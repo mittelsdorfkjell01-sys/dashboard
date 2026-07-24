@@ -21,7 +21,7 @@ export default function FactRow({
         <p className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
           Steckbrief
         </p>
-        <dl className="mt-4 grid grid-cols-1 gap-x-10 gap-y-7 border-t border-line pt-6 sm:grid-cols-2">
+        <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-7 border-t border-line pt-6 sm:grid-cols-2">
           {items.map((f) => (
             <div key={f.label}>
               <dt className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
@@ -36,7 +36,7 @@ export default function FactRow({
   }
 
   return (
-    <dl className="flex flex-wrap items-baseline gap-x-12 gap-y-4 border-y border-line py-6">
+    <dl className="flex flex-wrap items-baseline gap-x-8 gap-y-4 border-y border-line py-6">
       {items.map((f) => (
         <div key={f.label} className="flex flex-col">
           <dt className="text-caption text-muted">{f.label}</dt>

@@ -63,7 +63,7 @@ export default function Facilities({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-12 gap-y-8 md:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-3">
       {items.map((f) => {
         const Icon = facilityIcon[f.kind];
         const absent = f.available === false;

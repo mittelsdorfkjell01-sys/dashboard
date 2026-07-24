@@ -96,21 +96,21 @@ export default function EditorialHero({
         </div>
       )}
 
-      {/* headline block */}
-      <motion.div
-        className="absolute inset-x-0 bottom-0 z-10"
-        style={{ y: reduce ? 0 : titleY }}
-      >
+      {/* headline block — the kicker (region name) stays put; only the title/
+          meta get the parallax nudge, so the region name never drifts */}
+      <div className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto max-w-[1180px] px-4 pb-10 sm:px-8 sm:pb-14">
           {kicker && (
             <div className="mb-3 text-label font-semibold uppercase tracking-[0.16em] text-white/85">
               {kicker}
             </div>
           )}
-          {title && <h1 className="text-display-1 font-bold text-white text-balance">{title}</h1>}
-          {meta && <div className="mt-3 text-body font-medium text-white/90">{meta}</div>}
+          <motion.div style={{ y: reduce ? 0 : titleY }}>
+            {title && <h1 className="text-display-1 font-bold text-white text-balance">{title}</h1>}
+            {meta && <div className="mt-3 text-body font-medium text-white/90">{meta}</div>}
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
 
       {/* credit */}
       {credit && (
