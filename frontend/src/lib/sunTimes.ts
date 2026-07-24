@@ -58,3 +58,15 @@ export function sunTimes(
   if (sunrise == null || sunset == null) return null;
   return { sunrise, sunset };
 }
+
+/** Whether it's currently daytime at [lat, lng] — i.e. the real local clock
+ *  time (approximated the same longitude-as-timezone way as {@link sunTimes})
+ *  falls between today's sunrise and sunset. Polar day/night (no sunrise or
+ *  sunset that day) defaults to daytime rather than guessing which one. */
+export function isDaytime(lat: number, lng: number, now: Date = new Date()): boolean {
+  const sun = sunTimes(lat, lng, now);
+  if (!sun) return true;
+  const utcHour = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
+  const localHour = ((utcHour + lng / 15) % 24 + 24) % 24;
+  return localHour >= sun.sunrise && localHour < sun.sunset;
+}

@@ -2,8 +2,18 @@ import { useEffect } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import { formatCoords, mapLinkProps } from "../lib/mapLinks";
+import { isDaytime } from "../lib/sunTimes";
 
-const ZOOM = 13;
+const ZOOM = 15;
+
+// CARTO's free raster basemaps (no key) — Voyager by day (blue water, green
+// parkland, warm land tones), Dark Matter by night. Which one renders is
+// decided once per page load from the spot's own real local time, not a
+// hover toggle: the map should look like "right now, at this coast", not a
+// stylistic gimmick.
+const DAY_TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+const NIGHT_TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_SUBDOMAINS = "abcd";
 
 /** Leaflet renders no tiles when its container was sized 0 at init. */
 function InvalidateSize() {
@@ -45,12 +55,12 @@ const markerIcon = L.divIcon({
 });
 
 /**
- * Quiet locator map: where the spot sits in the region (zoom ~13), not the
- * beach itself — that's `SpotFlowMap`'s job on the Daten tab. Satellite tiles
- * (Esri World Imagery — free, no key, but its terms require the attribution
- * rendered below the map; see https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
- * instead of a vector basemap: a flat rendered coastline reads as empty, a
- * photo of the actual beach/reef/sandbank doesn't.
+ * Quiet locator map: where the spot sits in the region (zoom ~15), not the
+ * beach itself — that's `SpotFlowMap`'s job on the Daten tab. A colored
+ * cartographic basemap (CARTO, free, no key) rather than a satellite photo —
+ * blue water, green parkland — switching between its day and night variant
+ * based on whether it's actually daytime right now at the spot's own
+ * coordinates.
  *
  * Purely a picture, not an interactive map: no drag/scroll/zoom, no
  * wind/wave overlay. The whole card is one link to Google Maps / the
@@ -70,6 +80,7 @@ export default function LocatorMap({
 }) {
   const [lat, lng] = coords;
   const link = mapLinkProps(lat, lng);
+  const tileUrl = isDaytime(lat, lng) ? DAY_TILE_URL : NIGHT_TILE_URL;
 
   return (
     <a
@@ -94,7 +105,7 @@ export default function LocatorMap({
             attributionControl={false}
             className="swd-locator-map h-full w-full"
           >
-            <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+            <TileLayer url={tileUrl} subdomains={TILE_SUBDOMAINS} />
             <Marker position={coords} icon={markerIcon} />
             <ScaleControl />
             <InvalidateSize />
@@ -116,7 +127,7 @@ export default function LocatorMap({
 
       <div className="mt-2 flex items-center justify-between gap-3">
         <p className="text-caption tabular-nums text-teal">{formatCoords(lat, lng)}</p>
-        <p className="text-[10px] text-muted/80">Esri, Maxar, Earthstar Geographics, GIS User Community</p>
+        <p className="text-[10px] text-muted/80">© OpenStreetMap, © CARTO</p>
       </div>
     </a>
   );

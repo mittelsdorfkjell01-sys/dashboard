@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sunTimes } from "../sunTimes";
+import { isDaytime, sunTimes } from "../sunTimes";
 
 // Tarifa, Spain — a real spot in this catalogue.
 const TARIFA: [number, number] = [36.0, -5.6];
@@ -28,5 +28,19 @@ describe("sunTimes", () => {
 
   it("returns null for the midnight sun (high latitude, summer)", () => {
     expect(sunTimes(78, 15, new Date(Date.UTC(2026, 5, 21)))).toBeNull();
+  });
+});
+
+describe("isDaytime", () => {
+  it("is true around local noon in summer", () => {
+    expect(isDaytime(TARIFA[0], TARIFA[1], new Date(Date.UTC(2026, 6, 15, 12, 0, 0)))).toBe(true);
+  });
+
+  it("is false around local midnight in summer", () => {
+    expect(isDaytime(TARIFA[0], TARIFA[1], new Date(Date.UTC(2026, 6, 15, 0, 0, 0)))).toBe(false);
+  });
+
+  it("defaults to daytime for polar day/night, where there's no real sunrise/sunset", () => {
+    expect(isDaytime(78, 15, new Date(Date.UTC(2026, 11, 21, 12, 0, 0)))).toBe(true);
   });
 });

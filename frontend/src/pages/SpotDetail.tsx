@@ -181,7 +181,7 @@ export default function SpotDetail() {
             </SectionBand>
 
             {/* Steckbrief + Facilities: equal-weight two-up */}
-            <SectionBand tone="white">
+            <SectionBand tone="white" pad="md">
               <div className="grid gap-x-10 gap-y-12 lg:grid-cols-2">
                 <FactRow items={facts} variant="rail" />
                 <Facilities items={facilities} variant="rail" />
@@ -190,7 +190,7 @@ export default function SpotDetail() {
 
             {/* Lage: only ever shown with real coordinates */}
             {spot.coords && (
-              <SectionBand tone="white" kicker="Lage">
+              <SectionBand tone="white" pad="md" kicker="Lage">
                 <LocatorMap coords={spot.coords} contextLabel={locatorContextLabel} />
               </SectionBand>
             )}
