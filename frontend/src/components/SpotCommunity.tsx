@@ -1,38 +1,35 @@
-// Public community section on the spot page: a single chronological feed —
-// rating/tip/photo posts merged client-side (see lib/communityFeed, since the
-// backend still has three separate endpoints and this sprint adds none) —
-// plus the filmstrip gallery, which draws its photos from that same feed.
-// The composer is always visible (no hidden "Bewerten" button to find first)
-// and posts stars + text + an optional photo in one action.
+// Public community section on the spot page, split across two page
+// positions since Sprint 3: `CommunityGalleryMosaic` sits next to the lede
+// in the Überblick module, `SpotCommunityFeed` (default export) is the
+// chronological feed further down. Both call `useCommunityFeed` — ratings,
+// tips and images merged client-side (see lib/communityFeed; the backend
+// still has three separate endpoints and no sprint has added a combined
+// one) — independently; the shared useSwr cache means that's one set of
+// requests, not two. The composer (in the feed) is the only place a photo
+// gets attached to a post; the gallery only ever reads photos back out.
 
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useReducedMotion } from "framer-motion";
 import {
   ApiError,
   getImageLicense,
-  getRatings,
-  getSpotImages,
-  getTips,
   postRating,
   reportImage,
   resolveMediaUrl,
   uploadSpotImage,
   type CommunityImage,
-  type RatingItem,
-  type TipItem,
 } from "../lib/api";
 import { HERO_REQ, validateHeroFile } from "./ImageUpload";
 import { LEVELS, levelLabel, sportLabel } from "../lib/labels";
 import { ChevronDownIcon, CloseIcon } from "../lib/icons";
 import { Button, Input, Select, Textarea } from "./ui";
-import { usePersistedState } from "../lib/hooks";
-import { SectionBand } from "./editorial";
+import { useCommunityFeed, usePersistedState } from "../lib/hooks";
+import { satelliteTileUrl } from "../lib/mapLinks";
 import {
   avatarColor,
   encodeVisitDate,
-  feedPhotos,
   formatVisitDate,
   initials,
-  mergeFeed,
   relativeTime,
   sortFeed,
   type FeedPost,
@@ -47,6 +44,12 @@ const REPORT_REASONS: { key: string; label: string }[] = [
   { key: "other", label: "Sonstiges" },
 ];
 
+const COMPOSER_ID = "community-composer";
+const scrollToComposer = (smooth: boolean) =>
+  document
+    .getElementById(COMPOSER_ID)
+    ?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
+
 // Name must be a first name, or first + last (1–2 words, letters only).
 const NAME_RE = /^\p{L}[\p{L}'.-]*(?:\s+\p{L}[\p{L}'.-]*)?$/u;
 const validName = (n: string) => NAME_RE.test(n.trim());
@@ -59,7 +62,7 @@ const STAR_PATH =
 function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-      <path d={STAR_PATH} className={filled ? "fill-brand-orange" : "fill-line"} />
+      <path d={STAR_PATH} className={filled ? "fill-orange" : "fill-line"} />
     </svg>
   );
 }
@@ -80,7 +83,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
               </clipPath>
             </defs>
             <path d={STAR_PATH} className="fill-line" />
-            <path d={STAR_PATH} className="fill-brand-orange" clipPath={`url(#${clipId})`} />
+            <path d={STAR_PATH} className="fill-orange" clipPath={`url(#${clipId})`} />
           </svg>
         );
       })}
@@ -88,47 +91,156 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
   );
 }
 
+/** Marks a photo as auto-fetched from Wikimedia Commons rather than posted by
+ *  a community member — required by the sprint spec so the two sources never
+ *  get confused for one another. */
+function CommonsBadge({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink/70 px-2 py-0.5 text-caption font-medium text-white backdrop-blur">
+      {compact ? "Commons" : "Aus Wikimedia Commons"}
+    </span>
+  );
+}
+
+// --- gallery mosaic ----------------------------------------------------------
+
 /**
- * The whole community area: the gallery filmstrip (photos drawn from the
- * feed, see below) and the feed itself. One shared fetch (ratings/tips/images)
- * feeds both, in two SectionBands so the page keeps its white→cream rhythm.
+ * The Überblick module's photo tile: one big image (16:10) over three
+ * thumbnails, the last carrying a "+N" overlay once there are more than
+ * four. Looks right at 4 photos or 40. Photos come from the feed below —
+ * there's no separate upload here, "Bilder hinzufügen" just scrolls to the
+ * composer (the one place a photo actually gets attached to a post).
  */
-export default function SpotCommunitySection({ spotId, spotName }: { spotId: string; spotName: string }) {
-  const [ratings, setRatings] = useState<RatingItem[]>([]);
-  const [tips, setTips] = useState<TipItem[]>([]);
-  const [images, setImages] = useState<CommunityImage[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coords?: [number, number] }) {
+  const { photos } = useCommunityFeed(spotId);
+  const [heroFormOpen, setHeroFormOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [reportFor, setReportFor] = useState<string | null>(null);
+  const reduce = useReducedMotion();
 
-  const load = () => {
-    setLoadError(null);
-    void getRatings(spotId)
-      .then((r) => setRatings(r.items))
-      .catch(() => setLoadError("Beiträge konnten nicht vollständig geladen werden."));
-    void getTips(spotId).then((r) => setTips(r.items)).catch(() => {});
-    void getSpotImages(spotId).then((r) => setImages(r.items)).catch(() => {});
-  };
-
-  useEffect(() => {
-    load();
-  }, [spotId]);
-
-  const posts = useMemo(() => mergeFeed({ ratings, tips, images }), [ratings, tips, images]);
-  const photos = useMemo(() => feedPhotos(posts), [posts]);
+  const big = photos[0];
+  const thumbs = photos.slice(1, 4);
+  const extra = photos.length - 4;
 
   return (
-    <>
-      <SectionBand tone="white" pad="md">
-        <CommunityGalleryFilmstrip spotId={spotId} images={photos} />
-      </SectionBand>
-      <SectionBand
-        tone="cream"
-        kicker="Community"
-        heading="Community"
-        intro="Erfahrungen und Tipps von anderen vor Ort. Bitte fair und sachlich bleiben."
-      >
-        <CommunityFeed spotId={spotId} spotName={spotName} posts={posts} loadError={loadError} onPosted={load} />
-      </SectionBand>
-    </>
+    <div>
+      {photos.length === 0 ? (
+        <GalleryEmptyState coords={coords} onAdd={() => scrollToComposer(!reduce)} />
+      ) : (
+        <div className="grid gap-2">
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(0)}
+            aria-label={`Bild vergrößern${big.credit ? ` — ${big.credit}` : ""}`}
+            className="relative aspect-[16/10] overflow-hidden rounded-2xl"
+          >
+            <img
+              src={resolveMediaUrl(big.url)}
+              alt={big.credit ?? ""}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+            {big.source === "wikimedia_commons" && <CommonsBadge />}
+          </button>
+          {thumbs.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {thumbs.map((img, i) => {
+                const isLast = i === thumbs.length - 1;
+                return (
+                  <button
+                    key={img.id}
+                    type="button"
+                    onClick={() => setLightboxIndex(i + 1)}
+                    aria-label={
+                      isLast && extra > 0
+                        ? `Alle ${photos.length} Bilder ansehen`
+                        : `Bild vergrößern${img.credit ? ` — ${img.credit}` : ""}`
+                    }
+                    className="relative aspect-square overflow-hidden rounded-xl"
+                  >
+                    <img
+                      src={resolveMediaUrl(img.url)}
+                      alt={img.credit ?? ""}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    {isLast && extra > 0 && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-ink/60 text-body font-semibold text-white">
+                        +{extra}
+                      </span>
+                    )}
+                    {img.source === "wikimedia_commons" && !(isLast && extra > 0) && <CommonsBadge compact />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        {photos.length > 0 && (
+          <button
+            type="button"
+            onClick={() => scrollToComposer(!reduce)}
+            className="rounded-full border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
+          >
+            Bilder hinzufügen
+          </button>
+        )}
+        {!heroFormOpen && (
+          <button
+            type="button"
+            onClick={() => setHeroFormOpen(true)}
+            className="text-label font-medium text-teal hover:text-teal-hover"
+          >
+            Titelbild vorschlagen
+          </button>
+        )}
+      </div>
+
+      {heroFormOpen && (
+        <HeroCandidateForm spotId={spotId} onCancel={() => setHeroFormOpen(false)} onDone={() => setHeroFormOpen(false)} />
+      )}
+
+      {reportFor && (
+        <ReportDialog imageId={reportFor} onClose={() => setReportFor(null)} onDone={() => setReportFor(null)} />
+      )}
+
+      {lightboxIndex !== null && (
+        <Lightbox
+          items={photos}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+          onReport={setReportFor}
+        />
+      )}
+    </div>
+  );
+}
+
+/** No grey box: a satellite crop of the spot itself stands in for "no photos
+ *  yet", so the empty state still shows *something real* about the place. */
+function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd: () => void }) {
+  const bg = coords ? satelliteTileUrl(coords[0], coords[1], 15) : null;
+  return (
+    <div
+      className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-band bg-cover bg-center"
+      style={bg ? { backgroundImage: `url(${bg})` } : undefined}
+    >
+      <div className="absolute inset-0 bg-ink/55" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="text-body font-medium text-white">Noch keine Fotos von hier</p>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="rounded-full bg-teal px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+        >
+          Bilder hinzufügen
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -212,9 +324,9 @@ function Composer({
   };
 
   return (
-    <form onSubmit={submit} className="rounded-3xl border border-line bg-white p-4 sm:p-5">
+    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-3xl border border-line bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-body font-medium text-navy">Wie war's am {spotName}?</p>
+        <p className="text-body font-medium text-ink">Wie war's am {spotName}?</p>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
@@ -284,10 +396,10 @@ function Composer({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-label text-navy"
+              className="text-label text-ink"
             />
             {file && (
-              <label className="mt-2 flex items-start gap-2 text-label text-navy">
+              <label className="mt-2 flex items-start gap-2 text-label text-ink">
                 <input
                   type="checkbox"
                   checked={accepted}
@@ -304,7 +416,7 @@ function Composer({
               </label>
             )}
             {showTerms && terms && (
-              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-cream p-3 text-caption text-navy/80">
+              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-band p-3 text-caption text-ink-soft">
                 {terms.terms}
               </pre>
             )}
@@ -332,22 +444,16 @@ function Composer({
 
 // --- feed ----------------------------------------------------------------
 
-function CommunityFeed({
-  spotId,
-  spotName,
-  posts,
-  loadError,
-  onPosted,
-}: {
-  spotId: string;
-  spotName: string;
-  posts: FeedPost[];
-  loadError: string | null;
-  onPosted: () => void;
-}) {
+/** The chronological feed itself: composer up top, "Neueste"/"Hilfreichste"
+ *  toggle, then the posts (or an inviting empty state with the composer
+ *  directly under it). Headless — the caller's SectionBand supplies the
+ *  section heading (this used to also render the gallery; that moved up to
+ *  the Überblick module in Sprint 3, see `CommunityGalleryMosaic`). */
+export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string; spotName: string }) {
+  const { posts, loading, error, reload } = useCommunityFeed(spotId);
   const [sort, setSort] = usePersistedState<FeedSort>("swd.communityFeedSort", "newest");
   // Client-side only — there's no backend counter for "helpful" (no new
-  // endpoint this sprint), so this reflects this browser, not every visitor.
+  // endpoint has ever added one), so this reflects this browser, not every visitor.
   const [helpfulCounts, setHelpfulCounts] = usePersistedState<Record<string, number>>(
     `swd.communityHelpful.${spotId}`,
     {}
@@ -355,7 +461,7 @@ function CommunityFeed({
   const [votedIds, setVotedIds] = usePersistedState<string[]>(`swd.communityVoted.${spotId}`, []);
   const [reportFor, setReportFor] = useState<string | null>(null);
 
-  const sorted = useMemo(() => sortFeed(posts, sort, helpfulCounts), [posts, sort, helpfulCounts]);
+  const sorted = sortFeed(posts, sort, helpfulCounts);
 
   const markHelpful = (id: string) => {
     if (votedIds.includes(id)) return;
@@ -363,14 +469,14 @@ function CommunityFeed({
     setVotedIds((prev) => [...prev, id]);
   };
 
-  const composer = <Composer spotId={spotId} spotName={spotName} onPosted={onPosted} />;
+  const composer = <Composer spotId={spotId} spotName={spotName} onPosted={reload} />;
 
   return (
     <div>
-      {posts.length === 0 ? (
+      {!loading && posts.length === 0 ? (
         <>
           <div className="rounded-3xl border border-dashed border-line bg-white/60 px-6 py-8 text-center">
-            <p className="text-body font-medium text-navy">Sei der Erste, der von hier berichtet.</p>
+            <p className="text-body font-medium text-ink">Sei der Erste, der von hier berichtet.</p>
             <p className="mx-auto mt-2 max-w-[46ch] text-caption text-muted">
               Hilfreiche Beiträge nennen Bedingungen, Level und was andere vor Ort wissen sollten.
             </p>
@@ -381,41 +487,45 @@ function CommunityFeed({
         <>
           {composer}
 
-          <div className="mt-6 flex items-center justify-end gap-1 text-label">
-            {(["newest", "helpful"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSort(s)}
-                aria-pressed={sort === s}
-                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
-                  sort === s ? "bg-navy text-white" : "text-muted hover:text-navy"
-                }`}
-              >
-                {s === "newest" ? "Neueste" : "Hilfreichste"}
-              </button>
-            ))}
-          </div>
+          {posts.length > 0 && (
+            <>
+              <div className="mt-6 flex items-center justify-end gap-1 text-label">
+                {(["newest", "helpful"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSort(s)}
+                    aria-pressed={sort === s}
+                    className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+                      sort === s ? "bg-teal text-white" : "text-muted hover:text-teal"
+                    }`}
+                  >
+                    {s === "newest" ? "Neueste" : "Hilfreichste"}
+                  </button>
+                ))}
+              </div>
 
-          <ul className="mt-4 space-y-4">
-            {sorted.map((post) => (
-              <li key={post.id}>
-                <FeedPostCard
-                  post={post}
-                  helpfulCount={helpfulCounts[post.id] ?? 0}
-                  voted={votedIds.includes(post.id)}
-                  onHelpful={() => markHelpful(post.id)}
-                  onReport={setReportFor}
-                />
-              </li>
-            ))}
-          </ul>
+              <ul className="mt-4 space-y-4">
+                {sorted.map((post) => (
+                  <li key={post.id}>
+                    <FeedPostCard
+                      post={post}
+                      helpfulCount={helpfulCounts[post.id] ?? 0}
+                      voted={votedIds.includes(post.id)}
+                      onHelpful={() => markHelpful(post.id)}
+                      onReport={setReportFor}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </>
       )}
 
-      {loadError && (
+      {error && (
         <p role="alert" className="mt-4 text-label text-red-600">
-          {loadError}
+          {error}
         </p>
       )}
 
@@ -469,14 +579,14 @@ function FeedPostCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-body font-semibold text-navy">{post.authorName}</span>
+            <span className="text-body font-semibold text-ink">{post.authorName}</span>
             {post.skillLevel && (
-              <span className="rounded-full bg-navy/5 px-2 py-0.5 text-caption font-medium text-navy/70">
+              <span className="rounded-full bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
                 {levelLabel(post.skillLevel)}
               </span>
             )}
             {post.sport && (
-              <span className="rounded-full bg-brand-teal/10 px-2 py-0.5 text-caption font-medium text-brand-teal">
+              <span className="rounded-full bg-teal/10 px-2 py-0.5 text-caption font-medium text-teal">
                 {sportLabel(post.sport)}
               </span>
             )}
@@ -488,7 +598,7 @@ function FeedPostCard({
             </div>
           )}
 
-          {post.text && <p className="mt-2 text-ui leading-relaxed text-navy/90">{post.text}</p>}
+          {post.text && <p className="mt-2 text-ui leading-relaxed text-ink-soft">{post.text}</p>}
 
           {post.photo && (
             <img
@@ -500,7 +610,7 @@ function FeedPostCard({
           )}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted">
-            {post.visitedAt && <span className="font-medium text-navy/70">{formatVisitDate(post.visitedAt)}</span>}
+            {post.visitedAt && <span className="font-medium text-muted">{formatVisitDate(post.visitedAt)}</span>}
             <span>{relativeTime(post.createdAt)}</span>
           </div>
 
@@ -512,8 +622,8 @@ function FeedPostCard({
               aria-pressed={voted}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
                 voted
-                  ? "border-brand-green/30 bg-brand-green/10 text-brand-green"
-                  : "border-line text-muted hover:text-navy"
+                  ? "border-green/30 bg-green/10 text-green"
+                  : "border-line text-muted hover:text-teal"
               }`}
             >
               Hilfreich{helpfulCount > 0 ? ` · ${helpfulCount}` : ""}
@@ -527,7 +637,7 @@ function FeedPostCard({
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="Weitere Aktionen"
-                  className="grid h-8 w-8 place-items-center rounded-full text-label text-muted hover:bg-navy/5 hover:text-navy"
+                  className="grid h-8 w-8 place-items-center rounded-full text-label text-muted hover:bg-ink/5 hover:text-teal"
                 >
                   ⋯
                 </button>
@@ -543,7 +653,7 @@ function FeedPostCard({
                         setMenuOpen(false);
                         onReport(post.reportImageId!);
                       }}
-                      className="block w-full rounded-lg px-3 py-2 text-left text-label text-navy hover:bg-cream"
+                      className="block w-full rounded-lg px-3 py-2 text-left text-label text-ink hover:bg-band"
                     >
                       Melden
                     </button>
@@ -558,162 +668,24 @@ function FeedPostCard({
   );
 }
 
-// --- gallery filmstrip + hero-candidate proposal + report -------------------
-
-/** The filmstrip — a horizontal snap gallery that works identically at 2
- *  photos or 20: fixed-width portrait tiles, the next one always cut off at
- *  the edge as a scroll affordance. Its photos come from the feed (see
- *  `feedPhotos`); the only way to add a *post* photo is the composer above —
- *  no second upload button here. "Titelbild vorschlagen" is a distinct,
- *  deliberately understated action (proposing the page's cover photo, via its
- *  own admin review queue), not a second way to add a gallery photo. */
-function CommunityGalleryFilmstrip({ spotId, images }: { spotId: string; images: CommunityImage[] }) {
-  const [reportFor, setReportFor] = useState<string | null>(null);
-  const [heroFormOpen, setHeroFormOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [hoverCapable, setHoverCapable] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setHoverCapable(window.matchMedia("(hover: hover) and (pointer: fine)").matches);
-  }, []);
-
-  const updateScrollState = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  };
-
-  useEffect(() => {
-    updateScrollState();
-    window.addEventListener("resize", updateScrollState);
-    return () => window.removeEventListener("resize", updateScrollState);
-  }, [images]);
-
-  const scrollByTile = (dir: 1 | -1) => scrollRef.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
-
-  return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h3 className="text-title font-semibold text-navy">Bildergalerie</h3>
-        {!heroFormOpen && (
-          <button
-            type="button"
-            onClick={() => setHeroFormOpen(true)}
-            className="text-label font-medium text-brand-teal hover:text-brand-teal-dark"
-          >
-            Titelbild vorschlagen
-          </button>
-        )}
-      </div>
-
-      {images.length === 0 ? (
-        <div className="mt-4 rounded-3xl border border-dashed border-line bg-cream/60 px-6 py-10 text-center">
-          <p className="text-body font-medium text-navy">Noch keine Bilder von diesem Spot.</p>
-          <p className="mx-auto max-w-[42ch] text-caption text-muted">
-            Fotos kommen aus den Beiträgen weiter unten — teil deins mit dem ersten Bericht.
-          </p>
-        </div>
-      ) : (
-        <div className="relative mt-4">
-          {hoverCapable && canScrollLeft && (
-            <button
-              type="button"
-              onClick={() => scrollByTile(-1)}
-              aria-label="Zurückscrollen"
-              className="absolute left-2 top-1/2 z-10 hidden -translate-y-1/2 place-items-center rounded-full bg-white/90 p-2 text-navy shadow-pill transition-colors hover:bg-white sm:grid"
-            >
-              <ChevronDownIcon width={18} height={18} className="rotate-90" />
-            </button>
-          )}
-          {hoverCapable && canScrollRight && (
-            <button
-              type="button"
-              onClick={() => scrollByTile(1)}
-              aria-label="Weiterscrollen"
-              className="absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 place-items-center rounded-full bg-white/90 p-2 text-navy shadow-pill transition-colors hover:bg-white sm:grid"
-            >
-              <ChevronDownIcon width={18} height={18} className="-rotate-90" />
-            </button>
-          )}
-
-          <div
-            ref={scrollRef}
-            onScroll={updateScrollState}
-            className="flex snap-x-mandatory gap-2 overflow-x-auto no-scrollbar pb-2"
-          >
-            {images.map((img, i) => (
-              <figure
-                key={img.id}
-                className="group relative aspect-[14/19] w-[280px] shrink-0 snap-start overflow-hidden rounded-3xl"
-              >
-                <button
-                  type="button"
-                  onClick={() => setLightboxIndex(i)}
-                  aria-label={`Bild vergrößern${img.credit ? ` — ${img.credit}` : ""}`}
-                  className="absolute inset-0 h-full w-full"
-                >
-                  <img
-                    src={resolveMediaUrl(img.url)}
-                    alt={img.credit ?? ""}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                    loading="lazy"
-                  />
-                </button>
-                {img.credit && (
-                  <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-navy/60 px-3 py-1.5 text-caption text-white">
-                    {img.credit}
-                  </figcaption>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setReportFor(img.id)}
-                  className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-caption font-medium text-navy transition-colors hover:bg-white"
-                >
-                  Melden
-                </button>
-              </figure>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {reportFor && (
-        <ReportDialog imageId={reportFor} onClose={() => setReportFor(null)} onDone={() => setReportFor(null)} />
-      )}
-
-      {heroFormOpen && (
-        <HeroCandidateForm spotId={spotId} onCancel={() => setHeroFormOpen(false)} onDone={() => setHeroFormOpen(false)} />
-      )}
-
-      {lightboxIndex !== null && (
-        <Lightbox
-          items={images}
-          index={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-          onIndexChange={setLightboxIndex}
-        />
-      )}
-    </div>
-  );
-}
+// --- lightbox + report + hero-candidate proposal -----------------------------
 
 /** Full-screen lightbox: blurred scrim, swipe (touch) / arrow keys (desktop)
- *  to move between images, Esc to close, and a Tab-cycling focus trap so
- *  keyboard focus can't escape onto the page behind it. */
+ *  to move between images, Esc to close, a Tab-cycling focus trap so
+ *  keyboard focus can't escape onto the page behind it, and a quiet "Melden"
+ *  action (the mosaic's own thumbnails are too small to carry one each). */
 function Lightbox({
   items,
   index,
   onClose,
   onIndexChange,
+  onReport,
 }: {
   items: CommunityImage[];
   index: number;
   onClose: () => void;
   onIndexChange: (i: number) => void;
+  onReport: (imageId: string) => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -762,7 +734,7 @@ function Lightbox({
       aria-modal="true"
       aria-label="Bildergalerie, groß"
       tabIndex={-1}
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-navy-dark/85 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-ink/85 p-4 backdrop-blur-md"
       onClick={onClose}
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX;
@@ -774,14 +746,26 @@ function Lightbox({
         touchStartX.current = null;
       }}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Schließen"
-        className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-      >
-        <CloseIcon width={20} height={20} />
-      </button>
+      <div className="absolute right-4 top-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onReport(img.id);
+          }}
+          className="rounded-full bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
+        >
+          Melden
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Schließen"
+          className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+        >
+          <CloseIcon width={20} height={20} />
+        </button>
+      </div>
 
       {items.length > 1 && (
         <>
@@ -811,12 +795,33 @@ function Lightbox({
       )}
 
       <figure className="max-w-[92vw]" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={resolveMediaUrl(img.url)}
-          alt={img.credit ?? ""}
-          className="max-h-[80vh] max-w-[92vw] rounded-2xl object-contain"
-        />
-        {img.credit && <figcaption className="mt-3 text-center text-caption text-white/80">{img.credit}</figcaption>}
+        <div className="relative">
+          <img
+            src={resolveMediaUrl(img.url)}
+            alt={img.credit ?? ""}
+            className="max-h-[80vh] max-w-[92vw] rounded-2xl object-contain"
+          />
+          {img.source === "wikimedia_commons" && <CommonsBadge />}
+        </div>
+        {(img.credit || img.license_name) && (
+          <figcaption className="mt-3 text-center text-caption text-white/80">
+            {img.credit}
+            {img.credit && img.license_name && " · "}
+            {img.license_name &&
+              (img.license_url ? (
+                <a
+                  href={img.license_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-white"
+                >
+                  {img.license_name}
+                </a>
+              ) : (
+                img.license_name
+              ))}
+          </figcaption>
+        )}
       </figure>
     </div>
   );
@@ -852,15 +857,15 @@ function ReportDialog({
   };
 
   return (
-    <div className="mt-4 rounded-3xl border border-line bg-cream p-4">
+    <div className="mt-4 rounded-3xl border border-line bg-band p-4">
       <div className="flex items-center justify-between">
-        <p className="text-ui font-medium text-navy">Bild melden</p>
-        <button type="button" onClick={onClose} className="text-label text-muted hover:text-navy">
+        <p className="text-ui font-medium text-ink">Bild melden</p>
+        <button type="button" onClick={onClose} className="text-label text-muted hover:text-teal">
           Schließen
         </button>
       </div>
       {contact !== null ? (
-        <p role="status" className="mt-2 text-label text-brand-green">
+        <p role="status" className="mt-2 text-label text-green">
           Danke, deine Meldung ist eingegangen.
           {contact && <> Bei dringenden Rechtefragen: {contact}</>}
         </p>
@@ -953,10 +958,10 @@ function HeroCandidateForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-3xl bg-navy/5 p-4">
+    <form onSubmit={submit} className="mt-4 rounded-3xl bg-ink/5 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-ui font-medium text-navy">Titelbild vorschlagen</p>
-        <button type="button" onClick={onCancel} className="text-label text-muted hover:text-navy">
+        <p className="text-ui font-medium text-ink">Titelbild vorschlagen</p>
+        <button type="button" onClick={onCancel} className="text-label text-muted hover:text-teal">
           Schließen
         </button>
       </div>
@@ -967,7 +972,7 @@ function HeroCandidateForm({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
-        className="mt-2 text-label text-navy"
+        className="mt-2 text-label text-ink"
       />
       <Input
         value={credit}
@@ -975,7 +980,7 @@ function HeroCandidateForm({
         placeholder="Credit: Name oder Instagram (optional)"
         className="mt-2"
       />
-      <label className="mt-3 flex items-start gap-2 text-label text-navy">
+      <label className="mt-3 flex items-start gap-2 text-label text-ink">
         <input
           type="checkbox"
           checked={accepted}
@@ -991,13 +996,13 @@ function HeroCandidateForm({
         </span>
       </label>
       {showTerms && terms && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-cream p-3 text-caption text-navy/80">
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-band p-3 text-caption text-ink-soft">
           {terms.terms}
         </pre>
       )}
       <Honeypot value={website} onChange={setWebsite} />
       {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
-      {notice && <p role="status" className="mt-2 text-label text-brand-green">{notice}</p>}
+      {notice && <p role="status" className="mt-2 text-label text-green">{notice}</p>}
       <Button type="submit" disabled={busy || !file || !accepted} className="mt-3">
         {busy ? "Hochladen…" : "Vorschlagen"}
       </Button>

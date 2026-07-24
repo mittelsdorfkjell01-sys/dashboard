@@ -9,6 +9,7 @@ import type { Spot } from "./types";
 import * as api from "./api";
 import { adaptSpot, adaptSpots } from "./adapt";
 import { useSwr, type SwrState } from "./swr";
+import { mergeFeed, type FeedPost } from "./communityFeed";
 
 // Kept as names for backward-compatible imports; identical shape to SwrState.
 export type AsyncState<T> = SwrState<T>;
@@ -121,6 +122,55 @@ export function useBestWeeks(regionId?: string): AsyncStateReloadable<api.BestWe
 /** All regions (raw backend records), cached once and shared app-wide. */
 export function useRegions(): AsyncStateReloadable<api.Region[]> {
   return useSwr("regions", () => api.getRegions());
+}
+
+export interface CommunityFeedState {
+  posts: FeedPost[];
+  photos: api.CommunityImage[];
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+}
+
+/** Ratings + tips + images for a spot, merged into one chronological feed
+ *  (see lib/communityFeed). The Info tab's mosaic gallery tile and the
+ *  community feed section call this independently from two different places
+ *  in the page — the underlying useSwr cache (keyed by spotId) means that
+ *  only fires one set of requests, not two. */
+export function useCommunityFeed(spotId?: string): CommunityFeedState {
+  const ratings = useSwr(spotId ? `ratings:${spotId}` : null, () => api.getRatings(spotId!));
+  const tips = useSwr(spotId ? `tips:${spotId}` : null, () => api.getTips(spotId!));
+  const images = useSwr(spotId ? `images:${spotId}` : null, () => api.getSpotImages(spotId!));
+
+  // Commons photos were fetched automatically, not posted by a community
+  // member — they feed the gallery (below) but never masquerade as a feed
+  // post ("someone shared a photo").
+  const communityImages = useMemo(
+    () => (images.data?.items ?? []).filter((i) => i.source !== "wikimedia_commons"),
+    [images.data]
+  );
+  const posts = useMemo(
+    () =>
+      mergeFeed({
+        ratings: ratings.data?.items ?? [],
+        tips: tips.data?.items ?? [],
+        images: communityImages,
+      }),
+    [ratings.data, tips.data, communityImages]
+  );
+  const photos = images.data?.items ?? [];
+
+  return {
+    posts,
+    photos,
+    loading: ratings.loading || tips.loading || images.loading,
+    error: ratings.error ?? tips.error ?? images.error,
+    reload: () => {
+      ratings.reload();
+      tips.reload();
+      images.reload();
+    },
+  };
 }
 
 /** A piece of UI state persisted to localStorage under `key` (spot-agnostic —

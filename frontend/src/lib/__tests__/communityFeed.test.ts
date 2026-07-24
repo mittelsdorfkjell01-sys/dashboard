@@ -3,7 +3,6 @@ import type { CommunityImage, RatingItem, TipItem } from "../api";
 import {
   avatarColor,
   encodeVisitDate,
-  feedPhotos,
   initials,
   mergeFeed,
   parsePostText,
@@ -38,6 +37,10 @@ const image = (over: Partial<CommunityImage>): CommunityImage => ({
   height: 600,
   credit: null,
   created_at: "2026-07-20T12:00:30Z",
+  source: "user_upload",
+  license_name: null,
+  license_url: null,
+  source_url: null,
   ...over,
 });
 
@@ -124,18 +127,6 @@ describe("sortFeed", () => {
   it("sorts by helpful count, falling back to newest on ties", () => {
     const sorted = sortFeed(posts, "helpful", { "rating:old": 5, "rating:new": 1 });
     expect(sorted.map((p) => p.id)).toEqual(["rating:old", "rating:new"]);
-  });
-});
-
-describe("feedPhotos", () => {
-  it("pulls only the photo-bearing posts, in feed order", () => {
-    const withPhoto = mergeFeed({
-      ratings: [rating({})],
-      tips: [],
-      images: [image({ credit: "Anna Muster", created_at: "2026-07-20T12:00:05Z" })],
-    });
-    expect(feedPhotos(withPhoto)).toHaveLength(1);
-    expect(feedPhotos(mergeFeed({ ratings: [], tips: [], images: [] }))).toHaveLength(0);
   });
 });
 

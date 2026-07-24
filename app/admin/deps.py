@@ -7,6 +7,7 @@ Auth moved to :mod:`app.auth.deps` in Sprint A (cookie session + roles). The old
 
 from __future__ import annotations
 
+from app.admin.commons import CommonsClient, default_commons_client
 from app.admin.stock import StockImageClient, default_stock_client
 
 
@@ -31,3 +32,7 @@ get_cds_client = get_extract_client
 
 def get_stock_client() -> StockImageClient:
     return default_stock_client()
+
+
+def get_commons_client() -> CommonsClient:
+    return default_commons_client()

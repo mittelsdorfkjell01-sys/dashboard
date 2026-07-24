@@ -153,15 +153,9 @@ export function sortFeed(posts: FeedPost[], sort: FeedSort, helpfulCounts: Recor
   });
 }
 
-/** The feed's photos, in feed order — what the filmstrip gallery renders.
- *  There is no second upload path: every gallery photo is some post's photo. */
-export function feedPhotos(posts: FeedPost[]): CommunityImage[] {
-  return posts.flatMap((p) => (p.photo ? [p.photo] : []));
-}
-
 // --- presentation helpers ----------------------------------------------------
 
-const AVATAR_PALETTE = ["#13335E", "#1E6E7E", "#4A8159", "#E0823C", "#2C4E7E", "#6B7787"];
+const AVATAR_PALETTE = ["#241C17", "#1E6E7E", "#4A8159", "#E0823C", "#3D332C", "#7A6F66"];
 
 export function hashString(s: string): number {
   let h = 0;

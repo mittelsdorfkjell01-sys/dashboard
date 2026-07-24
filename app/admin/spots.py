@@ -235,6 +235,20 @@ def manage_spot_image(
     return spot
 
 
+def fetch_commons_images(spot_id, *, db: Session, client: Any) -> list[Any]:
+    """Geosearch Wikimedia Commons around the spot's own coordinates and store
+    any newly-licensed hits as gallery images. Returns the newly created rows
+    (empty if everything found was already stored)."""
+    from geoalchemy2.shape import to_shape
+
+    from app.community.service import create_commons_image_records
+
+    spot = _load(db, spot_id)
+    point = to_shape(spot.location)
+    results = client.search(point.y, point.x)
+    return create_commons_image_records(db, spot_id, results)
+
+
 def set_spot_live(spot_id, *, db: Session, actor: str | None = "admin") -> dict:
     """Publish a spot — only if ready; otherwise raise :class:`NotReadyError`."""
     readiness = validate_spot_readiness(spot_id, db=db)

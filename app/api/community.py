@@ -99,12 +99,18 @@ class ImageOut(BaseModel):
     height: int | None
     credit: str | None
     created_at: str
+    source: str
+    license_name: str | None
+    license_url: str | None
+    source_url: str | None
 
     @classmethod
     def of(cls, i: SpotImage) -> "ImageOut":
         return cls(
             id=str(i.id), url=i.url, kind=i.kind, width=i.width, height=i.height,
             credit=i.credit, created_at=i.created_at.isoformat(),
+            source=i.source, license_name=i.license_name, license_url=i.license_url,
+            source_url=i.source_url,
         )
 
 

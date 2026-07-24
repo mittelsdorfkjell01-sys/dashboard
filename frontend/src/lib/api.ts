@@ -493,9 +493,21 @@ export interface CommunityImage {
   height: number | null;
   credit: string | null;
   created_at: string;
+  source: string;
+  license_name: string | null;
+  license_url: string | null;
+  source_url: string | null;
 }
 export const getSpotImages = (spotId: string) =>
   request<{ items: CommunityImage[] }>(`/spots/${spotId}/images`);
+
+/** Admin: geosearch Wikimedia Commons around the spot and store newly-licensed
+ *  hits as gallery images. Safe to call again — already-stored photos are
+ *  skipped, so it only ever adds what's new since the last fetch. */
+export const fetchCommonsImages = (spotId: string) =>
+  request<{ items: CommunityImage[] }>(`/admin/spots/${spotId}/commons-images/fetch`, {
+    method: "POST",
+  });
 
 export function uploadSpotImage(
   spotId: string,

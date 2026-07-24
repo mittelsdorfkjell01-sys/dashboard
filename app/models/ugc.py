@@ -140,10 +140,16 @@ class SpotImage(Base, TimestampMixin):
     credit: Mapped[str | None] = mapped_column(String(200))  # name or IG handle
     submitter_email: Mapped[str | None] = mapped_column(String(255))
     app_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
-    license_version: Mapped[str] = mapped_column(String(20), nullable=False)
-    license_accepted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    # Nullable: images auto-fetched from an external source (Wikimedia Commons)
+    # were never "accepted" by an uploader — there's no consent event to date.
+    license_version: Mapped[str | None] = mapped_column(String(20))
+    license_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The photo's real license/attribution, as reported by the external source
+    # (e.g. "CC BY-SA 4.0") — distinct from license_version/license_accepted_at
+    # above, which track *our own upload consent flow* for user photos.
+    license_name: Mapped[str | None] = mapped_column(String(80))
+    license_url: Mapped[str | None] = mapped_column(String(500))
+    source_url: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     report_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0")

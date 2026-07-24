@@ -230,6 +230,52 @@ def create_image_record(
     return image
 
 
+def create_commons_image_records(db: Session, spot_id, results: list[dict]) -> list[SpotImage]:
+    """Store Wikimedia Commons geosearch hits as gallery images. ``kind`` is
+    always ``gallery`` (Commons photos never become hero candidates) and
+    ``status`` is ``approved`` outright — an admin explicitly triggered this
+    fetch and can hide individual results afterwards, so there's no separate
+    review queue for them. license_version/license_accepted_at stay ``None``:
+    there was no upload-consent event to date, that's not what these track.
+
+    Skips any result whose source_url is already stored for this spot, so the
+    fetch endpoint is safe to call again (e.g. to pick up new Commons uploads)
+    without duplicating existing rows.
+    """
+    _require_spot(db, spot_id)
+    existing = set(
+        db.scalars(
+            select(SpotImage.source_url).where(
+                SpotImage.spot_id == spot_id, SpotImage.source_url.isnot(None)
+            )
+        )
+    )
+    created: list[SpotImage] = []
+    for r in results:
+        if r["source_url"] in existing:
+            continue
+        image = SpotImage(
+            spot_id=spot_id,
+            url=r["url"],
+            kind="gallery",
+            width=r.get("width"),
+            height=r.get("height"),
+            source="wikimedia_commons",
+            credit=r.get("credit"),
+            license_name=r.get("license_name"),
+            license_url=r.get("license_url"),
+            source_url=r["source_url"],
+            status="approved",
+        )
+        db.add(image)
+        created.append(image)
+    if created:
+        db.commit()
+        for image in created:
+            db.refresh(image)
+    return created
+
+
 def list_images(db: Session, spot_id) -> list[SpotImage]:
     _require_spot(db, spot_id)
     return list(

@@ -21,13 +21,14 @@ from app.admin import dashboard as admin_dashboard
 from app.admin import regions as admin_regions
 from app.admin import spots as admin_spots
 from app.admin import team as admin_team
-from app.admin.deps import get_extract_client, get_stock_client
+from app.admin.deps import get_commons_client, get_extract_client, get_stock_client
 from app.admin.jobs import get_job_status, trigger_era5_job
 from app.auth.deps import get_actor, require_role
 from app.admin.readiness import validate_spot_readiness
 from app.admin.spots import NotReadyError
 from app.config import get_settings
 from app.db.session import get_db
+from app.api.community import ImageOut
 from app.search.deps import get_geocoder
 from app.media import (
     HERO_OUT_MAX_WIDTH,
@@ -451,6 +452,22 @@ def region_stock_image(
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
     return RegionRead.from_orm_region(region)
+
+
+@router.post("/spots/{spot_id}/commons-images/fetch")
+def fetch_commons_images(
+    spot_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    client=Depends(get_commons_client),
+) -> dict:
+    """Geosearch Wikimedia Commons around the spot and store newly-licensed
+    hits as gallery images. Safe to call again later — already-stored source
+    URLs are skipped, so it only ever adds what's new."""
+    try:
+        created = admin_spots.fetch_commons_images(spot_id, db=db, client=client)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    return {"items": [ImageOut.of(i) for i in created]}
 
 
 @router.patch("/regions/{region_id}", response_model=RegionRead)
