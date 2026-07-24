@@ -83,7 +83,7 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold text-navy">Benutzerverwaltung</h1>
+      <h1 className="text-[24px] font-semibold text-ink">Benutzerverwaltung</h1>
         <p className="mt-2 text-[15px] text-muted">
           Admins verwalten alles; Moderatoren kuratieren und moderieren, ohne
           Zugriff auf die Benutzerverwaltung.
@@ -92,7 +92,7 @@ export default function AdminUsers() {
         {notice && (
           <div
             role="status"
-            className="mt-4 rounded-xl bg-brand-green/10 px-3 py-2 text-[13px] font-medium text-brand-green"
+            className="mt-4 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green"
           >
             {notice}
           </div>
@@ -116,7 +116,7 @@ export default function AdminUsers() {
 
         <div className="mt-8 overflow-x-auto rounded-2xl border border-line">
           <table className="w-full min-w-[720px] text-left text-[14px]">
-            <thead className="bg-navy/5 text-[12px] uppercase tracking-wide text-navy/70">
+            <thead className="bg-ink/5 text-[12px] uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3 font-semibold">E-Mail</th>
                 <th className="px-4 py-3 font-semibold">Name</th>
@@ -142,15 +142,15 @@ export default function AdminUsers() {
               ) : (
                 users.map((u) => (
                   <tr key={u.id} className={u.is_active ? "" : "opacity-60"}>
-                    <td className="px-4 py-3 text-navy">{u.email}</td>
-                    <td className="px-4 py-3 text-navy">{u.display_name}</td>
+                    <td className="px-4 py-3 text-ink">{u.email}</td>
+                    <td className="px-4 py-3 text-ink">{u.display_name}</td>
                     <td className="px-4 py-3">
                       <select
                         value={u.role}
                         onChange={(e) =>
                           onRoleChange(u, e.target.value as AdminRole)
                         }
-                        className="rounded-lg border border-navy/15 bg-white px-2 py-1 text-[13px] text-navy"
+                        className="rounded-lg border border-line bg-white px-2 py-1 text-[13px] text-ink"
                         aria-label={`Rolle von ${u.email}`}
                       >
                         {ROLES.map((r) => (
@@ -163,7 +163,7 @@ export default function AdminUsers() {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${
-                          u.is_active ? "text-brand-green" : "text-muted"
+                          u.is_active ? "text-green" : "text-muted"
                         }`}
                       >
                         {u.is_active ? "● Aktiv" : "○ Inaktiv"}
@@ -179,14 +179,14 @@ export default function AdminUsers() {
                         <button
                           type="button"
                           onClick={() => onToggleActive(u)}
-                          className="rounded-lg border border-line px-2.5 py-1 text-[13px] font-medium text-navy hover:bg-navy/5"
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
                         >
                           {u.is_active ? "Deaktivieren" : "Aktivieren"}
                         </button>
                         <button
                           type="button"
                           onClick={() => onResetPassword(u)}
-                          className="rounded-lg border border-line px-2.5 py-1 text-[13px] font-medium text-navy hover:bg-navy/5"
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
                         >
                           Passwort
                         </button>
@@ -239,7 +239,7 @@ function TeamBoard() {
 
   return (
     <section className="mt-10">
-      <h2 className="text-[18px] font-semibold text-navy">Team-Notizen</h2>
+      <h2 className="text-[18px] font-semibold text-ink">Team-Notizen</h2>
       <p className="mt-1 text-[13px] text-muted">
         Nachrichten fürs Team — erscheinen als Kacheln auf der Übersicht.
       </p>
@@ -256,9 +256,9 @@ function TeamBoard() {
       {error && <p className="mt-2 text-[13px] text-red-600">{error}</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {notes.map((n) => (
-          <div key={n.id} className="flex items-start justify-between gap-2 rounded-xl border border-line bg-brand-teal/5 p-3">
+          <div key={n.id} className="flex items-start justify-between gap-2 rounded-xl border border-line bg-teal/5 p-3">
             <div className="min-w-0">
-              <p className="whitespace-pre-wrap text-[14px] text-navy">{n.body}</p>
+              <p className="whitespace-pre-wrap text-[14px] text-ink">{n.body}</p>
               <p className="mt-1 text-[12px] text-muted">
                 {n.author ?? "—"} · {new Date(n.created_at).toLocaleString("de-DE")}
               </p>
@@ -287,7 +287,7 @@ function ActivityLog() {
 
   return (
     <section className="mt-10">
-      <h2 className="text-[18px] font-semibold text-navy">Aktivität</h2>
+      <h2 className="text-[18px] font-semibold text-ink">Aktivität</h2>
       <p className="mt-1 text-[13px] text-muted">
         Letzte echten Änderungen durch das Team (keine Klicks, nur Aktionen).
       </p>
@@ -299,10 +299,10 @@ function ActivityLog() {
         ) : (
           items.map((a, i) => (
             <li key={i} className="flex items-start justify-between gap-3 px-4 py-2.5 text-[14px]">
-              <span className="min-w-0 text-navy">
+              <span className="min-w-0 text-ink">
                 <span className="font-medium">{a.actor ?? "—"}</span>{" "}
                 <span className="text-muted">{a.label}</span>
-                {a.target && <span className="text-navy"> — {a.target}</span>}
+                {a.target && <span className="text-ink"> — {a.target}</span>}
                 {a.fields.length > 0 && (
                   <span className="text-muted"> ({a.fields.map(gapLabel).join(", ")})</span>
                 )}
@@ -356,10 +356,10 @@ function CreateUserForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-6 rounded-2xl bg-navy/5 p-4 sm:p-5"
+      className="mt-6 rounded-2xl bg-ink/5 p-4 sm:p-5"
       noValidate
     >
-      <p className="text-[14px] font-semibold text-navy">Neuen Benutzer anlegen</p>
+      <p className="text-[14px] font-semibold text-ink">Neuen Benutzer anlegen</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           type="email"

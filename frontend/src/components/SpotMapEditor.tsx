@@ -17,7 +17,7 @@ const pinIcon = L.divIcon({
   className: "swd-pin",
   html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
-        fill="#13335E" stroke="#ffffff" stroke-width="1.4"/>
+        fill="#241C17" stroke="#ffffff" stroke-width="1.4"/>
       <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
     </svg>`,
   iconSize: [30, 38],
@@ -153,8 +153,8 @@ export default function SpotMapEditor({
           onClick={() => setLocked((v) => !v)}
           className={`absolute right-2 top-2 z-[500] rounded-full px-3 py-1.5 text-[12px] font-medium shadow-pill ${
             locked
-              ? "bg-navy text-white hover:bg-navy-dark"
-              : "bg-white text-navy hover:bg-navy/5"
+              ? "bg-teal text-white hover:bg-teal-hover"
+              : "bg-white text-teal hover:bg-teal/5"
           }`}
         >
           {locked ? "🔒 Fixiert — Bearbeiten" : "✓ Fixieren"}
@@ -170,7 +170,7 @@ export default function SpotMapEditor({
           href={gmaps}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 rounded-lg border border-line px-2.5 py-1 font-medium text-navy hover:bg-navy/5"
+          className="shrink-0 rounded-lg border border-line px-2.5 py-1 font-medium text-teal hover:bg-teal/5"
         >
           In Google Maps öffnen ↗
         </a>

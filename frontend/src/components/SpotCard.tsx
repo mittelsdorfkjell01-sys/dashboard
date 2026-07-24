@@ -36,7 +36,7 @@ export default function SpotCard({
 
       {editorial ? (
         <div className="mt-4">
-          <h3 className="text-[22px] font-semibold leading-tight text-navy text-balance">
+          <h3 className="text-[22px] font-semibold leading-tight text-ink text-balance">
             {spot.name}
           </h3>
           <div className="mt-2 flex items-baseline justify-between gap-3">
@@ -50,7 +50,7 @@ export default function SpotCard({
             <p className="truncate text-[12px] text-muted">{spot.region}</p>
             <WindBadge value={spot.wind} />
           </div>
-          <h3 className="mt-1 text-lg font-semibold leading-tight text-navy">{spot.name}</h3>
+          <h3 className="mt-1 text-lg font-semibold leading-tight text-ink">{spot.name}</h3>
         </div>
       )}
     </Link>

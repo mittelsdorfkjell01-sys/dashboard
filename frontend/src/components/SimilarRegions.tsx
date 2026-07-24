@@ -53,7 +53,7 @@ export default function SimilarRegions({
   return (
     <section>
       <div className="mb-6 border-b border-line/70 pb-4">
-        <h2 className="text-[20px] font-semibold text-navy sm:text-[24px]">Ähnliche Regionen</h2>
+        <h2 className="text-[20px] font-semibold text-ink sm:text-[24px]">Ähnliche Regionen</h2>
         <p className="mt-1 text-[14px] text-muted">
           Vergleichbare Reviere nach Charakter und Windstärke
         </p>
@@ -75,7 +75,7 @@ export default function SimilarRegions({
                 <p className="truncate text-[12px] text-muted">{r.country}</p>
                 <WindBadge value={meanWind(list)} />
               </div>
-              <h3 className="mt-1 text-lg font-semibold leading-tight text-navy">{r.name}</h3>
+              <h3 className="mt-1 text-lg font-semibold leading-tight text-ink">{r.name}</h3>
               <p className="mt-1 text-[12px] text-muted">
                 {list.length} {list.length === 1 ? "Spot" : "Spots"}
               </p>

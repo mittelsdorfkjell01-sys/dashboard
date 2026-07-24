@@ -40,14 +40,14 @@ export default function EditorialHero({
 
   // Image parallax: the wrapper is pre-inflated by the max travel distance
   // (60px top + 60px bottom = the 120px range the spec calls for) so the
-  // translate never uncovers the navy background at the top edge — a literal
+  // translate never uncovers the dark background at the top edge — a literal
   // [0,120] range would open exactly that gap, since the image sits flush
   // with the container at rest.
   const imageY = useTransform(scrollY, [0, 600], [-60, 60]);
   const titleY = useTransform(scrollY, [0, 400], [0, -40]);
 
   return (
-    <section className="hero-h relative w-full overflow-hidden bg-navy">
+    <section className="hero-h relative w-full overflow-hidden bg-ink">
       {image ? (
         <motion.div
           className="absolute inset-x-0"

@@ -12,7 +12,7 @@ const pinIcon = L.divIcon({
   className: "swd-pin",
   html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
-        fill="#13335E" stroke="#ffffff" stroke-width="1.4"/>
+        fill="#241C17" stroke="#ffffff" stroke-width="1.4"/>
       <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
     </svg>`,
   iconSize: [30, 38],
@@ -72,7 +72,7 @@ export default function MapView() {
           type="button"
           aria-label="Zur Startseite"
           onClick={() => navigate("/")}
-          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-navy shadow-bar transition-colors hover:bg-line/40"
+          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-teal shadow-bar transition-colors hover:bg-line/40"
         >
           <CloseIcon className="text-[20px]" />
         </button>
@@ -82,7 +82,7 @@ export default function MapView() {
             type="button"
             aria-label="Vergrößern"
             onClick={() => map?.zoomIn()}
-            className="grid h-11 w-11 place-items-center text-navy transition-colors hover:bg-line/40"
+            className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
           >
             <PlusIcon className="text-[20px]" />
           </button>
@@ -91,7 +91,7 @@ export default function MapView() {
             type="button"
             aria-label="Verkleinern"
             onClick={() => map?.zoomOut()}
-            className="grid h-11 w-11 place-items-center text-navy transition-colors hover:bg-line/40"
+            className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
           >
             <MinusIcon className="text-[20px]" />
           </button>

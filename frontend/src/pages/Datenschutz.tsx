@@ -11,9 +11,9 @@ export default function Datenschutz() {
     <div className="relative min-h-screen bg-white">
       <LandingHeader />
       <main className="mx-auto max-w-[760px] px-4 pb-24 pt-32 sm:px-8">
-        <h1 className="text-[28px] font-semibold text-navy">Datenschutzerklärung</h1>
-        <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-navy/80">
-          <p className="rounded-2xl border border-brand-orange/30 bg-brand-orange/5 p-4 text-[14px] text-navy/70">
+        <h1 className="text-[28px] font-semibold text-ink">Datenschutzerklärung</h1>
+        <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-ink-soft">
+          <p className="rounded-2xl border border-orange/30 bg-orange/5 p-4 text-[14px] text-ink-soft">
             Platzhalter — hier muss vor dem Live-Gang eine vollständige
             Datenschutzerklärung nach DSGVO eingetragen werden: verantwortliche
             Stelle, verarbeitete Daten, Rechtsgrundlagen, Speicherdauer,
@@ -22,10 +22,10 @@ export default function Datenschutz() {
             ersetzen.
           </p>
 
-          <h2 className="text-[16px] font-semibold text-navy">Verantwortliche Stelle</h2>
+          <h2 className="text-[16px] font-semibold text-ink">Verantwortliche Stelle</h2>
           <p>[Name und Anschrift der verantwortlichen Stelle — siehe Impressum]</p>
 
-          <h2 className="text-[16px] font-semibold text-navy">Ihre Rechte</h2>
+          <h2 className="text-[16px] font-semibold text-ink">Ihre Rechte</h2>
           <p>
             Sie haben das Recht auf Auskunft, Berichtigung, Löschung,
             Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch.

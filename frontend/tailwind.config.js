@@ -4,33 +4,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep classic navy — logo, buttons, filled tags, headings
-        navy: {
-          DEFAULT: "#13335E",
-          dark: "#0E2748",
-          soft: "#2C4E7E",
+        // Text scale. `ink` = headings/primary text, `ink-soft` = running body
+        // copy, `muted` = secondary text/captions. On dark surfaces text stays
+        // white — these three are for light surfaces only.
+        ink: "#241C17",
+        "ink-soft": "#3D332C",
+        muted: "#7A6F66",
+        // Hairline borders/dividers.
+        line: "#E6E1DA",
+        // Surfaces: white is the default surface, `band` is the alternating
+        // section background (was `cream`).
+        surface: "#FFFFFF",
+        band: "#F5F3F0",
+        // Interaction color — every button, link, hover, focus ring, active
+        // tab indicator. Never used for large text blocks the way `ink` is,
+        // but passes AA as both text-on-white and white-on-fill (5.9:1).
+        teal: {
+          DEFAULT: "#1E6E7E",
+          hover: "#195C6A",
         },
-        // "surfwind data" re-skin (Sprint: Landing redesign). Warm orange wordmark +
-        // teal accents. Hexes eyeballed from the design frames — set as tokens so
-        // they're trivial to nudge to exact brand values.
-        "brand-orange": {
-          DEFAULT: "#E0823C", // wordmark + round search button
-          dark: "#CF7433",    // button hover/active
-        },
-        "brand-teal": {
-          DEFAULT: "#1E6E7E", // "data" subscript, field labels, header pill
-          dark: "#17586A",
-        },
-        // Warm off-white for panels/cards in the new design
-        cream: "#FBF6EF",
-        // Beginner tag + status dot
-        // Darkened so white tag text clears WCAG AA (~4.5:1)
-        "brand-green": "#4A8159",
-        dot: "#3DA24A",
-        // Secondary text / captions — darkened to ~4.5:1 on white (was #8A97A9, 2.97:1)
-        muted: "#6B7787",
-        // Hairline borders
-        line: "#E4E9F0",
+        // Attention color — wordmark, map markers, the live-status pulse, the
+        // best-season highlight. Never a button, never a link, never body
+        // text (2.8:1 on white — fails AA as text).
+        orange: "#E0823C",
+        // Data accent, shared with the wind-speed scale. Passes AA as text
+        // (4.6:1).
+        green: "#4A8159",
       },
       fontFamily: {
         sans: ["Poppins", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
@@ -38,11 +37,15 @@ export default {
         display: ["MADE Mountain", "Poppins", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 10px 30px -12px rgba(19, 51, 94, 0.25)",
-        bar: "0 8px 24px -10px rgba(19, 51, 94, 0.22)",
-        pill: "0 4px 14px -6px rgba(19, 51, 94, 0.25)",
-        float: "0 32px 64px -32px rgba(19, 51, 94, 0.28)", // overlapping conditions card
-        lift: "0 12px 32px -16px rgba(19, 51, 94, 0.20)", // sticky subnav
+        card: "0 10px 30px -12px rgba(36, 28, 23, 0.25)",
+        bar: "0 8px 24px -10px rgba(36, 28, 23, 0.22)",
+        pill: "0 4px 14px -6px rgba(36, 28, 23, 0.25)",
+        // Two layers: a tighter, darker near-shadow to ground the card + the
+        // original soft wide one for ambient depth — reads as a stronger pull
+        // downward than a single soft shadow, standing in for the divider
+        // rule the identity card doesn't have.
+        float: "0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30)", // overlapping conditions card
+        lift: "0 12px 32px -16px rgba(36, 28, 23, 0.20)", // sticky subnav
       },
       borderRadius: {
         "2xl": "1rem",

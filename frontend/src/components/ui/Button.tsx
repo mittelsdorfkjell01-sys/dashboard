@@ -8,9 +8,9 @@ const BASE =
   "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 const VARIANT: Record<Variant, string> = {
-  primary: "bg-navy text-white hover:bg-navy-dark",
-  secondary: "bg-white text-navy ring-1 ring-navy/20 hover:ring-navy/40",
-  ghost: "border border-navy/20 bg-white text-navy hover:bg-navy/5",
+  primary: "bg-teal text-white hover:bg-teal-hover",
+  secondary: "bg-white text-teal ring-1 ring-teal/30 hover:ring-teal/50",
+  ghost: "border border-teal/30 bg-white text-teal hover:bg-teal/5",
   danger: "bg-red-600 text-white hover:bg-red-700",
 };
 

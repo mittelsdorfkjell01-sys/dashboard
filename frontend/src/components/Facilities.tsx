@@ -33,7 +33,7 @@ export default function Facilities({
   if (variant === "rail") {
     return (
       <div>
-        <p className="text-caption font-medium uppercase tracking-[0.18em] text-brand-teal">
+        <p className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
           Vor Ort
         </p>
         <dl className="mt-4 divide-y divide-line border-t border-line">
@@ -47,9 +47,9 @@ export default function Facilities({
                   <Icon
                     width={18}
                     height={18}
-                    className={`text-navy/70 ${absent ? "opacity-40" : unknown ? "opacity-30" : ""}`}
+                    className={`text-ink-soft ${absent ? "opacity-40" : unknown ? "opacity-30" : ""}`}
                   />
-                  <span className={`text-body font-medium ${absent ? "text-muted line-through" : "text-navy"}`}>
+                  <span className={`text-body font-medium ${absent ? "text-muted line-through" : "text-ink"}`}>
                     {f.title}
                   </span>
                 </dt>
@@ -71,13 +71,13 @@ export default function Facilities({
         return (
           <div key={f.kind}>
             <span
-              className={`grid h-11 w-11 place-items-center rounded-full bg-navy/[0.04] text-navy ${
+              className={`grid h-11 w-11 place-items-center rounded-full bg-ink/[0.04] text-ink ${
                 absent ? "opacity-40" : unknown ? "opacity-30" : ""
               }`}
             >
               <Icon width={22} height={22} />
             </span>
-            <p className={`mt-3 text-ui font-medium leading-tight ${absent ? "text-muted line-through" : "text-navy"}`}>
+            <p className={`mt-3 text-ui font-medium leading-tight ${absent ? "text-muted line-through" : "text-ink"}`}>
               {f.title}
             </p>
             <p className="mt-0.5 text-caption leading-snug text-muted">{f.note}</p>

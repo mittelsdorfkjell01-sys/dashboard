@@ -16,9 +16,9 @@ function Row({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-cream"
+      className="flex items-center rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-band"
     >
-      <span className="truncate text-[15px] text-brand-teal">{label}</span>
+      <span className="truncate text-[15px] text-teal">{label}</span>
     </button>
   );
 }
@@ -69,12 +69,12 @@ export default function SearchWhere({
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Region oder Spot suchen"
           aria-label="Region oder Spot suchen"
-          className="min-w-0 flex-1 rounded-full border border-line px-4 py-2 text-[14px] text-navy outline-none transition-colors placeholder:text-muted focus:border-brand-teal/60"
+          className="min-w-0 flex-1 rounded-full border border-line px-4 py-2 text-[14px] text-ink outline-none transition-colors placeholder:text-muted focus:border-teal/60"
         />
         <button
           type="button"
           onClick={onOpen}
-          className="shrink-0 whitespace-nowrap rounded-full border border-brand-teal/50 px-3 py-2 text-[12px] font-medium text-brand-teal transition-colors hover:bg-brand-teal/5"
+          className="shrink-0 whitespace-nowrap rounded-full border border-teal/50 px-3 py-2 text-[12px] font-medium text-teal transition-colors hover:bg-teal/5"
         >
           unentschlossen
         </button>

@@ -109,15 +109,15 @@ export default function SearchResults() {
     <div className="min-h-screen bg-white">
       <Header />
       <main className="mx-auto max-w-[1000px] px-4 pb-24 pt-12 sm:px-8">
-        <nav className="mb-4 text-[13px] font-medium text-navy/70">
+        <nav className="mb-4 text-[13px] font-medium text-muted">
           <Link to="/" className="hover:underline">
             Übersicht
           </Link>
           <span className="mx-1.5 text-muted">›</span>
-          <span className="text-navy">Suche</span>
+          <span className="text-ink">Suche</span>
         </nav>
 
-        <h1 className="text-[26px] font-semibold text-navy">{heading}</h1>
+        <h1 className="text-[26px] font-semibold text-ink">{heading}</h1>
         {sport && (
           <p className="mt-1 text-[14px] text-muted">
             Sportart: {sportLabel(sport)}
@@ -156,15 +156,15 @@ function SearchHits({ result }: { result: api.SearchResult }) {
     <div className="space-y-10">
       {result.regionen.length > 0 && (
         <section>
-          <h2 className="mb-3 text-[15px] font-semibold text-navy">Regionen</h2>
+          <h2 className="mb-3 text-[15px] font-semibold text-ink">Regionen</h2>
           <ul className="space-y-2">
             {result.regionen.map((r) => (
               <li key={r.id}>
                 <Link
                   to={`/region/${r.slug}`}
-                  className="flex items-center justify-between rounded-xl bg-[#F1F5FA] px-4 py-3 hover:bg-navy/[0.06]"
+                  className="flex items-center justify-between rounded-xl bg-[#F1F5FA] px-4 py-3 hover:bg-teal/[0.06]"
                 >
-                  <span className="font-medium text-navy">{r.name}</span>
+                  <span className="font-medium text-ink">{r.name}</span>
                   <span className="text-[13px] text-muted">Region ›</span>
                 </Link>
               </li>
@@ -176,7 +176,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
       {result.spots.length > 0 && (
         <section>
           <div className="mb-3 flex items-baseline justify-between gap-3">
-            <h2 className="text-[15px] font-semibold text-navy">Spots</h2>
+            <h2 className="text-[15px] font-semibold text-ink">Spots</h2>
             <span className="text-[12px] text-muted">Score 0–100 · höher = besser</span>
           </div>
           <ul className="space-y-2">
@@ -184,10 +184,10 @@ function SearchHits({ result }: { result: api.SearchResult }) {
               <li key={s.id}>
                 <Link
                   to={`/spot/${s.id}`}
-                  className="flex items-center justify-between gap-4 rounded-xl bg-[#F1F5FA] px-4 py-3 hover:bg-navy/[0.06]"
+                  className="flex items-center justify-between gap-4 rounded-xl bg-[#F1F5FA] px-4 py-3 hover:bg-teal/[0.06]"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate font-medium text-navy">{s.name}</span>
+                    <span className="block truncate font-medium text-ink">{s.name}</span>
                     <span className="block truncate text-[12px] text-muted">
                       {s.sports.map(sportLabel).join(", ")}
                     </span>
@@ -286,10 +286,10 @@ function BestWeeksList({
             key={w.week}
             className="flex items-center gap-4 rounded-xl bg-[#F1F5FA] px-4 py-3"
           >
-            <span className="w-16 shrink-0 font-medium text-navy">KW {w.week}</span>
-            <span className="h-2 flex-1 overflow-hidden rounded-full bg-navy/10">
+            <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
+            <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink/10">
               <span
-                className="block h-full rounded-full bg-brand-teal"
+                className="block h-full rounded-full bg-teal"
                 style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }}
               />
             </span>

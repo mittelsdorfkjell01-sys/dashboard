@@ -25,7 +25,7 @@ const NAV: NavItem[] = [
 function navClass({ isActive }: { isActive: boolean }) {
   return [
     "block rounded-xl px-3 py-2 text-[14px] font-medium transition-colors",
-    isActive ? "bg-navy text-white" : "text-navy hover:bg-navy/5",
+    isActive ? "bg-teal text-white" : "text-ink hover:bg-teal/5",
   ].join(" ");
 }
 
@@ -40,7 +40,7 @@ export default function AdminShell() {
   };
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-band">
       <div className="mx-auto flex max-w-[1400px]">
         {/* Sidebar (desktop) */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-white px-4 py-6 md:flex">
@@ -66,16 +66,16 @@ export default function AdminShell() {
             <div className="hidden md:block" />
             {user && (
               <div className="flex items-center gap-3">
-                <span className="hidden items-center gap-2 text-[13px] text-navy sm:flex">
+                <span className="hidden items-center gap-2 text-[13px] text-ink sm:flex">
                   {user.display_name}
-                  <span className="rounded-full bg-navy/5 px-2 py-0.5 text-[11px] font-medium text-navy/70">
+                  <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
                     {roleLabel(user.role)}
                   </span>
                 </span>
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="rounded-full border border-line px-3 py-1.5 text-[13px] font-medium text-navy hover:bg-navy/5"
+                  className="rounded-full border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5"
                 >
                   Abmelden
                 </button>
@@ -93,7 +93,7 @@ export default function AdminShell() {
                 className={({ isActive }) =>
                   [
                     "shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium",
-                    isActive ? "bg-navy text-white" : "text-navy hover:bg-navy/5",
+                    isActive ? "bg-teal text-white" : "text-ink hover:bg-teal/5",
                   ].join(" ")
                 }
               >

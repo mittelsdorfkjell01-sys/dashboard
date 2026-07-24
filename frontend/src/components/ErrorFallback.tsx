@@ -13,18 +13,18 @@ export default function ErrorFallback({
   detail?: string;
 }) {
   return (
-    <div className="grid min-h-screen place-items-center bg-cream px-6 text-center">
+    <div className="grid min-h-screen place-items-center bg-band px-6 text-center">
       <div>
         <a href="/" aria-label="surfwind data — Startseite" className="mb-6 inline-block">
           <Wordmark size="lg" />
         </a>
-        <h1 className="text-[22px] font-semibold text-navy">{title}</h1>
+        <h1 className="text-[22px] font-semibold text-ink">{title}</h1>
         <p className="mx-auto mt-2 max-w-sm text-[14px] text-muted">{detail}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Button onClick={() => window.location.reload()}>Neu laden</Button>
           <a
             href="/"
-            className="inline-flex items-center rounded-xl border border-navy/20 bg-white px-4 py-2 text-[14px] font-medium text-navy hover:bg-navy/5"
+            className="inline-flex items-center rounded-xl border border-teal/30 bg-white px-4 py-2 text-[14px] font-medium text-teal hover:bg-teal/5"
           >
             Zur Startseite
           </a>

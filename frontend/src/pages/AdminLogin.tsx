@@ -42,10 +42,10 @@ export default function AdminLogin() {
   };
 
   const inputCls =
-    "w-full rounded-xl border border-navy/15 bg-white px-3 py-2.5 text-[14px] text-navy outline-none focus:border-navy/40";
+    "w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[14px] text-ink outline-none focus:border-teal/50";
 
   return (
-    <div className="grid min-h-screen place-items-center bg-cream px-4">
+    <div className="grid min-h-screen place-items-center bg-band px-4">
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-6 flex justify-center">
           <Wordmark size="lg" />
@@ -55,7 +55,7 @@ export default function AdminLogin() {
           className="rounded-3xl bg-white p-6 shadow-card sm:p-8"
           noValidate
         >
-          <h1 className="text-[20px] font-semibold text-navy">Admin-Anmeldung</h1>
+          <h1 className="text-[20px] font-semibold text-ink">Admin-Anmeldung</h1>
           <p className="mt-1 text-[13px] text-muted">
             Bitte mit deinem Betreiber-Konto anmelden.
           </p>
@@ -70,7 +70,7 @@ export default function AdminLogin() {
           )}
 
           <label className="mt-5 block">
-            <span className="text-[13px] font-medium text-navy">E-Mail</span>
+            <span className="text-[13px] font-medium text-ink">E-Mail</span>
             <input
               type="email"
               autoComplete="username"
@@ -82,7 +82,7 @@ export default function AdminLogin() {
           </label>
 
           <label className="mt-4 block">
-            <span className="text-[13px] font-medium text-navy">Passwort</span>
+            <span className="text-[13px] font-medium text-ink">Passwort</span>
             <input
               type="password"
               autoComplete="current-password"
@@ -96,7 +96,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={busy || !email || !password}
-            className="mt-6 w-full rounded-xl bg-navy px-4 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-navy-dark disabled:opacity-50"
+            className="mt-6 w-full rounded-xl bg-teal px-4 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-50"
           >
             {busy ? "Anmelden…" : "Anmelden"}
           </button>

@@ -3,7 +3,7 @@ import type { RegionMonth } from "../lib/types";
 /**
  * The region's core answer: each month is a bar whose height is the share of the
  * region's spots that work that month (the backend's `spots_working`), so you
- * read the travel window at a glance. Peak months are filled navy and called out
+ * read the travel window at a glance. Peak months are filled ink and called out
  * as badges below. Mirrors the Windmonate look.
  *
  * Headless by design — the enclosing editorial SectionBand supplies the section
@@ -39,7 +39,7 @@ export default function RegionSeason({
             >
               <div
                 className={`w-full max-w-[26px] rounded-t-[4px] transition-colors ${
-                  strong ? "bg-navy" : "bg-navy/35"
+                  strong ? "bg-ink" : "bg-ink/35"
                 }`}
                 style={{ height: `${Math.max(5, share * 100)}%` }}
                 title={`${m.month}: ${m.working} von ${m.total} Spots · Ø ${m.wind} kts`}
@@ -56,7 +56,7 @@ export default function RegionSeason({
           {bestMonths.map((mo) => (
             <span
               key={mo}
-              className="inline-flex items-center rounded-full bg-navy px-3 py-1 text-[12px] font-medium text-white"
+              className="inline-flex items-center rounded-full bg-orange/15 px-3 py-1 text-[12px] font-medium text-ink"
             >
               {mo}
             </span>

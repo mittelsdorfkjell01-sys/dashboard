@@ -44,7 +44,7 @@ export default function AccountMenu() {
   };
 
   const linkClass =
-    "block rounded-xl px-3 py-2.5 text-[14px] font-medium text-navy transition-colors hover:bg-cream";
+    "block rounded-xl px-3 py-2.5 text-[14px] font-medium text-ink transition-colors hover:bg-band";
 
   return (
     <div ref={ref} className="relative">
@@ -54,7 +54,7 @@ export default function AccountMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Konto-Menü"
-        className="flex items-center gap-2.5 rounded-2xl bg-brand-teal px-3.5 py-2 text-white shadow-pill transition-colors hover:bg-brand-teal-dark"
+        className="flex items-center gap-2.5 rounded-2xl bg-teal px-3.5 py-2 text-white shadow-pill transition-colors hover:bg-teal-hover"
       >
         <MenuIcon className="text-[20px]" />
         <span className="grid h-7 w-7 place-items-center rounded-full bg-white/20">
@@ -76,7 +76,7 @@ export default function AccountMenu() {
             {user ? (
               <>
                 <div className="px-3 pb-2 pt-1">
-                  <p className="truncate text-[14px] font-semibold text-navy">
+                  <p className="truncate text-[14px] font-semibold text-ink">
                     {user.displayName}
                   </p>
                   <p className="truncate text-[12px] text-muted">{user.email}</p>
@@ -99,7 +99,7 @@ export default function AccountMenu() {
                     type="button"
                     role="menuitem"
                     onClick={onLogout}
-                    className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] font-medium text-brand-teal transition-colors hover:bg-cream"
+                    className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] font-medium text-teal transition-colors hover:bg-band"
                   >
                     Abmelden
                   </button>
@@ -119,7 +119,7 @@ export default function AccountMenu() {
                   to="/anmelden?mode=register"
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="mb-1 block rounded-xl bg-navy px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-navy-dark"
+                  className="mb-1 block rounded-xl bg-teal px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover"
                 >
                   Konto erstellen
                 </Link>
@@ -133,7 +133,7 @@ export default function AccountMenu() {
                   to={item.to}
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="block rounded-xl px-3 py-2.5 text-[14px] font-medium text-brand-teal transition-colors hover:bg-cream"
+                  className="block rounded-xl px-3 py-2.5 text-[14px] font-medium text-teal transition-colors hover:bg-band"
                 >
                   {item.label}
                 </Link>

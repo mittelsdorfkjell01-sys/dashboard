@@ -39,7 +39,7 @@ export default function Field({
 
   return (
     <label className="block">
-      <span className="text-[13px] font-medium text-navy">
+      <span className="text-[13px] font-medium text-ink">
         {label}
         {required && (
           <span className="ml-0.5 text-red-600" aria-hidden="true">

@@ -102,10 +102,10 @@ export default function SearchBar() {
               open === "where" ? "shadow-pill" : ""
             } ${dim("where") ? "opacity-55" : ""}`}
           >
-            <span className="text-[13px] font-semibold text-brand-teal">Wohin?</span>
+            <span className="text-[13px] font-semibold text-teal">Wohin?</span>
             <span
               className={`truncate text-[13px] ${
-                val.whereText ? "text-navy" : "text-muted"
+                val.whereText ? "text-ink" : "text-muted"
               }`}
             >
               {val.whereText || "Region oder Spot suchen"}
@@ -127,7 +127,7 @@ export default function SearchBar() {
             type="button"
             onClick={submit}
             aria-label="Suchen"
-            className="my-auto flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-brand-orange text-[15px] font-medium text-white transition-colors hover:bg-brand-orange-dark sm:ml-3 sm:mr-1 sm:w-12 sm:gap-0"
+            className="my-auto flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-teal text-[15px] font-medium text-white transition-colors hover:bg-teal-hover sm:ml-3 sm:mr-1 sm:w-12 sm:gap-0"
           >
             <SearchIcon className="text-[20px]" />
             <span className="sm:hidden">Suchen</span>
@@ -262,8 +262,8 @@ function Segment({
         active ? "shadow-pill" : ""
       } ${dim ? "opacity-55" : ""}`}
     >
-      <span className="text-[13px] font-semibold text-brand-teal">{label}</span>
-      <span className={`truncate text-[13px] ${value ? "text-navy" : "text-muted"}`}>
+      <span className="text-[13px] font-semibold text-teal">{label}</span>
+      <span className={`truncate text-[13px] ${value ? "text-ink" : "text-muted"}`}>
         {value || placeholder}
       </span>
     </button>

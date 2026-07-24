@@ -89,12 +89,12 @@ export default function SortDropdown({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-[15px] text-navy transition-colors hover:text-navy/60"
+        className="flex items-center gap-2 text-[15px] text-ink transition-colors hover:text-teal"
       >
         <SortIcon className="text-[18px]" />
         Sortieren & Filtern
         {count > 0 && (
-          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-navy px-1.5 text-[11px] font-semibold text-white">
+          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1.5 text-[11px] font-semibold text-white">
             {count}
           </span>
         )}
@@ -117,14 +117,14 @@ export default function SortDropdown({
               {SORT_OPTIONS.map((o) => (
                 <label
                   key={o.key}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13.5px] text-navy hover:bg-navy/[0.04]"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13.5px] text-ink hover:bg-teal/[0.06]"
                 >
                   <input
                     type="radio"
                     name="sort"
                     checked={value.sort === o.key}
                     onChange={() => setSort(o.key)}
-                    className="accent-navy"
+                    className="accent-teal"
                   />
                   {o.label}
                 </label>
@@ -187,7 +187,7 @@ export default function SortDropdown({
               type="button"
               onClick={() => onChange(emptyFilters())}
               disabled={count === 0}
-              className="text-[13px] font-medium text-navy underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+              className="text-[13px] font-medium text-teal underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
             >
               Zurücksetzen
             </button>
@@ -197,7 +197,7 @@ export default function SortDropdown({
                 setOpen(false);
                 triggerRef.current?.focus();
               }}
-              className="rounded-lg bg-navy px-3 py-1.5 text-[13px] font-medium text-white hover:bg-navy-dark"
+              className="rounded-lg bg-teal px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-hover"
             >
               Fertig
             </button>

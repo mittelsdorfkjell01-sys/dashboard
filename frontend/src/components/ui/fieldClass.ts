@@ -5,4 +5,4 @@
  * (WCAG 2.4.7) instead of the old outline-none-with-no-replacement pattern.
  */
 export const fieldClass =
-  "w-full rounded-xl border border-navy/15 bg-white px-3 py-2 text-ui text-navy outline-none transition-colors focus:border-navy/40";
+  "w-full rounded-xl border border-line bg-white px-3 py-2 text-ui text-ink outline-none transition-colors focus:border-teal/50";

@@ -59,7 +59,7 @@ export default function AdminHome() {
     <div>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[24px] font-semibold text-navy">Übersicht</h1>
+          <h1 className="text-[24px] font-semibold text-ink">Übersicht</h1>
           <p className="mt-1 text-[14px] text-muted">
             Offene Punkte, Entwürfe und gemeldete Beiträge auf einen Blick.
             Unvollständige Spots werden als Entwurf gespeichert und hier gelistet.
@@ -67,14 +67,14 @@ export default function AdminHome() {
         </div>
         <Link
           to="/admin/spot/new"
-          className="shrink-0 rounded-xl bg-navy px-4 py-2 text-[14px] font-medium text-white hover:bg-navy-dark"
+          className="shrink-0 rounded-xl bg-teal px-4 py-2 text-[14px] font-medium text-white hover:bg-teal-hover"
         >
           + Neuer Spot
         </Link>
       </div>
 
       {data.era5_queued > 0 && (
-        <div className="mt-4 rounded-2xl border border-line bg-brand-orange/5 p-3 text-[13px] text-muted">
+        <div className="mt-4 rounded-2xl border border-line bg-orange/5 p-3 text-[13px] text-muted">
           {data.era5_queued} Spot(s): Klimatologie wird im Hintergrund berechnet —
           Windmonate erscheinen automatisch, sobald sie fertig ist.
         </div>
@@ -83,8 +83,8 @@ export default function AdminHome() {
       {data.team_notes.length > 0 && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.team_notes.map((n) => (
-            <div key={n.id} className="rounded-2xl border border-line bg-brand-teal/5 p-4">
-              <p className="whitespace-pre-wrap text-[14px] text-navy">{n.body}</p>
+            <div key={n.id} className="rounded-2xl border border-line bg-teal/5 p-4">
+              <p className="whitespace-pre-wrap text-[14px] text-ink">{n.body}</p>
               <p className="mt-2 text-[12px] text-muted">
                 {n.author ?? "—"} · {new Date(n.created_at).toLocaleDateString("de-DE")}
               </p>
@@ -112,9 +112,9 @@ export default function AdminHome() {
               <Link
                 key={s.id}
                 to={`/admin/spot/${s.id}/edit`}
-                className="block rounded-xl bg-cream p-3 transition-colors hover:bg-brand-orange/10"
+                className="block rounded-xl bg-orange/5 p-3 transition-colors hover:bg-orange/10"
               >
-                <p className="text-[14px] font-medium text-navy">{s.name}</p>
+                <p className="text-[14px] font-medium text-ink">{s.name}</p>
                 <p className="mt-0.5 text-[12px] text-muted">
                   Fehlt: {s.gaps.map(gapLabel).join(", ")}
                 </p>
@@ -124,7 +124,7 @@ export default function AdminHome() {
         </Column>
 
         {/* 2 — Entwürfe */}
-        <Column title="Entwürfe" count={data.drafts.length} accent="navy">
+        <Column title="Entwürfe" count={data.drafts.length} accent="ink">
           {data.drafts.length === 0 ? (
             <Empty>Keine Entwürfe.</Empty>
           ) : (
@@ -132,17 +132,17 @@ export default function AdminHome() {
               <Link
                 key={s.id}
                 to={`/admin/spot/${s.id}/edit`}
-                className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white p-3 transition-colors hover:bg-navy/5"
+                className="flex items-center justify-between gap-2 rounded-xl border border-line bg-white p-3 transition-colors hover:bg-teal/5"
               >
-                <span className="min-w-0 truncate text-[14px] font-medium text-navy">
+                <span className="min-w-0 truncate text-[14px] font-medium text-ink">
                   {s.name}
                 </span>
                 {s.ready ? (
-                  <span className="shrink-0 rounded-full bg-brand-green/10 px-2 py-0.5 text-[11px] font-medium text-brand-green">
+                  <span className="shrink-0 rounded-full bg-green/10 px-2 py-0.5 text-[11px] font-medium text-green">
                     bereit
                   </span>
                 ) : (
-                  <span className="shrink-0 rounded-full bg-brand-orange/10 px-2 py-0.5 text-[11px] font-medium text-brand-orange">
+                  <span className="shrink-0 rounded-full bg-orange/10 px-2 py-0.5 text-[11px] font-medium text-ink">
                     {s.gaps.length} offen
                   </span>
                 )}
@@ -168,7 +168,7 @@ export default function AdminHome() {
 
           <Link
             to="/admin/review"
-            className="mt-3 block rounded-xl bg-navy px-3 py-2 text-center text-[13px] font-medium text-white hover:bg-navy-dark"
+            className="mt-3 block rounded-xl bg-teal px-3 py-2 text-center text-[13px] font-medium text-white hover:bg-teal-hover"
           >
             Zur Moderation
           </Link>
@@ -186,16 +186,16 @@ function Column({
 }: {
   title: string;
   count: number;
-  accent: "orange" | "navy" | "red";
+  accent: "orange" | "ink" | "red";
   children: React.ReactNode;
 }) {
   const dot =
-    accent === "orange" ? "bg-brand-orange" : accent === "red" ? "bg-red-500" : "bg-navy";
+    accent === "orange" ? "bg-orange" : accent === "red" ? "bg-red-500" : "bg-ink";
   return (
     <section className="rounded-2xl border border-line bg-white p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
-        <h2 className="text-[15px] font-semibold text-navy">{title}</h2>
+        <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
         <span className="text-[13px] font-normal text-muted">({count})</span>
       </div>
       <div className="space-y-2">{children}</div>
@@ -207,9 +207,9 @@ function ReviewRow({ label, value }: { label: string; value: number }) {
   return (
     <Link
       to="/admin/review"
-      className="flex items-center justify-between rounded-xl px-3 py-2 transition-colors hover:bg-navy/5"
+      className="flex items-center justify-between rounded-xl px-3 py-2 transition-colors hover:bg-teal/5"
     >
-      <span className="text-[14px] text-navy">{label}</span>
+      <span className="text-[14px] text-ink">{label}</span>
       <span
         className={`min-w-[24px] rounded-full px-2 py-0.5 text-center text-[12px] font-semibold ${
           value > 0 ? "bg-red-50 text-red-700" : "bg-line/60 text-muted"
@@ -238,7 +238,7 @@ function Tile({
 }) {
   return (
     <Link to={to} className="rounded-2xl border border-line bg-white p-4 transition-shadow hover:shadow-card">
-      <div className={`text-[28px] font-semibold ${accent === "green" ? "text-brand-green" : "text-navy"}`}>
+      <div className={`text-[28px] font-semibold ${accent === "green" ? "text-green" : "text-ink"}`}>
         {value}
       </div>
       <div className="mt-0.5 text-[13px] text-muted">{label}</div>

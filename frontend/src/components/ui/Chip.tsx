@@ -24,8 +24,8 @@ export default function Chip({
       onClick={onClick}
       className={`rounded-full px-3.5 py-2 text-label font-medium transition-colors ${
         active
-          ? "bg-navy text-white"
-          : "bg-white text-navy ring-1 ring-navy/15 hover:ring-navy/40"
+          ? "bg-teal text-white"
+          : "bg-white text-ink ring-1 ring-line hover:ring-teal/40"
       } ${className}`}
     >
       {children}

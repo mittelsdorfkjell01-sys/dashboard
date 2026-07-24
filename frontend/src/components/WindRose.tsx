@@ -34,8 +34,8 @@ function Needle({ deg, color, length, width }: { deg: number; color: string; len
 }
 
 /**
- * Compass wind rose in the app's navy/blue palette. Shows the direction the
- * wind (navy) and swell (blue) come FROM — matching the arrows drawn on the
+ * Compass wind rose in the app's ink/blue palette. Shows the direction the
+ * wind (ink) and swell (blue) come FROM — matching the arrows drawn on the
  * spot map. Meteorological convention: needle points towards the source.
  */
 export default function WindRose({
@@ -64,10 +64,10 @@ export default function WindRose({
         waveDir != null ? `, Welle aus ${degToCompass(waveDir)}` : ""
       }`}
     >
-      <circle cx={C} cy={C} r={R} fill="#fff" stroke="#E4E9F0" strokeWidth={2} />
-      <circle cx={C} cy={C} r={R - 22} fill="none" stroke="#E4E9F0" strokeWidth={1} />
+      <circle cx={C} cy={C} r={R} fill="#fff" stroke="#E6E1DA" strokeWidth={2} />
+      <circle cx={C} cy={C} r={R - 22} fill="none" stroke="#E6E1DA" strokeWidth={1} />
 
-      {/* Cardinal ticks (navy) */}
+      {/* Cardinal ticks (ink) */}
       {[0, 4, 8, 12].map((i) => {
         const a = (i * 22.5 * Math.PI) / 180;
         return (
@@ -77,7 +77,7 @@ export default function WindRose({
             y1={C - R * Math.cos(a)}
             x2={C + (R - 16) * Math.sin(a)}
             y2={C - (R - 16) * Math.cos(a)}
-            stroke="#13335E"
+            stroke="#241C17"
             strokeWidth={2}
           />
         );
@@ -108,7 +108,7 @@ export default function WindRose({
           dominantBaseline="central"
           fontSize={13}
           fontWeight={label === "N" ? 700 : 500}
-          fill={label === "N" ? "#13335E" : "#6B7787"}
+          fill={label === "N" ? "#241C17" : "#7A6F66"}
         >
           {label}
         </text>
@@ -116,9 +116,9 @@ export default function WindRose({
 
       {/* Swell needle behind, wind needle in front */}
       {waveDir != null && <Needle deg={waveDir} color="#2F6FB0" length={48} width={4} />}
-      <Needle deg={windDir} color="#13335E" length={60} width={5} />
+      <Needle deg={windDir} color="#241C17" length={60} width={5} />
 
-      <circle cx={C} cy={C} r={6} fill="#13335E" stroke="#fff" strokeWidth={2} />
+      <circle cx={C} cy={C} r={6} fill="#241C17" stroke="#fff" strokeWidth={2} />
     </svg>
   );
 }

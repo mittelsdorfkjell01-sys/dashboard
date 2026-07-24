@@ -75,8 +75,8 @@ export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => v
   return (
     <div className="rounded-2xl bg-[#F1F5FA] p-6">
       {/* Disclaimer */}
-      <div className="rounded-xl bg-navy/5 p-4 text-[13px] leading-relaxed text-navy/80">
-        <p className="font-semibold text-navy">Anforderungen an das Header-Bild</p>
+      <div className="rounded-xl bg-ink/5 p-4 text-[13px] leading-relaxed text-ink-soft">
+        <p className="font-semibold text-ink">Anforderungen an das Header-Bild</p>
         <ul className="mt-2 space-y-1">
           <li>• Mindestbreite <strong>{HERO_REQ.minWidth} px</strong> (für Retina-/4K-Displays, damit nichts hochskaliert wird)</li>
           <li>• Mindesthöhe {HERO_REQ.minHeight} px, <strong>Querformat</strong></li>
@@ -100,9 +100,9 @@ export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => v
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-navy/25 bg-white px-4 py-8 text-center transition-colors hover:border-navy/40 hover:bg-navy/[0.02]"
+          className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-teal/30 bg-white px-4 py-8 text-center transition-colors hover:border-teal/50 hover:bg-teal/[0.04]"
         >
-          <span className="text-[14px] font-medium text-navy">Bild auswählen</span>
+          <span className="text-[14px] font-medium text-teal">Bild auswählen</span>
           <span className="text-[12px] text-muted">JPG/PNG · min. {HERO_REQ.minWidth}px breit</span>
         </button>
       </div>
@@ -115,7 +115,7 @@ export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => v
       )}
       {result?.ok && (
         <div className="mt-3">
-          <p className="rounded-lg bg-brand-green/10 px-3 py-2 text-[13px] font-medium text-brand-green">
+          <p className="rounded-lg bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
             ✓ {fileName} · {result.width}×{result.height} px — Anforderung erfüllt
           </p>
           {preview && (

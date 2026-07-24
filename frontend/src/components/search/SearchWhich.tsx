@@ -26,13 +26,13 @@ function Row({
   onToggle: () => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 transition-colors hover:bg-cream">
-      <span className="text-[15px] text-brand-teal">{label}</span>
+    <label className="flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 transition-colors hover:bg-band">
+      <span className="text-[15px] text-teal">{label}</span>
       <input
         type="checkbox"
         checked={checked}
         onChange={onToggle}
-        className="h-5 w-5 shrink-0 accent-brand-orange"
+        className="h-5 w-5 shrink-0 accent-teal"
       />
     </label>
   );

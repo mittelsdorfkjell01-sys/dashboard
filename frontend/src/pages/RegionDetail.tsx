@@ -29,7 +29,7 @@ const pinIcon = L.divIcon({
   className: "swd-pin",
   html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
-        fill="#13335E" stroke="#ffffff" stroke-width="1.4"/>
+        fill="#241C17" stroke="#ffffff" stroke-width="1.4"/>
       <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
     </svg>`,
   iconSize: [30, 38],
@@ -95,7 +95,7 @@ export default function RegionDetail() {
     return (
       <div className="relative min-h-screen bg-white">
         <LandingHeader />
-        <div className="hero-h w-full animate-pulse bg-navy-soft" />
+        <div className="hero-h w-full animate-pulse bg-ink-soft" />
         <div className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-8">
           <div className="mb-10 h-8 w-64 animate-pulse rounded bg-line" />
           <SpotGridSkeleton />
@@ -127,8 +127,8 @@ export default function RegionDetail() {
         <LandingHeader />
         <div className="grid min-h-screen place-items-center px-6 text-center">
           <div>
-            <h1 className="text-2xl font-semibold text-navy">Region nicht gefunden</h1>
-            <Link to="/" className="mt-4 inline-block text-[15px] text-brand-teal underline">
+            <h1 className="text-2xl font-semibold text-ink">Region nicht gefunden</h1>
+            <Link to="/" className="mt-4 inline-block text-[15px] text-teal underline">
               Zurück zur Übersicht
             </Link>
           </div>
@@ -173,7 +173,7 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/95 py-2 pl-2.5 pr-4 text-[14px] font-medium text-brand-teal shadow-pill backdrop-blur transition-colors hover:bg-white"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/95 py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal shadow-pill backdrop-blur transition-colors hover:bg-white"
           >
             <ChevronDownIcon className="rotate-90 text-[18px]" />
             Zurück
@@ -182,7 +182,7 @@ export default function RegionDetail() {
 
         {/* Breadcrumb */}
         <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-8">
-          <nav className="text-[13px] font-medium text-navy/60">
+          <nav className="text-[13px] font-medium text-muted">
             <Link to="/" className="hover:underline">
               Übersicht
             </Link>
@@ -193,7 +193,7 @@ export default function RegionDetail() {
               </>
             )}
             <span className="mx-1.5 text-muted">›</span>
-            <span className="text-brand-teal">{region.name}</span>
+            <span className="text-teal">{region.name}</span>
           </nav>
         </div>
 
@@ -203,7 +203,7 @@ export default function RegionDetail() {
         </SectionBand>
 
         {/* Reisezeit — best weeks and the season curve read as one answer */}
-        <SectionBand tone="cream" heading="Wann hinfahren">
+        <SectionBand tone="band" heading="Wann hinfahren">
           {seasonView ? (
             <RegionSeason season={seasonView.season} bestMonths={seasonView.bestMonths} />
           ) : (
@@ -221,7 +221,7 @@ export default function RegionDetail() {
                 {bestWeeks.map((w) => (
                   <span
                     key={w.week}
-                    className="inline-flex items-center rounded-full bg-brand-teal/10 px-2.5 py-1 text-[12px] font-medium text-brand-teal"
+                    className="inline-flex items-center rounded-full bg-teal/10 px-2.5 py-1 text-[12px] font-medium text-teal"
                     title={`Score ${Math.round((w.score ?? 0) * 100)} · ${
                       w.spots_working ?? 0
                     } Spots`}
@@ -237,7 +237,7 @@ export default function RegionDetail() {
         {/* Die Spots */}
         <SectionBand tone="white">
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line/70 pb-5">
-            <h2 className="text-display-2 font-semibold text-navy text-balance">
+            <h2 className="text-display-2 font-semibold text-ink text-balance">
               Die Spots
             </h2>
             <SortDropdown value={filters} onChange={setFilters} />
@@ -257,7 +257,7 @@ export default function RegionDetail() {
 
         {/* Auf der Karte */}
         {withCoords.length > 0 && (
-          <SectionBand tone="cream" heading="Auf der Karte">
+          <SectionBand tone="band" heading="Auf der Karte">
             <div className="overflow-hidden rounded-3xl shadow-card">
               <MapContainer
                 center={region.center}

@@ -18,7 +18,7 @@ import { Button, Field, Input, fieldClass } from "../../components/ui";
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
-      <h2 className="mb-4 text-[16px] font-semibold text-navy">{title}</h2>
+      <h2 className="mb-4 text-[16px] font-semibold text-ink">{title}</h2>
       {children}
     </section>
   );
@@ -165,7 +165,7 @@ function UnitSelect<T extends string>({
 }) {
   return (
     <label className="block">
-      <span className="text-[13px] font-medium text-navy">{label}</span>
+      <span className="text-[13px] font-medium text-ink">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
@@ -205,7 +205,7 @@ function UnitsSection() {
           options={TEMP_UNIT_LABELS}
         />
       </div>
-      <div className="mt-4 rounded-xl bg-cream px-4 py-3 text-[13px] text-navy">
+      <div className="mt-4 rounded-xl bg-band px-4 py-3 text-[13px] text-ink">
         Vorschau: Wind {formatWind(18, units.wind)} · Welle {formatWave(1.2, units.wave)} ·
         Wasser {formatTemp(17, units.temp)}
       </div>

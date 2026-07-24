@@ -27,12 +27,12 @@ export default function Wordmark({
   const s = SIZE[size];
   return (
     <span className={`inline-flex items-baseline leading-none ${className}`}>
-      <span className={`wordmark ${s.brand} text-brand-orange`}>surfwind</span>
-      <span className={`wordmark ml-1.5 align-baseline ${s.data} text-brand-teal`}>
+      <span className={`wordmark ${s.brand} text-orange`}>surfwind</span>
+      <span className={`wordmark ml-1.5 align-baseline ${s.data} text-teal`}>
         data
       </span>
       {tag && (
-        <span className="ml-2 self-center rounded-full bg-navy/5 px-2 py-0.5 text-[11px] font-medium text-muted">
+        <span className="ml-2 self-center rounded-full bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
           {tag}
         </span>
       )}

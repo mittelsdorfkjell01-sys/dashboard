@@ -19,13 +19,13 @@
   }
 
   body {
-    @apply font-sans text-navy antialiased;
+    @apply font-sans text-ink antialiased;
     margin: 0;
   }
 
   /* Uppercase field labels: WO? / WANN? */
   .label-caps {
-    @apply text-[12px] font-medium tracking-[0.18em] text-navy/70 uppercase;
+    @apply text-[12px] font-medium tracking-[0.18em] text-ink-soft uppercase;
   }
 
   /* --- Design token: global keyboard focus indicator (WCAG 2.4.7) --------
@@ -44,7 +44,7 @@
       [role="checkbox"],
       [tabindex]:not([tabindex="-1"])
     ):focus-visible {
-    outline: 2px solid theme("colors.brand-teal.DEFAULT");
+    outline: 2px solid theme("colors.teal.DEFAULT");
     outline-offset: 2px;
   }
 
@@ -54,7 +54,7 @@
      reachable and clearly focused. `!important` beats the utility's transparent
      outline; there is no doubled indicator because the field token adds no ring. */
   :where(input, select, textarea):focus-visible {
-    outline: 2px solid theme("colors.brand-teal.DEFAULT") !important;
+    outline: 2px solid theme("colors.teal.DEFAULT") !important;
     outline-offset: 1px;
   }
 }
@@ -101,7 +101,7 @@
   .editorial-hero-fallback {
     background-image:
       radial-gradient(120% 100% at 15% 0%, rgba(30, 110, 126, 0.55), transparent 60%),
-      linear-gradient(160deg, #13335e 0%, #2c4e7e 55%, #1e6e7e 100%);
+      linear-gradient(160deg, #241c17 0%, #3d332c 55%, #1e6e7e 100%);
   }
 
   /* EditorialHero's height. `dvh` accounts for mobile browser chrome
@@ -213,6 +213,32 @@
   }
 }
 
+/* LocatorMap: a barely-perceptible "breathing" zoom on the satellite tiles
+   (the difference between a live map and a screenshot) and a pulsing ring
+   around the spot marker — not a pin, not a blink, not a bounce. */
+@keyframes swd-locator-drift {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.swd-locator-drift {
+  animation: swd-locator-drift 30s ease-in-out infinite;
+}
+
+@keyframes swd-locator-pulse {
+  0% { transform: scale(1); opacity: 0.35; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.swd-locator-pulse {
+  animation: swd-locator-pulse 3s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swd-locator-drift,
+  .swd-locator-pulse {
+    animation: none;
+  }
+}
+
 /* Hero scroll hint — a bright segment loops down a faint 1px track, signalling
    there's more page below (a longform cue). */
 @keyframes swd-scroll-hint {
@@ -239,10 +265,29 @@
 }
 
 /* Colour wash over the CARTO Voyager basemap: water leans light blue,
-   land leans light green. Applies only to map tiles, so the navy pins,
-   labels overlay and controls keep their own colours. */
+   land leans light green. Applies only to map tiles, so the pins, labels
+   overlay and controls keep their own colours. */
 .leaflet-tile {
   filter: hue-rotate(22deg) saturate(1.35);
+}
+
+/* LocatorMap's satellite imagery is real aerial photography, not the tinted
+   vector basemap the wash above is tuned for — leave it unfiltered. */
+.swd-locator-map .leaflet-tile {
+  filter: none;
+}
+
+/* Scale bar on LocatorMap — the default Leaflet control, restyled to sit
+   quietly on top of a photo instead of looking like browser chrome. */
+.swd-locator-map .leaflet-control-scale-line {
+  border-color: rgba(255, 255, 255, 0.8);
+  border-width: 0 2px 2px;
+  background: rgba(36, 28, 23, 0.45);
+  color: #fff;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: 10px;
+  padding: 1px 4px;
+  backdrop-filter: blur(2px);
 }
 
 /* Hide leaflet default popup chrome; we render our own card */

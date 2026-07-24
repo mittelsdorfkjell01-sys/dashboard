@@ -33,7 +33,7 @@ export default function RequireAuth({
   if (role && user.role !== role) {
     return (
       <div className="mx-auto max-w-md p-10 text-center">
-        <p className="text-[15px] font-medium text-navy">Keine Berechtigung</p>
+        <p className="text-[15px] font-medium text-ink">Keine Berechtigung</p>
         <p className="mt-2 text-[13px] text-muted">
           Dieser Bereich ist Administrator:innen vorbehalten.
         </p>

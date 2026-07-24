@@ -56,7 +56,7 @@ export default function RegionTile({
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
       {typeof rank === "number" && (
-        <span className="absolute left-3 top-3 inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-white/95 px-2 text-[13px] font-bold text-navy shadow-pill">
+        <span className="absolute left-3 top-3 inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-white/95 px-2 text-[13px] font-bold text-ink shadow-pill">
           {rank}
         </span>
       )}

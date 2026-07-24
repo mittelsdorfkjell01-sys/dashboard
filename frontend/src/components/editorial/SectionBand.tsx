@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
-type Tone = "white" | "cream" | "navy";
+type Tone = "white" | "band";
 type Width = "narrow" | "content" | "wide" | "bleed";
 type Pad = "md" | "lg";
 
@@ -19,15 +19,13 @@ const PAD_Y: Record<Pad, string> = {
 
 const TONE_BG: Record<Tone, string> = {
   white: "bg-white",
-  cream: "bg-cream",
-  navy: "bg-navy text-white",
+  band: "bg-band",
 };
 
 /**
  * A full-bleed editorial section. `tone` alternates the page rhythm
- * (white / cream / navy — navy is reserved for the one dramatic beat per page);
- * `width` sets the reading measure (narrow/content/wide/bleed); vertical
- * padding is fluid.
+ * (white / band); `width` sets the reading measure (narrow/content/wide/bleed);
+ * vertical padding is fluid.
  *
  * Every section fades/slides in once scrolled into view (Sprint 5: one
  * motion rule for the whole page, applied here instead of per-piece so
@@ -66,7 +64,6 @@ export default function SectionBand({
   children?: ReactNode;
 }) {
   const isBleed = width === "bleed";
-  const isNavy = tone === "navy";
   const hasHeader = Boolean(kicker || heading || intro);
   const reduce = useReducedMotion();
 
@@ -87,28 +84,20 @@ export default function SectionBand({
         {hasHeader && (
           <div className={align === "center" ? "text-center" : ""}>
             {kicker && (
-              <p
-                className={`text-caption font-medium uppercase tracking-[0.18em] ${
-                  isNavy ? "text-white/60" : "text-brand-teal"
-                }`}
-              >
+              <p className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
                 {kicker}
               </p>
             )}
             {heading && (
-              <h2
-                className={`text-display-2 font-semibold text-balance ${
-                  kicker ? "mt-2" : ""
-                } ${isNavy ? "text-white" : "text-navy"}`}
-              >
+              <h2 className={`text-display-2 font-semibold text-balance text-ink ${kicker ? "mt-2" : ""}`}>
                 {heading}
               </h2>
             )}
             {intro && (
               <p
-                className={`mt-4 max-w-[60ch] text-body ${
+                className={`mt-4 max-w-[60ch] text-body text-ink-soft ${
                   align === "center" ? "mx-auto" : ""
-                } ${isNavy ? "text-white/70" : "text-navy/70"}`}
+                }`}
               >
                 {intro}
               </p>

@@ -47,13 +47,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-band px-4 py-12">
       <Link to="/" aria-label="surfwind data — Startseite" className="mb-8 select-none">
         <Wordmark size="lg" />
       </Link>
 
       <div className="w-full max-w-[420px] rounded-3xl bg-white p-6 shadow-card sm:p-8">
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-cream p-1">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-band p-1">
           {(["login", "register"] as Mode[]).map((m) => (
             <button
               key={m}
@@ -62,8 +62,8 @@ export default function Auth() {
               aria-pressed={mode === m}
               className={`rounded-full py-2 text-[14px] font-semibold transition-colors ${
                 mode === m
-                  ? "bg-white text-navy shadow-pill"
-                  : "text-muted hover:text-navy"
+                  ? "bg-white text-teal shadow-pill"
+                  : "text-muted hover:text-teal"
               }`}
             >
               {m === "login" ? "Anmelden" : "Registrieren"}
@@ -71,7 +71,7 @@ export default function Auth() {
           ))}
         </div>
 
-        <h1 className="mb-1 text-[22px] font-semibold text-navy">
+        <h1 className="mb-1 text-[22px] font-semibold text-ink">
           {mode === "login" ? "Willkommen zurück" : "Konto erstellen"}
         </h1>
         <p className="mb-6 text-[14px] text-muted">
@@ -128,7 +128,7 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => switchMode(mode === "login" ? "register" : "login")}
-            className="font-semibold text-brand-teal hover:underline"
+            className="font-semibold text-teal hover:underline"
           >
             {mode === "login" ? "Jetzt registrieren" : "Zur Anmeldung"}
           </button>

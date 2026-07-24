@@ -62,7 +62,7 @@ export default function ImageFocalEditor({
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
-        className="relative w-full cursor-grab touch-none overflow-hidden rounded-xl border border-line bg-cream active:cursor-grabbing"
+        className="relative w-full cursor-grab touch-none overflow-hidden rounded-xl border border-line bg-band active:cursor-grabbing"
         style={{ aspectRatio: aspect }}
       >
         <img

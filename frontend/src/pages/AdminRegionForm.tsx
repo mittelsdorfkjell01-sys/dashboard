@@ -22,7 +22,7 @@ import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import { Button, Input, Textarea } from "../components/ui";
 
-const label = "text-[13px] font-medium text-navy";
+const label = "text-[13px] font-medium text-ink";
 const MONTHS_SHORT = [
   "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
   "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
@@ -182,26 +182,26 @@ export default function AdminRegionForm() {
       <button
         type="button"
         onClick={() => navigate("/admin/regions")}
-        className="text-[13px] text-muted hover:text-navy"
+        className="text-[13px] text-muted hover:text-teal"
       >
         ← Regionen
       </button>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-[24px] font-semibold text-navy">
+        <h1 className="text-[24px] font-semibold text-ink">
           Region bearbeiten — {region.name}
         </h1>
         <a
           href={`/region/${region.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-line px-3 py-1.5 text-[13px] font-medium text-navy hover:bg-navy/5"
+          className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5"
         >
           Vorschau ansehen ↗
         </a>
       </div>
 
       {notice && (
-        <div className="mt-4 rounded-xl bg-brand-green/10 px-3 py-2 text-[13px] font-medium text-brand-green">
+        <div className="mt-4 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
           {notice}
         </div>
       )}
@@ -248,8 +248,8 @@ export default function AdminRegionForm() {
                   }
                   className={`rounded-lg px-3 py-1.5 text-[13px] font-medium ${
                     on
-                      ? "bg-navy text-white"
-                      : "border border-navy/15 bg-white text-navy hover:bg-navy/5"
+                      ? "bg-teal text-white"
+                      : "border border-line bg-white text-ink hover:bg-teal/5"
                   }`}
                 >
                   {m}
@@ -270,7 +270,7 @@ export default function AdminRegionForm() {
 
       {/* Hero image */}
       <section className="mt-10">
-        <h2 className="text-[16px] font-semibold text-navy">Titelbild</h2>
+        <h2 className="text-[16px] font-semibold text-ink">Titelbild</h2>
         <div className="mt-3 flex flex-wrap items-start gap-4">
           {region.image?.url ? (
             <img
@@ -279,7 +279,7 @@ export default function AdminRegionForm() {
               className="h-24 w-40 rounded-xl object-cover"
             />
           ) : (
-            <div className="grid h-24 w-40 place-items-center rounded-xl bg-cream text-[12px] text-muted">
+            <div className="grid h-24 w-40 place-items-center rounded-xl bg-band text-[12px] text-muted">
               Kein Bild
             </div>
           )}
@@ -299,7 +299,7 @@ export default function AdminRegionForm() {
                 type="button"
                 disabled={busy || !imgUrl.trim()}
                 onClick={saveImageUrl}
-                className="shrink-0 rounded-xl border border-line px-3 py-2 text-[13px] font-medium text-navy hover:bg-navy/5 disabled:opacity-50"
+                className="shrink-0 rounded-xl border border-teal/30 px-3 py-2 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
               >
                 Setzen
               </button>
@@ -309,7 +309,7 @@ export default function AdminRegionForm() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => uploadImage(e.target.files?.[0] ?? null)}
-                className="text-[13px] text-navy"
+                className="text-[13px] text-ink"
               />
               <p className="mt-1 text-[12px] text-muted">
                 Upload: min. 3840×2000 px, Querformat, JPG/PNG.
@@ -339,7 +339,7 @@ export default function AdminRegionForm() {
 
       {/* Spots — drag from the right pool into this region */}
       <section className="mt-10">
-        <h2 className="text-[16px] font-semibold text-navy">Spots zuordnen</h2>
+        <h2 className="text-[16px] font-semibold text-ink">Spots zuordnen</h2>
         <p className="mt-1 text-[13px] text-muted">
           Ziehe einen Spot aus „Andere Spots" (rechts) in „Diese Region" (links).
           Er wechselt automatisch die Region — so korrigierst du falsche Zuordnungen.
@@ -360,10 +360,10 @@ export default function AdminRegionForm() {
               if (sid && id) void reassign(sid, id);
             }}
             className={`rounded-2xl border p-3 ${
-              dragOver ? "border-navy bg-navy/5" : "border-line bg-white"
+              dragOver ? "border-teal bg-teal/5" : "border-line bg-white"
             }`}
           >
-            <p className="px-1 text-[13px] font-semibold text-navy">
+            <p className="px-1 text-[13px] font-semibold text-ink">
               Diese Region ({spots.length})
             </p>
             <div className="mt-2 space-y-2">
@@ -373,7 +373,7 @@ export default function AdminRegionForm() {
                 </p>
               ) : (
                 spots.map((s) => (
-                  <div key={s.id} className="rounded-xl bg-cream px-3 py-2 text-[14px] text-navy">
+                  <div key={s.id} className="rounded-xl bg-band px-3 py-2 text-[14px] text-ink">
                     {s.name}
                   </div>
                 ))
@@ -383,7 +383,7 @@ export default function AdminRegionForm() {
 
           {/* Right: pool of all other spots (searchable, draggable) */}
           <div className="rounded-2xl border border-line bg-white p-3">
-            <p className="px-1 text-[13px] font-semibold text-navy">Andere Spots</p>
+            <p className="px-1 text-[13px] font-semibold text-ink">Andere Spots</p>
             <Input
               className="mt-2"
               value={spotSearch}
@@ -402,7 +402,7 @@ export default function AdminRegionForm() {
                     onDragStart={(e) => e.dataTransfer.setData("text/plain", s.id)}
                     className="cursor-grab rounded-xl border border-line px-3 py-2 active:cursor-grabbing"
                   >
-                    <div className="text-[14px] text-navy">{s.name}</div>
+                    <div className="text-[14px] text-ink">{s.name}</div>
                     <div className="text-[12px] text-muted">{regionName(s.region_id)}</div>
                   </div>
                 ))}

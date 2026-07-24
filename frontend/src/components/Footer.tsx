@@ -8,10 +8,10 @@ export default function Footer() {
       <div className="mx-auto flex max-w-[1400px] flex-col items-center justify-between gap-3 px-4 py-6 text-[13px] text-muted sm:flex-row sm:px-8">
         <span>© {year} surfwind data</span>
         <nav className="flex items-center gap-4">
-          <Link to="/impressum" className="hover:text-navy">
+          <Link to="/impressum" className="hover:text-teal">
             Impressum
           </Link>
-          <Link to="/datenschutz" className="hover:text-navy">
+          <Link to="/datenschutz" className="hover:text-teal">
             Datenschutz
           </Link>
         </nav>

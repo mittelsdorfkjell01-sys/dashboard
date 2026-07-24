@@ -36,7 +36,7 @@ export default function LandingHeader() {
             {INCLUDE_ADMIN && (
               <Link
                 to="/admin/spot/new"
-                className="hidden text-[16px] font-medium text-brand-teal transition-colors hover:text-brand-teal-dark sm:block"
+                className="hidden text-[16px] font-medium text-teal transition-colors hover:text-teal-hover sm:block"
               >
                 Füge Spots hinzu
               </Link>

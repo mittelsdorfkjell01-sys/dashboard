@@ -66,8 +66,8 @@ export default function MeineSpots() {
         onSubmit={onSubmit}
         className="rounded-2xl bg-white p-5 shadow-card"
       >
-        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-navy">
-          <PlusCircleIcon className="text-[18px] text-brand-teal" />
+        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-ink">
+          <PlusCircleIcon className="text-[18px] text-teal" />
           Spot vorschlagen
         </h2>
         <p className="mt-1 text-[13px] text-muted">
@@ -106,7 +106,7 @@ export default function MeineSpots() {
                 className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-card"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-[15px] font-medium text-navy">
+                  <span className="block truncate text-[15px] font-medium text-ink">
                     {s.name}
                   </span>
                   <span className="block text-[12px] text-muted">

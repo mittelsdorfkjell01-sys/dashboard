@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 const DROPCAP =
   "first-letter:float-left first-letter:mr-3 first-letter:mt-1 first-letter:text-[4.5rem] " +
-  "first-letter:font-semibold first-letter:leading-[0.78] first-letter:text-navy";
+  "first-letter:font-semibold first-letter:leading-[0.78] first-letter:text-ink";
 
 /**
  * The editorial lede — a wide, comfortable reading column for the spot/region
@@ -24,7 +24,7 @@ export default function Lede({
   const applyDropcap = dropcap && typeof children === "string" && children.length > 0;
   return (
     <div
-      className={`max-w-[68ch] text-lede leading-relaxed text-navy/80 text-pretty ${
+      className={`max-w-[68ch] text-lede leading-relaxed text-ink-soft text-pretty ${
         applyDropcap ? DROPCAP : ""
       }`}
     >

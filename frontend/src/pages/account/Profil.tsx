@@ -48,11 +48,11 @@ export default function Profil() {
   return (
     <div className="space-y-6">
       <section className="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-card sm:flex-row sm:items-center">
-        <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-brand-teal text-[26px] font-bold text-white">
+        <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-teal text-[26px] font-bold text-white">
           {initials}
         </span>
         <div className="min-w-0">
-          <h2 className="truncate text-[22px] font-semibold text-navy">
+          <h2 className="truncate text-[22px] font-semibold text-ink">
             {user.displayName}
           </h2>
           <p className="truncate text-[14px] text-muted">{user.email}</p>
@@ -62,7 +62,7 @@ export default function Profil() {
         </div>
         <Link
           to="/konto/einstellungen"
-          className="shrink-0 rounded-xl bg-navy px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-navy-dark sm:ml-auto"
+          className="shrink-0 rounded-xl bg-teal px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover sm:ml-auto"
         >
           Profil bearbeiten
         </Link>
@@ -102,11 +102,11 @@ function StatCard({
       to={to}
       className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-card transition-transform hover:-translate-y-0.5"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-cream text-brand-teal">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-band text-teal">
         {icon}
       </span>
       <span>
-        <span className="block text-[24px] font-bold leading-none text-navy">
+        <span className="block text-[24px] font-bold leading-none text-ink">
           {value}
         </span>
         <span className="mt-1 block text-[13px] text-muted">{label}</span>

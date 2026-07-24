@@ -8,7 +8,7 @@ import { HeartIcon, HeartFilledIcon } from "../lib/icons";
 import type { Spot } from "../lib/types";
 import type { LiveConditionsRead } from "../lib/api";
 
-// Live wind (kt) above which we treat a spot as "running now" (green dot).
+// Live wind (kt) above which we treat a spot as "running now" (orange dot).
 const RUNNING_WIND_KT = 12;
 
 /** German-comma wave height, or an honest em-dash when live is missing. */
@@ -81,7 +81,7 @@ export default function SpotTile({
         className="absolute right-2.5 top-2.5 z-10 grid h-9 w-9 place-items-center rounded-full bg-black/25 text-white backdrop-blur transition-colors hover:bg-black/45"
       >
         {fav ? (
-          <HeartFilledIcon className="text-[18px] text-brand-orange" />
+          <HeartFilledIcon className="text-[18px] text-orange" />
         ) : (
           <HeartIcon className="text-[18px]" />
         )}
@@ -97,7 +97,7 @@ export default function SpotTile({
               <span
                 aria-hidden="true"
                 className={`inline-block h-2 w-2 rounded-full ${
-                  running ? "bg-dot" : "border border-white/70 bg-transparent"
+                  running ? "bg-orange" : "border border-white/70 bg-transparent"
                 }`}
               />
               {running && <span className="sr-only">läuft gerade</span>}

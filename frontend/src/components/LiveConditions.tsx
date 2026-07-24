@@ -17,7 +17,7 @@ function Stat({
     <div className="w-[76px]">
       <p className="text-[10.5px] font-medium uppercase tracking-wide text-muted">{label}</p>
       <p className="mt-0.5 flex items-baseline gap-1">
-        <span className={`text-[20px] font-semibold leading-none ${accent ? "text-[#2F6FB0]" : "text-navy"}`}>
+        <span className={`text-[20px] font-semibold leading-none ${accent ? "text-[#2F6FB0]" : "text-ink"}`}>
           {value}
         </span>
         {unit && <span className="text-[12px] font-medium text-muted">{unit}</span>}
@@ -30,7 +30,7 @@ function Stat({
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mx-auto w-fit">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-navy/45">{title}</p>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">{title}</p>
       <div className="flex gap-x-8">{children}</div>
     </div>
   );
@@ -40,10 +40,10 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
  *  Box height matches the map (360 px); width stays with the grid column. */
 export default function LiveConditions({ live }: { live: Live }) {
   return (
-    <div className="flex h-[360px] flex-col rounded-lg border-[0.3px] border-navy p-5">
+    <div className="flex h-[360px] flex-col rounded-lg border-[0.3px] border-ink p-5">
       <div className="mb-4 flex items-center gap-2">
-        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-dot" />
-        <h2 className="text-[15px] font-semibold text-navy">Aktuelle Bedingungen</h2>
+        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-orange" />
+        <h2 className="text-[15px] font-semibold text-ink">Aktuelle Bedingungen</h2>
       </div>
 
       <div className="flex flex-1 flex-col justify-evenly">

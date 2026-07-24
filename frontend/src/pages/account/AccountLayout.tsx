@@ -31,7 +31,7 @@ export default function AccountLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-band">
       {/* brand bar */}
       <header className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3.5 sm:px-8">
@@ -41,7 +41,7 @@ export default function AccountLayout() {
           <button
             type="button"
             onClick={onLogout}
-            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-[13px] font-medium text-navy transition-colors hover:bg-cream"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-[13px] font-medium text-teal transition-colors hover:bg-band"
           >
             <LogoutIcon className="text-[16px]" />
             Abmelden
@@ -50,9 +50,9 @@ export default function AccountLayout() {
       </header>
 
       <main className="mx-auto max-w-[1000px] px-4 py-8 sm:px-8 sm:py-12">
-        <h1 className="text-[26px] font-semibold text-navy">Mein Konto</h1>
+        <h1 className="text-[26px] font-semibold text-ink">Mein Konto</h1>
         <p className="mt-1 text-[14px] text-muted">
-          Angemeldet als <span className="font-medium text-navy">{user.email}</span>
+          Angemeldet als <span className="font-medium text-ink">{user.email}</span>
         </p>
 
         {/* tab rail */}
@@ -64,8 +64,8 @@ export default function AccountLayout() {
               className={({ isActive }) =>
                 `inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-[14px] font-medium transition-colors ${
                   isActive
-                    ? "bg-navy text-white"
-                    : "bg-white text-navy ring-1 ring-line hover:bg-cream"
+                    ? "bg-teal text-white"
+                    : "bg-white text-ink ring-1 ring-line hover:bg-teal/5"
                 }`
               }
             >
