@@ -254,6 +254,7 @@ async def post_image(
     kind: str = Form(...),
     credit: str | None = Form(default=None),
     license_accept: bool = Form(default=False),
+    review: bool = Form(default=False),
     website: str | None = Form(default=None),  # honeypot
     db: Session = Depends(get_db),
     limiter: RateLimiter = Depends(get_rate_limiter),
@@ -298,8 +299,10 @@ async def post_image(
         spot_id, image_id, out, ext,
         media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
     )
-    # gallery = post-moderation (visible now); hero_candidate = awaits approval.
-    status = "approved" if kind == "gallery" else "pending"
+    # gallery = post-moderation (visible now) unless the uploader explicitly
+    # asked for review (the standalone "add a photo" form, decoupled from the
+    # rating/tip composer); hero_candidate always awaits approval.
+    status = "pending" if (kind == "hero_candidate" or review) else "approved"
     image = service.create_image_record(
         db, spot_id,
         url=url, kind=kind, width=width, height=height, status=status,

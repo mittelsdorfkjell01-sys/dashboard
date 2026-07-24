@@ -9,7 +9,6 @@
 // gets attached to a post; the gallery only ever reads photos back out.
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { useReducedMotion } from "framer-motion";
 import {
   ApiError,
   getImageLicense,
@@ -24,7 +23,7 @@ import { LEVELS, levelLabel, sportLabel } from "../lib/labels";
 import { ChevronDownIcon, CloseIcon } from "../lib/icons";
 import { Button, Input, Select, Textarea } from "./ui";
 import { useCommunityFeed, usePersistedState } from "../lib/hooks";
-import { satelliteTileUrl } from "../lib/mapLinks";
+import { coloredTileUrl } from "../lib/mapLinks";
 import {
   avatarColor,
   encodeVisitDate,
@@ -45,10 +44,6 @@ const REPORT_REASONS: { key: string; label: string }[] = [
 ];
 
 const COMPOSER_ID = "community-composer";
-const scrollToComposer = (smooth: boolean) =>
-  document
-    .getElementById(COMPOSER_ID)
-    ?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
 
 // Name must be a first name, or first + last (1–2 words, letters only).
 const NAME_RE = /^\p{L}[\p{L}'.-]*(?:\s+\p{L}[\p{L}'.-]*)?$/u;
@@ -107,16 +102,16 @@ function CommonsBadge({ compact = false }: { compact?: boolean }) {
 /**
  * The Überblick module's photo tile: one big image (16:10) over three
  * thumbnails, the last carrying a "+N" overlay once there are more than
- * four. Looks right at 4 photos or 40. Photos come from the feed below —
- * there's no separate upload here, "Bilder hinzufügen" just scrolls to the
- * composer (the one place a photo actually gets attached to a post).
+ * four. Looks right at 4 photos or 40. "Bilder hinzufügen" is its own small
+ * upload form (`GalleryUploadForm`), independent of the community composer
+ * further down — adding a photo here doesn't require writing a rating/tip.
  */
 export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coords?: [number, number] }) {
   const { photos } = useCommunityFeed(spotId);
   const [heroFormOpen, setHeroFormOpen] = useState(false);
+  const [uploadFormOpen, setUploadFormOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [reportFor, setReportFor] = useState<string | null>(null);
-  const reduce = useReducedMotion();
 
   const big = photos[0];
   const thumbs = photos.slice(1, 4);
@@ -125,7 +120,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
   return (
     <div>
       {photos.length === 0 ? (
-        <GalleryEmptyState coords={coords} onAdd={() => scrollToComposer(!reduce)} />
+        <GalleryEmptyState coords={coords} onAdd={() => setUploadFormOpen(true)} />
       ) : (
         <div className="grid gap-2">
           <button
@@ -179,10 +174,13 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        {photos.length > 0 && (
+        {photos.length > 0 && !uploadFormOpen && (
           <button
             type="button"
-            onClick={() => scrollToComposer(!reduce)}
+            onClick={() => {
+              setUploadFormOpen(true);
+              setHeroFormOpen(false);
+            }}
             className="rounded-full border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
           >
             Bilder hinzufügen
@@ -191,13 +189,20 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
         {!heroFormOpen && (
           <button
             type="button"
-            onClick={() => setHeroFormOpen(true)}
+            onClick={() => {
+              setHeroFormOpen(true);
+              setUploadFormOpen(false);
+            }}
             className="text-label font-medium text-teal hover:text-teal-hover"
           >
             Titelbild vorschlagen
           </button>
         )}
       </div>
+
+      {uploadFormOpen && (
+        <GalleryUploadForm spotId={spotId} onCancel={() => setUploadFormOpen(false)} onDone={() => setUploadFormOpen(false)} />
+      )}
 
       {heroFormOpen && (
         <HeroCandidateForm spotId={spotId} onCancel={() => setHeroFormOpen(false)} onDone={() => setHeroFormOpen(false)} />
@@ -220,10 +225,11 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
   );
 }
 
-/** No grey box: a satellite crop of the spot itself stands in for "no photos
- *  yet", so the empty state still shows *something real* about the place. */
+/** No grey box: a colored map crop of the spot itself stands in for "no
+ *  photos yet", so the empty state still shows *something real* about the
+ *  place. */
 function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd: () => void }) {
-  const bg = coords ? satelliteTileUrl(coords[0], coords[1], 15) : null;
+  const bg = coords ? coloredTileUrl(coords[0], coords[1], 15) : null;
   return (
     <div
       className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-band bg-cover bg-center"
@@ -890,6 +896,115 @@ function ReportDialog({
         </>
       )}
     </div>
+  );
+}
+
+/** Standalone "add a photo" form — independent of the community composer
+ *  (that's for posting a rating/tip; this is just "I have a photo of this
+ *  spot", no text required). Uploads immediately but lands in the admin
+ *  review queue rather than the public gallery straight away — an admin
+ *  approves it from there before it shows up for everyone else. */
+function GalleryUploadForm({
+  spotId,
+  onDone,
+  onCancel,
+}: {
+  spotId: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [credit, setCredit] = useState("");
+  const [accepted, setAccepted] = useState(false);
+  const [website, setWebsite] = useState("");
+  const [terms, setTerms] = useState<{ version: string; terms: string } | null>(null);
+  const [showTerms, setShowTerms] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    getImageLicense().then(setTerms).catch(() => {});
+  }, []);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+    if (website) return; // honeypot
+    if (!accepted) return setError("Bitte die Rechteerklärung fürs Foto bestätigen.");
+    setBusy(true);
+    setError(null);
+    try {
+      await uploadSpotImage(spotId, file, "gallery", {
+        credit: credit || undefined,
+        licenseAccept: accepted,
+        review: true,
+      });
+      setFile(null);
+      setCredit("");
+      setAccepted(false);
+      setNotice("Danke! Dein Bild wartet auf Freigabe.");
+      setTimeout(() => {
+        setNotice(null);
+        onDone();
+      }, 1800);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Upload fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="mt-4 rounded-3xl bg-ink/5 p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-ui font-medium text-ink">Bild hinzufügen</p>
+        <button type="button" onClick={onCancel} className="text-label text-muted hover:text-teal">
+          Schließen
+        </button>
+      </div>
+      <p className="mt-1 text-caption text-muted">
+        Wird sofort hochgeladen, ist aber erst nach kurzer Prüfung für alle sichtbar.
+      </p>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        className="mt-2 text-label text-ink"
+      />
+      <Input
+        value={credit}
+        onChange={(e) => setCredit(e.target.value)}
+        placeholder="Credit: Name oder Instagram (optional)"
+        className="mt-2"
+      />
+      <label className="mt-3 flex items-start gap-2 text-label text-ink">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+          className="mt-0.5"
+        />
+        <span>
+          Ich bestätige die{" "}
+          <button type="button" onClick={() => setShowTerms((v) => !v)} className="underline">
+            Rechte- &amp; Einwilligungserklärung{terms ? ` (${terms.version})` : ""}
+          </button>
+          .
+        </span>
+      </label>
+      {showTerms && terms && (
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-band p-3 text-caption text-ink-soft">
+          {terms.terms}
+        </pre>
+      )}
+      <Honeypot value={website} onChange={setWebsite} />
+      {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
+      {notice && <p role="status" className="mt-2 text-label text-green">{notice}</p>}
+      <Button type="submit" disabled={busy || !file || !accepted} className="mt-3">
+        {busy ? "Hochladen…" : "Hochladen"}
+      </Button>
+    </form>
   );
 }
 

@@ -100,7 +100,7 @@ def approve_image(
     actor: str = Depends(get_actor),
 ) -> dict:
     try:
-        img = moderation.approve_hero_image(db, image_id, actor=actor)
+        img = moderation.approve_image(db, image_id, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden.")
     except ValueError as exc:

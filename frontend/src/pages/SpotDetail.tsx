@@ -173,7 +173,7 @@ export default function SpotDetail() {
             >
             {/* Überblick + Galerie: lede left, photo mosaic right — keeps the
                 gallery apart from the rest of the community elements further down */}
-            <SectionBand tone="white" kicker="Überblick">
+            <SectionBand tone="white" pad="md" kicker="Überblick">
               <div className="grid gap-x-10 gap-y-10 lg:grid-cols-2">
                 <Lede dropcap>{spot.description}</Lede>
                 {id && <CommunityGalleryMosaic spotId={id} coords={spot.coords} />}
@@ -181,7 +181,7 @@ export default function SpotDetail() {
             </SectionBand>
 
             {/* Steckbrief + Facilities: equal-weight two-up */}
-            <SectionBand tone="white" pad="md">
+            <SectionBand tone="white" pad="sm">
               <div className="grid gap-x-10 gap-y-12 lg:grid-cols-2">
                 <FactRow items={facts} variant="rail" />
                 <Facilities items={facilities} variant="rail" />

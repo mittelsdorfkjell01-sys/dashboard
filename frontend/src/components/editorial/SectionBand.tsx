@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 
 type Tone = "white" | "band";
 type Width = "narrow" | "content" | "wide" | "bleed";
-type Pad = "md" | "lg";
+type Pad = "sm" | "md" | "lg";
 
 const WIDTH_MAX: Record<Width, string> = {
   narrow: "max-w-[720px]",
@@ -15,6 +15,7 @@ const WIDTH_MAX: Record<Width, string> = {
 const PAD_Y: Record<Pad, string> = {
   lg: "py-[clamp(4rem,9vw,8rem)]",
   md: "py-[clamp(2.5rem,5vw,4rem)]",
+  sm: "py-[clamp(1rem,2.5vw,1.5rem)]",
 };
 
 const TONE_BG: Record<Tone, string> = {

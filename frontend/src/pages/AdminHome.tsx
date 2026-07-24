@@ -24,6 +24,7 @@ const REPORTED: { key: string; label: string }[] = [
 const PENDING: { key: string; label: string }[] = [
   { key: "submissions_pending", label: "Neue Spot-Vorschläge" },
   { key: "hero_candidates_pending", label: "Neue Bild-Vorschläge" },
+  { key: "gallery_images_pending", label: "Neue Galeriebilder" },
 ];
 
 export default function AdminHome() {

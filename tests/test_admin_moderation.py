@@ -203,6 +203,30 @@ def test_hero_approve_writes_spot_image(client, anon_client, spot_id, db):
     assert _audit_count(db, "image", "image_approve") >= 1
 
 
+def test_gallery_approve_makes_it_public_without_touching_spot_image(client, anon_client, spot_id, db):
+    """A pending gallery photo (standalone upload form, review=true) approves
+    via the same endpoint as hero candidates, but just flips its own status —
+    it never becomes the spot's hero image."""
+    sid, _ = spot_id
+    before = db.get(Spot, uuid.UUID(sid)).image
+    img_id = anon_client.post(
+        f"/spots/{sid}/images",
+        files={"file": ("g.jpg", _img_bytes(1600, 1000), "image/jpeg")},
+        data={"kind": "gallery", "license_accept": "true", "review": "true"},
+    ).json()["id"]
+    assert img_id not in {
+        i["id"] for i in anon_client.get(f"/spots/{sid}/images").json()["items"]
+    }
+
+    resp = client.post(f"/admin/images/{img_id}/approve")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "approved"
+    assert db.get(Spot, uuid.UUID(sid)).image == before
+    assert img_id in {
+        i["id"] for i in anon_client.get(f"/spots/{sid}/images").json()["items"]
+    }
+
+
 # --- reported image remove / dismiss ---------------------------------------
 
 def test_report_then_remove_hides_image(client, anon_client, spot_id, db):

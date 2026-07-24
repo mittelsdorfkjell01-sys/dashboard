@@ -206,10 +206,12 @@ def test_submission_invalid_payload_422(anon_client):
 
 # --- images ----------------------------------------------------------------
 
-def _upload(client, sid, data, *, kind, license_accept=True, credit="Kai"):
+def _upload(client, sid, data, *, kind, license_accept=True, credit="Kai", review=False):
     form = {"kind": kind, "license_accept": str(license_accept).lower()}
     if credit is not None:
         form["credit"] = credit
+    if review:
+        form["review"] = "true"
     return client.post(
         f"/spots/{sid}/images",
         files={"file": ("photo.jpg", data, "image/jpeg")},
@@ -240,6 +242,20 @@ def test_gallery_image_visible_hero_candidate_pending(anon_client, spot_id, db):
     assert row.status == "approved"
     hero_row = db.get(SpotImage, uuid.UUID(hero.json()["id"]))
     assert hero_row.status == "pending"
+
+
+def test_gallery_upload_with_review_flag_is_pending_not_public(anon_client, spot_id, db):
+    """The standalone "add a photo" form (decoupled from the composer) sets
+    review=true so its upload lands in the admin queue instead of going
+    straight to the public gallery."""
+    from app.models import SpotImage
+
+    up = _upload(anon_client, spot_id, _img_bytes(1600, 1000), kind="gallery", review=True)
+    assert up.status_code == 201, up.text
+
+    visible = anon_client.get(f"/spots/{spot_id}/images").json()["items"]
+    assert up.json()["id"] not in {i["id"] for i in visible}
+    assert db.get(SpotImage, uuid.UUID(up.json()["id"])).status == "pending"
 
 
 def test_hero_candidate_too_small_422(anon_client, spot_id):

@@ -3,6 +3,8 @@
 // on mobile; desktop browsers have no geo: handler, so there we fall back to
 // a Google Maps web link in a new tab.
 
+import { isDaytime } from "./sunTimes";
+
 const isMobile = () =>
   typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -46,14 +48,20 @@ export function haversineKm(a: [number, number], b: [number, number]): number {
   return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
 
-/** A single Esri World Imagery tile URL covering `[lat, lng]` at `zoom` — for
- *  a lightweight static satellite backdrop (the gallery's empty state) where
- *  mounting a whole interactive map would be overkill. Esri's tile scheme is
- *  z/y/x (not z/x/y like most other providers). */
-export function satelliteTileUrl(lat: number, lng: number, zoom: number): string {
+const DAY_TILE_BASE = "https://a.basemaps.cartocdn.com/rastertiles/voyager";
+const NIGHT_TILE_BASE = "https://a.basemaps.cartocdn.com/rastertiles/dark_all";
+
+/** A single CARTO basemap tile (blue water, green parkland — day "Voyager" or
+ *  night "Dark Matter", picked by whether it's actually daytime right now at
+ *  `[lat, lng]`) covering that coordinate at `zoom` — for a lightweight static
+ *  backdrop (the gallery's empty state) where mounting a whole interactive
+ *  map would be overkill. Standard z/x/y tile scheme. `now` is only there so
+ *  tests can pin the day/night pick to a specific moment. */
+export function coloredTileUrl(lat: number, lng: number, zoom: number, now: Date = new Date()): string {
   const n = 2 ** zoom;
   const x = Math.floor(((lng + 180) / 360) * n);
   const latRad = toRad(lat);
   const y = Math.floor(((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n);
-  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`;
+  const base = isDaytime(lat, lng, now) ? DAY_TILE_BASE : NIGHT_TILE_BASE;
+  return `${base}/${zoom}/${x}/${y}.png`;
 }

@@ -59,6 +59,11 @@ def review_counts(db: Session) -> dict[str, int]:
                 SpotImage.kind == "hero_candidate", SpotImage.status == "pending"
             )
         ),
+        "gallery_images_pending": _count(
+            select(func.count()).select_from(SpotImage).where(
+                SpotImage.kind == "gallery", SpotImage.status == "pending"
+            )
+        ),
         "reported_images": _count(
             select(func.count()).select_from(SpotImage).where(SpotImage.report_count > 0)
         ),
@@ -82,6 +87,11 @@ def review_queue(db: Session) -> dict[str, Any]:
     hero_candidates = db.scalars(
         select(SpotImage)
         .where(SpotImage.kind == "hero_candidate", SpotImage.status == "pending")
+        .order_by(SpotImage.created_at.desc())
+    ).all()
+    pending_gallery_images = db.scalars(
+        select(SpotImage)
+        .where(SpotImage.kind == "gallery", SpotImage.status == "pending")
         .order_by(SpotImage.created_at.desc())
     ).all()
     reported = db.scalars(
@@ -108,6 +118,7 @@ def review_queue(db: Session) -> dict[str, Any]:
         "counts": counts,
         "submissions": [_submission_view(s) for s in submissions],
         "hero_candidates": [_image_view(i) for i in hero_candidates],
+        "pending_gallery_images": [_image_view(i) for i in pending_gallery_images],
         "reported_images": [_image_view(i) for i in reported],
         "tips": [_tip_view(t) for t in tips],
         "ratings": [_rating_view(r) for r in ratings],
@@ -252,6 +263,26 @@ def _get_image(db: Session, image_id) -> SpotImage:
     img = db.get(SpotImage, image_id)
     if img is None:
         raise LookupError("image not found")
+    return img
+
+
+def approve_image(db: Session, image_id, *, actor: str) -> SpotImage:
+    """Approve a pending image. Hero candidates are promoted to the spot's
+    hero image (see `approve_hero_image`); a plain pending gallery photo
+    (uploaded via the standalone "add a photo" form, decoupled from the
+    composer) is simply marked approved and becomes publicly visible."""
+    img = _get_image(db, image_id)
+    if img.kind == "hero_candidate":
+        return approve_hero_image(db, image_id, actor=actor)
+    img.status = "approved"
+    img.reviewed_by = actor
+    img.reviewed_at = _now()
+    record_moderation(
+        db, actor=actor, action="image_approve",
+        target_type="image", target_id=img.id,
+    )
+    db.commit()
+    db.refresh(img)
     return img
 
 

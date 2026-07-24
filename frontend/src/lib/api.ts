@@ -513,13 +513,17 @@ export function uploadSpotImage(
   spotId: string,
   file: File,
   kind: "gallery" | "hero_candidate",
-  opts: { credit?: string; licenseAccept: boolean } = { licenseAccept: false }
+  opts: { credit?: string; licenseAccept: boolean; review?: boolean } = { licenseAccept: false }
 ): Promise<CommunityImage> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("kind", kind);
   fd.append("license_accept", String(opts.licenseAccept));
   if (opts.credit) fd.append("credit", opts.credit);
+  // Standalone gallery uploads (decoupled from the composer) go to the admin
+  // review queue instead of appearing immediately — hero candidates are
+  // already always pending, so this only changes anything for "gallery".
+  if (opts.review) fd.append("review", "true");
   return request<CommunityImage>(`/spots/${spotId}/images`, {
     method: "POST",
     body: fd,
@@ -554,6 +558,7 @@ export const postSubmission = (body: {
 export interface ReviewCounts {
   submissions_pending: number;
   hero_candidates_pending: number;
+  gallery_images_pending: number;
   reported_images: number;
   flagged_tips: number;
   flagged_ratings: number;
@@ -599,6 +604,7 @@ export interface ReviewQueue {
   counts: ReviewCounts;
   submissions: ReviewSubmission[];
   hero_candidates: ReviewImage[];
+  pending_gallery_images: ReviewImage[];
   reported_images: ReviewImage[];
   tips: ReviewTip[];
   ratings: ReviewRating[];

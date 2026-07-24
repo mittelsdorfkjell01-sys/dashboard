@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { geoUri, googleMapsUrl, formatCoords, mapLinkProps, haversineKm, satelliteTileUrl } from "../mapLinks";
+import { geoUri, googleMapsUrl, formatCoords, mapLinkProps, haversineKm, coloredTileUrl } from "../mapLinks";
 
 describe("geoUri / googleMapsUrl", () => {
   it("builds a geo: URI with a redundant q= (for handlers that ignore the bare coords)", () => {
@@ -56,18 +56,24 @@ describe("haversineKm", () => {
   });
 });
 
-describe("satelliteTileUrl", () => {
+describe("coloredTileUrl", () => {
+  // Tarifa, Spain — daytime and nighttime UTC instants, same as sunTimes.test.ts.
+  const TARIFA: [number, number] = [36.0, -5.6];
+  const NOON_SUMMER = new Date(Date.UTC(2026, 6, 15, 12, 0, 0));
+  const MIDNIGHT_SUMMER = new Date(Date.UTC(2026, 6, 15, 0, 0, 0));
+
   it("is the single world tile at zoom 0, for any coordinate", () => {
-    expect(satelliteTileUrl(41.18, 9.32, 0)).toBe(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0"
-    );
-    expect(satelliteTileUrl(-33.9, 151.2, 0)).toBe(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0"
-    );
+    expect(coloredTileUrl(TARIFA[0], TARIFA[1], 0, NOON_SUMMER)).toMatch(/\/0\/0\/0\.png$/);
+    expect(coloredTileUrl(-33.9, 151.2, 0, NOON_SUMMER)).toMatch(/\/0\/0\/0\.png$/);
   });
 
-  it("uses Esri's z/y/x path order", () => {
-    const url = satelliteTileUrl(54.4, 11.2, 5);
-    expect(url).toMatch(/\/tile\/5\/\d+\/\d+$/);
+  it("uses standard z/x/y path order", () => {
+    const url = coloredTileUrl(TARIFA[0], TARIFA[1], 5, NOON_SUMMER);
+    expect(url).toMatch(/\/(voyager|dark_all)\/5\/\d+\/\d+\.png$/);
+  });
+
+  it("picks the day tile by day and the night tile by night, at the same coordinate", () => {
+    expect(coloredTileUrl(TARIFA[0], TARIFA[1], 8, NOON_SUMMER)).toContain("/voyager/");
+    expect(coloredTileUrl(TARIFA[0], TARIFA[1], 8, MIDNIGHT_SUMMER)).toContain("/dark_all/");
   });
 });

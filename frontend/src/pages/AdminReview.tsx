@@ -24,11 +24,12 @@ import {
 } from "../lib/api";
 import { SPORT_LABELS } from "../lib/labels";
 
-type Tab = "submissions" | "hero" | "reported" | "content";
+type Tab = "submissions" | "hero" | "gallery" | "reported" | "content";
 
 const TABS: { key: Tab; label: string; count: (q: ReviewQueue) => number }[] = [
   { key: "submissions", label: "Spot-Einreichungen", count: (q) => q.counts.submissions_pending },
   { key: "hero", label: "Hero-Bilder", count: (q) => q.counts.hero_candidates_pending },
+  { key: "gallery", label: "Galeriebilder", count: (q) => q.counts.gallery_images_pending },
   { key: "reported", label: "Gemeldete Bilder", count: (q) => q.counts.reported_images },
   {
     key: "content",
@@ -145,6 +146,25 @@ export default function AdminReview() {
                   <Actions>
                     <Approve busy={busy} onClick={() => act(() => approveImage(i.id))}>
                       Als Hero freigeben
+                    </Approve>
+                    <Reject busy={busy} onClick={() => act(() => rejectImage(i.id, promptNote()))}>
+                      Ablehnen
+                    </Reject>
+                  </Actions>
+                </Card>
+              ))
+            ))}
+
+          {tab === "gallery" &&
+            (queue.pending_gallery_images.length === 0 ? (
+              <Empty>Keine Galeriebilder zur Prüfung.</Empty>
+            ) : (
+              queue.pending_gallery_images.map((i) => (
+                <Card key={i.id}>
+                  <ImagePreview url={i.url} credit={i.credit} spotId={i.spot_id} />
+                  <Actions>
+                    <Approve busy={busy} onClick={() => act(() => approveImage(i.id))}>
+                      Freigeben
                     </Approve>
                     <Reject busy={busy} onClick={() => act(() => rejectImage(i.id, promptNote()))}>
                       Ablehnen
