@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import type { LiveConditionsRead } from "../lib/api";
 import { degToCompass } from "./WindRose";
 import WindArrow from "./WindArrow";
@@ -16,6 +17,14 @@ export interface SpotTab {
  * top, taking over once LandingHeader (an overlay confined to the hero)
  * scrolls out of view. The live wind stays visible here regardless of which
  * tab is active, so switching tabs is never required just to check it.
+ *
+ * The tabs sit in their own centered column (a spacer on the left balances
+ * the live-wind column on the right, so the pair stays truly centered
+ * whether or not `live` is showing). The active tab is marked two ways: a
+ * teal underline that slides between tabs via a shared `layoutId` (spring,
+ * no bounce), and the label itself stepping from `ink-soft`/regular to
+ * `ink`/medium — an invisible medium-weight copy of the label is rendered
+ * underneath to reserve its width, so that weight step never shifts layout.
  */
 export default function SpotTabs({ tabs, live }: { tabs: SpotTab[]; live: LiveConditionsRead | null }) {
   const { pathname } = useLocation();
@@ -37,8 +46,10 @@ export default function SpotTabs({ tabs, live }: { tabs: SpotTab[]; live: LiveCo
 
   return (
     <div className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1180px] items-center gap-4 px-4 sm:px-8">
-        <div role="tablist" aria-label="Spot-Ansicht" className="flex gap-1 py-3">
+      <div className="mx-auto grid max-w-[1180px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-2 sm:px-8">
+        <div aria-hidden="true" />
+
+        <div role="tablist" aria-label="Spot-Ansicht" className="flex justify-self-center">
           {tabs.map((tab, i) => {
             const active = i === activeIndex;
             return (
@@ -51,24 +62,42 @@ export default function SpotTabs({ tabs, live }: { tabs: SpotTab[]; live: LiveCo
                 tabIndex={active ? 0 : -1}
                 to={tab.href}
                 onKeyDown={(e) => onKeyDown(e, i)}
-                className={`rounded-full px-4 py-2 text-label font-medium transition-colors ${
-                  active ? "bg-navy text-white" : "text-muted hover:text-navy"
-                }`}
+                className="relative flex h-12 min-w-[140px] items-center justify-center px-4 text-label"
               >
-                {tab.label}
+                <span className="relative grid">
+                  <span aria-hidden="true" className="invisible col-start-1 row-start-1 font-medium">
+                    {tab.label}
+                  </span>
+                  <span
+                    className={`col-start-1 row-start-1 text-center transition-colors duration-200 ${
+                      active ? "font-medium text-ink" : "font-normal text-ink-soft"
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                </span>
+                {active && (
+                  <motion.span
+                    layoutId="spot-tab-indicator"
+                    className="absolute inset-x-3 bottom-1.5 h-[3px] rounded-full bg-teal"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                  />
+                )}
               </Link>
             );
           })}
         </div>
 
-        {typeof wind === "number" && (
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 text-ui font-medium text-navy">
-            <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-dot" />
-            <WindArrow dir={dir ?? 0} size={16} className="text-navy/60" />
-            {Math.round(wind)} kts
-            {typeof dir === "number" && <span className="text-caption text-muted">{degToCompass(dir)}</span>}
-          </div>
-        )}
+        <div className="flex justify-self-end">
+          {typeof wind === "number" && (
+            <div className="flex shrink-0 items-center gap-1.5 text-ui font-medium text-ink">
+              <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-orange" />
+              <WindArrow dir={dir ?? 0} size={16} className="text-ink-soft" />
+              {Math.round(wind)} kts
+              {typeof dir === "number" && <span className="text-caption text-muted">{degToCompass(dir)}</span>}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

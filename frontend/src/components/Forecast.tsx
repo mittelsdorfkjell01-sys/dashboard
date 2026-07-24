@@ -64,7 +64,7 @@ function DayDetailChart({
   return (
     <div ref={scrollRef} className="scroll-mt-24 rounded-2xl border border-line p-4 sm:p-5">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <span className="text-body font-semibold text-navy">
+        <span className="text-body font-semibold text-ink">
           {day.day} {day.date}
         </span>
         <span className="text-caption text-muted">
@@ -79,9 +79,9 @@ function DayDetailChart({
       </div>
 
       <svg viewBox={`0 0 ${L2_W} ${L2_H}`} width="100%" className="mt-3 block overflow-visible" aria-hidden="true">
-        {sun && sun.sunrise > 6 && <rect x={0} y={0} width={hourToX(sun.sunrise)} height={L2_H} fill="rgba(19,51,94,0.06)" />}
+        {sun && sun.sunrise > 6 && <rect x={0} y={0} width={hourToX(sun.sunrise)} height={L2_H} fill="rgba(36,28,23,0.06)" />}
         {sun && sun.sunset < 22 && (
-          <rect x={hourToX(sun.sunset)} y={0} width={L2_W - hourToX(sun.sunset)} height={L2_H} fill="rgba(19,51,94,0.06)" />
+          <rect x={hourToX(sun.sunset)} y={0} width={L2_W - hourToX(sun.sunset)} height={L2_H} fill="rgba(36,28,23,0.06)" />
         )}
 
         <line x1={0} y1={y(15)} x2={L2_W} y2={y(15)} stroke="rgba(107,119,135,0.4)" strokeWidth={1} strokeDasharray="3 3" />
@@ -102,7 +102,7 @@ function DayDetailChart({
         })}
 
         {gustPoints.length > 1 && (
-          <path d={gustPath} fill="none" stroke="#13335E" strokeWidth={1.5} strokeDasharray="4 3" strokeLinecap="round" />
+          <path d={gustPath} fill="none" stroke="#241C17" strokeWidth={1.5} strokeDasharray="4 3" strokeLinecap="round" />
         )}
       </svg>
 
@@ -110,7 +110,7 @@ function DayDetailChart({
         {day.blocks.map((b, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             {b.dir != null ? (
-              <WindArrow dir={b.dir} size={14} className="text-navy/50" />
+              <WindArrow dir={b.dir} size={14} className="text-muted" />
             ) : (
               <span className="text-caption text-line">—</span>
             )}
@@ -163,7 +163,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-caption text-muted">Beste Stunde je 3-Stunden-Block</p>
-        <div className="inline-flex rounded-full bg-navy/5 p-1">
+        <div className="inline-flex rounded-full bg-ink/5 p-1">
           {WIND_ORDER.map((u) => (
             <button
               key={u}
@@ -171,7 +171,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
               onClick={() => setWu(u)}
               aria-pressed={u === wu}
               className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-3 text-label font-medium transition-colors ${
-                u === wu ? "bg-white text-navy shadow-pill" : "text-muted hover:text-navy"
+                u === wu ? "bg-white text-teal shadow-pill" : "text-muted hover:text-teal"
               }`}
             >
               {WIND_SHORT[u]}
@@ -227,7 +227,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
               className="flex snap-start flex-col items-center gap-2 px-3 py-3 text-center"
             >
               <div>
-                <div className="text-caption font-semibold text-navy">{d.day}</div>
+                <div className="text-caption font-semibold text-ink">{d.day}</div>
                 <div className="text-caption text-muted">{d.date}</div>
               </div>
               <div aria-hidden="true" className="flex h-20 items-end gap-1">
@@ -242,13 +242,13 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
               </div>
               <div className="flex flex-col items-center gap-1 border-t border-line pt-2">
                 {d.windDir != null ? (
-                  <WindArrow dir={d.windDir} size={16} className="text-navy/60" />
+                  <WindArrow dir={d.windDir} size={16} className="text-ink-soft" />
                 ) : (
                   <span className="text-line" aria-hidden="true">
                     —
                   </span>
                 )}
-                <span className="text-body font-semibold tabular-nums text-navy">
+                <span className="text-body font-semibold tabular-nums text-ink">
                   {d.maxWind != null ? convert(d.maxWind) : "—"}
                 </span>
               </div>
@@ -266,7 +266,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
           aria-expanded={detailsOpen}
-          className="rounded-full border border-line px-5 py-2 text-label font-medium text-navy transition-colors hover:bg-navy/5"
+          className="rounded-full border border-teal/30 px-5 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
         >
           {detailsOpen ? "Details ausblenden" : "Details anzeigen"}
         </button>

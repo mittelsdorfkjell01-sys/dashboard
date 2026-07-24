@@ -6,7 +6,7 @@ import { usePersistedState } from "../lib/hooks";
 import { windColor } from "../lib/windScale";
 
 type Metric = "hours" | "knots";
-const NAVY = "19,51,94"; // #13335E as an rgb triple, for the hours-mode opacity ramp
+const INK = "36,28,23"; // #241C17 as an rgb triple, for the hours-mode opacity ramp
 
 const monthMean = (m: MonthWind) => m.weeks.reduce((a, b) => a + b, 0) / m.weeks.length;
 
@@ -32,7 +32,7 @@ function highlightRects(win: { startIndex: number; endIndex: number } | null) {
  * Yearly wind climatology, in a white card with a metric toggle:
  *
  *  - "Stunden" (default) — fahrbare Windstunden/Woche ≥ 14 kt
- *    (`climatologyToMonths`). Bars are monochrome navy with an opacity ramp;
+ *    (`climatologyToMonths`). Bars are monochrome ink with an opacity ramp;
  *    the windColor() scale is never used here — hours aren't knots, and the
  *    same colors can't mean two things on one page.
  *  - "Knoten" — P75 wind speed/Woche (`climatologyToPercentile`). Bar height
@@ -62,7 +62,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
 
   const barStyle = (w: number): React.CSSProperties => ({
     height: `${Math.max(6, (w / max) * 100)}%`,
-    backgroundColor: metric === "knots" ? windColor(w) : `rgba(${NAVY},${hoursOpacity(w)})`,
+    backgroundColor: metric === "knots" ? windColor(w) : `rgba(${INK},${hoursOpacity(w)})`,
     transition: reduce ? "none" : "height 350ms ease-out, background-color 350ms ease-out",
   });
 
@@ -71,7 +71,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           {win && (
-            <p className="text-title font-semibold text-navy">
+            <p className="text-title font-semibold text-ink">
               Beste Zeit: {win.startMonth} – {win.endMonth}
             </p>
           )}
@@ -80,7 +80,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
           </p>
         </div>
 
-        <div className="inline-flex shrink-0 rounded-full bg-navy/5 p-1">
+        <div className="inline-flex shrink-0 rounded-full bg-ink/5 p-1">
           {(["hours", "knots"] as const).map((m) => (
             <button
               key={m}
@@ -88,7 +88,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
               onClick={() => setMetric(m)}
               aria-pressed={m === metric}
               className={`flex min-h-[36px] items-center justify-center rounded-full px-3 text-label font-medium transition-colors ${
-                m === metric ? "bg-white text-navy shadow-pill" : "text-muted hover:text-navy"
+                m === metric ? "bg-white text-teal shadow-pill" : "text-muted hover:text-teal"
               }`}
             >
               {m === "hours" ? "Stunden" : "Knoten"}
@@ -125,7 +125,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
           {rects.map((r, i) => (
             <div
               key={i}
-              className="rounded-lg bg-navy/[0.06]"
+              className="rounded-lg bg-orange/[0.10]"
               style={{ gridColumn: `${r.startCol} / ${r.endCol}` }}
             />
           ))}
@@ -144,7 +144,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
                     title={`${m.month}: ${mean.toFixed(1)} ${metric === "hours" ? "h ≥14 kt" : "kt (P75)"}`}
                   />
                 </div>
-                <span className="text-caption font-medium tracking-wide text-navy/60">{m.month}</span>
+                <span className="text-caption font-medium tracking-wide text-ink-soft">{m.month}</span>
               </div>
             );
           })}
@@ -164,7 +164,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
                   />
                 ))}
               </div>
-              <span className="text-caption font-medium tracking-wide text-navy/60">{m.month}</span>
+              <span className="text-caption font-medium tracking-wide text-ink-soft">{m.month}</span>
             </div>
           ))}
         </div>

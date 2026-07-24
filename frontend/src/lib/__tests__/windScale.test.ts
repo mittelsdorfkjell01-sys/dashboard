@@ -10,15 +10,15 @@ describe("windColor", () => {
     expect(windColor(14.9)).toBe("#3F7F9B");
   });
 
-  it("crosses into the 15–20 bin exactly at 15 (brand-green)", () => {
+  it("crosses into the 15–20 bin exactly at 15 (green)", () => {
     expect(windColor(15)).toBe("#4A8159");
   });
 
-  it("matches brand-green at 17 kt", () => {
+  it("matches green at 17 kt", () => {
     expect(windColor(17)).toBe("#4A8159");
   });
 
-  it("matches brand-orange in the 25–30 bin", () => {
+  it("matches orange in the 25–30 bin", () => {
     expect(windColor(27)).toBe("#E0823C");
   });
 
@@ -31,8 +31,8 @@ describe("windColor", () => {
   });
 
   it("treats null and undefined as no-data", () => {
-    expect(windColor(null)).toBe("#E4E9F0");
-    expect(windColor(undefined)).toBe("#E4E9F0");
+    expect(windColor(null)).toBe("#E6E1DA");
+    expect(windColor(undefined)).toBe("#E6E1DA");
   });
 
   it("has nine contiguous, non-overlapping bins", () => {

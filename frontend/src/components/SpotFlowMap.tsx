@@ -485,7 +485,7 @@ export default function SpotFlowMap({
         const fade = Math.min(1, p.life / 10);
         for (let i = 1; i < t.length; i++) {
           const a = (i / t.length) * fade * 0.5;
-          ctx.strokeStyle = `rgba(19,51,94,${a})`;
+          ctx.strokeStyle = `rgba(36,28,23,${a})`;
           ctx.beginPath();
           ctx.moveTo(t[i - 1][0], t[i - 1][1]);
           ctx.lineTo(t[i][0], t[i][1]);
@@ -493,7 +493,7 @@ export default function SpotFlowMap({
         }
         // arrowhead at the leading tip, pointing downwind
         const ah = 3.8;
-        ctx.fillStyle = `rgba(19,51,94,${fade * 0.5})`;
+        ctx.fillStyle = `rgba(36,28,23,${fade * 0.5})`;
         ctx.beginPath();
         ctx.moveTo(p.x + wv.x * ah, p.y + wv.y * ah);
         ctx.lineTo(p.x - perp.x * ah * 0.6 - wv.x * ah * 0.35, p.y - perp.y * ah * 0.6 - wv.y * ah * 0.35);
@@ -565,7 +565,7 @@ export default function SpotFlowMap({
           initial={{ opacity: 0, y: -8 }}
           animate={overlayVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="glass-white pointer-events-none absolute left-4 top-4 z-[520] rounded-2xl px-4 py-3 text-navy shadow-pill backdrop-blur-xl"
+          className="glass-white pointer-events-none absolute left-4 top-4 z-[520] rounded-2xl px-4 py-3 text-ink shadow-pill backdrop-blur-xl"
         >
           <div className="flex items-baseline gap-2">
             <span className="text-title font-semibold tabular-nums" style={{ color: windColor(windValue) }}>
@@ -574,8 +574,8 @@ export default function SpotFlowMap({
             <span className="text-caption text-muted">kts</span>
             {typeof c?.dir === "number" && (
               <span className="flex items-center gap-1">
-                <WindArrow dir={c.dir} size={16} animate className="text-navy/70" />
-                <span className="text-caption font-medium text-navy/70">{degToCompass(c.dir)}</span>
+                <WindArrow dir={c.dir} size={16} animate className="text-ink-soft" />
+                <span className="text-caption font-medium text-ink-soft">{degToCompass(c.dir)}</span>
               </span>
             )}
           </div>
@@ -604,7 +604,7 @@ export default function SpotFlowMap({
           aria-label="Karte zum Verschieben und Zoomen aktivieren"
           className="absolute inset-0 z-[540] flex items-end justify-center pb-4 sm:items-center sm:pb-0"
         >
-          <span className="rounded-full bg-navy/80 px-4 py-2 text-caption font-medium text-white shadow-pill backdrop-blur">
+          <span className="rounded-full bg-ink/80 px-4 py-2 text-caption font-medium text-white shadow-pill backdrop-blur">
             Antippen zum Verschieben &amp; Zoomen
           </span>
         </button>

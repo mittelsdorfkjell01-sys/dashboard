@@ -18,16 +18,16 @@ export default function FactRow({
   if (variant === "rail") {
     return (
       <div>
-        <p className="text-caption font-medium uppercase tracking-[0.18em] text-brand-teal">
+        <p className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
           Steckbrief
         </p>
         <dl className="mt-4 grid grid-cols-1 gap-x-10 gap-y-7 border-t border-line pt-6 sm:grid-cols-2">
           {items.map((f) => (
             <div key={f.label}>
-              <dt className="text-caption font-medium uppercase tracking-[0.18em] text-brand-teal">
+              <dt className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
                 {f.label}
               </dt>
-              <dd className="mt-1.5 text-title font-semibold text-navy">{f.value}</dd>
+              <dd className="mt-1.5 text-title font-semibold text-ink">{f.value}</dd>
             </div>
           ))}
         </dl>
@@ -40,7 +40,7 @@ export default function FactRow({
       {items.map((f) => (
         <div key={f.label} className="flex flex-col">
           <dt className="text-caption text-muted">{f.label}</dt>
-          <dd className="mt-1 text-body font-medium text-navy">{f.value}</dd>
+          <dd className="mt-1 text-body font-medium text-ink">{f.value}</dd>
         </div>
       ))}
     </dl>

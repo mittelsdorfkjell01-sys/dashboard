@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
 import Facilities from "../components/Facilities";
 import LocatorMap from "../components/LocatorMap";
@@ -7,7 +9,7 @@ import SpotTabs from "../components/SpotTabs";
 import Forecast from "../components/Forecast";
 import WindMonths from "../components/WindMonths";
 import SimilarSpots from "../components/SimilarSpots";
-import SpotCommunitySection from "../components/SpotCommunity";
+import SpotCommunityFeed, { CommunityGalleryMosaic } from "../components/SpotCommunity";
 import Footer from "../components/Footer";
 import {
   EditorialHero,
@@ -19,19 +21,42 @@ import {
 import { ErrorBanner, EmptyState } from "../components/AsyncStates";
 import { ChevronDownIcon } from "../lib/icons";
 import { regionSlug } from "../lib/types";
-import { useSpot, useSpotLive, useSpotForecast } from "../lib/hooks";
+import { useSpot, useSpotLive, useSpotForecast, useRegions } from "../lib/hooks";
 import { facilitiesFromMap, spotFactsFrom } from "../lib/spotView";
 import { climatologyToMonths, waterTypeFromCharacter } from "../lib/seasonView";
+import { haversineKm } from "../lib/mapLinks";
 
 export default function SpotDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = location.pathname.endsWith("/daten") ? "daten" : "info";
+  const reduceMotion = useReducedMotion();
+
+  // Direction for the tab-content swap: which side the new content slides in
+  // from. Comparing against the previous tab index (kept in a ref) each
+  // render is the standard way to derive this without lagging a render
+  // behind, the way computing it in an effect would.
+  const TAB_ORDER = ["info", "daten"];
+  const tabIndex = TAB_ORDER.indexOf(activeTab);
+  const prevTabIndexRef = useRef(tabIndex);
+  const tabDirection = tabIndex - prevTabIndexRef.current >= 0 ? 1 : -1;
+  prevTabIndexRef.current = tabIndex;
+
+  // Old content slides 12px toward the side it came from and fades out; new
+  // content slides in from the side it's headed toward — direction is what
+  // makes the swap read as "moving" instead of every switch looking the same.
+  const tabContentVariants = {
+    enter: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir >= 0 ? 12 : -12 }),
+    center: { opacity: 1, x: 0 },
+    exit: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir >= 0 ? -12 : 12 }),
+  };
+
   const { data: spot, loading, error, reload } = useSpot(id);
   const { data: live } = useSpotLive(id);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(id);
+  const { data: regions } = useRegions();
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
 
@@ -39,7 +64,7 @@ export default function SpotDetail() {
     return (
       <div className="relative min-h-screen bg-white">
         <LandingHeader />
-        <div className="hero-h w-full animate-pulse bg-navy-soft" />
+        <div className="hero-h w-full animate-pulse bg-ink-soft" />
         <div className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-8">
           <div className="h-8 w-2/3 animate-pulse rounded bg-line" />
           <div className="mt-4 h-4 w-full animate-pulse rounded bg-line" />
@@ -52,13 +77,13 @@ export default function SpotDetail() {
     return (
       <div className="grid min-h-screen place-items-center bg-white px-6 text-center">
         <div>
-          <h1 className="text-2xl font-semibold text-navy">Spot nicht gefunden</h1>
+          <h1 className="text-2xl font-semibold text-ink">Spot nicht gefunden</h1>
           {error && (
             <div className="mt-4 max-w-md">
               <ErrorBanner message={error} onRetry={reload} />
             </div>
           )}
-          <Link to="/" className="mt-4 inline-block text-body text-navy underline">
+          <Link to="/" className="mt-4 inline-block text-body text-teal underline">
             Zurück zur Übersicht
           </Link>
         </div>
@@ -77,6 +102,16 @@ export default function SpotDetail() {
   const regionName = spot.region.split(",")[0].trim() || spot.name;
   const [regionPart, country] = spot.region.split(",").map((p) => p.trim());
   const regionHref = `/region/${regionSlug(spot.region)}`;
+
+  // "N km von <Ort>" for the LocatorMap — real distance from the spot's own
+  // coordinates to its region's real center point, never a guessed number.
+  // Omitted (not rounded to a fake "0 km") when there's no region center on
+  // record, or the spot practically *is* the region center.
+  const region = regions?.find((r) => r.id === spot.regionId);
+  const regionDistanceKm =
+    spot.coords && region?.center ? Math.round(haversineKm(spot.coords, [region.center.lat, region.center.lon])) : null;
+  const locatorContextLabel =
+    regionDistanceKm && regionDistanceKm >= 1 ? `${regionDistanceKm} km von ${region!.name}` : null;
 
   const tabs = id
     ? [
@@ -105,20 +140,19 @@ export default function SpotDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/95 py-2 pl-2.5 pr-4 text-ui font-medium text-brand-teal shadow-pill backdrop-blur transition-colors hover:bg-white"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/95 py-2 pl-2.5 pr-4 text-ui font-medium text-teal shadow-pill backdrop-blur transition-colors hover:bg-white"
           >
             <ChevronDownIcon width={18} height={18} className="rotate-90" />
             Zurück
           </button>
         </EditorialHero>
 
-        {/* Name, breadcrumb, coordinates, live wind — overlaps the hero's bottom edge */}
+        {/* Name, location, coordinates, live wind — overlaps the hero's bottom edge */}
         <div className="relative z-20 mx-auto max-w-[1180px] px-4 sm:px-8">
           <SpotIdentityCard
             name={spot.name}
             regionName={regionPart}
             country={country}
-            regionHref={regionHref}
             coords={spot.coords}
             live={live}
           />
@@ -126,11 +160,24 @@ export default function SpotDetail() {
 
         {tabs.length > 0 && <SpotTabs tabs={tabs} live={live} />}
 
-        {activeTab === "info" && (
-          <>
-            {/* Beschreibung: full-width lede, no more sticky rail */}
+        <AnimatePresence initial={false} custom={tabDirection}>
+          {activeTab === "info" && (
+            <motion.div
+              key="info"
+              custom={tabDirection}
+              variants={tabContentVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
+            >
+            {/* Überblick + Galerie: lede left, photo mosaic right — keeps the
+                gallery apart from the rest of the community elements further down */}
             <SectionBand tone="white" kicker="Überblick">
-              <Lede dropcap>{spot.description}</Lede>
+              <div className="grid gap-x-16 gap-y-10 lg:grid-cols-2">
+                <Lede dropcap>{spot.description}</Lede>
+                {id && <CommunityGalleryMosaic spotId={id} coords={spot.coords} />}
+              </div>
             </SectionBand>
 
             {/* Steckbrief + Facilities: equal-weight two-up */}
@@ -141,15 +188,24 @@ export default function SpotDetail() {
               </div>
             </SectionBand>
 
-            {/* Locator-Karte: only ever shown with real coordinates */}
+            {/* Lage: only ever shown with real coordinates */}
             {spot.coords && (
               <SectionBand tone="white" kicker="Lage">
-                <LocatorMap coords={spot.coords} />
+                <LocatorMap coords={spot.coords} contextLabel={locatorContextLabel} />
               </SectionBand>
             )}
 
-            {/* Bildergalerie + Community-Feed — one shared fetch, see SpotCommunitySection */}
-            {id && <SpotCommunitySection spotId={id} spotName={spot.name} />}
+            {/* Community: the feed — no diagrams, no gallery (that's above) */}
+            {id && (
+              <SectionBand
+                tone="band"
+                kicker="Community"
+                heading="Community"
+                intro="Erfahrungen und Tipps von anderen vor Ort. Bitte fair und sachlich bleiben."
+              >
+                <SpotCommunityFeed spotId={id} spotName={spot.name} />
+              </SectionBand>
+            )}
 
             {/* Ähnliche Spots */}
             <SectionBand
@@ -160,11 +216,19 @@ export default function SpotDetail() {
             >
               <SimilarSpots spot={spot} />
             </SectionBand>
-          </>
-        )}
+            </motion.div>
+          )}
 
-        {activeTab === "daten" && (
-          <>
+          {activeTab === "daten" && (
+            <motion.div
+              key="daten"
+              custom={tabDirection}
+              variants={tabContentVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
+            >
             {/* Wind & Wellen: centered narrow intro, then the flow map */}
             <SectionBand
               tone="white"
@@ -188,9 +252,9 @@ export default function SpotDetail() {
                   mapCenter={spot.mapView?.center}
                   live={live}
                 />
-                <div className="glass-white pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-full px-4 py-2 text-caption text-navy">
+                <div className="glass-white pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-full px-4 py-2 text-caption text-ink">
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-0.5 w-4 rounded-full bg-navy/60" />
+                    <span className="inline-block h-0.5 w-4 rounded-full bg-ink/60" />
                     Wind
                   </span>
                   <span className="flex items-center gap-1.5">
@@ -226,8 +290,9 @@ export default function SpotDetail() {
                 <WindMonths climatology={spot.climatology} />
               </SectionBand>
             )}
-          </>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <Footer />
