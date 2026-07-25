@@ -78,17 +78,11 @@
 
   /* --- "surfwind data" re-skin (Landing redesign) --- */
 
-  /* Frosted panel used for the tile overlay: teal-tinted translucent + blur. */
+  /* Opaque caption panel for the tile overlay — solid teal, hairline on top
+     to separate it from the photo (no blur/translucency). */
   .glass {
-    background-color: rgba(30, 110, 126, 0.34);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  /* Lighter frosted white for cards/menus on the hero. */
-  .glass-white {
-    background-color: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background-color: #1E6E7E;
+    border-top: 0.5px solid #E6E1DA;
   }
   /* Full-page dimmer behind an open search panel (Airbnb-style scrim). */
   .scrim {
@@ -235,24 +229,6 @@
 @media (prefers-reduced-motion: reduce) {
   .swd-locator-drift,
   .swd-locator-pulse {
-    animation: none;
-  }
-}
-
-/* Hero scroll hint — a bright segment loops down a faint 1px track, signalling
-   there's more page below (a longform cue). */
-@keyframes swd-scroll-hint {
-  0% { transform: translateY(-100%); opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { transform: translateY(200%); opacity: 0; }
-}
-.animate-swd-scroll-hint {
-  animation: swd-scroll-hint 2.6s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-swd-scroll-hint {
     animation: none;
   }
 }

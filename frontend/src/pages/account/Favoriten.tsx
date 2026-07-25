@@ -20,7 +20,7 @@ export default function Favoriten() {
 
   if (favs.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-white/60 px-6 py-14 text-center">
+      <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-14 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-band text-teal">
           <HeartFilledIcon className="text-[24px]" />
         </span>
@@ -46,7 +46,7 @@ export default function Favoriten() {
       {favs.map((f) => (
         <li
           key={f.id}
-          className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card"
+          className="flex items-center gap-3 rounded-2xl border border-line bg-white p-3.5"
         >
           <Link to={`/spot/${f.id}`} className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-semibold text-ink">

@@ -52,7 +52,7 @@ export default function AdminLogin() {
         </Link>
         <form
           onSubmit={onSubmit}
-          className="rounded-3xl bg-white p-6 shadow-card sm:p-8"
+          className="rounded-3xl border border-line bg-white p-6 sm:p-8"
           noValidate
         >
           <h1 className="text-[20px] font-semibold text-ink">Admin-Anmeldung</h1>

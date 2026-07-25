@@ -54,7 +54,7 @@ export default function AccountMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Konto-Menü"
-        className="flex items-center gap-2.5 rounded-2xl bg-teal px-3.5 py-2 text-white shadow-pill transition-colors hover:bg-teal-hover"
+        className="flex items-center gap-2.5 rounded-2xl bg-teal px-3.5 py-2 text-white transition-colors hover:bg-teal-hover"
       >
         <MenuIcon className="text-[20px]" />
         <span className="grid h-7 w-7 place-items-center rounded-full bg-white/20">
@@ -71,7 +71,7 @@ export default function AccountMenu() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: reduce ? 0 : -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-2xl bg-white p-2 shadow-card"
+            className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-2xl border border-line bg-white p-2"
           >
             {user ? (
               <>

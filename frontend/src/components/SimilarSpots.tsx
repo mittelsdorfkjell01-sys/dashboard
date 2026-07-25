@@ -8,8 +8,12 @@ import { useSpots } from "../lib/hooks";
  * then closest wind strength; the real similarity ranking comes from the backend
  * similarity endpoints in a later step. Reuses the landing SpotCard. Headless:
  * the section heading lives in the caller's `SectionBand`.
+ *
+ * Three entries, not four — and the first is visually bigger (spans a 2x2
+ * grid area, the other two stack beside it). Equal-size tiles would claim
+ * there's no ranking; there is one, even if it's a placeholder for now.
  */
-export default function SimilarSpots({ spot, limit = 4 }: { spot: Spot; limit?: number }) {
+export default function SimilarSpots({ spot, limit = 3 }: { spot: Spot; limit?: number }) {
   const { data: all } = useSpots({ status: "published" });
   const others = (all ?? []).filter((s) => s.id !== spot.id);
   const sameRegion = spot.region.split(",")[0].trim();
@@ -28,9 +32,11 @@ export default function SimilarSpots({ spot, limit = 4 }: { spot: Spot; limit?: 
   if (ranked.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-x-7 gap-y-10 md:grid-cols-4">
-      {ranked.map((s) => (
-        <SpotCard key={s.id} spot={s} variant="editorial" />
+    <div className="grid grid-cols-1 gap-x-7 gap-y-8 sm:grid-cols-3 sm:grid-rows-2">
+      {ranked.map((s, i) => (
+        <div key={s.id} className={i === 0 ? "sm:col-span-2 sm:row-span-2" : ""}>
+          <SpotCard spot={s} variant="editorial" />
+        </div>
       ))}
     </div>
   );

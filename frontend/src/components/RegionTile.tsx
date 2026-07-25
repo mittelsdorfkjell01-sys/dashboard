@@ -6,9 +6,9 @@ import { usableMediaUrl } from "../lib/api";
 const MONTH_INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 /**
- * Region result tile in the landing/top-spots grammar (glass-photo tile): a hero
- * image (or the branded SpotImage fallback), a bottom teal glass panel with the
- * region name + country, the season **coverage** as the tile's metric, and a
+ * Region result tile in the landing/top-spots grammar: a hero
+ * image (or the branded SpotImage fallback), a bottom opaque teal caption panel
+ * with the region name + country, the season **coverage** as the tile's metric, and a
  * 12-month **wind-months** strip (region.season.best_months) so you can read the
  * best time at a glance — any pattern, including non-contiguous months.
  *
@@ -56,7 +56,7 @@ export default function RegionTile({
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
       {typeof rank === "number" && (
-        <span className="absolute left-3 top-3 inline-flex h-7 min-w-[28px] items-center justify-center rounded-full bg-white/95 px-2 text-[13px] font-bold text-ink shadow-pill">
+        <span className="absolute left-3 top-3 inline-flex h-7 min-w-[28px] items-center justify-center rounded-full border border-line bg-white px-2 text-[13px] font-bold text-ink">
           {rank}
         </span>
       )}

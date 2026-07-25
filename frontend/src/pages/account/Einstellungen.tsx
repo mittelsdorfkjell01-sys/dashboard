@@ -17,7 +17,7 @@ import { Button, Field, Input, fieldClass } from "../../components/ui";
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
+    <section className="rounded-2xl border border-line bg-white p-5 sm:p-6">
       <h2 className="mb-4 text-[16px] font-semibold text-ink">{title}</h2>
       {children}
     </section>

@@ -663,14 +663,14 @@ export default function AdminSpotForm() {
                         loading="lazy"
                       />
                       {img.source === "wikimedia_commons" && (
-                        <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink/70 px-2 py-0.5 text-caption font-medium text-white backdrop-blur">
+                        <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink px-2 py-0.5 text-caption font-medium text-white">
                           Commons
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => removeGalleryImage(img.id)}
-                        className="absolute right-1.5 top-1.5 rounded-full bg-ink/70 px-2.5 py-1 text-caption font-medium text-white opacity-0 backdrop-blur transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                        className="absolute right-1.5 top-1.5 rounded-full bg-ink px-2.5 py-1 text-caption font-medium text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
                       >
                         Entfernen
                       </button>

@@ -106,7 +106,7 @@ export default function SortDropdown({
           id={panelId}
           role="dialog"
           aria-label="Sortieren und filtern"
-          className="absolute right-0 z-30 mt-3 w-[300px] rounded-2xl bg-white p-5 shadow-card ring-1 ring-line"
+          className="absolute right-0 z-30 mt-3 w-[300px] rounded-2xl bg-white p-5 ring-1 ring-line"
         >
           {/* Sortierung */}
           <fieldset>

@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import type { ForecastSeries } from "../lib/api";
-import type { DayHours } from "../lib/types";
-import { forecastToBlocks, forecastToHourly } from "../lib/seasonView";
+import type { DayDetail } from "../lib/types";
+import { forecastToBlocks, forecastToDetailBlocks, forecastToHourly } from "../lib/seasonView";
 import { usePersistedState } from "../lib/hooks";
 import { sunTimes } from "../lib/sunTimes";
 import { windColor } from "../lib/windScale";
 import { degToCompass } from "./WindRose";
 import WindArrow from "./WindArrow";
 import WindScaleLegend from "./WindScaleLegend";
+import HourTable from "./HourTable";
 
 type WindUnit = "kts" | "ms" | "kmh";
 const WIND_ORDER: WindUnit[] = ["kts", "ms", "kmh"];
@@ -33,7 +34,7 @@ function DayDetailChart({
   windUnit,
   scrollRef,
 }: {
-  day: DayHours;
+  day: DayDetail;
   date?: string;
   coords?: [number, number];
   convert: (kts: number) => number;
@@ -62,7 +63,7 @@ function DayDetailChart({
   const hourToX = (h: number) => Math.max(0, Math.min(L2_W, ((h - 6) / 16) * L2_W));
 
   return (
-    <div ref={scrollRef} className="scroll-mt-24 rounded-2xl border border-line p-4 sm:p-5">
+    <div ref={scrollRef} className="scroll-mt-24 border-t border-line pt-4">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <span className="text-body font-semibold text-ink">
           {day.day} {day.date}
@@ -142,7 +143,8 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
   const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const blocks = useMemo(() => forecastToBlocks(forecast), [forecast]);
-  const hourly = useMemo(() => forecastToHourly(forecast), [forecast]);
+  const detailBlocks = useMemo(() => forecastToDetailBlocks(forecast), [forecast]);
+  const hourlyRows = useMemo(() => forecastToHourly(forecast), [forecast]);
 
   const convert = (kts: number) => Math.round(kts * WIND_FACTOR[wu]);
   const windUnit = WIND_SHORT[wu];
@@ -171,7 +173,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
               onClick={() => setWu(u)}
               aria-pressed={u === wu}
               className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-3 text-label font-medium transition-colors ${
-                u === wu ? "bg-white text-teal shadow-pill" : "text-muted hover:text-teal"
+                u === wu ? "bg-white text-teal" : "text-muted hover:text-teal"
               }`}
             >
               {WIND_SHORT[u]}
@@ -180,7 +182,8 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
         </div>
       </div>
 
-      {/* Screen-reader alternative — full hourly-block granularity, incl. direction. */}
+      {/* Screen-reader alternative for the Wochenüberblick's bars (Stundentabelle
+          below is itself a real table — it doesn't need a second sr-only shadow). */}
       <table className="sr-only">
         <caption>Wind- und Wellenvorhersage, 7 Tage, je 2-Stunden-Fenster</caption>
         <thead>
@@ -196,7 +199,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
           </tr>
         </thead>
         <tbody>
-          {hourly.map((d) =>
+          {detailBlocks.map((d) =>
             d.blocks.map((b, i) => (
               <tr key={`${d.day}-${d.date}-${i}`}>
                 <td>
@@ -261,6 +264,11 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
         <WindScaleLegend />
       </div>
 
+      {/* Stundentabelle — the central view, directly below the week overview */}
+      <div className="mt-8">
+        <HourTable days={hourlyRows} coords={coords} convert={convert} windUnit={windUnit} />
+      </div>
+
       <div className="mt-6 flex justify-center">
         <button
           type="button"
@@ -275,7 +283,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
       {/* Ebene 2 — Tagesdetails, aufklappbar */}
       {detailsOpen && (
         <div className="mt-6 space-y-6">
-          {hourly.map((d, i) => (
+          {detailBlocks.map((d, i) => (
             <DayDetailChart
               key={`${d.day}-${d.date}`}
               day={d}

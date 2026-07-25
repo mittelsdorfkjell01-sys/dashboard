@@ -4,7 +4,16 @@
 // can hide the panel instead of inventing numbers.
 
 import type { ForecastHour, ForecastSeries, RegionSeasonResponse } from "./api";
-import type { DayBlock, DayBlocks, DayHours, HourBlock, MonthWind, RegionMonth, WaterType } from "./types";
+import type {
+  DayBlock,
+  DayBlocks,
+  DayDetail,
+  DayHours,
+  DetailBlock,
+  MonthWind,
+  RegionMonth,
+  WaterType,
+} from "./types";
 
 const WEEKDAYS = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"]; // Date.getDay(): 0 = Sun
 const MONTHS = ["JAN", "FEB", "MÄR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
@@ -128,9 +137,9 @@ const meanOf = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs
  *  blocks — here the point is the realistic expectation for that window) plus
  *  the window's peak gust, for the gust curve. Direction is one representative
  *  hour's reading (a real bearing), never an arithmetic mean of angles. */
-export function forecastToHourly(fc: ForecastSeries): DayHours[] {
+export function forecastToDetailBlocks(fc: ForecastSeries): DayDetail[] {
   return fc.days.map((d) => {
-    const blocks: HourBlock[] = BLOCKS_L2.map(([start, end]) => {
+    const blocks: DetailBlock[] = BLOCKS_L2.map(([start, end]) => {
       const inWindow = hoursInWindow(d.hours, start, end);
       const winds = inWindow.map((h) => h.wind).filter((v): v is number => v != null);
       const gusts = inWindow.map((h) => h.gust).filter((v): v is number => v != null);
@@ -156,6 +165,32 @@ export function forecastToHourly(fc: ForecastSeries): DayHours[] {
       airTemp: d.summary.air_max ?? null,
     };
   });
+}
+
+/** 7-day forecast → the Stundentabelle (Daten tab): every hour the forecast
+ *  actually reports, unaggregated — one row per variable, one column per
+ *  hour. Unlike `forecastToBlocks`/`forecastToDetailBlocks` this doesn't
+ *  average or pick a "best" hour; a short/incomplete day (fewer hours than
+ *  usual) just yields fewer columns, never a fabricated one. */
+export function forecastToHourly(fc: ForecastSeries): DayHours[] {
+  return fc.days.map((d) => ({
+    day: weekdayOf(d.date),
+    date: shortDate(d.date),
+    isoDate: d.date,
+    hours: d.hours.map((h) => ({
+      time: h.time.slice(11, 16),
+      hour: hourOf(h.time),
+      wind: h.wind,
+      gust: h.gust,
+      dir: h.dir,
+      waveHeight: h.swell,
+      swellDir: h.swell_dir,
+      period: h.period,
+      air: h.air,
+      water: h.sst,
+      precip: h.precip,
+    })),
+  }));
 }
 
 export function waterTypeFromCharacter(wc?: string | null): WaterType {

@@ -11,7 +11,7 @@ import HeroImage from "../HeroImage";
  * `children` is a top slot (e.g. a back pill) tucked below the floating header.
  * `title`, when given, renders as the page's single <h1> in Poppins display
  * size (not the wordmark face) — omit it when the <h1> lives elsewhere on the
- * page (the spot page's SpotIdentityCard owns it instead).
+ * page (the spot page's SpotHeaderCard owns it instead).
  */
 export default function EditorialHero({
   image,
@@ -118,15 +118,6 @@ export default function EditorialHero({
           {credit}
         </div>
       )}
-
-      {/* scroll hint — signals there's more below; a longform cue, not a UI control */}
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-3 z-10 flex justify-center">
-        <div className="relative h-12 w-px overflow-hidden bg-white/40">
-          {!reduce && (
-            <span className="animate-swd-scroll-hint absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-transparent via-white to-transparent" />
-          )}
-        </div>
-      </div>
     </section>
   );
 }

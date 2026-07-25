@@ -58,7 +58,7 @@ export default function AdminShell() {
 
         {/* Content column */}
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-white/90 px-4 py-3 backdrop-blur sm:px-8">
+          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-line bg-white px-4 py-3 sm:px-8">
             {/* Mobile brand */}
             <Link to="/admin" className="md:hidden">
               <Wordmark size="sm" tag="Admin" />

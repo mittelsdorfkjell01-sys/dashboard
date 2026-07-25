@@ -61,7 +61,7 @@ export default function Landing() {
               to="/map"
               state={{ from }}
               aria-label="Karte öffnen"
-              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white px-3.5 py-2 text-[15px] font-medium text-teal shadow-pill transition-colors hover:bg-band"
+              className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-line bg-white px-3.5 py-2 text-[15px] font-medium text-teal transition-colors hover:bg-band"
             >
               <MapIcon className="text-[18px]" />
               <span className="hidden sm:inline">Karte</span>

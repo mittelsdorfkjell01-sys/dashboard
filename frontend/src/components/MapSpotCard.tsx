@@ -14,7 +14,7 @@ export default function MapSpotCard({
   return (
     <Link
       to={`/spot/${spot.id}`}
-      className={`block overflow-hidden rounded-2xl bg-white shadow-card ${className}`}
+      className={`block overflow-hidden rounded-2xl border border-line bg-white ${className}`}
     >
       <div className="aspect-[16/7] w-full bg-line">
         <SpotImage src={spot.image} name={spot.name} region={spot.region} compact />

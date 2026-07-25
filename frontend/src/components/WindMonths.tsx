@@ -67,7 +67,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
   });
 
   return (
-    <div className="rounded-3xl border border-line bg-white p-6 shadow-card sm:p-8">
+    <div className="rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           {win && (
@@ -88,7 +88,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
               onClick={() => setMetric(m)}
               aria-pressed={m === metric}
               className={`flex min-h-[36px] items-center justify-center rounded-full px-3 text-label font-medium transition-colors ${
-                m === metric ? "bg-white text-teal shadow-pill" : "text-muted hover:text-teal"
+                m === metric ? "bg-white text-teal" : "text-muted hover:text-teal"
               }`}
             >
               {m === "hours" ? "Stunden" : "Knoten"}

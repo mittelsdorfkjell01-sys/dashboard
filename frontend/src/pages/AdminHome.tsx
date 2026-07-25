@@ -238,7 +238,7 @@ function Tile({
   accent?: "green";
 }) {
   return (
-    <Link to={to} className="rounded-2xl border border-line bg-white p-4 transition-shadow hover:shadow-card">
+    <Link to={to} className="rounded-2xl border border-line bg-white p-4 transition-colors hover:border-teal/40">
       <div className={`text-[28px] font-semibold ${accent === "green" ? "text-green" : "text-ink"}`}>
         {value}
       </div>

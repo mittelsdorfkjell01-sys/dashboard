@@ -64,7 +64,7 @@ export default function MeineSpots() {
     <div className="space-y-6">
       <form
         onSubmit={onSubmit}
-        className="rounded-2xl bg-white p-5 shadow-card"
+        className="rounded-2xl border border-line bg-white p-5"
       >
         <h2 className="flex items-center gap-2 text-[16px] font-semibold text-ink">
           <PlusCircleIcon className="text-[18px] text-teal" />
@@ -103,7 +103,7 @@ export default function MeineSpots() {
             return (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-card"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-white p-4"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] font-medium text-ink">

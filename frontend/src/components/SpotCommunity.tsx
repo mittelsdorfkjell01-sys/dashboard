@@ -91,7 +91,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
  *  get confused for one another. */
 function CommonsBadge({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink/70 px-2 py-0.5 text-caption font-medium text-white backdrop-blur">
+    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink px-2 py-0.5 text-caption font-medium text-white">
       {compact ? "Commons" : "Aus Wikimedia Commons"}
     </span>
   );
@@ -127,7 +127,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
             type="button"
             onClick={() => setLightboxIndex(0)}
             aria-label={`Bild vergrößern${big.credit ? ` — ${big.credit}` : ""}`}
-            className="relative aspect-[16/10] overflow-hidden rounded-2xl"
+            className="relative aspect-[4/5] overflow-hidden rounded-xl"
           >
             <img
               src={resolveMediaUrl(big.url)}
@@ -232,7 +232,7 @@ function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd
   const bg = coords ? coloredTileUrl(coords[0], coords[1], 15) : null;
   return (
     <div
-      className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-band bg-cover bg-center"
+      className="relative aspect-[4/5] overflow-hidden rounded-xl bg-band bg-cover bg-center"
       style={bg ? { backgroundImage: `url(${bg})` } : undefined}
     >
       <div className="absolute inset-0 bg-ink/55" />
@@ -481,7 +481,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
     <div>
       {!loading && posts.length === 0 ? (
         <>
-          <div className="rounded-3xl border border-dashed border-line bg-white/60 px-6 py-8 text-center">
+          <div className="rounded-3xl border border-dashed border-line bg-white px-6 py-8 text-center">
             <p className="text-body font-medium text-ink">Sei der Erste, der von hier berichtet.</p>
             <p className="mx-auto mt-2 max-w-[46ch] text-caption text-muted">
               Hilfreiche Beiträge nennen Bedingungen, Level und was andere vor Ort wissen sollten.
@@ -650,7 +650,7 @@ function FeedPostCard({
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-xl bg-white p-1 shadow-card"
+                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-xl border border-line bg-white p-1"
                   >
                     <button
                       type="button"
@@ -740,7 +740,7 @@ function Lightbox({
       aria-modal="true"
       aria-label="Bildergalerie, groß"
       tabIndex={-1}
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-ink/85 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-ink p-4"
       onClick={onClose}
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX;

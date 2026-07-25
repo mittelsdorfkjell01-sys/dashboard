@@ -173,6 +173,15 @@ export function useCommunityFeed(spotId?: string): CommunityFeedState {
   };
 }
 
+/** The namebox score — real `RatingAggregate.score` (0–5, Bayesian) from the
+ *  spot's published ratings. Shares the `ratings:${spotId}` cache key with
+ *  `useCommunityFeed`, so mounting both on the same page (namebox + feed)
+ *  never fires the request twice. */
+export function useRatingScore(spotId?: string): number | null {
+  const ratings = useSwr(spotId ? `ratings:${spotId}` : null, () => api.getRatings(spotId!));
+  return ratings.data?.aggregate.score ?? null;
+}
+
 /** A piece of UI state persisted to localStorage under `key` (spot-agnostic —
  *  e.g. a chart's unit/metric toggle that should stay put across spots and
  *  reloads). Falls back to `initial` when nothing's stored yet, or storage

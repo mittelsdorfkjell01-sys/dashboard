@@ -52,7 +52,7 @@ export default function Auth() {
         <Wordmark size="lg" />
       </Link>
 
-      <div className="w-full max-w-[420px] rounded-3xl bg-white p-6 shadow-card sm:p-8">
+      <div className="w-full max-w-[420px] rounded-3xl border border-line bg-white p-6 sm:p-8">
         <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-band p-1">
           {(["login", "register"] as Mode[]).map((m) => (
             <button
@@ -62,7 +62,7 @@ export default function Auth() {
               aria-pressed={mode === m}
               className={`rounded-full py-2 text-[14px] font-semibold transition-colors ${
                 mode === m
-                  ? "bg-white text-teal shadow-pill"
+                  ? "bg-white text-teal"
                   : "text-muted hover:text-teal"
               }`}
             >

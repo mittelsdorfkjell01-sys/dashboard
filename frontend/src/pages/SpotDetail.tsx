@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
@@ -6,25 +6,32 @@ import Facilities from "../components/Facilities";
 import LocatorMap from "../components/LocatorMap";
 import SpotFlowMap from "../components/SpotFlowMap";
 import SpotTabs from "../components/SpotTabs";
+import DatenSection from "../components/DatenSection";
 import Forecast from "../components/Forecast";
 import WindMonths from "../components/WindMonths";
-import SimilarSpots from "../components/SimilarSpots";
-import SpotCommunityFeed, { CommunityGalleryMosaic } from "../components/SpotCommunity";
+import SpotGalleryTile from "../components/SpotGalleryTile";
+import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
+import SpotCommentTeaser from "../components/SpotCommentTeaser";
+import CommentsOverlay from "../components/CommentsOverlay";
+import FavoriteButton from "../components/FavoriteButton";
 import Footer from "../components/Footer";
-import {
-  EditorialHero,
-  SectionBand,
-  Lede,
-  FactRow,
-  SpotIdentityCard,
-} from "../components/editorial";
+import { EditorialHero, SectionBand, SpotHeaderCard } from "../components/editorial";
 import { ErrorBanner, EmptyState } from "../components/AsyncStates";
-import { ChevronDownIcon } from "../lib/icons";
-import { regionSlug } from "../lib/types";
-import { useSpot, useSpotLive, useSpotForecast, useRegions } from "../lib/hooks";
-import { facilitiesFromMap, spotFactsFrom } from "../lib/spotView";
+import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
+import { sportLabel } from "../lib/labels";
+import { sortFeed } from "../lib/communityFeed";
+import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed, useRatingScore } from "../lib/hooks";
+import { facilitiesFromMap } from "../lib/spotView";
 import { climatologyToMonths, waterTypeFromCharacter } from "../lib/seasonView";
-import { haversineKm } from "../lib/mapLinks";
+
+// TODO(info-lorem): placeholder body copy per the Figma spec — real spot
+// descriptions aren't wired into this paragraph yet (see task doc).
+const LOREM =
+  "Lorem ipsum dolor sit amet consectetur. Neque vel ornare orci praesent. " +
+  "Vel aliquam id eu est auctor velit. Tempus id tincidunt egestas non a " +
+  "pharetra praesent. Aliquam urna vitae porta praesent convallis diam nunc " +
+  "tincidunt. Pretium vitae eu nunc lorem cursus cras. Risus nisl aliquet " +
+  "commodo eu felis. At faucibus eu justo penatibus nascetur mus.";
 
 export default function SpotDetail() {
   const { id } = useParams();
@@ -56,7 +63,13 @@ export default function SpotDetail() {
   const { data: live } = useSpotLive(id);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(id);
-  const { data: regions } = useRegions();
+  const { posts, photos } = useCommunityFeed(id);
+  const score = useRatingScore(id);
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const galleryTriggerRef = useRef<HTMLButtonElement>(null);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const commentsTriggerRef = useRef<HTMLButtonElement>(null);
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
 
@@ -92,26 +105,18 @@ export default function SpotDetail() {
   }
 
   // All from the backend record — no synthetic data.
-  const facts = spotFactsFrom(spot);
   const facilities = facilitiesFromMap(spot.facilities);
   const months = climatologyToMonths(spot.climatology);
   const waterType = waterTypeFromCharacter(spot.waterCharacter);
   const currentWind = live?.current.wind ?? undefined;
   const mapCoords = spot.coords ?? [41.18, 9.32];
   const windDir = live?.current.dir ?? spot.windDir ?? 320;
-  const regionName = spot.region.split(",")[0].trim() || spot.name;
   const [regionPart, country] = spot.region.split(",").map((p) => p.trim());
-  const regionHref = `/region/${regionSlug(spot.region)}`;
 
-  // "N km von <Ort>" for the LocatorMap — real distance from the spot's own
-  // coordinates to its region's real center point, never a guessed number.
-  // Omitted (not rounded to a fake "0 km") when there's no region center on
-  // record, or the spot practically *is* the region center.
-  const region = regions?.find((r) => r.id === spot.regionId);
-  const regionDistanceKm =
-    spot.coords && region?.center ? Math.round(haversineKm(spot.coords, [region.center.lat, region.center.lon])) : null;
-  const locatorContextLabel =
-    regionDistanceKm && regionDistanceKm >= 1 ? `${regionDistanceKm} km von ${region!.name}` : null;
+  // Most recent posts first — the teaser tile shows the newest one, the
+  // "mehr" overlay shows up to three.
+  const sortedPosts = sortFeed(posts, "newest", {});
+  const featuredPost = sortedPosts[0] ?? null;
 
   const tabs = id
     ? [
@@ -122,40 +127,28 @@ export default function SpotDetail() {
 
   return (
     <div className="relative min-h-screen bg-white">
-      <LandingHeader />
-
-      <main>
-        <EditorialHero
-          image={spot.hero}
-          focal={spot.heroFocal}
-          alt={spot.name}
-          credit={spot.heroCredit}
-          kicker={
-            <Link to={regionHref} className="text-white/85 transition-colors hover:text-white">
-              {regionName}
-            </Link>
-          }
-        >
+      <LandingHeader
+        left={
           <button
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white/95 py-2 pl-2.5 pr-4 text-ui font-medium text-teal shadow-pill backdrop-blur transition-colors hover:bg-white"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-teal py-2 pl-2.5 pr-4 text-ui font-medium text-white transition-colors hover:bg-teal-hover"
           >
             <ChevronDownIcon width={18} height={18} className="rotate-90" />
             Zurück
           </button>
-        </EditorialHero>
+        }
+      />
 
-        {/* Name, location, coordinates, live wind — overlaps the hero's bottom edge */}
+      <main>
+        {/* Region name lives in the namebox below, not floating on the photo. */}
+        <EditorialHero image={spot.hero} focal={spot.heroFocal} alt={spot.name} credit={spot.heroCredit} />
+
+        {/* Namebox: breadcrumb + name left, community score right — overlaps
+            the hero's bottom edge */}
         <div className="relative z-20 mx-auto max-w-[1180px] px-4 sm:px-8">
-          <SpotIdentityCard
-            name={spot.name}
-            regionName={regionPart}
-            country={country}
-            coords={spot.coords}
-            live={live}
-          />
+          <SpotHeaderCard name={spot.name} regionName={regionPart} country={country} score={score} />
         </div>
 
         {tabs.length > 0 && <SpotTabs tabs={tabs} />}
@@ -171,51 +164,75 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            {/* Überblick + Galerie: lede left, photo mosaic right — keeps the
-                gallery apart from the rest of the community elements further down */}
-            <SectionBand tone="white" pad="md" kicker="Überblick">
-              <div className="grid gap-x-10 gap-y-10 lg:grid-cols-2">
-                <Lede dropcap>{spot.description}</Lede>
-                {id && <CommunityGalleryMosaic spotId={id} coords={spot.coords} />}
-              </div>
-            </SectionBand>
+            {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
+            <SectionBand tone="white" pad="md">
+              <div className="grid gap-x-10 gap-y-10 lg:grid-cols-12">
+                <div className="lg:col-span-4">
+                  <h2 className="text-display-2 text-balance text-ink">
+                    <span className="font-bold">Top Tier Spot in</span>
+                    <br />
+                    <span className="font-normal text-ink-soft">{country || regionPart}</span>
+                  </h2>
 
-            {/* Steckbrief + Facilities: equal-weight two-up */}
-            <SectionBand tone="white" pad="sm">
-              <div className="grid gap-x-10 gap-y-12 lg:grid-cols-2">
-                <FactRow items={facts} variant="rail" />
-                <Facilities items={facilities} variant="rail" />
+                  {spot.sports && spot.sports.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {spot.sports.map((s) => (
+                        <span
+                          key={s}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-band px-3.5 py-1.5 text-label font-medium text-ink"
+                        >
+                          {sportLabel(s)}
+                          <CheckCircleIcon width={16} height={16} className="text-teal" />
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="mt-6 max-w-[62ch] text-body text-ink-soft">{LOREM}</p>
+
+                  <div className="mt-6">
+                    <FavoriteButton spot={spot} />
+                  </div>
+                </div>
+
+                <div className="lg:col-span-4">
+                  <SpotGalleryTile
+                    photos={photos}
+                    onOpenGallery={() => setGalleryOpen(true)}
+                    galleryTriggerRef={galleryTriggerRef}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-6 lg:col-span-4">
+                  <Facilities items={facilities} variant="list" />
+                  <SpotCommentTeaser
+                    post={featuredPost}
+                    onOpenMore={() => setCommentsOpen(true)}
+                    moreButtonRef={commentsTriggerRef}
+                  />
+                </div>
               </div>
             </SectionBand>
 
             {/* Lage: only ever shown with real coordinates */}
             {spot.coords && (
-              <SectionBand tone="white" pad="md" kicker="Lage">
-                <LocatorMap coords={spot.coords} contextLabel={locatorContextLabel} />
+              <SectionBand tone="white" pad="md">
+                <LocatorMap coords={spot.coords} />
               </SectionBand>
             )}
 
-            {/* Community: the feed — no diagrams, no gallery (that's above) */}
-            {id && (
-              <SectionBand
-                tone="band"
-                kicker="Community"
-                heading="Community"
-                intro="Erfahrungen und Tipps von anderen vor Ort. Bitte fair und sachlich bleiben."
-              >
-                <SpotCommunityFeed spotId={id} spotName={spot.name} />
-              </SectionBand>
-            )}
-
-            {/* Ähnliche Spots */}
-            <SectionBand
-              tone="white"
-              kicker="In der Nähe"
-              heading="Ähnliche Spots"
-              intro="Vergleichbare Reviere nach Charakter und Windstärke"
-            >
-              <SimilarSpots spot={spot} />
-            </SectionBand>
+            <PhotoGalleryOverlay
+              open={galleryOpen}
+              onClose={() => setGalleryOpen(false)}
+              triggerRef={galleryTriggerRef}
+              photos={photos}
+            />
+            <CommentsOverlay
+              open={commentsOpen}
+              onClose={() => setCommentsOpen(false)}
+              triggerRef={commentsTriggerRef}
+              posts={sortedPosts}
+            />
             </motion.div>
           )}
 
@@ -229,16 +246,9 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            {/* Wind & Wellen: centered narrow intro, then the flow map */}
-            <SectionBand
-              tone="white"
-              width="narrow"
-              align="center"
-              kicker="Wind & Wellen"
-              heading="Wie es hier läuft"
-              intro="Windstreifen ziehen mit dem Wind, Wellenlinien laufen auf die Küste zu — live aus den aktuellen Bedingungen."
-            />
-            <SectionBand tone="white" pad="md">
+            {/* Wind & Wellen: the flow map (legend on the map itself covers
+                what the lines mean, no explanatory sentence above it) */}
+            <DatenSection label="Wind & Wellen">
               <div className="relative">
                 <SpotFlowMap
                   coords={mapCoords}
@@ -252,7 +262,7 @@ export default function SpotDetail() {
                   mapCenter={spot.mapView?.center}
                   live={live}
                 />
-                <div className="glass-white pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-full px-4 py-2 text-caption text-ink">
+                <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-full border border-line bg-white px-4 py-2 text-caption text-ink">
                   <span className="flex items-center gap-1.5">
                     <span className="inline-block h-0.5 w-4 rounded-full bg-ink/60" />
                     Wind
@@ -263,12 +273,12 @@ export default function SpotDetail() {
                   </span>
                 </div>
               </div>
-            </SectionBand>
+            </DatenSection>
 
-            {/* Die nächsten 7 Tage — vor den Windmonaten */}
+            {/* Die nächsten 7 Tage — Wochenüberblick + Stundentabelle */}
             {(forecastLoading || forecast?.days.length) && (
-              <SectionBand tone="white" pad="md" heading="Die nächsten 7 Tage">
-                {forecastLoading && <div className="h-56 animate-pulse rounded-3xl bg-line" />}
+              <DatenSection label="Die nächsten 7 Tage">
+                {forecastLoading && <div className="h-56 animate-pulse bg-line" />}
                 {!forecastLoading && forecast && forecast.days.length > 0 && (
                   <Forecast forecast={forecast} coords={spot.coords} />
                 )}
@@ -281,14 +291,14 @@ export default function SpotDetail() {
                     }
                   />
                 )}
-              </SectionBand>
+              </DatenSection>
             )}
 
             {/* Saison */}
             {months && (
-              <SectionBand tone="white" kicker="Saison" heading="Wann hierher?">
+              <DatenSection label="Wann hierher?">
                 <WindMonths climatology={spot.climatology} />
-              </SectionBand>
+              </DatenSection>
             )}
             </motion.div>
           )}

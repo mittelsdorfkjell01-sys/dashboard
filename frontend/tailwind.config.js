@@ -37,15 +37,12 @@ export default {
         display: ["MADE Mountain", "Poppins", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 10px 30px -12px rgba(36, 28, 23, 0.25)",
-        bar: "0 8px 24px -10px rgba(36, 28, 23, 0.22)",
-        pill: "0 4px 14px -6px rgba(36, 28, 23, 0.25)",
-        // Two layers: a tighter, darker near-shadow to ground the card + the
-        // original soft wide one for ambient depth — reads as a stronger pull
-        // downward than a single soft shadow, standing in for the divider
-        // rule the identity card doesn't have.
-        float: "0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30)", // overlapping conditions card
-        lift: "0 12px 32px -16px rgba(36, 28, 23, 0.20)", // sticky subnav
+        // The only shadow left in the app — the spot page's header card,
+        // where it stands in for the divider rule the card doesn't have.
+        // Every other surface separates with a hairline (`border-line`)
+        // instead. Two layers: a tighter, darker near-shadow to ground the
+        // card + a soft wide one for ambient depth.
+        float: "0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30)",
       },
       borderRadius: {
         "2xl": "1rem",
@@ -61,14 +58,35 @@ export default {
         label: "0.8125rem", // 13px — control labels, chips, buttons (sm)
         ui: "0.875rem", // 14px — default control/body-UI text
         body: "0.9375rem", // 15px — reading copy
-        lede: ["clamp(1.1875rem, 1.4vw, 1.375rem)", { lineHeight: "1.65" }], // 19–22px — editorial lede copy
         title: ["1.375rem", { lineHeight: "1.25", letterSpacing: "-0.01em" }], // 22px — module/panel titles
         stat: ["clamp(3rem, 5vw, 4.25rem)", { lineHeight: "0.85", letterSpacing: "-0.03em" }], // big live numbers
         // Editorial display scale — fluid hero/section titles (travel-journal).
         "display-1": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "-0.03em" }],
         "display-2": ["clamp(1.75rem, 3.5vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "-0.02em" }],
+
+        // --- spot-page dual type system ------------------------------------
+        // The Info tab (travel-magazine) and Daten tab (weather instrument)
+        // read as two different products sharing one brand, so they get two
+        // separate type sets instead of one compromise scale.
+        "editorial-1": ["5.5rem", { lineHeight: "1.02", letterSpacing: "-0.03em" }], // 88px — Info: page title
+        "editorial-2": ["3.5rem", { lineHeight: "1.08", letterSpacing: "-0.03em" }], // 56px — Info: section headings
+        "editorial-3": ["2.5rem", { lineHeight: "1.15", letterSpacing: "-0.02em" }], // 40px — Info: header-card h1
+        lede: ["1.25rem", { lineHeight: "1.7" }], // 20px — Info: first paragraph
+        prose: ["1.0625rem", { lineHeight: "1.75" }], // 17px — Info: running body copy, max-w-[62ch]
+        "data-label": ["0.8125rem", { lineHeight: "1.2", letterSpacing: "0.14em" }], // 13px — Daten: section labels, uppercase
+        "data-value": ["0.875rem", { lineHeight: "1.4" }], // 14px — Daten: table values
+        "data-caption": ["0.75rem", { lineHeight: "1.4" }], // 12px — Daten: axes, units
       },
     },
   },
   plugins: [],
 };
+
+// Verified (headless Chromium, Poppins 400, 40px, `tabular-nums` applied):
+// digit widths ranged 51px ("1") to 102px ("6") — Poppins ships no tabular
+// figures, so the OpenType feature has nothing to switch on and the CSS
+// property is a no-op. `tabular-nums` still doesn't hurt (harmless if a
+// future font adds the feature), but it cannot be relied on for column
+// alignment. The Daten-tab hour table (Sprint 6) must give numeric columns a
+// fixed width and right-align them instead — that's the only way parallel
+// rows of digits stay put here.

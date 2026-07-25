@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { Wordmark } from "./ui";
@@ -12,15 +13,18 @@ import AccountMenu from "./AccountMenu";
  * Deliberately separate from the shared `Header.tsx` (which the map and search
  * pages reuse with a centred brand).
  */
-export default function LandingHeader() {
+export default function LandingHeader({ left }: { left?: ReactNode }) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000]">
       <div className="mx-auto max-w-[1500px] px-4 pt-9 sm:px-10 sm:pt-12">
         <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          {/* Left — caps tagline */}
-          <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
-            Best collection of surfspots
-          </span>
+          {/* Left — caps tagline, or a page-specific slot (e.g. the spot
+              page's "Zurück" pill) */}
+          {left ?? (
+            <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
+              Best collection of surfspots
+            </span>
+          )}
 
           {/* Centre — wordmark */}
           <Link

@@ -136,6 +136,8 @@ export interface ForecastHour {
   swell: number | null;
   period: number | null;
   swell_dir: number | null;
+  precip: number | null; // mm/h
+  sst: number | null; // deg C
 }
 export interface ForecastDay {
   date: string;

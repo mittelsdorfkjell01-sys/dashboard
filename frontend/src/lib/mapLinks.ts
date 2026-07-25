@@ -1,4 +1,4 @@
-// Shared "open in maps" logic for spot coordinates — used by SpotIdentityCard
+// Shared "open in maps" logic for spot coordinates — used by SpotHeaderCard
 // and (Sprint 2) LocatorMap. Native geo: URIs open Apple/Google Maps directly
 // on mobile; desktop browsers have no geo: handler, so there we fall back to
 // a Google Maps web link in a new tab.

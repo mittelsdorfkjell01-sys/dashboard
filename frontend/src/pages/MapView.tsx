@@ -72,12 +72,12 @@ export default function MapView() {
           type="button"
           aria-label="Zur Startseite"
           onClick={() => navigate("/")}
-          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-teal shadow-bar transition-colors hover:bg-line/40"
+          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-teal transition-colors hover:bg-line/40"
         >
           <CloseIcon className="text-[20px]" />
         </button>
 
-        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full bg-white shadow-bar">
+        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-line bg-white">
           <button
             type="button"
             aria-label="Vergrößern"

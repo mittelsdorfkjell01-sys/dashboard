@@ -43,9 +43,7 @@ export default function SectionBand({
   width = "content",
   pad = "lg",
   align = "left",
-  kicker,
   heading,
-  intro,
   className = "",
   children,
 }: {
@@ -56,16 +54,14 @@ export default function SectionBand({
   width?: Width;
   pad?: Pad;
   align?: "left" | "center";
-  kicker?: string;
   heading?: string;
-  intro?: string;
   className?: string;
-  /** Optional — omit for a header-only band (kicker/heading/intro with no
-   *  body), e.g. a centered intro that precedes a separate full-bleed section. */
+  /** Optional — omit for a header-only band (heading with no body), e.g. a
+   *  centered heading that precedes a separate full-bleed section. */
   children?: ReactNode;
 }) {
   const isBleed = width === "bleed";
-  const hasHeader = Boolean(kicker || heading || intro);
+  const hasHeader = Boolean(heading);
   const reduce = useReducedMotion();
 
   return (
@@ -84,25 +80,7 @@ export default function SectionBand({
       >
         {hasHeader && (
           <div className={align === "center" ? "text-center" : ""}>
-            {kicker && (
-              <p className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
-                {kicker}
-              </p>
-            )}
-            {heading && (
-              <h2 className={`text-display-2 font-semibold text-balance text-ink ${kicker ? "mt-2" : ""}`}>
-                {heading}
-              </h2>
-            )}
-            {intro && (
-              <p
-                className={`mt-4 max-w-[60ch] text-body text-ink-soft ${
-                  align === "center" ? "mx-auto" : ""
-                }`}
-              >
-                {intro}
-              </p>
-            )}
+            <h2 className="text-editorial-2 font-semibold text-balance text-ink">{heading}</h2>
           </div>
         )}
         {hasHeader && children != null ? <div className="mt-8">{children}</div> : children}

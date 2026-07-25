@@ -1,134 +1,72 @@
-import { useEffect } from "react";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import L from "leaflet";
-import { formatCoords, mapLinkProps } from "../lib/mapLinks";
-import { isDaytime } from "../lib/sunTimes";
+import { useState } from "react";
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import L, { type Map as LeafletMap } from "leaflet";
+import { mapLinkProps } from "../lib/mapLinks";
+import { MinusIcon, PlusIcon } from "../lib/icons";
 
-const ZOOM = 15;
-
-// CARTO's free raster basemaps (no key) — Voyager by day (blue water, green
-// parkland, warm land tones), Dark Matter by night. Which one renders is
-// decided once per page load from the spot's own real local time, not a
-// hover toggle: the map should look like "right now, at this coast", not a
-// stylistic gimmick.
-const DAY_TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-const NIGHT_TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png";
-const TILE_SUBDOMAINS = "abcd";
-
-/** Leaflet renders no tiles when its container was sized 0 at init. */
-function InvalidateSize() {
-  const map = useMap();
-  useEffect(() => {
-    map.invalidateSize();
-  }, [map]);
-  return null;
-}
-
-/** Leaflet's built-in scale bar (styled in index.css to sit quietly on a
- *  photo instead of looking like browser chrome) — one of the small things
- *  that keeps a static, non-interactive map from reading as a screenshot. */
-function ScaleControl() {
-  const map = useMap();
-  useEffect(() => {
-    const control = L.control.scale({ metric: true, imperial: false, position: "bottomright" });
-    control.addTo(map);
-    return () => {
-      control.remove();
-    };
-  }, [map]);
-  return null;
-}
-
-// A dot + expanding pulse ring (animation in index.css), not a pin: pins
-// imply "tap to drop/move me", which this static locator never does.
-const MARKER_BOX = 40;
-const markerIcon = L.divIcon({
-  className: "swd-locator-marker",
-  html: `
-    <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;">
-      <span class="swd-locator-pulse" style="position:absolute;inset:0;border-radius:9999px;background:#E0823C;"></span>
-      <span style="position:relative;display:block;width:100%;height:100%;border-radius:9999px;background:#E0823C;border:2px solid #ffffff;box-shadow:0 1px 4px rgba(0,0,0,.35);"></span>
-    </span>
-  `,
-  iconSize: [MARKER_BOX, MARKER_BOX],
-  iconAnchor: [MARKER_BOX / 2, MARKER_BOX / 2],
+/** Orange teardrop pin — standard OSM look per the Figma spec (Frame_9),
+ *  not the satellite/photo-map treatment used elsewhere on the old design. */
+const pinIcon = L.divIcon({
+  className: "swd-pin",
+  html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
+        fill="#E0823C" stroke="#ffffff" stroke-width="1.4"/>
+      <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
+    </svg>`,
+  iconSize: [30, 38],
+  iconAnchor: [15, 38],
 });
 
 /**
- * Quiet locator map: where the spot sits in the region (zoom ~15), not the
- * beach itself — that's `SpotFlowMap`'s job on the Daten tab. A colored
- * cartographic basemap (CARTO, free, no key) rather than a satellite photo —
- * blue water, green parkland — switching between its day and night variant
- * based on whether it's actually daytime right now at the spot's own
- * coordinates.
- *
- * Purely a picture, not an interactive map: no drag/scroll/zoom, no
- * wind/wave overlay. The whole card is one link to Google Maps / the
- * device's map app (same `mapLinks` logic as `SpotIdentityCard`), so there's
- * no separate control to tab to. A slow tile "drift" and a hover state
- * (slight zoom + a fading-in "open in Maps" pill) keep it from reading as a
- * static screenshot; both stand still under `prefers-reduced-motion`.
+ * "Lage" — a real, interactive OpenStreetMap (Figma Frame_9): persistent
+ * +/- zoom controls top-left, a "Maps" button below them that (like the
+ * marker) opens the device's map app / Google Maps via `lib/mapLinks`.
  */
-export default function LocatorMap({
-  coords,
-  contextLabel,
-}: {
-  coords: [number, number];
-  /** e.g. "6 km von Fehmarn" — omitted entirely when there's nothing real to
-   *  show it (no region center on record), never a guessed distance. */
-  contextLabel?: string | null;
-}) {
+export default function LocatorMap({ coords }: { coords: [number, number] }) {
+  const [map, setMap] = useState<LeafletMap | null>(null);
   const [lat, lng] = coords;
   const link = mapLinkProps(lat, lng);
-  const tileUrl = isDaytime(lat, lng) ? DAY_TILE_URL : NIGHT_TILE_URL;
 
   return (
-    <a
-      href={link.href}
-      target={link.target}
-      rel={link.rel}
-      role="link"
-      aria-label="Auf Google Maps öffnen"
-      className="group relative block"
-    >
-      <div className="relative overflow-hidden rounded-3xl transition-transform duration-500 ease-out group-hover:scale-[1.02]">
-        <div className="swd-locator-drift aspect-[16/9] w-full">
-          <MapContainer
-            center={coords}
-            zoom={ZOOM}
-            zoomControl={false}
-            scrollWheelZoom={false}
-            dragging={false}
-            doubleClickZoom={false}
-            touchZoom={false}
-            keyboard={false}
-            attributionControl={false}
-            className="swd-locator-map h-full w-full"
+    <div className="relative overflow-hidden rounded-3xl">
+      <MapContainer center={coords} zoom={13} zoomControl={false} scrollWheelZoom ref={setMap} className="h-[420px] w-full">
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={coords} icon={pinIcon} />
+      </MapContainer>
+
+      <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
+        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-line bg-white">
+          <button
+            type="button"
+            aria-label="Vergrößern"
+            onClick={() => map?.zoomIn()}
+            className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
           >
-            <TileLayer url={tileUrl} subdomains={TILE_SUBDOMAINS} />
-            <Marker position={coords} icon={markerIcon} />
-            <ScaleControl />
-            <InvalidateSize />
-          </MapContainer>
+            <PlusIcon className="text-[20px]" />
+          </button>
+          <span className="mx-2 h-px bg-line" />
+          <button
+            type="button"
+            aria-label="Verkleinern"
+            onClick={() => map?.zoomOut()}
+            className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
+          >
+            <MinusIcon className="text-[20px]" />
+          </button>
         </div>
 
-        {contextLabel && (
-          <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-caption text-ink shadow-pill">
-            {contextLabel}
-          </span>
-        )}
-
-        <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <span className="rounded-full bg-white/95 px-4 py-2 text-caption font-medium text-teal shadow-pill backdrop-blur">
-            Auf Google Maps öffnen
-          </span>
-        </span>
+        <a
+          href={link.href}
+          target={link.target}
+          rel={link.rel}
+          className="pointer-events-auto rounded-full border border-line bg-white px-4 py-2 text-label font-medium text-ink transition-colors hover:bg-line/40"
+        >
+          Maps
+        </a>
       </div>
-
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="text-caption tabular-nums text-teal">{formatCoords(lat, lng)}</p>
-        <p className="text-[10px] text-muted/80">© OpenStreetMap, © CARTO</p>
-      </div>
-    </a>
+    </div>
   );
 }

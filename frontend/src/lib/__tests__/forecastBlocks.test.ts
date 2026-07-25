@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ForecastDay, ForecastHour, ForecastSeries } from "../api";
-import { forecastToBlocks, forecastToHourly } from "../seasonView";
+import { forecastToBlocks, forecastToDetailBlocks, forecastToHourly } from "../seasonView";
 
 const hour = (time: string, wind: number | null, extra: Partial<ForecastHour> = {}): ForecastHour => ({
   time,
@@ -11,6 +11,8 @@ const hour = (time: string, wind: number | null, extra: Partial<ForecastHour> = 
   swell: extra.swell ?? null,
   period: extra.period ?? null,
   swell_dir: extra.swell_dir ?? null,
+  precip: extra.precip ?? null,
+  sst: extra.sst ?? null,
 });
 
 const day = (date: string, hours: ForecastHour[], summary: Partial<ForecastDay["summary"]> = {}): ForecastDay => ({
@@ -87,10 +89,10 @@ describe("forecastToBlocks (Ebene 1 — 5×3h, best hour)", () => {
   });
 });
 
-describe("forecastToHourly (Ebene 2 — 8×2h, mean + gust max)", () => {
+describe("forecastToDetailBlocks (Ebene 2 — 8×2h, mean + gust max)", () => {
   it("averages wind within a 2h block, not the max", () => {
     const d = day("2026-07-20", [hour("2026-07-20T06:00", 10), hour("2026-07-20T07:00", 20)]);
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.blocks[0].windAvg).toBe(15);
   });
 
@@ -99,33 +101,33 @@ describe("forecastToHourly (Ebene 2 — 8×2h, mean + gust max)", () => {
       hour("2026-07-20T06:00", 10, { gust: 14 }),
       hour("2026-07-20T07:00", 12, { gust: 22 }),
     ]);
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.blocks[0].gustMax).toBe(22);
   });
 
   it("respects 2h block boundaries", () => {
     const d = day("2026-07-20", [hour("2026-07-20T08:00", 30), hour("2026-07-20T07:00", 5)]);
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.blocks[0].windAvg).toBe(5); // 06–08
     expect(result.blocks[1].windAvg).toBe(30); // 08–10, boundary hour
   });
 
   it("skips null-wind hours when averaging", () => {
     const d = day("2026-07-20", [hour("2026-07-20T06:00", 10), hour("2026-07-20T07:00", null)]);
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.blocks[0].windAvg).toBe(10);
   });
 
   it("handles an incomplete day (only morning hours present)", () => {
     const d = day("2026-07-20", [hour("2026-07-20T06:00", 10), hour("2026-07-20T07:00", 12)]);
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.blocks[0].windAvg).not.toBeNull();
     expect(result.blocks[7].windAvg).toBeNull(); // 20–22, no data
   });
 
   it("handles a day with no hours at all", () => {
     const d = day("2026-07-20", []);
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.blocks).toHaveLength(8);
     expect(result.blocks.every((b) => b.windAvg === null && b.gustMax === null && b.dir === null)).toBe(true);
     expect(result.wavePeriod).toBeNull();
@@ -137,9 +139,49 @@ describe("forecastToHourly (Ebene 2 — 8×2h, mean + gust max)", () => {
       [hour("2026-07-20T06:00", 10, { period: 8 }), hour("2026-07-20T07:00", 10, { period: 10 })],
       { swell_max: 1.4, air_max: 22 }
     );
-    const [result] = forecastToHourly(series([d]));
+    const [result] = forecastToDetailBlocks(series([d]));
     expect(result.waveHeight).toBe(1.4);
     expect(result.airTemp).toBe(22);
     expect(result.wavePeriod).toBe(9);
+  });
+});
+
+describe("forecastToHourly (Stundentabelle — raw hourly rows, all variables)", () => {
+  it("carries every hour through unaggregated, in order", () => {
+    const d = day("2026-07-20", [
+      hour("2026-07-20T06:00", 10, { gust: 14, dir: 90, swell: 1.2, swell_dir: 250, period: 8, air: 18, sst: 19, precip: 0 }),
+      hour("2026-07-20T07:00", 12, { gust: 16, dir: 95, swell: 1.3, swell_dir: 251, period: 8, air: 18.5, sst: 19, precip: 0.2 }),
+    ]);
+    const [result] = forecastToHourly(series([d]));
+    expect(result.hours).toHaveLength(2);
+    expect(result.hours[0]).toMatchObject({
+      time: "06:00", hour: 6, wind: 10, gust: 14, dir: 90,
+      waveHeight: 1.2, swellDir: 250, period: 8, air: 18, water: 19, precip: 0,
+    });
+    expect(result.hours[1].time).toBe("07:00");
+  });
+
+  it("leaves a missing variable null rather than fabricating a value", () => {
+    const d = day("2026-07-20", [hour("2026-07-20T06:00", 10)]); // only wind set, rest default null
+    const [result] = forecastToHourly(series([d]));
+    const [row] = result.hours;
+    expect(row.gust).toBeNull();
+    expect(row.waveHeight).toBeNull();
+    expect(row.water).toBeNull();
+    expect(row.precip).toBeNull();
+  });
+
+  it("handles a day with no hours at all", () => {
+    const d = day("2026-07-20", []);
+    const [result] = forecastToHourly(series([d]));
+    expect(result.hours).toEqual([]);
+  });
+
+  it("handles a short/incomplete day (fewer hours than a full 24h horizon) without padding it out", () => {
+    const d = day("2026-07-20", [hour("2026-07-20T22:00", 8), hour("2026-07-20T23:00", 9)]);
+    const [result] = forecastToHourly(series([d]));
+    expect(result.hours).toHaveLength(2);
+    expect(result.hours[0].hour).toBe(22);
+    expect(result.hours[1].hour).toBe(23);
   });
 });

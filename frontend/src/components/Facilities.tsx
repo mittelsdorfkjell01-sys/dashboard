@@ -19,24 +19,42 @@ const facilityIcon: Record<FacilityKind, (p: { width?: number; height?: number; 
  *   - available: null  → icon at 30% opacity, no strikethrough, "Keine Angabe"
  *
  *  `variant="grid"` (default) is the icon-tile grid; `variant="rail"` is the
- *  hairline-table look for the sticky spec rail next to the lede.
+ *  hairline-table look for the sticky spec rail next to the lede; `variant="list"`
+ *  is the plain label/status row (no icon) for the Figma info-page layout.
  */
 export default function Facilities({
   items,
   variant = "grid",
 }: {
   items: Facility[];
-  variant?: "grid" | "rail";
+  variant?: "grid" | "rail" | "list";
 }) {
   if (items.length === 0) return null;
+
+  if (variant === "list") {
+    return (
+      <dl className="divide-y divide-line border-t border-line">
+        {items.map((f) => {
+          const absent = f.available === false;
+          const unknown = f.available === null;
+          return (
+            <div key={f.kind} className="flex items-center justify-between gap-4 py-3.5">
+              <dt className={`text-ui ${absent ? "text-muted line-through" : "text-ink"}`}>{f.title}</dt>
+              <dd className={`text-caption ${absent ? "text-muted line-through" : unknown ? "text-muted" : "text-ink-soft"}`}>
+                {f.note}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    );
+  }
 
   if (variant === "rail") {
     return (
       <div>
-        <p className="text-caption font-medium uppercase tracking-[0.18em] text-teal">
-          Vor Ort
-        </p>
-        <dl className="mt-4 divide-y divide-line border-t border-line">
+        <p className="text-data-label uppercase text-teal">Vor Ort</p>
+        <dl className="mt-4 divide-y divide-line">
           {items.map((f) => {
             const Icon = facilityIcon[f.kind];
             const absent = f.available === false;

@@ -113,7 +113,7 @@ function useCountUp(target: number | null, trigger: boolean, reduce: boolean | n
  *    swell period (spacing = phase-speed × period); chop breaks jagged, swell
  *    rolls smooth.
  *
- * A glass card top-left shows the live reading (`live`) — separate from the
+ * An opaque card top-left shows the live reading (`live`) — separate from the
  * windKts/windDir/waveDir/period/coast props below, which only drive the
  * canvas animation and are untouched. The map itself starts non-interactive
  * (so it never hijacks page scroll on mobile) and stays that way until
@@ -565,7 +565,7 @@ export default function SpotFlowMap({
           initial={{ opacity: 0, y: -8 }}
           animate={overlayVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="glass-white pointer-events-none absolute left-4 top-4 z-[520] rounded-2xl px-4 py-3 text-ink shadow-pill backdrop-blur-xl"
+          className="pointer-events-none absolute left-4 top-4 z-[520] rounded-2xl border border-line bg-white px-4 py-3 text-ink"
         >
           <div className="flex items-baseline gap-2">
             <span className="text-title font-semibold tabular-nums" style={{ color: windColor(windValue) }}>
@@ -604,7 +604,7 @@ export default function SpotFlowMap({
           aria-label="Karte zum Verschieben und Zoomen aktivieren"
           className="absolute inset-0 z-[540] flex items-end justify-center pb-4 sm:items-center sm:pb-0"
         >
-          <span className="rounded-full bg-ink/80 px-4 py-2 text-caption font-medium text-white shadow-pill backdrop-blur">
+          <span className="rounded-full border border-line bg-ink px-4 py-2 text-caption font-medium text-white">
             Antippen zum Verschieben &amp; Zoomen
           </span>
         </button>

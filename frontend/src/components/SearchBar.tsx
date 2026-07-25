@@ -91,7 +91,7 @@ export default function SearchBar() {
   return (
     <>
       <div ref={barRef} className="relative">
-        <div className="flex flex-col gap-1.5 rounded-3xl bg-white p-2 shadow-card sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-full">
+        <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-white p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-full">
           {/* Wohin? — trigger; the text input lives in the panel below. */}
           <button
             type="button"
@@ -99,7 +99,7 @@ export default function SearchBar() {
             onClick={() => openSeg("where", whereRef.current)}
             aria-expanded={open === "where"}
             className={`flex flex-1 flex-col items-start rounded-full px-6 py-2 text-left transition-all ${
-              open === "where" ? "shadow-pill" : ""
+              open === "where" ? "bg-band" : ""
             } ${dim("where") ? "opacity-55" : ""}`}
           >
             <span className="text-[13px] font-semibold text-teal">Wohin?</span>
@@ -191,7 +191,7 @@ export default function SearchBar() {
                   maxHeight: "70vh",
                   maxWidth: "calc(100vw - 16px)",
                 }}
-                className="overflow-hidden rounded-3xl bg-white shadow-card"
+                className="overflow-hidden rounded-3xl border border-line bg-white"
               >
                 <div className="h-full overflow-auto p-6">
                   <motion.div
@@ -259,7 +259,7 @@ function Segment({
       onClick={(e) => onClick(e.currentTarget)}
       aria-expanded={active}
       className={`flex flex-1 flex-col items-start rounded-full px-6 py-2 text-left transition-all ${
-        active ? "shadow-pill" : ""
+        active ? "bg-band" : ""
       } ${dim ? "opacity-55" : ""}`}
     >
       <span className="text-[13px] font-semibold text-teal">{label}</span>

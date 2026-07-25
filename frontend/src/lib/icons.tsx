@@ -213,3 +213,23 @@ export const PlusCircleIcon = (p: IconProps) => (
     <path d="M12 8v8M8 12h8" />
   </svg>
 );
+
+/** Filled check-in-circle badge — sport chips ("Kitesurfen ✓"). */
+export const CheckCircleIcon = (p: IconProps) => (
+  <svg {...base} {...p} fill="currentColor" stroke="none" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M8 12.5l2.5 2.5L16 9.5" stroke="white" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+/** Chevron pointing left/right — gallery prev/next arrows. */
+export const ChevronLeftIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M15 5l-7 7 7 7" />
+  </svg>
+);
+export const ChevronRightIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M9 5l7 7-7 7" />
+  </svg>
+);

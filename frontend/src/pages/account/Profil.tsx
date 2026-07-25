@@ -47,7 +47,7 @@ export default function Profil() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-card sm:flex-row sm:items-center">
+      <section className="flex flex-col gap-5 rounded-2xl border border-line bg-white p-6 sm:flex-row sm:items-center">
         <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-teal text-[26px] font-bold text-white">
           {initials}
         </span>
@@ -100,7 +100,7 @@ function StatCard({
   return (
     <Link
       to={to}
-      className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-card transition-transform hover:-translate-y-0.5"
+      className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 transition-transform hover:-translate-y-0.5"
     >
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-band text-teal">
         {icon}
