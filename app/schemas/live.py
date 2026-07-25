@@ -50,6 +50,8 @@ class ForecastHour(BaseModel):
     swell: float | None = None
     period: float | None = None
     swell_dir: float | None = None
+    precip: float | None = None      # mm/h
+    sst: float | None = None         # deg C
     wind_spread: SpreadBand | None = None
 
 

@@ -166,6 +166,41 @@ def test_forecast_hours_merge_wind_and_swell():
     assert first_hour["period"] is not None
 
 
+def test_forecast_hours_include_precip_and_sst():
+    """Sprint 3: precipitation (atmospheric) and sea-surface temperature
+    (marine) round-trip into the hourly series alongside wind/swell."""
+    spot = make_spot()
+    series = get_forecast_series(
+        spot.id, days=1, db=FakeDB(spot), client=FakeOpenMeteoClient(),
+        cache=InMemoryCache(),
+    )
+    first_hour = series["days"][0]["hours"][0]
+    assert first_hour["precip"] is not None
+    assert first_hour["sst"] is not None
+
+
+def test_forecast_hour_precip_is_null_not_fabricated_when_missing():
+    """A spot whose provider response has no precipitation variable at all
+    (coverage gap) gets `None`, never a guessed/rounded-to-0 value."""
+    from tests.live_helpers import make_forecast_response, make_marine_response
+
+    class _NoPrecipClient:
+        def fetch_forecast(self, lat, lon, models, days=7) -> dict:
+            data = make_forecast_response(1, models=None)
+            del data["hourly"]["precipitation"]
+            return data
+
+        def fetch_marine(self, lat, lon, days=7) -> dict:
+            return make_marine_response(1)
+
+    spot = make_spot()
+    series = get_forecast_series(
+        spot.id, days=1, db=FakeDB(spot), client=_NoPrecipClient(),
+        cache=InMemoryCache(),
+    )
+    assert all(h["precip"] is None for h in series["days"][0]["hours"])
+
+
 # --- multi-model consensus + spread (Sprint 18) ----------------------------
 
 def test_live_conditions_expose_consensus_band():

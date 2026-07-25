@@ -46,6 +46,7 @@ def _single_model_forecast(times: list[str]) -> dict:
             "wind_gusts_10m": [15.0 + (i % 12) for i in range(n)],
             "wind_direction_10m": [(i * 5) % 360 for i in range(n)],
             "temperature_2m": [18.0 + (i % 8) for i in range(n)],
+            "precipitation": [round(0.1 * (i % 5), 1) for i in range(n)],
         },
     }
 
@@ -88,6 +89,7 @@ def make_forecast_response(
             hourly[f"wind_gusts_10m_{m}"] = [None] * n
             hourly[f"wind_direction_10m_{m}"] = [None] * n
             hourly[f"temperature_2m_{m}"] = [None] * n
+            hourly[f"precipitation_{m}"] = [None] * n
             continue
         hourly[f"wind_speed_10m_{m}"] = [
             round(base_wind[i] + offset(mi, SPREAD_PER_DAY_KT * (i // 24)), 2)
@@ -99,6 +101,7 @@ def make_forecast_response(
         ]
         hourly[f"wind_direction_10m_{m}"] = base_dir
         hourly[f"temperature_2m_{m}"] = base_air
+        hourly[f"precipitation_{m}"] = [round(0.1 * (i % 5), 1) for i in range(n)]
 
     # Open-Meteo returns the `current` block UNSUFFIXED even for a multi-model
     # request (only `hourly` carries per-model suffixes) -- mirror that here so

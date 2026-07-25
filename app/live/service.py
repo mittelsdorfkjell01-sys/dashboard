@@ -210,12 +210,14 @@ def _index_marine_hours(marine: dict) -> dict[str, dict]:
     swh = hourly.get("swell_wave_height") or []
     per = hourly.get("swell_wave_period") or []
     sdir = hourly.get("swell_wave_direction") or []
+    sst = hourly.get("sea_surface_temperature") or []
     by_time: dict[str, dict] = {}
     for i, t in enumerate(times):
         by_time[t] = {
             "swell": swh[i] if i < len(swh) else None,
             "period": per[i] if i < len(per) else None,
             "swell_dir": sdir[i] if i < len(sdir) else None,
+            "sst": sst[i] if i < len(sst) else None,
         }
     return by_time
 
@@ -230,6 +232,7 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str]) -> list[dict]:
     gust_by_model = {m: _column(hourly, "wind_gusts_10m", m, multi) for m in models}
     dir_series = _column(hourly, "wind_direction_10m", src, multi) if src else []
     air_series = _column(hourly, "temperature_2m", src, multi) if src else []
+    precip_series = _column(hourly, "precipitation", src, multi) if src else []
     marine_by_time = _index_marine_hours(marine)
 
     hours: list[dict] = []
@@ -246,9 +249,11 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str]) -> list[dict]:
                 "gust": gust_band["median"] if gust_band else None,
                 "dir": dir_series[i] if i < len(dir_series) else None,
                 "air": air_series[i] if i < len(air_series) else None,
+                "precip": precip_series[i] if i < len(precip_series) else None,
                 "swell": m.get("swell"),
                 "period": m.get("period"),
                 "swell_dir": m.get("swell_dir"),
+                "sst": m.get("sst"),
                 "wind_spread": wind_band,
             }
         )
