@@ -11,7 +11,7 @@ import Forecast from "../components/Forecast";
 import WindMonths from "../components/WindMonths";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
-import SpotCommentTeaser from "../components/SpotCommentTeaser";
+import SpotCommentBox from "../components/SpotCommentBox";
 import CommentsOverlay from "../components/CommentsOverlay";
 import FavoriteButton from "../components/FavoriteButton";
 import Footer from "../components/Footer";
@@ -69,12 +69,7 @@ export default function SpotDetail() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [composeOnOpen, setComposeOnOpen] = useState(false);
   const commentsTriggerRef = useRef<HTMLButtonElement>(null);
-  const openComments = (compose: boolean) => {
-    setComposeOnOpen(compose);
-    setCommentsOpen(true);
-  };
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
 
@@ -222,10 +217,11 @@ export default function SpotDetail() {
 
                 <div className="flex flex-col gap-14">
                   <Facilities items={facilities} variant="list" />
-                  <SpotCommentTeaser
-                    post={featuredPost}
-                    onOpenMore={() => openComments(false)}
-                    onCompose={() => openComments(true)}
+                  <SpotCommentBox
+                    spotId={id}
+                    hasComments={featuredPost != null}
+                    onOpenMore={() => setCommentsOpen(true)}
+                    onPosted={reloadFeed}
                     moreButtonRef={commentsTriggerRef}
                   />
                 </div>
@@ -253,7 +249,6 @@ export default function SpotDetail() {
               posts={sortedPosts}
               spotId={id}
               onReload={reloadFeed}
-              startComposing={composeOnOpen}
             />
             </motion.div>
           )}

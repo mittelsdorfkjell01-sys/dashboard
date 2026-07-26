@@ -43,6 +43,9 @@ export default {
         // instead. Two layers: a tighter, darker near-shadow to ground the
         // card + a soft wide one for ambient depth.
         float: "0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30)",
+        // Soft, subtle elevation for a white surface that reads as raised
+        // (the Info-tab comment box, the auth-choice dialog).
+        card: "0 12px 34px -18px rgba(36, 28, 23, 0.20)",
       },
       borderRadius: {
         "2xl": "1rem",
