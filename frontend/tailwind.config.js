@@ -74,6 +74,7 @@ export default {
         "editorial-1": ["5.5rem", { lineHeight: "1.02", letterSpacing: "-0.03em" }], // 88px — Info: page title
         "editorial-2": ["3.5rem", { lineHeight: "1.08", letterSpacing: "-0.03em" }], // 56px — Info: section headings
         "editorial-3": ["3rem", { lineHeight: "1.08", letterSpacing: "-0.02em" }], // 48px — Info: header-card h1 (Figma Frame_9)
+        "editorial-4": ["2rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }], // 32px — Info: spot name + inline score (Figma Frame_9)
         lede: ["1.25rem", { lineHeight: "1.7" }], // 20px — Info: first paragraph
         prose: ["1.0625rem", { lineHeight: "1.75" }], // 17px — Info: running body copy, max-w-[62ch]
         "data-label": ["0.8125rem", { lineHeight: "1.2", letterSpacing: "0.14em" }], // 13px — Daten: section labels, uppercase

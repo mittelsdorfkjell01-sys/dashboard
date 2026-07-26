@@ -41,7 +41,7 @@ export default function SpotGalleryTile({
         ref={galleryTriggerRef}
         type="button"
         onClick={onOpenGallery}
-        className="absolute left-4 top-4 z-10 rounded-full bg-teal/80 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal"
+        className="absolute left-4 top-4 z-10 rounded-full bg-teal/50 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal/70"
       >
         Fotogalerie
       </button>
@@ -52,7 +52,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(-1)}
             aria-label="Vorheriges Bild"
-            className="grid h-9 w-9 place-items-center rounded-full bg-teal text-white transition-colors hover:bg-teal-hover"
+            className="grid h-9 w-9 place-items-center rounded-full bg-teal/50 text-white transition-colors hover:bg-teal/70"
           >
             <ChevronLeftIcon width={18} height={18} />
           </button>
@@ -60,7 +60,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(1)}
             aria-label="Nächstes Bild"
-            className="grid h-9 w-9 place-items-center rounded-full bg-teal text-white transition-colors hover:bg-teal-hover"
+            className="grid h-9 w-9 place-items-center rounded-full bg-teal/50 text-white transition-colors hover:bg-teal/70"
           >
             <ChevronRightIcon width={18} height={18} />
           </button>
