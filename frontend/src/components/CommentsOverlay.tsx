@@ -18,6 +18,7 @@ export default function CommentsOverlay({
   posts,
   spotId,
   onReload,
+  startComposing = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -26,12 +27,16 @@ export default function CommentsOverlay({
   spotId?: string;
   /** Refetch the feed after a new comment is posted. */
   onReload?: () => void;
+  /** Open straight into the composer (from the teaser's "Verfassen" CTA). */
+  startComposing?: boolean;
 }) {
   const [composerOpen, setComposerOpen] = useState(false);
 
+  // Composer starts open only when asked to (empty-state "Verfassen"); always
+  // resets when the overlay closes.
   useEffect(() => {
-    if (!open) setComposerOpen(false);
-  }, [open]);
+    setComposerOpen(open ? startComposing : false);
+  }, [open, startComposing]);
 
   const comments = posts.filter((p) => p.text);
 

@@ -69,7 +69,12 @@ export default function SpotDetail() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [composeOnOpen, setComposeOnOpen] = useState(false);
   const commentsTriggerRef = useRef<HTMLButtonElement>(null);
+  const openComments = (compose: boolean) => {
+    setComposeOnOpen(compose);
+    setCommentsOpen(true);
+  };
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
 
@@ -116,7 +121,9 @@ export default function SpotDetail() {
   // Most recent posts first — the teaser tile shows the newest one, the
   // "mehr" overlay shows up to three.
   const sortedPosts = sortFeed(posts, "newest", {});
-  const featuredPost = sortedPosts[0] ?? null;
+  // The teaser shows the newest post that actually has text — a photo-only
+  // post isn't a "comment", and its absence triggers the write-first prompt.
+  const featuredPost = sortedPosts.find((p) => p.text) ?? null;
 
   const tabs = id
     ? [
@@ -217,7 +224,8 @@ export default function SpotDetail() {
                   <Facilities items={facilities} variant="list" />
                   <SpotCommentTeaser
                     post={featuredPost}
-                    onOpenMore={() => setCommentsOpen(true)}
+                    onOpenMore={() => openComments(false)}
+                    onCompose={() => openComments(true)}
                     moreButtonRef={commentsTriggerRef}
                   />
                 </div>
@@ -245,6 +253,7 @@ export default function SpotDetail() {
               posts={sortedPosts}
               spotId={id}
               onReload={reloadFeed}
+              startComposing={composeOnOpen}
             />
             </motion.div>
           )}
