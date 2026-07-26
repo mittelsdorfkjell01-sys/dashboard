@@ -215,11 +215,11 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-14">
+                <div className="flex flex-col gap-6">
                   <Facilities items={facilities} variant="list" />
                   <SpotCommentBox
                     spotId={id}
-                    hasComments={featuredPost != null}
+                    comment={featuredPost}
                     onOpenMore={() => setCommentsOpen(true)}
                     onPosted={reloadFeed}
                     moreButtonRef={commentsTriggerRef}

@@ -128,11 +128,20 @@ def create_tip(
     body: str,
     author_name: str | None,
     author_email: str | None = None,
+    parent_id=None,
     ip_hash: str | None = None,
 ) -> LocalTip:
     _require_spot(db, spot_id)
     if not (body and body.strip()):
         raise ValueError("Der Tipp darf nicht leer sein.")
+    if parent_id is not None:
+        parent = db.get(LocalTip, parent_id)
+        if parent is None or parent.spot_id != spot_id:
+            raise ValueError("Der Kommentar, auf den geantwortet wird, existiert nicht.")
+        # Single-level threads: a reply to a reply attaches to the top-level
+        # comment instead of nesting deeper.
+        if parent.parent_id is not None:
+            parent_id = parent.parent_id
     from app.community.filter import is_flagged
 
     tip = LocalTip(
@@ -140,6 +149,7 @@ def create_tip(
         body=body.strip(),
         author_name=_clean_name(author_name),
         author_email=_clean_email(author_email),
+        parent_id=parent_id,
         flagged=is_flagged(body, author_name),
         ip_hash=ip_hash,
     )

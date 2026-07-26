@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { CloseIcon } from "../lib/icons";
 
 /**
  * Shared bottom-sheet chassis for the Fotogalerie/Kommentare overlays (Figma
@@ -78,7 +79,7 @@ export default function OverlayPanel({
           <motion.div
             key="blur"
             aria-hidden="true"
-            className="fixed inset-0 z-[1100] hidden backdrop-blur-[3px] sm:block"
+            className="fixed inset-0 z-[1100] hidden bg-black/10 backdrop-blur-[2px] sm:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -101,9 +102,10 @@ export default function OverlayPanel({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full border border-teal/30 px-5 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
+                className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
               >
-                schließen
+                <CloseIcon width={15} height={15} />
+                abbrechen
               </button>
             </div>
             <div className="px-6 pb-10 sm:px-10">{children}</div>

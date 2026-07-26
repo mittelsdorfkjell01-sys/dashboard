@@ -1,15 +1,14 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { avatarColor, initials, type FeedPost } from "../lib/communityFeed";
+import { useEffect, useState, type RefObject } from "react";
+import { avatarColor, commentThreads, initials, type CommentThread, type FeedPost } from "../lib/communityFeed";
 import { PlusIcon } from "../lib/icons";
-import CommentComposer from "./CommentComposer";
+import InlineTipComposer from "./InlineTipComposer";
 import OverlayPanel from "./OverlayPanel";
 
 /**
- * Kommentare overlay (Figma Frame_11) — title left, subtitle right, the spot's
- * comment tiles in a responsive grid. Each tile keeps a fixed base height; a
- * long comment is clipped with a "mehr" link that expands that one tile
- * downward (and "weniger" collapses it). A round "+" FAB bottom-right opens the
- * composer to add a comment. Triggered only by the teaser tile's "mehr" link.
+ * Kommentare overlay (Figma Frame_11) — the spot's comments as single-level
+ * threads: each top-level comment with its replies nested underneath. "Antworte"
+ * opens an inline reply mask on that comment; the round "+" FAB opens a
+ * new-comment mask. Triggered only by the teaser's "mehr" link.
  */
 export default function CommentsOverlay({
   open,
@@ -18,27 +17,22 @@ export default function CommentsOverlay({
   posts,
   spotId,
   onReload,
-  startComposing = false,
 }: {
   open: boolean;
   onClose: () => void;
   triggerRef: RefObject<HTMLElement>;
   posts: FeedPost[];
   spotId?: string;
-  /** Refetch the feed after a new comment is posted. */
+  /** Refetch the feed after a new comment/reply is posted. */
   onReload?: () => void;
-  /** Open straight into the composer (from the teaser's "Verfassen" CTA). */
-  startComposing?: boolean;
 }) {
-  const [composerOpen, setComposerOpen] = useState(false);
+  const [composeNew, setComposeNew] = useState(false);
 
-  // Composer starts open only when asked to (empty-state "Verfassen"); always
-  // resets when the overlay closes.
   useEffect(() => {
-    setComposerOpen(open ? startComposing : false);
-  }, [open, startComposing]);
+    if (!open) setComposeNew(false);
+  }, [open]);
 
-  const comments = posts.filter((p) => p.text);
+  const threads = commentThreads(posts);
 
   return (
     <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef}>
@@ -47,35 +41,33 @@ export default function CommentsOverlay({
         <p className="text-body text-muted">Kommentare und Tipps aus der Community</p>
       </div>
 
-      {composerOpen && spotId && (
-        <div className="mt-6">
-          <CommentComposer
+      {composeNew && spotId && (
+        <div className="mt-6 rounded-3xl bg-band p-5">
+          <InlineTipComposer
             spotId={spotId}
             onPosted={() => {
               onReload?.();
-              setComposerOpen(false);
+              setComposeNew(false);
             }}
-            onCancel={() => setComposerOpen(false)}
+            onCancel={() => setComposeNew(false)}
           />
         </div>
       )}
 
-      {comments.length === 0 ? (
+      {threads.length === 0 ? (
         <p className="mt-8 text-body text-muted">Noch keine Kommentare oder Tipps — sei die/der Erste.</p>
       ) : (
         <div className="mt-8 grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {comments.map((post) => (
-            <CommentCard key={post.id} post={post} />
+          {threads.map((thread) => (
+            <ThreadCard key={thread.comment.id} thread={thread} spotId={spotId} onReload={onReload} />
           ))}
         </div>
       )}
 
-      {/* Round "+" compose FAB, bottom-right of the panel — hidden while the
-          composer is open (it has its own controls). */}
-      {!composerOpen && (
+      {!composeNew && (
         <button
           type="button"
-          onClick={() => setComposerOpen(true)}
+          onClick={() => setComposeNew(true)}
           aria-label="Kommentar verfassen"
           className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-full bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
         >
@@ -86,66 +78,73 @@ export default function CommentsOverlay({
   );
 }
 
-/**
- * One comment tile. Fixed base height (`min-h`); the comment text fills the
- * remaining space and is clipped when it doesn't fit — a "mehr" link then
- * expands this tile to its full height ("weniger" collapses it). "Antworte"
- * stays pinned at the bottom. The overflow check runs only while collapsed, so
- * the toggle doesn't vanish once expanded.
- */
-function CommentCard({ post }: { post: FeedPost }) {
-  const [expanded, setExpanded] = useState(false);
-  const [overflowing, setOverflowing] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    if (expanded) return; // keep the last measurement while open
-    const el = boxRef.current;
-    if (!el) return;
-    const check = () => setOverflowing(el.scrollHeight - el.clientHeight > 1);
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [expanded, post.text]);
+function ThreadCard({
+  thread,
+  spotId,
+  onReload,
+}: {
+  thread: CommentThread;
+  spotId?: string;
+  onReload?: () => void;
+}) {
+  const [replying, setReplying] = useState(false);
+  const { comment, replies } = thread;
+  const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
   return (
-    <div className="flex min-h-[360px] flex-col rounded-3xl bg-band p-6">
-      <div className="flex items-center gap-2.5">
-        <span
-          aria-hidden="true"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-label font-semibold text-white"
-          style={{ backgroundColor: avatarColor(post.authorName) }}
-        >
-          {initials(post.authorName)}
-        </span>
-        <span className="text-ui font-medium text-ink">{post.authorName}</span>
-      </div>
+    <div className="flex flex-col rounded-3xl bg-band p-6">
+      <CommentHead post={comment} />
+      <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
 
-      <div ref={boxRef} className={`relative mt-4 ${expanded ? "" : "flex-1 overflow-hidden"}`}>
-        <p className="whitespace-pre-line text-body text-ink-soft">{post.text}</p>
-        {!expanded && overflowing && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-band to-transparent" />
-        )}
-      </div>
-
-      {overflowing && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          className="mt-2 self-start text-label font-medium text-teal hover:text-teal-hover"
-        >
-          {expanded ? "weniger" : "mehr"}
-        </button>
+      {replies.length > 0 && (
+        <div className="mt-4 space-y-3 border-l border-line pl-4">
+          {replies.map((reply) => (
+            <div key={reply.id}>
+              <CommentHead post={reply} small />
+              <p className="mt-1 whitespace-pre-line text-caption text-ink-soft">{reply.text}</p>
+            </div>
+          ))}
+        </div>
       )}
 
-      <div className="mt-5 flex items-center gap-3 text-label font-medium text-teal">
-        {/* TODO: reply flow lands separately — placement only, per spec */}
-        <button type="button" className="underline-offset-2 hover:underline">
+      {replying ? (
+        <div className="mt-4">
+          <InlineTipComposer
+            spotId={spotId}
+            parentId={parentTipId}
+            replyToName={comment.authorName}
+            onPosted={() => {
+              onReload?.();
+              setReplying(false);
+            }}
+            onCancel={() => setReplying(false)}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setReplying(true)}
+          className="mt-4 self-start text-label font-medium text-teal transition-colors hover:text-teal-hover"
+        >
           Antworte
         </button>
-      </div>
+      )}
+    </div>
+  );
+}
+
+function CommentHead({ post, small = false }: { post: FeedPost; small?: boolean }) {
+  const size = small ? "h-7 w-7" : "h-9 w-9";
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        aria-hidden="true"
+        className={`grid ${size} shrink-0 place-items-center rounded-full text-label font-semibold text-white`}
+        style={{ backgroundColor: avatarColor(post.authorName) }}
+      >
+        {initials(post.authorName)}
+      </span>
+      <span className={`font-medium text-ink ${small ? "text-label" : "text-ui"}`}>{post.authorName}</span>
     </div>
   );
 }

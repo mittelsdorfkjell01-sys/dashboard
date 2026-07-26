@@ -80,6 +80,12 @@ class LocalTip(Base, TimestampMixin):
     author_name: Mapped[str] = mapped_column(String(120), nullable=False)
     author_email: Mapped[str | None] = mapped_column(String(255))
     app_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    # A reply points at the comment it answers (same table); top-level comments
+    # have ``parent_id = NULL``. CASCADE so deleting a comment removes its
+    # replies with it.
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("local_tips.id", ondelete="CASCADE"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default=text("'published'")
     )
@@ -88,7 +94,10 @@ class LocalTip(Base, TimestampMixin):
     )
     ip_hash: Mapped[str | None] = mapped_column(String(64))
 
-    __table_args__ = (Index("ix_tip_spot", "spot_id"),)
+    __table_args__ = (
+        Index("ix_tip_spot", "spot_id"),
+        Index("ix_tip_parent", "parent_id"),
+    )
 
 
 class SpotSubmission(Base, TimestampMixin):

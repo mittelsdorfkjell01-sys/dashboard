@@ -30,9 +30,41 @@ export interface FeedPost {
   sport: string | null;
   text: string | null;
   photo: CommunityImage | null;
+  /** For a reply, the `id` of the FeedPost it answers (`tip:<parent>`); null
+   *  for top-level posts. Only tips can be replies. */
+  parentId: string | null;
   /** Image id to route "melden" to — only photo-bearing posts have anything
    *  reportable (there's no report endpoint for ratings/tips). */
   reportImageId: string | null;
+}
+
+/** A top-level comment together with its replies (oldest first). */
+export interface CommentThread {
+  comment: FeedPost;
+  replies: FeedPost[];
+}
+
+/**
+ * Groups the feed's text posts into single-level threads: each top-level
+ * comment (a post with text and no `parentId`) with its replies attached,
+ * oldest reply first. Photo-only posts and orphan replies are ignored.
+ */
+export function commentThreads(posts: FeedPost[]): CommentThread[] {
+  const tops = posts.filter((p) => p.text && !p.parentId);
+  const byParent = new Map<string, FeedPost[]>();
+  for (const p of posts) {
+    if (p.text && p.parentId) {
+      const list = byParent.get(p.parentId) ?? [];
+      list.push(p);
+      byParent.set(p.parentId, list);
+    }
+  }
+  return tops.map((comment) => ({
+    comment,
+    replies: (byParent.get(comment.id) ?? []).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt)
+    ),
+  }));
 }
 
 const VISIT_MARKER_RE = /^\[besucht:(\d{4}-\d{2}-\d{2})\]\s*/;
@@ -99,6 +131,7 @@ export function mergeFeed({
       sport: r.sport,
       text: text || null,
       photo,
+      parentId: null,
       reportImageId: photo?.id ?? null,
     };
   });
@@ -117,6 +150,7 @@ export function mergeFeed({
       sport: null,
       text: text || null,
       photo,
+      parentId: t.parent_id ? `tip:${t.parent_id}` : null,
       reportImageId: photo?.id ?? null,
     };
   });
@@ -132,6 +166,7 @@ export function mergeFeed({
     sport: null,
     text: null,
     photo: img,
+    parentId: null,
     reportImageId: img.id,
   }));
 

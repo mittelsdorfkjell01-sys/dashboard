@@ -475,12 +475,20 @@ export interface TipItem {
   body: string;
   author_name: string;
   created_at: string;
+  /** Set when this tip is a reply to another (single-level threads). */
+  parent_id: string | null;
 }
 export const getTips = (spotId: string) =>
   request<{ items: TipItem[] }>(`/spots/${spotId}/tips`);
 export const postTip = (
   spotId: string,
-  body: { body: string; author_name?: string; author_email?: string; website?: string }
+  body: {
+    body: string;
+    author_name?: string;
+    author_email?: string;
+    parent_id?: string;
+    website?: string;
+  }
 ) =>
   request<TipItem>(`/spots/${spotId}/tips`, {
     method: "POST",

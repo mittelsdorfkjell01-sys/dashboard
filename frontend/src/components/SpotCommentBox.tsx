@@ -1,70 +1,45 @@
 import { useState, type RefObject } from "react";
-import { useNavigate } from "react-router-dom";
-import { ApiError, postTip } from "../lib/api";
-import { useAuth } from "../context/AuthContext";
-import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
+import { avatarColor, initials, type FeedPost } from "../lib/communityFeed";
+import InlineTipComposer from "./InlineTipComposer";
 
 /**
- * Info-tab comment box (Figma Frame_9, right column under the facilities) — a
- * always-visible inline composer: "Kommentare oder Tips", a text area, and an
- * "absenden" button. Posts through the text-only tips endpoint.
- *
- * Submitting while signed out opens the auth-choice dialog
- * (`CommentAuthChoiceDialog`): post anonymously (as "Anonym") or sign in to
- * comment under your name. Signed in, it posts straight away under the
- * account's display name. A "mehr" link (only when comments exist) opens the
- * full Kommentare overlay.
+ * Info-tab comment tile (Figma Frame_9, under the facilities). Shows the newest
+ * comment when one exists, otherwise a "write the first one" prompt. Writing or
+ * replying flips the tile into an inline compose mask ("Antworte" targets the
+ * shown comment, "Verfasse Kommentar / Tipp" posts a new top-level comment).
+ * "mehr" opens the full Kommentare overlay. No shadow — it separates from the
+ * page by its band fill and fills the column down to the gallery's bottom.
  */
 export default function SpotCommentBox({
   spotId,
-  hasComments,
+  comment,
   onOpenMore,
   onPosted,
   moreButtonRef,
 }: {
   spotId?: string;
-  hasComments: boolean;
+  /** Newest top-level comment to feature, or null when there are none. */
+  comment: FeedPost | null;
   onOpenMore: () => void;
   onPosted?: () => void;
-  /** So the overlay can return focus to the "mehr" link on close. */
   moreButtonRef?: RefObject<HTMLButtonElement>;
 }) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [authOpen, setAuthOpen] = useState(false);
+  const [compose, setCompose] = useState<{ parentId?: string; replyToName?: string } | null>(null);
 
-  const post = async (authorName: string) => {
-    if (!spotId || !text.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await postTip(spotId, { body: text.trim(), author_name: authorName });
-      setText("");
-      onPosted?.();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Senden fehlgeschlagen.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Only a tip can be replied to (the backend parent is a local_tip).
+  const replyTargetId =
+    comment && comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
-  const onSend = () => {
-    if (!text.trim()) return;
-    if (!user) {
-      setAuthOpen(true);
-      return;
-    }
-    void post(user.displayName);
+  const posted = () => {
+    setCompose(null);
+    onPosted?.();
   };
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-card">
+    <div className="flex flex-1 flex-col rounded-3xl bg-band p-6">
       <div className="flex items-center justify-between gap-3">
         <p className="text-label text-muted">Kommentare oder Tips</p>
-        {hasComments && (
+        {comment && !compose && (
           <button
             ref={moreButtonRef}
             type="button"
@@ -76,36 +51,68 @@ export default function SpotCommentBox({
         )}
       </div>
 
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="verfasse einen Kommentar…"
-        rows={5}
-        className="mt-3 w-full resize-none rounded-2xl border border-line bg-white p-4 text-body text-ink placeholder:text-muted focus:border-teal/40 focus:outline-none focus:ring-2 focus:ring-teal/20"
-      />
-
-      {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
-
-      <div className="mt-3 flex justify-end">
-        <button
-          type="button"
-          onClick={onSend}
-          disabled={busy || !text.trim()}
-          className="rounded-full bg-teal px-5 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-40"
-        >
-          {busy ? "Senden…" : "absenden"}
-        </button>
-      </div>
-
-      <CommentAuthChoiceDialog
-        open={authOpen}
-        onAnonymous={() => {
-          setAuthOpen(false);
-          void post("Anonym");
-        }}
-        onSignIn={() => navigate("/anmelden")}
-        onCancel={() => setAuthOpen(false)}
-      />
+      {compose ? (
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+          <InlineTipComposer
+            spotId={spotId}
+            parentId={compose.parentId}
+            replyToName={compose.replyToName}
+            onPosted={posted}
+            onCancel={() => setCompose(null)}
+          />
+        </div>
+      ) : comment ? (
+        <>
+          <div className="mt-4 min-h-0 flex-1 overflow-hidden">
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-label font-semibold text-white"
+                style={{ backgroundColor: avatarColor(comment.authorName) }}
+              >
+                {initials(comment.authorName)}
+              </span>
+              <span className="text-ui font-medium text-ink">{comment.authorName}</span>
+            </div>
+            <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
+          </div>
+          <div className="mt-4 flex items-center gap-5 text-label font-medium text-teal">
+            <button
+              type="button"
+              onClick={() =>
+                setCompose(
+                  replyTargetId
+                    ? { parentId: replyTargetId, replyToName: comment.authorName }
+                    : {}
+                )
+              }
+              className="transition-colors hover:text-teal-hover"
+            >
+              Antworte
+            </button>
+            <button
+              type="button"
+              onClick={() => setCompose({})}
+              className="transition-colors hover:text-teal-hover"
+            >
+              Verfasse Kommentar / Tipp
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="mt-4 flex min-h-0 flex-1 flex-col items-center justify-center text-center">
+          <p className="max-w-[26ch] text-body text-ink-soft">
+            Schreibe einen Kommentar und einen Tipp für den Spot
+          </p>
+          <button
+            type="button"
+            onClick={() => setCompose({})}
+            className="mt-4 inline-flex items-center rounded-full bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+          >
+            Verfassen
+          </button>
+        </div>
+      )}
     </div>
   );
 }

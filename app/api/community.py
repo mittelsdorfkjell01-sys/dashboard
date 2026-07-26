@@ -82,12 +82,14 @@ class TipOut(BaseModel):
     body: str
     author_name: str
     created_at: str
+    parent_id: str | None = None
 
     @classmethod
     def of(cls, t: LocalTip) -> "TipOut":
         return cls(
             id=str(t.id), body=t.body, author_name=t.author_name,
             created_at=t.created_at.isoformat(),
+            parent_id=str(t.parent_id) if t.parent_id else None,
         )
 
 
@@ -130,6 +132,7 @@ class TipIn(BaseModel):
     body: str
     author_name: str | None = None
     author_email: str | None = None
+    parent_id: uuid.UUID | None = None  # set when this is a reply
     website: str | None = None  # honeypot
 
 
@@ -205,7 +208,8 @@ def post_tip(
     try:
         tip = service.create_tip(
             db, spot_id, body=body.body, author_name=body.author_name,
-            author_email=body.author_email, ip_hash=ip_hash(request),
+            author_email=body.author_email, parent_id=body.parent_id,
+            ip_hash=ip_hash(request),
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")

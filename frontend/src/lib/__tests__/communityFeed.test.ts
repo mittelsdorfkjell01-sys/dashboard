@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { CommunityImage, RatingItem, TipItem } from "../api";
 import {
   avatarColor,
+  commentThreads,
   encodeVisitDate,
   initials,
   mergeFeed,
@@ -26,6 +27,7 @@ const tip = (over: Partial<TipItem>): TipItem => ({
   body: "Parkt lieber am Nordende.",
   author_name: "Ben",
   created_at: "2026-07-18T09:00:00Z",
+  parent_id: null,
   ...over,
 });
 
@@ -57,6 +59,33 @@ describe("parsePostText / encodeVisitDate", () => {
 
   it("treats plain text (no marker) as having no visit date", () => {
     expect(parsePostText("Ganz normaler Text.")).toEqual({ visitedAt: null, text: "Ganz normaler Text." });
+  });
+});
+
+describe("commentThreads", () => {
+  it("nests replies under their parent comment, oldest first, ignoring photos", () => {
+    const posts = mergeFeed({
+      ratings: [],
+      tips: [
+        tip({ id: "c1", body: "Top Spot", created_at: "2026-07-18T09:00:00Z" }),
+        tip({ id: "r2", body: "zweite Antwort", parent_id: "c1", created_at: "2026-07-18T11:00:00Z" }),
+        tip({ id: "r1", body: "erste Antwort", parent_id: "c1", created_at: "2026-07-18T10:00:00Z" }),
+      ],
+      images: [],
+    });
+    const threads = commentThreads(posts);
+    expect(threads).toHaveLength(1);
+    expect(threads[0].comment.id).toBe("tip:c1");
+    expect(threads[0].replies.map((r) => r.text)).toEqual(["erste Antwort", "zweite Antwort"]);
+  });
+
+  it("drops orphan replies whose parent is absent", () => {
+    const posts = mergeFeed({
+      ratings: [],
+      tips: [tip({ id: "r", body: "verwaist", parent_id: "missing" })],
+      images: [],
+    });
+    expect(commentThreads(posts)).toHaveLength(0);
   });
 });
 

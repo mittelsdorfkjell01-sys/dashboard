@@ -41,7 +41,7 @@ export default function SpotGalleryTile({
         ref={galleryTriggerRef}
         type="button"
         onClick={onOpenGallery}
-        className="absolute left-4 top-4 z-10 rounded-full bg-teal px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+        className="absolute left-4 top-4 z-10 rounded-full bg-teal/80 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal"
       >
         Fotogalerie
       </button>

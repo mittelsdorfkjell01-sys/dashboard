@@ -34,7 +34,7 @@ export default function CommentAuthChoiceDialog({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[1200] grid place-items-center p-4 backdrop-blur-[3px]"
+          className="fixed inset-0 z-[1200] grid place-items-center bg-black/10 p-4 backdrop-blur-[2px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -56,10 +56,10 @@ export default function CommentAuthChoiceDialog({
             <p className="mt-1.5 text-center text-body text-muted">wie möchtest du fortfahren?</p>
 
             <div className="mt-7 grid gap-4 sm:grid-cols-2">
-              <ChoiceCard onClick={onAnonymous} icon={<IncognitoIcon />} title="Anonym">
+              <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym">
                 dein Kommentar wird ohne Namen veröffentlicht
               </ChoiceCard>
-              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} />} title="Anmelden">
+              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Anmelden">
                 melde dich an, um mit deinem Namen zu kommentieren
               </ChoiceCard>
             </div>
@@ -99,7 +99,7 @@ function ChoiceCard({
       onClick={onClick}
       className="group flex flex-col items-center rounded-3xl border border-line px-6 py-8 text-center transition-colors hover:border-teal/50 hover:bg-teal/[0.03]"
     >
-      <span className="text-teal">{icon}</span>
+      <span>{icon}</span>
       <span className="mt-4 text-body font-semibold text-ink">{title}</span>
       <span className="mt-2 max-w-[24ch] text-caption leading-relaxed text-muted">{children}</span>
       <span aria-hidden="true" className="mt-6 text-teal transition-transform group-hover:translate-x-1">
@@ -109,14 +109,11 @@ function ChoiceCard({
   );
 }
 
-function IncognitoIcon() {
+function ThinProfileIcon() {
   return (
-    <svg width="34" height="30" viewBox="0 0 34 30" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 15 9.6 6.4A3 3 0 0 1 12.5 4.3h9A3 3 0 0 1 24.4 6.4L27 15" />
-      <line x1="3" y1="15.5" x2="31" y2="15.5" />
-      <circle cx="10.5" cy="21.5" r="4.5" />
-      <circle cx="23.5" cy="21.5" r="4.5" />
-      <path d="M15 20.5c1.3-1 2.7-1 4 0" />
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className="text-ink">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4.2 3.6-6.5 8-6.5s8 2.3 8 6.5" />
     </svg>
   );
 }
