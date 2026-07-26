@@ -244,7 +244,6 @@ export default function SpotDetail() {
               triggerRef={commentsTriggerRef}
               posts={sortedPosts}
               spotId={id}
-              spotName={spot.name}
               onReload={reloadFeed}
             />
             </motion.div>

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { avatarColor, initials, type FeedPost } from "../lib/communityFeed";
 import { PlusIcon } from "../lib/icons";
-import { Composer } from "./SpotCommunity";
+import CommentComposer from "./CommentComposer";
 import OverlayPanel from "./OverlayPanel";
 
 /**
@@ -17,7 +17,6 @@ export default function CommentsOverlay({
   triggerRef,
   posts,
   spotId,
-  spotName,
   onReload,
 }: {
   open: boolean;
@@ -25,7 +24,6 @@ export default function CommentsOverlay({
   triggerRef: RefObject<HTMLElement>;
   posts: FeedPost[];
   spotId?: string;
-  spotName?: string;
   /** Refetch the feed after a new comment is posted. */
   onReload?: () => void;
 }) {
@@ -46,13 +44,13 @@ export default function CommentsOverlay({
 
       {composerOpen && spotId && (
         <div className="mt-6">
-          <Composer
+          <CommentComposer
             spotId={spotId}
-            spotName={spotName ?? ""}
             onPosted={() => {
               onReload?.();
               setComposerOpen(false);
             }}
+            onCancel={() => setComposerOpen(false)}
           />
         </div>
       )}
