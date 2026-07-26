@@ -28,3 +28,6 @@ Thumbs.db
 # Local screenshots / runtime media (not source)
 screens/
 /data/media/
+
+# local-only DB connection string for one-off migrations (never commit)
+scripts/.neon_url
