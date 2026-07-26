@@ -37,7 +37,7 @@ import {
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
 
-const SPORTS = ["kitesurf", "windsurf", "wing", "surf"] as const;
+const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
 
 const slugify = (s: string) =>

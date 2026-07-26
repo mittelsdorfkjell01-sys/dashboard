@@ -28,11 +28,11 @@ export default function SpotHeaderCard({
   const breadcrumb = [regionName, country].filter(Boolean).join(" › ");
 
   return (
-    <div className="relative z-20 -mt-16 max-w-[1180px] rounded-[28px] bg-white/50 px-6 py-7 backdrop-blur-md sm:-mt-20 sm:px-10 sm:py-8">
+    <div className="relative z-20 -mt-24 max-w-[1180px] rounded-[28px] bg-white/50 px-6 py-6 backdrop-blur-md sm:-mt-28 sm:px-10 sm:py-7">
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-0">
           {breadcrumb && <p className="text-label text-ink-soft/80">{breadcrumb}</p>}
-          <h1 className="mt-1 text-editorial-2 font-semibold text-balance text-ink">{name}</h1>
+          <h1 className="mt-1 text-editorial-3 font-semibold text-balance text-ink">{name}</h1>
         </div>
 
         {typeof score === "number" && (

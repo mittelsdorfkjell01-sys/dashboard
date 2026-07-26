@@ -24,7 +24,7 @@ export default function SpotGalleryTile({
   const go = (delta: number) => setIndex((i) => (i + delta + photos.length) % photos.length);
 
   return (
-    <div className="relative aspect-[3/4] overflow-hidden rounded-3xl bg-band">
+    <div className="relative aspect-[2/3] overflow-hidden rounded-3xl bg-band">
       {photo && (
         <img
           key={photo.id}

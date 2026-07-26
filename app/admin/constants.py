@@ -38,8 +38,10 @@ STYLES: tuple[str, ...] = ("freeride", "freestyle", "big_air", "wave_riding")
 # Facility kinds — exactly these five.
 FACILITY_KINDS: tuple[str, ...] = ("parking", "shower", "food", "camping", "school")
 
-# Sports offered by a spot / attached to a rating.
-SPORTS: tuple[str, ...] = ("kitesurf", "windsurf", "wing", "surf")
+# Sports offered by a spot / attached to a rating. "wavekite" is wave-oriented
+# kiting — wind-driven like kitesurf, but ridden in the wave (its own filter
+# facet), so it's a distinct key rather than a variant of "kitesurf".
+SPORTS: tuple[str, ...] = ("kitesurf", "wavekite", "windsurf", "wing", "surf")
 
 # --- UGC / moderation vocabularies (Sprint C) ------------------------------
 # Rating/tip visibility after post-moderation.

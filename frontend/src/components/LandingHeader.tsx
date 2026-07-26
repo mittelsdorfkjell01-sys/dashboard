@@ -13,18 +13,34 @@ import AccountMenu from "./AccountMenu";
  * Deliberately separate from the shared `Header.tsx` (which the map and search
  * pages reuse with a centred brand).
  */
-export default function LandingHeader({ left }: { left?: ReactNode }) {
+export default function LandingHeader({
+  left,
+  width = "wide",
+}: {
+  left?: ReactNode;
+  /** `"body"` snaps the bar to the 1180px content column (spot page) so the
+   *  back pill and account menu line up with the body's outer edges; `"wide"`
+   *  is the landing default. */
+  width?: "wide" | "body";
+}) {
+  const container =
+    width === "body"
+      ? "mx-auto max-w-[1180px] px-4 pt-9 sm:px-8 sm:pt-12"
+      : "mx-auto max-w-[1500px] px-4 pt-9 sm:px-10 sm:pt-12";
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000]">
-      <div className="mx-auto max-w-[1500px] px-4 pt-9 sm:px-10 sm:pt-12">
+      <div className={container}>
         <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-4">
           {/* Left — caps tagline, or a page-specific slot (e.g. the spot
-              page's "Zurück" pill) */}
-          {left ?? (
-            <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
-              Best collection of surfspots
-            </span>
-          )}
+              page's "Zurück" pill). `justify-self-start` keeps a pill at its
+              natural width instead of stretching across the whole 1fr column. */}
+          <div className="justify-self-start">
+            {left ?? (
+              <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
+                Best collection of surfspots
+              </span>
+            )}
+          </div>
 
           {/* Centre — wordmark */}
           <Link

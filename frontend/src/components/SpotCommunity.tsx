@@ -35,7 +35,7 @@ import {
   type FeedSort,
 } from "../lib/communityFeed";
 
-const SPORTS = ["kitesurf", "windsurf", "wing", "surf"];
+const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 const REPORT_REASONS: { key: string; label: string }[] = [
   { key: "copyright", label: "Urheberrecht / mein Bild" },
   { key: "inappropriate", label: "Unangemessen" },

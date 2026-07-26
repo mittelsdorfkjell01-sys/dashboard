@@ -128,6 +128,7 @@ export default function SpotDetail() {
   return (
     <div className="relative min-h-screen bg-white">
       <LandingHeader
+        width="body"
         left={
           <button
             type="button"

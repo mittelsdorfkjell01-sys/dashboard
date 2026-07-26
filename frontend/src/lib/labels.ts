@@ -53,9 +53,10 @@ export const FACILITY_LABELS: Record<FacilityKind, string> = {
 
 export const SPORT_LABELS: Record<string, string> = {
   kitesurf: "Kitesurfen",
+  wavekite: "Wavekiten",
   windsurf: "Windsurfen",
   wing: "Wingfoilen",
-  surf: "Wellenreiten",
+  surf: "Surfen",
 };
 
 // Admin roles (Sprint A). Keys stay 'admin'/'curator' in the backend; these are

@@ -78,7 +78,7 @@ export default function OverlayPanel({
           <motion.div
             key="blur"
             aria-hidden="true"
-            className="fixed inset-0 z-[1100] hidden backdrop-blur-md sm:block"
+            className="fixed inset-0 z-[1100] hidden backdrop-blur-[3px] sm:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

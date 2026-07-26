@@ -16,7 +16,7 @@ import {
 } from "../lib/api";
 import { gapLabel, sportLabel, statusLabel } from "../lib/labels";
 
-const SPORTS = ["kitesurf", "windsurf", "wing", "surf"];
+const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 const STATUSES = ["draft", "published", "archived"];
 const PAGE = 25;
 

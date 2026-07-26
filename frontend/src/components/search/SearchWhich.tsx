@@ -6,6 +6,7 @@
 const OPTIONS: { value: string; label: string }[] = [
   { value: "surf", label: "Surfen" },
   { value: "kitesurf", label: "Kitesurfen" },
+  { value: "wavekite", label: "Wavekiten" },
   { value: "windsurf", label: "Windsurfen" },
   { value: "wing", label: "Wing" },
 ];

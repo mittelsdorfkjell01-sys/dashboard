@@ -324,7 +324,7 @@ SPOTS: list[dict] = [
 
     {"slug": "tarifa-arte-vida", "name": "Arte Vida",
      "region_slug": "tarifa", "location": (-5.655, 36.035),
-     "sports": ["kitesurf", "wing", "windsurf"],
+     "sports": ["kitesurf", "wavekite", "surf"],
      "water_type": "sea", "bottom_type": "mixed", "level": "intermediate",
      "water_character": "welle_klein", "style": ["wave_riding", "freeride"],
      "status": "draft",
