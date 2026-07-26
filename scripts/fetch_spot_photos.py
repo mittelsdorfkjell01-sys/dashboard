@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import time
+from urllib.parse import unquote
 
 from geoalchemy2.shape import to_shape
 from sqlalchemy import select
@@ -23,6 +24,22 @@ from app.admin.commons import default_commons_client
 from app.community.service import create_commons_image_records
 from app.db.session import SessionLocal
 from app.models import Spot
+
+# Commons geosearch returns *any* geotagged photo nearby, so filter hits to ones
+# whose filename hints at a beach/surf/coast subject — keeps off-topic shots
+# (buildings, aerial tiles) out of the DB. --all disables the filter.
+_KEYWORDS = (
+    "beach","strand","playa","plage","spiaggia","praia","surf","kite","windsurf",
+    "wave","welle","ola","coast","kuste","küste","costa","cote","côte","dune","düne",
+    "sea","meer","ocean","ozean","bay","bucht","baie","bahia","cliff","klippe","sand",
+    "lagoon","laguna","lagune","hafen","harbour","pier","promenade","shore","ufer",
+    "kap","cape","punta","strand",
+)
+
+
+def _relevant(url: str) -> bool:
+    fn = unquote(url.rsplit("/", 1)[-1]).lower()
+    return any(k in fn for k in _KEYWORDS)
 
 
 def _pick_hero(images: list):
@@ -41,6 +58,7 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None, help="process at most N spots")
     ap.add_argument("--sleep", type=float, default=1.0, help="pause between Commons calls (s)")
     ap.add_argument("--dry-run", action="store_true", help="search + report, write nothing")
+    ap.add_argument("--all", action="store_true", help="keep every hit (skip the beach/surf keyword filter)")
     args = ap.parse_args()
 
     client = default_commons_client()
@@ -65,13 +83,15 @@ def main() -> None:
                 continue
 
             processed += 1
+            if not args.all:
+                results = [r for r in results if _relevant(r["url"])]
             if not results:
                 no_hits += 1
-                print(f"[--] {spot.slug}: no Commons photos nearby")
+                print(f"[--] {spot.slug}: no relevant Commons photos nearby")
                 continue
 
             if args.dry_run:
-                print(f"[dry] {spot.slug}: {len(results)} hit(s)")
+                print(f"[dry] {spot.slug}: {len(results)} relevant hit(s)")
                 continue
 
             created = create_commons_image_records(db, spot.id, results)
