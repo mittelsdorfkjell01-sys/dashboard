@@ -59,7 +59,7 @@ export default function CommentAuthChoiceDialog({
               <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym">
                 dein Kommentar wird ohne Namen veröffentlicht
               </ChoiceCard>
-              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Anmelden">
+              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Login">
                 melde dich an, um mit deinem Namen zu kommentieren
               </ChoiceCard>
             </div>

@@ -103,7 +103,7 @@ export default function InlineTipComposer({
           setAuthOpen(false);
           void post("Anonym");
         }}
-        onSignIn={() => navigate("/anmelden")}
+        onSignIn={() => navigate("/anmelden?mode=login")}
         onCancel={() => setAuthOpen(false)}
       />
     </div>
