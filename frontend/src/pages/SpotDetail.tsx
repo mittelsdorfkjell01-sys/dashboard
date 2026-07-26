@@ -63,7 +63,7 @@ export default function SpotDetail() {
   const { data: live } = useSpotLive(id);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(id);
-  const { posts, photos } = useCommunityFeed(id);
+  const { posts, photos, reload: reloadFeed } = useCommunityFeed(id);
   const score = useRatingScore(id);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -243,6 +243,9 @@ export default function SpotDetail() {
               onClose={() => setCommentsOpen(false)}
               triggerRef={commentsTriggerRef}
               posts={sortedPosts}
+              spotId={id}
+              spotName={spot.name}
+              onReload={reloadFeed}
             />
             </motion.div>
           )}

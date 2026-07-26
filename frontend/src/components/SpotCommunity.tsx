@@ -257,7 +257,7 @@ function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd
  *  single rating (stars + free text) and, if a photo was attached, a second
  *  upload call right after — the closest the current API gets to "one post,
  *  one action" without a dedicated endpoint. */
-function Composer({
+export function Composer({
   spotId,
   spotName,
   onPosted,
