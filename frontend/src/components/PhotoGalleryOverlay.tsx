@@ -7,6 +7,7 @@ import { justifyRows } from "../lib/justifyRows";
 import { CloseIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import { GalleryUploadForm } from "./SpotCommunity";
+import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
 import OverlayPanel from "./OverlayPanel";
 
 /**
@@ -37,6 +38,7 @@ export default function PhotoGalleryOverlay({
   const navigate = useNavigate();
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   // Reset transient sub-states whenever the whole overlay closes, so nothing
   // reopens mid-flow on the next open.
@@ -44,13 +46,15 @@ export default function PhotoGalleryOverlay({
     if (!open) {
       setLightbox(null);
       setUploadOpen(false);
+      setAuthOpen(false);
     }
   }, [open]);
 
   const onAdd = () => {
-    // Same gate as the favourites button: sign in first, then upload.
+    // Signed out → offer the same choice as comments: upload anonymously or
+    // sign in. Signed in → straight to the upload form.
     if (!user) {
-      navigate("/anmelden");
+      setAuthOpen(true);
       return;
     }
     setUploadOpen(true);
@@ -94,6 +98,19 @@ export default function PhotoGalleryOverlay({
           </button>
         )}
       </OverlayPanel>
+
+      <CommentAuthChoiceDialog
+        open={authOpen}
+        title="Foto hochladen"
+        anonymousText="dein Foto wird ohne Namen veröffentlicht"
+        signInText="melde dich an, um mit deinem Namen hochzuladen"
+        onAnonymous={() => {
+          setAuthOpen(false);
+          setUploadOpen(true);
+        }}
+        onSignIn={() => navigate("/anmelden?mode=login")}
+        onCancel={() => setAuthOpen(false)}
+      />
 
       <Lightbox photos={photos} index={lightbox} onClose={() => setLightbox(null)} onIndex={setLightbox} />
     </>

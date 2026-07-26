@@ -15,11 +15,18 @@ export default function CommentAuthChoiceDialog({
   onAnonymous,
   onSignIn,
   onCancel,
+  title = "Kommentar verfassen",
+  anonymousText = "dein Kommentar wird ohne Namen veröffentlicht",
+  signInText = "melde dich an, um mit deinem Namen zu kommentieren",
 }: {
   open: boolean;
   onAnonymous: () => void;
   onSignIn: () => void;
   onCancel: () => void;
+  /** Overridable copy so the same dialog serves comments and photo uploads. */
+  title?: string;
+  anonymousText?: string;
+  signInText?: string;
 }) {
   const reduce = useReducedMotion();
 
@@ -44,7 +51,7 @@ export default function CommentAuthChoiceDialog({
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label="Kommentar verfassen"
+            aria-label={title}
             className="w-full max-w-[560px] rounded-[28px] bg-white/95 p-7 shadow-card backdrop-blur-md sm:p-9"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
@@ -52,15 +59,15 @@ export default function CommentAuthChoiceDialog({
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: reduce ? 0 : 0.22, ease: "easeOut" }}
           >
-            <h2 className="text-center text-title font-semibold text-teal">Kommentar verfassen</h2>
+            <h2 className="text-center text-title font-semibold text-teal">{title}</h2>
             <p className="mt-1.5 text-center text-body text-muted">wie möchtest du fortfahren?</p>
 
             <div className="mt-7 grid gap-4 sm:grid-cols-2">
               <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym">
-                dein Kommentar wird ohne Namen veröffentlicht
+                {anonymousText}
               </ChoiceCard>
               <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Login">
-                melde dich an, um mit deinem Namen zu kommentieren
+                {signInText}
               </ChoiceCard>
             </div>
 

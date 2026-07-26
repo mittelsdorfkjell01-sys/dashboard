@@ -36,7 +36,7 @@ export default function SpotCommentBox({
   };
 
   return (
-    <div className="flex flex-1 flex-col rounded-3xl bg-band p-6">
+    <div className="flex flex-1 flex-col rounded-3xl bg-white p-6 shadow-card">
       <div className="flex items-center justify-between gap-3">
         <p className="text-label text-muted">Kommentare oder Tips</p>
         {comment && !compose && (

@@ -24,15 +24,6 @@ import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed, useRatingScore
 import { facilitiesFromMap } from "../lib/spotView";
 import { climatologyToMonths, waterTypeFromCharacter } from "../lib/seasonView";
 
-// TODO(info-lorem): placeholder body copy per the Figma spec — real spot
-// descriptions aren't wired into this paragraph yet (see task doc).
-const LOREM =
-  "Lorem ipsum dolor sit amet consectetur. Neque vel ornare orci praesent. " +
-  "Vel aliquam id eu est auctor velit. Tempus id tincidunt egestas non a " +
-  "pharetra praesent. Aliquam urna vitae porta praesent convallis diam nunc " +
-  "tincidunt. Pretium vitae eu nunc lorem cursus cras. Risus nisl aliquet " +
-  "commodo eu felis. At faucibus eu justo penatibus nascetur mus.";
-
 export default function SpotDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -188,7 +179,7 @@ export default function SpotDetail() {
                   {/* Sports are plain label + teal check (Figma Frame_9), not
                       filled pills — datengetrieben aus spot.sports. */}
                   {spot.sports && spot.sports.length > 0 && (
-                    <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
                       {spot.sports.map((s) => (
                         <span
                           key={s}
@@ -201,9 +192,13 @@ export default function SpotDetail() {
                     </div>
                   )}
 
-                  <p className="mt-6 max-w-[62ch] text-body text-ink-soft">{LOREM}</p>
+                  {/* The real spot description (editorial.description from the DB);
+                      falls back to a gentle note when a spot has none yet. */}
+                  <p className="mt-8 max-w-[62ch] text-body text-ink-soft">
+                    {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
+                  </p>
 
-                  <div className="mt-6">
+                  <div className="mt-10">
                     <FavoriteButton spot={spot} />
                   </div>
                 </div>
