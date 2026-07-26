@@ -236,6 +236,7 @@ export default function SpotDetail() {
               onClose={() => setGalleryOpen(false)}
               triggerRef={galleryTriggerRef}
               photos={photos}
+              spotId={id}
             />
             <CommentsOverlay
               open={commentsOpen}

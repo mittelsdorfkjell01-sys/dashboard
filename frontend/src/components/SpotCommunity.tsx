@@ -904,7 +904,7 @@ function ReportDialog({
  *  spot", no text required). Uploads immediately but lands in the admin
  *  review queue rather than the public gallery straight away — an admin
  *  approves it from there before it shows up for everyone else. */
-function GalleryUploadForm({
+export function GalleryUploadForm({
   spotId,
   onDone,
   onCancel,

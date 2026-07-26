@@ -91,7 +91,7 @@ export default function OverlayPanel({
             role="dialog"
             aria-modal="true"
             tabIndex={-1}
-            className="fixed inset-0 z-[1101] overflow-y-auto bg-white outline-none sm:inset-x-0 sm:top-auto sm:bottom-0 sm:max-h-[85vh] sm:rounded-t-[28px]"
+            className="fixed inset-0 z-[1101] overflow-y-auto bg-white outline-none sm:inset-x-0 sm:top-auto sm:bottom-0 sm:min-h-[50vh] sm:max-h-[90vh] sm:rounded-t-[28px]"
             initial={{ y: reduce ? 0 : "100%" }}
             animate={{ y: 0 }}
             exit={{ y: reduce ? 0 : "100%" }}
