@@ -33,12 +33,12 @@ export default function Facilities({
 
   if (variant === "list") {
     return (
-      <dl className="divide-y divide-line border-t border-line">
+      <dl>
         {items.map((f) => {
           const absent = f.available === false;
           const unknown = f.available === null;
           return (
-            <div key={f.kind} className="flex items-center justify-between gap-4 py-3.5">
+            <div key={f.kind} className="flex items-center justify-between gap-4 border-b border-line py-3">
               <dt className={`text-ui ${absent ? "text-muted line-through" : "text-ink"}`}>{f.title}</dt>
               <dd className={`text-caption ${absent ? "text-muted line-through" : unknown ? "text-muted" : "text-ink-soft"}`}>
                 {f.note}

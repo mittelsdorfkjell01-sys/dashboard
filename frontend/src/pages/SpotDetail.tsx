@@ -143,13 +143,20 @@ export default function SpotDetail() {
       />
 
       <main>
-        {/* Region name lives in the namebox below, not floating on the photo. */}
-        <EditorialHero image={spot.hero} focal={spot.heroFocal} alt={spot.name} credit={spot.heroCredit} />
+        {/* Hero + namebox: the namebox floats fully over the hero image with a
+            small gap above its bottom edge (Figma Frame_9), so it's an absolute
+            overlay rather than a card straddling the seam. */}
+        <div className="relative">
+          {/* Region name lives in the namebox, not floating on the photo. */}
+          <EditorialHero image={spot.hero} focal={spot.heroFocal} alt={spot.name} credit={spot.heroCredit} />
 
-        {/* Namebox: breadcrumb + name left, community score right — overlaps
-            the hero's bottom edge */}
-        <div className="relative z-20 mx-auto max-w-[1180px] px-4 sm:px-8">
-          <SpotHeaderCard name={spot.name} regionName={regionPart} country={country} score={score} />
+          <div className="pointer-events-none absolute inset-x-0 bottom-8 z-20">
+            <div className="mx-auto max-w-[1180px] px-4 sm:px-8">
+              <div className="pointer-events-auto">
+                <SpotHeaderCard name={spot.name} regionName={regionPart} country={country} score={score} />
+              </div>
+            </div>
+          </div>
         </div>
 
         {tabs.length > 0 && <SpotTabs tabs={tabs} />}
@@ -167,20 +174,22 @@ export default function SpotDetail() {
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="white" pad="md">
-              <div className="grid gap-x-10 gap-y-10 lg:grid-cols-12">
-                <div className="lg:col-span-4">
+              <div className="grid gap-x-8 gap-y-10 lg:grid-cols-[5fr_6fr_5fr]">
+                <div>
                   <h2 className="text-display-2 text-balance text-ink">
                     <span className="font-bold">Top Tier Spot in</span>
                     <br />
                     <span className="font-normal text-ink-soft">{country || regionPart}</span>
                   </h2>
 
+                  {/* Sports are plain label + teal check (Figma Frame_9), not
+                      filled pills — datengetrieben aus spot.sports. */}
                   {spot.sports && spot.sports.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
                       {spot.sports.map((s) => (
                         <span
                           key={s}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-band px-3.5 py-1.5 text-label font-medium text-ink"
+                          className="inline-flex items-center gap-1 text-label font-medium text-ink"
                         >
                           {sportLabel(s)}
                           <CheckCircleIcon width={16} height={16} className="text-teal" />
@@ -196,7 +205,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-4">
+                <div>
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -204,7 +213,7 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-6 lg:col-span-4">
+                <div className="flex flex-col gap-14">
                   <Facilities items={facilities} variant="list" />
                   <SpotCommentTeaser
                     post={featuredPost}
