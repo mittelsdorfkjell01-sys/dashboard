@@ -59,13 +59,18 @@ def main() -> None:
     ap.add_argument("--sleep", type=float, default=1.0, help="pause between Commons calls (s)")
     ap.add_argument("--dry-run", action="store_true", help="search + report, write nothing")
     ap.add_argument("--all", action="store_true", help="keep every hit (skip the beach/surf keyword filter)")
+    ap.add_argument("--slug", default=None, help="process only this spot slug")
+    ap.add_argument("--radius", type=int, default=None, help="override the Commons geosearch radius (m)")
     args = ap.parse_args()
 
     client = default_commons_client()
     db = SessionLocal()
     processed = galleries = heroes = no_hits = 0
     try:
-        spots = db.scalars(select(Spot).order_by(Spot.name)).all()
+        stmt = select(Spot).order_by(Spot.name)
+        if args.slug:
+            stmt = stmt.where(Spot.slug == args.slug)
+        spots = db.scalars(stmt).all()
         for spot in spots:
             if args.limit is not None and processed >= args.limit:
                 break
@@ -76,8 +81,9 @@ def main() -> None:
                 continue
 
             pt = to_shape(spot.location)  # shapely Point(lon, lat)
+            search_kw = {"radius_m": args.radius} if args.radius else {}
             try:
-                results = client.search(pt.y, pt.x)
+                results = client.search(pt.y, pt.x, **search_kw)
             except Exception as exc:  # pragma: no cover - live network
                 print(f"[skip] {spot.slug}: search failed: {exc}")
                 continue
