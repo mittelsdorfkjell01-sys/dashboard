@@ -101,7 +101,14 @@ def main() -> None:
             if not has_hero:
                 hero = _pick_hero(created)
                 if hero is not None:
-                    spot.image = {"url": hero.url, "credit": hero.credit}
+                    # Store attribution on the hero JSONB so the UI can credit
+                    # the author + license and link back to the Commons page.
+                    spot.image = {
+                        "url": hero.url,
+                        "credit": hero.credit,
+                        "license": hero.license_name,
+                        "source": hero.source_url,
+                    }
                     db.add(spot)
                     heroes += 1
                     hero_now = True

@@ -21,6 +21,8 @@ export default function EditorialHero({
   title,
   meta,
   credit,
+  license,
+  sourceUrl,
   children,
 }: {
   image?: string | null;
@@ -30,9 +32,13 @@ export default function EditorialHero({
   title?: string;
   meta?: ReactNode;
   /** Photographer name / Instagram tag, shown small in the hero's bottom
-   *  corner. Plain text only — there's no credit-URL field in the data model
-   *  yet, so this never renders as a link. */
+   *  corner. */
   credit?: string;
+  /** License name shown next to the credit (attribution for e.g. a Commons
+   *  hero). */
+  license?: string;
+  /** Source page URL — rendered as a "Quelle" link when it's an http(s) URL. */
+  sourceUrl?: string;
   children?: ReactNode;
 }) {
   const reduce = useReducedMotion();
@@ -112,10 +118,21 @@ export default function EditorialHero({
         </div>
       </div>
 
-      {/* credit */}
-      {credit && (
+      {/* credit + attribution (author · license · source link) */}
+      {(credit || license || sourceUrl) && (
         <div className="pointer-events-none absolute bottom-4 right-4 z-10 text-caption tracking-wide text-white/55 sm:bottom-6 sm:right-8">
-          {credit}
+          <span className="pointer-events-auto">
+            {credit && <span>Foto: {credit}</span>}
+            {license && <span>{credit ? " · " : ""}{license}</span>}
+            {sourceUrl && /^https?:\/\//i.test(sourceUrl) && (
+              <span>
+                {" · "}
+                <a href={sourceUrl} target="_blank" rel="noreferrer noopener" className="underline hover:text-white/80">
+                  Quelle
+                </a>
+              </span>
+            )}
+          </span>
         </div>
       )}
     </section>

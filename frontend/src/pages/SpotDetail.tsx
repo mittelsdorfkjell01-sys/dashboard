@@ -138,7 +138,14 @@ export default function SpotDetail() {
       <main>
         {/* Clean hero image — the spot identity (name/region/score) now lives in
             the Info column below, not in an overlay on the photo (Figma Frame_9). */}
-        <EditorialHero image={spot.hero} focal={spot.heroFocal} alt={spot.name} credit={spot.heroCredit} />
+        <EditorialHero
+          image={spot.hero}
+          focal={spot.heroFocal}
+          alt={spot.name}
+          credit={spot.heroCredit}
+          license={spot.heroLicense}
+          sourceUrl={spot.heroSource}
+        />
 
         {tabs.length > 0 && <SpotTabs tabs={tabs} />}
 

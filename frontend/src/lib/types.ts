@@ -23,6 +23,8 @@ export interface Spot {
   hero?: string;
   heroFocal?: { x: number; y: number } | null; // object-position % for the crop
   heroCredit?: string; // photographer name / Instagram tag, shown in the hero corner
+  heroLicense?: string; // license name for attribution (e.g. a Commons hero)
+  heroSource?: string; // source page URL — rendered as a "Quelle" link when it's a URL
   coords?: [number, number]; // [lat, lng]
   windDir?: number; // degrees the wind comes FROM
   waveDir?: number;

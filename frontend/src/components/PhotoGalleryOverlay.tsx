@@ -309,9 +309,29 @@ function Lightbox({
             transition={{ duration: reduce ? 0 : 0.18 }}
           />
 
-          {photo.credit && (
-            <p className="absolute bottom-4 left-0 right-0 text-center text-caption text-white/70">
-              {photo.credit}
+          {(photo.credit || photo.license_name || photo.source_url) && (
+            <p className="absolute bottom-4 left-0 right-0 px-4 text-center text-caption text-white/70">
+              {photo.credit && <span>Foto: {photo.credit}</span>}
+              {photo.license_name && (
+                <span>
+                  {photo.credit ? " · " : ""}
+                  {photo.license_url ? (
+                    <a href={photo.license_url} target="_blank" rel="noreferrer noopener" className="underline hover:text-white">
+                      {photo.license_name}
+                    </a>
+                  ) : (
+                    photo.license_name
+                  )}
+                </span>
+              )}
+              {photo.source_url && (
+                <span>
+                  {" · "}
+                  <a href={photo.source_url} target="_blank" rel="noreferrer noopener" className="underline hover:text-white">
+                    Quelle
+                  </a>
+                </span>
+              )}
             </p>
           )}
         </motion.div>
