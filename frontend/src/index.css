@@ -57,6 +57,12 @@
     outline: 2px solid theme("colors.teal.DEFAULT") !important;
     outline-offset: 1px;
   }
+
+  /* The inline comment composer opts out of the thick outer outline — its own
+     thin teal border is the focus indicator (per design). */
+  textarea.comment-field:focus-visible {
+    outline: none !important;
+  }
 }
 
 @layer utilities {

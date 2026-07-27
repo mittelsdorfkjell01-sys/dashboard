@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import L, { type Map as LeafletMap } from "leaflet";
 import { mapLinkProps } from "../lib/mapLinks";
@@ -17,19 +17,51 @@ const pinIcon = L.divIcon({
   iconAnchor: [15, 38],
 });
 
+const HANDLERS = ["dragging", "scrollWheelZoom", "doubleClickZoom", "touchZoom", "boxZoom", "keyboard"] as const;
+
 /**
- * "Lage" — a real, interactive OpenStreetMap (Figma Frame_9): persistent
- * +/- zoom controls top-left, a "Maps" button below them that (like the
- * marker) opens the device's map app / Google Maps via `lib/mapLinks`.
+ * "Lage" — the locator map (Figma Frame_9). Interaction is **click-to-activate**:
+ * it starts locked (so scrolling the page never gets hijacked and there's no
+ * hover overlay/warning); the first click enables pan/zoom, and a second click
+ * on the map locks it again. The +/- zoom and "Maps" controls always work.
  */
 export default function LocatorMap({ coords }: { coords: [number, number] }) {
   const [map, setMap] = useState<LeafletMap | null>(null);
+  const [active, setActive] = useState(false);
   const [lat, lng] = coords;
   const link = mapLinkProps(lat, lng);
 
+  // Enable/disable the interaction handlers to match the active state.
+  useEffect(() => {
+    if (!map) return;
+    for (const h of HANDLERS) active ? map[h].enable() : map[h].disable();
+  }, [map, active]);
+
+  // While active, a plain click (not a drag) locks the map again.
+  useEffect(() => {
+    if (!map || !active) return;
+    const lock = () => setActive(false);
+    map.on("click", lock);
+    return () => {
+      map.off("click", lock);
+    };
+  }, [map, active]);
+
   return (
     <div className="relative overflow-hidden rounded-3xl">
-      <MapContainer center={coords} zoom={13} zoomControl={false} scrollWheelZoom ref={setMap} className="h-[440px] w-full sm:h-[540px]">
+      <MapContainer
+        center={coords}
+        zoom={13}
+        zoomControl={false}
+        dragging={false}
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        boxZoom={false}
+        keyboard={false}
+        ref={setMap}
+        className="h-[440px] w-full sm:h-[540px]"
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -37,6 +69,17 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         />
         <Marker position={coords} icon={pinIcon} />
       </MapContainer>
+
+      {/* Locked: a transparent catcher that activates on click — no text, no
+          hover styling, so hovering the map changes nothing. */}
+      {!active && (
+        <button
+          type="button"
+          aria-label="Karte aktivieren"
+          onClick={() => setActive(true)}
+          className="absolute inset-0 z-[450] bg-transparent"
+        />
+      )}
 
       <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
         <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
