@@ -16,6 +16,8 @@ export default {
         // section background (was `cream`).
         surface: "#FFFFFF",
         band: "#F5F3F0",
+        // Page/body background — cards sit on this as white surfaces.
+        page: "#F7F7F7",
         // Interaction color — every button, link, hover, focus ring, active
         // tab indicator. Never used for large text blocks the way `ink` is,
         // but passes AA as both text-on-white and white-on-fill (5.9:1).
@@ -48,8 +50,9 @@ export default {
         card: "0 12px 34px -18px rgba(36, 28, 23, 0.20)",
       },
       borderRadius: {
-        "2xl": "1rem",
-        "3xl": "1.5rem",
+        // Corner radius unified to 14px across cards/tiles/overlays.
+        "2xl": "0.875rem", // 14px
+        "3xl": "0.875rem", // 14px
       },
       // Semantic type scale — the app's recurring UI text steps as tokens
       // (single source of truth). Font-size only, so values match the previously

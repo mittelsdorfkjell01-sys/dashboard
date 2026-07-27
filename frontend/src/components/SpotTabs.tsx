@@ -37,7 +37,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
   };
 
   return (
-    <div className="bg-white pt-12">
+    <div className="bg-page pt-12">
       <div
         role="tablist"
         aria-label="Spot-Ansicht"

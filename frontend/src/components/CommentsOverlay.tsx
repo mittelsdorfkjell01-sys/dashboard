@@ -42,7 +42,7 @@ export default function CommentsOverlay({
       </div>
 
       {composeNew && spotId && (
-        <div className="mt-6 rounded-3xl bg-band p-5">
+        <div className="mt-6 rounded-3xl bg-white p-5">
           <InlineTipComposer
             spotId={spotId}
             onPosted={() => {
@@ -92,7 +92,7 @@ function ThreadCard({
   const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
   return (
-    <div className="flex flex-col rounded-3xl bg-band p-6">
+    <div className="flex flex-col rounded-3xl bg-white p-6">
       <CommentHead post={comment} />
       <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
 

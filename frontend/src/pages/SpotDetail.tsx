@@ -66,7 +66,7 @@ export default function SpotDetail() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen bg-white">
+      <div className="relative min-h-screen bg-page">
         <LandingHeader />
         <div className="hero-h w-full animate-pulse bg-ink-soft" />
         <div className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-8">
@@ -119,7 +119,7 @@ export default function SpotDetail() {
     : [];
 
   return (
-    <div className="relative min-h-screen bg-white">
+    <div className="relative min-h-screen bg-page">
       <LandingHeader
         width="body"
         left={
@@ -161,7 +161,7 @@ export default function SpotDetail() {
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
-            <SectionBand tone="white" pad="md">
+            <SectionBand tone="page" pad="md">
               <div className="grid gap-x-8 gap-y-10 lg:grid-cols-[5fr_6fr_5fr]">
                 <div>
                   {/* Spot identity: breadcrumb, name + community score inline
@@ -233,7 +233,7 @@ export default function SpotDetail() {
 
             {/* Lage: only ever shown with real coordinates */}
             {spot.coords && (
-              <SectionBand tone="white" pad="md">
+              <SectionBand tone="page" pad="md">
                 <LocatorMap coords={spot.coords} />
               </SectionBand>
             )}

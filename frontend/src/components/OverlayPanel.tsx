@@ -92,13 +92,13 @@ export default function OverlayPanel({
             role="dialog"
             aria-modal="true"
             tabIndex={-1}
-            className="fixed inset-0 z-[1101] overflow-y-auto bg-white outline-none sm:inset-x-0 sm:top-auto sm:bottom-0 sm:min-h-[50vh] sm:max-h-[90vh] sm:rounded-t-[28px]"
+            className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-0 sm:top-auto sm:bottom-0 sm:min-h-[50vh] sm:max-h-[90vh] sm:rounded-t-3xl"
             initial={{ y: reduce ? 0 : "100%" }}
             animate={{ y: 0 }}
             exit={{ y: reduce ? 0 : "100%" }}
             transition={{ duration: reduce ? 0 : 0.32, ease: "easeOut" }}
           >
-            <div className="sticky top-0 z-10 flex justify-center bg-white pb-2 pt-4">
+            <div className="sticky top-0 z-10 flex justify-center bg-page pb-2 pt-4">
               <button
                 type="button"
                 onClick={onClose}

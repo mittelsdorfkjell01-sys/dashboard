@@ -52,7 +52,7 @@ export default function CommentAuthChoiceDialog({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="w-full max-w-[560px] rounded-[28px] bg-white/95 p-7 shadow-card backdrop-blur-md sm:p-9"
+            className="w-full max-w-[560px] rounded-3xl bg-white/95 p-7 shadow-card backdrop-blur-md sm:p-9"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

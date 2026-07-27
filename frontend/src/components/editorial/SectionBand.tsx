@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
-type Tone = "white" | "band";
+type Tone = "white" | "band" | "page";
 type Width = "narrow" | "content" | "wide" | "bleed";
 type Pad = "sm" | "md" | "lg";
 
@@ -21,6 +21,7 @@ const PAD_Y: Record<Pad, string> = {
 const TONE_BG: Record<Tone, string> = {
   white: "bg-white",
   band: "bg-band",
+  page: "bg-page",
 };
 
 /**
