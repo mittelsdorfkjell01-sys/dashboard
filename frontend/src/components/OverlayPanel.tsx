@@ -34,6 +34,22 @@ export default function OverlayPanel({
   const reduce = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Lock the page while an overlay is open so the background can't be scrolled
+  // or interacted with. Compensate the scrollbar width to avoid a layout jump.
+  useEffect(() => {
+    if (!open) return;
+    const { body } = document;
+    const prevOverflow = body.style.overflow;
+    const prevPaddingRight = body.style.paddingRight;
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    body.style.overflow = "hidden";
+    if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
+    return () => {
+      body.style.overflow = prevOverflow;
+      body.style.paddingRight = prevPaddingRight;
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     panelRef.current?.focus();
