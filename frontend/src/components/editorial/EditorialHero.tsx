@@ -80,15 +80,19 @@ export default function EditorialHero({
         </div>
       )}
 
-      {/* scrim: bottom layer for title legibility, top layer for the header */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 22%, rgba(0,0,0,.12) 48%, transparent 70%)",
-        }}
-      />
+      {/* scrim: bottom layer only when a title/meta sits on the hero (region
+          pages). The spot page moved the name into the column below, so the
+          hero stays as bright as the original photo — no bottom darkening. */}
+      {(title || meta || kicker) && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 22%, rgba(0,0,0,.12) 48%, transparent 70%)",
+          }}
+        />
+      )}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-40"

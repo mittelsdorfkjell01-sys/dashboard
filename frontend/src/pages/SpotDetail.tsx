@@ -20,7 +20,7 @@ import { ErrorBanner, EmptyState } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { sortFeed } from "../lib/communityFeed";
-import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed, useRatingScore } from "../lib/hooks";
+import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { climatologyToMonths, waterTypeFromCharacter } from "../lib/seasonView";
 
@@ -55,7 +55,6 @@ export default function SpotDetail() {
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(id);
   const { posts, photos, reload: reloadFeed } = useCommunityFeed(id);
-  const score = useRatingScore(id);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -171,17 +170,7 @@ export default function SpotDetail() {
                       {[regionPart, country].filter(Boolean).join(" › ")}
                     </p>
                   )}
-                  <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h1 className="text-editorial-4 font-semibold text-balance text-ink">{spot.name}</h1>
-                    {typeof score === "number" && (
-                      <span className="flex items-baseline gap-1">
-                        <span className="text-editorial-4 font-semibold tabular-nums text-ink-soft">
-                          {(score * 2).toFixed(1)}
-                        </span>
-                        <span className="text-caption text-muted">Punkte</span>
-                      </span>
-                    )}
-                  </div>
+                  <h1 className="mt-1 text-editorial-4 font-semibold text-balance text-ink">{spot.name}</h1>
 
                   {/* Sports are plain label + teal check (Figma Frame_9), not
                       filled pills — datengetrieben aus spot.sports. */}
@@ -229,14 +218,16 @@ export default function SpotDetail() {
                   />
                 </div>
               </div>
-            </SectionBand>
 
-            {/* Lage: only ever shown with real coordinates */}
-            {spot.coords && (
-              <SectionBand tone="page" pad="md">
-                <LocatorMap coords={spot.coords} />
-              </SectionBand>
-            )}
+              {/* Lage: sits directly under the columns — same 32px gap the
+                  gallery has to its left/right columns (gap-x-8), not a whole
+                  new section's padding. */}
+              {spot.coords && (
+                <div className="mt-8">
+                  <LocatorMap coords={spot.coords} />
+                </div>
+              )}
+            </SectionBand>
 
             <PhotoGalleryOverlay
               open={galleryOpen}

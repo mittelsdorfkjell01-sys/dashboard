@@ -71,7 +71,7 @@ export default function InlineTipComposer({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
-        className="min-h-[110px] w-full flex-1 resize-none rounded-2xl border-[0.5px] border-line bg-white p-4 text-body text-ink placeholder:text-muted focus:border-teal/40 focus:outline-none focus:ring-2 focus:ring-teal/20"
+        className="min-h-[110px] w-full flex-1 resize-none rounded-2xl border-[0.5px] border-line bg-white p-4 text-body text-ink placeholder:text-muted focus:border-teal/50 focus:outline-none focus:ring-0"
       />
       {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
       <div className="mt-3 flex items-center justify-between">
