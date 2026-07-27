@@ -41,32 +41,31 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${KEY}`,
       center: [lng, lat],
       zoom: 12.5,
-      pitch: 40, // slight 3D
-      maxPitch: 70,
+      pitch: 0, // flat top-down view
       attributionControl: { compact: true },
     });
     mapRef.current = map;
     map.dragRotate.disable();
+    map.touchPitch.disable();
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
     map.on("load", () => {
-      // Slight 3D terrain from MapTiler's DEM.
-      if (!map.getSource("md-dem")) {
-        map.addSource("md-dem", {
-          type: "raster-dem",
-          url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${KEY}`,
-        });
-      }
-      map.setTerrain({ source: "md-dem", exaggeration: 1.1 });
+      // Keep the built-in 2D relief (Hillshade) for the "Gelände" look, but no
+      // 3D terrain tilt — the map reads normally from above.
 
-      // Label filtering: keep place names (source-layer "place") + the three
-      // wanted POI layers; hide every other symbol (road/water/contour labels,
-      // shops, sport, culture, …). Then narrow Transport→parking, Tourism→camp.
+      // Filtering: keep place names (source-layer "place") + the three wanted
+      // POI symbol layers; hide every other symbol (road/water/contour labels,
+      // shops, sport, culture, …) AND the long-distance trail lines (the bright
+      // orange lines that read like coloured motorways). Then narrow
+      // Transport→parking, Tourism→campsite.
       for (const layer of map.getStyle().layers ?? []) {
-        if (layer.type !== "symbol") continue;
         const src = (layer as { "source-layer"?: string })["source-layer"];
-        const keep = src === "place" || ["Food", "Transport", "Tourism"].includes(layer.id);
-        map.setLayoutProperty(layer.id, "visibility", keep ? "visible" : "none");
+        if (layer.type === "symbol") {
+          const keep = src === "place" || ["Food", "Transport", "Tourism"].includes(layer.id);
+          map.setLayoutProperty(layer.id, "visibility", keep ? "visible" : "none");
+        } else if (src === "trail") {
+          map.setLayoutProperty(layer.id, "visibility", "none");
+        }
       }
       if (map.getLayer("Transport")) {
         map.setFilter("Transport", ["all", ["==", "$type", "Point"], ["in", "class", "parking", "parking_garage", "parking_paid"]]);
