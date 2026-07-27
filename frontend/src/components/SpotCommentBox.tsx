@@ -107,7 +107,7 @@ export default function SpotCommentBox({
           <button
             type="button"
             onClick={() => setCompose({})}
-            className="mt-4 inline-flex items-center rounded-full bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+            className="mt-4 inline-flex items-center rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
           >
             Verfassen
           </button>

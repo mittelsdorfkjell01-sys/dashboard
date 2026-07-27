@@ -39,7 +39,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       </MapContainer>
 
       <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
-        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-line bg-white">
+        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
           <button
             type="button"
             aria-label="Vergrößern"
@@ -63,7 +63,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           href={link.href}
           target={link.target}
           rel={link.rel}
-          className="pointer-events-auto rounded-full border border-line bg-white px-4 py-2 text-label font-medium text-ink transition-colors hover:bg-line/40"
+          className="pointer-events-auto rounded-2xl border border-line bg-white px-4 py-2 text-label font-medium text-ink transition-colors hover:bg-line/40"
         >
           Maps
         </a>

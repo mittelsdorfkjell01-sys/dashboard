@@ -92,7 +92,7 @@ export default function PhotoGalleryOverlay({
             type="button"
             onClick={onAdd}
             aria-label="Foto hinzufügen"
-            className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-full bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
+            className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-2xl bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
           >
             <PlusIcon className="text-[26px]" />
           </button>
@@ -182,7 +182,7 @@ function JustifiedGallery({
 function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="mt-10 grid place-items-center rounded-3xl border border-dashed border-line bg-band/40 px-6 py-16 text-center">
-      <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-full bg-white text-teal shadow-sm">
+      <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-2xl bg-white text-teal shadow-sm">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2.5" />
           <circle cx="8.5" cy="10" r="1.6" />
@@ -198,7 +198,7 @@ function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
       <button
         type="button"
         onClick={onAdd}
-        className="mt-6 inline-flex items-center gap-2 rounded-full bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
       >
         <PlusIcon className="text-[18px]" />
         Foto hinzufügen
@@ -272,7 +272,7 @@ function Lightbox({
             type="button"
             onClick={onClose}
             aria-label="Schließen"
-            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
+            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
           >
             <CloseIcon width={20} height={20} />
           </button>
@@ -283,7 +283,7 @@ function Lightbox({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(-1); }}
                 aria-label="Vorheriges Bild"
-                className="absolute left-3 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
+                className="absolute left-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
               >
                 <ChevronLeftIcon width={22} height={22} />
               </button>
@@ -291,7 +291,7 @@ function Lightbox({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(1); }}
                 aria-label="Nächstes Bild"
-                className="absolute right-3 grid h-12 w-12 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
+                className="absolute right-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
               >
                 <ChevronRightIcon width={22} height={22} />
               </button>

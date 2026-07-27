@@ -69,7 +69,7 @@ export default function CommentsOverlay({
           type="button"
           onClick={() => setComposeNew(true)}
           aria-label="Kommentar verfassen"
-          className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-full bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
+          className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-2xl bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
         >
           <PlusIcon className="text-[26px]" />
         </button>
