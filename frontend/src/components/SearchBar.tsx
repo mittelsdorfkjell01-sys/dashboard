@@ -91,14 +91,14 @@ export default function SearchBar() {
   return (
     <>
       <div ref={barRef} className="relative">
-        <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-white p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-full">
+        <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-white p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-2xl">
           {/* Wohin? — trigger; the text input lives in the panel below. */}
           <button
             type="button"
             ref={whereRef}
             onClick={() => openSeg("where", whereRef.current)}
             aria-expanded={open === "where"}
-            className={`flex flex-1 flex-col items-start rounded-full px-6 py-2 text-left transition-all ${
+            className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left transition-all ${
               open === "where" ? "bg-band" : ""
             } ${dim("where") ? "opacity-55" : ""}`}
           >
@@ -127,7 +127,7 @@ export default function SearchBar() {
             type="button"
             onClick={submit}
             aria-label="Suchen"
-            className="my-auto flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-teal text-[15px] font-medium text-white transition-colors hover:bg-teal-hover sm:ml-3 sm:mr-1 sm:w-12 sm:gap-0"
+            className="my-auto flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-teal text-[15px] font-medium text-white transition-colors hover:bg-teal-hover sm:ml-3 sm:mr-1 sm:w-12 sm:gap-0"
           >
             <SearchIcon className="text-[20px]" />
             <span className="sm:hidden">Suchen</span>
@@ -258,7 +258,7 @@ function Segment({
       type="button"
       onClick={(e) => onClick(e.currentTarget)}
       aria-expanded={active}
-      className={`flex flex-1 flex-col items-start rounded-full px-6 py-2 text-left transition-all ${
+      className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left transition-all ${
         active ? "bg-band" : ""
       } ${dim ? "opacity-55" : ""}`}
     >

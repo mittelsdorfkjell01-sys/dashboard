@@ -87,7 +87,7 @@ export default function WindMonths({ climatology }: { climatology: Record<string
               type="button"
               onClick={() => setMetric(m)}
               aria-pressed={m === metric}
-              className={`flex min-h-[36px] items-center justify-center rounded-full px-3 text-label font-medium transition-colors ${
+              className={`flex min-h-[36px] items-center justify-center rounded-2xl px-3 text-label font-medium transition-colors ${
                 m === metric ? "bg-white text-teal" : "text-muted hover:text-teal"
               }`}
             >

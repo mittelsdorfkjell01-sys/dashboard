@@ -604,7 +604,7 @@ export default function SpotFlowMap({
           aria-label="Karte zum Verschieben und Zoomen aktivieren"
           className="absolute inset-0 z-[540] flex items-end justify-center pb-4 sm:items-center sm:pb-0"
         >
-          <span className="rounded-full border border-line bg-ink px-4 py-2 text-caption font-medium text-white">
+          <span className="rounded-2xl border border-line bg-ink px-4 py-2 text-caption font-medium text-white">
             Antippen zum Verschieben &amp; Zoomen
           </span>
         </button>

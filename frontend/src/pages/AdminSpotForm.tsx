@@ -636,7 +636,7 @@ export default function AdminSpotForm() {
                   type="button"
                   onClick={runCommonsFetch}
                   disabled={commonsBusy}
-                  className="rounded-full border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5 disabled:opacity-50"
+                  className="rounded-2xl border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5 disabled:opacity-50"
                 >
                   {commonsBusy ? "Abrufen…" : "Wikimedia-Bilder abrufen"}
                 </button>
@@ -663,14 +663,14 @@ export default function AdminSpotForm() {
                         loading="lazy"
                       />
                       {img.source === "wikimedia_commons" && (
-                        <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink px-2 py-0.5 text-caption font-medium text-white">
+                        <span className="absolute bottom-1.5 left-1.5 rounded-2xl bg-ink px-2 py-0.5 text-caption font-medium text-white">
                           Commons
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => removeGalleryImage(img.id)}
-                        className="absolute right-1.5 top-1.5 rounded-full bg-ink px-2.5 py-1 text-caption font-medium text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                        className="absolute right-1.5 top-1.5 rounded-2xl bg-ink px-2.5 py-1 text-caption font-medium text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
                       >
                         Entfernen
                       </button>

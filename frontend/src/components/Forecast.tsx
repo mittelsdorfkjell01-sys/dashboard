@@ -172,7 +172,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
               type="button"
               onClick={() => setWu(u)}
               aria-pressed={u === wu}
-              className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-3 text-label font-medium transition-colors ${
+              className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl px-3 text-label font-medium transition-colors ${
                 u === wu ? "bg-white text-teal" : "text-muted hover:text-teal"
               }`}
             >
@@ -274,7 +274,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
           aria-expanded={detailsOpen}
-          className="rounded-full border border-teal/30 px-5 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
+          className="rounded-2xl border border-teal/30 px-5 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
         >
           {detailsOpen ? "Details ausblenden" : "Details anzeigen"}
         </button>

@@ -78,7 +78,7 @@ export default function SpotTile({
         aria-label={
           fav ? `${spot.name} aus Favoriten entfernen` : `${spot.name} zu Favoriten hinzufügen`
         }
-        className="absolute right-2.5 top-2.5 z-10 grid h-9 w-9 place-items-center rounded-full border border-line bg-ink text-white transition-colors hover:bg-ink-soft"
+        className="absolute right-2.5 top-2.5 z-10 grid h-9 w-9 place-items-center rounded-2xl border border-line bg-ink text-white transition-colors hover:bg-ink-soft"
       >
         {fav ? (
           <HeartFilledIcon className="text-[18px] text-orange" />

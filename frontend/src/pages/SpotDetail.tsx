@@ -282,7 +282,7 @@ export default function SpotDetail() {
                   mapCenter={spot.mapView?.center}
                   live={live}
                 />
-                <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-full border border-line bg-white px-4 py-2 text-caption text-ink">
+                <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-2xl border border-line bg-white px-4 py-2 text-caption text-ink">
                   <span className="flex items-center gap-1.5">
                     <span className="inline-block h-0.5 w-4 rounded-full bg-ink/60" />
                     Wind

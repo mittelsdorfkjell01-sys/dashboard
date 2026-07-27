@@ -153,7 +153,7 @@ export default function SpotOpsPanel({ spotId }: { spotId: string }) {
               <li key={k} className="text-[13px] text-ink-soft">
                 <span className="font-medium">{k}</span>{" "}
                 <span className="text-muted">= {JSON.stringify(overrides?.[k])}</span>{" "}
-                <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[11px] text-muted">
+                <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] text-muted">
                   überschrieben
                 </span>
               </li>

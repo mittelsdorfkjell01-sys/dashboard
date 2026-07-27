@@ -10,7 +10,7 @@ export default function ViewToggle({ active }: { active: "grid" | "map" }) {
   const item =
     "flex items-center gap-2 px-5 py-2.5 text-[16px] font-medium text-ink transition-colors hover:text-teal";
   return (
-    <div className="inline-flex items-center rounded-full border border-line bg-white px-1">
+    <div className="inline-flex items-center rounded-2xl border border-line bg-white px-1">
       <Link to="/" className={item} aria-current={active === "grid" ? "page" : undefined}>
         <GridIcon className="text-[18px]" />
         Grid

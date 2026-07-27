@@ -121,7 +121,7 @@ export default function SearchWhen({
       <button
         type="button"
         onClick={() => onChange(isOpen ? null : { mode: "open" })}
-        className={`self-start rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ${
+        className={`self-start rounded-2xl border px-3 py-1 text-[12px] font-medium transition-colors ${
           isOpen
             ? "border-teal bg-teal/10 text-teal"
             : "border-teal/50 text-teal hover:bg-teal/5"
@@ -144,7 +144,7 @@ export default function SearchWhen({
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, -1))}
                 aria-label="Vorheriger Monat"
-                className={`grid h-9 w-9 place-items-center rounded-full text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
+                className={`grid h-9 w-9 place-items-center rounded-2xl text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
               >
                 <ChevL className="text-[16px]" />
               </button>
@@ -155,7 +155,7 @@ export default function SearchWhen({
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, 1))}
                 aria-label="Nächster Monat"
-                className={`grid h-9 w-9 place-items-center rounded-full text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
+                className={`grid h-9 w-9 place-items-center rounded-2xl text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
               >
                 <ChevR className="text-[16px]" />
               </button>
@@ -172,7 +172,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-10 w-10 place-items-center rounded-full text-[13px] transition-colors ${
+                    className={`mx-auto grid h-10 w-10 place-items-center rounded-2xl text-[13px] transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -229,7 +229,7 @@ export default function SearchWhen({
                 key={dur}
                 type="button"
                 onClick={() => pickDuration(dur)}
-                className={`rounded-full border px-3 py-1.5 text-[12px] transition-colors ${
+                className={`rounded-2xl border px-3 py-1.5 text-[12px] transition-colors ${
                   selDuration === dur
                     ? "border-teal bg-teal/10 text-teal"
                     : "border-line text-teal hover:border-teal"

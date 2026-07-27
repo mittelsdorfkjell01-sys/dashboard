@@ -91,7 +91,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
  *  get confused for one another. */
 function CommonsBadge({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink px-2 py-0.5 text-caption font-medium text-white">
+    <span className="absolute bottom-1.5 left-1.5 rounded-2xl bg-ink px-2 py-0.5 text-caption font-medium text-white">
       {compact ? "Commons" : "Aus Wikimedia Commons"}
     </span>
   );
@@ -181,7 +181,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
               setUploadFormOpen(true);
               setHeroFormOpen(false);
             }}
-            className="rounded-full border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
+            className="rounded-2xl border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
           >
             Bilder hinzufügen
           </button>
@@ -241,7 +241,7 @@ function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd
         <button
           type="button"
           onClick={onAdd}
-          className="rounded-full bg-teal px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+          className="rounded-2xl bg-teal px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover"
         >
           Bilder hinzufügen
         </button>
@@ -502,7 +502,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
                     type="button"
                     onClick={() => setSort(s)}
                     aria-pressed={sort === s}
-                    className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
+                    className={`rounded-2xl px-3 py-1.5 font-medium transition-colors ${
                       sort === s ? "bg-teal text-white" : "text-muted hover:text-teal"
                     }`}
                   >
@@ -587,12 +587,12 @@ function FeedPostCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-body font-semibold text-ink">{post.authorName}</span>
             {post.skillLevel && (
-              <span className="rounded-full bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
+              <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
                 {levelLabel(post.skillLevel)}
               </span>
             )}
             {post.sport && (
-              <span className="rounded-full bg-teal/10 px-2 py-0.5 text-caption font-medium text-teal">
+              <span className="rounded-2xl bg-teal/10 px-2 py-0.5 text-caption font-medium text-teal">
                 {sportLabel(post.sport)}
               </span>
             )}
@@ -626,7 +626,7 @@ function FeedPostCard({
               onClick={onHelpful}
               disabled={voted}
               aria-pressed={voted}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
+              className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
                 voted
                   ? "border-green/30 bg-green/10 text-green"
                   : "border-line text-muted hover:text-teal"
@@ -643,7 +643,7 @@ function FeedPostCard({
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="Weitere Aktionen"
-                  className="grid h-8 w-8 place-items-center rounded-full text-label text-muted hover:bg-ink/5 hover:text-teal"
+                  className="grid h-8 w-8 place-items-center rounded-2xl text-label text-muted hover:bg-ink/5 hover:text-teal"
                 >
                   ⋯
                 </button>
@@ -759,7 +759,7 @@ function Lightbox({
             e.stopPropagation();
             onReport(img.id);
           }}
-          className="rounded-full bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
+          className="rounded-2xl bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
         >
           Melden
         </button>
@@ -767,7 +767,7 @@ function Lightbox({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <CloseIcon width={20} height={20} />
         </button>
@@ -782,7 +782,7 @@ function Lightbox({
               go(-1);
             }}
             aria-label="Vorheriges Bild"
-            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
+            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
           >
             <ChevronDownIcon width={20} height={20} className="rotate-90" />
           </button>
@@ -793,7 +793,7 @@ function Lightbox({
               go(1);
             }}
             aria-label="Nächstes Bild"
-            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
+            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
           >
             <ChevronDownIcon width={20} height={20} className="-rotate-90" />
           </button>

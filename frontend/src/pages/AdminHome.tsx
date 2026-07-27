@@ -139,11 +139,11 @@ export default function AdminHome() {
                   {s.name}
                 </span>
                 {s.ready ? (
-                  <span className="shrink-0 rounded-full bg-green/10 px-2 py-0.5 text-[11px] font-medium text-green">
+                  <span className="shrink-0 rounded-2xl bg-green/10 px-2 py-0.5 text-[11px] font-medium text-green">
                     bereit
                   </span>
                 ) : (
-                  <span className="shrink-0 rounded-full bg-orange/10 px-2 py-0.5 text-[11px] font-medium text-ink">
+                  <span className="shrink-0 rounded-2xl bg-orange/10 px-2 py-0.5 text-[11px] font-medium text-ink">
                     {s.gaps.length} offen
                   </span>
                 )}
@@ -212,7 +212,7 @@ function ReviewRow({ label, value }: { label: string; value: number }) {
     >
       <span className="text-[14px] text-ink">{label}</span>
       <span
-        className={`min-w-[24px] rounded-full px-2 py-0.5 text-center text-[12px] font-semibold ${
+        className={`min-w-[24px] rounded-2xl px-2 py-0.5 text-center text-[12px] font-semibold ${
           value > 0 ? "bg-red-50 text-red-700" : "bg-line/60 text-muted"
         }`}
       >

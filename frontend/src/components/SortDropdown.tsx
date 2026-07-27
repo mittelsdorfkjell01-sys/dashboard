@@ -94,7 +94,7 @@ export default function SortDropdown({
         <SortIcon className="text-[18px]" />
         Sortieren & Filtern
         {count > 0 && (
-          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1.5 text-[11px] font-semibold text-white">
+          <span className="grid h-5 min-w-5 place-items-center rounded-2xl bg-ink px-1.5 text-[11px] font-semibold text-white">
             {count}
           </span>
         )}

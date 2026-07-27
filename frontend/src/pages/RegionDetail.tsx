@@ -173,7 +173,7 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-line bg-white py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal transition-colors hover:bg-band"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl border border-line bg-white py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal transition-colors hover:bg-band"
           >
             <ChevronDownIcon className="rotate-90 text-[18px]" />
             Zurück
@@ -221,7 +221,7 @@ export default function RegionDetail() {
                 {bestWeeks.map((w) => (
                   <span
                     key={w.week}
-                    className="inline-flex items-center rounded-full bg-teal/10 px-2.5 py-1 text-[12px] font-medium text-teal"
+                    className="inline-flex items-center rounded-2xl bg-teal/10 px-2.5 py-1 text-[12px] font-medium text-teal"
                     title={`Score ${Math.round((w.score ?? 0) * 100)} · ${
                       w.spots_working ?? 0
                     } Spots`}

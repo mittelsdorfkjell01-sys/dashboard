@@ -56,7 +56,7 @@ export default function RegionSeason({
           {bestMonths.map((mo) => (
             <span
               key={mo}
-              className="inline-flex items-center rounded-full bg-orange/15 px-3 py-1 text-[12px] font-medium text-ink"
+              className="inline-flex items-center rounded-2xl bg-orange/15 px-3 py-1 text-[12px] font-medium text-ink"
             >
               {mo}
             </span>

@@ -151,7 +151,7 @@ export default function SpotMapEditor({
         <button
           type="button"
           onClick={() => setLocked((v) => !v)}
-          className={`absolute right-2 top-2 z-[500] rounded-full border border-line px-3 py-1.5 text-[12px] font-medium ${
+          className={`absolute right-2 top-2 z-[500] rounded-2xl border border-line px-3 py-1.5 text-[12px] font-medium ${
             locked
               ? "bg-teal text-white hover:bg-teal-hover"
               : "bg-white text-teal hover:bg-teal/5"

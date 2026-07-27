@@ -354,7 +354,7 @@ function StatusBadge({ status }: { status: string }) {
   };
   return (
     <span
-      className={`inline-block rounded-full px-2 py-0.5 text-[12px] font-medium ${
+      className={`inline-block rounded-2xl px-2 py-0.5 text-[12px] font-medium ${
         styles[status] ?? "bg-ink/5 text-muted"
       }`}
     >

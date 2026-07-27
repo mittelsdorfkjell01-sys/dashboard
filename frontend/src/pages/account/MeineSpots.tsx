@@ -119,7 +119,7 @@ export default function MeineSpots() {
                   </span>
                 </span>
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${st.cls}`}
+                  className={`shrink-0 rounded-2xl px-2.5 py-1 text-[11px] font-semibold ${st.cls}`}
                 >
                   {st.label}
                 </span>

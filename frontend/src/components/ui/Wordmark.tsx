@@ -32,7 +32,7 @@ export default function Wordmark({
         data
       </span>
       {tag && (
-        <span className="ml-2 self-center rounded-full bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
+        <span className="ml-2 self-center rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
           {tag}
         </span>
       )}

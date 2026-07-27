@@ -102,7 +102,7 @@ function StatCard({
       to={to}
       className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 transition-transform hover:-translate-y-0.5"
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-band text-teal">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-band text-teal">
         {icon}
       </span>
       <span>

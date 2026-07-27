@@ -53,14 +53,14 @@ export default function Auth() {
       </Link>
 
       <div className="w-full max-w-[420px] rounded-3xl border border-line bg-white p-6 sm:p-8">
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-band p-1">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl bg-band p-1">
           {(["login", "register"] as Mode[]).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => switchMode(m)}
               aria-pressed={mode === m}
-              className={`rounded-full py-2 text-[14px] font-semibold transition-colors ${
+              className={`rounded-2xl py-2 text-[14px] font-semibold transition-colors ${
                 mode === m
                   ? "bg-white text-teal"
                   : "text-muted hover:text-teal"

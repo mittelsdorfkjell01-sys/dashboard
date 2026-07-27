@@ -94,7 +94,7 @@ export default function Facilities({
         return (
           <div key={f.kind}>
             <span
-              className={`grid h-11 w-11 place-items-center rounded-full bg-ink/[0.04] text-ink ${
+              className={`grid h-11 w-11 place-items-center rounded-2xl bg-ink/[0.04] text-ink ${
                 absent ? "opacity-40" : unknown ? "opacity-30" : ""
               }`}
             >

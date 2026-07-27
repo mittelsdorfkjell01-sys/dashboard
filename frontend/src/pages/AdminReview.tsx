@@ -108,7 +108,7 @@ export default function AdminReview() {
           >
             {t.label}
             {queue && t.count(queue) > 0 && (
-              <span className="ml-2 rounded-full bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
+              <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
                 {t.count(queue)}
               </span>
             )}
@@ -213,7 +213,7 @@ export default function AdminReview() {
                       <div className="text-[13px] text-muted">
                         Bewertung · {r.stars}★ · {r.author_name}
                         {r.flagged && (
-                          <span className="ml-2 rounded-full bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
                             gemeldet
                           </span>
                         )}
@@ -233,7 +233,7 @@ export default function AdminReview() {
                       <div className="text-[13px] text-muted">
                         Tipp · {t.author_name}
                         {t.flagged && (
-                          <span className="ml-2 rounded-full bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
                             gemeldet
                           </span>
                         )}
@@ -370,7 +370,7 @@ function SubmissionCard({
                   type="button"
                   onClick={() => toggleSport(k)}
                   aria-pressed={sports.includes(k)}
-                  className={`rounded-full px-2.5 py-1 text-[12px] font-medium ${
+                  className={`rounded-2xl px-2.5 py-1 text-[12px] font-medium ${
                     sports.includes(k)
                       ? "bg-teal text-white"
                       : "bg-white text-muted ring-1 ring-line hover:text-teal"

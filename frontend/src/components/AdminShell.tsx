@@ -68,14 +68,14 @@ export default function AdminShell() {
               <div className="flex items-center gap-3">
                 <span className="hidden items-center gap-2 text-[13px] text-ink sm:flex">
                   {user.display_name}
-                  <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
+                  <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
                     {roleLabel(user.role)}
                   </span>
                 </span>
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="rounded-full border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5"
+                  className="rounded-2xl border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5"
                 >
                   Abmelden
                 </button>
@@ -92,7 +92,7 @@ export default function AdminShell() {
                 end={n.end}
                 className={({ isActive }) =>
                   [
-                    "shrink-0 rounded-full px-3 py-1.5 text-[13px] font-medium",
+                    "shrink-0 rounded-2xl px-3 py-1.5 text-[13px] font-medium",
                     isActive ? "bg-teal text-white" : "text-ink hover:bg-teal/5",
                   ].join(" ")
                 }
