@@ -1,77 +1,126 @@
-import { useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import L, { type Map as LeafletMap } from "leaflet";
+import { useEffect, useRef, useState } from "react";
+import maplibregl, { type Map as MlMap } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { mapLinkProps } from "../lib/mapLinks";
 import { MinusIcon, PlusIcon } from "../lib/icons";
 
-/** Orange teardrop pin — standard OSM look per the Figma spec (Frame_9),
- *  not the satellite/photo-map treatment used elsewhere on the old design. */
-const pinIcon = L.divIcon({
-  className: "swd-pin",
-  html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
-        fill="#E0823C" stroke="#ffffff" stroke-width="1.4"/>
-      <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
-    </svg>`,
-  iconSize: [30, 38],
-  iconAnchor: [15, 38],
-});
+const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
-const HANDLERS = ["dragging", "scrollWheelZoom", "doubleClickZoom", "touchZoom", "boxZoom", "keyboard"] as const;
+// Orange teardrop pin (same look as the old Leaflet marker).
+const PIN_SVG = `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z" fill="#E0823C" stroke="#ffffff" stroke-width="1.4"/>
+  <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
+</svg>`;
+
+/** Interaction handlers toggled by the click-to-activate flow. Rotation stays
+ *  off so the slight-3D tilt/bearing never gets knocked askew. */
+function interactionHandlers(map: MlMap) {
+  return [map.dragPan, map.scrollZoom, map.doubleClickZoom, map.touchZoomRotate, map.keyboard, map.boxZoom];
+}
 
 /**
- * "Lage" — the locator map (Figma Frame_9). Interaction is **click-to-activate**:
- * it starts locked (so scrolling the page never gets hijacked and there's no
- * hover overlay/warning); the first click enables pan/zoom, and a second click
- * on the map locks it again. The +/- zoom and "Maps" controls always work.
+ * "Lage" — MapLibre GL locator map on MapTiler vector tiles (Figma Frame_9).
+ * Terrain relief + a slight 3D tilt; labels are filtered to just place names
+ * and the Gastro / Camping / Parkplatz POI classes plus the orange spot pin.
+ * Interaction is click-to-activate (starts locked → first click enables
+ * pan/zoom → a plain click locks it again), so page scroll is never hijacked
+ * and hovering the map changes nothing.
  */
 export default function LocatorMap({ coords }: { coords: [number, number] }) {
-  const [map, setMap] = useState<LeafletMap | null>(null);
-  const [active, setActive] = useState(false);
   const [lat, lng] = coords;
   const link = mapLinkProps(lat, lng);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MlMap | null>(null);
+  const [active, setActive] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  // Enable/disable the interaction handlers to match the active state.
   useEffect(() => {
-    if (!map) return;
-    for (const h of HANDLERS) active ? map[h].enable() : map[h].disable();
-  }, [map, active]);
+    if (!KEY || !containerRef.current || mapRef.current) return;
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${KEY}`,
+      center: [lng, lat],
+      zoom: 12.5,
+      pitch: 40, // slight 3D
+      maxPitch: 70,
+      attributionControl: { compact: true },
+    });
+    mapRef.current = map;
+    map.dragRotate.disable();
+    for (const h of interactionHandlers(map)) h.disable(); // start locked
+
+    map.on("load", () => {
+      // Slight 3D terrain from MapTiler's DEM.
+      if (!map.getSource("md-dem")) {
+        map.addSource("md-dem", {
+          type: "raster-dem",
+          url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${KEY}`,
+        });
+      }
+      map.setTerrain({ source: "md-dem", exaggeration: 1.1 });
+
+      // Label filtering: keep place names (source-layer "place") + the three
+      // wanted POI layers; hide every other symbol (road/water/contour labels,
+      // shops, sport, culture, …). Then narrow Transport→parking, Tourism→camp.
+      for (const layer of map.getStyle().layers ?? []) {
+        if (layer.type !== "symbol") continue;
+        const src = (layer as { "source-layer"?: string })["source-layer"];
+        const keep = src === "place" || ["Food", "Transport", "Tourism"].includes(layer.id);
+        map.setLayoutProperty(layer.id, "visibility", keep ? "visible" : "none");
+      }
+      if (map.getLayer("Transport")) {
+        map.setFilter("Transport", ["all", ["==", "$type", "Point"], ["in", "class", "parking", "parking_garage", "parking_paid"]]);
+      }
+      if (map.getLayer("Tourism")) {
+        map.setFilter("Tourism", ["all", ["==", "$type", "Point"], ["==", "class", "campsite"]]);
+      }
+
+      const el = document.createElement("div");
+      el.innerHTML = PIN_SVG;
+      new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
+      setReady(true);
+    });
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [lat, lng]);
+
+  // Enable/disable interaction to match the active state.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    for (const h of interactionHandlers(map)) {
+      if (active) h.enable();
+      else h.disable();
+    }
+  }, [active, ready]);
 
   // While active, a plain click (not a drag) locks the map again.
   useEffect(() => {
+    const map = mapRef.current;
     if (!map || !active) return;
     const lock = () => setActive(false);
     map.on("click", lock);
     return () => {
       map.off("click", lock);
     };
-  }, [map, active]);
+  }, [active]);
+
+  if (!KEY) {
+    return (
+      <div className="grid h-[440px] w-full place-items-center rounded-3xl border border-line bg-band px-6 text-center text-caption text-muted sm:h-[540px]">
+        Karte nicht konfiguriert — <code>VITE_MAPTILER_KEY</code> fehlt.
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden rounded-3xl">
-      <MapContainer
-        center={coords}
-        zoom={13}
-        zoomControl={false}
-        dragging={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        touchZoom={false}
-        boxZoom={false}
-        keyboard={false}
-        ref={setMap}
-        className="h-[440px] w-full sm:h-[540px]"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
-        />
-        <Marker position={coords} icon={pinIcon} />
-      </MapContainer>
+      <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
 
-      {/* Locked: a transparent catcher that activates on click — no text, no
-          hover styling, so hovering the map changes nothing. */}
+      {/* Locked: transparent click-catcher (no text, no hover styling). */}
       {!active && (
         <button
           type="button"
@@ -86,7 +135,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           <button
             type="button"
             aria-label="Vergrößern"
-            onClick={() => map?.zoomIn()}
+            onClick={() => mapRef.current?.zoomIn()}
             className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
           >
             <PlusIcon className="text-[20px]" />
@@ -95,7 +144,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           <button
             type="button"
             aria-label="Verkleinern"
-            onClick={() => map?.zoomOut()}
+            onClick={() => mapRef.current?.zoomOut()}
             className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
           >
             <MinusIcon className="text-[20px]" />
