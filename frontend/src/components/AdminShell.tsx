@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth";
 import { roleLabel } from "../lib/labels";
 import type { AdminRole } from "../lib/api";
 import { Wordmark } from "./ui";
+import NotificationBell from "./admin/NotificationBell";
 
 interface NavItem {
   to: string;
@@ -67,6 +68,7 @@ export default function AdminShell() {
             <div className="hidden md:block" />
             {user && (
               <div className="flex items-center gap-3">
+                <NotificationBell />
                 <span className="hidden items-center gap-2 text-[13px] text-ink sm:flex">
                   {user.display_name}
                   <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">

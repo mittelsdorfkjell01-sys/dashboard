@@ -22,6 +22,7 @@ from app.models.ugc import (
 from app.models.moderation_audit import ModerationAudit
 from app.models.team_note import TeamNote
 from app.models.board_task import BoardTask
+from app.models.admin_notification import AdminNotification
 
 __all__ = [
     "Base",
@@ -44,4 +45,5 @@ __all__ = [
     "ModerationAudit",
     "TeamNote",
     "BoardTask",
+    "AdminNotification",
 ]

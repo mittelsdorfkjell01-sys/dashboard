@@ -648,3 +648,33 @@ def test_region_country_editable(admin):
     resp = admin.patch(f"/admin/regions/{rid}", json={"country": "ES"})
     assert resp.status_code == 200, resp.text
     assert resp.json()["country"] == "ES"
+
+
+# --- operator notifications (Sprint 9) -------------------------------------
+# A community submission creates an operator notification; the admin can list,
+# mark one read, and clear all.
+
+def test_admin_notifications_flow(admin, region_id, db):
+    from app.community import service as community
+
+    community.create_submission(
+        db,
+        payload={
+            "name": "Vorschlag X", "slug": f"vorschlag-{uuid.uuid4().hex[:8]}",
+            "region_id": region_id, "lat": 54.4, "lon": 10.2,
+            "sports": ["kitesurf"], "water_type": "sea", "bottom_type": "sand",
+            "level": "beginner", "water_character": "chop",
+        },
+        submitter_name="Gast",
+    )
+
+    listed = admin.get("/admin/notifications").json()
+    assert listed["unread"] >= 1
+    sub = next((n for n in listed["items"] if n["type"] == "submission"), None)
+    assert sub is not None and not sub["read"]
+
+    assert admin.get("/admin/notifications/unread-count").json()["count"] >= 1
+    assert admin.post(f"/admin/notifications/{sub['id']}/read").json()["read"] is True
+
+    admin.post("/admin/notifications/read-all")
+    assert admin.get("/admin/notifications/unread-count").json()["count"] == 0

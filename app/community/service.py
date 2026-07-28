@@ -69,6 +69,17 @@ def _clean_email(email: str | None) -> str | None:
     return email or None
 
 
+def _notify(db: Session, type: str, message: str, spot_id=None) -> None:
+    """Record an operator notification (admin badge) — best-effort, so a
+    notification failure never blocks the community write it accompanies."""
+    try:
+        from app.admin.notifications import notify
+
+        notify(db, type=type, message=message, spot_id=spot_id)
+    except Exception:
+        pass
+
+
 # --- ratings ---------------------------------------------------------------
 
 def create_rating(
@@ -104,6 +115,8 @@ def create_rating(
         ip_hash=ip_hash,
     )
     db.add(rating)
+    if rating.flagged:
+        _notify(db, "flagged_rating", "Eine Bewertung wurde zur Prüfung markiert.", spot_id)
     db.commit()
     db.refresh(rating)
     return rating
@@ -154,6 +167,8 @@ def create_tip(
         ip_hash=ip_hash,
     )
     db.add(tip)
+    if tip.flagged:
+        _notify(db, "flagged_tip", "Ein Tipp wurde zur Prüfung markiert.", spot_id)
     db.commit()
     db.refresh(tip)
     return tip
@@ -198,6 +213,8 @@ def create_submission(
         ip_hash=ip_hash,
     )
     db.add(sub)
+    name = payload.get("name") or "unbenannt"
+    _notify(db, "submission", f"Neuer Spot-Vorschlag: {name}")
     db.commit()
     db.refresh(sub)
     return sub
@@ -323,6 +340,7 @@ def report_image(
     )
     image.report_count = (image.report_count or 0) + 1
     db.add(report)
+    _notify(db, "reported_image", "Ein Bild wurde gemeldet.", image.spot_id)
     db.commit()
     db.refresh(image)
     return report, image

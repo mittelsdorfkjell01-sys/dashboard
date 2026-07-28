@@ -799,6 +799,25 @@ export const updateBoardTask = (
 export const deleteBoardTask = (id: string) =>
   request<void>(`/admin/board/tasks/${id}`, { method: "DELETE" });
 
+// --- operator notifications (badge) ----------------------------------------
+
+export interface AdminNotification {
+  id: string;
+  type: string;
+  message: string;
+  spot_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+export const getNotifications = () =>
+  request<{ items: AdminNotification[]; unread: number }>(`/admin/notifications`);
+export const getUnreadNotificationCount = () =>
+  request<{ count: number }>(`/admin/notifications/unread-count`);
+export const markNotificationRead = (id: string) =>
+  request<AdminNotification>(`/admin/notifications/${id}/read`, { method: "POST" });
+export const markAllNotificationsRead = () =>
+  request<{ marked: number }>(`/admin/notifications/read-all`, { method: "POST" });
+
 export interface AdminSpotsQuery {
   status?: string;
   region_id?: string;

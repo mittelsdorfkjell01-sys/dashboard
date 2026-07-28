@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.admin import dashboard as admin_dashboard
+from app.admin import notifications as admin_notifications
 from app.admin import regions as admin_regions
 from app.admin import spots as admin_spots
 from app.admin import team as admin_team
@@ -678,6 +679,34 @@ def delete_team_note(note_id: uuid.UUID, db: Session = Depends(get_db)):
 def activity(db: Session = Depends(get_db)) -> list[dict]:
     """Recent real changes (spot + moderation audits), newest first."""
     return admin_team.activity(db)
+
+
+# --- operator notifications (badge) ----------------------------------------
+
+@router.get("/notifications")
+def list_notifications(db: Session = Depends(get_db)) -> dict:
+    items = [admin_notifications.view(n) for n in admin_notifications.list_recent(db)]
+    return {"items": items, "unread": admin_notifications.unread_count(db)}
+
+
+@router.get("/notifications/unread-count")
+def notifications_unread_count(db: Session = Depends(get_db)) -> dict:
+    """Cheap endpoint for the badge's minute polling."""
+    return {"count": admin_notifications.unread_count(db)}
+
+
+@router.post("/notifications/{notification_id}/read")
+def read_notification(notification_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    try:
+        n = admin_notifications.mark_read(db, notification_id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Benachrichtigung nicht gefunden.")
+    return admin_notifications.view(n)
+
+
+@router.post("/notifications/read-all")
+def read_all_notifications(db: Session = Depends(get_db)) -> dict:
+    return {"marked": admin_notifications.mark_all_read(db)}
 
 
 # --- board tasks (kanban) --------------------------------------------------
