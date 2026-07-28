@@ -52,8 +52,6 @@ const GAP_ANCHOR: Record<string, string> = {
   level: "f-level",
   water_character: "f-water_character",
   "editorial.description": "f-description",
-  "editorial.usable_wind_directions": "f-winddir",
-  "editorial.tide": "f-tide",
   image: "f-hero",
   climatology: "f-hero",
 };
@@ -91,8 +89,6 @@ export default function AdminSpotForm() {
   const [facing, setFacing] = useState("");
   const [waterType, setWaterType] = useState("");
   const [bottomType, setBottomType] = useState("");
-  const [windDirMin, setWindDirMin] = useState("");
-  const [windDirMax, setWindDirMax] = useState("");
   const [tide, setTide] = useState("");
   const [facilities, setFacilities] = useState<
     Record<FacilityKind, { state: Availability; note: string }>
@@ -194,11 +190,6 @@ export default function AdminSpotForm() {
     setFacing(s.facing != null ? String(s.facing) : "");
     setWaterType(s.water_type ?? "");
     setBottomType(s.bottom_type ?? "");
-    const uwd = s.editorial?.usable_wind_directions;
-    if (uwd && typeof uwd === "object") {
-      setWindDirMin(uwd.min != null ? String(uwd.min) : "");
-      setWindDirMax(uwd.max != null ? String(uwd.max) : "");
-    }
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
     if (s.facilities) {
       setFacilities((prev) => {
@@ -270,8 +261,6 @@ export default function AdminSpotForm() {
   const buildEditorial = (): Record<string, any> => {
     const ed: Record<string, any> = {};
     if (description.trim()) ed.description = description.trim();
-    if (windDirMin !== "" && windDirMax !== "")
-      ed.usable_wind_directions = { min: Number(windDirMin), max: Number(windDirMax) };
     if (isSurf && tide.trim()) ed.tide = tide.trim();
     if (mapView) ed.map_view = mapView; // preview frame for the spot's flow map
     return ed;
@@ -434,19 +423,8 @@ export default function AdminSpotForm() {
                 placeholder="z. B. Laboe"
               />
             </Field>
-            <Field
-              label="Slug"
-              hint="Wird automatisch aus dem Namen erzeugt — überschreibbar."
-            >
-              <input
-                className={inputCls}
-                value={effectiveSlug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(e.target.value);
-                }}
-              />
-            </Field>
+            {/* Slug ausgeblendet — wird automatisch aus dem Namen erzeugt
+                (Spots werden im Admin über die ID adressiert). */}
             <Field label="Region" error={fieldErrors.region_id}>
               <select
                 className={inputCls}
@@ -614,32 +592,9 @@ export default function AdminSpotForm() {
             </div>
           </section>
 
-          {/* Wind & Gezeiten */}
+          {/* Ausrichtung */}
           <section className="space-y-4">
-            <h2 className="text-body font-semibold text-ink">Wind & Ausrichtung</h2>
-            <Field
-              label="Nutzbare Windrichtungen"
-              hint="Sektor in Grad (0 = N). Pflichtfeld für Kite/Wind/Wing."
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  id="f-winddir"
-                  className={`${inputCls} scroll-mt-24`}
-                  value={windDirMin}
-                  onChange={(e) => setWindDirMin(e.target.value)}
-                  inputMode="numeric"
-                  placeholder="von (z. B. 180)"
-                />
-                <span className="text-muted">–</span>
-                <input
-                  className={inputCls}
-                  value={windDirMax}
-                  onChange={(e) => setWindDirMax(e.target.value)}
-                  inputMode="numeric"
-                  placeholder="bis (z. B. 260)"
-                />
-              </div>
-            </Field>
+            <h2 className="text-body font-semibold text-ink">Ausrichtung</h2>
             <Field label="Strandausrichtung (facing, 0–359)">
               <input
                 className={inputCls}
@@ -649,17 +604,8 @@ export default function AdminSpotForm() {
                 placeholder="45"
               />
             </Field>
-            {isSurf && (
-              <Field label="Gezeiten (Tide)" hint="Pflichtfeld für Surf-Spots.">
-                <input
-                  id="f-tide"
-                  className={`${inputCls} scroll-mt-24`}
-                  value={tide}
-                  onChange={(e) => setTide(e.target.value)}
-                  placeholder="z. B. bei auflaufendem Wasser am besten"
-                />
-              </Field>
-            )}
+            {/* Gezeiten (Tide) ausgeblendet — wird später überarbeitet. Wert
+                bleibt erhalten und wird weiterhin gespeichert. */}
           </section>
 
           {/* Facilities */}

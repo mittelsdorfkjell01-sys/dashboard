@@ -270,16 +270,21 @@ def fetch_commons_images(spot_id, *, db: Session, client: Any) -> list[Any]:
 
 
 def set_spot_live(spot_id, *, db: Session, actor: str | None = "admin") -> dict:
-    """Publish a spot — only if ready; otherwise raise :class:`NotReadyError`."""
+    """Publish a spot. Publishing is always allowed — readiness is advisory:
+    the remaining gaps are returned so the UI can show a disclaimer, but they
+    never block go-live."""
     readiness = validate_spot_readiness(spot_id, db=db)
-    if not readiness["ready"]:
-        raise NotReadyError(readiness["gaps"], readiness["checklist"])
     spot = _load(db, spot_id)
     spot.status = STATUS_LIVE
     record_audit(db, spot.id, "publish", {"status": STATUS_LIVE}, actor)
     db.commit()
     db.refresh(spot)
-    return {"spot_id": str(spot.id), "status": spot.status, "ready": True}
+    return {
+        "spot_id": str(spot.id),
+        "status": spot.status,
+        "ready": readiness["ready"],
+        "gaps": readiness["gaps"],
+    }
 
 
 def set_image_focal(

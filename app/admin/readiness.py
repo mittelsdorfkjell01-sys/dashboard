@@ -25,12 +25,6 @@ REQUIRED_FIELDS_V1: list[dict] = [
     {"entity": "spot", "field": "editorial.description", "applies_when": None, "severity": "required"},
     {
         "entity": "spot",
-        "field": "editorial.usable_wind_directions",
-        "applies_when": {"sports_any": ["kitesurf", "wavekite", "windsurf", "wing"]},
-        "severity": "required",
-    },
-    {
-        "entity": "spot",
         "field": "editorial.tide",
         "applies_when": {"sports_any": ["surf"]},
         "severity": "required",

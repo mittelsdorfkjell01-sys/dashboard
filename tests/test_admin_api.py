@@ -105,37 +105,35 @@ def test_create_spot_inherits_defaults_and_triggers_era5(admin, region_id, db):
 
 # --- readiness + go-live ---------------------------------------------------
 
-def test_set_live_blocked_until_ready_then_succeeds(admin, region_id, db):
+def test_go_live_always_allowed_with_advisory_gaps(admin, region_id, db):
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
 
-    # initially incomplete -> 409 with a clear gap list
+    # Go-live is always allowed, even when incomplete: 200 + published, with the
+    # remaining gaps returned as advisory (not a 409 block).
     resp = admin.post(f"/admin/spots/{sid}/live")
-    assert resp.status_code == 409
-    gaps = resp.json()["detail"]["gaps"]
-    assert {"editorial.description", "climatology", "image"} <= set(gaps)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["status"] == "published"
+    assert body["ready"] is False
+    assert {"editorial.description", "climatology", "image"} <= set(body["gaps"])
+    # usable_wind_directions is no longer a requirement (field + rule removed).
+    assert "editorial.usable_wind_directions" not in body["gaps"]
 
-    # curate editorial (description) + the wind directions
+    # Complete it → ready true, no gaps.
     admin.patch(f"/admin/spots/{sid}", json={"editorial": {
         "description": "A breezy Baltic flatwater spot.",
-        "usable_wind_directions": {"min": 180, "max": 260},
     }})
-    # image with full rights
     admin.post(f"/admin/spots/{sid}/image", json={
         "url": "https://img/x.jpg", "source": "unsplash",
         "license": "Unsplash License", "credit": "Jo",
     })
-    # climatology arrives from the pipeline (set directly here)
     spot_row = db.get(Spot, sid)
     spot_row.climatology = {"window": "2006-2025", "weeks": [{"week": 1}]}
     db.commit()
 
-    ready = admin.get(f"/admin/spots/{sid}/readiness").json()
-    assert ready["ready"] is True
-
-    live = admin.post(f"/admin/spots/{sid}/live")
-    assert live.status_code == 200
-    assert live.json()["status"] == "published"
+    again = admin.post(f"/admin/spots/{sid}/live").json()
+    assert again["ready"] is True and again["gaps"] == []
 
 
 def test_unpublish_and_archive(admin, region_id, db):

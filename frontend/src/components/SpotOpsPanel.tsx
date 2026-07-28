@@ -65,18 +65,17 @@ export default function SpotOpsPanel({
     setBusy(true);
     setError(null);
     try {
-      await goLiveSpot(spotId);
-      flash("Spot ist jetzt live.");
+      // Go-live is always allowed; the response carries any remaining gaps.
+      const res = (await goLiveSpot(spotId)) as { ready?: boolean; gaps?: string[] };
+      const gaps = res.gaps ?? [];
+      flash(
+        res.ready === false && gaps.length > 0
+          ? `Live gesetzt — es fehlen noch: ${gaps.map(gapLabel).join(", ")}`
+          : "Spot ist jetzt live."
+      );
       await refresh();
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        const detail = (e.detail as { detail?: { gaps?: string[] } } | null)?.detail;
-        setError(
-          `Noch nicht bereit. Fehlt: ${(detail?.gaps ?? []).map(gapLabel).join(", ")}`
-        );
-      } else {
-        setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
-      }
+      setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
@@ -155,6 +154,10 @@ export default function SpotOpsPanel({
               )}
             </span>
           )}
+          <p className="mt-1 text-caption text-muted">
+            Veröffentlichen ist trotzdem möglich — die fehlenden Angaben sind nur
+            ein Hinweis.
+          </p>
         </div>
       )}
 

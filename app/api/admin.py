@@ -28,7 +28,6 @@ from app.admin.deps import get_commons_client, get_extract_client, get_stock_cli
 from app.admin.jobs import get_job_status, trigger_era5_job
 from app.auth.deps import get_actor, require_role
 from app.admin.readiness import validate_spot_readiness
-from app.admin.spots import NotReadyError
 from app.config import get_settings
 from app.db.session import get_db
 from app.api.community import ImageOut
@@ -354,15 +353,12 @@ def go_live(
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
 ) -> dict:
+    # Go-live is always allowed now; the response carries `ready`/`gaps` so the
+    # UI can show a non-blocking disclaimer.
     try:
         return admin_spots.set_spot_live(spot_id, db=db, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
-    except NotReadyError as exc:
-        raise HTTPException(
-            status_code=409,
-            detail={"message": "spot not ready", "gaps": exc.gaps, "checklist": exc.checklist},
-        )
 
 
 @router.post("/spots/{spot_id}/unpublish")
