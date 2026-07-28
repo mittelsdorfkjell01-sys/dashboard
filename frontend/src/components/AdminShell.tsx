@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { to: "/admin/spots", label: "Spots" },
   { to: "/admin/regions", label: "Regionen" },
   { to: "/admin/review", label: "Review" },
+  { to: "/admin/board", label: "Board" },
   { to: "/admin/users", label: "Benutzer", role: "admin" },
 ];
 
