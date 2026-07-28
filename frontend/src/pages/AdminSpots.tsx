@@ -128,7 +128,7 @@ export default function AdminSpots() {
   };
 
   const selectCls =
-    "rounded-xl border border-line bg-white px-3 py-2 text-[14px] text-ink outline-none focus:border-teal/50";
+    "rounded-lg border border-line bg-white px-3 py-2 text-ui text-ink outline-none focus:border-teal/50";
 
   const total = data?.total ?? 0;
   const shown = data?.items.length ?? 0;
@@ -136,10 +136,10 @@ export default function AdminSpots() {
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-[24px] font-semibold text-ink">Spots</h1>
+        <h1 className="text-2xl font-semibold text-ink">Spots</h1>
         <Link
           to="/admin/spot/new"
-          className="rounded-xl bg-teal px-4 py-2 text-[14px] font-medium text-white hover:bg-teal-hover"
+          className="rounded-lg bg-teal px-4 py-2 text-ui font-medium text-white hover:bg-teal-hover"
         >
           + Neuer Spot
         </Link>
@@ -198,7 +198,7 @@ export default function AdminSpots() {
       {notice && (
         <div
           role="status"
-          className="mt-4 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green"
+          className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green"
         >
           {notice}
         </div>
@@ -206,15 +206,15 @@ export default function AdminSpots() {
       {error && (
         <div
           role="alert"
-          className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700"
+          className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
         >
           {error}
         </div>
       )}
 
       <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[820px] text-left text-[14px]">
-          <thead className="bg-ink/5 text-[12px] uppercase tracking-wide text-muted">
+        <table className="w-full min-w-[820px] text-left text-ui">
+          <thead className="bg-ink/5 text-caption uppercase tracking-wide text-muted">
             <tr>
               <th className="px-4 py-3 font-semibold">Name</th>
               <th className="px-4 py-3 font-semibold">Region</th>
@@ -247,7 +247,7 @@ export default function AdminSpots() {
                     >
                       {s.name}
                     </Link>
-                    <div className="text-[12px] text-muted">{s.slug}</div>
+                    <div className="text-caption text-muted">{s.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-ink">{regionName(s.region_id)}</td>
                   <td className="px-4 py-3 text-ink">
@@ -263,7 +263,7 @@ export default function AdminSpots() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         to={`/admin/spot/${s.id}/edit`}
-                        className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
+                        className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
                       >
                         Bearbeiten
                       </Link>
@@ -271,7 +271,7 @@ export default function AdminSpots() {
                         href={`/spot/${s.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
+                        className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
                       >
                         Ansehen ↗
                       </a>
@@ -280,7 +280,7 @@ export default function AdminSpots() {
                           type="button"
                           disabled={busyId === s.id}
                           onClick={() => onGoLive(s)}
-                          className="rounded-lg bg-green px-2.5 py-1 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+                          className="rounded-lg bg-green px-2.5 py-1 text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
                         >
                           Go-Live
                         </button>
@@ -292,7 +292,7 @@ export default function AdminSpots() {
                           onClick={() =>
                             runStatus(s, unpublishSpot, `„${s.name}" ist offline.`)
                           }
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
                         >
                           Offline
                         </button>
@@ -304,7 +304,7 @@ export default function AdminSpots() {
                           onClick={() =>
                             runStatus(s, archiveSpot, `„${s.name}" archiviert.`)
                           }
-                          className="rounded-lg border border-line px-2.5 py-1 text-[13px] font-medium text-muted hover:bg-teal/5 disabled:opacity-50"
+                          className="rounded-lg border border-line px-2.5 py-1 text-label font-medium text-muted hover:bg-teal/5 disabled:opacity-50"
                         >
                           Archivieren
                         </button>
@@ -319,7 +319,7 @@ export default function AdminSpots() {
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex items-center justify-between text-[13px] text-muted">
+      <div className="mt-4 flex items-center justify-between text-label text-muted">
         <span>
           {total === 0 ? "0" : `${offset + 1}–${offset + shown}`} von {total}
         </span>
@@ -354,7 +354,7 @@ function StatusBadge({ status }: { status: string }) {
   };
   return (
     <span
-      className={`inline-block rounded-2xl px-2 py-0.5 text-[12px] font-medium ${
+      className={`inline-block rounded-2xl px-2 py-0.5 text-caption font-medium ${
         styles[status] ?? "bg-ink/5 text-muted"
       }`}
     >

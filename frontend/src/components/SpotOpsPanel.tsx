@@ -105,10 +105,10 @@ export default function SpotOpsPanel({
   return (
     <div className="mt-6 rounded-2xl border border-line bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-ink">Betrieb & Veröffentlichung</h2>
+        <h2 className="text-body font-semibold text-ink">Betrieb & Veröffentlichung</h2>
         {readiness && (
           <span
-            className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${
+            className={`inline-flex items-center gap-1.5 text-label font-medium ${
               readiness.ready ? "text-green" : "text-muted"
             }`}
           >
@@ -119,21 +119,21 @@ export default function SpotOpsPanel({
       </div>
 
       {notice && (
-        <div className="mt-3 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
+        <div className="mt-3 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green">
           {notice}
         </div>
       )}
       {error && (
         <div
           role="alert"
-          className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700"
+          className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
         >
           {error}
         </div>
       )}
 
       {readiness && !readiness.ready && (
-        <div className="mt-3 text-[13px] text-muted">
+        <div className="mt-3 text-label text-muted">
           Fehlt noch:{" "}
           {readiness.gaps.length === 0 ? (
             "—"
@@ -145,7 +145,7 @@ export default function SpotOpsPanel({
                     key={g}
                     type="button"
                     onClick={() => onGapClick(g)}
-                    className="rounded-lg bg-orange/10 px-2 py-0.5 text-[12px] font-medium text-ink hover:bg-orange/20"
+                    className="rounded-lg bg-orange/10 px-2 py-0.5 text-caption font-medium text-ink hover:bg-orange/20"
                   >
                     {gapLabel(g)}
                   </button>
@@ -160,7 +160,7 @@ export default function SpotOpsPanel({
 
       {/* Klimatologie (ERA5) — background job; status + manual re-trigger. */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
-        <span className="text-[13px] text-muted">
+        <span className="text-label text-muted">
           Klimatologie:{" "}
           <span className="font-medium text-ink-soft">
             {ERA5_LABEL[era5Status] ?? era5Status}
@@ -170,7 +170,7 @@ export default function SpotOpsPanel({
           type="button"
           disabled={busy || era5Status === "queued" || era5Status === "processing"}
           onClick={onTriggerEra5}
-          className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+          className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
         >
           Neu berechnen
         </button>
@@ -181,7 +181,7 @@ export default function SpotOpsPanel({
           type="button"
           disabled={busy || readiness?.status === "published"}
           onClick={onGoLive}
-          className="rounded-xl bg-green px-4 py-2 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="rounded-lg bg-green px-4 py-2 text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {readiness?.status === "published" ? "Live" : "Go-Live"}
         </button>
@@ -190,7 +190,7 @@ export default function SpotOpsPanel({
             type="button"
             disabled={busy}
             onClick={() => runStatus(() => unpublishSpot(spotId), "Spot ist offline.")}
-            className="rounded-xl border border-teal/30 px-4 py-2 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+            className="rounded-lg border border-teal/30 px-4 py-2 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
           >
             Offline nehmen
           </button>
@@ -200,7 +200,7 @@ export default function SpotOpsPanel({
             type="button"
             disabled={busy}
             onClick={() => runStatus(() => archiveSpot(spotId), "Spot archiviert.")}
-            className="rounded-xl border border-line px-4 py-2 text-[13px] font-medium text-muted hover:bg-teal/5 disabled:opacity-50"
+            className="rounded-lg border border-line px-4 py-2 text-label font-medium text-muted hover:bg-teal/5 disabled:opacity-50"
           >
             Archivieren
           </button>
@@ -209,15 +209,15 @@ export default function SpotOpsPanel({
 
       {overrideKeys.length > 0 && (
         <div className="mt-4">
-          <p className="text-[13px] font-semibold text-ink">
+          <p className="text-label font-semibold text-ink">
             Überschriebene Felder
           </p>
           <ul className="mt-1.5 space-y-1">
             {overrideKeys.map((k) => (
-              <li key={k} className="text-[13px] text-ink-soft">
+              <li key={k} className="text-label text-ink-soft">
                 <span className="font-medium">{k}</span>{" "}
                 <span className="text-muted">= {JSON.stringify(overrides?.[k])}</span>{" "}
-                <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] text-muted">
+                <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-caption text-muted">
                   überschrieben
                 </span>
               </li>

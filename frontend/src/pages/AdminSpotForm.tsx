@@ -407,10 +407,10 @@ export default function AdminSpotForm() {
 
   return (
     <div className="mx-auto max-w-[1100px]">
-      <h1 className="text-[24px] font-semibold text-ink">
+      <h1 className="text-2xl font-semibold text-ink">
         {isEdit ? "Spot bearbeiten" : "Neuen Spot anlegen"}
       </h1>
-      <p className="mt-2 text-[15px] text-muted">
+      <p className="mt-2 text-body text-muted">
         Nur Name, Region und Position sind zum Speichern nötig — fehlende Teile
         sind ok: der Spot wird als Entwurf gespeichert und erscheint in der
         Übersicht unter „Offene Punkte", um ihn später zu ergänzen.
@@ -424,7 +424,7 @@ export default function AdminSpotForm() {
         <div className="min-w-0 space-y-8">
           {/* Basisdaten */}
           <section className="space-y-4">
-            <h2 className="text-[15px] font-semibold text-ink">Basisdaten</h2>
+            <h2 className="text-body font-semibold text-ink">Basisdaten</h2>
             <Field label="Name" error={fieldErrors.name}>
               <input
                 className={inputCls}
@@ -498,7 +498,7 @@ export default function AdminSpotForm() {
               </Field>
             </div>
             <div>
-              <span className="text-[13px] font-medium text-ink">
+              <span className="text-label font-medium text-ink">
                 Position &amp; Karten-Ausschnitt
               </span>
               <div className="mt-1.5">
@@ -531,7 +531,7 @@ export default function AdminSpotForm() {
 
           {/* Sportarten */}
           <section>
-            <h2 className="text-[15px] font-semibold text-ink">Sportarten</h2>
+            <h2 className="text-body font-semibold text-ink">Sportarten</h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {SPORTS.map((s) => (
                 <Chip
@@ -547,7 +547,7 @@ export default function AdminSpotForm() {
 
           {/* Kategorien */}
           <section className="space-y-4">
-            <h2 className="text-[15px] font-semibold text-ink">Kategorien</h2>
+            <h2 className="text-body font-semibold text-ink">Kategorien</h2>
             <Field label="Level">
               <select
                 id="f-level"
@@ -615,7 +615,7 @@ export default function AdminSpotForm() {
 
           {/* Wind & Gezeiten */}
           <section className="space-y-4">
-            <h2 className="text-[15px] font-semibold text-ink">Wind & Ausrichtung</h2>
+            <h2 className="text-body font-semibold text-ink">Wind & Ausrichtung</h2>
             <Field
               label="Nutzbare Windrichtungen"
               hint="Sektor in Grad (0 = N). Pflichtfeld für Kite/Wind/Wing."
@@ -663,8 +663,8 @@ export default function AdminSpotForm() {
 
           {/* Facilities */}
           <section>
-            <h2 className="text-[15px] font-semibold text-ink">Facilities</h2>
-            <p className="mt-1 text-[12px] text-muted">
+            <h2 className="text-body font-semibold text-ink">Facilities</h2>
+            <p className="mt-1 text-caption text-muted">
               „Unbekannt" zeigt auf der Spot-Seite einen eigenen, gedämpften Zustand — nicht
               „nicht vorhanden".
             </p>
@@ -672,7 +672,7 @@ export default function AdminSpotForm() {
               {FACILITY_KINDS.map((k) => (
                 <div
                   key={k}
-                  className="rounded-xl bg-[#F1F5FA] p-3 sm:flex sm:items-center sm:gap-3"
+                  className="rounded-lg bg-[#F1F5FA] p-3 sm:flex sm:items-center sm:gap-3"
                 >
                   <span className="w-40 shrink-0 text-[13.5px] font-medium text-ink">
                     {facilityLabel(k)}
@@ -720,10 +720,10 @@ export default function AdminSpotForm() {
 
           {/* Hero-Bild */}
           <section id="f-hero" tabIndex={-1} className="scroll-mt-24 outline-none">
-            <h2 className="text-[15px] font-semibold text-ink">Header-Bild</h2>
+            <h2 className="text-body font-semibold text-ink">Header-Bild</h2>
             {currentImage?.url && (
               <div className="mt-3">
-                <p className="text-[13px] font-medium text-ink">Ausschnitt wählen</p>
+                <p className="text-label font-medium text-ink">Ausschnitt wählen</p>
                 <div className="mt-1.5 max-w-[560px]">
                   <ImageFocalEditor
                     url={currentImage.url}
@@ -737,8 +737,8 @@ export default function AdminSpotForm() {
                   />
                 </div>
                 <div className="mt-4 rounded-2xl border border-line bg-band/40 p-4">
-                  <p className="text-[13px] font-semibold text-ink">Bildnachweis</p>
-                  <p className="mt-0.5 text-[12px] text-muted">
+                  <p className="text-label font-semibold text-ink">Bildnachweis</p>
+                  <p className="mt-0.5 text-caption text-muted">
                     Urheber, Lizenz und Quelle des aktuellen Bilds — ohne neu
                     hochzuladen.
                   </p>
@@ -778,16 +778,16 @@ export default function AdminSpotForm() {
                         !attrLicense.trim() ||
                         !attrSource.trim()
                       }
-                      className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                      className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
                     >
                       {attrBusy ? "Speichern…" : "Bildnachweis speichern"}
                     </button>
                     {attrMsg && (
-                      <span className="text-[12px] font-medium text-green">{attrMsg}</span>
+                      <span className="text-caption font-medium text-green">{attrMsg}</span>
                     )}
                   </div>
                 </div>
-                <p className="mt-3 text-[12px] text-muted">
+                <p className="mt-3 text-caption text-muted">
                   Neues Bild ersetzt das aktuelle:
                 </p>
               </div>
@@ -813,7 +813,7 @@ export default function AdminSpotForm() {
           {isEdit && id && (
             <section>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-[15px] font-semibold text-ink">Galerie</h2>
+                <h2 className="text-body font-semibold text-ink">Galerie</h2>
                 <button
                   type="button"
                   onClick={runCommonsFetch}
@@ -837,7 +837,7 @@ export default function AdminSpotForm() {
               {galleryImages.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {galleryImages.map((img) => (
-                    <div key={img.id} className="group relative aspect-square overflow-hidden rounded-xl">
+                    <div key={img.id} className="group relative aspect-square overflow-hidden rounded-lg">
                       <img
                         src={resolveMediaUrl(img.url)}
                         alt={img.credit ?? ""}
@@ -866,7 +866,7 @@ export default function AdminSpotForm() {
           {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}
           {isEdit && id && (
             <section>
-              <h2 className="text-[15px] font-semibold text-ink">Kommentare</h2>
+              <h2 className="text-body font-semibold text-ink">Kommentare</h2>
               <p className="mb-4 mt-1 text-caption text-muted">
                 Alle Kommentare zu diesem Spot — Antworten stehen unter ihrem
                 Ausgangskommentar. Verborgene bleiben hier sichtbar und lassen
@@ -884,7 +884,7 @@ export default function AdminSpotForm() {
 
           {savedId && readiness && (
             <div className="rounded-2xl bg-green/10 p-4">
-              <p className="text-[14px] font-semibold text-green">
+              <p className="text-ui font-semibold text-green">
                 ✓ Gespeichert.{" "}
                 {readiness.ready
                   ? "Der Spot erfüllt alle Pflichtfelder und kann live gehen."
@@ -897,7 +897,7 @@ export default function AdminSpotForm() {
                       key={g}
                       type="button"
                       onClick={() => focusGap(g)}
-                      className="rounded-lg bg-white px-2 py-0.5 text-[12px] font-medium text-ink-soft ring-1 ring-line hover:ring-teal/40"
+                      className="rounded-lg bg-white px-2 py-0.5 text-caption font-medium text-ink-soft ring-1 ring-line hover:ring-teal/40"
                     >
                       {gapLabel(g)}
                     </button>
@@ -907,7 +907,7 @@ export default function AdminSpotForm() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to={`/spot/${savedId}`}
-                  className="rounded-lg bg-teal px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-hover"
+                  className="rounded-lg bg-teal px-3 py-1.5 text-label font-medium text-white hover:bg-teal-hover"
                 >
                   Zur Spot-Seite
                 </Link>
@@ -915,7 +915,7 @@ export default function AdminSpotForm() {
                   <button
                     type="button"
                     onClick={() => navigate(`/admin/spot/${savedId}/edit`)}
-                    className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-teal ring-1 ring-teal/30 hover:ring-teal/50"
+                    className="rounded-lg px-3 py-1.5 text-label font-medium text-teal ring-1 ring-teal/30 hover:ring-teal/50"
                   >
                     Weiter bearbeiten
                   </button>
@@ -930,7 +930,7 @@ export default function AdminSpotForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-teal px-5 py-2.5 text-[14px] font-medium text-white hover:bg-teal-hover disabled:opacity-50"
+              className="w-full rounded-lg bg-teal px-5 py-2.5 text-ui font-medium text-white hover:bg-teal-hover disabled:opacity-50"
             >
               {submitting
                 ? "Speichern …"
@@ -938,7 +938,7 @@ export default function AdminSpotForm() {
                 ? "Änderungen speichern"
                 : "Spot anlegen"}
             </button>
-            <div className="mt-3 flex items-center justify-between text-[13px]">
+            <div className="mt-3 flex items-center justify-between text-label">
               <Link to="/" className="text-muted hover:text-teal">
                 Abbrechen
               </Link>

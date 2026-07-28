@@ -26,7 +26,7 @@ import ConflictDialog from "../components/admin/ConflictDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { Button, Input, Textarea } from "../components/ui";
 
-const label = "text-[13px] font-medium text-ink";
+const label = "text-label font-medium text-ink";
 const MONTHS_SHORT = [
   "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
   "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
@@ -236,7 +236,7 @@ export default function AdminRegionForm() {
   };
 
   if (!region) {
-    return <div className="mx-auto max-w-[820px] text-[14px] text-muted">Lädt…</div>;
+    return <div className="mx-auto max-w-[820px] text-ui text-muted">Lädt…</div>;
   }
 
   return (
@@ -244,31 +244,31 @@ export default function AdminRegionForm() {
       <button
         type="button"
         onClick={() => navigate("/admin/regions")}
-        className="text-[13px] text-muted hover:text-teal"
+        className="text-label text-muted hover:text-teal"
       >
         ← Regionen
       </button>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-[24px] font-semibold text-ink">
+        <h1 className="text-2xl font-semibold text-ink">
           Region bearbeiten — {region.name}
         </h1>
         <a
           href={`/region/${region.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5"
+          className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5"
         >
           Vorschau ansehen ↗
         </a>
       </div>
 
       {notice && (
-        <div className="mt-4 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
+        <div className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green">
           {notice}
         </div>
       )}
       {error && (
-        <div role="alert" className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
+        <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
           {error}
         </div>
       )}
@@ -301,7 +301,7 @@ export default function AdminRegionForm() {
         </label>
         <div className="block">
           <span className={label}>Beste Monate (Windmonate)</span>
-          <span className="ml-2 text-[12px] text-muted">
+          <span className="ml-2 text-caption text-muted">
             Monate anklicken, in denen die Region am besten läuft
           </span>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -319,7 +319,7 @@ export default function AdminRegionForm() {
                         : [...prev, month]
                     )
                   }
-                  className={`rounded-lg px-3 py-1.5 text-[13px] font-medium ${
+                  className={`rounded-lg px-3 py-1.5 text-label font-medium ${
                     on
                       ? "bg-teal text-white"
                       : "border border-line bg-white text-ink hover:bg-teal/5"
@@ -332,7 +332,7 @@ export default function AdminRegionForm() {
           </div>
         </div>
         {error && (
-          <div role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
             {error}
           </div>
         )}
@@ -343,16 +343,16 @@ export default function AdminRegionForm() {
 
       {/* Hero image */}
       <section className="mt-10">
-        <h2 className="text-[16px] font-semibold text-ink">Titelbild</h2>
+        <h2 className="text-base font-semibold text-ink">Titelbild</h2>
         <div className="mt-3 flex flex-wrap items-start gap-4">
           {region.image?.url ? (
             <img
               src={resolveMediaUrl(region.image.url)}
               alt=""
-              className="h-24 w-40 rounded-xl object-cover"
+              className="h-24 w-40 rounded-lg object-cover"
             />
           ) : (
-            <div className="grid h-24 w-40 place-items-center rounded-xl bg-band text-[12px] text-muted">
+            <div className="grid h-24 w-40 place-items-center rounded-lg bg-band text-caption text-muted">
               Kein Bild
             </div>
           )}
@@ -372,7 +372,7 @@ export default function AdminRegionForm() {
                 type="button"
                 disabled={busy || !imgUrl.trim()}
                 onClick={saveImageUrl}
-                className="shrink-0 rounded-xl border border-teal/30 px-3 py-2 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                className="shrink-0 rounded-lg border border-teal/30 px-3 py-2 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
               >
                 Setzen
               </button>
@@ -382,9 +382,9 @@ export default function AdminRegionForm() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => uploadImage(e.target.files?.[0] ?? null)}
-                className="text-[13px] text-ink"
+                className="text-label text-ink"
               />
-              <p className="mt-1 text-[12px] text-muted">
+              <p className="mt-1 text-caption text-muted">
                 Upload: min. 3840×2000 px, Querformat, JPG/PNG.
               </p>
             </div>
@@ -412,8 +412,8 @@ export default function AdminRegionForm() {
 
       {/* Spots — drag from the right pool into this region */}
       <section className="mt-10">
-        <h2 className="text-[16px] font-semibold text-ink">Spots zuordnen</h2>
-        <p className="mt-1 text-[13px] text-muted">
+        <h2 className="text-base font-semibold text-ink">Spots zuordnen</h2>
+        <p className="mt-1 text-label text-muted">
           Einzeln per Drag &amp; Drop aus „Andere Spots" in „Diese Region", oder
           mehrere ankreuzen und gebündelt verschieben — in beide Richtungen.
         </p>
@@ -436,19 +436,19 @@ export default function AdminRegionForm() {
               dragOver ? "border-teal bg-teal/5" : "border-line bg-white"
             }`}
           >
-            <p className="px-1 text-[13px] font-semibold text-ink">
+            <p className="px-1 text-label font-semibold text-ink">
               Diese Region ({spots.length})
             </p>
             <div className="mt-2 space-y-2">
               {spots.length === 0 ? (
-                <p className="px-1 py-6 text-center text-[13px] text-muted">
+                <p className="px-1 py-6 text-center text-label text-muted">
                   Spot hierher ziehen …
                 </p>
               ) : (
                 spots.map((s) => (
                   <label
                     key={s.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-band px-3 py-2 text-[14px] text-ink"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg bg-band px-3 py-2 text-ui text-ink"
                   >
                     <input
                       type="checkbox"
@@ -462,11 +462,11 @@ export default function AdminRegionForm() {
             </div>
             {selIn.size > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                <span className="text-[12px] text-muted">{selIn.size} gewählt →</span>
+                <span className="text-caption text-muted">{selIn.size} gewählt →</span>
                 <select
                   value={moveOutTarget}
                   onChange={(e) => setMoveOutTarget(e.target.value)}
-                  className="rounded-lg border border-line bg-white px-2 py-1 text-[13px] text-ink"
+                  className="rounded-lg border border-line bg-white px-2 py-1 text-label text-ink"
                 >
                   <option value="">— Zielregion —</option>
                   {regions
@@ -481,7 +481,7 @@ export default function AdminRegionForm() {
                   type="button"
                   disabled={busy || !moveOutTarget}
                   onClick={() => bulkMove([...selIn], moveOutTarget)}
-                  className="rounded-lg border border-teal/30 px-3 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                  className="rounded-lg border border-teal/30 px-3 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
                 >
                   Verschieben
                 </button>
@@ -492,13 +492,13 @@ export default function AdminRegionForm() {
           {/* Right: pool of all other spots (searchable, selectable, draggable) */}
           <div className="rounded-2xl border border-line bg-white p-3">
             <div className="flex items-center justify-between gap-2 px-1">
-              <p className="text-[13px] font-semibold text-ink">Andere Spots</p>
+              <p className="text-label font-semibold text-ink">Andere Spots</p>
               {selOut.size > 0 && (
                 <button
                   type="button"
                   disabled={busy || !id}
                   onClick={() => id && bulkMove([...selOut], id)}
-                  className="rounded-lg border border-teal/30 px-3 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                  className="rounded-lg border border-teal/30 px-3 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
                 >
                   {selOut.size} in diese Region holen
                 </button>
@@ -518,7 +518,7 @@ export default function AdminRegionForm() {
                 .map((s) => (
                   <div
                     key={s.id}
-                    className="flex items-center gap-2 rounded-xl border border-line px-3 py-2"
+                    className="flex items-center gap-2 rounded-lg border border-line px-3 py-2"
                   >
                     <input
                       type="checkbox"
@@ -530,8 +530,8 @@ export default function AdminRegionForm() {
                       onDragStart={(e) => e.dataTransfer.setData("text/plain", s.id)}
                       className="min-w-0 flex-1 cursor-grab active:cursor-grabbing"
                     >
-                      <div className="text-[14px] text-ink">{s.name}</div>
-                      <div className="text-[12px] text-muted">{regionName(s.region_id)}</div>
+                      <div className="text-ui text-ink">{s.name}</div>
+                      <div className="text-caption text-muted">{regionName(s.region_id)}</div>
                     </div>
                   </div>
                 ))}
@@ -542,8 +542,8 @@ export default function AdminRegionForm() {
 
       {/* Danger zone: delete (only when empty). */}
       <section className="mt-10 rounded-2xl border border-red-200 bg-red-50/40 p-4">
-        <h2 className="text-[15px] font-semibold text-ink">Region löschen</h2>
-        <p className="mt-1 text-[13px] text-muted">
+        <h2 className="text-body font-semibold text-ink">Region löschen</h2>
+        <p className="mt-1 text-label text-muted">
           {spots.length > 0
             ? `Diese Region hat ${spots.length} zugeordnete(n) Spot(s). Verschiebe sie zuerst — dann lässt sich die Region löschen.`
             : "Diese Region hat keine Spots und kann gelöscht werden. Das lässt sich nicht rückgängig machen."}
@@ -552,7 +552,7 @@ export default function AdminRegionForm() {
           type="button"
           disabled={busy || spots.length > 0}
           onClick={() => setDeleteOpen(true)}
-          className="mt-3 rounded-lg border border-red-300 px-3 py-1.5 text-[13px] font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-3 rounded-lg border border-red-300 px-3 py-1.5 text-label font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Region löschen
         </button>

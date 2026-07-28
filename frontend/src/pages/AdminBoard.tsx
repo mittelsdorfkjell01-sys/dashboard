@@ -176,7 +176,7 @@ function TaskCard({
     <div
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", task.id)}
-      className="cursor-grab rounded-xl border border-line bg-white p-3 active:cursor-grabbing"
+      className="cursor-grab rounded-lg border border-line bg-white p-3 active:cursor-grabbing"
     >
       <p className="text-label font-medium text-ink">{task.title}</p>
       {task.body && <p className="mt-1 whitespace-pre-wrap text-caption text-muted">{task.body}</p>}

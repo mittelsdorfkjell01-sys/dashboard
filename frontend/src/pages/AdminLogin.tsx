@@ -42,7 +42,7 @@ export default function AdminLogin() {
   };
 
   const inputCls =
-    "w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[14px] text-ink outline-none focus:border-teal/50";
+    "w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ui text-ink outline-none focus:border-teal/50";
 
   return (
     <div className="grid min-h-screen place-items-center bg-band px-4">
@@ -55,22 +55,22 @@ export default function AdminLogin() {
           className="rounded-3xl border border-line bg-white p-6 sm:p-8"
           noValidate
         >
-          <h1 className="text-[20px] font-semibold text-ink">Admin-Anmeldung</h1>
-          <p className="mt-1 text-[13px] text-muted">
+          <h1 className="text-xl font-semibold text-ink">Admin-Anmeldung</h1>
+          <p className="mt-1 text-label text-muted">
             Bitte mit deinem Betreiber-Konto anmelden.
           </p>
 
           {error && (
             <div
               role="alert"
-              className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700"
+              className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
             >
               {error}
             </div>
           )}
 
           <label className="mt-5 block">
-            <span className="text-[13px] font-medium text-ink">E-Mail</span>
+            <span className="text-label font-medium text-ink">E-Mail</span>
             <input
               type="email"
               autoComplete="username"
@@ -82,7 +82,7 @@ export default function AdminLogin() {
           </label>
 
           <label className="mt-4 block">
-            <span className="text-[13px] font-medium text-ink">Passwort</span>
+            <span className="text-label font-medium text-ink">Passwort</span>
             <input
               type="password"
               autoComplete="current-password"
@@ -96,7 +96,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={busy || !email || !password}
-            className="mt-6 w-full rounded-xl bg-teal px-4 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-50"
+            className="mt-6 w-full rounded-lg bg-teal px-4 py-2.5 text-ui font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-50"
           >
             {busy ? "Anmelden…" : "Anmelden"}
           </button>

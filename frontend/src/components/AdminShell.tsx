@@ -26,7 +26,7 @@ const NAV: NavItem[] = [
 
 function navClass({ isActive }: { isActive: boolean }) {
   return [
-    "block rounded-xl px-3 py-2 text-[14px] font-medium transition-colors",
+    "block rounded-lg px-3 py-2 text-ui font-medium transition-colors",
     isActive ? "bg-teal text-white" : "text-ink hover:bg-teal/5",
   ].join(" ");
 }
@@ -69,16 +69,16 @@ export default function AdminShell() {
             {user && (
               <div className="flex items-center gap-3">
                 <NotificationBell />
-                <span className="hidden items-center gap-2 text-[13px] text-ink sm:flex">
+                <span className="hidden items-center gap-2 text-label text-ink sm:flex">
                   {user.display_name}
-                  <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
+                  <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
                     {roleLabel(user.role)}
                   </span>
                 </span>
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="rounded-2xl border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5"
+                  className="rounded-2xl border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5"
                 >
                   Abmelden
                 </button>
@@ -95,7 +95,7 @@ export default function AdminShell() {
                 end={n.end}
                 className={({ isActive }) =>
                   [
-                    "shrink-0 rounded-2xl px-3 py-1.5 text-[13px] font-medium",
+                    "shrink-0 rounded-2xl px-3 py-1.5 text-label font-medium",
                     isActive ? "bg-teal text-white" : "text-ink hover:bg-teal/5",
                   ].join(" ")
                 }

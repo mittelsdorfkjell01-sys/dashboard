@@ -96,13 +96,13 @@ export default function AdminReview() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold text-ink">Review</h1>
-      <p className="mt-1 text-[14px] text-muted">
+      <h1 className="text-2xl font-semibold text-ink">Review</h1>
+      <p className="mt-1 text-ui text-muted">
         Nutzer-Beiträge sichten und entscheiden. Jede Aktion wird protokolliert.
       </p>
 
       {error && (
-        <div role="alert" className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
+        <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
           {error}
         </div>
       )}
@@ -114,7 +114,7 @@ export default function AdminReview() {
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`-mb-px border-b-2 px-3 py-2 text-[14px] font-medium ${
+            className={`-mb-px border-b-2 px-3 py-2 text-ui font-medium ${
               tab === t.key
                 ? "border-teal text-teal"
                 : "border-transparent text-muted hover:text-teal"
@@ -122,7 +122,7 @@ export default function AdminReview() {
           >
             {t.label}
             {queue && t.count(queue) > 0 && (
-              <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
+              <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-caption font-semibold text-ink">
                 {t.count(queue)}
               </span>
             )}
@@ -131,7 +131,7 @@ export default function AdminReview() {
       </div>
 
       {!queue ? (
-        <div className="mt-6 text-[14px] text-muted">Lädt…</div>
+        <div className="mt-6 text-ui text-muted">Lädt…</div>
       ) : (
         <div className="mt-6 space-y-3">
           {tab === "submissions" &&
@@ -242,22 +242,22 @@ export default function AdminReview() {
               <Empty>Keine Tips oder Bewertungen.</Empty>
             ) : (
               <>
-                <p className="text-[13px] text-muted">
+                <p className="text-label text-muted">
                   Alle veröffentlichten Beiträge (gemeldete zuerst). „Verbergen"
                   nimmt einen Beitrag aus der öffentlichen Liste — reversibel.
                 </p>
                 {queue.ratings.map((r) => (
                   <Card key={r.id}>
                     <div className="min-w-0">
-                      <div className="text-[13px] text-muted">
+                      <div className="text-label text-muted">
                         Bewertung · {r.stars}★ · {r.author_name}
                         {r.flagged && (
-                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-caption font-semibold text-ink">
                             gemeldet
                           </span>
                         )}
                       </div>
-                      <p className="text-[14px] text-ink">{r.conditions}</p>
+                      <p className="text-ui text-ink">{r.conditions}</p>
                     </div>
                     <Actions>
                       <Reject busy={busy} onClick={() => act(() => hideRating(r.id))}>
@@ -269,15 +269,15 @@ export default function AdminReview() {
                 {queue.tips.map((t) => (
                   <Card key={t.id}>
                     <div className="min-w-0">
-                      <div className="text-[13px] text-muted">
+                      <div className="text-label text-muted">
                         Tipp · {t.author_name}
                         {t.flagged && (
-                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-[11px] font-semibold text-ink">
+                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-caption font-semibold text-ink">
                             gemeldet
                           </span>
                         )}
                       </div>
-                      <p className="text-[14px] text-ink">{t.body}</p>
+                      <p className="text-ui text-ink">{t.body}</p>
                     </div>
                     <Actions>
                       <Reject busy={busy} onClick={() => act(() => hideTip(t.id))}>
@@ -355,27 +355,27 @@ function SubmissionCard({
     <Card>
       <div className="min-w-0 flex-1">
         <div className="font-semibold text-ink">{submission.name ?? "—"}</div>
-        <div className="text-[13px] text-muted">
+        <div className="text-label text-muted">
           von {submission.submitter_name} ·{" "}
           {new Date(submission.created_at).toLocaleDateString("de-DE")}
         </div>
 
         {complete ? (
-          <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-band p-2 text-[12px] text-ink-soft">
+          <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-band p-2 text-caption text-ink-soft">
             {JSON.stringify(submission.payload, null, 2)}
           </pre>
         ) : (
-          <div className="mt-3 rounded-xl border border-line bg-band/40 p-3">
-            <p className="mb-2 text-[12px] font-medium text-muted">
+          <div className="mt-3 rounded-lg border border-line bg-band/40 p-3">
+            <p className="mb-2 text-caption font-medium text-muted">
               Nur als Name eingereicht — zum Anlegen Region und Koordinaten ergänzen.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1 block text-[12px] text-muted">Region</span>
+                <span className="mb-1 block text-caption text-muted">Region</span>
                 <select
                   value={regionId}
                   onChange={(e) => setRegionId(e.target.value)}
-                  className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-[13px] text-ink"
+                  className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-label text-ink"
                 >
                   <option value="">— wählen —</option>
                   {regions.map((r) => (
@@ -388,25 +388,25 @@ function SubmissionCard({
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <label className="block">
-                  <span className="mb-1 block text-[12px] text-muted">Breitengrad</span>
+                  <span className="mb-1 block text-caption text-muted">Breitengrad</span>
                   <input
                     inputMode="decimal"
                     value={lat}
                     onChange={(e) => setLat(e.target.value)}
                     placeholder="54.41"
-                    className={`w-full rounded-lg border bg-white px-2 py-1.5 text-[13px] text-ink ${
+                    className={`w-full rounded-lg border bg-white px-2 py-1.5 text-label text-ink ${
                       lat && !latOk ? "border-red-300" : "border-line"
                     }`}
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-[12px] text-muted">Längengrad</span>
+                  <span className="mb-1 block text-caption text-muted">Längengrad</span>
                   <input
                     inputMode="decimal"
                     value={lon}
                     onChange={(e) => setLon(e.target.value)}
                     placeholder="10.22"
-                    className={`w-full rounded-lg border bg-white px-2 py-1.5 text-[13px] text-ink ${
+                    className={`w-full rounded-lg border bg-white px-2 py-1.5 text-label text-ink ${
                       lon && !lonOk ? "border-red-300" : "border-line"
                     }`}
                   />
@@ -420,7 +420,7 @@ function SubmissionCard({
                   type="button"
                   onClick={() => toggleSport(k)}
                   aria-pressed={sports.includes(k)}
-                  className={`rounded-2xl px-2.5 py-1 text-[12px] font-medium ${
+                  className={`rounded-2xl px-2.5 py-1 text-caption font-medium ${
                     sports.includes(k)
                       ? "bg-teal text-white"
                       : "bg-white text-muted ring-1 ring-line hover:text-teal"
@@ -472,25 +472,25 @@ function Actions({ children }: { children: React.ReactNode }) {
   return <div className="flex shrink-0 flex-wrap gap-2">{children}</div>;
 }
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-line bg-white p-6 text-center text-[14px] text-muted">{children}</div>;
+  return <div className="rounded-2xl border border-line bg-white p-6 text-center text-ui text-muted">{children}</div>;
 }
 function Approve({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg bg-green px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-50">
+    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg bg-green px-3 py-1.5 text-label font-medium text-white hover:opacity-90 disabled:opacity-50">
       {children}
     </button>
   );
 }
 function Reject({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[13px] font-medium text-red-700 hover:bg-red-100 disabled:opacity-50">
+    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-label font-medium text-red-700 hover:bg-red-100 disabled:opacity-50">
       {children}
     </button>
   );
 }
 function Neutral({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50">
+    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50">
       {children}
     </button>
   );
@@ -513,7 +513,7 @@ function ImagePreview({
         alt=""
         className="h-20 w-32 shrink-0 rounded-lg object-cover"
       />
-      <div className="min-w-0 text-[13px]">
+      <div className="min-w-0 text-label">
         {credit && <div className="text-ink">Credit: {credit}</div>}
         {badge && <div className="font-medium text-ink">{badge}</div>}
         <Link to={`/admin/spot/${spotId}/edit`} className="text-muted hover:underline">

@@ -89,16 +89,16 @@ export default function NotificationBell() {
         aria-label={`Benachrichtigungen${unread ? `, ${unread} ungelesen` : ""}`}
         className="relative grid h-9 w-9 place-items-center rounded-lg text-ink-soft hover:bg-ink/5"
       >
-        <span aria-hidden className="text-[18px]">🔔</span>
+        <span aria-hidden className="text-lg">🔔</span>
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-orange px-1 text-[11px] font-semibold leading-[18px] text-white">
+          <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-orange px-1 text-caption font-semibold leading-[18px] text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-line bg-white shadow-float">
+        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border border-line bg-white shadow-float">
           <div className="flex items-center justify-between border-b border-line px-3 py-2">
             <span className="text-label font-semibold text-ink">Benachrichtigungen</span>
             {(items?.some((i) => !i.read) ?? false) && (

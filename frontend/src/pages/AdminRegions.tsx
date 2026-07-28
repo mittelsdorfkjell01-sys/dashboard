@@ -56,8 +56,8 @@ export default function AdminRegions() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold text-ink">Regionen</h1>
-      <p className="mt-1 text-[14px] text-muted">
+      <h1 className="text-2xl font-semibold text-ink">Regionen</h1>
+      <p className="mt-1 text-ui text-muted">
         Regionen anlegen, bearbeiten und ein Stock-Bild abrufen. Das Wettermodell
         wird automatisch nach den Koordinaten gewählt.
       </p>
@@ -65,7 +65,7 @@ export default function AdminRegions() {
       {notice && (
         <div
           role="status"
-          className="mt-4 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green"
+          className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green"
         >
           {notice}
         </div>
@@ -73,7 +73,7 @@ export default function AdminRegions() {
       {error && (
         <div
           role="alert"
-          className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700"
+          className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
         >
           {error}
         </div>
@@ -89,9 +89,9 @@ export default function AdminRegions() {
 
       <div className="mt-8 space-y-3">
         {loading ? (
-          <div className="text-[14px] text-muted">Lädt…</div>
+          <div className="text-ui text-muted">Lädt…</div>
         ) : entries.length === 0 ? (
-          <div className="text-[14px] text-muted">Noch keine Regionen.</div>
+          <div className="text-ui text-muted">Noch keine Regionen.</div>
         ) : (
           entries.map((entry) => (
             <RegionCard
@@ -122,15 +122,15 @@ function RegionCard({
     <div className="rounded-2xl border border-line bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-[16px] font-semibold text-ink">
+          <div className="text-base font-semibold text-ink">
             {region.name}
             {region.country && (
-              <span className="ml-2 text-[13px] font-normal text-muted">
+              <span className="ml-2 text-label font-normal text-muted">
                 {region.country}
               </span>
             )}
           </div>
-          <div className="mt-1 flex gap-3 text-[12px] text-muted">
+          <div className="mt-1 flex gap-3 text-caption text-muted">
             <span>{spot_counts.published} live</span>
             <span>{spot_counts.draft} Entwurf</span>
             <span>{spot_counts.archived} archiviert</span>
@@ -138,13 +138,13 @@ function RegionCard({
         </div>
         <div className="flex items-center gap-2">
           {region.image?.url ? (
-            <span className="text-[12px] text-green">● Bild gesetzt</span>
+            <span className="text-caption text-green">● Bild gesetzt</span>
           ) : (
-            <span className="text-[12px] text-muted">○ Kein Bild</span>
+            <span className="text-caption text-muted">○ Kein Bild</span>
           )}
           <Link
             to={`/admin/region/${region.id}/edit`}
-            className="rounded-lg bg-teal px-2.5 py-1 text-[13px] font-medium text-white hover:bg-teal-hover"
+            className="rounded-lg bg-teal px-2.5 py-1 text-label font-medium text-white hover:bg-teal-hover"
           >
             Bearbeiten
           </Link>
@@ -152,7 +152,7 @@ function RegionCard({
             href={`/region/${region.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
+            className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
           >
             Ansehen ↗
           </a>
@@ -160,7 +160,7 @@ function RegionCard({
             type="button"
             disabled={busy}
             onClick={onStockImage}
-            className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+            className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
           >
             Stock-Bild
           </button>
@@ -202,8 +202,8 @@ function CreateRegionForm({
 
   return (
     <form onSubmit={submit} className="mt-6 rounded-2xl bg-ink/5 p-4 sm:p-5" noValidate>
-      <p className="text-[14px] font-semibold text-ink">Neue Region anlegen</p>
-      <p className="mt-1 text-[12px] text-muted">
+      <p className="text-ui font-semibold text-ink">Neue Region anlegen</p>
+      <p className="mt-1 text-caption text-muted">
         Nur Name (+ Land) — Mittelpunkt und Fläche werden automatisch aus dem
         Namen bestimmt.
       </p>

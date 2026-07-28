@@ -47,8 +47,8 @@ export default function TeamBoard() {
 
   return (
     <section className="mt-6">
-      <h2 className="text-[15px] font-semibold text-ink">Team-Notizen</h2>
-      <p className="mt-1 text-[13px] text-muted">Kurze Nachrichten fürs Team.</p>
+      <h2 className="text-body font-semibold text-ink">Team-Notizen</h2>
+      <p className="mt-1 text-label text-muted">Kurze Nachrichten fürs Team.</p>
       <form onSubmit={submit} className="mt-3 flex gap-2">
         <Input
           value={body}
@@ -59,7 +59,7 @@ export default function TeamBoard() {
           Posten
         </Button>
       </form>
-      {error && <p className="mt-2 text-[13px] text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-label text-red-600">{error}</p>}
       {notes.length > 0 && (
         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {notes.map((n) => (
@@ -68,15 +68,15 @@ export default function TeamBoard() {
               className="flex items-start justify-between gap-2 rounded-2xl border border-line bg-teal/5 p-4"
             >
               <div className="min-w-0">
-                <p className="whitespace-pre-wrap text-[14px] text-ink">{n.body}</p>
-                <p className="mt-1 text-[12px] text-muted">
+                <p className="whitespace-pre-wrap text-ui text-ink">{n.body}</p>
+                <p className="mt-1 text-caption text-muted">
                   {n.author ?? "—"} · {new Date(n.created_at).toLocaleString("de-DE")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => remove(n.id)}
-                className="shrink-0 text-[12px] text-muted hover:text-red-600"
+                className="shrink-0 text-caption text-muted hover:text-red-600"
                 aria-label="Notiz löschen"
               >
                 ✕

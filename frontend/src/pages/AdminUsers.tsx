@@ -106,8 +106,8 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold text-ink">Benutzerverwaltung</h1>
-        <p className="mt-2 text-[15px] text-muted">
+      <h1 className="text-2xl font-semibold text-ink">Benutzerverwaltung</h1>
+        <p className="mt-2 text-body text-muted">
           Alle Operatoren haben volle Admin-Rechte. Du kannst dein eigenes Konto
           und den letzten aktiven Admin nicht deaktivieren oder löschen.
         </p>
@@ -115,7 +115,7 @@ export default function AdminUsers() {
         {notice && (
           <div
             role="status"
-            className="mt-4 rounded-xl bg-green/10 px-3 py-2 text-[13px] font-medium text-green"
+            className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green"
           >
             {notice}
           </div>
@@ -123,7 +123,7 @@ export default function AdminUsers() {
         {error && (
           <div
             role="alert"
-            className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700"
+            className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
           >
             {error}
           </div>
@@ -138,8 +138,8 @@ export default function AdminUsers() {
         />
 
         <div className="mt-8 overflow-x-auto rounded-2xl border border-line">
-          <table className="w-full min-w-[720px] text-left text-[14px]">
-            <thead className="bg-ink/5 text-[12px] uppercase tracking-wide text-muted">
+          <table className="w-full min-w-[720px] text-left text-ui">
+            <thead className="bg-ink/5 text-caption uppercase tracking-wide text-muted">
               <tr>
                 <th className="px-4 py-3 font-semibold">E-Mail</th>
                 <th className="px-4 py-3 font-semibold">Name</th>
@@ -167,24 +167,24 @@ export default function AdminUsers() {
                   <tr key={u.id} className={u.is_active ? "" : "opacity-60"}>
                     <td className="px-4 py-3 text-ink">{u.email}</td>
                     <td className="px-4 py-3 text-ink">{u.display_name}</td>
-                    <td className="px-4 py-3 text-[13px] text-ink">
+                    <td className="px-4 py-3 text-label text-ink">
                       {roleLabel(u.role)}
                       {isSelf(u) && (
-                        <span className="ml-2 rounded bg-teal/10 px-1.5 py-0.5 text-[11px] font-semibold text-teal">
+                        <span className="ml-2 rounded bg-teal/10 px-1.5 py-0.5 text-caption font-semibold text-teal">
                           du
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex items-center gap-1.5 text-[13px] font-medium ${
+                        className={`inline-flex items-center gap-1.5 text-label font-medium ${
                           u.is_active ? "text-green" : "text-muted"
                         }`}
                       >
                         {u.is_active ? "● Aktiv" : "○ Inaktiv"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-muted">
+                    <td className="px-4 py-3 text-label text-muted">
                       {u.last_login_at
                         ? new Date(u.last_login_at).toLocaleString("de-DE")
                         : "—"}
@@ -202,14 +202,14 @@ export default function AdminUsers() {
                               ? "Der letzte aktive Admin kann nicht deaktiviert werden."
                               : undefined
                           }
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {u.is_active ? "Deaktivieren" : "Aktivieren"}
                         </button>
                         <button
                           type="button"
                           onClick={() => setPwTarget(u)}
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
                         >
                           Passwort
                         </button>
@@ -224,7 +224,7 @@ export default function AdminUsers() {
                               ? "Der letzte aktive Admin kann nicht gelöscht werden."
                               : undefined
                           }
-                          className="rounded-lg border border-red-200 px-2.5 py-1 text-[13px] font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-lg border border-red-200 px-2.5 py-1 text-label font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           Löschen
                         </button>
@@ -274,18 +274,18 @@ function ActivityLog() {
 
   return (
     <section className="mt-10">
-      <h2 className="text-[18px] font-semibold text-ink">Aktivität</h2>
-      <p className="mt-1 text-[13px] text-muted">
+      <h2 className="text-lg font-semibold text-ink">Aktivität</h2>
+      <p className="mt-1 text-label text-muted">
         Letzte echten Änderungen durch das Team (keine Klicks, nur Aktionen).
       </p>
       <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-white">
         {items.length === 0 ? (
-          <li className="px-4 py-4 text-center text-[13px] text-muted">
+          <li className="px-4 py-4 text-center text-label text-muted">
             Noch keine Aktivität.
           </li>
         ) : (
           items.map((a, i) => (
-            <li key={i} className="flex items-start justify-between gap-3 px-4 py-2.5 text-[14px]">
+            <li key={i} className="flex items-start justify-between gap-3 px-4 py-2.5 text-ui">
               <span className="min-w-0 text-ink">
                 <span className="font-medium">{a.actor ?? "—"}</span>{" "}
                 <span className="text-muted">{a.label}</span>
@@ -294,7 +294,7 @@ function ActivityLog() {
                   <span className="text-muted"> ({a.fields.map(gapLabel).join(", ")})</span>
                 )}
               </span>
-              <span className="shrink-0 text-[12px] text-muted">
+              <span className="shrink-0 text-caption text-muted">
                 {a.at ? new Date(a.at).toLocaleString("de-DE") : ""}
               </span>
             </li>
@@ -344,7 +344,7 @@ function CreateUserForm({
       className="mt-6 rounded-2xl bg-ink/5 p-4 sm:p-5"
       noValidate
     >
-      <p className="text-[14px] font-semibold text-ink">Neuen Admin anlegen</p>
+      <p className="text-ui font-semibold text-ink">Neuen Admin anlegen</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           type="email"
