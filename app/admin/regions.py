@@ -82,6 +82,30 @@ def assign_spot_to_region(spot_id, region_id, *, db: Session) -> Any:
     return spot
 
 
+def assign_spots_to_region(spot_ids, region_id, *, db: Session) -> int:
+    """Move several spots to a region in one transaction (inheriting
+    ``model_pref`` where unset). Returns the count moved. Raises LookupError if
+    the region or any spot id is unknown — nothing is committed on error."""
+    from app.models import Region, Spot
+
+    region = db.get(Region, region_id)
+    if region is None:
+        raise LookupError(f"unknown region {region_id}")
+    moved = 0
+    for spot_id in spot_ids:
+        spot = db.get(Spot, spot_id)
+        if spot is None:
+            raise LookupError(f"unknown spot {spot_id}")
+        if spot.region_id == region.id:
+            continue
+        spot.region_id = region.id
+        if not spot.model_pref and region.defaults:
+            spot.model_pref = region.defaults.get("model_pref")
+        moved += 1
+    db.commit()
+    return moved
+
+
 def update_region_defaults(region_id, defaults: dict, *, db: Session) -> Any:
     """Merge into ``regions.defaults`` (the spot-creation template)."""
     from app.models import Region

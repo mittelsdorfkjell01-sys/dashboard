@@ -42,6 +42,7 @@ from app.models import Region, Spot
 from app.schemas import RegionRead, SpotRead, SpotSummary
 from app.schemas.admin import (
     AssignRegionRequest,
+    BulkAssignRegionRequest,
     ImageAttributionRequest,
     ImageRequest,
     OverrideRequest,
@@ -441,6 +442,19 @@ def assign_region(
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     return SpotRead.from_orm_spot(spot)
+
+
+@router.post("/spots/bulk-assign-region")
+def bulk_assign_region(body: BulkAssignRegionRequest, db: Session = Depends(get_db)) -> dict:
+    """Move several spots to a region at once (both directions — the caller
+    picks the target). All-or-nothing: an unknown id rolls the batch back."""
+    try:
+        moved = admin_regions.assign_spots_to_region(
+            body.spot_ids, body.region_id, db=db
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return {"moved": moved}
 
 
 # --- regions ---------------------------------------------------------------

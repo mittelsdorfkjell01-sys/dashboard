@@ -567,3 +567,52 @@ def test_image_attribution_requires_existing_image(admin, region_id):
         json={"credit": "X", "license": "Y", "source": "Z"},
     )
     assert resp.status_code == 422, resp.text
+
+
+# --- bulk region transfer (Sprint 6) ---------------------------------------
+
+def test_bulk_assign_region_moves_both_directions(admin, region_id):
+    # A second region to move spots into.
+    suffix = uuid.uuid4().hex[:8]
+    other = admin.post("/admin/regions", json={
+        "name": f"Test Region {suffix}", "slug": f"test-region-{suffix}",
+        "country": "DE", "lat": 54.4, "lon": 10.2,
+        "defaults": {"model_pref": "icon_d2"},
+    }).json()["id"]
+
+    a = _create_spot(admin, region_id)["id"]
+    b = _create_spot(admin, region_id)["id"]
+
+    # Move both from region_id → other in one call.
+    resp = admin.post(
+        "/admin/spots/bulk-assign-region",
+        json={"spot_ids": [a, b], "region_id": other},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["moved"] == 2
+    assert admin.get(f"/admin/spots?region_id={other}").json()["total"] >= 2
+
+    # And back the other direction.
+    back = admin.post(
+        "/admin/spots/bulk-assign-region",
+        json={"spot_ids": [a], "region_id": region_id},
+    )
+    assert back.json()["moved"] == 1
+
+
+def test_bulk_assign_region_unknown_spot_rolls_back(admin, region_id):
+    suffix = uuid.uuid4().hex[:8]
+    other = admin.post("/admin/regions", json={
+        "name": f"Test Region {suffix}", "slug": f"test-region-{suffix}",
+        "country": "DE", "lat": 54.4, "lon": 10.2,
+    }).json()["id"]
+    a = _create_spot(admin, region_id)["id"]
+
+    # a would move to `other`, but the unknown id aborts the whole batch.
+    resp = admin.post(
+        "/admin/spots/bulk-assign-region",
+        json={"spot_ids": [a, str(uuid.uuid4())], "region_id": other},
+    )
+    assert resp.status_code == 404, resp.text
+    # a must still be in its original region (nothing committed).
+    assert admin.get(f"/admin/spots/{a}").json()["region_id"] == region_id

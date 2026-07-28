@@ -909,6 +909,13 @@ export const assignSpotRegion = (spotId: string, regionId: string) =>
     body: JSON.stringify({ region_id: regionId }),
   });
 
+/** Move several spots into a region at once (both directions). */
+export const bulkAssignSpotRegion = (spotIds: string[], regionId: string) =>
+  request<{ moved: number }>(`/admin/spots/bulk-assign-region`, {
+    method: "POST",
+    body: JSON.stringify({ spot_ids: spotIds, region_id: regionId }),
+  });
+
 // --- admin spot actions (go-live / ERA5) -----------------------------------
 
 export interface Era5Status {

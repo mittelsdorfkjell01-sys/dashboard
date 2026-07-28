@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   assignSpotRegion,
+  bulkAssignSpotRegion,
   getAdminSpots,
   getRegion,
   getRegions,
@@ -50,6 +51,11 @@ export default function AdminRegionForm() {
   const [conflictOpen, setConflictOpen] = useState(false);
   const [spotSearch, setSpotSearch] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  // Bulk transfer: checkbox selections in each column + the target region for
+  // moving spots *out* of this region.
+  const [selIn, setSelIn] = useState<Set<string>>(new Set());
+  const [selOut, setSelOut] = useState<Set<string>>(new Set());
+  const [moveOutTarget, setMoveOutTarget] = useState("");
 
   const flash = (m: string) => {
     setNotice(m);
@@ -183,6 +189,29 @@ export default function AdminRegionForm() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const bulkMove = async (ids: string[], regionId: string) => {
+    if (ids.length === 0 || !regionId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { moved } = await bulkAssignSpotRegion(ids, regionId);
+      setSelIn(new Set());
+      setSelOut(new Set());
+      await loadSpots();
+      flash(`${moved} Spot(s) verschoben.`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Verschieben fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggle = (set: Set<string>, sid: string) => {
+    const next = new Set(set);
+    next.has(sid) ? next.delete(sid) : next.add(sid);
+    return next;
   };
 
   if (!region) {
@@ -353,8 +382,8 @@ export default function AdminRegionForm() {
       <section className="mt-10">
         <h2 className="text-[16px] font-semibold text-ink">Spots zuordnen</h2>
         <p className="mt-1 text-[13px] text-muted">
-          Ziehe einen Spot aus „Andere Spots" (rechts) in „Diese Region" (links).
-          Er wechselt automatisch die Region — so korrigierst du falsche Zuordnungen.
+          Einzeln per Drag &amp; Drop aus „Andere Spots" in „Diese Region", oder
+          mehrere ankreuzen und gebündelt verschieben — in beide Richtungen.
         </p>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -385,17 +414,64 @@ export default function AdminRegionForm() {
                 </p>
               ) : (
                 spots.map((s) => (
-                  <div key={s.id} className="rounded-xl bg-band px-3 py-2 text-[14px] text-ink">
+                  <label
+                    key={s.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-band px-3 py-2 text-[14px] text-ink"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selIn.has(s.id)}
+                      onChange={() => setSelIn((prev) => toggle(prev, s.id))}
+                    />
                     {s.name}
-                  </div>
+                  </label>
                 ))
               )}
             </div>
+            {selIn.size > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                <span className="text-[12px] text-muted">{selIn.size} gewählt →</span>
+                <select
+                  value={moveOutTarget}
+                  onChange={(e) => setMoveOutTarget(e.target.value)}
+                  className="rounded-lg border border-line bg-white px-2 py-1 text-[13px] text-ink"
+                >
+                  <option value="">— Zielregion —</option>
+                  {regions
+                    .filter((r) => r.id !== id)
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={busy || !moveOutTarget}
+                  onClick={() => bulkMove([...selIn], moveOutTarget)}
+                  className="rounded-lg border border-teal/30 px-3 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                >
+                  Verschieben
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Right: pool of all other spots (searchable, draggable) */}
+          {/* Right: pool of all other spots (searchable, selectable, draggable) */}
           <div className="rounded-2xl border border-line bg-white p-3">
-            <p className="px-1 text-[13px] font-semibold text-ink">Andere Spots</p>
+            <div className="flex items-center justify-between gap-2 px-1">
+              <p className="text-[13px] font-semibold text-ink">Andere Spots</p>
+              {selOut.size > 0 && (
+                <button
+                  type="button"
+                  disabled={busy || !id}
+                  onClick={() => id && bulkMove([...selOut], id)}
+                  className="rounded-lg border border-teal/30 px-3 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                >
+                  {selOut.size} in diese Region holen
+                </button>
+              )}
+            </div>
             <Input
               className="mt-2"
               value={spotSearch}
@@ -410,12 +486,21 @@ export default function AdminRegionForm() {
                 .map((s) => (
                   <div
                     key={s.id}
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData("text/plain", s.id)}
-                    className="cursor-grab rounded-xl border border-line px-3 py-2 active:cursor-grabbing"
+                    className="flex items-center gap-2 rounded-xl border border-line px-3 py-2"
                   >
-                    <div className="text-[14px] text-ink">{s.name}</div>
-                    <div className="text-[12px] text-muted">{regionName(s.region_id)}</div>
+                    <input
+                      type="checkbox"
+                      checked={selOut.has(s.id)}
+                      onChange={() => setSelOut((prev) => toggle(prev, s.id))}
+                    />
+                    <div
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData("text/plain", s.id)}
+                      className="min-w-0 flex-1 cursor-grab active:cursor-grabbing"
+                    >
+                      <div className="text-[14px] text-ink">{s.name}</div>
+                      <div className="text-[12px] text-muted">{regionName(s.region_id)}</div>
+                    </div>
                   </div>
                 ))}
             </div>

@@ -155,3 +155,8 @@ class RegionImageRequest(BaseModel):
 
 class AssignRegionRequest(BaseModel):
     region_id: uuid.UUID
+
+
+class BulkAssignRegionRequest(BaseModel):
+    spot_ids: list[uuid.UUID]
+    region_id: uuid.UUID
