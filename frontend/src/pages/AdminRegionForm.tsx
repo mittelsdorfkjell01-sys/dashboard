@@ -8,6 +8,7 @@ import {
   ApiError,
   assignSpotRegion,
   bulkAssignSpotRegion,
+  deleteRegion,
   getAdminSpots,
   getRegion,
   getRegions,
@@ -22,6 +23,7 @@ import {
 import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { Button, Input, Textarea } from "../components/ui";
 
 const label = "text-[13px] font-medium text-ink";
@@ -40,6 +42,7 @@ export default function AdminRegionForm() {
   const [allSpots, setAllSpots] = useState<SpotSummary[]>([]);
 
   const [name, setName] = useState("");
+  const [country, setCountry] = useState("");
   const [description, setDescription] = useState("");
   const [bestMonths, setBestMonths] = useState<number[]>([]);
   const [imgUrl, setImgUrl] = useState("");
@@ -56,6 +59,7 @@ export default function AdminRegionForm() {
   const [selIn, setSelIn] = useState<Set<string>>(new Set());
   const [selOut, setSelOut] = useState<Set<string>>(new Set());
   const [moveOutTarget, setMoveOutTarget] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const flash = (m: string) => {
     setNotice(m);
@@ -67,6 +71,7 @@ export default function AdminRegionForm() {
     const r = await getRegion(id);
     setRegion(r);
     setName(r.name);
+    setCountry(r.country ?? "");
     setDescription(r.description ?? "");
     setBestMonths(
       Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
@@ -112,6 +117,7 @@ export default function AdminRegionForm() {
     try {
       const updated = await updateRegion(id, {
         name: name.trim() || undefined,
+        country: country.trim() ? country.trim() : null,
         description: description.trim() ? description.trim() : null,
         season,
         expected_updated_at: force ? undefined : region?.updated_at,
@@ -214,6 +220,21 @@ export default function AdminRegionForm() {
     return next;
   };
 
+  const onDelete = async () => {
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteRegion(id);
+      navigate("/admin/regions");
+    } catch (err) {
+      setDeleteOpen(false);
+      setError(err instanceof ApiError ? err.message : "Löschen fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!region) {
     return <div className="mx-auto max-w-[820px] text-[14px] text-muted">Lädt…</div>;
   }
@@ -254,10 +275,21 @@ export default function AdminRegionForm() {
 
       {/* Editorial */}
       <form onSubmit={saveFields} className="mt-6 space-y-4">
-        <label className="block">
-          <span className={label}>Name</span>
-          <Input className="mt-1.5" value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className={label}>Name</span>
+            <Input className="mt-1.5" value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className={label}>Land</span>
+            <Input
+              className="mt-1.5"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              placeholder="z. B. DE"
+            />
+          </label>
+        </div>
         <label className="block">
           <span className={label}>Beschreibung</span>
           <Textarea
@@ -507,6 +539,33 @@ export default function AdminRegionForm() {
           </div>
         </div>
       </section>
+
+      {/* Danger zone: delete (only when empty). */}
+      <section className="mt-10 rounded-2xl border border-red-200 bg-red-50/40 p-4">
+        <h2 className="text-[15px] font-semibold text-ink">Region löschen</h2>
+        <p className="mt-1 text-[13px] text-muted">
+          {spots.length > 0
+            ? `Diese Region hat ${spots.length} zugeordnete(n) Spot(s). Verschiebe sie zuerst — dann lässt sich die Region löschen.`
+            : "Diese Region hat keine Spots und kann gelöscht werden. Das lässt sich nicht rückgängig machen."}
+        </p>
+        <button
+          type="button"
+          disabled={busy || spots.length > 0}
+          onClick={() => setDeleteOpen(true)}
+          className="mt-3 rounded-lg border border-red-300 px-3 py-1.5 text-[13px] font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Region löschen
+        </button>
+      </section>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Region löschen"
+        message={`„${region.name}" wird dauerhaft gelöscht. Das lässt sich nicht rückgängig machen.`}
+        busy={busy}
+        onConfirm={onDelete}
+        onCancel={() => setDeleteOpen(false)}
+      />
 
       <ConflictDialog
         open={conflictOpen}

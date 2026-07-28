@@ -13,6 +13,7 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Response,
     UploadFile,
 )
 from pydantic import BaseModel
@@ -559,6 +560,18 @@ def update_region(
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
     return RegionRead.from_orm_region(region)
+
+
+@router.delete("/regions/{region_id}", status_code=204)
+def delete_region(region_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Delete a region — only when no spots are assigned (409 otherwise)."""
+    try:
+        admin_regions.delete_region(region_id, db=db)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Region not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return Response(status_code=204)
 
 
 @router.post("/regions/{region_id}/image", response_model=RegionRead)

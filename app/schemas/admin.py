@@ -133,6 +133,7 @@ class RegionUpdate(BaseModel):
     """Partial region edit: only the fields sent are applied."""
 
     name: str | None = None
+    country: str | None = None
     description: str | None = None
     defaults: dict[str, Any] | None = None
     season: dict[str, Any] | None = None

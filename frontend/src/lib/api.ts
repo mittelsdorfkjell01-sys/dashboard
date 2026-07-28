@@ -871,6 +871,7 @@ export const updateRegion = (
   id: string,
   body: {
     name?: string;
+    country?: string | null;
     description?: string | null;
     defaults?: Record<string, unknown>;
     season?: Record<string, unknown> | null;
@@ -882,6 +883,10 @@ export const updateRegion = (
     method: "PATCH",
     body: JSON.stringify(body),
   });
+
+/** Delete a region (only when no spots are assigned — 409 otherwise). */
+export const deleteRegion = (id: string) =>
+  request<void>(`/admin/regions/${id}`, { method: "DELETE" });
 
 export const setRegionImageManual = (
   id: string,

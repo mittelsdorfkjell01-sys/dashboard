@@ -131,6 +131,8 @@ def update_region(region_id, data: dict, *, db: Session) -> Any:
         raise LookupError(f"unknown region {region_id}")
     if "name" in data and data["name"]:
         region.name = data["name"]
+    if "country" in data:
+        region.country = data["country"]
     if "description" in data:
         region.description = data["description"]
     if "season" in data:
@@ -142,6 +144,27 @@ def update_region(region_id, data: dict, *, db: Session) -> Any:
     db.commit()
     db.refresh(region)
     return region
+
+
+def delete_region(region_id, *, db: Session) -> None:
+    """Delete a region — only when no spots are assigned to it. Raises
+    LookupError if unknown, ValueError if it still has spots (the caller must
+    move or delete them first)."""
+    from sqlalchemy import func, select
+    from app.models import Region, Spot
+
+    region = db.get(Region, region_id)
+    if region is None:
+        raise LookupError(f"unknown region {region_id}")
+    count = db.scalar(
+        select(func.count()).select_from(Spot).where(Spot.region_id == region_id)
+    )
+    if count:
+        raise ValueError(
+            f"Region hat noch {count} Spot(s) — bitte zuerst verschieben oder löschen."
+        )
+    db.delete(region)
+    db.commit()
 
 
 def set_region_image(region_id, image: dict, *, db: Session) -> Any:

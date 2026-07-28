@@ -616,3 +616,35 @@ def test_bulk_assign_region_unknown_spot_rolls_back(admin, region_id):
     assert resp.status_code == 404, resp.text
     # a must still be in its original region (nothing committed).
     assert admin.get(f"/admin/spots/{a}").json()["region_id"] == region_id
+
+
+# --- region delete + country (Sprint 7) ------------------------------------
+
+def test_region_delete_blocked_when_spots_assigned(admin, region_id):
+    _create_spot(admin, region_id)  # region now has a spot
+    resp = admin.delete(f"/admin/regions/{region_id}")
+    assert resp.status_code == 409, resp.text
+    assert "Spot" in resp.json()["detail"]
+    # Still there.
+    assert admin.get(f"/admin/regions/{region_id}").status_code == 200
+
+
+def test_region_delete_when_empty(admin):
+    suffix = uuid.uuid4().hex[:8]
+    rid = admin.post("/admin/regions", json={
+        "name": f"Test Region {suffix}", "slug": f"test-region-{suffix}",
+        "country": "DE", "lat": 54.4, "lon": 10.2,
+    }).json()["id"]
+    assert admin.delete(f"/admin/regions/{rid}").status_code == 204
+    assert admin.get(f"/admin/regions/{rid}").status_code == 404
+
+
+def test_region_country_editable(admin):
+    suffix = uuid.uuid4().hex[:8]
+    rid = admin.post("/admin/regions", json={
+        "name": f"Test Region {suffix}", "slug": f"test-region-{suffix}",
+        "country": "DE", "lat": 54.4, "lon": 10.2,
+    }).json()["id"]
+    resp = admin.patch(f"/admin/regions/{rid}", json={"country": "ES"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["country"] == "ES"
