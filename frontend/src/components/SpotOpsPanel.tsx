@@ -6,28 +6,50 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
   archiveSpot,
+  getEra5Status,
   getReadiness,
   getSpot,
   goLiveSpot,
+  triggerEra5,
   unpublishSpot,
+  type Era5Status,
   type Readiness,
 } from "../lib/api";
 import { gapLabel, statusLabel } from "../lib/labels";
 
-export default function SpotOpsPanel({ spotId }: { spotId: string }) {
+const ERA5_LABEL: Record<string, string> = {
+  queued: "in Warteschlange",
+  processing: "wird berechnet",
+  done: "fertig",
+  ready: "fertig",
+  error: "Fehler",
+  none: "nicht berechnet",
+};
+
+export default function SpotOpsPanel({
+  spotId,
+  onGapClick,
+}: {
+  spotId: string;
+  /** Click a readiness gap to jump to its field in the form. */
+  onGapClick?: (gap: string) => void;
+}) {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [overrides, setOverrides] = useState<Record<string, unknown> | null>(null);
+  const [era5, setEra5] = useState<Era5Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [r, spot] = await Promise.all([
+    const [r, spot, e] = await Promise.all([
       getReadiness(spotId).catch(() => null),
       getSpot(spotId).catch(() => null),
+      getEra5Status(spotId).catch(() => null),
     ]);
     setReadiness(r);
     setOverrides(spot?.overrides ?? null);
+    setEra5(e);
   }, [spotId]);
 
   useEffect(() => {
@@ -74,7 +96,11 @@ export default function SpotOpsPanel({ spotId }: { spotId: string }) {
     }
   };
 
+  const onTriggerEra5 = () =>
+    runStatus(() => triggerEra5(spotId), "Klimatologie neu angestoßen.");
+
   const overrideKeys = overrides ? Object.keys(overrides) : [];
+  const era5Status = (era5?.status as string | undefined) ?? "none";
 
   return (
     <div className="mt-6 rounded-2xl border border-line bg-white p-5">
@@ -107,10 +133,48 @@ export default function SpotOpsPanel({ spotId }: { spotId: string }) {
       )}
 
       {readiness && !readiness.ready && (
-        <p className="mt-3 text-[13px] text-muted">
-          Fehlt noch: {readiness.gaps.map(gapLabel).join(", ") || "—"}
-        </p>
+        <div className="mt-3 text-[13px] text-muted">
+          Fehlt noch:{" "}
+          {readiness.gaps.length === 0 ? (
+            "—"
+          ) : (
+            <span className="inline-flex flex-wrap gap-1.5 align-middle">
+              {readiness.gaps.map((g) =>
+                onGapClick ? (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => onGapClick(g)}
+                    className="rounded-lg bg-orange/10 px-2 py-0.5 text-[12px] font-medium text-ink hover:bg-orange/20"
+                  >
+                    {gapLabel(g)}
+                  </button>
+                ) : (
+                  <span key={g}>{gapLabel(g)}</span>
+                )
+              )}
+            </span>
+          )}
+        </div>
       )}
+
+      {/* Klimatologie (ERA5) — background job; status + manual re-trigger. */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
+        <span className="text-[13px] text-muted">
+          Klimatologie:{" "}
+          <span className="font-medium text-ink-soft">
+            {ERA5_LABEL[era5Status] ?? era5Status}
+          </span>
+        </span>
+        <button
+          type="button"
+          disabled={busy || era5Status === "queued" || era5Status === "processing"}
+          onClick={onTriggerEra5}
+          className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+        >
+          Neu berechnen
+        </button>
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button

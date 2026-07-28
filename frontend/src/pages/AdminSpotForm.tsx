@@ -16,6 +16,7 @@ import {
   getSpotImages,
   removeImage,
   resolveMediaUrl,
+  setHeroAttribution,
   setSpotImageFocal,
   updateSpot,
   uploadHeroImage,
@@ -29,9 +30,11 @@ import {
 import {
   FACILITY_KINDS,
   LEVELS,
+  MODEL_PREF_OPTIONS,
   STYLES,
   WATER_CHARACTERS,
   facilityLabel,
+  gapLabel,
   levelLabel,
   sportLabel,
   styleLabel,
@@ -86,9 +89,16 @@ export default function AdminSpotForm() {
         FACILITY_KINDS.map((k) => [k, { state: "unknown", note: "" }])
       ) as Record<FacilityKind, { state: Availability; note: string }>
   );
+  const [modelPref, setModelPref] = useState("");
   const [heroFile, setHeroFile] = useState<File | null>(null);
   const [currentImage, setCurrentImage] = useState<ImageRecord | null>(null);
   const [credit, setCredit] = useState("");
+  // Attribution of the *current* hero (edited in place, url + focal preserved).
+  const [attrCredit, setAttrCredit] = useState("");
+  const [attrLicense, setAttrLicense] = useState("");
+  const [attrSource, setAttrSource] = useState("");
+  const [attrBusy, setAttrBusy] = useState(false);
+  const [attrMsg, setAttrMsg] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<CommunityImage[]>([]);
   const [commonsBusy, setCommonsBusy] = useState(false);
   const [commonsError, setCommonsError] = useState<string | null>(null);
@@ -107,17 +117,67 @@ export default function AdminSpotForm() {
   const effectiveSlug = slugTouched ? slug : slugify(name);
   const isSurf = sports.includes("surf");
 
+  // Readiness gap key → the id of the field/section to jump to when clicked.
+  const GAP_ANCHOR: Record<string, string> = {
+    water_type: "f-water_type",
+    bottom_type: "f-bottom_type",
+    level: "f-level",
+    water_character: "f-water_character",
+    "editorial.description": "f-description",
+    "editorial.usable_wind_directions": "f-winddir",
+    "editorial.tide": "f-tide",
+    image: "f-hero",
+    climatology: "f-hero",
+  };
+  const focusGap = (gap: string) => {
+    const el = document.getElementById(GAP_ANCHOR[gap] ?? "");
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (typeof el.focus === "function") el.focus({ preventScroll: true });
+  };
+
+  // Set the current hero + seed its attribution editor fields.
+  const seedImage = (img: ImageRecord | null) => {
+    setCurrentImage(img);
+    setAttrCredit(img?.credit ?? "");
+    setAttrLicense(img?.license ?? "");
+    setAttrSource(img?.source ?? "");
+  };
+
+  const saveAttribution = async () => {
+    if (!id || !currentImage) return;
+    setAttrBusy(true);
+    setAttrMsg(null);
+    try {
+      const spot = await setHeroAttribution(id, {
+        credit: attrCredit.trim(),
+        license: attrLicense.trim(),
+        source: attrSource.trim(),
+      });
+      seedImage((spot.image as ImageRecord | null) ?? null);
+      setAttrMsg("Attribution gespeichert.");
+      setTimeout(() => setAttrMsg(null), 2500);
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Attribution speichern fehlgeschlagen."
+      );
+    } finally {
+      setAttrBusy(false);
+    }
+  };
+
   // Populate every field from a freshly-loaded spot. Also captures the
   // `updated_at` used as the optimistic-locking token on save. Reused by the
   // edit-mode prefill and by the conflict dialog's "Neu laden".
   const applySpot = (s: Awaited<ReturnType<typeof getSpot>>) => {
     setLoadedUpdatedAt(s.updated_at);
+    setModelPref(s.model_pref ?? "");
     setName(s.name);
     setSlug(s.slug);
     setSlugTouched(true);
     setRegionId(s.region_id);
     setDescription((s.editorial?.description as string) ?? "");
-    setCurrentImage((s.image as ImageRecord | null) ?? null);
+    seedImage((s.image as ImageRecord | null) ?? null);
     if (s.location) {
       setLat(String(s.location.lat));
       setLon(String(s.location.lon));
@@ -268,6 +328,7 @@ export default function AdminSpotForm() {
       if (isEdit && id) {
         spot = await updateSpot(id, {
           ...body,
+          model_pref: modelPref || null,
           expected_updated_at: force ? undefined : loadedUpdatedAt ?? undefined,
         });
         // Adopt the new version so a second save in the same session isn't
@@ -400,6 +461,22 @@ export default function AdminSpotForm() {
                 ))}
               </select>
             </Field>
+            {isEdit && (
+              <Field label="Wettermodell">
+                <select
+                  className={inputCls}
+                  value={modelPref}
+                  onChange={(e) => setModelPref(e.target.value)}
+                >
+                  <option value="">— vom Region-Default erben —</option>
+                  {MODEL_PREF_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <Field label="Breitengrad (lat)" error={fieldErrors.lat}>
                 <input
@@ -443,7 +520,8 @@ export default function AdminSpotForm() {
             </div>
             <Field label="Beschreibung">
               <textarea
-                className={`${inputCls} min-h-[120px] resize-y`}
+                id="f-description"
+                className={`${inputCls} min-h-[120px] resize-y scroll-mt-24`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Charakter des Spots, Bedingungen, Besonderheiten …"
@@ -472,7 +550,8 @@ export default function AdminSpotForm() {
             <h2 className="text-[15px] font-semibold text-ink">Kategorien</h2>
             <Field label="Level">
               <select
-                className={inputCls}
+                id="f-level"
+                className={`${inputCls} scroll-mt-24`}
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
               >
@@ -486,7 +565,8 @@ export default function AdminSpotForm() {
             </Field>
             <Field label="Wasserart" hint="Pflichtfeld für die Veröffentlichung.">
               <select
-                className={inputCls}
+                id="f-water_character"
+                className={`${inputCls} scroll-mt-24`}
                 value={waterCharacter}
                 onChange={(e) => setWaterCharacter(e.target.value)}
               >
@@ -514,7 +594,8 @@ export default function AdminSpotForm() {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Wassertyp" hint="ocean | sea | lake | lagoon">
                 <input
-                  className={inputCls}
+                  id="f-water_type"
+                  className={`${inputCls} scroll-mt-24`}
                   value={waterType}
                   onChange={(e) => setWaterType(e.target.value)}
                   placeholder="sea"
@@ -522,7 +603,8 @@ export default function AdminSpotForm() {
               </Field>
               <Field label="Untergrund" hint="sand | rock | reef | mixed">
                 <input
-                  className={inputCls}
+                  id="f-bottom_type"
+                  className={`${inputCls} scroll-mt-24`}
                   value={bottomType}
                   onChange={(e) => setBottomType(e.target.value)}
                   placeholder="sand"
@@ -540,7 +622,8 @@ export default function AdminSpotForm() {
             >
               <div className="flex items-center gap-2">
                 <input
-                  className={inputCls}
+                  id="f-winddir"
+                  className={`${inputCls} scroll-mt-24`}
                   value={windDirMin}
                   onChange={(e) => setWindDirMin(e.target.value)}
                   inputMode="numeric"
@@ -568,7 +651,8 @@ export default function AdminSpotForm() {
             {isSurf && (
               <Field label="Gezeiten (Tide)" hint="Pflichtfeld für Surf-Spots.">
                 <input
-                  className={inputCls}
+                  id="f-tide"
+                  className={`${inputCls} scroll-mt-24`}
                   value={tide}
                   onChange={(e) => setTide(e.target.value)}
                   placeholder="z. B. bei auflaufendem Wasser am besten"
@@ -635,7 +719,7 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Hero-Bild */}
-          <section>
+          <section id="f-hero" tabIndex={-1} className="scroll-mt-24 outline-none">
             <h2 className="text-[15px] font-semibold text-ink">Header-Bild</h2>
             {currentImage?.url && (
               <div className="mt-3">
@@ -648,11 +732,62 @@ export default function AdminSpotForm() {
                     onSave={async (x, y) => {
                       if (!id) return;
                       const spot = await setSpotImageFocal(id, x, y);
-                      setCurrentImage((spot.image as ImageRecord | null) ?? null);
+                      seedImage((spot.image as ImageRecord | null) ?? null);
                     }}
                   />
                 </div>
-                <p className="mt-2 text-[12px] text-muted">
+                <div className="mt-4 rounded-2xl border border-line bg-band/40 p-4">
+                  <p className="text-[13px] font-semibold text-ink">Bildnachweis</p>
+                  <p className="mt-0.5 text-[12px] text-muted">
+                    Urheber, Lizenz und Quelle des aktuellen Bilds — ohne neu
+                    hochzuladen.
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <Field label="Urheber / Credit">
+                      <input
+                        className={inputCls}
+                        value={attrCredit}
+                        onChange={(e) => setAttrCredit(e.target.value)}
+                        placeholder="Fotograf:in"
+                      />
+                    </Field>
+                    <Field label="Lizenz">
+                      <input
+                        className={inputCls}
+                        value={attrLicense}
+                        onChange={(e) => setAttrLicense(e.target.value)}
+                        placeholder="z. B. CC BY-SA 4.0"
+                      />
+                    </Field>
+                    <Field label="Quelle">
+                      <input
+                        className={inputCls}
+                        value={attrSource}
+                        onChange={(e) => setAttrSource(e.target.value)}
+                        placeholder="z. B. wikimedia_commons"
+                      />
+                    </Field>
+                  </div>
+                  <div className="mt-3 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={saveAttribution}
+                      disabled={
+                        attrBusy ||
+                        !attrCredit.trim() ||
+                        !attrLicense.trim() ||
+                        !attrSource.trim()
+                      }
+                      className="rounded-lg border border-teal/30 px-3 py-1.5 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                    >
+                      {attrBusy ? "Speichern…" : "Bildnachweis speichern"}
+                    </button>
+                    {attrMsg && (
+                      <span className="text-[12px] font-medium text-green">{attrMsg}</span>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-3 text-[12px] text-muted">
                   Neues Bild ersetzt das aktuelle:
                 </p>
               </div>
@@ -745,7 +880,7 @@ export default function AdminSpotForm() {
 
         {/* Right column: sticky actions — stay put while the form scrolls */}
         <aside className="mt-8 space-y-4 lg:mt-0 lg:sticky lg:top-6">
-          {isEdit && id && <SpotOpsPanel spotId={id} />}
+          {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
 
           {savedId && readiness && (
             <div className="rounded-2xl bg-green/10 p-4">
@@ -756,11 +891,18 @@ export default function AdminSpotForm() {
                   : "Für die Veröffentlichung fehlen noch Angaben:"}
               </p>
               {!readiness.ready && (
-                <ul className="mt-2 list-inside list-disc text-[13px] text-ink-soft">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {readiness.gaps.map((g) => (
-                    <li key={g}>{g}</li>
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => focusGap(g)}
+                      className="rounded-lg bg-white px-2 py-0.5 text-[12px] font-medium text-ink-soft ring-1 ring-line hover:ring-teal/40"
+                    >
+                      {gapLabel(g)}
+                    </button>
                   ))}
-                </ul>
+                </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
@@ -806,8 +948,9 @@ export default function AdminSpotForm() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-teal hover:underline"
+                  title="Öffnet die öffentliche Spot-Seite — funktioniert auch für Entwürfe."
                 >
-                  Vorschau ↗
+                  Öffentliche Vorschau ↗
                 </a>
               )}
             </div>

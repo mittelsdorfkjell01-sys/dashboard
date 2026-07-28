@@ -235,6 +235,26 @@ def manage_spot_image(
     return spot
 
 
+def update_image_attribution(
+    spot_id, *, credit: str, license: str, source: str, db: Session, actor="admin"
+) -> Any:
+    """Edit the current hero's rights fields (credit/license/source) in place,
+    preserving the url and the chosen focal point (unlike manage_spot_image,
+    which resets the image). Used by the spot form's attribution editor."""
+    spot = _load(db, spot_id)
+    if not (spot.image and isinstance(spot.image.get("url"), str)):
+        raise ValueError("no image set")
+    fields = {"credit": credit, "license": license, "source": source}
+    for k, v in fields.items():
+        if not (isinstance(v, str) and v.strip()):
+            raise ValueError(f"attribution field required: {k}")
+    spot.image = {**spot.image, **{k: v.strip() for k, v in fields.items()}}
+    record_audit(db, spot.id, "image", {"attribution": True}, actor)
+    db.commit()
+    db.refresh(spot)
+    return spot
+
+
 def fetch_commons_images(spot_id, *, db: Session, client: Any) -> list[Any]:
     """Geosearch Wikimedia Commons around the spot's own coordinates and store
     any newly-licensed hits as gallery images. Returns the newly created rows

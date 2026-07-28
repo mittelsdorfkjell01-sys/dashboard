@@ -103,6 +103,14 @@ class ImageRequest(BaseModel):
         return self.model_dump()
 
 
+class ImageAttributionRequest(BaseModel):
+    """Edit the current hero's rights fields in place (url + focal untouched)."""
+
+    credit: str
+    license: str
+    source: str
+
+
 class RegionCreate(BaseModel):
     name: str
     slug: str | None = None

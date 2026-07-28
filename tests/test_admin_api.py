@@ -528,3 +528,42 @@ def test_spot_tips_lists_all_with_thread_and_hide_restore(admin, region_id):
     assert admin.post(f"/admin/tips/{reply['id']}/restore").status_code == 200
     after_restore = {t["id"]: t for t in admin.get(f"/admin/spots/{sid}/tips").json()["items"]}
     assert after_restore[reply["id"]]["status"] == "published"
+
+
+# --- hero attribution editing (Sprint 5) -----------------------------------
+# Edit the current hero's credit/license/source in place — url + focal preserved.
+
+def test_image_attribution_edits_in_place(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    # Set a hero by URL first (full rights fields).
+    admin.post(
+        f"/admin/spots/{sid}/image",
+        json={
+            "url": "https://example.test/a.jpg",
+            "source": "wikimedia_commons",
+            "license": "CC BY-SA 4.0",
+            "credit": "Alice",
+        },
+    )
+    # Give it a focal point so we can prove it survives the attribution edit.
+    admin.post(f"/admin/spots/{sid}/image/focal", json={"x": 40, "y": 60})
+
+    resp = admin.post(
+        f"/admin/spots/{sid}/image/attribution",
+        json={"credit": "Bob", "license": "CC0", "source": "own"},
+    )
+    assert resp.status_code == 200, resp.text
+    img = resp.json()["image"]
+    assert img["credit"] == "Bob" and img["license"] == "CC0" and img["source"] == "own"
+    assert img["url"] == "https://example.test/a.jpg"  # url preserved
+    assert img["focal"] == {"x": 40, "y": 60}  # focal preserved
+
+
+def test_image_attribution_requires_existing_image(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    resp = admin.post(
+        f"/admin/spots/{spot['id']}/image/attribution",
+        json={"credit": "X", "license": "Y", "source": "Z"},
+    )
+    assert resp.status_code == 422, resp.text

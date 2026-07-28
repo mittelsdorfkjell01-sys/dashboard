@@ -962,6 +962,8 @@ export interface SpotCreateBody {
 }
 
 export type SpotUpdateBody = Partial<SpotCreateBody> & {
+  /** Weather model preference (edit-only; inherited from the region on create). */
+  model_pref?: string | null;
   /** Optimistic-locking token: the `updated_at` the form loaded. Omit to force
    *  an overwrite after a 409 conflict. */
   expected_updated_at?: string;
@@ -986,6 +988,16 @@ export const setSpotImageFocal = (id: string, x: number, y: number) =>
   request<SpotRead>(`/admin/spots/${id}/image/focal`, {
     method: "POST",
     body: JSON.stringify({ x, y }),
+  });
+
+/** Edit the current hero's rights fields in place (url + focal preserved). */
+export const setHeroAttribution = (
+  id: string,
+  body: { credit: string; license: string; source: string }
+) =>
+  request<SpotRead>(`/admin/spots/${id}/image/attribution`, {
+    method: "POST",
+    body: JSON.stringify(body),
   });
 
 export const setRegionImageFocal = (id: string, x: number, y: number) =>

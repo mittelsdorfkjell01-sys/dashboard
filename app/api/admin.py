@@ -42,6 +42,7 @@ from app.models import Region, Spot
 from app.schemas import RegionRead, SpotRead, SpotSummary
 from app.schemas.admin import (
     AssignRegionRequest,
+    ImageAttributionRequest,
     ImageRequest,
     OverrideRequest,
     RegionCreate,
@@ -238,6 +239,31 @@ def set_image(
     try:
         spot = admin_spots.manage_spot_image(
             spot_id, body.to_image(), db=db, actor=actor
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return SpotRead.from_orm_spot(spot)
+
+
+@router.post("/spots/{spot_id}/image/attribution", response_model=SpotRead)
+def set_image_attribution(
+    spot_id: uuid.UUID,
+    body: ImageAttributionRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+):
+    """Edit the current hero image's credit/license/source without re-uploading
+    (url + focal preserved)."""
+    try:
+        spot = admin_spots.update_image_attribution(
+            spot_id,
+            credit=body.credit,
+            license=body.license,
+            source=body.source,
+            db=db,
+            actor=actor,
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
