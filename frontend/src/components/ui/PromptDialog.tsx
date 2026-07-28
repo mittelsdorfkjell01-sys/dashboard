@@ -17,6 +17,7 @@ export default function PromptDialog({
   initialValue = "",
   placeholder,
   busy = false,
+  allowEmpty = false,
   onConfirm,
   onCancel,
 }: {
@@ -28,6 +29,8 @@ export default function PromptDialog({
   initialValue?: string;
   placeholder?: string;
   busy?: boolean;
+  /** Allow confirming with an empty field (e.g. an optional note). */
+  allowEmpty?: boolean;
   onConfirm: (value: string) => void;
   onCancel: () => void;
 }) {
@@ -43,7 +46,7 @@ export default function PromptDialog({
   }, [open, initialValue]);
 
   const submit = () => {
-    if (!value.trim() || busy) return;
+    if (busy || (!allowEmpty && !value.trim())) return;
     onConfirm(value);
   };
 
@@ -72,7 +75,7 @@ export default function PromptDialog({
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
           Abbrechen
         </Button>
-        <Button onClick={submit} disabled={busy || !value.trim()}>
+        <Button onClick={submit} disabled={busy || (!allowEmpty && !value.trim())}>
           {busy ? "…" : confirmText}
         </Button>
       </div>

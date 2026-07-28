@@ -13,6 +13,7 @@ import {
   type AdminOverview,
 } from "../lib/api";
 import { gapLabel } from "../lib/labels";
+import TeamBoard from "../components/admin/TeamBoard";
 
 // review-queue keys → German labels. Split into "reported" (user-flagged) and
 // "pending" (awaiting a first review).
@@ -81,18 +82,7 @@ export default function AdminHome() {
         </div>
       )}
 
-      {data.team_notes.length > 0 && (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {data.team_notes.map((n) => (
-            <div key={n.id} className="rounded-2xl border border-line bg-teal/5 p-4">
-              <p className="whitespace-pre-wrap text-[14px] text-ink">{n.body}</p>
-              <p className="mt-2 text-[12px] text-muted">
-                {n.author ?? "—"} · {new Date(n.created_at).toLocaleDateString("de-DE")}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
+      <TeamBoard />
 
       {/* Status tiles */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -23,6 +23,7 @@ import {
   type SubmissionCompletion,
 } from "../lib/api";
 import { SPORT_LABELS } from "../lib/labels";
+import PromptDialog from "../components/ui/PromptDialog";
 
 type Tab = "submissions" | "hero" | "gallery" | "reported" | "content";
 
@@ -80,6 +81,19 @@ export default function AdminReview() {
     }
   };
 
+  // Reject/remove actions capture an optional note via a dialog (replaces
+  // window.prompt). `run` receives the note (undefined when left blank).
+  const [noteAction, setNoteAction] = useState<{
+    title: string;
+    confirmText: string;
+    run: (note?: string) => Promise<unknown>;
+  } | null>(null);
+  const askNote = (
+    title: string,
+    confirmText: string,
+    run: (note?: string) => Promise<unknown>
+  ) => setNoteAction({ title, confirmText, run });
+
   return (
     <div>
       <h1 className="text-[24px] font-semibold text-ink">Review</h1>
@@ -131,7 +145,11 @@ export default function AdminReview() {
                   regions={regions}
                   busy={busy}
                   onApprove={(completion) => act(() => approveSubmission(s.id, completion))}
-                  onReject={() => act(() => rejectSubmission(s.id, promptNote()))}
+                  onReject={() =>
+                    askNote("Einreichung ablehnen", "Ablehnen", (note) =>
+                      rejectSubmission(s.id, note)
+                    )
+                  }
                 />
               ))
             ))}
@@ -147,7 +165,14 @@ export default function AdminReview() {
                     <Approve busy={busy} onClick={() => act(() => approveImage(i.id))}>
                       Als Hero freigeben
                     </Approve>
-                    <Reject busy={busy} onClick={() => act(() => rejectImage(i.id, promptNote()))}>
+                    <Reject
+                      busy={busy}
+                      onClick={() =>
+                        askNote("Bild ablehnen", "Ablehnen", (note) =>
+                          rejectImage(i.id, note)
+                        )
+                      }
+                    >
                       Ablehnen
                     </Reject>
                   </Actions>
@@ -166,7 +191,14 @@ export default function AdminReview() {
                     <Approve busy={busy} onClick={() => act(() => approveImage(i.id))}>
                       Freigeben
                     </Approve>
-                    <Reject busy={busy} onClick={() => act(() => rejectImage(i.id, promptNote()))}>
+                    <Reject
+                      busy={busy}
+                      onClick={() =>
+                        askNote("Bild ablehnen", "Ablehnen", (note) =>
+                          rejectImage(i.id, note)
+                        )
+                      }
+                    >
                       Ablehnen
                     </Reject>
                   </Actions>
@@ -187,7 +219,14 @@ export default function AdminReview() {
                     badge={`${i.report_count} Meldung(en)`}
                   />
                   <Actions>
-                    <Reject busy={busy} onClick={() => act(() => removeImage(i.id, promptNote()))}>
+                    <Reject
+                      busy={busy}
+                      onClick={() =>
+                        askNote("Bild entfernen", "Entfernen", (note) =>
+                          removeImage(i.id, note)
+                        )
+                      }
+                    >
                       Entfernen
                     </Reject>
                     <Neutral busy={busy} onClick={() => act(() => dismissReports(i.id))}>
@@ -251,12 +290,23 @@ export default function AdminReview() {
             ))}
         </div>
       )}
+
+      <PromptDialog
+        open={noteAction !== null}
+        title={noteAction?.title ?? ""}
+        label="Notiz (optional)"
+        confirmText={noteAction?.confirmText ?? "Bestätigen"}
+        allowEmpty
+        busy={busy}
+        onConfirm={(note) => {
+          const action = noteAction;
+          setNoteAction(null);
+          if (action) void act(() => action.run(note.trim() || undefined));
+        }}
+        onCancel={() => setNoteAction(null)}
+      />
     </div>
   );
-}
-
-function promptNote(): string | undefined {
-  return window.prompt("Notiz (optional):") ?? undefined;
 }
 
 const SPORT_KEYS = Object.keys(SPORT_LABELS);
