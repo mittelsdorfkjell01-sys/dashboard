@@ -10,7 +10,7 @@ import {
   approveImage,
   approveSubmission,
   dismissReports,
-  getRegions,
+  getAdminRegionsFlat,
   getReviewQueue,
   hideRating,
   hideTip,
@@ -61,7 +61,7 @@ export default function AdminReview() {
 
   // Regions power the completion form's dropdown; load once.
   useEffect(() => {
-    getRegions()
+    getAdminRegionsFlat()
       .then(setRegions)
       .catch(() => {
         /* dropdown just stays empty; approval still works for full payloads */

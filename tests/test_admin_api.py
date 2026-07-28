@@ -694,3 +694,27 @@ def test_unassign_region_makes_spot_region_less_and_overview_lists_it(admin, reg
 
     # Re-assign so the region-cascade cleanup reclaims it (no leak into other tests).
     admin.post(f"/admin/spots/{sid}/assign-region", json={"region_id": region_id})
+
+
+# --- region publish status (WP-C) ------------------------------------------
+
+def test_region_publish_status_and_public_filter(admin):
+    suffix = uuid.uuid4().hex[:8]
+    rid = admin.post("/admin/regions", json={
+        "name": f"Test Region {suffix}", "slug": f"test-region-{suffix}",
+        "country": "DE", "lat": 54.4, "lon": 10.2,
+    }).json()["id"]
+
+    # New regions start as draft.
+    assert admin.get(f"/regions/{rid}").json()["status"] == "draft"
+    # Public listing hides drafts; admin (status=all) shows them.
+    assert all(r["id"] != rid for r in admin.get("/regions").json())
+    assert any(r["id"] == rid for r in admin.get("/regions?status=all").json())
+    # Draft is still reachable by slug (preview).
+    assert admin.get(f"/regions/by-slug/test-region-{suffix}").json()["id"] == rid
+
+    # Publish → live + shows publicly.
+    assert admin.post(f"/admin/regions/{rid}/publish").json()["status"] == "published"
+    assert any(r["id"] == rid for r in admin.get("/regions").json())
+    # Unpublish → draft again.
+    assert admin.post(f"/admin/regions/{rid}/unpublish").json()["status"] == "draft"

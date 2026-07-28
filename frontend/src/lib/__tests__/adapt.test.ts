@@ -32,6 +32,7 @@ const region: Region = {
   image: null,
   season: null,
   defaults: null,
+  status: "published",
   updated_at: "2024-01-01T00:00:00Z",
 };
 

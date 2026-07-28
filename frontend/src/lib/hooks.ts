@@ -124,6 +124,18 @@ export function useRegions(): AsyncStateReloadable<api.Region[]> {
   return useSwr("regions", () => api.getRegions());
 }
 
+/** Admin region list — includes drafts. */
+export function useAdminRegions(): AsyncStateReloadable<api.Region[]> {
+  return useSwr("admin-regions", () => api.getAdminRegionsFlat());
+}
+
+/** Resolve one region by slug regardless of status (so draft preview works). */
+export function useRegionBySlug(slug: string | undefined) {
+  return useSwr(slug ? `region-slug:${slug}` : null, () =>
+    api.getRegionBySlug(slug!)
+  );
+}
+
 export interface CommunityFeedState {
   posts: FeedPost[];
   photos: api.CommunityImage[];

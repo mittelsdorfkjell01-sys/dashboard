@@ -7,7 +7,7 @@ import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import { ErrorBanner } from "../components/AsyncStates";
-import { useRegions } from "../lib/hooks";
+import { useAdminRegions } from "../lib/hooks";
 import {
   createSpot,
   fetchCommonsImages,
@@ -72,7 +72,7 @@ export default function AdminSpotForm() {
   const { id } = useParams(); // present => edit mode
   const isEdit = Boolean(id);
   const navigate = useNavigate();
-  const { data: regions } = useRegions();
+  const { data: regions } = useAdminRegions();
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");

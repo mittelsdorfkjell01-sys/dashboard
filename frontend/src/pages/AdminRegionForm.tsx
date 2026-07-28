@@ -12,7 +12,9 @@ import {
   deleteRegion,
   getAdminSpots,
   getRegion,
-  getRegions,
+  getAdminRegionsFlat,
+  publishRegion,
+  unpublishRegion,
   resolveMediaUrl,
   setRegionImageFocal,
   setRegionImageManual,
@@ -87,7 +89,7 @@ export default function AdminRegionForm() {
   };
 
   useEffect(() => {
-    getRegions().then(setRegions).catch(() => {});
+    getAdminRegionsFlat().then(setRegions).catch(() => {});
     loadRegion().catch((e) =>
       setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
     );
@@ -230,6 +232,20 @@ export default function AdminRegionForm() {
     }
   };
 
+  const setStatus = async (fn: (id: string) => Promise<Region>, msg: string) => {
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    try {
+      setRegion(await fn(id));
+      flash(msg);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Aktion fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const toggle = (set: Set<string>, sid: string) => {
     const next = new Set(set);
     next.has(sid) ? next.delete(sid) : next.add(sid);
@@ -256,7 +272,7 @@ export default function AdminRegionForm() {
   }
 
   return (
-    <div className="mx-auto max-w-[820px]">
+    <div className="mx-auto max-w-[1100px]">
       <button
         type="button"
         onClick={() => navigate("/admin/regions")}
@@ -264,19 +280,9 @@ export default function AdminRegionForm() {
       >
         ← Regionen
       </button>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold text-ink">
-          Region bearbeiten — {region.name}
-        </h1>
-        <a
-          href={`/region/${region.slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5"
-        >
-          Vorschau ansehen ↗
-        </a>
-      </div>
+      <h1 className="mt-2 text-2xl font-semibold text-ink">
+        Region bearbeiten — {region.name}
+      </h1>
 
       {notice && (
         <div className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green">
@@ -289,8 +295,10 @@ export default function AdminRegionForm() {
         </div>
       )}
 
+      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_300px]">
+        <div className="min-w-0 space-y-8">
       {/* Editorial */}
-      <form onSubmit={saveFields} className="mt-6 space-y-4">
+      <form onSubmit={saveFields} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className={label}>Name</span>
@@ -596,6 +604,63 @@ export default function AdminRegionForm() {
           Region löschen
         </button>
       </section>
+        </div>
+
+        {/* Right: sticky action panel (status / go-live / preview / save). */}
+        <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
+          <div className="rounded-2xl border border-line bg-white p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-label font-semibold text-ink">Status</h2>
+              <span
+                className={`rounded-full px-2 py-0.5 text-caption font-semibold ${
+                  region.status === "published"
+                    ? "bg-green/10 text-green"
+                    : "bg-orange/15 text-ink"
+                }`}
+              >
+                {region.status === "published" ? "● Live" : "○ Entwurf"}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-col gap-2">
+              {region.status === "published" ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStatus(unpublishRegion, "Region offline genommen.")}
+                  className="rounded-lg border border-teal/30 px-3 py-2 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                >
+                  Offline nehmen
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setStatus(publishRegion, "Region ist jetzt live.")}
+                  className="rounded-lg bg-green px-3 py-2 text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  Go-Live
+                </button>
+              )}
+              <a
+                href={`/region/${region.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg border border-line px-3 py-2 text-center text-label font-medium text-ink hover:bg-band/60"
+              >
+                Öffentliche Vorschau ↗
+              </a>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void doSaveFields(false)}
+                className="rounded-lg bg-teal px-3 py-2 text-label font-medium text-white hover:bg-teal-hover disabled:opacity-50"
+              >
+                Änderungen speichern
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <ConfirmDialog
         open={deleteOpen}

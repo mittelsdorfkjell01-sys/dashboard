@@ -7,7 +7,7 @@ import {
   ApiError,
   archiveSpot,
   getAdminSpots,
-  getRegions,
+  getAdminRegionsFlat,
   goLiveSpot,
   unpublishSpot,
   type AdminSpotsResponse,
@@ -40,7 +40,7 @@ export default function AdminSpots() {
   }, [regions]);
 
   useEffect(() => {
-    getRegions().then(setRegions).catch(() => setRegions([]));
+    getAdminRegionsFlat().then(setRegions).catch(() => setRegions([]));
   }, []);
 
   const load = useCallback(async () => {

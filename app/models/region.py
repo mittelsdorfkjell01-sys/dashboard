@@ -20,6 +20,11 @@ class Region(Base, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     country: Mapped[str | None] = mapped_column(String(2))  # ISO 3166-1 alpha-2
+    # draft = hidden from public listings; published = live. Existing rows keep
+    # showing (server_default 'published'); new regions are created as draft.
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'published'")
+    )
 
     center: Mapped[object | None] = mapped_column(
         Geography(geometry_type="POINT", srid=4326, spatial_index=False)

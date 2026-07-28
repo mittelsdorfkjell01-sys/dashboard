@@ -14,7 +14,7 @@ import { EmptyState, ErrorBanner, SpotGridSkeleton } from "../components/AsyncSt
 import { ChevronDownIcon } from "../lib/icons";
 import type { RegionInfo } from "../lib/types";
 import { usableMediaUrl } from "../lib/api";
-import { useRegions, useSpots, useRegionSeason, useBestWeeks } from "../lib/hooks";
+import { useRegionBySlug, useSpots, useRegionSeason, useBestWeeks } from "../lib/hooks";
 import { regionSeasonToView } from "../lib/seasonView";
 import {
   filterSpots,
@@ -47,15 +47,11 @@ export default function RegionDetail() {
     setSearchParams(filtersToSearchParams(next), { replace: true });
 
   const {
-    data: regions,
+    data: backendRegion,
     loading: regionsLoading,
     error: regionsError,
     reload: reloadRegions,
-  } = useRegions();
-  const backendRegion = useMemo(
-    () => regions?.find((r) => r.slug === slug),
-    [regions, slug]
-  );
+  } = useRegionBySlug(slug);
   const {
     data: spots,
     loading: spotsLoading,

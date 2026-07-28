@@ -568,6 +568,24 @@ def update_region(
     return RegionRead.from_orm_region(region)
 
 
+@router.post("/regions/{region_id}/publish", response_model=RegionRead)
+def publish_region(region_id: uuid.UUID, db: Session = Depends(get_db)):
+    try:
+        region = admin_regions.set_region_status(region_id, "published", db=db)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Region not found")
+    return RegionRead.from_orm_region(region)
+
+
+@router.post("/regions/{region_id}/unpublish", response_model=RegionRead)
+def unpublish_region(region_id: uuid.UUID, db: Session = Depends(get_db)):
+    try:
+        region = admin_regions.set_region_status(region_id, "draft", db=db)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Region not found")
+    return RegionRead.from_orm_region(region)
+
+
 @router.delete("/regions/{region_id}", status_code=204)
 def delete_region(region_id: uuid.UUID, db: Session = Depends(get_db)):
     """Delete a region — only when no spots are assigned (409 otherwise)."""

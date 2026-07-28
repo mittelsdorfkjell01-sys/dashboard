@@ -19,12 +19,31 @@ def list_regions(
     db: Session = Depends(get_db),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    status: str | None = Query(default=None),
 ) -> list[RegionRead]:
-    rows = db.scalars(
-        select(Region).order_by(Region.name).limit(limit).offset(offset)
-    ).all()
+    """Public listing shows only published regions. The admin passes
+    ``status=all`` to see drafts too (or a specific status)."""
+    stmt = select(Region).order_by(Region.name)
+    if status is None:
+        stmt = stmt.where(Region.status == "published")
+    elif status != "all":
+        stmt = stmt.where(Region.status == status)
+    rows = db.scalars(stmt.limit(limit).offset(offset)).all()
     set_public_cache(response)
     return [RegionRead.from_orm_region(r) for r in rows]
+
+
+@router.get("/by-slug/{slug}", response_model=RegionRead)
+def get_region_by_slug(
+    slug: str, response: Response, db: Session = Depends(get_db)
+) -> RegionRead:
+    """Resolve a region by slug regardless of status — powers the region page +
+    draft preview (like the spot detail, which is not status-filtered)."""
+    region = db.scalar(select(Region).where(Region.slug == slug))
+    if region is None:
+        raise HTTPException(status_code=404, detail="Region not found")
+    set_public_cache(response)
+    return RegionRead.from_orm_region(region)
 
 
 @router.get("/{region_id}", response_model=RegionRead)

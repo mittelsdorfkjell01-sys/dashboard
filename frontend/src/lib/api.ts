@@ -99,6 +99,7 @@ export interface Region {
   image: ImageRecord | null;
   season: Record<string, any> | null;
   defaults: Record<string, any> | null;
+  status: string;
   updated_at: string;
 }
 
@@ -299,14 +300,28 @@ export const getSpotsLive = (ids: string[]) =>
     `/spots/live?ids=${encodeURIComponent(ids.join(","))}`
   );
 
+/** Public region listing — published only. */
 export const getRegions = () => request<Region[]>(`/regions`);
+
+/** Flat admin region list (Region[], includes drafts) — for dropdowns/pickers. */
+export const getAdminRegionsFlat = () => request<Region[]>(`/regions?status=all`);
 
 export const getRegion = (id: string) => request<Region>(`/regions/${id}`);
 
+/** Resolve a region by slug regardless of status (so draft preview works). */
 export async function getRegionBySlug(slug: string): Promise<Region | undefined> {
-  const regions = await getRegions();
-  return regions.find((r) => r.slug === slug);
+  try {
+    return await request<Region>(`/regions/by-slug/${encodeURIComponent(slug)}`);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return undefined;
+    throw e;
+  }
 }
+
+export const publishRegion = (id: string) =>
+  request<Region>(`/admin/regions/${id}/publish`, { method: "POST" });
+export const unpublishRegion = (id: string) =>
+  request<Region>(`/admin/regions/${id}/unpublish`, { method: "POST" });
 
 export const getSpotForecast = (id: string, days?: number) =>
   request<ForecastSeries>(`/spots/${id}/forecast${qs({ days })}`);

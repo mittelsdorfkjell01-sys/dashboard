@@ -20,6 +20,7 @@ class RegionRead(BaseModel):
     image: dict[str, Any] | None = None
     season: dict[str, Any] | None = None
     defaults: dict[str, Any] | None = None
+    status: str = "published"
     created_at: datetime
     updated_at: datetime
 
@@ -36,6 +37,7 @@ class RegionRead(BaseModel):
             image=region.image,
             season=region.season,
             defaults=region.defaults,
+            status=getattr(region, "status", "published"),
             created_at=region.created_at,
             updated_at=region.updated_at,
         )

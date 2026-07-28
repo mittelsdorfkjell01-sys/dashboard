@@ -57,6 +57,7 @@ def create_region(data: dict, *, db: Session) -> Any:
         defaults=data.get("defaults") or {},
         season=data.get("season"),
         image=data.get("image"),
+        status="draft",  # new regions start as draft → operator goes live
     )
     db.add(region)
     db.commit()
@@ -119,6 +120,21 @@ def update_region_defaults(region_id, defaults: dict, *, db: Session) -> Any:
     merged = dict(region.defaults or {})
     merged.update(defaults or {})
     region.defaults = merged
+    db.commit()
+    db.refresh(region)
+    return region
+
+
+def set_region_status(region_id, status: str, *, db: Session) -> Any:
+    """Publish (``published``) or unpublish (``draft``) a region."""
+    from app.models import Region
+
+    if status not in ("draft", "published"):
+        raise ValueError(f"invalid region status: {status!r}")
+    region = db.get(Region, region_id)
+    if region is None:
+        raise LookupError(f"unknown region {region_id}")
+    region.status = status
     db.commit()
     db.refresh(region)
     return region
