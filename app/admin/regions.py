@@ -124,6 +124,23 @@ def update_region_defaults(region_id, defaults: dict, *, db: Session) -> Any:
     return region
 
 
+def unassign_spots_from_region(spot_ids, *, db: Session) -> int:
+    """Drag a spot out of every region → region-less (region_id NULL). It then
+    surfaces at the top of the Übersicht until a region is picked. Returns the
+    count changed; unknown ids are ignored (idempotent)."""
+    from sqlalchemy import select
+    from app.models import Spot
+
+    spots = db.scalars(select(Spot).where(Spot.id.in_(spot_ids))).all()
+    changed = 0
+    for spot in spots:
+        if spot.region_id is not None:
+            spot.region_id = None
+            changed += 1
+    db.commit()
+    return changed
+
+
 def update_region(region_id, data: dict, *, db: Session) -> Any:
     """Patch a region's editorial fields. Only keys present in ``data`` are
     applied; ``defaults`` is merged, ``season``/``name``/``description`` replaced."""

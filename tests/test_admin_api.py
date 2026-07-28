@@ -676,3 +676,21 @@ def test_admin_notifications_flow(admin, region_id, db):
 
     admin.post("/admin/notifications/read-all")
     assert admin.get("/admin/notifications/unread-count").json()["count"] == 0
+
+
+# --- region-less spots (WP-B) ----------------------------------------------
+
+def test_unassign_region_makes_spot_region_less_and_overview_lists_it(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+
+    resp = admin.post("/admin/spots/bulk-unassign-region", json={"spot_ids": [sid]})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["changed"] == 1
+    assert admin.get(f"/admin/spots/{sid}").json()["region_id"] is None
+
+    ov = admin.get("/admin/overview").json()
+    assert any(s["id"] == sid for s in ov["no_region"])
+
+    # Re-assign so the region-cascade cleanup reclaims it (no leak into other tests).
+    admin.post(f"/admin/spots/{sid}/assign-region", json={"region_id": region_id})

@@ -249,7 +249,9 @@ export default function AdminSpots() {
                     </Link>
                     <div className="text-caption text-muted">{s.slug}</div>
                   </td>
-                  <td className="px-4 py-3 text-ink">{regionName(s.region_id)}</td>
+                  <td className="px-4 py-3 text-ink">
+                    {s.region_id ? regionName(s.region_id) : "— ohne Region"}
+                  </td>
                   <td className="px-4 py-3 text-ink">
                     {(s.sports ?? []).map(sportLabel).join(", ") || "—"}
                   </td>

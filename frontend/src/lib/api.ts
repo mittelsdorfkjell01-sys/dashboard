@@ -64,7 +64,7 @@ export interface SpotSummary {
   id: string;
   slug: string;
   name: string;
-  region_id: string;
+  region_id: string | null;
   location: GeoPoint | null;
   sports: string[];
   water_type: string | null;
@@ -735,11 +735,18 @@ export interface TeamNote {
   created_at: string;
 }
 
+export interface NoRegionSpot {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+}
 export interface AdminOverview {
   spots: StatusCounts;
   regions: number;
   readiness_open: number;
   not_live: NotLiveSpot[];
+  no_region: NoRegionSpot[];
   drafts: DraftSpot[];
   recent: RecentSpot[];
   review: Record<string, number>;
@@ -938,6 +945,13 @@ export const bulkAssignSpotRegion = (spotIds: string[], regionId: string) =>
   request<{ moved: number }>(`/admin/spots/bulk-assign-region`, {
     method: "POST",
     body: JSON.stringify({ spot_ids: spotIds, region_id: regionId }),
+  });
+
+/** Make spots region-less (drag out of a region without a target). */
+export const bulkUnassignSpotRegion = (spotIds: string[]) =>
+  request<{ changed: number }>(`/admin/spots/bulk-unassign-region`, {
+    method: "POST",
+    body: JSON.stringify({ spot_ids: spotIds }),
   });
 
 // --- admin spot actions (go-live / ERA5) -----------------------------------

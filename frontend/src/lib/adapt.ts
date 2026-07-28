@@ -40,7 +40,7 @@ export function adaptSpot(
     slug: s.slug,
     name: s.name,
     region: regionLabel(region),
-    regionId: s.region_id,
+    regionId: s.region_id ?? undefined,
     wind: typicalWind,
     description,
     tags: [],
@@ -76,5 +76,5 @@ export function adaptSpots(
   spots: (SpotSummary | SpotRead)[],
   regionsById: Map<string, Region>
 ): Spot[] {
-  return spots.map((s) => adaptSpot(s, regionsById.get(s.region_id)));
+  return spots.map((s) => adaptSpot(s, regionsById.get(s.region_id ?? "")));
 }

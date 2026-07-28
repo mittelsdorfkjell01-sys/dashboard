@@ -44,6 +44,7 @@ from app.schemas import RegionRead, SpotRead, SpotSummary
 from app.schemas.admin import (
     AssignRegionRequest,
     BulkAssignRegionRequest,
+    BulkUnassignRegionRequest,
     ImageAttributionRequest,
     ImageRequest,
     OverrideRequest,
@@ -453,6 +454,14 @@ def bulk_assign_region(body: BulkAssignRegionRequest, db: Session = Depends(get_
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     return {"moved": moved}
+
+
+@router.post("/spots/bulk-unassign-region")
+def bulk_unassign_region(body: BulkUnassignRegionRequest, db: Session = Depends(get_db)) -> dict:
+    """Make spots region-less (drag out of a region without a target). They then
+    show at the top of the Übersicht until a region is assigned."""
+    changed = admin_regions.unassign_spots_from_region(body.spot_ids, db=db)
+    return {"changed": changed}
 
 
 # --- regions ---------------------------------------------------------------

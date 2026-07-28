@@ -85,6 +85,30 @@ export default function AdminHome() {
         </Link>
       </div>
 
+      {/* Region-less spots — most urgent, flagged red at the very top. */}
+      {data.no_region.length > 0 && (
+        <section className="mt-6 rounded-2xl border-2 border-red-400 bg-red-50/50 p-4">
+          <p className="text-body font-semibold text-red-700">
+            {data.no_region.length} Spot(s) ohne Region
+          </p>
+          <p className="mt-0.5 text-caption text-red-700/80">
+            Diesen Spots ist keine Region zugeordnet — bitte eine Region wählen,
+            sonst erscheinen sie nicht korrekt auf der Seite.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {data.no_region.map((s) => (
+              <Link
+                key={s.id}
+                to={`/admin/spot/${s.id}/edit`}
+                className="rounded-lg bg-white px-3 py-1.5 text-label font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-100"
+              >
+                {s.name} →
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Was ist zu tun? — the prioritized action list */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-line bg-white">
         {tasks.length === 0 ? (

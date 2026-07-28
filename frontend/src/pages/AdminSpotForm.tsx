@@ -172,7 +172,7 @@ export default function AdminSpotForm() {
     setName(s.name);
     setSlug(s.slug);
     setSlugTouched(true);
-    setRegionId(s.region_id);
+    setRegionId(s.region_id ?? "");
     setDescription((s.editorial?.description as string) ?? "");
     seedImage((s.image as ImageRecord | null) ?? null);
     if (s.location) {

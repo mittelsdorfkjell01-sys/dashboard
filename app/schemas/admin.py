@@ -161,3 +161,7 @@ class AssignRegionRequest(BaseModel):
 class BulkAssignRegionRequest(BaseModel):
     spot_ids: list[uuid.UUID]
     region_id: uuid.UUID
+
+
+class BulkUnassignRegionRequest(BaseModel):
+    spot_ids: list[uuid.UUID]

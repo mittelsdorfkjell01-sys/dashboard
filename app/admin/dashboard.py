@@ -252,6 +252,18 @@ def recent_spots(db: Session, *, limit: int = 8) -> list[dict[str, Any]]:
     ]
 
 
+def no_region_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:
+    """Region-less spots (dragged out of every region). Surfaced at the top of
+    the Übersicht (red) until a region is assigned."""
+    rows = db.scalars(
+        select(Spot)
+        .where(Spot.region_id.is_(None))
+        .order_by(Spot.updated_at.desc())
+        .limit(limit)
+    ).all()
+    return [{"id": str(s.id), "name": s.name, "slug": s.slug, "status": s.status} for s in rows]
+
+
 def overview(db: Session) -> dict[str, Any]:
     """Dashboard KPIs, including the moderation review-queue counts + team notes."""
     from app.admin.era5_worker import count_queued
@@ -266,6 +278,7 @@ def overview(db: Session) -> dict[str, Any]:
         "regions": regions_count,
         "readiness_open": len(open_gaps),
         "not_live": open_gaps[:20],
+        "no_region": no_region_spots(db),
         "drafts": draft_spots(db, limit=100),
         "recent": recent_spots(db),
         "review": review_counts(db),

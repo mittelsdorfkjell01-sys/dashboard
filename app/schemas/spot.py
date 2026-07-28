@@ -20,7 +20,7 @@ class SpotSummary(BaseModel):
     id: uuid.UUID
     slug: str
     name: str
-    region_id: uuid.UUID
+    region_id: uuid.UUID | None = None
     location: GeoPoint | None = None
     sports: list[str]
     water_type: str | None = None
@@ -62,7 +62,7 @@ class SpotRead(BaseModel):
     id: uuid.UUID
     slug: str
     name: str
-    region_id: uuid.UUID
+    region_id: uuid.UUID | None = None
     location: GeoPoint | None = None
     era5_cell: dict[str, Any] | None = None
     model_pref: str | None = None

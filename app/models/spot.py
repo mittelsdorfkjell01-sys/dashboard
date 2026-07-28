@@ -20,10 +20,10 @@ class Spot(Base, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
 
-    region_id: Mapped[uuid.UUID] = mapped_column(
+    region_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("regions.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
 
     location: Mapped[object] = mapped_column(

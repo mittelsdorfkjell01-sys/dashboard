@@ -8,6 +8,7 @@ import {
   ApiError,
   assignSpotRegion,
   bulkAssignSpotRegion,
+  bulkUnassignSpotRegion,
   deleteRegion,
   getAdminSpots,
   getRegion,
@@ -53,6 +54,7 @@ export default function AdminRegionForm() {
   const [conflictOpen, setConflictOpen] = useState(false);
   const [spotSearch, setSpotSearch] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [dragOverRight, setDragOverRight] = useState(false);
   // Bulk transfer: checkbox selections in each column + the target region for
   // moving spots *out* of this region.
   const [selIn, setSelIn] = useState<Set<string>>(new Set());
@@ -209,6 +211,20 @@ export default function AdminRegionForm() {
       flash(`${moved} Spot(s) verschoben.`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Verschieben fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const unassign = async (spotId: string) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await bulkUnassignSpotRegion([spotId]);
+      await loadSpots();
+      flash("Spot ohne Region gesetzt.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Aktion fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
@@ -414,8 +430,10 @@ export default function AdminRegionForm() {
       <section className="mt-10">
         <h2 className="text-base font-semibold text-ink">Spots zuordnen</h2>
         <p className="mt-1 text-label text-muted">
-          Einzeln per Drag &amp; Drop aus „Andere Spots" in „Diese Region", oder
-          mehrere ankreuzen und gebündelt verschieben — in beide Richtungen.
+          Drag &amp; Drop in beide Richtungen: nach links = dieser Region
+          zuordnen, nach rechts = Region entfernen (Spot wird region-los und
+          erscheint oben in der Übersicht). Oder mehrere ankreuzen und gebündelt
+          verschieben.
         </p>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -448,7 +466,9 @@ export default function AdminRegionForm() {
                 spots.map((s) => (
                   <label
                     key={s.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg bg-band px-3 py-2 text-ui text-ink"
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData("text/plain", s.id)}
+                    className="flex cursor-grab items-center gap-2 rounded-lg bg-band px-3 py-2 text-ui text-ink active:cursor-grabbing"
                   >
                     <input
                       type="checkbox"
@@ -489,8 +509,25 @@ export default function AdminRegionForm() {
             )}
           </div>
 
-          {/* Right: pool of all other spots (searchable, selectable, draggable) */}
-          <div className="rounded-2xl border border-line bg-white p-3">
+          {/* Right: pool of other spots — also a drop target: dropping a spot
+              from this region here removes its region (region-less). */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOverRight(true);
+            }}
+            onDragLeave={() => setDragOverRight(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOverRight(false);
+              const sid = e.dataTransfer.getData("text/plain");
+              // Only spots currently in THIS region get unassigned here.
+              if (sid && spots.some((s) => s.id === sid)) void unassign(sid);
+            }}
+            className={`rounded-2xl border p-3 transition-colors ${
+              dragOverRight ? "border-red-400 bg-red-50/50" : "border-line bg-white"
+            }`}
+          >
             <div className="flex items-center justify-between gap-2 px-1">
               <p className="text-label font-semibold text-ink">Andere Spots</p>
               {selOut.size > 0 && (
@@ -531,7 +568,9 @@ export default function AdminRegionForm() {
                       className="min-w-0 flex-1 cursor-grab active:cursor-grabbing"
                     >
                       <div className="text-ui text-ink">{s.name}</div>
-                      <div className="text-caption text-muted">{regionName(s.region_id)}</div>
+                      <div className="text-caption text-muted">
+                        {s.region_id ? regionName(s.region_id) : "ohne Region"}
+                      </div>
                     </div>
                   </div>
                 ))}
