@@ -151,6 +151,13 @@ def dismiss_reports(
 
 # --- tips & ratings --------------------------------------------------------
 
+@router.get("/spots/{spot_id}/tips")
+def spot_tips(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    """All comments on a spot (published + hidden), chronological, with
+    ``parent_id`` so the UI can show threads. Powers per-spot moderation."""
+    return {"items": moderation.list_spot_tips(db, spot_id)}
+
+
 @router.post("/tips/{tip_id}/hide")
 def hide_tip(
     tip_id: uuid.UUID, db: Session = Depends(get_db), actor: str = Depends(get_actor)

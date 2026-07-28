@@ -76,6 +76,20 @@ def review_counts(db: Session) -> dict[str, int]:
     }
 
 
+def list_spot_tips(db: Session, spot_id) -> list[dict]:
+    """Every comment on a spot — regardless of status — for per-spot
+    moderation. Chronological so the frontend can nest replies under their
+    parent by ``parent_id``. Unlike the review queue this includes ``hidden``
+    tips (so they can be restored) and is scoped to one spot.
+    """
+    tips = db.scalars(
+        select(LocalTip)
+        .where(LocalTip.spot_id == spot_id)
+        .order_by(LocalTip.created_at.asc())
+    ).all()
+    return [_tip_view(t) for t in tips]
+
+
 def review_queue(db: Session) -> dict[str, Any]:
     counts = review_counts(db)
 
@@ -148,6 +162,7 @@ def _tip_view(t: LocalTip) -> dict:
     return {
         "id": str(t.id), "spot_id": str(t.spot_id), "body": t.body,
         "author_name": t.author_name, "status": t.status, "flagged": t.flagged,
+        "parent_id": str(t.parent_id) if t.parent_id else None,
         "created_at": t.created_at.isoformat(),
     }
 

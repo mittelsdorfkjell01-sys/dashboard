@@ -489,3 +489,42 @@ def test_region_patch_stale_updated_at_conflicts(admin, region_id):
     )
     assert ok.status_code == 200, ok.text
     assert ok.json()["name"] == "New Name"
+
+
+# --- per-spot comment moderation (Sprint 2) --------------------------------
+# The admin lists ALL comments on a spot (published + hidden) with parent_id so
+# the UI can show threads, and can hide/restore any of them — not just flagged.
+
+def _post_tip(admin, spot_id, body, parent_id=None):
+    payload = {"body": body, "author_name": "Tester"}
+    if parent_id:
+        payload["parent_id"] = parent_id
+    resp = admin.post(f"/spots/{spot_id}/tips", json=payload)
+    assert resp.status_code in (200, 201), resp.text
+    return resp.json()
+
+
+def test_spot_tips_lists_all_with_thread_and_hide_restore(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+
+    root = _post_tip(admin, sid, "top-level")
+    reply = _post_tip(admin, sid, "a reply", parent_id=root["id"])
+
+    listed = admin.get(f"/admin/spots/{sid}/tips")
+    assert listed.status_code == 200, listed.text
+    items = listed.json()["items"]
+    assert len(items) == 2
+    by_id = {t["id"]: t for t in items}
+    assert by_id[reply["id"]]["parent_id"] == root["id"]
+    assert by_id[root["id"]]["parent_id"] is None
+
+    # Hiding the reply keeps it in the per-spot list (so it can be restored),
+    # unlike the published-only public feed.
+    assert admin.post(f"/admin/tips/{reply['id']}/hide").status_code == 200
+    after_hide = {t["id"]: t for t in admin.get(f"/admin/spots/{sid}/tips").json()["items"]}
+    assert after_hide[reply["id"]]["status"] == "hidden"
+
+    assert admin.post(f"/admin/tips/{reply['id']}/restore").status_code == 200
+    after_restore = {t["id"]: t for t in admin.get(f"/admin/spots/{sid}/tips").json()["items"]}
+    assert after_restore[reply["id"]]["status"] == "published"

@@ -599,6 +599,8 @@ export interface ReviewTip {
   author_name: string;
   status: string;
   flagged: boolean;
+  /** Set when this comment is a reply (points at the top-level comment). */
+  parent_id: string | null;
   created_at: string;
 }
 export interface ReviewRating {
@@ -660,6 +662,9 @@ export const dismissReports = (id: string) =>
     `/admin/images/${id}/dismiss-reports`,
     { method: "POST" }
   );
+/** All comments on a spot (published + hidden), for per-spot moderation. */
+export const getSpotTips = (spotId: string) =>
+  request<{ items: ReviewTip[] }>(`/admin/spots/${spotId}/tips`);
 export const hideTip = (id: string) =>
   request<{ id: string; status: string }>(`/admin/tips/${id}/hide`, { method: "POST" });
 export const restoreTip = (id: string) =>

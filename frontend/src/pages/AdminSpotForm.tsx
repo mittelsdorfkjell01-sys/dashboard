@@ -5,6 +5,7 @@ import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
+import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useRegions } from "../lib/hooks";
 import {
@@ -724,6 +725,19 @@ export default function AdminSpotForm() {
                   ))}
                 </div>
               )}
+            </section>
+          )}
+
+          {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}
+          {isEdit && id && (
+            <section>
+              <h2 className="text-[15px] font-semibold text-ink">Kommentare</h2>
+              <p className="mb-4 mt-1 text-caption text-muted">
+                Alle Kommentare zu diesem Spot — Antworten stehen unter ihrem
+                Ausgangskommentar. Verborgene bleiben hier sichtbar und lassen
+                sich wiederherstellen.
+              </p>
+              <SpotCommentsPanel spotId={id} />
             </section>
           )}
 
