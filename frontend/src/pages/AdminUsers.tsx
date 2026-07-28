@@ -7,27 +7,34 @@ import {
   ApiError,
   createAdminUser,
   createTeamNote,
+  deleteAdminUser,
   deleteTeamNote,
   getActivity,
   getAdminUsers,
+  getMe,
   getTeamNotes,
   setAdminUserPassword,
   updateAdminUser,
   type ActivityItem,
-  type AdminRole,
   type AdminUserRecord,
+  type AuthUser,
   type TeamNote,
 } from "../lib/api";
-import { ROLE_LABELS, gapLabel, roleLabel } from "../lib/labels";
-import { Button, Input, Select } from "../components/ui";
-
-const ROLES: AdminRole[] = ["admin", "curator"];
+import { gapLabel, roleLabel } from "../lib/labels";
+import { Button, Input } from "../components/ui";
+import PromptDialog from "../components/ui/PromptDialog";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
+  const [me, setMe] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Password-reset + delete dialog targets (null = closed).
+  const [pwTarget, setPwTarget] = useState<AdminUserRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUserRecord | null>(null);
+  const [dialogBusy, setDialogBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -43,6 +50,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     void load();
+    getMe().then(setMe).catch(() => setMe(null));
   }, []);
 
   const flash = (msg: string) => {
@@ -50,15 +58,14 @@ export default function AdminUsers() {
     setTimeout(() => setNotice(null), 2500);
   };
 
-  const onRoleChange = async (u: AdminUserRecord, role: AdminRole) => {
-    try {
-      await updateAdminUser(u.id, { role });
-      flash(`Rolle von ${u.email} auf ${roleLabel(role)} gesetzt.`);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Aktualisierung fehlgeschlagen.");
-    }
-  };
+  // Client-side mirrors of the server guards, for disabling the buttons up
+  // front (the server stays authoritative).
+  const activeAdminCount = users.filter(
+    (u) => u.role === "admin" && u.is_active
+  ).length;
+  const isSelf = (u: AdminUserRecord) => me?.id === u.id;
+  const isLastActiveAdmin = (u: AdminUserRecord) =>
+    u.role === "admin" && u.is_active && activeAdminCount <= 1;
 
   const onToggleActive = async (u: AdminUserRecord) => {
     try {
@@ -70,14 +77,34 @@ export default function AdminUsers() {
     }
   };
 
-  const onResetPassword = async (u: AdminUserRecord) => {
-    const pw = window.prompt(`Neues Passwort für ${u.email}:`);
-    if (!pw) return;
+  const onResetPassword = async (pw: string) => {
+    if (!pwTarget) return;
+    setDialogBusy(true);
+    setError(null);
     try {
-      await setAdminUserPassword(u.id, pw);
-      flash(`Passwort für ${u.email} geändert.`);
+      await setAdminUserPassword(pwTarget.id, pw);
+      flash(`Passwort für ${pwTarget.email} geändert.`);
+      setPwTarget(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Passwort ändern fehlgeschlagen.");
+    } finally {
+      setDialogBusy(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!deleteTarget) return;
+    setDialogBusy(true);
+    setError(null);
+    try {
+      await deleteAdminUser(deleteTarget.id);
+      flash(`${deleteTarget.email} gelöscht.`);
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Löschen fehlgeschlagen.");
+    } finally {
+      setDialogBusy(false);
     }
   };
 
@@ -85,8 +112,8 @@ export default function AdminUsers() {
     <div>
       <h1 className="text-[24px] font-semibold text-ink">Benutzerverwaltung</h1>
         <p className="mt-2 text-[15px] text-muted">
-          Admins verwalten alles; Moderatoren kuratieren und moderieren, ohne
-          Zugriff auf die Benutzerverwaltung.
+          Alle Operatoren haben volle Admin-Rechte. Du kannst dein eigenes Konto
+          und den letzten aktiven Admin nicht deaktivieren oder löschen.
         </p>
 
         {notice && (
@@ -144,21 +171,13 @@ export default function AdminUsers() {
                   <tr key={u.id} className={u.is_active ? "" : "opacity-60"}>
                     <td className="px-4 py-3 text-ink">{u.email}</td>
                     <td className="px-4 py-3 text-ink">{u.display_name}</td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={u.role}
-                        onChange={(e) =>
-                          onRoleChange(u, e.target.value as AdminRole)
-                        }
-                        className="rounded-lg border border-line bg-white px-2 py-1 text-[13px] text-ink"
-                        aria-label={`Rolle von ${u.email}`}
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {ROLE_LABELS[r]}
-                          </option>
-                        ))}
-                      </select>
+                    <td className="px-4 py-3 text-[13px] text-ink">
+                      {roleLabel(u.role)}
+                      {isSelf(u) && (
+                        <span className="ml-2 rounded bg-teal/10 px-1.5 py-0.5 text-[11px] font-semibold text-teal">
+                          du
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -175,20 +194,43 @@ export default function AdminUsers() {
                         : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => onToggleActive(u)}
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
+                          disabled={isSelf(u) || isLastActiveAdmin(u)}
+                          title={
+                            isSelf(u)
+                              ? "Du kannst dich nicht selbst deaktivieren."
+                              : isLastActiveAdmin(u)
+                              ? "Der letzte aktive Admin kann nicht deaktiviert werden."
+                              : undefined
+                          }
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {u.is_active ? "Deaktivieren" : "Aktivieren"}
                         </button>
                         <button
                           type="button"
-                          onClick={() => onResetPassword(u)}
+                          onClick={() => setPwTarget(u)}
                           className="rounded-lg border border-teal/30 px-2.5 py-1 text-[13px] font-medium text-teal hover:bg-teal/5"
                         >
                           Passwort
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(u)}
+                          disabled={isSelf(u) || isLastActiveAdmin(u)}
+                          title={
+                            isSelf(u)
+                              ? "Du kannst dein eigenes Konto nicht löschen."
+                              : isLastActiveAdmin(u)
+                              ? "Der letzte aktive Admin kann nicht gelöscht werden."
+                              : undefined
+                          }
+                          className="rounded-lg border border-red-200 px-2.5 py-1 text-[13px] font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Löschen
                         </button>
                       </div>
                     </td>
@@ -201,6 +243,29 @@ export default function AdminUsers() {
 
         <TeamBoard />
         <ActivityLog />
+
+        <PromptDialog
+          open={pwTarget !== null}
+          title="Passwort zurücksetzen"
+          label={pwTarget ? `Neues Passwort für ${pwTarget.email}` : undefined}
+          type="password"
+          confirmText="Passwort setzen"
+          busy={dialogBusy}
+          onConfirm={onResetPassword}
+          onCancel={() => setPwTarget(null)}
+        />
+        <ConfirmDialog
+          open={deleteTarget !== null}
+          title="Benutzer löschen"
+          message={
+            deleteTarget
+              ? `${deleteTarget.email} wird dauerhaft gelöscht. Das lässt sich nicht rückgängig machen.`
+              : undefined
+          }
+          busy={dialogBusy}
+          onConfirm={onDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
     </div>
   );
 }
@@ -328,23 +393,21 @@ function CreateUserForm({
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<AdminRole>("curator");
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
+      // Role is fixed to admin server-side — no picker.
       await createAdminUser({
         email: email.trim(),
         password,
         display_name: displayName.trim() || undefined,
-        role,
       });
       setEmail("");
       setDisplayName("");
       setPassword("");
-      setRole("curator");
       await onCreated(email.trim());
     } catch (err) {
       onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
@@ -359,7 +422,7 @@ function CreateUserForm({
       className="mt-6 rounded-2xl bg-ink/5 p-4 sm:p-5"
       noValidate
     >
-      <p className="text-[14px] font-semibold text-ink">Neuen Benutzer anlegen</p>
+      <p className="text-[14px] font-semibold text-ink">Neuen Admin anlegen</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           type="email"
@@ -383,22 +446,9 @@ function CreateUserForm({
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <div className="flex gap-2">
-          <Select
-            value={role}
-            onChange={(e) => setRole(e.target.value as AdminRole)}
-            aria-label="Rolle"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" disabled={busy || !email || !password} className="shrink-0">
-            {busy ? "…" : "Anlegen"}
-          </Button>
-        </div>
+        <Button type="submit" disabled={busy || !email || !password} className="shrink-0">
+          {busy ? "…" : "Anlegen"}
+        </Button>
       </div>
     </form>
   );

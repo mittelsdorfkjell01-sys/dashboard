@@ -52,7 +52,9 @@ class AdminUserCreate(BaseModel):
     email: str
     password: str
     display_name: str | None = None
-    role: str = "curator"
+    # Two operators, both full admins — no role granularity. New accounts are
+    # admins; the UI exposes no role picker.
+    role: str = "admin"
 
 
 class AdminUserUpdate(BaseModel):
@@ -101,6 +103,12 @@ def update_user(
     if body.role is not None:
         if body.role not in ROLES:
             raise HTTPException(status_code=422, detail=f"Ungültige Rolle: {body.role}")
+        # Never demote the last active admin — that would orphan the system.
+        if body.role != "admin" and _is_last_active_admin(db, user):
+            raise HTTPException(
+                status_code=422,
+                detail="Der letzte aktive Admin kann nicht herabgestuft werden.",
+            )
         user.role = body.role
     if body.display_name is not None:
         name = body.display_name.strip()
@@ -134,6 +142,30 @@ def set_user_password(
         service.set_password(db, user, body.password)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/{user_id}", status_code=204)
+def delete_user(
+    user_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_role("admin")),
+):
+    user = db.get(AdminUser, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden.")
+    # Two guards: never delete your own account (lock-out / accident), never
+    # delete the last active admin (orphan the system).
+    if principal.user_id is not None and user.id == principal.user_id:
+        raise HTTPException(
+            status_code=422, detail="Du kannst dein eigenes Konto nicht löschen."
+        )
+    if _is_last_active_admin(db, user):
+        raise HTTPException(
+            status_code=422, detail="Der letzte aktive Admin kann nicht gelöscht werden."
+        )
+    db.delete(user)
     db.commit()
     return Response(status_code=204)
 

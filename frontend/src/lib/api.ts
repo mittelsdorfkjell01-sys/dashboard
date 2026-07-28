@@ -434,6 +434,9 @@ export const setAdminUserPassword = (id: string, password: string) =>
     body: JSON.stringify({ password }),
   });
 
+export const deleteAdminUser = (id: string) =>
+  request<void>(`/admin/users/${id}`, { method: "DELETE" });
+
 // --- community / UGC (Sprint C/D, public) ----------------------------------
 
 export interface RatingItem {

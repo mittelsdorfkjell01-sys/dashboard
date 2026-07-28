@@ -226,3 +226,32 @@ def test_audit_actor_is_logged_in_email(client, db):
         if r is not None:
             db.delete(r)
             db.commit()
+
+
+# --- Sprint 3: user management (delete + guards + default role) -------------
+
+def test_create_user_defaults_to_admin(client):
+    email = f"defadm-{uuid.uuid4().hex[:8]}@test.local"
+    created = client.post("/admin/users", json={"email": email, "password": "pw-123456"})
+    assert created.status_code == 201, created.text
+    # No role granularity: new accounts are admins.
+    assert created.json()["role"] == "admin"
+
+
+def test_delete_admin_user(client):
+    email = f"deltarget-{uuid.uuid4().hex[:8]}@test.local"
+    uid = client.post(
+        "/admin/users", json={"email": email, "password": "pw-123456"}
+    ).json()["id"]
+
+    assert client.delete(f"/admin/users/{uid}").status_code == 204
+    assert all(u["id"] != uid for u in client.get("/admin/users").json())
+    # Deleting again → 404.
+    assert client.delete(f"/admin/users/{uid}").status_code == 404
+
+
+def test_cannot_delete_self(client):
+    me = client.get("/auth/me").json()
+    resp = client.delete(f"/admin/users/{me['id']}")
+    assert resp.status_code == 422
+    assert "eigenes Konto" in resp.json()["detail"]
