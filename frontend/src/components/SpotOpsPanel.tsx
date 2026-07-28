@@ -100,7 +100,7 @@ export default function SpotOpsPanel({
     runStatus(() => triggerEra5(spotId), "Klimatologie neu angestoßen.");
 
   const overrideKeys = overrides ? Object.keys(overrides) : [];
-  const era5Status = (era5?.status as string | undefined) ?? "none";
+  const era5Status = era5?.status ?? "none";
 
   return (
     <div className="mt-6 rounded-2xl border border-line bg-white p-5">

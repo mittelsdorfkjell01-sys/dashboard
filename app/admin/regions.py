@@ -86,16 +86,19 @@ def assign_spots_to_region(spot_ids, region_id, *, db: Session) -> int:
     """Move several spots to a region in one transaction (inheriting
     ``model_pref`` where unset). Returns the count moved. Raises LookupError if
     the region or any spot id is unknown — nothing is committed on error."""
+    from sqlalchemy import select
     from app.models import Region, Spot
 
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
+    spots = db.scalars(select(Spot).where(Spot.id.in_(spot_ids))).all()
+    found = {s.id for s in spots}
+    missing = [sid for sid in spot_ids if sid not in found]
+    if missing:
+        raise LookupError(f"unknown spot {missing[0]}")
     moved = 0
-    for spot_id in spot_ids:
-        spot = db.get(Spot, spot_id)
-        if spot is None:
-            raise LookupError(f"unknown spot {spot_id}")
+    for spot in spots:
         if spot.region_id == region.id:
             continue
         spot.region_id = region.id

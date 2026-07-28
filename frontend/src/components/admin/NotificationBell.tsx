@@ -66,13 +66,8 @@ export default function NotificationBell() {
       setItems((prev) => prev?.map((x) => (x.id === n.id ? { ...x, read: true } : x)) ?? null);
       setUnread((u) => Math.max(0, u - 1));
     }
-    if (n.spot_id) {
-      setOpen(false);
-      navigate(`/admin/spot/${n.spot_id}/edit`);
-    } else {
-      setOpen(false);
-      navigate("/admin/review");
-    }
+    setOpen(false);
+    navigate(n.spot_id ? `/admin/spot/${n.spot_id}/edit` : "/admin/review");
   };
 
   const markAll = async () => {

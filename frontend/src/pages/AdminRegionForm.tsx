@@ -38,7 +38,6 @@ export default function AdminRegionForm() {
 
   const [region, setRegion] = useState<Region | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
-  const [spots, setSpots] = useState<SpotSummary[]>([]);
   const [allSpots, setAllSpots] = useState<SpotSummary[]>([]);
 
   const [name, setName] = useState("");
@@ -80,11 +79,8 @@ export default function AdminRegionForm() {
 
   const loadSpots = async () => {
     if (!id) return;
-    const [mine, all] = await Promise.all([
-      getAdminSpots({ region_id: id, limit: 500 }),
-      getAdminSpots({ limit: 500 }),
-    ]);
-    setSpots(mine.items);
+    // One fetch; `spots` (this region) and `otherSpots` are both derived below.
+    const all = await getAdminSpots({ limit: 500 });
     setAllSpots(all.items);
   };
 
@@ -97,6 +93,10 @@ export default function AdminRegionForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const spots = useMemo(
+    () => allSpots.filter((s) => s.region_id === id),
+    [allSpots, id]
+  );
   const otherSpots = useMemo(
     () => allSpots.filter((s) => s.region_id !== id),
     [allSpots, id]

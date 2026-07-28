@@ -115,7 +115,18 @@ def update_user(
         if name:
             user.display_name = name
     if body.is_active is not None:
-        # Guard against locking yourself (or the last admin) out.
+        # Guard against locking yourself (or the last admin) out — same two
+        # protections as delete_user, enforced server-side (the UI only greys
+        # the buttons out).
+        if (
+            not body.is_active
+            and principal.user_id is not None
+            and user.id == principal.user_id
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Du kannst dein eigenes Konto nicht deaktivieren.",
+            )
         if (
             user.is_active
             and not body.is_active

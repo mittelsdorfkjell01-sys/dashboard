@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models import AdminNotification
@@ -59,14 +59,13 @@ def mark_read(db: Session, notification_id) -> AdminNotification:
 
 
 def mark_all_read(db: Session) -> int:
-    now = datetime.now(timezone.utc)
-    rows = db.scalars(
-        select(AdminNotification).where(AdminNotification.read_at.is_(None))
-    ).all()
-    for n in rows:
-        n.read_at = now
+    result = db.execute(
+        update(AdminNotification)
+        .where(AdminNotification.read_at.is_(None))
+        .values(read_at=datetime.now(timezone.utc))
+    )
     db.commit()
-    return len(rows)
+    return result.rowcount or 0
 
 
 def view(n: AdminNotification) -> dict:

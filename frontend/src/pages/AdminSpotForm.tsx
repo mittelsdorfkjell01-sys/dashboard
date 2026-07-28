@@ -45,6 +45,19 @@ import { Chip, Field, fieldClass as inputCls } from "../components/ui";
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
 
+// Readiness gap key → the id of the field/section to jump to when clicked.
+const GAP_ANCHOR: Record<string, string> = {
+  water_type: "f-water_type",
+  bottom_type: "f-bottom_type",
+  level: "f-level",
+  water_character: "f-water_character",
+  "editorial.description": "f-description",
+  "editorial.usable_wind_directions": "f-winddir",
+  "editorial.tide": "f-tide",
+  image: "f-hero",
+  climatology: "f-hero",
+};
+
 const slugify = (s: string) =>
   s
     .toLowerCase()
@@ -117,18 +130,6 @@ export default function AdminSpotForm() {
   const effectiveSlug = slugTouched ? slug : slugify(name);
   const isSurf = sports.includes("surf");
 
-  // Readiness gap key → the id of the field/section to jump to when clicked.
-  const GAP_ANCHOR: Record<string, string> = {
-    water_type: "f-water_type",
-    bottom_type: "f-bottom_type",
-    level: "f-level",
-    water_character: "f-water_character",
-    "editorial.description": "f-description",
-    "editorial.usable_wind_directions": "f-winddir",
-    "editorial.tide": "f-tide",
-    image: "f-hero",
-    climatology: "f-hero",
-  };
   const focusGap = (gap: string) => {
     const el = document.getElementById(GAP_ANCHOR[gap] ?? "");
     if (!el) return;
