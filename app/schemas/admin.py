@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -59,6 +60,10 @@ class SpotUpdate(BaseModel):
     facing: int | None = Field(default=None, ge=0, le=359)
     model_pref: str | None = None
     editorial: dict[str, Any] | None = None
+    # Optimistic-locking token: the ``updated_at`` the client loaded. When set,
+    # the route rejects the write (409) if the row changed meanwhile. Never a
+    # data column — excluded from ``to_data()``.
+    expected_updated_at: datetime | None = None
 
     _v_level = field_validator("level")(staticmethod(validate_level))
     _v_water = field_validator("water_character")(
@@ -68,8 +73,9 @@ class SpotUpdate(BaseModel):
     _v_fac = field_validator("facilities")(staticmethod(validate_facilities))
 
     def to_data(self) -> dict:
-        """Only the fields the client actually sent (so absent ≠ null-clear)."""
-        return self.model_dump(exclude_unset=True)
+        """Only the fields the client actually sent (so absent ≠ null-clear).
+        The locking token is stripped — it is not a persisted field."""
+        return self.model_dump(exclude_unset=True, exclude={"expected_updated_at"})
 
 
 class MetadataUpdate(BaseModel):
@@ -122,9 +128,11 @@ class RegionUpdate(BaseModel):
     description: str | None = None
     defaults: dict[str, Any] | None = None
     season: dict[str, Any] | None = None
+    # See SpotUpdate.expected_updated_at.
+    expected_updated_at: datetime | None = None
 
     def to_data(self) -> dict:
-        return self.model_dump(exclude_unset=True)
+        return self.model_dump(exclude_unset=True, exclude={"expected_updated_at"})
 
 
 class RegionImageRequest(BaseModel):

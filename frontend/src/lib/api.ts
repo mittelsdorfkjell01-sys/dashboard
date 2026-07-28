@@ -99,6 +99,7 @@ export interface Region {
   image: ImageRecord | null;
   season: Record<string, any> | null;
   defaults: Record<string, any> | null;
+  updated_at: string;
 }
 
 export interface CurrentConditions {
@@ -865,6 +866,8 @@ export const updateRegion = (
     description?: string | null;
     defaults?: Record<string, unknown>;
     season?: Record<string, unknown> | null;
+    /** Optimistic-locking token; omit to force an overwrite after a 409. */
+    expected_updated_at?: string;
   }
 ) =>
   request<Region>(`/admin/regions/${id}`, {
@@ -950,7 +953,11 @@ export interface SpotCreateBody {
   editorial?: Record<string, any> | null;
 }
 
-export type SpotUpdateBody = Partial<SpotCreateBody>;
+export type SpotUpdateBody = Partial<SpotCreateBody> & {
+  /** Optimistic-locking token: the `updated_at` the form loaded. Omit to force
+   *  an overwrite after a 409 conflict. */
+  expected_updated_at?: string;
+};
 
 export const createSpot = (body: SpotCreateBody) =>
   request<SpotRead>(`/admin/spots`, {

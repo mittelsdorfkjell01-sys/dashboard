@@ -31,3 +31,9 @@ screens/
 
 # local-only DB connection string for one-off migrations (never commit)
 scripts/.neon_url
+
+# local-only Vercel API token (never commit)
+scripts/.vercel_token
+
+# local-only MapTiler API key
+scripts/.maptiler_key

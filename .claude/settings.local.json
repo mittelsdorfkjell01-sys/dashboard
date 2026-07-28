@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m py_compile app/models/ugc.py app/community/service.py app/api/community.py alembic/versions/0011_tip_parent.py)"
+    ]
+  }
+}

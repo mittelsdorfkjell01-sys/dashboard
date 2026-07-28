@@ -20,6 +20,7 @@ import {
 } from "../lib/api";
 import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
+import ConflictDialog from "../components/admin/ConflictDialog";
 import { Button, Input, Textarea } from "../components/ui";
 
 const label = "text-[13px] font-medium text-ink";
@@ -46,6 +47,7 @@ export default function AdminRegionForm() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [conflictOpen, setConflictOpen] = useState(false);
   const [spotSearch, setSpotSearch] = useState("");
   const [dragOver, setDragOver] = useState(false);
 
@@ -91,8 +93,8 @@ export default function AdminRegionForm() {
   const regionName = (rid: string) =>
     regions.find((r) => r.id === rid)?.name ?? "—";
 
-  const saveFields = async (e: FormEvent) => {
-    e.preventDefault();
+  // `force` skips the optimistic-locking token (conflict dialog → overwrite).
+  const doSaveFields = async (force: boolean) => {
     if (!id) return;
     setBusy(true);
     setError(null);
@@ -106,14 +108,24 @@ export default function AdminRegionForm() {
         name: name.trim() || undefined,
         description: description.trim() ? description.trim() : null,
         season,
+        expected_updated_at: force ? undefined : region?.updated_at,
       });
       setRegion(updated);
       flash("Region gespeichert.");
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setConflictOpen(true);
+        return;
+      }
       setError(err instanceof ApiError ? err.message : "Speichern fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const saveFields = (e: FormEvent) => {
+    e.preventDefault();
+    void doSaveFields(false);
   };
 
   const saveImageUrl = async () => {
@@ -410,6 +422,22 @@ export default function AdminRegionForm() {
           </div>
         </div>
       </section>
+
+      <ConflictDialog
+        open={conflictOpen}
+        busy={busy}
+        onReload={() => {
+          setConflictOpen(false);
+          loadRegion().catch((e) =>
+            setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
+          );
+        }}
+        onOverwrite={() => {
+          setConflictOpen(false);
+          void doSaveFields(true);
+        }}
+        onClose={() => setConflictOpen(false)}
+      />
     </div>
   );
 }

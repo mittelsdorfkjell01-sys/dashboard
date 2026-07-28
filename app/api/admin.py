@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import (
     APIRouter,
@@ -37,7 +38,7 @@ from app.media import (
     save_hero_image,
     validate_hero_image,
 )
-from app.models import Spot
+from app.models import Region, Spot
 from app.schemas import RegionRead, SpotRead, SpotSummary
 from app.schemas.admin import (
     AssignRegionRequest,
@@ -57,6 +58,40 @@ router = APIRouter(
     tags=["admin"],
     dependencies=[Depends(require_role("admin", "curator"))],
 )
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """Normalise to a timezone-aware instant so a naive DB value and an ISO
+    string parsed by the client compare correctly."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
+def _guard_version(db: Session, model, obj_id, expected: datetime | None) -> None:
+    """Optimistic lock for the admin PATCH routes (this is a multi-operator
+    tool). ``expected`` is the ``updated_at`` the client loaded; when present it
+    must still match the row, otherwise a concurrent edit would be silently
+    clobbered. ``None`` means "force" — the client already chose to overwrite.
+
+    Raises 404 if the row is gone, 409 (with the fresh ``updated_at``) on a
+    stale write. No auto-merge — the caller decides reload vs. overwrite.
+    """
+    if expected is None:
+        return
+    obj = db.get(model, obj_id)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    if _as_utc(obj.updated_at) != _as_utc(expected):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "stale_write",
+                "message": (
+                    "Der Datensatz wurde inzwischen von jemand anderem "
+                    "geändert."
+                ),
+                "current_updated_at": _as_utc(obj.updated_at).isoformat(),
+            },
+        )
 
 
 def _maybe_autoprocess_era5(background: BackgroundTasks, spot_id, client) -> None:
@@ -143,7 +178,9 @@ def update_spot(
     actor: str = Depends(get_actor),
 ):
     """Patch a spot: editorial (merged) + structural/category columns. Only the
-    fields present in the request are applied. Invalid enum values → 422."""
+    fields present in the request are applied. Invalid enum values → 422.
+    Optimistic lock: send ``expected_updated_at`` → 409 on a stale write."""
+    _guard_version(db, Spot, spot_id, body.expected_updated_at)
     try:
         spot = admin_spots.update_spot(
             spot_id, body.to_data(), db=db, actor=actor
@@ -474,7 +511,9 @@ def fetch_commons_images(
 def update_region(
     region_id: uuid.UUID, body: RegionUpdate, db: Session = Depends(get_db)
 ):
-    """Edit a region: description, season (Windmonate), defaults, name."""
+    """Edit a region: description, season (Windmonate), defaults, name.
+    Optimistic lock: send ``expected_updated_at`` → 409 on a stale write."""
+    _guard_version(db, Region, region_id, body.expected_updated_at)
     try:
         region = admin_regions.update_region(region_id, body.to_data(), db=db)
     except LookupError:

@@ -4,6 +4,7 @@ import ImageUpload from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
+import ConflictDialog from "../components/admin/ConflictDialog";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useRegions } from "../lib/hooks";
 import {
@@ -97,9 +98,59 @@ export default function AdminSpotForm() {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(isEdit);
+  // Optimistic locking: the `updated_at` the form loaded, sent back on save so
+  // the server can reject a stale overwrite (409). Refreshed on every save.
+  const [loadedUpdatedAt, setLoadedUpdatedAt] = useState<string | null>(null);
+  const [conflictOpen, setConflictOpen] = useState(false);
 
   const effectiveSlug = slugTouched ? slug : slugify(name);
   const isSurf = sports.includes("surf");
+
+  // Populate every field from a freshly-loaded spot. Also captures the
+  // `updated_at` used as the optimistic-locking token on save. Reused by the
+  // edit-mode prefill and by the conflict dialog's "Neu laden".
+  const applySpot = (s: Awaited<ReturnType<typeof getSpot>>) => {
+    setLoadedUpdatedAt(s.updated_at);
+    setName(s.name);
+    setSlug(s.slug);
+    setSlugTouched(true);
+    setRegionId(s.region_id);
+    setDescription((s.editorial?.description as string) ?? "");
+    setCurrentImage((s.image as ImageRecord | null) ?? null);
+    if (s.location) {
+      setLat(String(s.location.lat));
+      setLon(String(s.location.lon));
+    }
+    const mv = s.editorial?.map_view;
+    if (mv && Array.isArray(mv.center) && typeof mv.zoom === "number") {
+      setMapView({ center: mv.center as [number, number], zoom: mv.zoom });
+    }
+    setSports(s.sports ?? []);
+    setLevel(s.level ?? "");
+    setWaterCharacter(s.water_character ?? "");
+    setStyles(s.style ?? []);
+    setFacing(s.facing != null ? String(s.facing) : "");
+    setWaterType(s.water_type ?? "");
+    setBottomType(s.bottom_type ?? "");
+    const uwd = s.editorial?.usable_wind_directions;
+    if (uwd && typeof uwd === "object") {
+      setWindDirMin(uwd.min != null ? String(uwd.min) : "");
+      setWindDirMax(uwd.max != null ? String(uwd.max) : "");
+    }
+    setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
+    if (s.facilities) {
+      setFacilities((prev) => {
+        const next = { ...prev };
+        for (const k of FACILITY_KINDS) {
+          const entry = s.facilities?.[k];
+          next[k] = entry
+            ? { state: entry.available ? "yes" : "no", note: entry.note ?? "" }
+            : { state: "unknown", note: "" };
+        }
+        return next;
+      });
+    }
+  };
 
   // Prefill in edit mode.
   useEffect(() => {
@@ -107,46 +158,7 @@ export default function AdminSpotForm() {
     let alive = true;
     getSpot(id)
       .then((s) => {
-        if (!alive) return;
-        setName(s.name);
-        setSlug(s.slug);
-        setSlugTouched(true);
-        setRegionId(s.region_id);
-        setDescription((s.editorial?.description as string) ?? "");
-        setCurrentImage((s.image as ImageRecord | null) ?? null);
-        if (s.location) {
-          setLat(String(s.location.lat));
-          setLon(String(s.location.lon));
-        }
-        const mv = s.editorial?.map_view;
-        if (mv && Array.isArray(mv.center) && typeof mv.zoom === "number") {
-          setMapView({ center: mv.center as [number, number], zoom: mv.zoom });
-        }
-        setSports(s.sports ?? []);
-        setLevel(s.level ?? "");
-        setWaterCharacter(s.water_character ?? "");
-        setStyles(s.style ?? []);
-        setFacing(s.facing != null ? String(s.facing) : "");
-        setWaterType(s.water_type ?? "");
-        setBottomType(s.bottom_type ?? "");
-        const uwd = s.editorial?.usable_wind_directions;
-        if (uwd && typeof uwd === "object") {
-          setWindDirMin(uwd.min != null ? String(uwd.min) : "");
-          setWindDirMax(uwd.max != null ? String(uwd.max) : "");
-        }
-        setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
-        if (s.facilities) {
-          setFacilities((prev) => {
-            const next = { ...prev };
-            for (const k of FACILITY_KINDS) {
-              const entry = s.facilities?.[k];
-              next[k] = entry
-                ? { state: entry.available ? "yes" : "no", note: entry.note ?? "" }
-                : { state: "unknown", note: "" };
-            }
-            return next;
-          });
-        }
+        if (alive) applySpot(s);
       })
       .catch((e) =>
         alive && setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
@@ -155,6 +167,7 @@ export default function AdminSpotForm() {
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const reloadGallery = () => {
@@ -226,12 +239,11 @@ export default function AdminSpotForm() {
     return Object.keys(errs).length === 0;
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // `force` skips the optimistic-locking token — used by the conflict dialog's
+  // "Trotzdem überschreiben" after the operator has been warned.
+  const doSave = async (force: boolean) => {
     setError(null);
     setReadiness(null);
-    if (!validateLocal()) return;
-
     setSubmitting(true);
     try {
       const body: SpotCreateBody = {
@@ -251,8 +263,18 @@ export default function AdminSpotForm() {
         editorial: Object.keys(buildEditorial()).length ? buildEditorial() : null,
       };
 
-      const spot =
-        isEdit && id ? await updateSpot(id, body) : await createSpot(body);
+      let spot;
+      if (isEdit && id) {
+        spot = await updateSpot(id, {
+          ...body,
+          expected_updated_at: force ? undefined : loadedUpdatedAt ?? undefined,
+        });
+        // Adopt the new version so a second save in the same session isn't
+        // rejected as stale against its own successful write.
+        setLoadedUpdatedAt(spot.updated_at);
+      } else {
+        spot = await createSpot(body);
+      }
 
       if (heroFile) {
         await uploadHeroImage(spot.id, heroFile, credit.trim());
@@ -263,6 +285,10 @@ export default function AdminSpotForm() {
       setSavedId(spot.id);
     } catch (err) {
       if (err instanceof ApiError) {
+        if (err.status === 409) {
+          setConflictOpen(true);
+          return;
+        }
         setError(err.message);
         // FastAPI/Pydantic 422: detail may be a list of {loc, msg}.
         if (Array.isArray((err.detail as any)?.detail)) {
@@ -279,6 +305,26 @@ export default function AdminSpotForm() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!validateLocal()) return;
+    void doSave(false);
+  };
+
+  // Conflict dialog: discard local edits and reload the server's version.
+  const reloadFromServer = () => {
+    setConflictOpen(false);
+    if (!id) return;
+    setLoadingExisting(true);
+    getSpot(id)
+      .then(applySpot)
+      .catch((e) =>
+        setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
+      )
+      .finally(() => setLoadingExisting(false));
   };
 
   const regionOptions = useMemo(
@@ -754,6 +800,17 @@ export default function AdminSpotForm() {
           </div>
         </aside>
       </form>
+
+      <ConflictDialog
+        open={conflictOpen}
+        busy={submitting}
+        onReload={reloadFromServer}
+        onOverwrite={() => {
+          setConflictOpen(false);
+          void doSave(true);
+        }}
+        onClose={() => setConflictOpen(false)}
+      />
     </div>
   );
 }

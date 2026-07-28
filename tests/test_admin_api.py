@@ -432,3 +432,60 @@ def test_geocode_endpoint(admin):
         assert hit["name"] and isinstance(hit["lat"], float) and isinstance(hit["lon"], float)
     finally:
         app.dependency_overrides.pop(get_geocoder, None)
+
+
+# --- optimistic locking (Sprint 1) -----------------------------------------
+# This is a multi-operator tool: a PATCH carrying a stale ``updated_at`` must be
+# rejected (409) instead of silently clobbering a concurrent edit. Omitting the
+# token forces the write through (the "Trotzdem überschreiben" path).
+
+def test_spot_patch_stale_updated_at_conflicts(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+
+    # A clearly-outdated token → 409 with the fresh timestamp echoed back.
+    stale = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"name": "Renamed", "expected_updated_at": "2000-01-01T00:00:00+00:00"},
+    )
+    assert stale.status_code == 409, stale.text
+    detail = stale.json()["detail"]
+    assert detail["code"] == "stale_write"
+    assert detail["current_updated_at"]
+
+
+def test_spot_patch_current_and_forced_updated_at_succeed(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+
+    # The exact loaded token → 200.
+    ok = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"name": "Fresh", "expected_updated_at": spot["updated_at"]},
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["name"] == "Fresh"
+    assert ok.json()["updated_at"] != spot["updated_at"]
+
+    # No token → force overwrite, always 200.
+    forced = admin.patch(f"/admin/spots/{sid}", json={"name": "Forced"})
+    assert forced.status_code == 200, forced.text
+    assert forced.json()["name"] == "Forced"
+
+
+def test_region_patch_stale_updated_at_conflicts(admin, region_id):
+    current = admin.get(f"/admin/regions/{region_id}").json()
+
+    stale = admin.patch(
+        f"/admin/regions/{region_id}",
+        json={"name": "New Name", "expected_updated_at": "2000-01-01T00:00:00+00:00"},
+    )
+    assert stale.status_code == 409, stale.text
+    assert stale.json()["detail"]["code"] == "stale_write"
+
+    ok = admin.patch(
+        f"/admin/regions/{region_id}",
+        json={"name": "New Name", "expected_updated_at": current["updated_at"]},
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["name"] == "New Name"
