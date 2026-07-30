@@ -78,6 +78,24 @@ def region_score_series(
     return [max((c[w - 1] for c in curves), default=0.0) for w in range(1, N_WEEKS + 1)]
 
 
+def compute_best_months(
+    spots: list[Any], *, db: Any | None = None
+) -> list[int]:
+    """Derive the region's best (wind-)months from its spots' climatology: a
+    month counts when at least half of its weeks have ≥1 working spot (using the
+    same per-sport ``week_good_threshold`` as the season aggregate). Returns
+    sorted month numbers (1–12). Empty when no spot has climatology yet."""
+    weeks = region_season_weeks(spots, db=db)
+    good = [0] * 13
+    total = [0] * 13
+    for wk in weeks:
+        month = min(12, (wk["week"] - 1) * 12 // N_WEEKS + 1)
+        total[month] += 1
+        if wk["spots_working"] > 0:
+            good[month] += 1
+    return [m for m in range(1, 13) if total[m] and good[m] / total[m] >= 0.5]
+
+
 def smooth_circular(series: list[float], window: int = 5) -> list[float]:
     """Circular moving average (the season wraps Dec→Jan)."""
     n = len(series)

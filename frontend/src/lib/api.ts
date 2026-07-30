@@ -318,6 +318,10 @@ export async function getRegionBySlug(slug: string): Promise<Region | undefined>
   }
 }
 
+/** "Berechnen" mode: recompute best months from the region's spots' climatology. */
+export const computeRegionMonths = (id: string) =>
+  request<Region>(`/admin/regions/${id}/compute-months`, { method: "POST" });
+
 export const publishRegion = (id: string) =>
   request<Region>(`/admin/regions/${id}/publish`, { method: "POST" });
 export const unpublishRegion = (id: string) =>

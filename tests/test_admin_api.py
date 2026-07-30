@@ -718,3 +718,14 @@ def test_region_publish_status_and_public_filter(admin):
     assert any(r["id"] == rid for r in admin.get("/regions").json())
     # Unpublish → draft again.
     assert admin.post(f"/admin/regions/{rid}/unpublish").json()["status"] == "draft"
+
+
+# --- Windmonate compute toggle (WP-D) --------------------------------------
+
+def test_compute_region_months_sets_auto_mode(admin, region_id):
+    _create_spot(admin, region_id)  # a spot under the region
+    resp = admin.post(f"/admin/regions/{region_id}/compute-months")
+    assert resp.status_code == 200, resp.text
+    season = resp.json()["season"] or {}
+    assert season.get("mode") == "auto"
+    assert isinstance(season.get("best_months"), list)

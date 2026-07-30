@@ -125,6 +125,25 @@ def update_region_defaults(region_id, defaults: dict, *, db: Session) -> Any:
     return region
 
 
+def recompute_best_months(region_id, *, db: Session) -> Any:
+    """"Berechnen"-Modus: derive best_months from the region's spots'
+    climatology and store them with ``season.mode = 'auto'``."""
+    from app.models import Region
+    from app.scoring.region import compute_best_months
+
+    region = db.get(Region, region_id)
+    if region is None:
+        raise LookupError(f"unknown region {region_id}")
+    months = compute_best_months(list(region.spots), db=db)
+    season = dict(region.season or {})
+    season["best_months"] = months
+    season["mode"] = "auto"
+    region.season = season
+    db.commit()
+    db.refresh(region)
+    return region
+
+
 def set_region_status(region_id, status: str, *, db: Session) -> Any:
     """Publish (``published``) or unpublish (``draft``) a region."""
     from app.models import Region

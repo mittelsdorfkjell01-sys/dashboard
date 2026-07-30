@@ -9,6 +9,7 @@ import {
   assignSpotRegion,
   bulkAssignSpotRegion,
   bulkUnassignSpotRegion,
+  computeRegionMonths,
   deleteRegion,
   getAdminSpots,
   getRegion,
@@ -47,6 +48,9 @@ export default function AdminRegionForm() {
   const [country, setCountry] = useState("");
   const [description, setDescription] = useState("");
   const [bestMonths, setBestMonths] = useState<number[]>([]);
+  // "auto" = best months computed from spot climatology (checkboxes locked);
+  // "manual" = hand-picked and never overwritten by the computation.
+  const [seasonMode, setSeasonMode] = useState<"auto" | "manual">("manual");
   const [imgUrl, setImgUrl] = useState("");
   const [imgCredit, setImgCredit] = useState("");
 
@@ -79,6 +83,26 @@ export default function AdminRegionForm() {
     setBestMonths(
       Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
     );
+    setSeasonMode(r.season?.mode === "auto" ? "auto" : "manual");
+  };
+
+  const computeMonths = async () => {
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await computeRegionMonths(id);
+      setRegion(r);
+      setBestMonths(
+        Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
+      );
+      setSeasonMode("auto");
+      flash("Windmonate aus der Spot-Klimatologie berechnet.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Berechnen fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const loadSpots = async () => {
@@ -113,11 +137,15 @@ export default function AdminRegionForm() {
     if (!id) return;
     setBusy(true);
     setError(null);
-    // Preserve any other season keys; only the best-months selection is edited.
-    const season = {
+    // Preserve other season keys. In manual mode persist the hand-picked months;
+    // in auto mode keep the computed months (the compute endpoint owns them).
+    const season: Record<string, unknown> = {
       ...(region?.season ?? {}),
-      best_months: [...bestMonths].sort((a, b) => a - b),
+      mode: seasonMode,
     };
+    if (seasonMode === "manual") {
+      season.best_months = [...bestMonths].sort((a, b) => a - b);
+    }
     try {
       const updated = await updateRegion(id, {
         name: name.trim() || undefined,
@@ -324,18 +352,46 @@ export default function AdminRegionForm() {
           />
         </label>
         <div className="block">
-          <span className={label}>Beste Monate (Windmonate)</span>
-          <span className="ml-2 text-caption text-muted">
-            Monate anklicken, in denen die Region am besten läuft
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className={label}>Beste Monate (Windmonate)</span>
+            {/* Mode toggle: berechnen (auto) vs. auswählen (manual). */}
+            <div className="inline-flex overflow-hidden rounded-lg border border-line">
+              <button
+                type="button"
+                onClick={() => setSeasonMode("manual")}
+                className={`px-3 py-1 text-label font-medium ${
+                  seasonMode === "manual" ? "bg-teal text-white" : "bg-white text-ink hover:bg-teal/5"
+                }`}
+              >
+                Auswählen
+              </button>
+              <button
+                type="button"
+                onClick={computeMonths}
+                disabled={busy}
+                className={`px-3 py-1 text-label font-medium disabled:opacity-50 ${
+                  seasonMode === "auto" ? "bg-teal text-white" : "bg-white text-ink hover:bg-teal/5"
+                }`}
+              >
+                Berechnen
+              </button>
+            </div>
+          </div>
+          <span className="mt-1 block text-caption text-muted">
+            {seasonMode === "auto"
+              ? "Automatisch aus der Klimatologie der zugeordneten Spots berechnet — „Berechnen“ erneut klicken zum Aktualisieren."
+              : "Monate anklicken, in denen die Region am besten läuft."}
           </span>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {MONTHS_SHORT.map((m, i) => {
               const month = i + 1;
               const on = bestMonths.includes(month);
+              const locked = seasonMode === "auto";
               return (
                 <button
                   key={month}
                   type="button"
+                  disabled={locked}
                   onClick={() =>
                     setBestMonths((prev) =>
                       prev.includes(month)
@@ -347,7 +403,7 @@ export default function AdminRegionForm() {
                     on
                       ? "bg-teal text-white"
                       : "border border-line bg-white text-ink hover:bg-teal/5"
-                  }`}
+                  } ${locked ? "cursor-not-allowed opacity-60 hover:bg-white" : ""}`}
                 >
                   {m}
                 </button>

@@ -568,6 +568,17 @@ def update_region(
     return RegionRead.from_orm_region(region)
 
 
+@router.post("/regions/{region_id}/compute-months", response_model=RegionRead)
+def compute_region_months(region_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Recompute the region's best months from its spots' climatology (the
+    Windmonate 'Berechnen' toggle)."""
+    try:
+        region = admin_regions.recompute_best_months(region_id, db=db)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Region not found")
+    return RegionRead.from_orm_region(region)
+
+
 @router.post("/regions/{region_id}/publish", response_model=RegionRead)
 def publish_region(region_id: uuid.UUID, db: Session = Depends(get_db)):
     try:
