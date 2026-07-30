@@ -255,3 +255,23 @@ def test_cannot_delete_self(client):
     resp = client.delete(f"/admin/users/{me['id']}")
     assert resp.status_code == 422
     assert "eigenes Konto" in resp.json()["detail"]
+
+
+def test_update_user_email_and_name(client):
+    email = f"e-{uuid.uuid4().hex[:8]}@test.local"
+    uid = client.post(
+        "/admin/users", json={"email": email, "password": "pw-123456"}
+    ).json()["id"]
+
+    new_email = f"e2-{uuid.uuid4().hex[:8]}@test.local"
+    resp = client.patch(
+        f"/admin/users/{uid}",
+        json={"email": new_email, "display_name": "Neuer Name"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["email"] == new_email
+    assert resp.json()["display_name"] == "Neuer Name"
+
+    # Taking another account's email → 409.
+    dup = client.patch(f"/admin/users/{uid}", json={"email": TEST_ADMIN["email"]})
+    assert dup.status_code == 409

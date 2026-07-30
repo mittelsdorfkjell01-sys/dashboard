@@ -710,9 +710,12 @@ def delete_team_note(note_id: uuid.UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/activity")
-def activity(db: Session = Depends(get_db)) -> list[dict]:
-    """Recent real changes (spot + moderation audits), newest first."""
-    return admin_team.activity(db)
+def activity(
+    db: Session = Depends(get_db), q: str | None = Query(default=None)
+) -> list[dict]:
+    """Recent real changes (spot + moderation audits), newest first. ``q``
+    searches actor name/email, target (e.g. spot name) and label."""
+    return admin_team.activity(db, q=q)
 
 
 # --- operator notifications (badge) ----------------------------------------

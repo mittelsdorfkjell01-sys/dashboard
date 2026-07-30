@@ -157,8 +157,17 @@ def _changed_fields(action: str, changes) -> list[str]:
     return [k for k in changes.keys() if k not in ("auto", "from", "to")]
 
 
-def activity(db: Session, *, limit: int = 30) -> list[dict]:
-    """Most-recent audited changes across spots and moderation, merged."""
+def activity(db: Session, *, limit: int = 30, q: str | None = None) -> list[dict]:
+    """Most-recent audited changes across spots and moderation, merged. Actors
+    are resolved to display names. When ``q`` is given, a wider window is
+    searched and filtered by actor name/email, target and label."""
+    from app.models import AdminUser
+
+    fetch = 200 if q else limit
+    name_by_email = {
+        u.email: u.display_name for u in db.scalars(select(AdminUser)).all()
+    }
+
     spot_rows = db.execute(
         select(
             SpotAudit.actor, SpotAudit.action, SpotAudit.created_at,
@@ -166,7 +175,7 @@ def activity(db: Session, *, limit: int = 30) -> list[dict]:
         )
         .join(Spot, Spot.id == SpotAudit.spot_id)
         .order_by(SpotAudit.created_at.desc())
-        .limit(limit)
+        .limit(fetch)
     ).all()
     mod_rows = db.execute(
         select(
@@ -175,13 +184,14 @@ def activity(db: Session, *, limit: int = 30) -> list[dict]:
             ModerationAudit.note,
         )
         .order_by(ModerationAudit.created_at.desc())
-        .limit(limit)
+        .limit(fetch)
     ).all()
 
     items: list[dict] = []
     for actor, action, at, changes, spot_name, spot_id in spot_rows:
         items.append({
-            "actor": actor,
+            "actor": name_by_email.get(actor, actor),
+            "actor_email": actor,
             "action": action,
             "label": _SPOT_ACTIONS.get(action, action),
             "target": spot_name,
@@ -192,7 +202,8 @@ def activity(db: Session, *, limit: int = 30) -> list[dict]:
         })
     for actor, action, at, target_type, note in mod_rows:
         items.append({
-            "actor": actor,
+            "actor": name_by_email.get(actor, actor),
+            "actor_email": actor,
             "action": action,
             "label": _MOD_ACTIONS.get(action, action),
             "target": note or target_type,
@@ -203,4 +214,15 @@ def activity(db: Session, *, limit: int = 30) -> list[dict]:
         })
 
     items.sort(key=lambda x: x["at"] or "", reverse=True)
+
+    if q:
+        ql = q.lower()
+        items = [
+            it for it in items
+            if ql in (it["actor"] or "").lower()
+            or ql in (it["actor_email"] or "").lower()
+            or ql in (it["target"] or "").lower()
+            or ql in (it["label"] or "").lower()
+        ]
+        return items[:100]
     return items[:limit]

@@ -61,6 +61,7 @@ class AdminUserUpdate(BaseModel):
     role: str | None = None
     is_active: bool | None = None
     display_name: str | None = None
+    email: str | None = None
 
 
 class PasswordUpdate(BaseModel):
@@ -114,6 +115,16 @@ def update_user(
         name = body.display_name.strip()
         if name:
             user.display_name = name
+    if body.email is not None:
+        from app.models.admin_user import normalize_email
+
+        email = normalize_email(body.email)
+        if not email:
+            raise HTTPException(status_code=422, detail="E-Mail darf nicht leer sein.")
+        existing = service.get_by_email(db, email)
+        if existing is not None and existing.id != user.id:
+            raise HTTPException(status_code=409, detail="E-Mail ist bereits vergeben.")
+        user.email = email
     if body.is_active is not None:
         # Guard against locking yourself (or the last admin) out — same two
         # protections as delete_user, enforced server-side (the UI only greys

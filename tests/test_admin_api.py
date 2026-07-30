@@ -729,3 +729,20 @@ def test_compute_region_months_sets_auto_mode(admin, region_id):
     season = resp.json()["season"] or {}
     assert season.get("mode") == "auto"
     assert isinstance(season.get("best_months"), list)
+
+
+# --- activity: actor names + search (WP-E) ---------------------------------
+
+def test_activity_resolves_actor_and_search(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    acts = admin.get("/admin/activity").json()
+    entry = next((a for a in acts if a["target_id"] == spot["id"]), None)
+    assert entry is not None
+    assert entry["actor_email"]           # raw email retained
+    assert entry["actor"]                 # resolved display (name or email)
+
+    # Search by the spot name surfaces it; an unrelated query does not.
+    hits = admin.get("/admin/activity", params={"q": spot["name"]}).json()
+    assert any(a["target_id"] == spot["id"] for a in hits)
+    miss = admin.get("/admin/activity", params={"q": "zzz-nomatch-zzz"}).json()
+    assert all(a["target_id"] != spot["id"] for a in miss)

@@ -440,7 +440,7 @@ export const createAdminUser = (body: {
 
 export const updateAdminUser = (
   id: string,
-  body: { role?: AdminRole; is_active?: boolean; display_name?: string }
+  body: { role?: AdminRole; is_active?: boolean; display_name?: string; email?: string }
 ) =>
   request<AdminUserRecord>(`/admin/users/${id}`, {
     method: "PATCH",
@@ -788,6 +788,7 @@ export const deleteTeamNote = (id: string) =>
 
 export interface ActivityItem {
   actor: string | null;
+  actor_email?: string | null;
   action: string;
   label: string;
   target: string | null;
@@ -796,7 +797,8 @@ export interface ActivityItem {
   fields: string[];
   at: string | null;
 }
-export const getActivity = () => request<ActivityItem[]>(`/admin/activity`);
+export const getActivity = (q?: string) =>
+  request<ActivityItem[]>(`/admin/activity${qs({ q })}`);
 
 // --- board tasks (kanban overview) -----------------------------------------
 

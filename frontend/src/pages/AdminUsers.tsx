@@ -20,6 +20,7 @@ import { gapLabel, roleLabel } from "../lib/labels";
 import { Button, Input } from "../components/ui";
 import PromptDialog from "../components/ui/PromptDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
+import Modal from "../components/ui/Modal";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
@@ -30,6 +31,10 @@ export default function AdminUsers() {
   // Password-reset + delete dialog targets (null = closed).
   const [pwTarget, setPwTarget] = useState<AdminUserRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUserRecord | null>(null);
+  // Edit dialog (email + display name).
+  const [editTarget, setEditTarget] = useState<AdminUserRecord | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editName, setEditName] = useState("");
   const [dialogBusy, setDialogBusy] = useState(false);
 
   const load = async () => {
@@ -99,6 +104,31 @@ export default function AdminUsers() {
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Löschen fehlgeschlagen.");
+    } finally {
+      setDialogBusy(false);
+    }
+  };
+
+  const openEdit = (u: AdminUserRecord) => {
+    setEditTarget(u);
+    setEditEmail(u.email);
+    setEditName(u.display_name);
+  };
+
+  const saveEdit = async () => {
+    if (!editTarget) return;
+    setDialogBusy(true);
+    setError(null);
+    try {
+      await updateAdminUser(editTarget.id, {
+        email: editEmail.trim(),
+        display_name: editName.trim(),
+      });
+      flash("Benutzer aktualisiert.");
+      setEditTarget(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Speichern fehlgeschlagen.");
     } finally {
       setDialogBusy(false);
     }
@@ -208,6 +238,13 @@ export default function AdminUsers() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => openEdit(u)}
+                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
+                        >
+                          Bearbeiten
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setPwTarget(u)}
                           className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
                         >
@@ -239,6 +276,40 @@ export default function AdminUsers() {
 
         <ActivityLog />
 
+        <Modal
+          open={editTarget !== null}
+          onClose={() => setEditTarget(null)}
+          labelledBy="edit-user-title"
+        >
+          <h2 id="edit-user-title" className="text-ui font-semibold text-ink">
+            Benutzer bearbeiten
+          </h2>
+          <label className="mt-3 block text-label text-ink-soft">E-Mail</label>
+          <Input
+            type="email"
+            value={editEmail}
+            onChange={(e) => setEditEmail(e.target.value)}
+            className="mt-1"
+          />
+          <label className="mt-3 block text-label text-ink-soft">Anzeigename</label>
+          <Input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="mt-1"
+          />
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <Button variant="ghost" onClick={() => setEditTarget(null)} disabled={dialogBusy}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={saveEdit}
+              disabled={dialogBusy || !editEmail.trim() || !editName.trim()}
+            >
+              {dialogBusy ? "…" : "Speichern"}
+            </Button>
+          </div>
+        </Modal>
+
         <PromptDialog
           open={pwTarget !== null}
           title="Passwort zurücksetzen"
@@ -267,14 +338,29 @@ export default function AdminUsers() {
 
 function ActivityLog() {
   const [items, setItems] = useState<ActivityItem[]>([]);
+  const [q, setQ] = useState("");
 
   useEffect(() => {
-    getActivity().then(setItems).catch(() => {});
-  }, []);
+    const t = setTimeout(() => {
+      getActivity(q.trim() || undefined)
+        .then(setItems)
+        .catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-ink">Aktivität</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-ink">Aktivität</h2>
+        <Input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Suche: Name, Spot …"
+          className="max-w-[240px]"
+        />
+      </div>
       <p className="mt-1 text-label text-muted">
         Letzte echten Änderungen durch das Team (keine Klicks, nur Aktionen).
       </p>
