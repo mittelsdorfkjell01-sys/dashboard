@@ -15,16 +15,11 @@ import {
 
 type Segment = "where" | "when";
 
-// Fixed panel height so every segment's dropdown is exactly the same size (no
-// jump when switching fields); taller content (e.g. the "Wohin?" list) scrolls
-// inside. Capped at 70vh on short screens via maxHeight.
-const PANEL_H = 400;
-
 /**
- * Airbnb-style 3-segment search (Frame_2–5). The bar stays crisp above a
- * page-dimming scrim; the active panel opens below it. Scrim + panel are
- * portalled to <body> so no hero `overflow-hidden`/z-index can clip them — the
- * bar's wrapper in Landing carries a z-index above the scrim so it isn't dimmed.
+ * Airbnb-style search. The "Wohin?" text field (the Tippleiste) lives directly
+ * in the bar; typing opens a panel below with the matching Spots/Regionen. Both
+ * panels span the full bar width and size to their content (dynamic height,
+ * capped at 70vh). Fields never dim — the bar stays crisp above the scrim.
  */
 export default function SearchBar() {
   const navigate = useNavigate();
@@ -32,26 +27,20 @@ export default function SearchBar() {
   const [open, setOpen] = useState<Segment | null>(null);
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
   const barRef = useRef<HTMLDivElement>(null);
-  const whereRef = useRef<HTMLButtonElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
-  // Panel geometry: "Wann?" needs the full bar width for its two-month calendar;
-  // "Wohin?" and "Welche?" only span their own field.
-  const openSeg = (s: Segment, el: HTMLElement | null) => {
-    const source = s === "when" ? barRef.current : el;
-    setRect(source?.getBoundingClientRect() ?? null);
+  // Both panels span the full bar width (measured at open time).
+  const openSeg = (s: Segment) => {
+    setRect(barRef.current?.getBoundingClientRect() ?? null);
     setOpen(s);
   };
   const close = () => setOpen(null);
 
-  // While open: Esc closes, and scroll/resize collapse the panel (positions are
-  // captured at open time).
+  // While open: Esc closes, and page scroll/resize collapse the panel (its
+  // position is captured from a rect at open time).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
-    // Close when the *page* scrolls (the panel is fixed-positioned from a rect
-    // captured at open time). No capture, so scrolling *inside* the panel's own
-    // list (e.g. the "Wohin?" results) does not bubble here and keep it open.
     const onScroll = () => close();
     const onResize = () => close();
     window.addEventListener("keydown", onKey);
@@ -86,31 +75,31 @@ export default function SearchBar() {
     close();
   };
 
-  const dim = (seg: Segment) => !!open && open !== seg;
-
   return (
     <>
       <div ref={barRef} className="relative">
         <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-white p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-2xl">
-          {/* Wohin? — trigger; the text input lives in the panel below. */}
-          <button
-            type="button"
-            ref={whereRef}
-            onClick={() => openSeg("where", whereRef.current)}
-            aria-expanded={open === "where"}
-            className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left transition-all ${
+          {/* Wohin? — the Tippleiste, an inline input right in the bar. */}
+          <div
+            className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 transition-colors ${
               open === "where" ? "bg-band" : ""
-            } ${dim("where") ? "opacity-55" : ""}`}
+            }`}
           >
             <span className="text-[13px] font-semibold text-teal">Wohin?</span>
-            <span
-              className={`truncate text-[13px] ${
-                val.whereText ? "text-ink" : "text-muted"
-              }`}
-            >
-              {val.whereText || "Region oder Spot suchen"}
-            </span>
-          </button>
+            <input
+              value={val.whereText}
+              onFocus={() => openSeg("where")}
+              onChange={(e) => {
+                const text = e.target.value;
+                setVal((v) => ({ ...v, whereText: text, whereSel: null, whereOpen: false }));
+                if (open !== "where") openSeg("where");
+              }}
+              placeholder="Region oder Spot suchen"
+              aria-label="Region oder Spot suchen"
+              aria-expanded={open === "where"}
+              className="w-full truncate bg-transparent text-[13px] text-ink outline-none placeholder:text-muted"
+            />
+          </div>
 
           <Divider />
 
@@ -119,8 +108,7 @@ export default function SearchBar() {
             placeholder="Datum wählen"
             value={whenLabel(val.when)}
             active={open === "when"}
-            dim={dim("when")}
-            onClick={(el) => openSeg("when", el)}
+            onClick={() => openSeg("when")}
           />
 
           <button
@@ -152,16 +140,14 @@ export default function SearchBar() {
                 key="panel"
                 role="dialog"
                 aria-modal="false"
-                // Seed position/width in `initial` too so the panel mounts in
-                // place (no fly-in from <body>'s default corner); switching
-                // fields keeps the element mounted, so those still morph.
+                // Seed position/width in `initial` so the panel mounts in place;
+                // height is left to the content (dynamic), capped by maxHeight.
                 initial={{
                   opacity: 0,
                   y: reduce ? 0 : -8,
                   top: rect.bottom + 12,
                   left: rect.left,
                   width: rect.width,
-                  height: PANEL_H,
                 }}
                 animate={{
                   opacity: 1,
@@ -169,15 +155,12 @@ export default function SearchBar() {
                   top: rect.bottom + 12,
                   left: rect.left,
                   width: rect.width,
-                  height: PANEL_H,
                 }}
                 exit={{ opacity: 0, y: reduce ? 0 : -8 }}
                 transition={
                   reduce
                     ? { duration: 0 }
                     : {
-                        // Spring the box (position/width/height) between fields;
-                        // fade opacity on the quicker linear track.
                         type: "spring",
                         stiffness: 420,
                         damping: 40,
@@ -188,12 +171,11 @@ export default function SearchBar() {
                 style={{
                   position: "fixed",
                   zIndex: 1150,
-                  maxHeight: "70vh",
                   maxWidth: "calc(100vw - 16px)",
                 }}
                 className="overflow-hidden rounded-3xl border border-line bg-white"
               >
-                <div className="h-full overflow-auto p-6">
+                <div className="max-h-[70vh] overflow-auto p-6">
                   <motion.div
                     key={open}
                     initial={reduce ? false : { opacity: 0, y: 6 }}
@@ -205,14 +187,6 @@ export default function SearchBar() {
                         query={val.whereText}
                         onPick={pickWhere}
                         onOpen={openWherePlace}
-                        onQueryChange={(text) =>
-                          setVal((v) => ({
-                            ...v,
-                            whereText: text,
-                            whereSel: null,
-                            whereOpen: false,
-                          }))
-                        }
                       />
                     )}
                     {open === "when" && (
@@ -243,24 +217,22 @@ function Segment({
   placeholder,
   value,
   active,
-  dim,
   onClick,
 }: {
   label: string;
   placeholder: string;
   value: string;
   active: boolean;
-  dim: boolean;
-  onClick: (el: HTMLElement) => void;
+  onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={(e) => onClick(e.currentTarget)}
+      onClick={onClick}
       aria-expanded={active}
-      className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left transition-all ${
+      className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left transition-colors ${
         active ? "bg-band" : ""
-      } ${dim ? "opacity-55" : ""}`}
+      }`}
     >
       <span className="text-[13px] font-semibold text-teal">{label}</span>
       <span className={`truncate text-[13px] ${value ? "text-ink" : "text-muted"}`}>

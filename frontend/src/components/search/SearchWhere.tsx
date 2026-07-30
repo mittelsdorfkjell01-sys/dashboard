@@ -1,8 +1,9 @@
-// "Wohin?" panel (Frame_4): a search input paired with the "unentschlossen"
-// shortcut on one row, then Spots + Regionen lists and a "Zuletzt gesucht"
-// column from localStorage. Selecting fills the search value.
+// "Wohin?" panel (Frame_4): suggestion lists only — the search input itself now
+// lives in the search bar (the "Tippleiste"), so this panel is just the results:
+// the "unentschlossen" shortcut, then Spots + Regionen filtered by the bar's
+// query, and a "Zuletzt gesucht" list from localStorage.
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { useRegions, useSpots } from "../../lib/hooks";
 import { getRecent, type RecentItem } from "../../lib/recentSearches";
 import type { WhereSelection } from "../../lib/searchSubmit";
@@ -27,18 +28,11 @@ export default function SearchWhere({
   query,
   onPick,
   onOpen,
-  onQueryChange,
 }: {
   query: string;
   onPick: (pick: WherePick) => void;
   onOpen: () => void;
-  onQueryChange: (text: string) => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  // Focus the panel's own search field as soon as it opens.
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
   const { data: spots } = useSpots({ status: "published" });
   const { data: regions } = useRegions();
   // Snapshot recents once per mount so the list doesn't reshuffle mid-interaction.
@@ -57,28 +51,16 @@ export default function SearchWhere({
     .filter((r) => !q || r.name.toLowerCase().includes(q))
     .slice(0, 5);
 
-  // Single narrow column: the panel is only as wide as the "Wohin?" field.
   return (
     <div className="flex flex-col gap-5">
-      {/* Search input (left) + the "unentschlossen" shortcut (right) on one row.
-          "unentschlossen" opens the place axis → ranks the best regions. */}
-      <div className="flex items-center gap-2">
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Region oder Spot suchen"
-          aria-label="Region oder Spot suchen"
-          className="min-w-0 flex-1 rounded-2xl border border-line px-4 py-2 text-[14px] text-ink outline-none transition-colors placeholder:text-muted focus:border-teal/60"
-        />
-        <button
-          type="button"
-          onClick={onOpen}
-          className="shrink-0 whitespace-nowrap rounded-2xl border border-teal/50 px-3 py-2 text-[12px] font-medium text-teal transition-colors hover:bg-teal/5"
-        >
-          unentschlossen
-        </button>
-      </div>
+      {/* "unentschlossen" opens the place axis → ranks the best regions. */}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="self-start whitespace-nowrap rounded-2xl border border-teal/50 px-3 py-2 text-[12px] font-medium text-teal transition-colors hover:bg-teal/5"
+      >
+        unentschlossen — beste Regionen zeigen
+      </button>
 
       <div>
         <h3 className="mb-2 text-[13px] font-medium text-muted">Spots</h3>
