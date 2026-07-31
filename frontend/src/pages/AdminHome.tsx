@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, getAdminOverview, type AdminOverview } from "../lib/api";
-import { actionLabel, gapLabel } from "../lib/labels";
+import { gapLabel } from "../lib/labels";
 import TeamBoard from "../components/admin/TeamBoard";
 
 type Tone = "red" | "orange" | "teal";
@@ -44,8 +44,9 @@ function buildTasks(data: AdminOverview): Task[] {
     tasks.push({ key: "pending", tone: "orange", label: "Neue Einreichungen prüfen", count: pending, to: "/admin/review" });
   if (readyToPublish > 0)
     tasks.push({ key: "ready", tone: "teal", label: "Bereit zum Veröffentlichen", count: readyToPublish, to: "/admin/spots?status=draft" });
-  if (data.readiness_open > 0)
-    tasks.push({ key: "finish", tone: "orange", label: "Spots fertigstellen", count: data.readiness_open, to: "/admin/spots?status=draft" });
+  // Note: "Spots fertigstellen" is intentionally NOT a task here — the same open
+  // spots are shown as a working list in the "Fertigstellen" panel below, so
+  // listing them twice (once as a count, once as a list) only read as redundant.
   return tasks;
 }
 
@@ -144,48 +145,41 @@ export default function AdminHome() {
         </div>
       )}
 
-      {/* Two hands-on lists: finish drafts + what changed recently */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Panel title="Fertigstellen" count={data.not_live.length}>
+      {/* Kanban board — team tasks, kept above the fold (above "Fertigstellen"). */}
+      <TeamBoard />
+
+      {/* Unfinished spots — one place. The count is the true open total; the list
+          shows the first ones with a link to the rest. */}
+      <section className="mt-6">
+        <Panel title="Fertigstellen" count={data.readiness_open}>
           {data.not_live.length === 0 ? (
             <Empty>Keine unfertigen Spots. 🎉</Empty>
           ) : (
-            data.not_live.map((s) => (
-              <Link
-                key={s.id}
-                to={`/admin/spot/${s.id}/edit`}
-                className="block rounded-lg bg-orange/5 p-3 transition-colors hover:bg-orange/10"
-              >
-                <p className="text-label font-medium text-ink">{s.name}</p>
-                <p className="mt-0.5 text-caption text-muted">
-                  Fehlt: {s.gaps.map(gapLabel).join(", ")}
-                </p>
-              </Link>
-            ))
+            <>
+              {data.not_live.map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/admin/spot/${s.id}/edit`}
+                  className="block rounded-lg bg-orange/5 p-3 transition-colors hover:bg-orange/10"
+                >
+                  <p className="text-label font-medium text-ink">{s.name}</p>
+                  <p className="mt-0.5 text-caption text-muted">
+                    Fehlt: {s.gaps.map(gapLabel).join(", ")}
+                  </p>
+                </Link>
+              ))}
+              {data.readiness_open > data.not_live.length && (
+                <Link
+                  to="/admin/spots?status=draft"
+                  className="block rounded-lg p-2 text-center text-caption font-medium text-teal hover:bg-teal/5"
+                >
+                  +{data.readiness_open - data.not_live.length} weitere anzeigen →
+                </Link>
+              )}
+            </>
           )}
         </Panel>
-
-        <Panel title="Zuletzt geändert" count={data.recent.length}>
-          {data.recent.length === 0 ? (
-            <Empty>Noch keine Änderungen.</Empty>
-          ) : (
-            data.recent.slice(0, 8).map((s) => (
-              <Link
-                key={s.id}
-                to={`/admin/spot/${s.id}/edit`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white p-3 transition-colors hover:bg-teal/5"
-              >
-                <span className="min-w-0 truncate text-label font-medium text-ink">{s.name}</span>
-                <span className="shrink-0 text-caption text-muted">
-                  {s.last_change ? actionLabel(s.last_change.action) : "—"}
-                </span>
-              </Link>
-            ))
-          )}
-        </Panel>
-      </div>
-
-      <TeamBoard />
+      </section>
 
       {/* Secondary: raw counters */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
