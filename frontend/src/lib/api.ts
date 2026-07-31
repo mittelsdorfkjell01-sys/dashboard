@@ -747,10 +747,13 @@ export interface RecentSpot {
   last_change: LastChange | null;
 }
 
+export type TeamNotePriority = "normal" | "important";
+
 export interface TeamNote {
   id: string;
   author: string | null;
   body: string;
+  priority: TeamNotePriority;
   created_at: string;
 }
 
@@ -778,10 +781,18 @@ export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
 // --- team notes + activity (admin) -----------------------------------------
 
 export const getTeamNotes = () => request<TeamNote[]>(`/admin/team-notes`);
-export const createTeamNote = (body: string) =>
+export const createTeamNote = (body: string, priority: TeamNotePriority = "normal") =>
   request<TeamNote>(`/admin/team-notes`, {
     method: "POST",
-    body: JSON.stringify({ body }),
+    body: JSON.stringify({ body, priority }),
+  });
+export const updateTeamNote = (
+  id: string,
+  patch: { body?: string; priority?: TeamNotePriority }
+) =>
+  request<TeamNote>(`/admin/team-notes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
   });
 export const deleteTeamNote = (id: string) =>
   request<void>(`/admin/team-notes/${id}`, { method: "DELETE" });

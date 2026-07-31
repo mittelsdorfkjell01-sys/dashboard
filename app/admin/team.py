@@ -16,26 +16,58 @@ from app.models import BoardTask, ModerationAudit, Spot, SpotAudit, TeamNote
 
 # --- team notes ------------------------------------------------------------
 
+PRIORITIES = ("normal", "important")
+
+
+def _clean_priority(priority: str | None) -> str:
+    """Normalise a priority to one of PRIORITIES; unknown/empty → 'normal'."""
+    return priority if priority in PRIORITIES else "normal"
+
+
+def note_view(n: TeamNote) -> dict:
+    return {
+        "id": str(n.id),
+        "author": n.author,
+        "body": n.body,
+        "priority": n.priority,
+        "created_at": n.created_at.isoformat(),
+    }
+
+
 def list_notes(db: Session, *, limit: int = 30) -> list[dict]:
     rows = db.scalars(
         select(TeamNote).order_by(TeamNote.created_at.desc()).limit(limit)
     ).all()
-    return [
-        {
-            "id": str(n.id),
-            "author": n.author,
-            "body": n.body,
-            "created_at": n.created_at.isoformat(),
-        }
-        for n in rows
-    ]
+    # Important notes first, then newest first (rows already come newest-first, so
+    # a stable sort by "not important" keeps that order within each group).
+    rows = sorted(rows, key=lambda n: n.priority != "important")
+    return [note_view(n) for n in rows]
 
 
-def create_note(db: Session, *, author: str | None, body: str) -> TeamNote:
+def create_note(
+    db: Session, *, author: str | None, body: str, priority: str | None = None
+) -> TeamNote:
     if not (body and body.strip()):
         raise ValueError("Die Nachricht darf nicht leer sein.")
-    note = TeamNote(author=author, body=body.strip())
+    note = TeamNote(author=author, body=body.strip(), priority=_clean_priority(priority))
     db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+def update_note(
+    db: Session, note_id, *, body: str | None = None, priority: str | None = None
+) -> TeamNote | None:
+    note = db.get(TeamNote, note_id)
+    if note is None:
+        return None
+    if body is not None:
+        if not body.strip():
+            raise ValueError("Die Nachricht darf nicht leer sein.")
+        note.body = body.strip()
+    if priority is not None:
+        note.priority = _clean_priority(priority)
     db.commit()
     db.refresh(note)
     return note

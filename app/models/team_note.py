@@ -25,6 +25,11 @@ class TeamNote(Base):
     )
     author: Mapped[str | None] = mapped_column(String(120))
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    # Board priority: "normal" (default) | "important". Important notes get a red
+    # stroke and sort to the top of the overview board.
+    priority: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'normal'")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -677,6 +677,12 @@ async def upload_region_image(
 
 class TeamNoteIn(BaseModel):
     body: str
+    priority: str | None = None
+
+
+class TeamNotePatch(BaseModel):
+    body: str | None = None
+    priority: str | None = None
 
 
 @router.get("/team-notes")
@@ -691,13 +697,29 @@ def create_team_note(
     actor: str = Depends(get_actor),
 ) -> dict:
     try:
-        note = admin_team.create_note(db, author=actor, body=body.body)
+        note = admin_team.create_note(
+            db, author=actor, body=body.body, priority=body.priority
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    return {
-        "id": str(note.id), "author": note.author, "body": note.body,
-        "created_at": note.created_at.isoformat(),
-    }
+    return admin_team.note_view(note)
+
+
+@router.patch("/team-notes/{note_id}")
+def update_team_note(
+    note_id: uuid.UUID,
+    body: TeamNotePatch,
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        note = admin_team.update_note(
+            db, note_id, body=body.body, priority=body.priority
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    if note is None:
+        raise HTTPException(status_code=404, detail="Notiz nicht gefunden.")
+    return admin_team.note_view(note)
 
 
 @router.delete("/team-notes/{note_id}", status_code=204)
