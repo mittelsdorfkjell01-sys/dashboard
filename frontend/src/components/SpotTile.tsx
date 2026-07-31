@@ -4,20 +4,20 @@ import { sportLabel } from "../lib/labels";
 import type { Spot } from "../lib/types";
 
 /**
- * Glass-overlay top-spot tile. Image with a bottom caption panel (region, name,
- * sports). No favourites/hearts and no live conditions on the landing page —
- * those live on the spot detail page.
+ * Top-spot card: image on top, a clean white info area below (region kicker,
+ * name, sport pills) — image and information are separated rather than
+ * overlaid. No favourites/hearts and no live conditions on the landing page.
  */
 export default function SpotTile({ spot }: { spot: Spot }) {
   const id = spot.uuid ?? spot.id;
-  const tags = (spot.sports ?? []).slice(0, 4).map(sportLabel);
+  const tags = (spot.sports ?? []).slice(0, 3).map(sportLabel);
 
   return (
     <Link
       to={`/spot/${id}`}
-      className="group relative block h-[190px] w-full overflow-hidden rounded-3xl"
+      className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-white shadow-card transition-shadow duration-300 hover:shadow-float"
     >
-      <div className="absolute inset-0">
+      <div className="relative aspect-[4/3] overflow-hidden">
         <SpotImage
           src={spot.image}
           name={spot.name}
@@ -26,18 +26,25 @@ export default function SpotTile({ spot }: { spot: Spot }) {
           className="transition-transform duration-500 group-hover:scale-105"
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
 
-      {/* bottom glass panel */}
-      <div className="glass absolute inset-x-0 bottom-0 p-3.5 text-white">
-        <p className="truncate text-[10px] font-medium text-white/90">{spot.region}</p>
-        <p className="mt-0.5 min-w-0 truncate text-[15px] font-semibold">{spot.name}</p>
+      <div className="flex flex-1 flex-col p-3.5">
+        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">
+          {spot.region}
+        </p>
+        <p className="mt-0.5 truncate text-[15px] font-semibold leading-tight text-ink">
+          {spot.name}
+        </p>
         {tags.length > 0 && (
-          <p className="mt-1.5 flex flex-nowrap gap-x-2 overflow-hidden text-[10px] text-white/90">
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
             {tags.map((t) => (
-              <span key={t} className="whitespace-nowrap">{t}</span>
+              <span
+                key={t}
+                className="rounded-full bg-band px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+              >
+                {t}
+              </span>
             ))}
-          </p>
+          </div>
         )}
       </div>
     </Link>

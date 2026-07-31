@@ -10,7 +10,16 @@ function RowSkeleton() {
   return (
     <div className={GRID}>
       {Array.from({ length: MAX_TILES }).map((_, i) => (
-        <div key={i} className="h-[190px] animate-pulse rounded-3xl bg-white/20" />
+        <div
+          key={i}
+          className="overflow-hidden rounded-3xl border border-line bg-white shadow-card"
+        >
+          <div className="aspect-[4/3] animate-pulse bg-line" />
+          <div className="space-y-2 p-3.5">
+            <div className="h-2 w-1/3 animate-pulse rounded bg-line" />
+            <div className="h-3.5 w-2/3 animate-pulse rounded bg-line" />
+          </div>
+        </div>
       ))}
     </div>
   );
