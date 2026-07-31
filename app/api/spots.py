@@ -27,6 +27,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/spots", tags=["spots"])
 
 
+def _safe_summaries(rows: list[Spot]) -> list[SpotSummary]:
+    """Serialize a list of spots, skipping (and logging) any row whose data
+    can't be summarized. One malformed spot must never 500 the whole list — a
+    single bad record would otherwise take down the public landing/map views.
+    The log names the spot so the underlying data can be repaired."""
+    out: list[SpotSummary] = []
+    for s in rows:
+        try:
+            out.append(SpotSummary.from_orm_spot(s))
+        except Exception:
+            logger.exception(
+                "skipping spot %s (%s): summary serialization failed",
+                getattr(s, "id", None),
+                getattr(s, "slug", None),
+            )
+    return out
+
+
 @router.get("", response_model=list[SpotSummary])
 def list_spots(
     response: Response,
@@ -72,7 +90,7 @@ def list_spots(
 
     rows = db.scalars(stmt).all()
     set_public_cache(response)
-    return [SpotSummary.from_orm_spot(s) for s in rows]
+    return _safe_summaries(rows)
 
 
 @router.get("/top", response_model=list[SpotSummary])
@@ -115,7 +133,7 @@ def list_top_spots(
         ordered = list(db.scalars(stmt.order_by(Spot.name).limit(limit)))
 
     set_public_cache(response)
-    return [SpotSummary.from_orm_spot(s) for s in ordered]
+    return _safe_summaries(ordered)
 
 
 @router.get("/live", response_model=list[LiveConditionsRead], tags=["live"])
