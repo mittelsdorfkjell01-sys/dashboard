@@ -21,6 +21,7 @@ import { Button, Input } from "../components/ui";
 import PromptDialog from "../components/ui/PromptDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
+import ActivityPreview from "../components/admin/ActivityPreview";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
@@ -339,6 +340,7 @@ export default function AdminUsers() {
 function ActivityLog() {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [q, setQ] = useState("");
+  const [preview, setPreview] = useState<ActivityItem | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -370,23 +372,45 @@ function ActivityLog() {
             Noch keine Aktivität.
           </li>
         ) : (
-          items.map((a, i) => (
-            <li key={i} className="flex items-start justify-between gap-3 px-4 py-2.5 text-ui">
-              <span className="min-w-0 text-ink">
-                <span className="font-medium">{a.actor ?? "—"}</span>{" "}
-                <span className="text-muted">{a.label}</span>
-                {a.target && <span className="text-ink"> — {a.target}</span>}
-                {a.fields.length > 0 && (
-                  <span className="text-muted"> ({a.fields.map(gapLabel).join(", ")})</span>
+          items.map((a, i) => {
+            const clickable = a.kind === "spot" && !!a.target_id;
+            const content = (
+              <>
+                <span className="min-w-0 text-ink">
+                  <span className="font-medium">{a.actor ?? "—"}</span>{" "}
+                  <span className="text-muted">{a.label}</span>
+                  {a.target && <span className="text-ink"> — {a.target}</span>}
+                  {a.fields.length > 0 && (
+                    <span className="text-muted"> ({a.fields.map(gapLabel).join(", ")})</span>
+                  )}
+                </span>
+                <span className="shrink-0 text-caption text-muted">
+                  {a.at ? new Date(a.at).toLocaleString("de-DE") : ""}
+                </span>
+              </>
+            );
+            return (
+              <li key={i}>
+                {clickable ? (
+                  <button
+                    type="button"
+                    onClick={() => setPreview(a)}
+                    className="flex w-full items-start justify-between gap-3 px-4 py-2.5 text-left text-ui transition-colors hover:bg-band/60"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div className="flex items-start justify-between gap-3 px-4 py-2.5 text-ui">
+                    {content}
+                  </div>
                 )}
-              </span>
-              <span className="shrink-0 text-caption text-muted">
-                {a.at ? new Date(a.at).toLocaleString("de-DE") : ""}
-              </span>
-            </li>
-          ))
+              </li>
+            );
+          })
         )}
       </ul>
+
+      <ActivityPreview item={preview} onClose={() => setPreview(null)} />
     </section>
   );
 }
