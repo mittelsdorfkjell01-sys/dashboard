@@ -19,6 +19,7 @@ import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner, EmptyState } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
+import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
@@ -167,7 +168,18 @@ export default function SpotDetail() {
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
                     <p className="text-label text-ink-soft/80">
-                      {[regionPart, country].filter(Boolean).join(" › ")}
+                      {country && <span>{country}</span>}
+                      {country && regionPart && (
+                        <span className="mx-1.5 text-ink-soft/50">›</span>
+                      )}
+                      {regionPart && (
+                        <Link
+                          to={`/region/${regionSlug(spot.region)}`}
+                          className="font-medium text-teal transition-colors hover:text-teal-hover hover:underline"
+                        >
+                          {regionPart}
+                        </Link>
+                      )}
                     </p>
                   )}
                   <h1 className="mt-1 text-editorial-4 font-semibold text-balance text-ink">{spot.name}</h1>

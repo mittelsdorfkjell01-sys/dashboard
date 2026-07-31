@@ -1,14 +1,34 @@
 import { useState, type RefObject } from "react";
+import { useNavigate } from "react-router-dom";
 import { avatarColor, initials, type FeedPost } from "../lib/communityFeed";
-import InlineTipComposer from "./InlineTipComposer";
+import { useAuth } from "../context/AuthContext";
+import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
+import CommentModal from "./CommentModal";
+
+/** Small speech-bubble icon for the "Kommentar verfassen" entry. */
+function CommentIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.3-1L3 20l1.1-4.2A8.4 8.4 0 1 1 21 11.5Z" />
+    </svg>
+  );
+}
 
 /**
- * Info-tab comment tile (Figma Frame_9, under the facilities). Shows the newest
- * comment when one exists, otherwise a "write the first one" prompt. Writing or
- * replying flips the tile into an inline compose mask ("Antworte" targets the
- * shown comment, "Verfasse Kommentar / Tipp" posts a new top-level comment).
- * "mehr" opens the full Kommentare overlay. No shadow — it separates from the
- * page by its band fill and fills the column down to the gallery's bottom.
+ * Info-tab comment tile (under the facilities). Shows the newest comment when
+ * one exists, otherwise a "write the first one" prompt. Composing runs through a
+ * flow: "Kommentar verfassen" → auth choice (anonym / anmelden) → a central
+ * comment modal (dimmed + blurred backdrop). "mehr" opens the full overlay.
  */
 export default function SpotCommentBox({
   spotId,
@@ -18,28 +38,48 @@ export default function SpotCommentBox({
   moreButtonRef,
 }: {
   spotId?: string;
-  /** Newest top-level comment to feature, or null when there are none. */
   comment: FeedPost | null;
   onOpenMore: () => void;
   onPosted?: () => void;
   moreButtonRef?: RefObject<HTMLButtonElement>;
 }) {
-  const [compose, setCompose] = useState<{ parentId?: string; replyToName?: string } | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  // The pending compose target (null = closed); step drives choice vs. modal.
+  const [pending, setPending] = useState<{ parentId?: string; replyToName?: string } | null>(null);
+  const [step, setStep] = useState<"choose" | "compose" | null>(null);
+  const [author, setAuthor] = useState("Anonym");
 
   // Only a tip can be replied to (the backend parent is a local_tip).
   const replyTargetId =
     comment && comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
+  // Signed in → straight to the modal; signed out → offer the auth choice first.
+  const startCompose = (target: { parentId?: string; replyToName?: string }) => {
+    setPending(target);
+    if (user) {
+      setAuthor(user.displayName);
+      setStep("compose");
+    } else {
+      setStep("choose");
+    }
+  };
+
+  const reset = () => {
+    setStep(null);
+    setPending(null);
+  };
+
   const posted = () => {
-    setCompose(null);
     onPosted?.();
+    reset();
   };
 
   return (
     <div className="flex flex-1 flex-col rounded-3xl bg-white p-6 shadow-card">
       <div className="flex items-center justify-between gap-3">
         <p className="text-label text-muted">Kommentare oder Tips</p>
-        {comment && !compose && (
+        {comment && (
           <button
             ref={moreButtonRef}
             type="button"
@@ -51,17 +91,7 @@ export default function SpotCommentBox({
         )}
       </div>
 
-      {compose ? (
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <InlineTipComposer
-            spotId={spotId}
-            parentId={compose.parentId}
-            replyToName={compose.replyToName}
-            onPosted={posted}
-            onCancel={() => setCompose(null)}
-          />
-        </div>
-      ) : comment ? (
+      {comment ? (
         <>
           <div className="mt-4 min-h-0 flex-1 overflow-hidden">
             <div className="flex items-center gap-2.5">
@@ -80,21 +110,23 @@ export default function SpotCommentBox({
             <button
               type="button"
               onClick={() =>
-                setCompose(
+                startCompose(
                   replyTargetId
                     ? { parentId: replyTargetId, replyToName: comment.authorName }
                     : {}
                 )
               }
-              className="transition-colors hover:text-teal-hover"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-teal-hover"
             >
+              <CommentIcon />
               Antworte
             </button>
             <button
               type="button"
-              onClick={() => setCompose({})}
-              className="transition-colors hover:text-teal-hover"
+              onClick={() => startCompose({})}
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-teal-hover"
             >
+              <CommentIcon />
               Verfasse Kommentar / Tipp
             </button>
           </div>
@@ -106,13 +138,33 @@ export default function SpotCommentBox({
           </p>
           <button
             type="button"
-            onClick={() => setCompose({})}
-            className="mt-4 inline-flex items-center rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+            onClick={() => startCompose({})}
+            className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
           >
-            Verfassen
+            <CommentIcon />
+            Kommentar verfassen
           </button>
         </div>
       )}
+
+      <CommentAuthChoiceDialog
+        open={step === "choose"}
+        onAnonymous={() => {
+          setAuthor("Anonym");
+          setStep("compose");
+        }}
+        onSignIn={() => navigate("/anmelden?mode=login")}
+        onCancel={reset}
+      />
+      <CommentModal
+        open={step === "compose"}
+        spotId={spotId}
+        parentId={pending?.parentId}
+        replyToName={pending?.replyToName}
+        authorName={author}
+        onPosted={posted}
+        onClose={reset}
+      />
     </div>
   );
 }
