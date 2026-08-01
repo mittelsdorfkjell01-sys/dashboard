@@ -38,7 +38,7 @@ export default function MapView() {
   }, [withCoords]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div data-lenis-prevent className="relative h-screen w-screen overflow-hidden">
       <Header showAccount={false} />
       <h1 className="sr-only">Spot-Karte</h1>
 

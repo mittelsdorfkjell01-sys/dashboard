@@ -77,7 +77,7 @@ export default function AdminMap() {
         </div>
       )}
 
-      <div className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-2xl border border-line">
+      <div data-lenis-prevent className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-2xl border border-line">
         <MapContainer
           key={spots.length ? "loaded" : "init"}
           center={center}

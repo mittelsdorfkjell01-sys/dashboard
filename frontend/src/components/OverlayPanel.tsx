@@ -108,6 +108,7 @@ export default function OverlayPanel({
             role="dialog"
             aria-modal="true"
             tabIndex={-1}
+            data-lenis-prevent
             className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-0 sm:top-auto sm:bottom-0 sm:min-h-[50vh] sm:max-h-[90vh] sm:rounded-t-3xl"
             initial={{ y: reduce ? 0 : "100%" }}
             animate={{ y: 0 }}

@@ -60,6 +60,7 @@ export default function Modal({
         aria-labelledby={labelledBy}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
+        data-lenis-prevent
         className="w-full max-w-md rounded-lg bg-white p-6 shadow-float outline-none"
       >
         {children}

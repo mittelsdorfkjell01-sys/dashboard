@@ -23,6 +23,25 @@
     margin: 0;
   }
 
+  /* Lenis smooth-scroll layer (System A). Lenis toggles these classes on <html>;
+     these are the library's recommended base rules. When Lenis runs it owns the
+     smoothing, so native scroll-behavior is forced back to auto to avoid
+     double-animated anchor jumps. Inner scrollables opt out with
+     data-lenis-prevent (Leaflet maps, modals, overflow panels). */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
   /* Uppercase field labels: WO? / WANN? */
   .label-caps {
     @apply text-[12px] font-medium tracking-[0.18em] text-ink-soft uppercase;

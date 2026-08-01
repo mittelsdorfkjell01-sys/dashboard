@@ -173,7 +173,7 @@ export default function SearchBar() {
                 }}
                 className="overflow-hidden rounded-3xl border border-line bg-white"
               >
-                <div className="max-h-[46vh] overflow-auto p-5">
+                <div data-lenis-prevent className="max-h-[46vh] overflow-auto p-5">
                   <motion.div
                     key={open}
                     initial={reduce ? false : { opacity: 0, y: 6 }}

@@ -3,11 +3,14 @@ import ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
   Navigate,
+  Outlet,
   RouterProvider,
   type RouteObject,
 } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import "./index.css";
+import { LenisProvider } from "./lib/lenis";
+import ScrollManager from "./components/ScrollManager";
 import Landing from "./pages/Landing";
 import MapView from "./pages/MapView";
 import SpotDetail from "./pages/SpotDetail";
@@ -70,13 +73,28 @@ async function bootstrap() {
   // Every route gets a render-error fallback instead of a blank screen.
   for (const r of routes) if (!r.errorElement) r.errorElement = <RouteError />;
 
-  const router = createBrowserRouter(routes);
+  // Pathless root layout: mounts ScrollManager inside the router (owns route
+  // scroll-reset + hash anchors under Lenis) and renders the matched route.
+  const router = createBrowserRouter([
+    {
+      element: (
+        <>
+          <ScrollManager />
+          <Outlet />
+        </>
+      ),
+      errorElement: <RouteError />,
+      children: routes,
+    },
+  ]);
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <ErrorBoundary>
         <PrefsProvider>
           <AuthProvider>
-            <RouterProvider router={router} />
+            <LenisProvider>
+              <RouterProvider router={router} />
+            </LenisProvider>
           </AuthProvider>
         </PrefsProvider>
       </ErrorBoundary>

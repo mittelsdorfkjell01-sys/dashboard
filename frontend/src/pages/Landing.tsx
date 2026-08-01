@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import LandingHeader from "../components/LandingHeader";
 import HeroImage from "../components/HeroImage";
+import LiquidReveal from "../components/LiquidReveal";
 import SearchBar from "../components/SearchBar";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotTile from "../components/SpotTile";
@@ -24,40 +24,19 @@ export default function Landing() {
   const { data: allSpots } = useSpots({ status: "published" });
   const spots = allSpots ?? [];
 
-  // Fade the hero photo out as the page scrolls toward the spots below, so it's
-  // gone by the time the white cards sheet is in view. rAF-throttled.
-  const [heroOpacity, setHeroOpacity] = useState(1);
-  useEffect(() => {
-    let ticking = false;
-    const update = () => {
-      const h = window.innerHeight || 1;
-      setHeroOpacity(Math.max(0, Math.min(1, 1 - window.scrollY / (h * 0.85))));
-      ticking = false;
-    };
-    const onScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    update();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <div className="relative bg-white">
       <LandingHeader />
+
+      {/* System B — page-replacement transition. Autonomous (see LiquidReveal);
+          the hero below stays fully static. */}
+      <LiquidReveal />
 
       {/* 1 — Hero screen. `isolate` gives the section its own stacking context so
           the -z-10 hero stays behind the section's own content instead of
           escaping to the root and being covered by the page's white background. */}
       <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
-        <div
-          className="absolute inset-0 -z-10"
-          style={{ opacity: heroOpacity }}
-          aria-hidden
-        >
+        <div className="absolute inset-0 -z-10" aria-hidden>
           <HeroImage
             src="/hero-surfwind.jpg"
             alt=""
