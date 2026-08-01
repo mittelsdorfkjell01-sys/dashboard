@@ -805,6 +805,17 @@ export interface AdminOverview {
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
 
+/** Lightweight spot for the admin map: coordinates + status only. */
+export interface AdminMapSpot {
+  id: string;
+  name: string;
+  status: string;
+  lat: number;
+  lon: number;
+}
+export const getAdminMapSpots = () =>
+  request<AdminMapSpot[]>(`/admin/map-spots`);
+
 // --- team notes + activity (admin) -----------------------------------------
 
 export const getTeamNotes = () => request<TeamNote[]>(`/admin/team-notes`);
@@ -834,6 +845,8 @@ export interface ActivityItem {
   kind: string;
   fields: string[];
   at: string | null;
+  /** How many audited actions this slot aggregates (spots are grouped). */
+  actions?: number;
 }
 export const getActivity = (q?: string) =>
   request<ActivityItem[]>(`/admin/activity${qs({ q })}`);

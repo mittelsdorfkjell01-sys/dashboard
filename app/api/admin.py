@@ -119,6 +119,12 @@ def overview(db: Session = Depends(get_db)) -> dict:
     return admin_dashboard.overview(db)
 
 
+@router.get("/map-spots")
+def map_spots(db: Session = Depends(get_db)) -> list[dict]:
+    """All spots with coordinates for the admin map (id/name/status/lat/lon)."""
+    return admin_dashboard.map_spots(db)
+
+
 @router.get("/spots")
 def list_spots(
     db: Session = Depends(get_db),

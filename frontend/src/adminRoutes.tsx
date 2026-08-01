@@ -12,7 +12,7 @@ import AdminSpots from "./pages/AdminSpots";
 import AdminRegions from "./pages/AdminRegions";
 import AdminRegionForm from "./pages/AdminRegionForm";
 import AdminReview from "./pages/AdminReview";
-import AdminBoard from "./pages/AdminBoard";
+import AdminMap from "./pages/AdminMap";
 import AdminSpotForm from "./pages/AdminSpotForm";
 import AdminUsers from "./pages/AdminUsers";
 import AdminShell from "./components/AdminShell";
@@ -42,7 +42,7 @@ const adminRoutes: RouteObject[] = [
           { path: "regions", element: <AdminRegions /> },
           { path: "region/:id/edit", element: <AdminRegionForm /> },
           { path: "review", element: <AdminReview /> },
-          { path: "board", element: <AdminBoard /> },
+          { path: "map", element: <AdminMap /> },
           { path: "spot/new", element: <AdminSpotForm /> },
           { path: "spot/:id/edit", element: <AdminSpotForm /> },
           {

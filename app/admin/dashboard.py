@@ -7,6 +7,7 @@ Kept deliberately additive so Sprint C/D can fold in review-queue counts.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Any
 
@@ -15,6 +16,8 @@ from sqlalchemy.orm import Session, defer
 
 from app.admin.readiness import build_checklist
 from app.models import Era5Job, Region, RequiredField, Spot, SpotAudit
+
+logger = logging.getLogger(__name__)
 
 _SORTS = {
     "name": Spot.name.asc(),
@@ -147,7 +150,11 @@ def not_live_gaps(db: Session, *, limit: int = 50) -> list[dict[str, Any]]:
     ).all()
     out: list[dict[str, Any]] = []
     for s in spots:
-        result = build_checklist(s, rules, job_status=jobs.get(s.id))
+        try:
+            result = build_checklist(s, rules, job_status=jobs.get(s.id))
+        except Exception:
+            logger.exception("not_live_gaps: skipping spot %s", getattr(s, "id", None))
+            continue
         if not result["ready"]:
             out.append(
                 {
@@ -181,7 +188,11 @@ def draft_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:
     ).all()
     out: list[dict[str, Any]] = []
     for s in spots:
-        result = build_checklist(s, rules, job_status=jobs.get(s.id))
+        try:
+            result = build_checklist(s, rules, job_status=jobs.get(s.id))
+        except Exception:
+            logger.exception("draft_spots: skipping spot %s", getattr(s, "id", None))
+            continue
         out.append(
             {
                 "id": str(s.id),
@@ -266,25 +277,62 @@ def ranked_spots(db: Session, *, limit: int = 500) -> list[dict[str, Any]]:
     spots = db.scalars(select(Spot).order_by(Spot.name)).all()
     out: list[dict[str, Any]] = []
     for s in spots:
-        result = build_checklist(s, rules, job_status=jobs.get(s.id))
-        gaps = result["gaps"]
-        out.append(
-            {
-                "id": str(s.id),
-                "name": s.name,
-                "slug": s.slug,
-                "status": s.status,
-                "region_id": str(s.region_id) if s.region_id else None,
-                "gaps": gaps,
-                "ready": result["ready"],
-                "rank": effective_rank(gaps, s.finish_rank),
-                "rank_auto": auto_rank(gaps),
-                "finish_rank": s.finish_rank,
-            }
-        )
+        # One spot with malformed data (bad facilities/image shape) must never
+        # 500 the whole Übersicht — skip and log it so the rest still loads.
+        try:
+            result = build_checklist(s, rules, job_status=jobs.get(s.id))
+            gaps = result["gaps"]
+            out.append(
+                {
+                    "id": str(s.id),
+                    "name": s.name,
+                    "slug": s.slug,
+                    "status": s.status,
+                    "region_id": str(s.region_id) if s.region_id else None,
+                    "gaps": gaps,
+                    "ready": result["ready"],
+                    "rank": effective_rank(gaps, s.finish_rank),
+                    "rank_auto": auto_rank(gaps),
+                    "finish_rank": s.finish_rank,
+                }
+            )
+        except Exception:
+            logger.exception(
+                "ranked_spots: skipping spot %s (%s)",
+                getattr(s, "id", None),
+                getattr(s, "slug", None),
+            )
     order = {"red": 0, "yellow": 1, "green": 2}
     out.sort(key=lambda r: (order.get(r["rank"], 3), r["name"].lower()))
     return out[:limit]
+
+
+def map_spots(db: Session) -> list[dict[str, Any]]:
+    """Lightweight payload for the admin map: every spot with a resolvable
+    location, as ``{id, name, status, lat, lon}``. Heavy JSONB columns are
+    deferred; spots without coordinates are skipped."""
+    from geoalchemy2.shape import to_shape
+
+    rows = db.scalars(
+        select(Spot).options(
+            defer(Spot.climatology), defer(Spot.editorial),
+            defer(Spot.overrides), defer(Spot.era5_cell),
+        )
+    ).all()
+    out: list[dict[str, Any]] = []
+    for s in rows:
+        if s.location is None:
+            continue
+        try:
+            point = to_shape(s.location)
+        except Exception:
+            logger.exception("map_spots: skipping spot %s", getattr(s, "id", None))
+            continue
+        out.append(
+            {"id": str(s.id), "name": s.name, "status": s.status,
+             "lat": point.y, "lon": point.x}
+        )
+    return out
 
 
 def no_region_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:

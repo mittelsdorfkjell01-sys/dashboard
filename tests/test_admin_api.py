@@ -327,6 +327,31 @@ def test_activity_lists_real_changes(admin, region_id):
     )
 
 
+def test_activity_groups_multiple_actions_into_one_slot_per_spot(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    # Three separate edits on the same spot → still ONE activity slot.
+    admin.patch(f"/admin/spots/{sid}", json={"name": "Edit A"})
+    admin.patch(f"/admin/spots/{sid}", json={"water_type": "lake"})
+    admin.patch(f"/admin/spots/{sid}", json={"bottom_type": "rock"})
+
+    acts = admin.get("/admin/activity").json()
+    mine = [a for a in acts if a["kind"] == "spot" and a["target_id"] == sid]
+    assert len(mine) == 1                       # one slot per spot, not per action
+    assert mine[0]["actions"] >= 4              # create + 3 edits aggregated
+    # Changed fields are the union across the spot's recent audits.
+    assert {"water_type", "bottom_type"} <= set(mine[0]["fields"])
+
+
+def test_map_spots_lists_all_with_coordinates(admin, region_id):
+    spot = _create_spot(admin, region_id)  # created at lat 54.41 / lon 10.22
+    rows = admin.get("/admin/map-spots").json()
+    mine = next(r for r in rows if r["id"] == spot["id"])
+    assert mine["status"] == "draft"
+    assert mine["lat"] == pytest.approx(54.41) and mine["lon"] == pytest.approx(10.22)
+    assert mine["name"] == spot["name"]
+
+
 def test_overview_has_team_notes_and_review(admin):
     body = admin.get("/admin/overview").json()
     assert "team_notes" in body and isinstance(body["team_notes"], list)

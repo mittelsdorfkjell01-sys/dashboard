@@ -385,7 +385,8 @@ function ActivityLog() {
         />
       </div>
       <p className="mt-1 text-label text-muted">
-        Letzte echten Änderungen durch das Team (keine Klicks, nur Aktionen).
+        Letzte Änderungen durch das Team — pro Spot zusammengefasst (ein Eintrag
+        je Spot, nicht je Aktion).
       </p>
       <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-white">
         {items.length === 0 ? (
@@ -403,6 +404,9 @@ function ActivityLog() {
                   {a.target && <span className="text-ink"> — {a.target}</span>}
                   {a.fields.length > 0 && (
                     <span className="text-muted"> ({a.fields.map(gapLabel).join(", ")})</span>
+                  )}
+                  {a.actions && a.actions > 1 && (
+                    <span className="text-caption text-muted"> · {a.actions} Änderungen</span>
                   )}
                 </span>
                 <span className="shrink-0 text-caption text-muted">

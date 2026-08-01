@@ -21,6 +21,12 @@ export default function Modal({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
+  // Hold the latest onClose without it being an effect dependency — otherwise a
+  // new inline onClose on every parent render (e.g. while typing in a dialog
+  // input) would re-run the effect, and its cleanup would yank focus out of the
+  // field after each keystroke.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -30,7 +36,7 @@ export default function Modal({
     body.style.overflow = "hidden";
     cardRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -38,7 +44,7 @@ export default function Modal({
       body.style.overflow = prevOverflow;
       restoreRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

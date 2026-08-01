@@ -190,16 +190,20 @@ def _changed_fields(action: str, changes) -> list[str]:
 
 
 def activity(db: Session, *, limit: int = 30, q: str | None = None) -> list[dict]:
-    """Most-recent audited changes across spots and moderation, merged. Actors
-    are resolved to display names. When ``q`` is given, a wider window is
-    searched and filtered by actor name/email, target and label."""
+    """Recent team activity, **one slot per spot** (not one per action): a spot's
+    newest audit is the representative (actor/action/time) and its changed fields
+    are the union across that spot's recent audits, with an ``actions`` count.
+    Moderation events (not spot-scoped) stay individual. Actors are resolved to
+    display names; ``q`` filters by actor name/email, target and label."""
     from app.models import AdminUser
 
-    fetch = 200 if q else limit
     name_by_email = {
         u.email: u.display_name for u in db.scalars(select(AdminUser)).all()
     }
 
+    # Generous window so grouping by spot still yields enough distinct spots to
+    # fill `limit` (a single spot can have many audit rows).
+    window = 500
     spot_rows = db.execute(
         select(
             SpotAudit.actor, SpotAudit.action, SpotAudit.created_at,
@@ -207,7 +211,7 @@ def activity(db: Session, *, limit: int = 30, q: str | None = None) -> list[dict
         )
         .join(Spot, Spot.id == SpotAudit.spot_id)
         .order_by(SpotAudit.created_at.desc())
-        .limit(fetch)
+        .limit(window)
     ).all()
     mod_rows = db.execute(
         select(
@@ -216,22 +220,35 @@ def activity(db: Session, *, limit: int = 30, q: str | None = None) -> list[dict
             ModerationAudit.note,
         )
         .order_by(ModerationAudit.created_at.desc())
-        .limit(fetch)
+        .limit(limit)
     ).all()
 
-    items: list[dict] = []
+    # Collapse spot audits to one slot per spot. Rows arrive newest-first, so the
+    # first row for a spot is its representative; later rows only merge fields.
+    by_spot: dict = {}
     for actor, action, at, changes, spot_name, spot_id in spot_rows:
-        items.append({
-            "actor": name_by_email.get(actor, actor),
-            "actor_email": actor,
-            "action": action,
-            "label": _SPOT_ACTIONS.get(action, action),
-            "target": spot_name,
-            "target_id": str(spot_id),
-            "kind": "spot",
-            "fields": _changed_fields(action, changes),
-            "at": at.isoformat() if at else None,
-        })
+        fields = _changed_fields(action, changes)
+        entry = by_spot.get(spot_id)
+        if entry is None:
+            by_spot[spot_id] = {
+                "actor": name_by_email.get(actor, actor),
+                "actor_email": actor,
+                "action": action,
+                "label": _SPOT_ACTIONS.get(action, action),
+                "target": spot_name,
+                "target_id": str(spot_id),
+                "kind": "spot",
+                "fields": list(dict.fromkeys(fields)),
+                "at": at.isoformat() if at else None,
+                "actions": 1,
+            }
+        else:
+            for f in fields:
+                if f not in entry["fields"]:
+                    entry["fields"].append(f)
+            entry["actions"] += 1
+
+    items: list[dict] = list(by_spot.values())
     for actor, action, at, target_type, note in mod_rows:
         items.append({
             "actor": name_by_email.get(actor, actor),
@@ -243,6 +260,7 @@ def activity(db: Session, *, limit: int = 30, q: str | None = None) -> list[dict
             "kind": "moderation",
             "fields": [],
             "at": at.isoformat() if at else None,
+            "actions": 1,
         })
 
     items.sort(key=lambda x: x["at"] or "", reverse=True)
