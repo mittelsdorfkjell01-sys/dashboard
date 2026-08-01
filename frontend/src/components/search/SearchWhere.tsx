@@ -52,7 +52,7 @@ export default function SearchWhere({
     .slice(0, 5);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {/* "unentschlossen" opens the place axis → ranks the best regions. */}
       <button
         type="button"
@@ -62,48 +62,51 @@ export default function SearchWhere({
         unentschlossen — beste Regionen zeigen
       </button>
 
-      <div>
-        <h3 className="mb-2 text-[13px] font-medium text-muted">Spots</h3>
-        {spotHits.length ? (
-          <div className="flex flex-col gap-0.5">
-            {spotHits.map((s) => {
-              const country = regionById.get(s.regionId ?? "")?.country ?? null;
-              return (
+      {/* Two columns: Regionen left, Spots right. */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+        <div>
+          <h3 className="mb-2 text-[13px] font-medium text-muted">Regionen</h3>
+          {regionHits.length ? (
+            <div className="flex flex-col gap-0.5">
+              {regionHits.map((r) => (
                 <Row
-                  key={s.id}
-                  label={s.name}
+                  key={r.id}
+                  label={r.name}
                   onClick={() =>
-                    onPick({ label: s.name, kind: "spot", id: s.uuid ?? s.id, country })
+                    onPick({ label: r.name, kind: "region", id: r.id, country: r.country })
                   }
                 />
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted">Keine Spots gefunden.</p>
-        )}
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-muted">Keine Regionen gefunden.</p>
+          )}
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-[13px] font-medium text-muted">Spots</h3>
+          {spotHits.length ? (
+            <div className="flex flex-col gap-0.5">
+              {spotHits.map((s) => {
+                const country = regionById.get(s.regionId ?? "")?.country ?? null;
+                return (
+                  <Row
+                    key={s.id}
+                    label={s.name}
+                    onClick={() =>
+                      onPick({ label: s.name, kind: "spot", id: s.uuid ?? s.id, country })
+                    }
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-[13px] text-muted">Keine Spots gefunden.</p>
+          )}
+        </div>
       </div>
 
-      <div>
-        <h3 className="mb-2 text-[13px] font-medium text-muted">Regionen</h3>
-        {regionHits.length ? (
-          <div className="flex flex-col gap-0.5">
-            {regionHits.map((r) => (
-              <Row
-                key={r.id}
-                label={r.name}
-                onClick={() =>
-                  onPick({ label: r.name, kind: "region", id: r.id, country: r.country })
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-[13px] text-muted">Keine Regionen gefunden.</p>
-        )}
-      </div>
-
-      <div className="border-t border-line pt-4">
+      <div className="border-t border-line pt-3">
         <h3 className="mb-2 text-[13px] font-medium text-muted">Zuletzt gesucht</h3>
         {recent.length ? (
           <div className="flex flex-col gap-0.5">

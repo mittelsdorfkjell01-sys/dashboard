@@ -79,12 +79,10 @@ export default function SearchBar() {
     <>
       <div ref={barRef} className="relative">
         <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-white p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-2xl">
-          {/* Wohin? — the Tippleiste, an inline input right in the bar. */}
-          <div
-            className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 transition-colors ${
-              open === "where" ? "bg-band" : ""
-            }`}
-          >
+          {/* Wohin? — the Tippleiste. A <label> so a click anywhere in the field
+              (not just on the text) focuses the input; no active tint/box, the
+              bar stays white and the input has no border. */}
+          <label className="flex flex-1 cursor-text flex-col items-start rounded-2xl px-6 py-2">
             <span className="text-[13px] font-semibold text-teal">Wohin?</span>
             <input
               value={val.whereText}
@@ -97,9 +95,9 @@ export default function SearchBar() {
               placeholder="Region oder Spot suchen"
               aria-label="Region oder Spot suchen"
               aria-expanded={open === "where"}
-              className="w-full truncate bg-transparent text-[13px] text-ink outline-none placeholder:text-muted"
+              className="w-full truncate border-0 bg-transparent text-[13px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
             />
-          </div>
+          </label>
 
           <Divider />
 
@@ -175,7 +173,7 @@ export default function SearchBar() {
                 }}
                 className="overflow-hidden rounded-3xl border border-line bg-white"
               >
-                <div className="max-h-[70vh] overflow-auto p-6">
+                <div className="max-h-[46vh] overflow-auto p-5">
                   <motion.div
                     key={open}
                     initial={reduce ? false : { opacity: 0, y: 6 }}
@@ -230,9 +228,7 @@ function Segment({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className={`flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left transition-colors ${
-        active ? "bg-band" : ""
-      }`}
+      className="flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left"
     >
       <span className="text-[13px] font-semibold text-teal">{label}</span>
       <span className={`truncate text-[13px] ${value ? "text-ink" : "text-muted"}`}>

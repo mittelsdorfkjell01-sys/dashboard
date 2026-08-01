@@ -72,19 +72,23 @@ export default function Landing() {
 
         <div className="flex-1" />
 
-        {/* Search — wide, sitting directly above the Top Spots. */}
-        <div className="mb-8 flex justify-center px-4 sm:px-6">
+        {/* Search — moved further down in the hero; its dropdown now overlaps
+            the white section that follows. Top Spots moved into that section. */}
+        <div className="flex justify-center px-4 pb-24 sm:px-6 sm:pb-28">
           <div className="relative z-[1200] w-full max-w-[760px]">
             <SearchBar />
           </div>
         </div>
+      </section>
 
-        {/* aktuelle Top Spots — title left, map button right. */}
-        <div className="mx-auto w-full max-w-[1300px] pb-20">
+      {/* 2 — Extended white section: aktuelle Top Spots (moved here onto the
+          white background) + all spots as Airbnb-style cards. The rounded sheet
+          rises over the hero for a seamless transition. */}
+      <section className="relative z-10 -mt-8 rounded-t-[2rem] bg-white">
+        {/* aktuelle Top Spots — title left, map button right, now on white. */}
+        <div className="mx-auto w-full max-w-[1300px] pt-14">
           <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
-            <h2 className="text-[18px] font-semibold text-white drop-shadow">
-              aktuelle Top Spots
-            </h2>
+            <h2 className="text-[22px] font-semibold text-ink">aktuelle Top Spots</h2>
             <Link
               to="/map"
               state={{ from }}
@@ -97,11 +101,7 @@ export default function Landing() {
           </div>
           <TopSpotsRow />
         </div>
-      </section>
 
-      {/* 2 — Extended white section: all spots as Airbnb-style cards. The
-          rounded sheet rises over the hero for a seamless transition. */}
-      <section className="relative z-10 -mt-8 rounded-t-[2rem] bg-white">
         <div className="mx-auto max-w-[1300px] px-4 pb-20 pt-14 sm:px-10">
           <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
           <p className="mt-1 text-[15px] text-muted">

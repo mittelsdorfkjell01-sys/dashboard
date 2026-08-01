@@ -90,9 +90,10 @@
     background-color: #1E6E7E;
     border-top: 0.5px solid #E6E1DA;
   }
-  /* Full-page dimmer behind an open search panel (Airbnb-style scrim). */
+  /* Invisible click-catcher behind an open search panel — closes it on an
+     outside click without dimming the page (the bar must never go dark). */
   .scrim {
-    background-color: rgba(10, 30, 40, 0.32);
+    background-color: transparent;
   }
 
   /* Editorial hero fallback — a designed brand colour field for spots/regions
