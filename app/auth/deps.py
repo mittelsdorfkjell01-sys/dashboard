@@ -10,6 +10,11 @@ from __future__ import annotations
 import secrets
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+
+# Throttle presence writes to at most one per this window, per user, so the
+# heartbeat stays cheap on the request hot path.
+_HEARTBEAT_THROTTLE = timedelta(seconds=60)
 
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -64,6 +69,17 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> Principal:
         raise HTTPException(
             status_code=401, detail="Konto nicht gefunden oder deaktiviert."
         )
+
+    # Presence heartbeat (throttled). Best-effort — never fail the request on it.
+    now = datetime.now(timezone.utc)
+    last_seen = user.last_seen_at
+    if last_seen is None or (now - last_seen) > _HEARTBEAT_THROTTLE:
+        try:
+            user.last_seen_at = now
+            db.commit()
+        except Exception:
+            db.rollback()
+
     return Principal(email=user.email, role=user.role, user_id=user.id)
 
 

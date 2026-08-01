@@ -85,6 +85,7 @@ export interface SpotRead extends SpotSummary {
   editorial: Record<string, any> | null;
   climatology: Record<string, any> | null;
   overrides: Record<string, any> | null;
+  finish_rank: Rank | null;
   created_at: string;
   updated_at: string;
 }
@@ -422,6 +423,7 @@ export interface AdminUserRecord {
   role: AdminRole;
   is_active: boolean;
   last_login_at: string | null;
+  last_seen_at: string | null;
   created_at: string;
 }
 
@@ -731,6 +733,29 @@ export interface DraftSpot {
   updated_at: string;
 }
 
+export type Rank = "red" | "yellow" | "green";
+
+/** A spot in the "Fertigstellen" list with its traffic-light rank. */
+export interface RankedSpot {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  region_id: string | null;
+  gaps: string[];
+  ready: boolean;
+  rank: Rank; // effective (override if set, else auto)
+  rank_auto: Rank;
+  finish_rank: Rank | null; // manual override, null = auto
+}
+
+/** Set (rank) or clear (null) a spot's manual Fertigstellen rank. */
+export const setFinishRank = (id: string, rank: Rank | null) =>
+  request<SpotRead>(`/admin/spots/${id}/finish-rank`, {
+    method: "PATCH",
+    body: JSON.stringify({ rank }),
+  });
+
 export interface LastChange {
   action: string;
   fields: string[];
@@ -768,6 +793,8 @@ export interface AdminOverview {
   regions: number;
   readiness_open: number;
   not_live: NotLiveSpot[];
+  finish: RankedSpot[];
+  finish_open: number;
   no_region: NoRegionSpot[];
   drafts: DraftSpot[];
   recent: RecentSpot[];

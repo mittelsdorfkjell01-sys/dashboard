@@ -50,6 +50,8 @@ class SpotUpdate(BaseModel):
 
     name: str | None = None
     slug: str | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
     sports: list[str] | None = None
     water_type: str | None = None
     bottom_type: str | None = None
@@ -82,6 +84,12 @@ class MetadataUpdate(BaseModel):
     """Editorial fields to merge. Each value may be a real value or ``"n/a"``."""
 
     editorial: dict[str, Any]
+
+
+class FinishRankRequest(BaseModel):
+    """Manual "Fertigstellen" rank override: red|yellow|green, or null for auto."""
+
+    rank: str | None = None
 
 
 class OverrideRequest(BaseModel):

@@ -133,6 +133,15 @@ def update_spot(
         spot.name = data["name"]
     if "slug" in data and data["slug"]:
         spot.slug = data["slug"]
+    # Moving the pin: persist the new coordinates and re-resolve the ERA5 grid
+    # cell so future climatology matches the corrected location. Without this the
+    # PATCH silently dropped lat/lon and the pin snapped back on the next open.
+    if data.get("lat") is not None and data.get("lon") is not None:
+        from app.era5.grid import resolve_grid_cell
+
+        lat, lon = float(data["lat"]), float(data["lon"])
+        spot.location = _point(lat, lon)
+        spot.era5_cell = resolve_grid_cell(lat, lon)
     if "sports" in data and data["sports"] is not None:
         spot.sports = list(data["sports"])
     for col in ("water_type", "bottom_type", "model_pref"):
@@ -323,6 +332,26 @@ def set_spot_status(
     db.commit()
     db.refresh(spot)
     return {"spot_id": str(spot.id), "status": spot.status}
+
+
+def set_finish_rank(
+    spot_id, rank: str | None, *, db: Session, actor: str | None = "admin"
+) -> Any:
+    """Set or clear the manual "Fertigstellen" rank override.
+
+    ``rank`` is ``red``/``yellow``/``green`` to pin the traffic-light colour, or
+    ``None`` to fall back to the automatic value derived from readiness gaps.
+    """
+    from app.admin.rank import RANKS
+
+    if rank is not None and rank not in RANKS:
+        raise ValueError(f"invalid rank {rank!r}; use one of {RANKS} or null")
+    spot = _load(db, spot_id)
+    spot.finish_rank = rank
+    record_audit(db, spot.id, "rank", {"finish_rank": rank}, actor)
+    db.commit()
+    db.refresh(spot)
+    return spot
 
 
 def spot_effective_view(spot_id, *, db: Session) -> dict:

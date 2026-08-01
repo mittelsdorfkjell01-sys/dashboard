@@ -252,6 +252,41 @@ def recent_spots(db: Session, *, limit: int = 8) -> list[dict[str, Any]]:
     ]
 
 
+def ranked_spots(db: Session, *, limit: int = 500) -> list[dict[str, Any]]:
+    """Every spot with its "Fertigstellen" traffic-light rank.
+
+    The whole catalogue is being reworked, so this lists ALL spots (not just the
+    unfinished ones) with their readiness gaps and rank — a manual override
+    (``finish_rank``) wins over the automatic value. Ordered worst-first
+    (red → yellow → green) so the spots needing attention surface at the top."""
+    from app.admin.rank import auto_rank, effective_rank
+
+    rules = _required_rules(db)
+    jobs = _latest_job_status_map(db)
+    spots = db.scalars(select(Spot).order_by(Spot.name)).all()
+    out: list[dict[str, Any]] = []
+    for s in spots:
+        result = build_checklist(s, rules, job_status=jobs.get(s.id))
+        gaps = result["gaps"]
+        out.append(
+            {
+                "id": str(s.id),
+                "name": s.name,
+                "slug": s.slug,
+                "status": s.status,
+                "region_id": str(s.region_id) if s.region_id else None,
+                "gaps": gaps,
+                "ready": result["ready"],
+                "rank": effective_rank(gaps, s.finish_rank),
+                "rank_auto": auto_rank(gaps),
+                "finish_rank": s.finish_rank,
+            }
+        )
+    order = {"red": 0, "yellow": 1, "green": 2}
+    out.sort(key=lambda r: (order.get(r["rank"], 3), r["name"].lower()))
+    return out[:limit]
+
+
 def no_region_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:
     """Region-less spots (dragged out of every region). Surfaced at the top of
     the Übersicht (red) until a region is assigned."""
@@ -273,11 +308,15 @@ def overview(db: Session) -> dict[str, Any]:
     spots = _status_counts(db)
     regions_count = int(db.scalar(select(func.count()).select_from(Region)) or 0)
     open_gaps = not_live_gaps(db, limit=100)
+    ranked = ranked_spots(db)
     return {
         "spots": spots,
         "regions": regions_count,
         "readiness_open": len(open_gaps),
         "not_live": open_gaps[:20],
+        # Fertigstellen: every spot, ranked; the count is how many aren't green.
+        "finish": ranked,
+        "finish_open": sum(1 for r in ranked if r["rank"] != "green"),
         "no_region": no_region_spots(db),
         "drafts": draft_spots(db, limit=100),
         "recent": recent_spots(db),

@@ -44,3 +44,6 @@ class AdminUser(Base, TimestampMixin):
         Boolean, nullable=False, server_default=text("true")
     )
     last_login_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
+    # Presence heartbeat: refreshed (throttled) on every authenticated request
+    # so the user table can show a real online/offline indicator.
+    last_seen_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))

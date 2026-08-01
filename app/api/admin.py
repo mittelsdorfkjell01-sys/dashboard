@@ -45,6 +45,7 @@ from app.schemas.admin import (
     AssignRegionRequest,
     BulkAssignRegionRequest,
     BulkUnassignRegionRequest,
+    FinishRankRequest,
     ImageAttributionRequest,
     ImageRequest,
     OverrideRequest,
@@ -189,6 +190,23 @@ def update_spot(
         spot = admin_spots.update_spot(
             spot_id, body.to_data(), db=db, actor=actor
         )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return SpotRead.from_orm_spot(spot)
+
+
+@router.patch("/spots/{spot_id}/finish-rank", response_model=SpotRead)
+def set_finish_rank(
+    spot_id: uuid.UUID,
+    body: FinishRankRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+):
+    """Set/clear the manual Fertigstellen rank (red|yellow|green, or null=auto)."""
+    try:
+        spot = admin_spots.set_finish_rank(spot_id, body.rank, db=db, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
@@ -351,15 +369,29 @@ def readiness(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
 @router.post("/spots/{spot_id}/live")
 def go_live(
     spot_id: uuid.UUID,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
+    client=Depends(get_extract_client),
 ) -> dict:
     # Go-live is always allowed now; the response carries `ready`/`gaps` so the
     # UI can show a non-blocking disclaimer.
     try:
-        return admin_spots.set_spot_live(spot_id, db=db, actor=actor)
+        result = admin_spots.set_spot_live(spot_id, db=db, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+
+    # Auto-start the climatology (ERA5) on go-live when it isn't ready yet, so
+    # publishing always kicks off the background computation. Best-effort — a
+    # trigger failure must never block go-live.
+    if "climatology" in (result.get("gaps") or []):
+        try:
+            trigger_era5_job(spot_id, db=db, client=client)
+            _maybe_autoprocess_era5(background, spot_id, client)
+        except Exception:
+            db.rollback()
+
+    return result
 
 
 @router.post("/spots/{spot_id}/unpublish")

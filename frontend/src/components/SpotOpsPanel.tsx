@@ -10,12 +10,16 @@ import {
   getReadiness,
   getSpot,
   goLiveSpot,
+  setFinishRank as saveFinishRank,
   triggerEra5,
   unpublishSpot,
   type Era5Status,
+  type Rank,
   type Readiness,
 } from "../lib/api";
 import { gapLabel, statusLabel } from "../lib/labels";
+import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
+import RankControl from "./admin/RankControl";
 
 const ERA5_LABEL: Record<string, string> = {
   queued: "in Warteschlange",
@@ -36,6 +40,7 @@ export default function SpotOpsPanel({
 }) {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [overrides, setOverrides] = useState<Record<string, unknown> | null>(null);
+  const [rankOverride, setRankOverride] = useState<Rank | null>(null);
   const [era5, setEra5] = useState<Era5Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,8 +54,20 @@ export default function SpotOpsPanel({
     ]);
     setReadiness(r);
     setOverrides(spot?.overrides ?? null);
+    setRankOverride(spot?.finish_rank ?? null);
     setEra5(e);
   }, [spotId]);
+
+  const onRankChange = async (rank: Rank | null) => {
+    const prev = rankOverride;
+    setRankOverride(rank); // optimistic
+    try {
+      await saveFinishRank(spotId, rank);
+    } catch (e) {
+      setRankOverride(prev); // rollback
+      setError(e instanceof ApiError ? e.message : "Rang konnte nicht gesetzt werden.");
+    }
+  };
 
   useEffect(() => {
     void refresh();
@@ -100,6 +117,7 @@ export default function SpotOpsPanel({
 
   const overrideKeys = overrides ? Object.keys(overrides) : [];
   const era5Status = era5?.status ?? "none";
+  const rank = effectiveRank(readiness?.gaps ?? [], rankOverride);
 
   return (
     <div className="mt-6 rounded-2xl border border-line bg-white p-5">
@@ -115,6 +133,20 @@ export default function SpotOpsPanel({
             {statusLabel(readiness.status)}
           </span>
         )}
+      </div>
+
+      {/* Fertigstellen-Rang — „Auto" folgt den offenen Punkten; eine Farbe pinnt
+          den Rang manuell (dieselbe Steuerung wie in der Übersichtsliste). */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-band/50 px-3 py-2">
+        <span className="inline-flex items-center gap-2 text-label text-muted">
+          <span className={`h-2.5 w-2.5 rounded-full ${RANK_DOT[rank]}`} />
+          Fertigstellen-Rang:{" "}
+          <span className="font-medium text-ink">{RANK_LABEL[rank]}</span>
+          {rankOverride === null && (
+            <span className="text-caption text-muted">(automatisch)</span>
+          )}
+        </span>
+        <RankControl value={rankOverride} effective={rank} onChange={onRankChange} busy={busy} />
       </div>
 
       {notice && (

@@ -58,6 +58,10 @@ class Spot(Base, TimestampMixin):
         String(20), nullable=False, server_default=text("'draft'")
     )  # draft | published | archived
     confidence: Mapped[float | None] = mapped_column(Float)      # 0.0 .. 1.0
+    # Manual override for the "Fertigstellen" traffic-light rank (red|yellow|
+    # green). NULL = automatic (derived from readiness gaps). Set in the
+    # overview list or the editor's "Betrieb & Veröffentlichung" panel.
+    finish_rank: Mapped[str | None] = mapped_column(String(10))
     facing: Mapped[int | None] = mapped_column(SmallInteger)     # compass bearing 0..359
 
     editorial: Mapped[dict | None] = mapped_column(JSONB)

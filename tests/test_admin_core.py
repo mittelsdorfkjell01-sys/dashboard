@@ -115,6 +115,29 @@ def test_provenance_marks_overridden_fields():
     assert view["_overridden"] == ["level"]
 
 
+# --- Fertigstellen rank ----------------------------------------------------
+
+def test_auto_rank_traffic_light():
+    from app.admin.rank import auto_rank, effective_rank
+
+    assert auto_rank([]) == "green"                                   # nothing open
+    assert auto_rank(["water_type"]) == "yellow"                      # one point
+    assert auto_rank(["water_type", "level"]) == "yellow"             # two points
+    assert auto_rank(["water_type", "level", "bottom_type"]) == "red"  # > two points
+    assert auto_rank(["image"]) == "red"                             # hero image is important
+
+    # Climatology is soft: it keeps a spot yellow, never forces red, and never
+    # counts toward the "> two points" threshold.
+    assert auto_rank(["climatology"]) == "yellow"
+    assert auto_rank(["climatology", "water_type", "level"]) == "yellow"
+    assert auto_rank(["climatology", "image"]) == "red"  # image still forces red
+
+    # A valid override wins; anything else falls back to the auto value.
+    assert effective_rank(["image"], "green") == "green"
+    assert effective_rank(["image"], None) == "red"
+    assert effective_rank([], "bogus") == "green"
+
+
 # --- stock seam ------------------------------------------------------------
 
 def test_fetch_region_stock_image_uses_client():

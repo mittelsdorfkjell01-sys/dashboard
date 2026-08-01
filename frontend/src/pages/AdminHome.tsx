@@ -5,9 +5,17 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError, getAdminOverview, type AdminOverview } from "../lib/api";
+import {
+  ApiError,
+  getAdminOverview,
+  setFinishRank,
+  type AdminOverview,
+  type Rank,
+} from "../lib/api";
 import { gapLabel } from "../lib/labels";
-import TeamBoard from "../components/admin/TeamBoard";
+import { autoRank, RANK_CARD, RANK_DOT } from "../lib/rank";
+import BoardPanel from "../components/admin/BoardPanel";
+import RankControl from "../components/admin/RankControl";
 
 type Tone = "red" | "orange" | "teal";
 interface Task {
@@ -53,12 +61,42 @@ function buildTasks(data: AdminOverview): Task[] {
 export default function AdminHome() {
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rankBusyId, setRankBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     getAdminOverview()
       .then(setData)
       .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen."));
   }, []);
+
+  // Set/clear a spot's manual rank from the list — optimistic, rolls back on
+  // failure. Position is kept (no re-sort) so the row doesn't jump under the
+  // cursor; a reload re-orders worst-first.
+  const onRank = async (spotId: string, rank: Rank | null) => {
+    if (!data) return;
+    const snapshot = data.finish;
+    setRankBusyId(spotId);
+    setData((d) =>
+      d
+        ? {
+            ...d,
+            finish: d.finish.map((f) =>
+              f.id === spotId
+                ? { ...f, finish_rank: rank, rank: rank ?? autoRank(f.gaps) }
+                : f
+            ),
+          }
+        : d
+    );
+    try {
+      await setFinishRank(spotId, rank);
+    } catch (e) {
+      setData((d) => (d ? { ...d, finish: snapshot } : d)); // rollback
+      setError(e instanceof ApiError ? e.message : "Rang konnte nicht gesetzt werden.");
+    } finally {
+      setRankBusyId(null);
+    }
+  };
 
   if (error)
     return (
@@ -110,6 +148,16 @@ export default function AdminHome() {
         </section>
       )}
 
+      {/* Team board — directly under the region-less (red) block, above the
+          "Fertigstellen" working list. Replaces the old Team-Notizen. */}
+      <section className="mt-6">
+        <h2 className="text-body font-semibold text-ink">Board</h2>
+        <p className="mt-1 text-label text-muted">Aufgaben fürs Team.</p>
+        <div className="mt-3">
+          <BoardPanel />
+        </div>
+      </section>
+
       {/* Was ist zu tun? — the prioritized action list */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-line bg-white">
         {tasks.length === 0 ? (
@@ -145,38 +193,43 @@ export default function AdminHome() {
         </div>
       )}
 
-      {/* Kanban board — team tasks, kept above the fold (above "Fertigstellen"). */}
-      <TeamBoard />
-
-      {/* Unfinished spots — one place. The count is the true open total; the list
-          shows the first ones with a link to the rest. */}
+      {/* Fertigstellen — the whole catalogue is being reworked, so every spot is
+          listed here with its traffic-light rank (worst first). The count is how
+          many still need work (not green). Rank can be set per row (Auto = derived
+          from the open points; a colour pins it manually). */}
       <section className="mt-6">
-        <Panel title="Fertigstellen" count={data.readiness_open}>
-          {data.not_live.length === 0 ? (
-            <Empty>Keine unfertigen Spots. 🎉</Empty>
+        <Panel
+          title="Fertigstellen"
+          count={data.finish.filter((f) => f.rank !== "green").length}
+        >
+          {data.finish.length === 0 ? (
+            <Empty>Keine Spots.</Empty>
           ) : (
-            <>
-              {data.not_live.map((s) => (
+            data.finish.map((s) => (
+              <div
+                key={s.id}
+                className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${RANK_CARD[s.rank]}`}
+              >
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${RANK_DOT[s.rank]}`} />
                 <Link
-                  key={s.id}
                   to={`/admin/spot/${s.id}/edit`}
-                  className="block rounded-lg bg-orange/5 p-3 transition-colors hover:bg-orange/10"
+                  className="min-w-0 flex-1 hover:underline"
                 >
-                  <p className="text-label font-medium text-ink">{s.name}</p>
-                  <p className="mt-0.5 text-caption text-muted">
-                    Fehlt: {s.gaps.map(gapLabel).join(", ")}
-                  </p>
+                  <span className="text-label font-medium text-ink">{s.name}</span>
+                  <span className="mt-0.5 block text-caption text-muted">
+                    {s.gaps.length === 0
+                      ? "Fertig — nichts offen"
+                      : `Offen: ${s.gaps.map(gapLabel).join(", ")}`}
+                  </span>
                 </Link>
-              ))}
-              {data.readiness_open > data.not_live.length && (
-                <Link
-                  to="/admin/spots?status=draft"
-                  className="block rounded-lg p-2 text-center text-caption font-medium text-teal hover:bg-teal/5"
-                >
-                  +{data.readiness_open - data.not_live.length} weitere anzeigen →
-                </Link>
-              )}
-            </>
+                <RankControl
+                  value={s.finish_rank}
+                  effective={s.rank}
+                  busy={rankBusyId === s.id}
+                  onChange={(r) => onRank(s.id, r)}
+                />
+              </div>
+            ))
           )}
         </Panel>
       </section>

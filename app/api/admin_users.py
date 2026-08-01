@@ -33,6 +33,7 @@ class AdminUserOut(BaseModel):
     role: str
     is_active: bool
     last_login_at: str | None = None
+    last_seen_at: str | None = None
     created_at: str
 
     @classmethod
@@ -44,6 +45,7 @@ class AdminUserOut(BaseModel):
             role=u.role,
             is_active=u.is_active,
             last_login_at=u.last_login_at.isoformat() if u.last_login_at else None,
+            last_seen_at=u.last_seen_at.isoformat() if u.last_seen_at else None,
             created_at=u.created_at.isoformat(),
         )
 

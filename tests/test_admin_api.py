@@ -471,6 +471,61 @@ def test_spot_patch_current_and_forced_updated_at_succeed(admin, region_id):
     assert forced.json()["name"] == "Forced"
 
 
+def test_spot_patch_moves_pin_and_reresolves_era5_cell(admin, region_id):
+    """Correcting the pin (lat/lon) must persist — regression: SpotUpdate used to
+    drop lat/lon, so the marker snapped back on the next open."""
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    old_cell = spot["era5_cell"]
+
+    resp = admin.patch(f"/admin/spots/{sid}", json={"lat": 28.09, "lon": -14.35})
+    assert resp.status_code == 200, resp.text
+    # PATCH response is refreshed from the DB → proves the write persisted.
+    assert resp.json()["location"]["lat"] == pytest.approx(28.09)
+    assert resp.json()["location"]["lon"] == pytest.approx(-14.35)
+    # A large move must land in a different ERA5 grid cell.
+    assert resp.json()["era5_cell"] != old_cell
+
+    # And the form's own load path (public GET) reflects it on the next open.
+    reloaded = admin.get(f"/spots/{sid}").json()
+    assert reloaded["location"]["lat"] == pytest.approx(28.09)
+    assert reloaded["location"]["lon"] == pytest.approx(-14.35)
+
+
+def test_finish_rank_auto_and_manual_override(admin, region_id):
+    """Overview ranks every spot (red/yellow/green); a manual override wins and
+    can be cleared back to the automatic value."""
+    spot = _create_spot(admin, region_id)  # no hero image → important gap
+    sid = spot["id"]
+
+    entry = next(r for r in admin.get("/admin/overview").json()["finish"] if r["id"] == sid)
+    assert entry["rank"] == "red"          # missing hero image forces red
+    assert entry["rank_auto"] == "red"
+    assert entry["finish_rank"] is None
+
+    resp = admin.patch(f"/admin/spots/{sid}/finish-rank", json={"rank": "green"})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["finish_rank"] == "green"
+
+    entry2 = next(r for r in admin.get("/admin/overview").json()["finish"] if r["id"] == sid)
+    assert entry2["rank"] == "green"       # override shown
+    assert entry2["rank_auto"] == "red"    # auto untouched
+
+    admin.patch(f"/admin/spots/{sid}/finish-rank", json={"rank": None})
+    entry3 = next(r for r in admin.get("/admin/overview").json()["finish"] if r["id"] == sid)
+    assert entry3["rank"] == "red" and entry3["finish_rank"] is None
+
+    assert admin.patch(f"/admin/spots/{sid}/finish-rank", json={"rank": "purple"}).status_code == 422
+
+
+def test_authenticated_request_records_presence_heartbeat(admin):
+    """Any authenticated admin request refreshes the acting user's last_seen_at,
+    which powers the online/offline indicator in the user table."""
+    users = admin.get("/admin/users").json()
+    me = next(u for u in users if u["email"] == "admin@test.local")
+    assert me["last_seen_at"] is not None
+
+
 def test_region_patch_stale_updated_at_conflicts(admin, region_id):
     current = admin.get(f"/admin/regions/{region_id}").json()
 

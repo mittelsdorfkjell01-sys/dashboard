@@ -55,6 +55,15 @@ export default function AdminUsers() {
     getMe().then(setMe).catch(() => setMe(null));
   }, []);
 
+  // Keep the online/offline dots live in the background — refetch presence
+  // without the full-page "Lädt…" flash a normal load() would trigger.
+  useEffect(() => {
+    const id = setInterval(() => {
+      getAdminUsers().then(setUsers).catch(() => {});
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const flash = (msg: string) => {
     setNotice(msg);
     setTimeout(() => setNotice(null), 2500);
@@ -66,6 +75,12 @@ export default function AdminUsers() {
     (u) => u.role === "admin" && u.is_active
   ).length;
   const isSelf = (u: AdminUserRecord) => me?.id === u.id;
+  // Online = seen within the heartbeat window (backend refreshes last_seen_at on
+  // every request, throttled to ~1/min). A deactivated account is never online.
+  const isOnline = (u: AdminUserRecord) =>
+    u.is_active &&
+    !!u.last_seen_at &&
+    Date.now() - new Date(u.last_seen_at).getTime() < 5 * 60 * 1000;
   const isLastActiveAdmin = (u: AdminUserRecord) =>
     u.role === "admin" && u.is_active && activeAdminCount <= 1;
 
@@ -207,13 +222,19 @@ export default function AdminUsers() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 text-label font-medium ${
-                          u.is_active ? "text-green" : "text-muted"
-                        }`}
-                      >
-                        {u.is_active ? "● Aktiv" : "○ Inaktiv"}
-                      </span>
+                      {!u.is_active ? (
+                        <span className="inline-flex items-center gap-1.5 text-label font-medium text-muted">
+                          ○ Deaktiviert
+                        </span>
+                      ) : isOnline(u) ? (
+                        <span className="inline-flex items-center gap-1.5 text-label font-medium text-green">
+                          ● Online
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-label font-medium text-muted">
+                          ○ Offline
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-label text-muted">
                       {u.last_login_at

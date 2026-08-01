@@ -80,6 +80,7 @@ class SpotRead(BaseModel):
     climatology: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
     image: dict[str, Any] | None = None
+    finish_rank: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -108,6 +109,7 @@ class SpotRead(BaseModel):
             climatology=spot.climatology,
             overrides=spot.overrides,
             image=spot.image,
+            finish_rank=getattr(spot, "finish_rank", None),
             created_at=spot.created_at,
             updated_at=spot.updated_at,
         )

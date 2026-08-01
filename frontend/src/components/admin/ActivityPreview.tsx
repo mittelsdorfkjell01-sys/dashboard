@@ -14,9 +14,10 @@ import type { FacilityKind } from "../../lib/api";
 import Modal from "../ui/Modal";
 
 /**
- * Activity preview (Variante A). Clicking a spot activity opens a read-only
- * preview of the spot's form fields; the fields the audit recorded as changed
- * get a green highlight + a "geändert" badge and are floated to the top.
+ * Activity preview. Clicking a spot activity opens a read-only view laid out
+ * like the spot editor — the same sections in the same order — so it reads as
+ * "the form". The fields the audit recorded as changed keep the form order but
+ * get a green stroke + a "geändert" badge.
  *
  * The audit only stores WHICH fields changed (not the old values), so this
  * shows the spot's CURRENT values with the changed ones marked — no true
@@ -35,32 +36,58 @@ interface FieldDef {
   value: (s: SpotRead) => ReactNode;
 }
 
-// The main form fields, in form order. `key` matches the audit field keys
-// (see app/admin/team.py::_changed_fields) so we can flag what changed.
-const FIELDS: FieldDef[] = [
-  { key: "name", label: "Name", value: (s) => s.name || "—" },
-  { key: "sports", label: "Sportarten", value: (s) => s.sports.map(sportLabel).join(", ") || "—" },
-  { key: "level", label: "Level", value: (s) => levelLabel(s.level) || "—" },
-  { key: "water_type", label: "Gewässerart", value: (s) => s.water_type ?? "—" },
-  { key: "bottom_type", label: "Untergrund", value: (s) => s.bottom_type ?? "—" },
-  { key: "water_character", label: "Wasserart", value: (s) => waterCharacterLabel(s.water_character) || "—" },
-  { key: "style", label: "Fahrstil", value: (s) => styleList(s.style) || "—" },
-  { key: "facilities", label: "Ausstattung", value: (s) => facilitiesSummary(s.facilities) },
-  { key: "editorial.description", label: "Beschreibung", value: (s) => s.editorial?.description ?? "—" },
-  { key: "editorial.tide", label: "Gezeiten", value: (s) => s.editorial?.tide ?? "—" },
+interface Section {
+  title: string;
+  fields: FieldDef[];
+}
+
+// The spot editor's sections, in editor order. `key` matches the audit field
+// keys (see app/admin/team.py::_changed_fields) so we can flag what changed.
+const SECTIONS: Section[] = [
   {
-    key: "editorial.usable_wind_directions",
-    label: "Nutzbare Windrichtungen",
-    value: (s) => {
-      const w = s.editorial?.usable_wind_directions;
-      return Array.isArray(w) ? w.join(", ") || "—" : w ?? "—";
-    },
+    title: "Grunddaten",
+    fields: [{ key: "name", label: "Name", value: (s) => s.name || "—" }],
   },
-  { key: "image", label: "Titelbild", value: (s) => (s.image?.url ? "gesetzt" : "—") },
-  { key: "climatology", label: "Klimatologie", value: (s) => (s.climatology?.weeks ? "vorhanden" : "—") },
+  {
+    title: "Sportarten & Eigenschaften",
+    fields: [
+      { key: "sports", label: "Sportarten", value: (s) => s.sports.map(sportLabel).join(", ") || "—" },
+      { key: "level", label: "Level", value: (s) => levelLabel(s.level) || "—" },
+      { key: "water_type", label: "Gewässerart", value: (s) => s.water_type ?? "—" },
+      { key: "bottom_type", label: "Untergrund", value: (s) => s.bottom_type ?? "—" },
+      { key: "water_character", label: "Wasserart", value: (s) => waterCharacterLabel(s.water_character) || "—" },
+      { key: "style", label: "Fahrstil", value: (s) => styleList(s.style) || "—" },
+    ],
+  },
+  {
+    title: "Ausstattung",
+    fields: [{ key: "facilities", label: "Ausstattung", value: (s) => facilitiesSummary(s.facilities) }],
+  },
+  {
+    title: "Redaktionell",
+    fields: [
+      { key: "editorial.description", label: "Beschreibung", value: (s) => s.editorial?.description ?? "—" },
+      { key: "editorial.tide", label: "Gezeiten", value: (s) => s.editorial?.tide ?? "—" },
+      {
+        key: "editorial.usable_wind_directions",
+        label: "Nutzbare Windrichtungen",
+        value: (s) => {
+          const w = s.editorial?.usable_wind_directions;
+          return Array.isArray(w) ? w.join(", ") || "—" : w ?? "—";
+        },
+      },
+    ],
+  },
+  {
+    title: "Medien & Daten",
+    fields: [
+      { key: "image", label: "Titelbild", value: (s) => (s.image?.url ? "gesetzt" : "—") },
+      { key: "climatology", label: "Klimatologie", value: (s) => (s.climatology?.weeks ? "vorhanden" : "—") },
+    ],
+  },
 ];
 
-const KNOWN = new Set(FIELDS.map((f) => f.key));
+const KNOWN = new Set(SECTIONS.flatMap((sec) => sec.fields.map((f) => f.key)));
 
 // Best-effort value for a changed key that isn't in the curated list above.
 function genericValue(s: SpotRead, key: string): string {
@@ -71,6 +98,36 @@ function genericValue(s: SpotRead, key: string): string {
   if (Array.isArray(v)) return v.join(", ") || "—";
   if (typeof v === "object") return "geändert";
   return String(v);
+}
+
+function FieldRow({
+  label,
+  changed,
+  children,
+}: {
+  label: string;
+  changed: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`rounded-lg px-3 py-2 ${
+        changed
+          ? "border border-green/40 bg-green/10 ring-1 ring-green/30"
+          : "border border-line bg-white"
+      }`}
+    >
+      <dt className="flex items-center gap-2 text-caption text-muted">
+        {label}
+        {changed && (
+          <span className="rounded-full bg-green/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green">
+            geändert
+          </span>
+        )}
+      </dt>
+      <dd className="mt-0.5 whitespace-pre-wrap break-words text-label text-ink">{children}</dd>
+    </div>
+  );
 }
 
 export default function ActivityPreview({
@@ -99,21 +156,8 @@ export default function ActivityPreview({
   if (!open || !item) return null;
 
   const changed = new Set(item.fields);
-
-  // Curated rows (mark changed) + any changed key not covered by the curated set.
-  const rows = FIELDS.map((f) => ({ ...f, changed: changed.has(f.key) }));
-  const extras = item.fields
-    .filter((k) => !KNOWN.has(k))
-    .map((k) => ({
-      key: k,
-      label: gapLabel(k),
-      value: (s: SpotRead) => genericValue(s, k),
-      changed: true,
-    }));
-  // Changed first, otherwise keep form order.
-  const ordered = [...rows, ...extras].sort(
-    (a, b) => Number(b.changed) - Number(a.changed)
-  );
+  // Changed keys the curated sections don't cover (shown in an extra section).
+  const extras = item.fields.filter((k) => !KNOWN.has(k));
 
   return (
     <Modal open={open} onClose={onClose} labelledBy="activity-preview-title">
@@ -145,36 +189,42 @@ export default function ActivityPreview({
         </p>
       )}
 
-      <div className="mt-3 max-h-[55vh] overflow-y-auto pr-1">
+      <div className="mt-3 max-h-[55vh] space-y-4 overflow-y-auto pr-1">
         {loading ? (
           <p className="py-6 text-center text-label text-muted">Lädt…</p>
         ) : error ? (
           <p className="py-6 text-center text-label text-red-600">{error}</p>
         ) : spot ? (
-          <dl className="space-y-1.5">
-            {ordered.map((f) => (
-              <div
-                key={f.key}
-                className={`rounded-lg px-3 py-2 ${
-                  f.changed
-                    ? "border border-green/40 bg-green/10 ring-1 ring-green/30"
-                    : "border border-line bg-white"
-                }`}
-              >
-                <dt className="flex items-center gap-2 text-caption text-muted">
-                  {f.label}
-                  {f.changed && (
-                    <span className="rounded-full bg-green/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green">
-                      geändert
-                    </span>
-                  )}
-                </dt>
-                <dd className="mt-0.5 whitespace-pre-wrap break-words text-label text-ink">
-                  {f.value(spot)}
-                </dd>
-              </div>
+          <>
+            {SECTIONS.map((section) => (
+              <section key={section.title}>
+                <p className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-muted">
+                  {section.title}
+                </p>
+                <dl className="space-y-1.5">
+                  {section.fields.map((f) => (
+                    <FieldRow key={f.key} label={f.label} changed={changed.has(f.key)}>
+                      {f.value(spot)}
+                    </FieldRow>
+                  ))}
+                </dl>
+              </section>
             ))}
-          </dl>
+            {extras.length > 0 && (
+              <section>
+                <p className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-muted">
+                  Weitere Änderungen
+                </p>
+                <dl className="space-y-1.5">
+                  {extras.map((k) => (
+                    <FieldRow key={k} label={gapLabel(k)} changed>
+                      {genericValue(spot, k)}
+                    </FieldRow>
+                  ))}
+                </dl>
+              </section>
+            )}
+          </>
         ) : null}
       </div>
     </Modal>
