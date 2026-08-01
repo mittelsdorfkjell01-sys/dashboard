@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import LandingHeader from "../components/LandingHeader";
 import HeroImage from "../components/HeroImage";
-import LiquidReveal from "../components/LiquidReveal";
 import SearchBar from "../components/SearchBar";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotTile from "../components/SpotTile";
@@ -27,10 +26,6 @@ export default function Landing() {
   return (
     <div className="relative bg-white">
       <LandingHeader />
-
-      {/* System B — page-replacement transition. Autonomous (see LiquidReveal);
-          the hero below stays fully static. */}
-      <LiquidReveal />
 
       {/* 1 — Hero screen. `isolate` gives the section its own stacking context so
           the -z-10 hero stays behind the section's own content instead of
@@ -88,7 +83,7 @@ export default function Landing() {
           </p>
 
           {spots.length > 0 && (
-            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="mt-8 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {spots.map((spot) => (
                 <SpotTile key={spot.id} spot={spot} />
               ))}

@@ -3,7 +3,8 @@ import SpotTile from "./SpotTile";
 import { ErrorBanner } from "./AsyncStates";
 
 // One full-width row on desktop; tiles wrap on smaller screens.
-const GRID = "grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-10 lg:grid-cols-5";
+const GRID =
+  "grid auto-rows-fr grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-10 lg:grid-cols-5";
 const MAX_TILES = 5;
 
 function RowSkeleton() {
@@ -12,9 +13,9 @@ function RowSkeleton() {
       {Array.from({ length: MAX_TILES }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-3xl border border-line bg-white shadow-card"
+          className="overflow-hidden rounded-3xl border border-line bg-white"
         >
-          <div className="aspect-[4/3] animate-pulse bg-line" />
+          <div className="aspect-video animate-pulse bg-line" />
           <div className="space-y-2 p-3.5">
             <div className="h-2 w-1/3 animate-pulse rounded bg-line" />
             <div className="h-3.5 w-2/3 animate-pulse rounded bg-line" />

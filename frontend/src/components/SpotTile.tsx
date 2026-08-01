@@ -15,16 +15,11 @@ export default function SpotTile({ spot }: { spot: Spot }) {
   return (
     <Link
       to={`/spot/${id}`}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-white shadow-card transition-shadow duration-300 hover:shadow-float"
+      className="flex h-full flex-col overflow-hidden rounded-3xl border border-line bg-white"
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <SpotImage
-          src={spot.image}
-          name={spot.name}
-          region={spot.region}
-          compact
-          className="transition-transform duration-500 group-hover:scale-105"
-        />
+      {/* 16:9 image, fixed width by the grid cell — no hover zoom. */}
+      <div className="relative aspect-video overflow-hidden">
+        <SpotImage src={spot.image} name={spot.name} region={spot.region} compact />
       </div>
 
       <div className="flex flex-1 flex-col p-3.5">
