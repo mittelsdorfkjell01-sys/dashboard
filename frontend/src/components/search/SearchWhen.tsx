@@ -116,30 +116,16 @@ export default function SearchWhen({
   const months = [anchor, addMonth(anchor, 1)];
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Open time axis — "unentschlossen" → ranks the best weeks for the place. */}
-      <button
-        type="button"
-        onClick={() => onChange(isOpen ? null : { mode: "open" })}
-        className={`self-start rounded-2xl border px-3 py-1 text-[12px] font-medium transition-colors ${
-          isOpen
-            ? "border-teal bg-teal/10 text-teal"
-            : "border-teal/50 text-teal hover:bg-teal/5"
-        }`}
-      >
-        unentschlossen
-      </button>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-6">
       <div
         aria-disabled={calDisabled}
-        className={`flex flex-1 gap-5 transition-opacity ${
+        className={`flex flex-1 gap-4 transition-opacity ${
           calDisabled ? "pointer-events-none opacity-40" : ""
         }`}
       >
         {months.map((mm, idx) => (
           <div key={idx} className="flex-1">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, -1))}
@@ -160,9 +146,9 @@ export default function SearchWhen({
                 <ChevR className="text-[16px]" />
               </button>
             </div>
-            <div className="grid grid-cols-7 gap-y-1">
+            <div className="grid grid-cols-7 gap-y-0.5">
               {WEEKDAYS.map((w) => (
-                <span key={w} className="pb-1 text-center text-[11px] font-medium text-muted">
+                <span key={w} className="pb-0.5 text-center text-[11px] font-medium text-muted">
                   {w}
                 </span>
               ))}
@@ -172,7 +158,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-9 w-9 place-items-center rounded-xl text-[12px] transition-colors ${
+                    className={`mx-auto grid h-8 w-8 place-items-center rounded-xl text-[12px] transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -253,7 +239,6 @@ export default function SearchWhen({
         >
           Zurücksetzen
         </button>
-      </div>
       </div>
     </div>
   );

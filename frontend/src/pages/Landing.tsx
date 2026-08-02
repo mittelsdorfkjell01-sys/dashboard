@@ -46,9 +46,9 @@ export default function Landing() {
 
         <div className="flex-1" />
 
-        {/* Search — sits higher in the hero so its dropdown has room below and
-            never gets clipped at the viewport bottom. */}
-        <div className="flex justify-center px-4 pb-44 sm:px-6 sm:pb-52">
+        {/* Search — sits high in the hero so the (compact) dropdown always fits
+            above the fold and never reaches into the white spots section. */}
+        <div className="flex justify-center px-4 pb-56 sm:px-6 sm:pb-64">
           <div className="relative z-[1200] w-full max-w-[760px]">
             <SearchBar />
           </div>

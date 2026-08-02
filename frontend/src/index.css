@@ -82,6 +82,12 @@
   textarea.comment-field:focus-visible {
     outline: none !important;
   }
+
+  /* The "Wohin?" search field is a borderless Tippleiste inside the search bar —
+     it carries no focus outline at all (the open panel is the affordance). */
+  .search-plain:focus-visible {
+    outline: none !important;
+  }
 }
 
 @layer utilities {

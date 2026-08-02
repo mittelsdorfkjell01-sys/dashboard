@@ -113,9 +113,12 @@ def list_top_spots(
     provider is unreachable), it degrades to a plain published list instead of
     500-ing, so the landing row always renders.
     """
+    # Over-fetch a few extra candidates so a single spot dropped by
+    # _safe_summaries (malformed data) doesn't shrink the row below `limit`.
+    fetch_n = min(limit + 3, 20)
     try:
         ids = discovery.top_spot_ids(
-            db, limit=limit, sport=sport, client=client, cache=cache
+            db, limit=fetch_n, sport=sport, client=client, cache=cache
         )
     except Exception:
         logger.exception("featured top-spots ranking failed — serving published list")
@@ -130,10 +133,11 @@ def list_top_spots(
         stmt = select(Spot).where(Spot.status == "published")
         if sport is not None:
             stmt = stmt.where(Spot.sports.any(sport))
-        ordered = list(db.scalars(stmt.order_by(Spot.name).limit(limit)))
+        ordered = list(db.scalars(stmt.order_by(Spot.name).limit(fetch_n)))
 
     set_public_cache(response)
-    return _safe_summaries(ordered)
+    # Serialize (dropping any malformed rows), then trim to the requested count.
+    return _safe_summaries(ordered)[:limit]
 
 
 @router.get("/live", response_model=list[LiveConditionsRead], tags=["live"])
