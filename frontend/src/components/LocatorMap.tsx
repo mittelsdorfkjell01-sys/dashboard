@@ -1,10 +1,36 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MlMap } from "maplibre-gl";
+import maplibregl, {
+  type Map as MlMap,
+  type StyleSpecification,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { mapLinkProps } from "../lib/mapLinks";
 import { MinusIcon, PlusIcon } from "../lib/icons";
 
 const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
+
+// The designed look is the MapTiler "outdoor-v2" vector style (terrain relief +
+// filtered POIs), which needs VITE_MAPTILER_KEY. When that key isn't set (e.g.
+// the env var isn't configured on the deploy), fall back to keyless CARTO raster
+// tiles so the map still works — just without the terrain/POI styling — instead
+// of showing a raw configuration error to visitors.
+const RASTER_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    basemap: {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+      ],
+      tileSize: 256,
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+};
 
 // Orange teardrop pin (same look as the old Leaflet marker).
 const PIN_SVG = `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
@@ -35,10 +61,12 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!KEY || !containerRef.current || mapRef.current) return;
+    if (!containerRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${KEY}`,
+      style: KEY
+        ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${KEY}`
+        : RASTER_STYLE,
       center: [lng, lat],
       zoom: 12.5,
       pitch: 0, // flat top-down view
@@ -50,28 +78,26 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
     map.on("load", () => {
-      // Keep the built-in 2D relief (Hillshade) for the "Gelände" look, but no
-      // 3D terrain tilt — the map reads normally from above.
-
-      // Filtering: keep place names (source-layer "place") + the three wanted
-      // POI symbol layers; hide every other symbol (road/water/contour labels,
-      // shops, sport, culture, …) AND the long-distance trail lines (the bright
-      // orange lines that read like coloured motorways). Then narrow
-      // Transport→parking, Tourism→campsite.
-      for (const layer of map.getStyle().layers ?? []) {
-        const src = (layer as { "source-layer"?: string })["source-layer"];
-        if (layer.type === "symbol") {
-          const keep = src === "place" || ["Food", "Transport", "Tourism"].includes(layer.id);
-          map.setLayoutProperty(layer.id, "visibility", keep ? "visible" : "none");
-        } else if (src === "trail") {
-          map.setLayoutProperty(layer.id, "visibility", "none");
+      // Vector-style only: keep the built-in 2D relief, keep place names +
+      // Food/Transport/Tourism POIs, hide other symbols + trail lines, then
+      // narrow Transport→parking, Tourism→campsite. The raster fallback has no
+      // such layers, so this is skipped there.
+      if (KEY) {
+        for (const layer of map.getStyle().layers ?? []) {
+          const src = (layer as { "source-layer"?: string })["source-layer"];
+          if (layer.type === "symbol") {
+            const keep = src === "place" || ["Food", "Transport", "Tourism"].includes(layer.id);
+            map.setLayoutProperty(layer.id, "visibility", keep ? "visible" : "none");
+          } else if (src === "trail") {
+            map.setLayoutProperty(layer.id, "visibility", "none");
+          }
         }
-      }
-      if (map.getLayer("Transport")) {
-        map.setFilter("Transport", ["all", ["==", "$type", "Point"], ["in", "class", "parking", "parking_garage", "parking_paid"]]);
-      }
-      if (map.getLayer("Tourism")) {
-        map.setFilter("Tourism", ["all", ["==", "$type", "Point"], ["==", "class", "campsite"]]);
+        if (map.getLayer("Transport")) {
+          map.setFilter("Transport", ["all", ["==", "$type", "Point"], ["in", "class", "parking", "parking_garage", "parking_paid"]]);
+        }
+        if (map.getLayer("Tourism")) {
+          map.setFilter("Tourism", ["all", ["==", "$type", "Point"], ["==", "class", "campsite"]]);
+        }
       }
 
       const el = document.createElement("div");
@@ -106,14 +132,6 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       map.off("click", lock);
     };
   }, [active]);
-
-  if (!KEY) {
-    return (
-      <div className="grid h-[440px] w-full place-items-center rounded-3xl border border-line bg-band px-6 text-center text-caption text-muted sm:h-[540px]">
-        Karte nicht konfiguriert — <code>VITE_MAPTILER_KEY</code> fehlt.
-      </div>
-    );
-  }
 
   return (
     <div className="relative overflow-hidden rounded-3xl">
