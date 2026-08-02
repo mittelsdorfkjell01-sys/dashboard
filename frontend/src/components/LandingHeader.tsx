@@ -1,57 +1,81 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { Wordmark } from "./ui";
 import AccountMenu from "./AccountMenu";
 
 /**
- * Landing-only top bar for the "surfwind data" design (Frame_1 / Frame_5).
- * Transparent over the hero: caps tagline (left), wordmark (centre), the "Füge
- * Spots hinzu" link (admin build) and the shared account menu. The map button
- * lives down by the "aktuelle Top Spots" title (see Landing), not up here.
- *
- * Deliberately separate from the shared `Header.tsx` (which the map and search
- * pages reuse with a centred brand).
+ * Top bar for the hero pages. By default it's transparent and absolute over the
+ * hero (spot/region pages keep this). With `sticky`, it's fixed and turns into a
+ * solid, slightly smaller sticky bar once the hero is scrolled past (~half a
+ * viewport) — a hairline + translucent blur appear, the padding tightens and the
+ * wordmark steps down to its compact size. Used on the landing.
  */
 export default function LandingHeader({
   left,
   width = "wide",
+  sticky = false,
 }: {
   left?: ReactNode;
-  /** `"body"` snaps the bar to the 1180px content column (spot page) so the
-   *  back pill and account menu line up with the body's outer edges; `"wide"`
-   *  is the landing default. */
+  /** `"body"` snaps the bar to the 1180px content column (spot page). */
   width?: "wide" | "body";
+  /** Fixed bar that solidifies + shrinks on scroll (landing). */
+  sticky?: boolean;
 }) {
-  const container =
-    width === "body"
-      ? "mx-auto max-w-[1180px] px-4 pt-9 sm:px-8 sm:pt-12"
-      : "mx-auto max-w-[1500px] px-4 pt-9 sm:px-10 sm:pt-12";
+  const [solid, setSolid] = useState(false);
+  useEffect(() => {
+    if (!sticky) return;
+    // Solidify exactly when the search bar has scrolled up to meet the header —
+    // i.e. the wordmark bar "catches" the search bar. Falls back to half-a-
+    // viewport when the search bar isn't on the page (other hero pages).
+    const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
+    const onScroll = () => {
+      const search = document.getElementById("landing-search");
+      if (search) setSolid(search.getBoundingClientRect().top <= TRIGGER_Y);
+      else setSolid(window.scrollY > window.innerHeight * 0.5);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [sticky]);
+
+  const innerWidth = width === "body" ? "max-w-[1180px] sm:px-8" : "max-w-[1500px] sm:px-10";
+
   return (
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000]">
-      <div className={container}>
+    <header
+      className={`${sticky ? "fixed" : "absolute"} inset-x-0 top-0 z-[1000] transition-[background-color,box-shadow] duration-200 ${
+        solid
+          ? "bg-white/85 shadow-[0_1px_0_rgba(36,28,23,0.08)] backdrop-blur"
+          : "pointer-events-none bg-transparent"
+      }`}
+    >
+      <div
+        className={`mx-auto px-4 transition-[padding] duration-200 ${innerWidth} ${
+          solid ? "py-2.5" : sticky ? "py-6 sm:py-8" : "pt-9 sm:pt-12"
+        }`}
+      >
         <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-          {/* Left — caps tagline, or a page-specific slot (e.g. the spot
-              page's "Zurück" pill). `justify-self-start` keeps a pill at its
-              natural width instead of stretching across the whole 1fr column. */}
           <div className="justify-self-start">
-            {left ?? (
-              <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
-                Best collection of surfspots
-              </span>
-            )}
+            {left ??
+              (!solid && (
+                <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
+                  Best collection of surfspots
+                </span>
+              ))}
           </div>
 
-          {/* Centre — wordmark */}
           <Link
             to="/"
             aria-label="surfwind data — Startseite"
             className="col-start-2 select-none justify-self-center leading-none"
           >
-            <Wordmark size="xl" />
+            <Wordmark size={solid ? "md" : "xl"} />
           </Link>
 
-          {/* Right — add-spot link + account menu */}
           <div className="col-start-3 flex items-center justify-end gap-3 sm:gap-5">
             {INCLUDE_ADMIN && (
               <Link
