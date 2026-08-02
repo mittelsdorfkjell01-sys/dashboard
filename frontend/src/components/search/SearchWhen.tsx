@@ -116,7 +116,7 @@ export default function SearchWhen({
   const months = [anchor, addMonth(anchor, 1)];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* Open time axis — "unentschlossen" → ranks the best weeks for the place. */}
       <button
         type="button"
@@ -130,10 +130,10 @@ export default function SearchWhen({
         unentschlossen
       </button>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
       <div
         aria-disabled={calDisabled}
-        className={`flex flex-1 gap-8 transition-opacity ${
+        className={`flex flex-1 gap-5 transition-opacity ${
           calDisabled ? "pointer-events-none opacity-40" : ""
         }`}
       >
@@ -172,7 +172,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-10 w-10 place-items-center rounded-2xl text-[13px] transition-colors ${
+                    className={`mx-auto grid h-9 w-9 place-items-center rounded-xl text-[12px] transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -191,7 +191,7 @@ export default function SearchWhen({
         ))}
       </div>
 
-      <div className="lg:w-[220px]">
+      <div className="sm:w-[200px]">
         <div
           aria-disabled={flexDisabled}
           className={`transition-opacity ${

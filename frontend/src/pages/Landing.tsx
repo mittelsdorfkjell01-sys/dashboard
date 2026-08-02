@@ -46,9 +46,9 @@ export default function Landing() {
 
         <div className="flex-1" />
 
-        {/* Search — moved further down in the hero; its dropdown now overlaps
-            the white section that follows. Top Spots moved into that section. */}
-        <div className="flex justify-center px-4 pb-24 sm:px-6 sm:pb-28">
+        {/* Search — sits higher in the hero so its dropdown has room below and
+            never gets clipped at the viewport bottom. */}
+        <div className="flex justify-center px-4 pb-44 sm:px-6 sm:pb-52">
           <div className="relative z-[1200] w-full max-w-[760px]">
             <SearchBar />
           </div>
