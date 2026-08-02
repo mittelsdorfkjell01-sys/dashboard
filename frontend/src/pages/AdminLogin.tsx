@@ -42,35 +42,35 @@ export default function AdminLogin() {
   };
 
   const inputCls =
-    "w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ui text-ink outline-none focus:border-teal/50";
+    "w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 py-2.5 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary";
 
   return (
-    <div className="grid min-h-screen place-items-center bg-band px-4">
+    <div className="grid min-h-screen place-items-center bg-admin-bg px-4">
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-6 flex justify-center">
           <Wordmark size="lg" />
         </Link>
         <form
           onSubmit={onSubmit}
-          className="rounded-3xl border border-line bg-white p-6 sm:p-8"
+          className="rounded-xl border border-admin-border bg-admin-surface p-6 sm:p-8"
           noValidate
         >
-          <h1 className="text-xl font-semibold text-ink">Admin-Anmeldung</h1>
-          <p className="mt-1 text-label text-muted">
+          <h1 className="text-lg font-semibold text-admin-fg">Admin-Anmeldung</h1>
+          <p className="mt-1 text-label text-admin-muted">
             Bitte mit deinem Betreiber-Konto anmelden.
           </p>
 
           {error && (
             <div
               role="alert"
-              className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
+              className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger"
             >
               {error}
             </div>
           )}
 
           <label className="mt-5 block">
-            <span className="text-label font-medium text-ink">E-Mail</span>
+            <span className="text-label font-medium text-admin-fg">E-Mail</span>
             <input
               type="email"
               autoComplete="username"
@@ -82,7 +82,7 @@ export default function AdminLogin() {
           </label>
 
           <label className="mt-4 block">
-            <span className="text-label font-medium text-ink">Passwort</span>
+            <span className="text-label font-medium text-admin-fg">Passwort</span>
             <input
               type="password"
               autoComplete="current-password"
@@ -96,7 +96,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={busy || !email || !password}
-            className="mt-6 w-full rounded-lg bg-teal px-4 py-2.5 text-ui font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-50"
+            className="mt-6 w-full rounded-md bg-admin-primary px-4 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "Anmelden…" : "Anmelden"}
           </button>

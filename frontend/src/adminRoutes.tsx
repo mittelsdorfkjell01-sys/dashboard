@@ -18,13 +18,17 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminShell from "./components/AdminShell";
 import RequireAuth from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth";
+import { AdminThemeProvider } from "./components/admin/theme";
 
 const adminRoutes: RouteObject[] = [
   {
-    // Pathless layout: provides the auth context to /admin/login and /admin/*.
+    // Pathless layout: provides the auth context + admin theme (light/dark,
+    // scoped to <body>) to /admin/login and /admin/*.
     element: (
       <AuthProvider>
-        <Outlet />
+        <AdminThemeProvider>
+          <Outlet />
+        </AdminThemeProvider>
       </AuthProvider>
     ),
     children: [

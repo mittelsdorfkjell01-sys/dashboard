@@ -9,6 +9,7 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import { ApiError, getAdminMapSpots, type AdminMapSpot } from "../lib/api";
 import { statusLabel } from "../lib/labels";
+import { PageHeader } from "../components/admin/ui";
 
 const STATUS_COLOR: Record<string, string> = {
   published: "#4A8159", // grün
@@ -57,27 +58,25 @@ export default function AdminMap() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-ui font-semibold text-ink sm:text-editorial-4">Karte</h1>
-          <p className="mt-1 text-label text-muted">
-            Alle Spots — Marker anklicken, um zu bearbeiten.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 text-label">
-          <Legend color={STATUS_COLOR.published} label={`Veröffentlicht (${counts.published ?? 0})`} />
-          <Legend color={STATUS_COLOR.draft} label={`Entwurf (${counts.draft ?? 0})`} />
-          <Legend color={STATUS_COLOR.archived} label={`Archiviert (${counts.archived ?? 0})`} />
-        </div>
-      </div>
+      <PageHeader
+        title="Karte"
+        description="Alle Spots — Marker anklicken, um zu bearbeiten."
+        actions={
+          <div className="flex flex-wrap items-center gap-4 text-label">
+            <Legend color={STATUS_COLOR.published} label={`Veröffentlicht (${counts.published ?? 0})`} />
+            <Legend color={STATUS_COLOR.draft} label={`Entwurf (${counts.draft ?? 0})`} />
+            <Legend color={STATUS_COLOR.archived} label={`Archiviert (${counts.archived ?? 0})`} />
+          </div>
+        }
+      />
 
       {error && (
-        <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
+        <div role="alert" className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger">
           {error}
         </div>
       )}
 
-      <div data-lenis-prevent className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-2xl border border-line">
+      <div data-lenis-prevent className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-lg border border-admin-border">
         <MapContainer
           key={spots.length ? "loaded" : "init"}
           center={center}
@@ -118,8 +117,8 @@ export default function AdminMap() {
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-muted">
-      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+    <span className="inline-flex items-center gap-1.5 text-admin-muted">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
       {label}
     </span>
   );

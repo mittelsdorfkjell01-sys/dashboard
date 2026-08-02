@@ -15,6 +15,7 @@ import {
   type SpotSummary,
 } from "../lib/api";
 import { gapLabel, sportLabel, statusLabel } from "../lib/labels";
+import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 const STATUSES = ["draft", "published", "archived"];
@@ -128,25 +129,28 @@ export default function AdminSpots() {
   };
 
   const selectCls =
-    "rounded-lg border border-line bg-white px-3 py-2 text-ui text-ink outline-none focus:border-teal/50";
+    "h-9 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary";
 
   const total = data?.total ?? 0;
   const shown = data?.items.length ?? 0;
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-ink">Spots</h1>
-        <Link
-          to="/admin/spot/new"
-          className="rounded-lg bg-teal px-4 py-2 text-ui font-medium text-white hover:bg-teal-hover"
-        >
-          + Neuer Spot
-        </Link>
-      </div>
+      <PageHeader
+        title="Spots"
+        description="Surfspots verwalten, veröffentlichen und archivieren."
+        actions={
+          <Link
+            to="/admin/spot/new"
+            className="inline-flex items-center gap-1.5 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
+          >
+            <span aria-hidden className="text-[15px] leading-none">+</span> Neuer Spot
+          </Link>
+        }
+      />
 
       {/* Filters */}
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           type="search"
           placeholder="Suche Name / Slug"
@@ -198,7 +202,7 @@ export default function AdminSpots() {
       {notice && (
         <div
           role="status"
-          className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green"
+          className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success"
         >
           {notice}
         </div>
@@ -206,66 +210,66 @@ export default function AdminSpots() {
       {error && (
         <div
           role="alert"
-          className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
+          className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger"
         >
           {error}
         </div>
       )}
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-white">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface">
         <table className="w-full min-w-[820px] text-left text-ui">
-          <thead className="bg-ink/5 text-caption uppercase tracking-wide text-muted">
+          <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
             <tr>
-              <th className="px-4 py-3 font-semibold">Name</th>
-              <th className="px-4 py-3 font-semibold">Region</th>
-              <th className="px-4 py-3 font-semibold">Sportarten</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Conf.</th>
-              <th className="px-4 py-3 font-semibold">Aktionen</th>
+              <th className="px-4 py-2.5 font-semibold">Name</th>
+              <th className="px-4 py-2.5 font-semibold">Region</th>
+              <th className="px-4 py-2.5 font-semibold">Sportarten</th>
+              <th className="px-4 py-2.5 font-semibold">Status</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Conf.</th>
+              <th className="px-4 py-2.5 font-semibold">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
+          <tbody className="divide-y divide-admin-border-subtle">
             {!data ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-muted">
+                <td colSpan={6} className="px-4 py-6 text-center text-admin-muted">
                   Lädt…
                 </td>
               </tr>
             ) : data.items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-muted">
-                  Keine Spots gefunden.
+                <td colSpan={6} className="px-4 py-10 text-center text-admin-muted">
+                  Keine Spots gefunden. Filter anpassen.
                 </td>
               </tr>
             ) : (
               data.items.map((s) => (
-                <tr key={s.id}>
+                <tr key={s.id} className="transition-colors hover:bg-admin-hover">
                   <td className="px-4 py-3">
                     <Link
                       to={`/admin/spot/${s.id}/edit`}
-                      className="font-medium text-ink hover:underline"
+                      className="font-medium text-admin-fg hover:text-admin-primary hover:underline"
                     >
                       {s.name}
                     </Link>
-                    <div className="text-caption text-muted">{s.slug}</div>
+                    <div className="admin-mono text-caption text-admin-muted">{s.slug}</div>
                   </td>
-                  <td className="px-4 py-3 text-ink">
+                  <td className="px-4 py-3 text-admin-fg2">
                     {s.region_id ? regionName(s.region_id) : "— ohne Region"}
                   </td>
-                  <td className="px-4 py-3 text-ink">
+                  <td className="px-4 py-3 text-admin-fg2">
                     {(s.sports ?? []).map(sportLabel).join(", ") || "—"}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={s.status} />
                   </td>
-                  <td className="px-4 py-3 text-ink">
+                  <td className="admin-mono px-4 py-3 text-right text-admin-fg2">
                     {s.confidence != null ? s.confidence.toFixed(2) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       <Link
                         to={`/admin/spot/${s.id}/edit`}
-                        className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
+                        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
                       >
                         Bearbeiten
                       </Link>
@@ -273,7 +277,7 @@ export default function AdminSpots() {
                         href={`/spot/${s.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
+                        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
                       >
                         Ansehen ↗
                       </a>
@@ -282,7 +286,7 @@ export default function AdminSpots() {
                           type="button"
                           disabled={busyId === s.id}
                           onClick={() => onGoLive(s)}
-                          className="rounded-lg bg-green px-2.5 py-1 text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
+                          className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
                         >
                           Go-Live
                         </button>
@@ -294,7 +298,7 @@ export default function AdminSpots() {
                           onClick={() =>
                             runStatus(s, unpublishSpot, `„${s.name}" ist offline.`)
                           }
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                         >
                           Offline
                         </button>
@@ -306,7 +310,7 @@ export default function AdminSpots() {
                           onClick={() =>
                             runStatus(s, archiveSpot, `„${s.name}" archiviert.`)
                           }
-                          className="rounded-lg border border-line px-2.5 py-1 text-label font-medium text-muted hover:bg-teal/5 disabled:opacity-50"
+                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                         >
                           Archivieren
                         </button>
@@ -321,8 +325,8 @@ export default function AdminSpots() {
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 flex items-center justify-between text-label text-muted">
-        <span>
+      <div className="mt-4 flex items-center justify-between text-label text-admin-muted">
+        <span className="admin-mono">
           {total === 0 ? "0" : `${offset + 1}–${offset + shown}`} von {total}
         </span>
         <div className="flex gap-2">
@@ -330,7 +334,7 @@ export default function AdminSpots() {
             type="button"
             disabled={offset === 0}
             onClick={() => setOffset(Math.max(0, offset - PAGE))}
-            className="rounded-lg border border-teal/30 px-3 py-1.5 font-medium text-teal hover:bg-teal/5 disabled:opacity-40"
+            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-40"
           >
             Zurück
           </button>
@@ -338,7 +342,7 @@ export default function AdminSpots() {
             type="button"
             disabled={offset + shown >= total}
             onClick={() => setOffset(offset + PAGE)}
-            className="rounded-lg border border-teal/30 px-3 py-1.5 font-medium text-teal hover:bg-teal/5 disabled:opacity-40"
+            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-40"
           >
             Weiter
           </button>
@@ -348,19 +352,12 @@ export default function AdminSpots() {
   );
 }
 
+const STATUS_TONE: Record<string, BadgeTone> = {
+  published: "success",
+  draft: "neutral",
+  archived: "neutral",
+};
+
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    published: "bg-green/10 text-green",
-    draft: "bg-ink/5 text-muted",
-    archived: "bg-muted/10 text-muted",
-  };
-  return (
-    <span
-      className={`inline-block rounded-2xl px-2 py-0.5 text-caption font-medium ${
-        styles[status] ?? "bg-ink/5 text-muted"
-      }`}
-    >
-      {statusLabel(status)}
-    </span>
-  );
+  return <Badge tone={STATUS_TONE[status] ?? "neutral"}>{statusLabel(status)}</Badge>;
 }

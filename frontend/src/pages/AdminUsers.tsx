@@ -22,6 +22,7 @@ import PromptDialog from "../components/ui/PromptDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
 import ActivityPreview from "../components/admin/ActivityPreview";
+import { PageHeader, Badge } from "../components/admin/ui";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
@@ -152,16 +153,15 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Benutzerverwaltung</h1>
-        <p className="mt-2 text-body text-muted">
-          Alle Operatoren haben volle Admin-Rechte. Du kannst dein eigenes Konto
-          und den letzten aktiven Admin nicht deaktivieren oder löschen.
-        </p>
+      <PageHeader
+        title="Benutzerverwaltung"
+        description="Alle Operatoren haben volle Admin-Rechte. Du kannst dein eigenes Konto und den letzten aktiven Admin nicht deaktivieren oder löschen."
+      />
 
         {notice && (
           <div
             role="status"
-            className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green"
+            className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success"
           >
             {notice}
           </div>
@@ -169,7 +169,7 @@ export default function AdminUsers() {
         {error && (
           <div
             role="alert"
-            className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
+            className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger"
           >
             {error}
           </div>
@@ -183,60 +183,61 @@ export default function AdminUsers() {
           onError={setError}
         />
 
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-line">
+        <div className="mt-8 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface">
           <table className="w-full min-w-[720px] text-left text-ui">
-            <thead className="bg-ink/5 text-caption uppercase tracking-wide text-muted">
+            <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
               <tr>
-                <th className="px-4 py-3 font-semibold">E-Mail</th>
-                <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Rolle</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Letzter Login</th>
-                <th className="px-4 py-3 font-semibold">Aktionen</th>
+                <th className="px-4 py-2.5 font-semibold">E-Mail</th>
+                <th className="px-4 py-2.5 font-semibold">Name</th>
+                <th className="px-4 py-2.5 font-semibold">Rolle</th>
+                <th className="px-4 py-2.5 font-semibold">Status</th>
+                <th className="px-4 py-2.5 font-semibold">Letzter Login</th>
+                <th className="px-4 py-2.5 font-semibold">Aktionen</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-admin-border-subtle">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={6} className="px-4 py-6 text-center text-admin-muted">
                     Lädt…
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted">
+                  <td colSpan={6} className="px-4 py-10 text-center text-admin-muted">
                     Keine Benutzer.
                   </td>
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} className={u.is_active ? "" : "opacity-60"}>
-                    <td className="px-4 py-3 text-ink">{u.email}</td>
-                    <td className="px-4 py-3 text-ink">{u.display_name}</td>
-                    <td className="px-4 py-3 text-label text-ink">
-                      {roleLabel(u.role)}
-                      {isSelf(u) && (
-                        <span className="ml-2 rounded bg-teal/10 px-1.5 py-0.5 text-caption font-semibold text-teal">
-                          du
-                        </span>
-                      )}
+                  <tr
+                    key={u.id}
+                    className={`transition-colors hover:bg-admin-hover ${
+                      u.is_active ? "" : "opacity-60"
+                    }`}
+                  >
+                    <td className="admin-mono px-4 py-3 text-admin-fg">{u.email}</td>
+                    <td className="px-4 py-3 text-admin-fg">{u.display_name}</td>
+                    <td className="px-4 py-3 text-label text-admin-fg2">
+                      <span className="inline-flex items-center gap-2">
+                        {roleLabel(u.role)}
+                        {isSelf(u) && (
+                          <Badge tone="primary" dot={false}>
+                            du
+                          </Badge>
+                        )}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       {!u.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 text-label font-medium text-muted">
-                          ○ Deaktiviert
-                        </span>
+                        <Badge tone="neutral">Deaktiviert</Badge>
                       ) : isOnline(u) ? (
-                        <span className="inline-flex items-center gap-1.5 text-label font-medium text-green">
-                          ● Online
-                        </span>
+                        <Badge tone="success">Online</Badge>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-label font-medium text-muted">
-                          ○ Offline
-                        </span>
+                        <Badge tone="neutral">Offline</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-label text-muted">
+                    <td className="admin-mono px-4 py-3 text-label text-admin-muted">
                       {u.last_login_at
                         ? new Date(u.last_login_at).toLocaleString("de-DE")
                         : "—"}
@@ -254,21 +255,21 @@ export default function AdminUsers() {
                               ? "Der letzte aktive Admin kann nicht deaktiviert werden."
                               : undefined
                           }
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {u.is_active ? "Deaktivieren" : "Aktivieren"}
                         </button>
                         <button
                           type="button"
                           onClick={() => openEdit(u)}
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
+                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
                         >
                           Bearbeiten
                         </button>
                         <button
                           type="button"
                           onClick={() => setPwTarget(u)}
-                          className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
+                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
                         >
                           Passwort
                         </button>
@@ -283,7 +284,7 @@ export default function AdminUsers() {
                               ? "Der letzte aktive Admin kann nicht gelöscht werden."
                               : undefined
                           }
-                          className="rounded-lg border border-red-200 px-2.5 py-1 text-label font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-md border border-admin-danger-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           Löschen
                         </button>
@@ -375,7 +376,7 @@ function ActivityLog() {
   return (
     <section className="mt-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-ink">Aktivität</h2>
+        <h2 className="text-lg font-semibold text-admin-fg">Aktivität</h2>
         <Input
           type="search"
           value={q}
@@ -384,13 +385,13 @@ function ActivityLog() {
           className="max-w-[240px]"
         />
       </div>
-      <p className="mt-1 text-label text-muted">
+      <p className="mt-1 text-label text-admin-muted">
         Letzte Änderungen durch das Team — pro Spot zusammengefasst (ein Eintrag
         je Spot, nicht je Aktion).
       </p>
-      <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-white">
+      <ul className="mt-3 divide-y divide-admin-border-subtle rounded-lg border border-admin-border bg-admin-surface">
         {items.length === 0 ? (
-          <li className="px-4 py-4 text-center text-label text-muted">
+          <li className="px-4 py-4 text-center text-label text-admin-muted">
             Noch keine Aktivität.
           </li>
         ) : (
@@ -409,7 +410,7 @@ function ActivityLog() {
                     <span className="text-caption text-muted"> · {a.actions} Änderungen</span>
                   )}
                 </span>
-                <span className="shrink-0 text-caption text-muted">
+                <span className="admin-mono shrink-0 text-caption text-admin-muted">
                   {a.at ? new Date(a.at).toLocaleString("de-DE") : ""}
                 </span>
               </>
@@ -420,7 +421,7 @@ function ActivityLog() {
                   <button
                     type="button"
                     onClick={() => setPreview(a)}
-                    className="flex w-full items-start justify-between gap-3 px-4 py-2.5 text-left text-ui transition-colors hover:bg-band/60"
+                    className="flex w-full items-start justify-between gap-3 px-4 py-2.5 text-left text-ui transition-colors hover:bg-admin-hover"
                   >
                     {content}
                   </button>
@@ -476,10 +477,10 @@ function CreateUserForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-6 rounded-2xl bg-ink/5 p-4 sm:p-5"
+      className="mt-6 rounded-lg border border-admin-border bg-admin-hover p-4 sm:p-5"
       noValidate
     >
-      <p className="text-ui font-semibold text-ink">Neuen Admin anlegen</p>
+      <p className="text-ui font-semibold text-admin-fg">Neuen Admin anlegen</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           type="email"

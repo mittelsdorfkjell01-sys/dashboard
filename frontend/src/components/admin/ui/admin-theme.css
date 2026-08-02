@@ -1,0 +1,314 @@
+/* =========================================================================
+   Admin design system — an independent, monochrome, Vercel/Linear-inspired
+   token layer scoped ENTIRELY to the admin back office.
+
+   Nothing here leaks to the public site: every rule is nested under
+   `.admin-scope`, a class the AdminThemeProvider adds to <body> only while an
+   admin route is mounted (and removes on unmount). Because it also lives on
+   <body>, portaled dialogs (Modal → document.body) inherit the tokens too.
+
+   Two jobs:
+   1. Define semantic CSS variables for light + dark (the source of truth).
+   2. Re-point the app's existing brand utilities (text-ink, bg-white,
+      border-line, text-teal, …) at those tokens *within the scope only*, so
+      the whole admin — including screens/components not individually
+      restyled — themes correctly and gains first-class dark mode with no
+      per-call-site edits. Specificity (.admin-scope .x = 0,2,0) beats the base
+      utility (.x = 0,1,0), so no `!important` is needed.
+   ========================================================================= */
+
+.admin-scope {
+  /* ---- Light theme (default) ------------------------------------------ */
+  --a-bg: #fbfbfb; /* app canvas */
+  --a-surface: #ffffff; /* panels, tables, cards */
+  --a-elevated: #ffffff; /* popovers, dialogs */
+  --a-hover: #f4f4f5; /* subtle row/control hover */
+  --a-active: #ececed; /* pressed / selected surface */
+
+  --a-border: #e6e6e8; /* standard hairline */
+  --a-border-subtle: #f0f0f1; /* faint divider */
+  --a-border-strong: #d4d4d8; /* input / emphasized edge */
+
+  --a-fg: #18181b; /* primary text */
+  --a-fg2: #52525b; /* secondary text */
+  --a-muted: #71717a; /* captions, meta */
+  --a-faint: #a1a1aa; /* placeholders, disabled */
+
+  /* Accent — a single restrained thread of the surf brand's teal. */
+  --a-primary: #197888;
+  --a-primary-hover: #14636f;
+  --a-primary-fg: #ffffff;
+  --a-primary-bg: #ecf5f6; /* tinted surface (active nav, selected) */
+  --a-ring: #197888;
+
+  --a-success: #15803d;
+  --a-success-fg: #15803d;
+  --a-success-bg: #f0faf3;
+  --a-success-border: #cdeed6;
+  --a-warning: #b45309;
+  --a-warning-fg: #b45309;
+  --a-warning-bg: #fdf6ec;
+  --a-danger: #dc2626;
+  --a-danger-fg: #dc2626;
+  --a-danger-bg: #fef2f2;
+  --a-danger-border: #f6cccc;
+  --a-info: #197888;
+  --a-info-bg: #ecf5f6;
+
+  --a-shadow-pop: 0 8px 24px -8px rgba(24, 24, 27, 0.18),
+    0 2px 6px -2px rgba(24, 24, 27, 0.12);
+  --a-shadow-dialog: 0 24px 48px -12px rgba(24, 24, 27, 0.28),
+    0 8px 20px -8px rgba(24, 24, 27, 0.18);
+
+  background-color: var(--a-bg);
+  color: var(--a-fg);
+}
+
+.admin-scope[data-theme="dark"] {
+  --a-bg: #0a0a0a;
+  --a-surface: #111112;
+  --a-elevated: #18181a;
+  --a-hover: #1b1b1e;
+  --a-active: #232327;
+
+  --a-border: #272729;
+  --a-border-subtle: #1c1c1f;
+  --a-border-strong: #34343a;
+
+  --a-fg: #fafafa;
+  --a-fg2: #a1a1aa;
+  --a-muted: #7c7c85;
+  --a-faint: #55555c;
+
+  --a-primary: #2fa6bb;
+  --a-primary-hover: #43b7cb;
+  --a-primary-fg: #04181d;
+  --a-primary-bg: #10262b;
+  --a-ring: #2fa6bb;
+
+  --a-success: #4ade80;
+  --a-success-fg: #5ad98a;
+  --a-success-bg: #0f2417;
+  --a-success-border: #1c3d29;
+  --a-warning: #fbbf24;
+  --a-warning-fg: #fbbf24;
+  --a-warning-bg: #2a2110;
+  --a-danger: #f87171;
+  --a-danger-fg: #f87171;
+  --a-danger-bg: #2a1414;
+  --a-danger-border: #4a2020;
+  --a-info: #2fa6bb;
+  --a-info-bg: #10262b;
+
+  --a-shadow-pop: 0 8px 24px -8px rgba(0, 0, 0, 0.6),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5);
+  --a-shadow-dialog: 0 24px 48px -12px rgba(0, 0, 0, 0.7),
+    0 8px 20px -8px rgba(0, 0, 0, 0.55);
+}
+
+/* Smooth the light/dark flip without animating every re-render. */
+.admin-scope,
+.admin-scope [data-admin-tint] {
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-scope,
+  .admin-scope [data-admin-tint] {
+    transition: none;
+  }
+}
+
+/* =========================================================================
+   Brand-utility remap — themes existing admin markup + enables dark mode.
+   Keep in sync with the token vocabulary the admin pages already use.
+   ========================================================================= */
+
+/* Text ------------------------------------------------------------------- */
+.admin-scope .text-ink {
+  color: var(--a-fg);
+}
+.admin-scope .text-ink-soft {
+  color: var(--a-fg2);
+}
+.admin-scope .text-muted {
+  color: var(--a-muted);
+}
+/* Accents (exclude the brand wordmark, which keeps its orange/teal). */
+.admin-scope .text-teal:not(.wordmark) {
+  color: var(--a-primary);
+}
+.admin-scope .text-orange:not(.wordmark) {
+  color: var(--a-warning);
+}
+.admin-scope .text-green {
+  color: var(--a-success-fg);
+}
+.admin-scope .text-red-600,
+.admin-scope .text-red-700,
+.admin-scope .text-red-500,
+.admin-scope .text-red-700\/80 {
+  color: var(--a-danger-fg);
+}
+
+/* Surfaces --------------------------------------------------------------- */
+.admin-scope .bg-white {
+  background-color: var(--a-surface);
+}
+.admin-scope .bg-band {
+  background-color: var(--a-bg);
+}
+.admin-scope .bg-band\/60,
+.admin-scope .bg-band\/40,
+.admin-scope .bg-ink\/5,
+.admin-scope .bg-muted\/10,
+.admin-scope .bg-teal\/5,
+.admin-scope .bg-teal\/10 {
+  background-color: var(--a-hover);
+}
+.admin-scope .hover\:bg-teal\/5:hover,
+.admin-scope .hover\:bg-ink\/5:hover {
+  background-color: var(--a-hover);
+}
+.admin-scope .bg-teal {
+  background-color: var(--a-primary);
+}
+.admin-scope .bg-teal-hover,
+.admin-scope .hover\:bg-teal-hover:hover {
+  background-color: var(--a-primary-hover);
+}
+.admin-scope .bg-ink {
+  background-color: var(--a-fg);
+}
+.admin-scope .bg-green {
+  background-color: var(--a-success);
+}
+.admin-scope .bg-green\/10,
+.admin-scope .bg-green\/15 {
+  background-color: var(--a-success-bg);
+}
+.admin-scope .bg-orange {
+  background-color: var(--a-warning);
+}
+.admin-scope .bg-orange\/15 {
+  background-color: var(--a-warning-bg);
+}
+/* Danger surfaces (red-50 → near-white; must recolor for dark). */
+.admin-scope .bg-red-50,
+.admin-scope .bg-red-100,
+.admin-scope .bg-red-50\/50,
+.admin-scope .bg-red-50\/40 {
+  background-color: var(--a-danger-bg);
+}
+.admin-scope .bg-red-600,
+.admin-scope .bg-red-500 {
+  background-color: var(--a-danger);
+}
+
+/* Borders / rings / dividers -------------------------------------------- */
+.admin-scope .border-line,
+.admin-scope .border-teal\/30,
+.admin-scope .border-teal\/40,
+.admin-scope .border-teal\/50,
+.admin-scope .border-teal {
+  border-color: var(--a-border);
+}
+.admin-scope .border-teal,
+.admin-scope .border-green\/40 {
+  border-color: var(--a-border-strong);
+}
+.admin-scope .border-red-200,
+.admin-scope .border-red-300,
+.admin-scope .border-red-400 {
+  border-color: var(--a-danger-border);
+}
+.admin-scope .bg-line {
+  background-color: var(--a-border);
+}
+.admin-scope .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--a-border);
+}
+.admin-scope .ring-line {
+  --tw-ring-color: var(--a-border);
+}
+.admin-scope .ring-teal\/30,
+.admin-scope .ring-teal\/40,
+.admin-scope .ring-teal\/50,
+.admin-scope .hover\:ring-teal\/40:hover,
+.admin-scope .hover\:ring-teal\/50:hover {
+  --tw-ring-color: var(--a-primary);
+}
+.admin-scope .ring-ink,
+.admin-scope .ring-ink\/30 {
+  --tw-ring-color: var(--a-border-strong);
+}
+.admin-scope .ring-red-300 {
+  --tw-ring-color: var(--a-danger-border);
+}
+.admin-scope .ring-green\/30 {
+  --tw-ring-color: var(--a-success-border);
+}
+.admin-scope .focus\:border-teal\/50:focus {
+  border-color: var(--a-primary);
+}
+
+/* =========================================================================
+   Base + helpers
+   ========================================================================= */
+
+/* Themed scrollbars inside the admin. */
+.admin-scope *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.admin-scope *::-webkit-scrollbar-thumb {
+  background-color: var(--a-border-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.admin-scope *::-webkit-scrollbar-thumb:hover {
+  background-color: var(--a-muted);
+}
+.admin-scope * {
+  scrollbar-color: var(--a-border-strong) transparent;
+}
+
+/* Monospace for technical values (coords, timestamps, IDs, wind/wave data). */
+.admin-mono {
+  font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  letter-spacing: -0.01em;
+}
+
+/* Skeleton shimmer for loading states (matches token surfaces). */
+.admin-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--a-hover);
+  border-radius: 6px;
+}
+.admin-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--a-surface) 60%, transparent),
+    transparent
+  );
+  animation: admin-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes admin-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-skeleton::after {
+    animation: none;
+  }
+}

@@ -32,6 +32,44 @@ export default {
         // Data accent, shared with the wind-speed scale. Passes AA as text
         // (4.6:1).
         green: "#4A8159",
+
+        // --- Admin back-office palette (independent design system) ---------
+        // CSS-var-backed semantic tokens for the admin dashboard ONLY. The
+        // variables are defined + theme-switched in
+        // components/admin/ui/admin-theme.css under `.admin-scope`, so these
+        // classes render correctly only inside the admin (which is where they
+        // are used). The public site never references `admin-*` classes, so
+        // this addition is inert for it. See that file for the full rationale.
+        admin: {
+          bg: "var(--a-bg)",
+          surface: "var(--a-surface)",
+          elevated: "var(--a-elevated)",
+          hover: "var(--a-hover)",
+          active: "var(--a-active)",
+          border: "var(--a-border)",
+          "border-subtle": "var(--a-border-subtle)",
+          "border-strong": "var(--a-border-strong)",
+          fg: "var(--a-fg)",
+          fg2: "var(--a-fg2)",
+          muted: "var(--a-muted)",
+          faint: "var(--a-faint)",
+          primary: "var(--a-primary)",
+          "primary-hover": "var(--a-primary-hover)",
+          "primary-fg": "var(--a-primary-fg)",
+          "primary-bg": "var(--a-primary-bg)",
+          success: "var(--a-success-fg)",
+          "success-bg": "var(--a-success-bg)",
+          "success-border": "var(--a-success-border)",
+          warning: "var(--a-warning-fg)",
+          "warning-bg": "var(--a-warning-bg)",
+          danger: "var(--a-danger-fg)",
+          "danger-strong": "var(--a-danger)",
+          "danger-bg": "var(--a-danger-bg)",
+          "danger-border": "var(--a-danger-border)",
+          info: "var(--a-info)",
+          "info-bg": "var(--a-info-bg)",
+          ring: "var(--a-ring)",
+        },
       },
       fontFamily: {
         sans: ["Poppins", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],

@@ -82,25 +82,37 @@ export default function NotificationBell() {
         type="button"
         onClick={toggle}
         aria-label={`Benachrichtigungen${unread ? `, ${unread} ungelesen` : ""}`}
-        className="relative grid h-9 w-9 place-items-center rounded-lg text-ink-soft hover:bg-ink/5"
+        className="relative grid h-8 w-8 place-items-center rounded-md border border-admin-border bg-admin-surface text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
       >
-        <span aria-hidden className="text-lg">🔔</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-orange px-1 text-caption font-semibold leading-[18px] text-white">
+          <span className="absolute -right-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-admin-primary px-1 text-[10px] font-semibold leading-[16px] text-admin-primary-fg">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border border-line bg-white shadow-float">
-          <div className="flex items-center justify-between border-b border-line px-3 py-2">
-            <span className="text-label font-semibold text-ink">Benachrichtigungen</span>
+        <div
+          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border border-admin-border bg-admin-elevated"
+          style={{ boxShadow: "var(--a-shadow-pop)" }}
+        >
+          <div className="flex items-center justify-between border-b border-admin-border px-3 py-2">
+            <span className="text-label font-semibold text-admin-fg">Benachrichtigungen</span>
             {(items?.some((i) => !i.read) ?? false) && (
               <button
                 type="button"
                 onClick={markAll}
-                className="text-caption font-medium text-teal hover:underline"
+                className="text-caption font-medium text-admin-primary hover:underline"
               >
                 Alle gelesen
               </button>
@@ -108,9 +120,9 @@ export default function NotificationBell() {
           </div>
           <div className="max-h-[360px] overflow-y-auto">
             {items === null ? (
-              <p className="px-3 py-6 text-center text-caption text-muted">Lädt…</p>
+              <p className="px-3 py-6 text-center text-caption text-admin-muted">Lädt…</p>
             ) : items.length === 0 ? (
-              <p className="px-3 py-6 text-center text-caption text-muted">
+              <p className="px-3 py-6 text-center text-caption text-admin-muted">
                 Keine Benachrichtigungen.
               </p>
             ) : (
@@ -119,15 +131,15 @@ export default function NotificationBell() {
                   key={n.id}
                   type="button"
                   onClick={() => onItem(n)}
-                  className={`block w-full border-b border-line px-3 py-2 text-left last:border-0 hover:bg-band/60 ${
-                    n.read ? "" : "bg-teal/5"
+                  className={`block w-full border-b border-admin-border-subtle px-3 py-2 text-left transition-colors last:border-0 hover:bg-admin-hover ${
+                    n.read ? "" : "bg-admin-primary-bg"
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-orange" />}
+                    {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-admin-primary" />}
                     <div className="min-w-0">
-                      <p className="text-label text-ink">{n.message}</p>
-                      <p className="mt-0.5 text-caption text-muted">
+                      <p className="text-label text-admin-fg">{n.message}</p>
+                      <p className="admin-mono mt-0.5 text-caption text-admin-muted">
                         {new Date(n.created_at).toLocaleString("de-DE")}
                       </p>
                     </div>

@@ -304,21 +304,21 @@ export default function AdminRegionForm() {
       <button
         type="button"
         onClick={() => navigate("/admin/regions")}
-        className="text-label text-muted hover:text-teal"
+        className="text-label text-admin-muted transition-colors hover:text-admin-fg"
       >
         ← Regionen
       </button>
-      <h1 className="mt-2 text-2xl font-semibold text-ink">
+      <h1 className="mt-2 border-b border-admin-border pb-5 text-[22px] font-semibold leading-tight tracking-[-0.01em] text-admin-fg">
         Region bearbeiten — {region.name}
       </h1>
 
       {notice && (
-        <div className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green">
+        <div className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success">
           {notice}
         </div>
       )}
       {error && (
-        <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
+        <div role="alert" className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger">
           {error}
         </div>
       )}

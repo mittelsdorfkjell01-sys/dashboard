@@ -16,6 +16,7 @@ import { gapLabel } from "../lib/labels";
 import { autoRank, RANK_CARD, RANK_DOT } from "../lib/rank";
 import BoardPanel from "../components/admin/BoardPanel";
 import RankControl from "../components/admin/RankControl";
+import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
 
 type Tone = "red" | "orange" | "teal";
 interface Task {
@@ -26,15 +27,10 @@ interface Task {
   to: string;
 }
 
-const TONE_DOT: Record<Tone, string> = {
-  red: "bg-red-500",
-  orange: "bg-orange",
-  teal: "bg-teal",
-};
-const TONE_BADGE: Record<Tone, string> = {
-  red: "bg-red-50 text-red-700",
-  orange: "bg-orange/15 text-ink",
-  teal: "bg-teal/10 text-teal",
+const TONE_BADGE: Record<Tone, BadgeTone> = {
+  red: "danger",
+  orange: "warning",
+  teal: "primary",
 };
 
 function buildTasks(data: AdminOverview): Task[] {
@@ -100,29 +96,29 @@ export default function AdminHome() {
 
   if (error)
     return (
-      <div role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-label text-red-700">
+      <div role="alert" className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-4 py-3 text-label text-admin-danger">
         {error}
       </div>
     );
   if (!data)
-    return <div role="status" className="text-label text-muted">Lädt…</div>;
+    return <div role="status" className="text-label text-admin-muted">Lädt…</div>;
 
   const tasks = buildTasks(data);
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-ui font-semibold text-ink sm:text-editorial-4">Übersicht</h1>
-          <p className="mt-1 text-label text-muted">Was ist zu tun? Alles Offene auf einen Blick.</p>
-        </div>
-        <Link
-          to="/admin/spot/new"
-          className="shrink-0 rounded-lg bg-teal px-4 py-2 text-label font-medium text-white hover:bg-teal-hover"
-        >
-          + Neuer Spot
-        </Link>
-      </div>
+      <PageHeader
+        title="Übersicht"
+        description="Was ist zu tun? Alles Offene auf einen Blick."
+        actions={
+          <Link
+            to="/admin/spot/new"
+            className="inline-flex items-center gap-1.5 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
+          >
+            <span aria-hidden className="text-[15px] leading-none">+</span> Neuer Spot
+          </Link>
+        }
+      />
 
       {/* Region-less spots — most urgent, flagged red at the very top. */}
       {data.no_region.length > 0 && (
@@ -159,26 +155,23 @@ export default function AdminHome() {
       </section>
 
       {/* Was ist zu tun? — the prioritized action list */}
-      <section className="mt-6 overflow-hidden rounded-2xl border border-line bg-white">
+      <section className="mt-6 overflow-hidden rounded-lg border border-admin-border bg-admin-surface">
         {tasks.length === 0 ? (
           <div className="p-6 text-center">
-            <p className="text-ui font-semibold text-ink">Alles erledigt 🎉</p>
-            <p className="mt-1 text-label text-muted">Keine offenen Aufgaben.</p>
+            <p className="text-ui font-semibold text-admin-fg">Alles erledigt 🎉</p>
+            <p className="mt-1 text-label text-admin-muted">Keine offenen Aufgaben.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-admin-border">
             {tasks.map((t) => (
               <li key={t.key}>
                 <Link
                   to={t.to}
-                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-band/60"
+                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-admin-hover"
                 >
-                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${TONE_DOT[t.tone]}`} />
-                  <span className="flex-1 text-body text-ink">{t.label}</span>
-                  <span className={`min-w-[26px] rounded-full px-2 py-0.5 text-center text-caption font-semibold ${TONE_BADGE[t.tone]}`}>
-                    {t.count}
-                  </span>
-                  <span aria-hidden className="text-muted">›</span>
+                  <span className="flex-1 text-body text-admin-fg">{t.label}</span>
+                  <Badge tone={TONE_BADGE[t.tone]}>{t.count}</Badge>
+                  <span aria-hidden className="text-admin-faint">›</span>
                 </Link>
               </li>
             ))}
@@ -255,10 +248,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-line bg-white p-4">
+    <section className="rounded-lg border border-admin-border bg-admin-surface p-4">
       <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-label font-semibold text-ink">{title}</h2>
-        <span className="text-caption text-muted">({count})</span>
+        <h2 className="text-label font-semibold text-admin-fg">{title}</h2>
+        <span className="text-caption text-admin-muted">({count})</span>
       </div>
       <div className="space-y-2">{children}</div>
     </section>
@@ -266,7 +259,7 @@ function Panel({
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="py-2 text-caption text-muted">{children}</p>;
+  return <p className="py-2 text-caption text-admin-muted">{children}</p>;
 }
 
 function Tile({
@@ -281,11 +274,18 @@ function Tile({
   accent?: "green";
 }) {
   return (
-    <Link to={to} className="rounded-2xl border border-line bg-white p-4 transition-colors hover:border-teal/40">
-      <div className={`text-3xl font-semibold leading-none ${accent === "green" ? "text-green" : "text-ink"}`}>
+    <Link
+      to={to}
+      className="rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong hover:bg-admin-hover"
+    >
+      <div
+        className={`admin-mono text-[28px] font-semibold leading-none ${
+          accent === "green" ? "text-admin-success" : "text-admin-fg"
+        }`}
+      >
         {value}
       </div>
-      <div className="mt-1 text-caption text-muted">{label}</div>
+      <div className="mt-1.5 text-caption text-admin-muted">{label}</div>
     </Link>
   );
 }

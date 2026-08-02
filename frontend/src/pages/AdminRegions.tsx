@@ -11,6 +11,7 @@ import {
   type AdminRegionEntry,
 } from "../lib/api";
 import { Button, Input } from "../components/ui";
+import { PageHeader, Badge } from "../components/admin/ui";
 
 export default function AdminRegions() {
   const [entries, setEntries] = useState<AdminRegionEntry[]>([]);
@@ -56,16 +57,15 @@ export default function AdminRegions() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Regionen</h1>
-      <p className="mt-1 text-ui text-muted">
-        Regionen anlegen, bearbeiten und ein Stock-Bild abrufen. Das Wettermodell
-        wird automatisch nach den Koordinaten gewählt.
-      </p>
+      <PageHeader
+        title="Regionen"
+        description="Regionen anlegen, bearbeiten und ein Stock-Bild abrufen. Das Wettermodell wird automatisch nach den Koordinaten gewählt."
+      />
 
       {notice && (
         <div
           role="status"
-          className="mt-4 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green"
+          className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success"
         >
           {notice}
         </div>
@@ -73,7 +73,7 @@ export default function AdminRegions() {
       {error && (
         <div
           role="alert"
-          className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
+          className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger"
         >
           {error}
         </div>
@@ -119,32 +119,32 @@ function RegionCard({
   const { region, spot_counts } = entry;
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-4 sm:p-5">
+    <div className="rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-base font-semibold text-ink">
+          <div className="text-base font-semibold text-admin-fg">
             {region.name}
             {region.country && (
-              <span className="ml-2 text-label font-normal text-muted">
+              <span className="ml-2 text-label font-normal text-admin-muted">
                 {region.country}
               </span>
             )}
           </div>
-          <div className="mt-1 flex gap-3 text-caption text-muted">
-            <span>{spot_counts.published} live</span>
-            <span>{spot_counts.draft} Entwurf</span>
-            <span>{spot_counts.archived} archiviert</span>
+          <div className="mt-1.5 flex gap-3 text-caption text-admin-muted">
+            <span className="admin-mono text-admin-success">{spot_counts.published}</span> live
+            <span className="admin-mono">{spot_counts.draft}</span> Entwurf
+            <span className="admin-mono">{spot_counts.archived}</span> archiviert
           </div>
         </div>
         <div className="flex items-center gap-2">
           {region.image?.url ? (
-            <span className="text-caption text-green">● Bild gesetzt</span>
+            <Badge tone="success">Bild gesetzt</Badge>
           ) : (
-            <span className="text-caption text-muted">○ Kein Bild</span>
+            <Badge tone="neutral">Kein Bild</Badge>
           )}
           <Link
             to={`/admin/region/${region.id}/edit`}
-            className="rounded-lg bg-teal px-2.5 py-1 text-label font-medium text-white hover:bg-teal-hover"
+            className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
           >
             Bearbeiten
           </Link>
@@ -152,7 +152,7 @@ function RegionCard({
             href={`/region/${region.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5"
+            className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
           >
             Ansehen ↗
           </a>
@@ -160,7 +160,7 @@ function RegionCard({
             type="button"
             disabled={busy}
             onClick={onStockImage}
-            className="rounded-lg border border-teal/30 px-2.5 py-1 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+            className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
           >
             Stock-Bild
           </button>
@@ -201,9 +201,13 @@ function CreateRegionForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 rounded-2xl bg-ink/5 p-4 sm:p-5" noValidate>
-      <p className="text-ui font-semibold text-ink">Neue Region anlegen</p>
-      <p className="mt-1 text-caption text-muted">
+    <form
+      onSubmit={submit}
+      className="mt-6 rounded-lg border border-admin-border bg-admin-hover p-4 sm:p-5"
+      noValidate
+    >
+      <p className="text-ui font-semibold text-admin-fg">Neue Region anlegen</p>
+      <p className="mt-1 text-caption text-admin-muted">
         Nur Name (+ Land) — Mittelpunkt und Fläche werden automatisch aus dem
         Namen bestimmt.
       </p>

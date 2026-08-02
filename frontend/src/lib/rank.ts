@@ -31,16 +31,18 @@ export const RANK_LABEL: Record<Rank, string> = {
   green: "Grün",
 };
 
-// Solid dot colour for a rank.
+// Solid dot colour for a rank. Uses the admin semantic tokens (theme-aware:
+// legible in both light and dark) — rank.ts is an admin-only helper.
 export const RANK_DOT: Record<Rank, string> = {
-  red: "bg-red-500",
-  yellow: "bg-amber-400",
-  green: "bg-green",
+  red: "bg-admin-danger",
+  yellow: "bg-admin-warning",
+  green: "bg-admin-success",
 };
 
-// Tinted card styling (border + background) for a ranked row.
+// Tinted card styling (border + background) for a ranked row. Admin semantic
+// token surfaces so the traffic-light tint adapts to light/dark.
 export const RANK_CARD: Record<Rank, string> = {
-  red: "border-red-300 bg-red-50",
-  yellow: "border-amber-300 bg-amber-50",
-  green: "border-green/30 bg-green/5",
+  red: "border-admin-danger-border bg-admin-danger-bg",
+  yellow: "border-admin-warning-bg bg-admin-warning-bg",
+  green: "border-admin-success-border bg-admin-success-bg",
 };

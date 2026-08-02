@@ -24,6 +24,7 @@ import {
 } from "../lib/api";
 import { SPORT_LABELS } from "../lib/labels";
 import PromptDialog from "../components/ui/PromptDialog";
+import { PageHeader, Badge } from "../components/admin/ui";
 
 type Tab = "submissions" | "hero" | "gallery" | "reported" | "content";
 
@@ -96,42 +97,42 @@ export default function AdminReview() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-ink">Review</h1>
-      <p className="mt-1 text-ui text-muted">
-        Nutzer-Beiträge sichten und entscheiden. Jede Aktion wird protokolliert.
-      </p>
+      <PageHeader
+        title="Review"
+        description="Nutzer-Beiträge sichten und entscheiden. Jede Aktion wird protokolliert."
+      />
 
       {error && (
-        <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
+        <div role="alert" className="mt-4 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger">
           {error}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="mt-5 flex flex-wrap gap-2 border-b border-line">
+      <div className="mt-5 flex flex-wrap gap-1 border-b border-admin-border">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`-mb-px border-b-2 px-3 py-2 text-ui font-medium ${
+            className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-ui font-medium transition-colors ${
               tab === t.key
-                ? "border-teal text-teal"
-                : "border-transparent text-muted hover:text-teal"
+                ? "border-admin-primary text-admin-fg"
+                : "border-transparent text-admin-muted hover:text-admin-fg"
             }`}
           >
             {t.label}
             {queue && t.count(queue) > 0 && (
-              <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-caption font-semibold text-ink">
+              <Badge tone={tab === t.key ? "primary" : "neutral"} dot={false}>
                 {t.count(queue)}
-              </span>
+              </Badge>
             )}
           </button>
         ))}
       </div>
 
       {!queue ? (
-        <div className="mt-6 text-ui text-muted">Lädt…</div>
+        <div className="mt-6 text-ui text-admin-muted">Lädt…</div>
       ) : (
         <div className="mt-6 space-y-3">
           {tab === "submissions" &&
@@ -249,15 +250,11 @@ export default function AdminReview() {
                 {queue.ratings.map((r) => (
                   <Card key={r.id}>
                     <div className="min-w-0">
-                      <div className="text-label text-muted">
-                        Bewertung · {r.stars}★ · {r.author_name}
-                        {r.flagged && (
-                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-caption font-semibold text-ink">
-                            gemeldet
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2 text-label text-admin-muted">
+                        <span>Bewertung · {r.stars}★ · {r.author_name}</span>
+                        {r.flagged && <Badge tone="warning">gemeldet</Badge>}
                       </div>
-                      <p className="text-ui text-ink">{r.conditions}</p>
+                      <p className="mt-1 text-ui text-admin-fg">{r.conditions}</p>
                     </div>
                     <Actions>
                       <Reject busy={busy} onClick={() => act(() => hideRating(r.id))}>
@@ -269,15 +266,11 @@ export default function AdminReview() {
                 {queue.tips.map((t) => (
                   <Card key={t.id}>
                     <div className="min-w-0">
-                      <div className="text-label text-muted">
-                        Tipp · {t.author_name}
-                        {t.flagged && (
-                          <span className="ml-2 rounded-2xl bg-orange/15 px-2 py-0.5 text-caption font-semibold text-ink">
-                            gemeldet
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2 text-label text-admin-muted">
+                        <span>Tipp · {t.author_name}</span>
+                        {t.flagged && <Badge tone="warning">gemeldet</Badge>}
                       </div>
-                      <p className="text-ui text-ink">{t.body}</p>
+                      <p className="mt-1 text-ui text-admin-fg">{t.body}</p>
                     </div>
                     <Actions>
                       <Reject busy={busy} onClick={() => act(() => hideTip(t.id))}>
@@ -361,11 +354,11 @@ function SubmissionCard({
         </div>
 
         {complete ? (
-          <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-band p-2 text-caption text-ink-soft">
+          <pre className="admin-mono mt-2 max-h-40 overflow-auto rounded-md border border-admin-border bg-admin-hover p-2.5 text-caption text-admin-fg2">
             {JSON.stringify(submission.payload, null, 2)}
           </pre>
         ) : (
-          <div className="mt-3 rounded-lg border border-line bg-band/40 p-3">
+          <div className="mt-3 rounded-md border border-admin-border bg-admin-hover p-3">
             <p className="mb-2 text-caption font-medium text-muted">
               Nur als Name eingereicht — zum Anlegen Region und Koordinaten ergänzen.
             </p>
@@ -463,7 +456,7 @@ function SubmissionCard({
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-line bg-white p-4">
+    <div className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-admin-border bg-admin-surface p-4">
       {children}
     </div>
   );
@@ -472,25 +465,25 @@ function Actions({ children }: { children: React.ReactNode }) {
   return <div className="flex shrink-0 flex-wrap gap-2">{children}</div>;
 }
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-line bg-white p-6 text-center text-ui text-muted">{children}</div>;
+  return <div className="rounded-lg border border-dashed border-admin-border bg-admin-surface p-10 text-center text-ui text-admin-muted">{children}</div>;
 }
 function Approve({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg bg-green px-3 py-1.5 text-label font-medium text-white hover:opacity-90 disabled:opacity-50">
+    <button type="button" disabled={busy} onClick={onClick} className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50">
       {children}
     </button>
   );
 }
 function Reject({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-label font-medium text-red-700 hover:bg-red-100 disabled:opacity-50">
+    <button type="button" disabled={busy} onClick={onClick} className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:brightness-95 disabled:opacity-50">
       {children}
     </button>
   );
 }
 function Neutral({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50">
+    <button type="button" disabled={busy} onClick={onClick} className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50">
       {children}
     </button>
   );

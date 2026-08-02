@@ -41,6 +41,7 @@ import {
   waterCharacterLabel,
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
+import { PageHeader } from "../components/admin/ui";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
@@ -397,14 +398,10 @@ export default function AdminSpotForm() {
 
   return (
     <div className="mx-auto max-w-[1100px]">
-      <h1 className="text-2xl font-semibold text-ink">
-        {isEdit ? "Spot bearbeiten" : "Neuen Spot anlegen"}
-      </h1>
-      <p className="mt-2 text-body text-muted">
-        Nur Name, Region und Position sind zum Speichern nötig — fehlende Teile
-        sind ok: der Spot wird als Entwurf gespeichert und erscheint in der
-        Übersicht unter „Offene Punkte", um ihn später zu ergänzen.
-      </p>
+      <PageHeader
+        title={isEdit ? "Spot bearbeiten" : "Neuen Spot anlegen"}
+        description="Nur Name, Region und Position sind zum Speichern nötig — fehlende Teile sind ok: der Spot wird als Entwurf gespeichert und erscheint in der Übersicht unter „Offene Punkte“, um ihn später zu ergänzen."
+      />
 
       <form
         onSubmit={onSubmit}
@@ -830,8 +827,8 @@ export default function AdminSpotForm() {
           {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
 
           {savedId && readiness && (
-            <div className="rounded-2xl bg-green/10 p-4">
-              <p className="text-ui font-semibold text-green">
+            <div className="rounded-lg border border-admin-success-border bg-admin-success-bg p-4">
+              <p className="text-ui font-semibold text-admin-success">
                 ✓ Gespeichert.{" "}
                 {readiness.ready
                   ? "Der Spot erfüllt alle Pflichtfelder und kann live gehen."
@@ -844,7 +841,7 @@ export default function AdminSpotForm() {
                       key={g}
                       type="button"
                       onClick={() => focusGap(g)}
-                      className="rounded-lg bg-white px-2 py-0.5 text-caption font-medium text-ink-soft ring-1 ring-line hover:ring-teal/40"
+                      className="rounded-md border border-admin-border bg-admin-surface px-2 py-0.5 text-caption font-medium text-admin-fg2 transition-colors hover:border-admin-border-strong"
                     >
                       {gapLabel(g)}
                     </button>
@@ -854,7 +851,7 @@ export default function AdminSpotForm() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to={`/spot/${savedId}`}
-                  className="rounded-lg bg-teal px-3 py-1.5 text-label font-medium text-white hover:bg-teal-hover"
+                  className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
                 >
                   Zur Spot-Seite
                 </Link>
@@ -862,7 +859,7 @@ export default function AdminSpotForm() {
                   <button
                     type="button"
                     onClick={() => navigate(`/admin/spot/${savedId}/edit`)}
-                    className="rounded-lg px-3 py-1.5 text-label font-medium text-teal ring-1 ring-teal/30 hover:ring-teal/50"
+                    className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
                   >
                     Weiter bearbeiten
                   </button>
@@ -873,11 +870,11 @@ export default function AdminSpotForm() {
 
           {error && <ErrorBanner message={error} />}
 
-          <div className="rounded-2xl border border-line bg-white p-4">
+          <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-lg bg-teal px-5 py-2.5 text-ui font-medium text-white hover:bg-teal-hover disabled:opacity-50"
+              className="w-full rounded-md bg-admin-primary px-5 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
             >
               {submitting
                 ? "Speichern …"
@@ -886,7 +883,7 @@ export default function AdminSpotForm() {
                 : "Spot anlegen"}
             </button>
             <div className="mt-3 flex items-center justify-between text-label">
-              <Link to="/" className="text-muted hover:text-teal">
+              <Link to="/" className="text-admin-muted transition-colors hover:text-admin-fg">
                 Abbrechen
               </Link>
               {isEdit && id && (
@@ -894,7 +891,7 @@ export default function AdminSpotForm() {
                   href={`/spot/${id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-teal hover:underline"
+                  className="font-medium text-admin-primary hover:underline"
                   title="Öffnet die öffentliche Spot-Seite — funktioniert auch für Entwürfe."
                 >
                   Öffentliche Vorschau ↗
