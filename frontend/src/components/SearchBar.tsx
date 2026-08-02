@@ -115,7 +115,8 @@ export default function SearchBar() {
       whereText: pick.label,
       whereOpen: false,
     }));
-    close();
+    // Airbnb flow: after choosing the place, advance to "Wann?" (the date step).
+    openSeg("when");
   };
 
   // Keyboard on the "Wohin?" input: ↓/↑ move within the active column, ←/→ hop
@@ -144,7 +145,10 @@ export default function SearchBar() {
       e.preventDefault();
       const items = activeCol === "spot" ? spotItems : regionItems;
       const item = activeRow >= 0 ? items[activeRow] : undefined;
+      // Highlighted result → pick it (→ Wann). Free text typed → keep it and
+      // advance to Wann too. Nothing entered → run the open search.
       if (item) pickWhere(item.pick);
+      else if (val.whereText.trim()) openSeg("when");
       else submit();
     }
   };

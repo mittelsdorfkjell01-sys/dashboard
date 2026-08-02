@@ -60,12 +60,15 @@ export default function LandingHeader({
       >
         <div className="pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center gap-4">
           <div className="justify-self-start">
-            {left ??
-              (!solid && (
-                <span className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block">
-                  Best collection of surfspots
-                </span>
-              ))}
+            {left ?? (
+              <span
+                className={`hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] transition-colors sm:block ${
+                  solid ? "text-teal" : "text-white/90"
+                }`}
+              >
+                Best collection of surfspots
+              </span>
+            )}
           </div>
 
           <Link

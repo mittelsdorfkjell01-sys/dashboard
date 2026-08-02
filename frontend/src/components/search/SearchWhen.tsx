@@ -203,7 +203,9 @@ export default function SearchWhen({
           </div>
 
           <p className="mb-1.5 mt-3 text-[12px] font-medium text-muted">Zeitspanne</p>
-          <div className="flex flex-wrap gap-1.5">
+          {/* "Ein Wochenende" spans the row; "Eine Woche" + "zwei Wochen" sit
+              side by side below it. */}
+          <div className="grid grid-cols-2 gap-1.5">
             {(
               [
                 ["Ein Wochenende", "weekend"],
@@ -215,7 +217,9 @@ export default function SearchWhen({
                 key={dur}
                 type="button"
                 onClick={() => pickDuration(dur)}
-                className={`rounded-2xl border px-3 py-1.5 text-[12px] transition-colors ${
+                className={`rounded-2xl border px-3 py-1.5 text-center text-[12px] transition-colors ${
+                  dur === "weekend" ? "col-span-2" : ""
+                } ${
                   selDuration === dur
                     ? "border-teal bg-teal/10 text-teal"
                     : "border-line text-teal hover:border-teal"
