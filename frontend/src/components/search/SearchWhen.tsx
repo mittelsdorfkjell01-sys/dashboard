@@ -125,12 +125,12 @@ export default function SearchWhen({
       >
         {months.map((mm, idx) => (
           <div key={idx} className="flex-1">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-1 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, -1))}
                 aria-label="Vorheriger Monat"
-                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
+                className={`grid h-6 w-6 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
               >
                 <ChevL className="text-[16px]" />
               </button>
@@ -141,7 +141,7 @@ export default function SearchWhen({
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, 1))}
                 aria-label="Nächster Monat"
-                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
+                className={`grid h-6 w-6 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
               >
                 <ChevR className="text-[16px]" />
               </button>
@@ -158,7 +158,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-7 w-7 place-items-center rounded-lg text-[11px] transition-colors ${
+                    className={`mx-auto grid h-6 w-6 place-items-center rounded-lg text-[11px] transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -184,14 +184,14 @@ export default function SearchWhen({
             flexDisabled ? "pointer-events-none opacity-40" : ""
           }`}
         >
-          <p className="mb-1.5 text-[12px] font-medium text-muted">Monat</p>
+          <p className="mb-1 text-[12px] font-medium text-muted">Monat</p>
           <div className="grid grid-cols-4 gap-1.5">
             {MONTHS_SHORT.map((mon, i) => (
               <button
                 key={mon}
                 type="button"
                 onClick={() => pickMonth(i + 1)}
-                className={`rounded-lg border px-2 py-1.5 text-[12px] font-medium transition-colors ${
+                className={`rounded-lg border px-2 py-1 text-[12px] font-medium transition-colors ${
                   selMonth === i + 1
                     ? "border-teal bg-teal/10 text-teal"
                     : "border-line text-teal hover:border-teal"
@@ -202,7 +202,7 @@ export default function SearchWhen({
             ))}
           </div>
 
-          <p className="mb-1.5 mt-3 text-[12px] font-medium text-muted">Zeitspanne</p>
+          <p className="mb-1 mt-2 text-[12px] font-medium text-muted">Zeitspanne</p>
           {/* "Ein Wochenende" spans the row; "Eine Woche" + "zwei Wochen" sit
               side by side below it. */}
           <div className="grid grid-cols-2 gap-1.5">
@@ -217,7 +217,7 @@ export default function SearchWhen({
                 key={dur}
                 type="button"
                 onClick={() => pickDuration(dur)}
-                className={`rounded-2xl border px-3 py-1.5 text-center text-[12px] transition-colors ${
+                className={`rounded-2xl border px-3 py-1 text-center text-[12px] transition-colors ${
                   dur === "weekend" ? "col-span-2" : ""
                 } ${
                   selDuration === dur
@@ -237,7 +237,7 @@ export default function SearchWhen({
           onClick={() => onChange(null)}
           aria-hidden={!value}
           tabIndex={value ? 0 : -1}
-          className={`mt-3 text-[12px] font-medium text-teal underline underline-offset-2 transition-colors hover:text-teal-hover ${
+          className={`mt-2 text-[12px] font-medium text-teal underline underline-offset-2 transition-colors hover:text-teal-hover ${
             value ? "" : "invisible"
           }`}
         >
