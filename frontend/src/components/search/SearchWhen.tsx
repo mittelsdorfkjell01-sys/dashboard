@@ -191,7 +191,7 @@ export default function SearchWhen({
                 key={mon}
                 type="button"
                 onClick={() => pickMonth(i + 1)}
-                className={`rounded-lg border px-2 py-1 text-[12px] font-medium transition-colors ${
+                className={`flex h-7 items-center justify-center rounded-lg border px-2 text-[12px] font-medium transition-colors ${
                   selMonth === i + 1
                     ? "border-teal bg-teal/10 text-teal"
                     : "border-line text-teal hover:border-teal"
@@ -217,7 +217,7 @@ export default function SearchWhen({
                 key={dur}
                 type="button"
                 onClick={() => pickDuration(dur)}
-                className={`rounded-2xl border px-3 py-1 text-center text-[12px] transition-colors ${
+                className={`flex h-7 items-center justify-center rounded-2xl border px-2 text-[12px] transition-colors ${
                   dur === "weekend" ? "col-span-2" : ""
                 } ${
                   selDuration === dur
