@@ -40,17 +40,17 @@ function Row({
 export default function SearchWhere({
   spotItems,
   regionItems,
-  activeIndex,
+  activeCol,
+  activeRow,
   onPick,
 }: {
   spotItems: WhereItem[];
   regionItems: WhereItem[];
-  /** Flat highlight index across [spots…, regions…]; -1 = none. */
-  activeIndex: number;
+  /** Which column the keyboard highlight is in, and the row within it (-1=none). */
+  activeCol: "spot" | "region";
+  activeRow: number;
   onPick: (pick: WherePick) => void;
 }) {
-  const activeRegion = activeIndex - spotItems.length;
-
   return (
     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
       {/* Spots left */}
@@ -62,7 +62,7 @@ export default function SearchWhere({
               <Row
                 key={it.key}
                 label={it.label}
-                active={i === activeIndex}
+                active={activeCol === "spot" && i === activeRow}
                 onClick={() => onPick(it.pick)}
               />
             ))}
@@ -81,7 +81,7 @@ export default function SearchWhere({
               <Row
                 key={it.key}
                 label={it.label}
-                active={i === activeRegion}
+                active={activeCol === "region" && i === activeRow}
                 onClick={() => onPick(it.pick)}
               />
             ))}

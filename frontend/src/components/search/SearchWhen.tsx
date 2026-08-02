@@ -130,25 +130,25 @@ export default function SearchWhen({
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, -1))}
                 aria-label="Vorheriger Monat"
-                className={`grid h-9 w-9 place-items-center rounded-2xl text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
+                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
               >
                 <ChevL className="text-[16px]" />
               </button>
-              <span className="text-[14px] font-semibold text-ink">
+              <span className="text-[13px] font-semibold text-ink">
                 {MONTHS_LONG[mm.m]} {mm.y}
               </span>
               <button
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, 1))}
                 aria-label="Nächster Monat"
-                className={`grid h-9 w-9 place-items-center rounded-2xl text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
+                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
               >
                 <ChevR className="text-[16px]" />
               </button>
             </div>
             <div className="grid grid-cols-7 gap-y-0.5">
               {WEEKDAYS.map((w) => (
-                <span key={w} className="pb-0.5 text-center text-[11px] font-medium text-muted">
+                <span key={w} className="pb-0.5 text-center text-[10px] font-medium text-muted">
                   {w}
                 </span>
               ))}
@@ -158,7 +158,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-8 w-8 place-items-center rounded-xl text-[12px] transition-colors ${
+                    className={`mx-auto grid h-7 w-7 place-items-center rounded-lg text-[11px] transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -184,14 +184,14 @@ export default function SearchWhen({
             flexDisabled ? "pointer-events-none opacity-40" : ""
           }`}
         >
-          <p className="mb-2 text-[12px] font-medium text-muted">Monat</p>
-          <div className="grid grid-cols-4 gap-2">
+          <p className="mb-1.5 text-[12px] font-medium text-muted">Monat</p>
+          <div className="grid grid-cols-4 gap-1.5">
             {MONTHS_SHORT.map((mon, i) => (
               <button
                 key={mon}
                 type="button"
                 onClick={() => pickMonth(i + 1)}
-                className={`rounded-lg border px-2 py-2 text-[12px] font-medium transition-colors ${
+                className={`rounded-lg border px-2 py-1.5 text-[12px] font-medium transition-colors ${
                   selMonth === i + 1
                     ? "border-teal bg-teal/10 text-teal"
                     : "border-line text-teal hover:border-teal"
@@ -202,8 +202,8 @@ export default function SearchWhen({
             ))}
           </div>
 
-          <p className="mb-2 mt-4 text-[12px] font-medium text-muted">Zeitspanne</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="mb-1.5 mt-3 text-[12px] font-medium text-muted">Zeitspanne</p>
+          <div className="flex flex-wrap gap-1.5">
             {(
               [
                 ["Ein Wochenende", "weekend"],
@@ -233,7 +233,7 @@ export default function SearchWhen({
           onClick={() => onChange(null)}
           aria-hidden={!value}
           tabIndex={value ? 0 : -1}
-          className={`mt-5 text-[12px] font-medium text-teal underline underline-offset-2 transition-colors hover:text-teal-hover ${
+          className={`mt-3 text-[12px] font-medium text-teal underline underline-offset-2 transition-colors hover:text-teal-hover ${
             value ? "" : "invisible"
           }`}
         >

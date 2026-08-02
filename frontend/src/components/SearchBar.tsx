@@ -68,10 +68,15 @@ export default function SearchBar() {
         })),
     [regions, q]
   );
-  const flat = useMemo(() => [...spotItems, ...regionItems], [spotItems, regionItems]);
-  // Keyboard highlight across the flat list (-1 = none). Reset while typing.
-  const [activeIndex, setActiveIndex] = useState(-1);
-  useEffect(() => setActiveIndex(-1), [val.whereText]);
+  // Keyboard highlight: which column + row (row -1 = none). ↑/↓ move within the
+  // column, ←/→ switch Spots↔Regionen (only once navigating, so plain typing can
+  // still move the text caret). Reset while typing.
+  const [activeCol, setActiveCol] = useState<"spot" | "region">("spot");
+  const [activeRow, setActiveRow] = useState(-1);
+  useEffect(() => {
+    setActiveRow(-1);
+    setActiveCol("spot");
+  }, [val.whereText]);
 
   // Both panels span the full bar width (measured at open time).
   const openSeg = (s: Segment) => {
@@ -113,20 +118,32 @@ export default function SearchBar() {
     close();
   };
 
-  // Keyboard on the "Wohin?" input: ↑/↓ move the highlight, Enter picks the
-  // highlighted result — or, with none highlighted, runs the search with the
-  // free text as typed (partial word ok, no date required).
+  // Keyboard on the "Wohin?" input: ↓/↑ move within the active column, ←/→ hop
+  // between Spots and Regionen (only after navigation started, so before that
+  // ←/→ still edit the text). Enter picks the highlighted result — or, with none
+  // highlighted, runs the search with the free text as typed (partial word ok,
+  // no date required).
   const onWhereKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const curLen = activeCol === "spot" ? spotItems.length : regionItems.length;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (open !== "where") openSeg("where");
-      setActiveIndex((i) => Math.min(i + 1, flat.length - 1));
+      setActiveRow((r) => Math.min(r + 1, curLen - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, -1));
+      setActiveRow((r) => Math.max(r - 1, -1));
+    } else if (e.key === "ArrowRight" && activeRow >= 0 && regionItems.length) {
+      e.preventDefault();
+      setActiveCol("region");
+      setActiveRow((r) => Math.min(Math.max(r, 0), regionItems.length - 1));
+    } else if (e.key === "ArrowLeft" && activeRow >= 0 && spotItems.length) {
+      e.preventDefault();
+      setActiveCol("spot");
+      setActiveRow((r) => Math.min(Math.max(r, 0), spotItems.length - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const item = activeIndex >= 0 ? flat[activeIndex] : undefined;
+      const items = activeCol === "spot" ? spotItems : regionItems;
+      const item = activeRow >= 0 ? items[activeRow] : undefined;
       if (item) pickWhere(item.pick);
       else submit();
     }
@@ -247,7 +264,8 @@ export default function SearchBar() {
                       <SearchWhere
                         spotItems={spotItems}
                         regionItems={regionItems}
-                        activeIndex={activeIndex}
+                        activeCol={activeCol}
+                        activeRow={activeRow}
                         onPick={pickWhere}
                       />
                     )}
