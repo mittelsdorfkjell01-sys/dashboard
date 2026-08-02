@@ -1,69 +1,71 @@
 // "Wohin?" panel: two compact columns of suggestions — Spots left, Regionen
-// right — filtered by the bar's query. The input itself lives in the search bar
-// (the "Tippleiste"); this panel is just the results.
+// right. Presentational only: the filtered items, the keyboard-highlight index
+// and the pick handler are owned by the search bar (so ↑/↓/Enter work).
 
-import { useMemo } from "react";
-import { useRegions, useSpots } from "../../lib/hooks";
 import type { WhereSelection } from "../../lib/searchSubmit";
 
 export interface WherePick extends WhereSelection {
   country?: string | null;
 }
 
-function Row({ label, onClick }: { label: string; onClick: () => void }) {
+/** A rendered suggestion: a stable key, its label, and the pick it commits. */
+export interface WhereItem {
+  key: string;
+  label: string;
+  pick: WherePick;
+}
+
+function Row({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-band"
+      className={`flex items-center rounded-lg px-2 py-1.5 text-left transition-colors ${
+        active ? "bg-band" : "hover:bg-band"
+      }`}
     >
-      <span className="truncate text-[15px] text-teal">{label}</span>
+      <span className="truncate text-[15px] text-ink">{label}</span>
     </button>
   );
 }
 
 export default function SearchWhere({
-  query,
+  spotItems,
+  regionItems,
+  activeIndex,
   onPick,
 }: {
-  query: string;
+  spotItems: WhereItem[];
+  regionItems: WhereItem[];
+  /** Flat highlight index across [spots…, regions…]; -1 = none. */
+  activeIndex: number;
   onPick: (pick: WherePick) => void;
 }) {
-  const { data: spots } = useSpots({ status: "published" });
-  const { data: regions } = useRegions();
-
-  const regionById = useMemo(
-    () => new Map((regions ?? []).map((r) => [r.id, r])),
-    [regions]
-  );
-
-  const q = query.trim().toLowerCase();
-  const spotHits = (spots ?? [])
-    .filter((s) => !q || s.name.toLowerCase().includes(q))
-    .slice(0, 6);
-  const regionHits = (regions ?? [])
-    .filter((r) => !q || r.name.toLowerCase().includes(q))
-    .slice(0, 6);
+  const activeRegion = activeIndex - spotItems.length;
 
   return (
     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
       {/* Spots left */}
       <div>
         <h3 className="mb-2 text-[13px] font-medium text-muted">Spots</h3>
-        {spotHits.length ? (
+        {spotItems.length ? (
           <div className="flex flex-col gap-0.5">
-            {spotHits.map((s) => {
-              const country = regionById.get(s.regionId ?? "")?.country ?? null;
-              return (
-                <Row
-                  key={s.id}
-                  label={s.name}
-                  onClick={() =>
-                    onPick({ label: s.name, kind: "spot", id: s.uuid ?? s.id, country })
-                  }
-                />
-              );
-            })}
+            {spotItems.map((it, i) => (
+              <Row
+                key={it.key}
+                label={it.label}
+                active={i === activeIndex}
+                onClick={() => onPick(it.pick)}
+              />
+            ))}
           </div>
         ) : (
           <p className="text-[13px] text-muted">Keine Spots gefunden.</p>
@@ -73,15 +75,14 @@ export default function SearchWhere({
       {/* Regionen right */}
       <div>
         <h3 className="mb-2 text-[13px] font-medium text-muted">Regionen</h3>
-        {regionHits.length ? (
+        {regionItems.length ? (
           <div className="flex flex-col gap-0.5">
-            {regionHits.map((r) => (
+            {regionItems.map((it, i) => (
               <Row
-                key={r.id}
-                label={r.name}
-                onClick={() =>
-                  onPick({ label: r.name, kind: "region", id: r.id, country: r.country })
-                }
+                key={it.key}
+                label={it.label}
+                active={i === activeRegion}
+                onClick={() => onPick(it.pick)}
               />
             ))}
           </div>

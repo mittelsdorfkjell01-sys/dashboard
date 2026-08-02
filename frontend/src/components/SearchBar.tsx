@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { SearchIcon } from "../lib/icons";
-import SearchWhere, { type WherePick } from "./search/SearchWhere";
+import SearchWhere, { type WhereItem, type WherePick } from "./search/SearchWhere";
 import SearchWhen from "./search/SearchWhen";
 import { addRecent } from "../lib/recentSearches";
+import { useRegions, useSpots } from "../lib/hooks";
 import {
   buildSearchParams,
   EMPTY_SEARCH,
@@ -28,6 +29,49 @@ export default function SearchBar() {
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
   const barRef = useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
+
+  // "Wohin?" results (owned here so ↑/↓/Enter can navigate them). Spots first,
+  // then Regionen — the flat order the arrow keys move through.
+  const { data: spots } = useSpots({ status: "published" });
+  const { data: regions } = useRegions();
+  const q = val.whereText.trim().toLowerCase();
+  const regionById = useMemo(
+    () => new Map((regions ?? []).map((r) => [r.id, r])),
+    [regions]
+  );
+  const spotItems = useMemo<WhereItem[]>(
+    () =>
+      (spots ?? [])
+        .filter((s) => !q || s.name.toLowerCase().includes(q))
+        .slice(0, 6)
+        .map((s) => ({
+          key: s.id,
+          label: s.name,
+          pick: {
+            label: s.name,
+            kind: "spot",
+            id: s.uuid ?? s.id,
+            country: regionById.get(s.regionId ?? "")?.country ?? null,
+          },
+        })),
+    [spots, q, regionById]
+  );
+  const regionItems = useMemo<WhereItem[]>(
+    () =>
+      (regions ?? [])
+        .filter((r) => !q || r.name.toLowerCase().includes(q))
+        .slice(0, 6)
+        .map((r) => ({
+          key: r.id,
+          label: r.name,
+          pick: { label: r.name, kind: "region", id: r.id, country: r.country },
+        })),
+    [regions, q]
+  );
+  const flat = useMemo(() => [...spotItems, ...regionItems], [spotItems, regionItems]);
+  // Keyboard highlight across the flat list (-1 = none). Reset while typing.
+  const [activeIndex, setActiveIndex] = useState(-1);
+  useEffect(() => setActiveIndex(-1), [val.whereText]);
 
   // Both panels span the full bar width (measured at open time).
   const openSeg = (s: Segment) => {
@@ -69,6 +113,25 @@ export default function SearchBar() {
     close();
   };
 
+  // Keyboard on the "Wohin?" input: ↑/↓ move the highlight, Enter picks the
+  // highlighted result — or, with none highlighted, runs the search with the
+  // free text as typed (partial word ok, no date required).
+  const onWhereKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (open !== "where") openSeg("where");
+      setActiveIndex((i) => Math.min(i + 1, flat.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const item = activeIndex >= 0 ? flat[activeIndex] : undefined;
+      if (item) pickWhere(item.pick);
+      else submit();
+    }
+  };
+
   return (
     <>
       <div ref={barRef} className="relative">
@@ -86,6 +149,7 @@ export default function SearchBar() {
                 setVal((v) => ({ ...v, whereText: text, whereSel: null, whereOpen: false }));
                 if (open !== "where") openSeg("where");
               }}
+              onKeyDown={onWhereKeyDown}
               placeholder="Region oder Spot suchen"
               aria-label="Region oder Spot suchen"
               aria-expanded={open === "where"}
@@ -167,11 +231,12 @@ export default function SearchBar() {
                 }}
                 className="overflow-hidden rounded-3xl border border-line bg-white"
               >
-                <motion.div layout data-lenis-prevent className="p-5">
+                <div data-lenis-prevent className="p-5">
                   {/* Airbnb-style switch: the panel stays open and only its
                       content swaps when Wohin/Wann is clicked — the new section
                       slides in from the side of its tab (left = Wohin, right =
-                      Wann); `layout` above eases the height change. */}
+                      Wann). No height/layout animation, so typing (which filters
+                      the list) never makes rows slide around. */}
                   <motion.div
                     key={open}
                     initial={reduce ? false : { opacity: 0, x: open === "when" ? 18 : -18 }}
@@ -179,7 +244,12 @@ export default function SearchBar() {
                     transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                   >
                     {open === "where" && (
-                      <SearchWhere query={val.whereText} onPick={pickWhere} />
+                      <SearchWhere
+                        spotItems={spotItems}
+                        regionItems={regionItems}
+                        activeIndex={activeIndex}
+                        onPick={pickWhere}
+                      />
                     )}
                     {open === "when" && (
                       <SearchWhen
@@ -188,7 +258,7 @@ export default function SearchBar() {
                       />
                     )}
                   </motion.div>
-                </motion.div>
+                </div>
               </motion.div>
             </>
           )}

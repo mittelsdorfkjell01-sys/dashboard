@@ -27,11 +27,13 @@ export default function Landing() {
     <div className="relative bg-white">
       <LandingHeader />
 
-      {/* 1 — Hero screen. `isolate` gives the section its own stacking context so
-          the -z-10 hero stays behind the section's own content instead of
-          escaping to the root and being covered by the page's white background. */}
-      <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
-        <div className="absolute inset-0 -z-10" aria-hidden>
+      {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
+          it paints above the page's white background but below the search bar).
+          No `isolate` here — an isolated stacking context would trap the search
+          bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
+          hit the scrim and close instead of switching the panel. */}
+      <section className="relative flex min-h-screen flex-col overflow-hidden">
+        <div className="absolute inset-0 z-0" aria-hidden>
           <HeroImage
             src="/hero-surfwind.jpg"
             alt=""
@@ -48,7 +50,7 @@ export default function Landing() {
 
         {/* Search — sits high in the hero so the (compact) dropdown always fits
             above the fold and never reaches into the white spots section. */}
-        <div className="flex justify-center px-4 pb-56 sm:px-6 sm:pb-64">
+        <div className="flex justify-center px-4 pb-72 sm:px-6 sm:pb-80">
           <div className="relative z-[1200] w-full max-w-[760px]">
             <SearchBar />
           </div>
