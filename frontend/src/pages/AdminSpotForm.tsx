@@ -819,7 +819,7 @@ export default function AdminSpotForm() {
         {/* Right column: sticky actions — stay visible while the form scrolls.
             top clears the sticky app header; self-start + max-height keep the rail
             pinned and independently scrollable if it ever exceeds the viewport. */}
-        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[72px] xl:self-start xl:max-h-[calc(100vh-88px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
+        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[79px] xl:self-start xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
           {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
 
           {savedId && readiness && (

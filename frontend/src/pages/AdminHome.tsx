@@ -8,15 +8,12 @@ import { Link } from "react-router-dom";
 import {
   ApiError,
   getAdminOverview,
-  setFinishRank,
   type AdminOverview,
-  type Rank,
 } from "../lib/api";
 import { gapLabel } from "../lib/labels";
-import { autoRank, RANK_CARD, RANK_DOT } from "../lib/rank";
+import { RANK_CARD, RANK_DOT } from "../lib/rank";
 import BoardPanel from "../components/admin/BoardPanel";
-import RankControl from "../components/admin/RankControl";
-import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
+import { Badge, type BadgeTone } from "../components/admin/ui";
 
 type Tone = "red" | "orange" | "teal";
 interface Task {
@@ -57,42 +54,12 @@ function buildTasks(data: AdminOverview): Task[] {
 export default function AdminHome() {
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rankBusyId, setRankBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     getAdminOverview()
       .then(setData)
       .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen."));
   }, []);
-
-  // Set/clear a spot's manual rank from the list — optimistic, rolls back on
-  // failure. Position is kept (no re-sort) so the row doesn't jump under the
-  // cursor; a reload re-orders worst-first.
-  const onRank = async (spotId: string, rank: Rank | null) => {
-    if (!data) return;
-    const snapshot = data.finish;
-    setRankBusyId(spotId);
-    setData((d) =>
-      d
-        ? {
-            ...d,
-            finish: d.finish.map((f) =>
-              f.id === spotId
-                ? { ...f, finish_rank: rank, rank: rank ?? autoRank(f.gaps) }
-                : f
-            ),
-          }
-        : d
-    );
-    try {
-      await setFinishRank(spotId, rank);
-    } catch (e) {
-      setData((d) => (d ? { ...d, finish: snapshot } : d)); // rollback
-      setError(e instanceof ApiError ? e.message : "Rang konnte nicht gesetzt werden.");
-    } finally {
-      setRankBusyId(null);
-    }
-  };
 
   if (error)
     return (
@@ -107,19 +74,6 @@ export default function AdminHome() {
 
   return (
     <div>
-      <PageHeader
-        title="Übersicht"
-        description="Was ist zu tun? Alles Offene auf einen Blick."
-        actions={
-          <Link
-            to="/admin/spot/new"
-            className="inline-flex items-center gap-1.5 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
-          >
-            <span aria-hidden className="text-[15px] leading-none">+</span> Neuer Spot
-          </Link>
-        }
-      />
-
       {/* Region-less spots — most urgent, flagged red at the very top. */}
       {data.no_region.length > 0 && (
         <section className="mt-6 rounded-2xl border-2 border-red-400 bg-red-50/50 p-4">
@@ -154,14 +108,10 @@ export default function AdminHome() {
         </div>
       </section>
 
-      {/* Was ist zu tun? — the prioritized action list */}
-      <section className="mt-6 overflow-hidden rounded-lg border border-admin-border bg-admin-surface">
-        {tasks.length === 0 ? (
-          <div className="p-6 text-center">
-            <p className="text-ui font-semibold text-admin-fg">Alles erledigt 🎉</p>
-            <p className="mt-1 text-label text-admin-muted">Keine offenen Aufgaben.</p>
-          </div>
-        ) : (
+      {/* Was ist zu tun? — the prioritized action list (hidden when empty; the
+          board already conveys "nothing to do"). */}
+      {tasks.length > 0 && (
+        <section className="mt-6 overflow-hidden rounded-lg border border-admin-border bg-admin-surface">
           <ul className="divide-y divide-admin-border">
             {tasks.map((t) => (
               <li key={t.key}>
@@ -176,8 +126,8 @@ export default function AdminHome() {
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
       {data.era5_queued > 0 && (
         <div className="mt-4 rounded-2xl border border-line bg-teal/5 p-3 text-caption text-muted">
@@ -215,12 +165,6 @@ export default function AdminHome() {
                       : `Offen: ${s.gaps.map(gapLabel).join(", ")}`}
                   </span>
                 </Link>
-                <RankControl
-                  value={s.finish_rank}
-                  effective={s.rank}
-                  busy={rankBusyId === s.id}
-                  onChange={(r) => onRank(s.id, r)}
-                />
               </div>
             ))
           )}

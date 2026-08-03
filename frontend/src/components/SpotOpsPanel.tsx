@@ -133,16 +133,22 @@ export default function SpotOpsPanel({
 
       {/* Fertigstellen-Rang — „Auto" folgt den offenen Punkten; eine Farbe pinnt
           den Rang manuell (dieselbe Steuerung wie in der Übersichtsliste). */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-admin-border bg-admin-bg px-3 py-2.5">
-        <span className="inline-flex items-center gap-2 text-label text-admin-muted">
-          <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
-          Fertigstellen-Rang:{" "}
-          <span className="font-medium text-admin-fg">{RANK_LABEL[rank]}</span>
-          {rankOverride === null && (
-            <span className="text-caption text-admin-faint">(automatisch)</span>
-          )}
-        </span>
-        <RankControl value={rankOverride} effective={rank} onChange={onRankChange} busy={busy} />
+      <div className="mt-4 rounded-md border border-admin-border bg-admin-bg px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2 text-label text-admin-muted">
+            <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
+            Fertigstellen-Rang
+          </span>
+          <span className="text-label font-medium text-admin-fg">
+            {RANK_LABEL[rank]}
+            {rankOverride === null && (
+              <span className="ml-1 text-caption font-normal text-admin-faint">(auto)</span>
+            )}
+          </span>
+        </div>
+        <div className="mt-2.5">
+          <RankControl value={rankOverride} effective={rank} onChange={onRankChange} busy={busy} />
+        </div>
       </div>
 
       {notice && (

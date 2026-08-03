@@ -59,6 +59,11 @@ const I = {
       <path d="M16 4.2A3.2 3.2 0 0 1 16 11m4.5 9c0-2.4-1.6-4.2-3.8-4.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ),
+  activity: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 12h4l2.5-7 5 14 2.5-7H21" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 };
 
 const NAV: NavItem[] = [
@@ -67,6 +72,7 @@ const NAV: NavItem[] = [
   { to: "/admin/regions", label: "Regionen", icon: I.regions },
   { to: "/admin/review", label: "Review", icon: I.review },
   { to: "/admin/map", label: "Karte", icon: I.map },
+  { to: "/admin/activity", label: "Aktivität", icon: I.activity },
   { to: "/admin/users", label: "Benutzer", role: "admin", icon: I.users },
 ];
 
