@@ -41,7 +41,6 @@ import {
   waterCharacterLabel,
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
-import { PageHeader } from "../components/admin/ui";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
@@ -398,14 +397,9 @@ export default function AdminSpotForm() {
 
   return (
     <div className="mx-auto max-w-[1100px]">
-      <PageHeader
-        title={isEdit ? "Spot bearbeiten" : "Neuen Spot anlegen"}
-        description="Nur Name, Region und Position sind zum Speichern nötig — fehlende Teile sind ok: der Spot wird als Entwurf gespeichert und erscheint in der Übersicht unter „Offene Punkte“, um ihn später zu ergänzen."
-      />
-
       <form
         onSubmit={onSubmit}
-        className="mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8"
+        className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8"
       >
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">

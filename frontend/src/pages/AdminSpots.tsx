@@ -2,7 +2,7 @@
 // edit, go-live (surfaces the readiness gap list on 409), and ERA5 trigger.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   archiveSpot,
@@ -22,6 +22,7 @@ const STATUSES = ["draft", "published", "archived"];
 const PAGE = 25;
 
 export default function AdminSpots() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const status = params.get("status") ?? "";
   const regionId = params.get("region_id") ?? "";
@@ -243,14 +244,15 @@ export default function AdminSpots() {
               </tr>
             ) : (
               data.items.map((s) => (
-                <tr key={s.id} className="transition-colors hover:bg-admin-hover">
+                <tr
+                  key={s.id}
+                  onClick={() => navigate(`/admin/spot/${s.id}/edit`)}
+                  className="group cursor-pointer transition-colors hover:bg-admin-hover"
+                >
                   <td className="px-4 py-3">
-                    <Link
-                      to={`/admin/spot/${s.id}/edit`}
-                      className="font-medium text-admin-fg hover:text-admin-primary hover:underline"
-                    >
+                    <span className="font-medium text-admin-fg group-hover:text-admin-primary">
                       {s.name}
-                    </Link>
+                    </span>
                     <div className="admin-mono text-caption text-admin-muted">{s.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-admin-fg2">
@@ -265,7 +267,7 @@ export default function AdminSpots() {
                   <td className="admin-mono px-4 py-3 text-right text-admin-fg2">
                     {s.confidence != null ? s.confidence.toFixed(2) : "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <div className="flex flex-wrap gap-2">
                       <Link
                         to={`/admin/spot/${s.id}/edit`}
