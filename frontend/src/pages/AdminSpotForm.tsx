@@ -396,7 +396,7 @@ export default function AdminSpotForm() {
   }
 
   return (
-    <div className="mx-auto max-w-[1280px]">
+    <div className="w-full">
       <form
         onSubmit={onSubmit}
         className="xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8"

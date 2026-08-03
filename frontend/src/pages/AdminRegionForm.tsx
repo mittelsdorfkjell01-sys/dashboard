@@ -301,7 +301,7 @@ export default function AdminRegionForm() {
   }
 
   return (
-    <div className="mx-auto max-w-[1280px]">
+    <div className="w-full">
       <button
         type="button"
         onClick={() => navigate("/admin/regions")}

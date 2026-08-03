@@ -97,7 +97,7 @@ export default function AdminShell() {
 
   return (
     <div className="min-h-screen bg-admin-bg text-admin-fg">
-      <div className="mx-auto flex max-w-[1760px]">
+      <div className="flex">
         {/* Sidebar (desktop) */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-5 lg:flex">
           <Link to="/admin" className="px-2 py-1">
