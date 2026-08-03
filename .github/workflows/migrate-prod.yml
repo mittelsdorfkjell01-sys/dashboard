@@ -1,0 +1,59 @@
+# Applies pending Alembic migrations to the production Neon database.
+#
+# Why: Vercel deliberately does NOT run migrations (alembic is excluded from the
+# serverless function deps to stay under the size limit — see api/requirements.txt).
+# Without this, a deploy that adds a migration leaves prod on the old schema and
+# admin endpoints 500 (e.g. /admin/overview when a queried column is missing).
+#
+# This runs `alembic upgrade head` against prod on every push to the deploy
+# branch that touches migrations (and on manual dispatch), using the DIRECT
+# (non-pooled) Neon URL stored as the `DIRECT_DATABASE_URL` repo secret.
+#
+# Setup (one-time): GitHub → repo → Settings → Secrets and variables → Actions →
+# New repository secret:
+#   Name:  DIRECT_DATABASE_URL
+#   Value: postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
+#          (the DIRECT / non-pooled Neon URL — NOT the -pooler one. The app
+#           normalizes the driver to postgresql+psycopg automatically.)
+
+name: Migrate production DB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "alembic/**"
+      - "requirements.txt"
+      - ".github/workflows/migrate-prod.yml"
+  workflow_dispatch: {} # allow running it by hand from the Actions tab
+
+# Never let two migration runs overlap.
+concurrency:
+  group: migrate-prod
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DIRECT_DATABASE_URL secret is not set — add it in repo Settings → Secrets → Actions."
+            exit 1
+          fi
+          python -m alembic upgrade head
+          echo "Current revision after upgrade:"
+          python -m alembic current
