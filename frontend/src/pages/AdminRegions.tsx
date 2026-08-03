@@ -87,11 +87,13 @@ export default function AdminRegions() {
         onError={setError}
       />
 
-      <div className="mt-8 space-y-3">
+      {/* Card list: single column, two columns on wide desktops (2xl) so the
+          cards don't stretch into a huge empty middle. */}
+      <div className="mt-8 grid grid-cols-1 gap-3 2xl:grid-cols-2">
         {loading ? (
-          <div className="text-ui text-muted">Lädt…</div>
+          <div className="text-ui text-admin-muted">Lädt…</div>
         ) : entries.length === 0 ? (
-          <div className="text-ui text-muted">Noch keine Regionen.</div>
+          <div className="text-ui text-admin-muted">Noch keine Regionen.</div>
         ) : (
           entries.map((entry) => (
             <RegionCard
