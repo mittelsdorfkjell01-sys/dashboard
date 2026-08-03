@@ -410,8 +410,8 @@ export default function AdminSpotForm() {
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">
           {/* Basisdaten */}
-          <section className="space-y-4">
-            <h2 className="text-body font-semibold text-ink">Basisdaten</h2>
+          <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+            <h2 className="text-ui font-semibold text-admin-fg">Basisdaten</h2>
             <Field label="Name" error={fieldErrors.name}>
               <input
                 className={inputCls}
@@ -506,8 +506,8 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Sportarten */}
-          <section>
-            <h2 className="text-body font-semibold text-ink">Sportarten</h2>
+          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+            <h2 className="text-ui font-semibold text-admin-fg">Sportarten</h2>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {SPORTS.map((s) => (
                 <Chip
@@ -522,8 +522,8 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Kategorien */}
-          <section className="space-y-4">
-            <h2 className="text-body font-semibold text-ink">Kategorien</h2>
+          <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+            <h2 className="text-ui font-semibold text-admin-fg">Kategorien</h2>
             <Field label="Level">
               <select
                 id="f-level"
@@ -590,8 +590,8 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Ausrichtung */}
-          <section className="space-y-4">
-            <h2 className="text-body font-semibold text-ink">Ausrichtung</h2>
+          <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+            <h2 className="text-ui font-semibold text-admin-fg">Ausrichtung</h2>
             <Field label="Strandausrichtung (facing, 0–359)">
               <input
                 className={inputCls}
@@ -606,8 +606,8 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Facilities */}
-          <section>
-            <h2 className="text-body font-semibold text-ink">Facilities</h2>
+          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+            <h2 className="text-ui font-semibold text-admin-fg">Facilities</h2>
             <p className="mt-1 text-caption text-muted">
               „Unbekannt" zeigt auf der Spot-Seite einen eigenen, gedämpften Zustand — nicht
               „nicht vorhanden".
@@ -616,7 +616,7 @@ export default function AdminSpotForm() {
               {FACILITY_KINDS.map((k) => (
                 <div
                   key={k}
-                  className="rounded-lg bg-[#F1F5FA] p-3 sm:flex sm:items-center sm:gap-3"
+                  className="rounded-lg border border-admin-border bg-admin-bg p-3 sm:flex sm:items-center sm:gap-3"
                 >
                   <span className="w-40 shrink-0 text-[13.5px] font-medium text-ink">
                     {facilityLabel(k)}
@@ -663,8 +663,8 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Hero-Bild */}
-          <section id="f-hero" tabIndex={-1} className="scroll-mt-24 outline-none">
-            <h2 className="text-body font-semibold text-ink">Header-Bild</h2>
+          <section id="f-hero" tabIndex={-1} className="scroll-mt-24 rounded-lg border border-admin-border bg-admin-surface p-5 outline-none sm:p-6">
+            <h2 className="text-ui font-semibold text-admin-fg">Header-Bild</h2>
             {currentImage?.url && (
               <div className="mt-3">
                 <p className="text-label font-medium text-ink">Ausschnitt wählen</p>
@@ -680,8 +680,8 @@ export default function AdminSpotForm() {
                     }}
                   />
                 </div>
-                <div className="mt-4 rounded-2xl border border-line bg-band/40 p-4">
-                  <p className="text-label font-semibold text-ink">Bildnachweis</p>
+                <div className="mt-4 rounded-lg border border-admin-border bg-admin-bg p-4">
+                  <p className="text-label font-semibold text-admin-fg">Bildnachweis</p>
                   <p className="mt-0.5 text-caption text-muted">
                     Urheber, Lizenz und Quelle des aktuellen Bilds — ohne neu
                     hochzuladen.
@@ -722,12 +722,12 @@ export default function AdminSpotForm() {
                         !attrLicense.trim() ||
                         !attrSource.trim()
                       }
-                      className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                      className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                     >
                       {attrBusy ? "Speichern…" : "Bildnachweis speichern"}
                     </button>
                     {attrMsg && (
-                      <span className="text-caption font-medium text-green">{attrMsg}</span>
+                      <span className="text-caption font-medium text-admin-success">{attrMsg}</span>
                     )}
                   </div>
                 </div>
@@ -755,14 +755,14 @@ export default function AdminSpotForm() {
 
           {/* Galerie: community photos + Wikimedia Commons */}
           {isEdit && id && (
-            <section>
+            <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-body font-semibold text-ink">Galerie</h2>
+                <h2 className="text-ui font-semibold text-admin-fg">Galerie</h2>
                 <button
                   type="button"
                   onClick={runCommonsFetch}
                   disabled={commonsBusy}
-                  className="rounded-2xl border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5 disabled:opacity-50"
+                  className="rounded-md border border-admin-border bg-admin-surface px-3.5 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                 >
                   {commonsBusy ? "Abrufen…" : "Wikimedia-Bilder abrufen"}
                 </button>
@@ -789,14 +789,14 @@ export default function AdminSpotForm() {
                         loading="lazy"
                       />
                       {img.source === "wikimedia_commons" && (
-                        <span className="absolute bottom-1.5 left-1.5 rounded-2xl bg-ink px-2 py-0.5 text-caption font-medium text-white">
+                        <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/70 px-2 py-0.5 text-caption font-medium text-white backdrop-blur-sm">
                           Commons
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => removeGalleryImage(img.id)}
-                        className="absolute right-1.5 top-1.5 rounded-2xl bg-ink px-2.5 py-1 text-caption font-medium text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                        className="absolute right-1.5 top-1.5 rounded-md bg-black/70 px-2.5 py-1 text-caption font-medium text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-admin-danger-strong group-hover:opacity-100"
                       >
                         Entfernen
                       </button>
@@ -809,8 +809,8 @@ export default function AdminSpotForm() {
 
           {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}
           {isEdit && id && (
-            <section>
-              <h2 className="text-body font-semibold text-ink">Kommentare</h2>
+            <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+              <h2 className="text-ui font-semibold text-admin-fg">Kommentare</h2>
               <p className="mb-4 mt-1 text-caption text-muted">
                 Alle Kommentare zu diesem Spot — Antworten stehen unter ihrem
                 Ausgangskommentar. Verborgene bleiben hier sichtbar und lassen
@@ -822,8 +822,10 @@ export default function AdminSpotForm() {
 
         </div>
 
-        {/* Right column: sticky actions — stay put while the form scrolls */}
-        <aside className="mt-8 space-y-4 lg:mt-0 lg:sticky lg:top-6">
+        {/* Right column: sticky actions — stay visible while the form scrolls.
+            top clears the sticky app header; self-start + max-height keep the rail
+            pinned and independently scrollable if it ever exceeds the viewport. */}
+        <aside className="mt-8 space-y-4 lg:mt-0 lg:sticky lg:top-[72px] lg:self-start lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto lg:pr-1 no-scrollbar">
           {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
 
           {savedId && readiness && (

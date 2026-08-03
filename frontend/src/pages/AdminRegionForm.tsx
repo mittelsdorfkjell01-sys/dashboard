@@ -29,8 +29,9 @@ import ImageFocalEditor from "../components/ImageFocalEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { Button, Input, Textarea } from "../components/ui";
+import { Badge } from "../components/admin/ui";
 
-const label = "text-label font-medium text-ink";
+const label = "text-label font-medium text-admin-fg";
 const MONTHS_SHORT = [
   "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
   "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
@@ -326,7 +327,7 @@ export default function AdminRegionForm() {
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0 space-y-8">
       {/* Editorial */}
-      <form onSubmit={saveFields} className="space-y-4">
+      <form onSubmit={saveFields} className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className={label}>Name</span>
@@ -412,7 +413,7 @@ export default function AdminRegionForm() {
           </div>
         </div>
         {error && (
-          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
+          <div role="alert" className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger">
             {error}
           </div>
         )}
@@ -422,8 +423,8 @@ export default function AdminRegionForm() {
       </form>
 
       {/* Hero image */}
-      <section className="mt-10">
-        <h2 className="text-base font-semibold text-ink">Titelbild</h2>
+      <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+        <h2 className="text-ui font-semibold text-admin-fg">Titelbild</h2>
         <div className="mt-3 flex flex-wrap items-start gap-4">
           {region.image?.url ? (
             <img
@@ -432,7 +433,7 @@ export default function AdminRegionForm() {
               className="h-24 w-40 rounded-lg object-cover"
             />
           ) : (
-            <div className="grid h-24 w-40 place-items-center rounded-lg bg-band text-caption text-muted">
+            <div className="grid h-24 w-40 place-items-center rounded-lg border border-admin-border bg-admin-bg text-caption text-admin-muted">
               Kein Bild
             </div>
           )}
@@ -452,7 +453,7 @@ export default function AdminRegionForm() {
                 type="button"
                 disabled={busy || !imgUrl.trim()}
                 onClick={saveImageUrl}
-                className="shrink-0 rounded-lg border border-teal/30 px-3 py-2 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                className="shrink-0 rounded-md border border-admin-border bg-admin-surface px-3 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
               >
                 Setzen
               </button>
@@ -491,8 +492,8 @@ export default function AdminRegionForm() {
       </section>
 
       {/* Spots — drag from the right pool into this region */}
-      <section className="mt-10">
-        <h2 className="text-base font-semibold text-ink">Spots zuordnen</h2>
+      <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+        <h2 className="text-ui font-semibold text-admin-fg">Spots zuordnen</h2>
         <p className="mt-1 text-label text-muted">
           Drag &amp; Drop in beide Richtungen: nach links = dieser Region
           zuordnen, nach rechts = Region entfernen (Spot wird region-los und
@@ -644,9 +645,9 @@ export default function AdminRegionForm() {
       </section>
 
       {/* Danger zone: delete (only when empty). */}
-      <section className="mt-10 rounded-2xl border border-red-200 bg-red-50/40 p-4">
-        <h2 className="text-body font-semibold text-ink">Region löschen</h2>
-        <p className="mt-1 text-label text-muted">
+      <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-5 sm:p-6">
+        <h2 className="text-ui font-semibold text-admin-danger">Region löschen</h2>
+        <p className="mt-1 text-label text-admin-fg2">
           {spots.length > 0
             ? `Diese Region hat ${spots.length} zugeordnete(n) Spot(s). Verschiebe sie zuerst — dann lässt sich die Region löschen.`
             : "Diese Region hat keine Spots und kann gelöscht werden. Das lässt sich nicht rückgängig machen."}
@@ -655,35 +656,31 @@ export default function AdminRegionForm() {
           type="button"
           disabled={busy || spots.length > 0}
           onClick={() => setDeleteOpen(true)}
-          className="mt-3 rounded-lg border border-red-300 px-3 py-1.5 text-label font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-4 rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-40"
         >
           Region löschen
         </button>
       </section>
         </div>
 
-        {/* Right: sticky action panel (status / go-live / preview / save). */}
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-          <div className="rounded-2xl border border-line bg-white p-4">
+        {/* Right: sticky action panel (status / go-live / preview / save).
+            top clears the sticky app header so the rail stays visible while the
+            long form scrolls. */}
+        <aside className="lg:sticky lg:top-[72px] lg:h-fit lg:self-start">
+          <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-label font-semibold text-ink">Status</h2>
-              <span
-                className={`rounded-full px-2 py-0.5 text-caption font-semibold ${
-                  region.status === "published"
-                    ? "bg-green/10 text-green"
-                    : "bg-orange/15 text-ink"
-                }`}
-              >
-                {region.status === "published" ? "● Live" : "○ Entwurf"}
-              </span>
+              <h2 className="text-ui font-semibold text-admin-fg">Status</h2>
+              <Badge tone={region.status === "published" ? "success" : "warning"}>
+                {region.status === "published" ? "Live" : "Entwurf"}
+              </Badge>
             </div>
-            <div className="mt-3 flex flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-2">
               {region.status === "published" ? (
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => setStatus(unpublishRegion, "Region offline genommen.")}
-                  className="rounded-lg border border-teal/30 px-3 py-2 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+                  className="rounded-md border border-admin-border bg-admin-surface px-3 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                 >
                   Offline nehmen
                 </button>
@@ -692,7 +689,7 @@ export default function AdminRegionForm() {
                   type="button"
                   disabled={busy}
                   onClick={() => setStatus(publishRegion, "Region ist jetzt live.")}
-                  className="rounded-lg bg-green px-3 py-2 text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  className="rounded-md bg-admin-primary px-3 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
                 >
                   Go-Live
                 </button>
@@ -701,15 +698,16 @@ export default function AdminRegionForm() {
                 href={`/region/${region.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg border border-line px-3 py-2 text-center text-label font-medium text-ink hover:bg-band/60"
+                className="rounded-md border border-admin-border bg-admin-surface px-3 py-2 text-center text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
               >
                 Öffentliche Vorschau ↗
               </a>
+              <div className="my-1 h-px bg-admin-border" />
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void doSaveFields(false)}
-                className="rounded-lg bg-teal px-3 py-2 text-label font-medium text-white hover:bg-teal-hover disabled:opacity-50"
+                className="rounded-md bg-admin-primary px-3 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
               >
                 Änderungen speichern
               </button>

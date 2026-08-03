@@ -20,6 +20,7 @@ import {
 import { gapLabel, statusLabel } from "../lib/labels";
 import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
 import RankControl from "./admin/RankControl";
+import { Badge } from "./admin/ui";
 
 const ERA5_LABEL: Record<string, string> = {
   queued: "in Warteschlange",
@@ -120,52 +121,47 @@ export default function SpotOpsPanel({
   const rank = effectiveRank(readiness?.gaps ?? [], rankOverride);
 
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-white p-5">
+    <div className="rounded-lg border border-admin-border bg-admin-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-body font-semibold text-ink">Betrieb & Veröffentlichung</h2>
+        <h2 className="text-ui font-semibold text-admin-fg">Betrieb &amp; Veröffentlichung</h2>
         {readiness && (
-          <span
-            className={`inline-flex items-center gap-1.5 text-label font-medium ${
-              readiness.ready ? "text-green" : "text-muted"
-            }`}
-          >
-            {readiness.ready ? "● Bereit" : "○ Angaben offen"} ·{" "}
-            {statusLabel(readiness.status)}
-          </span>
+          <Badge tone={readiness.ready ? "success" : "neutral"}>
+            {readiness.ready ? "Bereit" : "Angaben offen"} · {statusLabel(readiness.status)}
+          </Badge>
         )}
       </div>
 
       {/* Fertigstellen-Rang — „Auto" folgt den offenen Punkten; eine Farbe pinnt
           den Rang manuell (dieselbe Steuerung wie in der Übersichtsliste). */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-band/50 px-3 py-2">
-        <span className="inline-flex items-center gap-2 text-label text-muted">
-          <span className={`h-2.5 w-2.5 rounded-full ${RANK_DOT[rank]}`} />
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-admin-border bg-admin-bg px-3 py-2.5">
+        <span className="inline-flex items-center gap-2 text-label text-admin-muted">
+          <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
           Fertigstellen-Rang:{" "}
-          <span className="font-medium text-ink">{RANK_LABEL[rank]}</span>
+          <span className="font-medium text-admin-fg">{RANK_LABEL[rank]}</span>
           {rankOverride === null && (
-            <span className="text-caption text-muted">(automatisch)</span>
+            <span className="text-caption text-admin-faint">(automatisch)</span>
           )}
         </span>
         <RankControl value={rankOverride} effective={rank} onChange={onRankChange} busy={busy} />
       </div>
 
       {notice && (
-        <div className="mt-3 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green">
+        <div className="mt-3 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success">
           {notice}
         </div>
       )}
       {error && (
         <div
           role="alert"
-          className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700"
+          className="mt-3 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger"
         >
           {error}
         </div>
       )}
 
       {readiness && !readiness.ready && (
-        <div className="mt-3 text-label text-muted">
-          Fehlt noch:{" "}
+        <div className="mt-3 text-label text-admin-muted">
+          <span className="align-middle">Fehlt noch: </span>
           {readiness.gaps.length === 0 ? (
             "—"
           ) : (
@@ -176,7 +172,7 @@ export default function SpotOpsPanel({
                     key={g}
                     type="button"
                     onClick={() => onGapClick(g)}
-                    className="rounded-lg bg-orange/10 px-2 py-0.5 text-caption font-medium text-ink hover:bg-orange/20"
+                    className="rounded-md border border-admin-warning-bg bg-admin-warning-bg px-2 py-0.5 text-caption font-medium text-admin-warning transition-colors hover:brightness-110"
                   >
                     {gapLabel(g)}
                   </button>
@@ -186,7 +182,7 @@ export default function SpotOpsPanel({
               )}
             </span>
           )}
-          <p className="mt-1 text-caption text-muted">
+          <p className="mt-1.5 text-caption text-admin-faint">
             Veröffentlichen ist trotzdem möglich — die fehlenden Angaben sind nur
             ein Hinweis.
           </p>
@@ -194,10 +190,10 @@ export default function SpotOpsPanel({
       )}
 
       {/* Klimatologie (ERA5) — background job; status + manual re-trigger. */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
-        <span className="text-label text-muted">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-admin-border pt-4">
+        <span className="text-label text-admin-muted">
           Klimatologie:{" "}
-          <span className="font-medium text-ink-soft">
+          <span className="font-medium text-admin-fg2">
             {ERA5_LABEL[era5Status] ?? era5Status}
           </span>
         </span>
@@ -205,18 +201,18 @@ export default function SpotOpsPanel({
           type="button"
           disabled={busy || era5Status === "queued" || era5Status === "processing"}
           onClick={onTriggerEra5}
-          className="rounded-lg border border-teal/30 px-3 py-1.5 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+          className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
         >
           Neu berechnen
         </button>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border pt-4">
         <button
           type="button"
           disabled={busy || readiness?.status === "published"}
           onClick={onGoLive}
-          className="rounded-lg bg-green px-4 py-2 text-label font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
         >
           {readiness?.status === "published" ? "Live" : "Go-Live"}
         </button>
@@ -225,7 +221,7 @@ export default function SpotOpsPanel({
             type="button"
             disabled={busy}
             onClick={() => runStatus(() => unpublishSpot(spotId), "Spot ist offline.")}
-            className="rounded-lg border border-teal/30 px-4 py-2 text-label font-medium text-teal hover:bg-teal/5 disabled:opacity-50"
+            className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
           >
             Offline nehmen
           </button>
@@ -235,7 +231,7 @@ export default function SpotOpsPanel({
             type="button"
             disabled={busy}
             onClick={() => runStatus(() => archiveSpot(spotId), "Spot archiviert.")}
-            className="rounded-lg border border-line px-4 py-2 text-label font-medium text-muted hover:bg-teal/5 disabled:opacity-50"
+            className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
           >
             Archivieren
           </button>
@@ -243,18 +239,16 @@ export default function SpotOpsPanel({
       </div>
 
       {overrideKeys.length > 0 && (
-        <div className="mt-4">
-          <p className="text-label font-semibold text-ink">
+        <div className="mt-4 border-t border-admin-border pt-4">
+          <p className="text-label font-semibold text-admin-fg">
             Überschriebene Felder
           </p>
-          <ul className="mt-1.5 space-y-1">
+          <ul className="mt-2 space-y-1.5">
             {overrideKeys.map((k) => (
-              <li key={k} className="text-label text-ink-soft">
-                <span className="font-medium">{k}</span>{" "}
-                <span className="text-muted">= {JSON.stringify(overrides?.[k])}</span>{" "}
-                <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-caption text-muted">
-                  überschrieben
-                </span>
+              <li key={k} className="flex items-center gap-2 text-label text-admin-fg2">
+                <span className="admin-mono font-medium">{k}</span>
+                <span className="admin-mono text-admin-muted">= {JSON.stringify(overrides?.[k])}</span>
+                <Badge tone="neutral" dot={false}>überschrieben</Badge>
               </li>
             ))}
           </ul>
