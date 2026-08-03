@@ -324,7 +324,7 @@ export default function AdminRegionForm() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_300px]">
+      <div className="mt-6 grid gap-8 xl:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-8">
       {/* Editorial */}
       <form onSubmit={saveFields} className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
@@ -666,7 +666,7 @@ export default function AdminRegionForm() {
         {/* Right: sticky action panel (status / go-live / preview / save).
             top clears the sticky app header so the rail stays visible while the
             long form scrolls. */}
-        <aside className="lg:sticky lg:top-[72px] lg:h-fit lg:self-start">
+        <aside className="xl:sticky xl:top-[72px] xl:h-fit xl:self-start">
           <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-ui font-semibold text-admin-fg">Status</h2>

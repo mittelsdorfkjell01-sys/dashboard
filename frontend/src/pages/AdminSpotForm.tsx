@@ -399,7 +399,7 @@ export default function AdminSpotForm() {
     <div className="mx-auto max-w-[1100px]">
       <form
         onSubmit={onSubmit}
-        className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-8"
+        className="xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8"
       >
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">
@@ -819,7 +819,7 @@ export default function AdminSpotForm() {
         {/* Right column: sticky actions — stay visible while the form scrolls.
             top clears the sticky app header; self-start + max-height keep the rail
             pinned and independently scrollable if it ever exceeds the viewport. */}
-        <aside className="mt-8 space-y-4 lg:mt-0 lg:sticky lg:top-[72px] lg:self-start lg:max-h-[calc(100vh-88px)] lg:overflow-y-auto lg:pr-1 no-scrollbar">
+        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[72px] xl:self-start xl:max-h-[calc(100vh-88px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
           {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
 
           {savedId && readiness && (

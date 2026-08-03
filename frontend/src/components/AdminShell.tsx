@@ -93,7 +93,7 @@ export default function AdminShell() {
     <div className="min-h-screen bg-admin-bg text-admin-fg">
       <div className="mx-auto flex max-w-[1440px]">
         {/* Sidebar (desktop) */}
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-5 md:flex">
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-5 lg:flex">
           <Link to="/admin" className="px-2 py-1">
             <Wordmark size="md" tag="Admin" />
           </Link>
@@ -127,11 +127,11 @@ export default function AdminShell() {
         {/* Content column */}
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
-            {/* Mobile brand */}
-            <Link to="/admin" className="md:hidden">
+            {/* Brand — shown until the sidebar appears (lg). */}
+            <Link to="/admin" className="lg:hidden">
               <Wordmark size="sm" tag="Admin" />
             </Link>
-            <div className="hidden md:block" />
+            <div className="hidden lg:block" />
             <div className="flex items-center gap-2 sm:gap-3">
               <NotificationBell />
               {user && (
@@ -155,8 +155,8 @@ export default function AdminShell() {
             </div>
           </header>
 
-          {/* Mobile nav */}
-          <nav className="no-scrollbar flex gap-1.5 overflow-x-auto border-b border-admin-border bg-admin-surface px-4 py-2 md:hidden">
+          {/* Compact top nav — used below the sidebar breakpoint (tablet, half-screen, mobile). */}
+          <nav className="no-scrollbar flex gap-1.5 overflow-x-auto border-b border-admin-border bg-admin-surface px-4 py-2 lg:hidden">
             {items.map((n) => (
               <NavLink
                 key={n.to}

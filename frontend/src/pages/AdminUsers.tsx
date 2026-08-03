@@ -151,6 +151,65 @@ export default function AdminUsers() {
     }
   };
 
+  // Status badge + actions — shared by the desktop table and the mobile cards.
+  const statusBadge = (u: AdminUserRecord) =>
+    !u.is_active ? (
+      <Badge tone="neutral">Deaktiviert</Badge>
+    ) : isOnline(u) ? (
+      <Badge tone="success">Online</Badge>
+    ) : (
+      <Badge tone="neutral">Offline</Badge>
+    );
+
+  const userActions = (u: AdminUserRecord) => (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => onToggleActive(u)}
+        disabled={isSelf(u) || isLastActiveAdmin(u)}
+        title={
+          isSelf(u)
+            ? "Du kannst dich nicht selbst deaktivieren."
+            : isLastActiveAdmin(u)
+            ? "Der letzte aktive Admin kann nicht deaktiviert werden."
+            : undefined
+        }
+        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {u.is_active ? "Deaktivieren" : "Aktivieren"}
+      </button>
+      <button
+        type="button"
+        onClick={() => openEdit(u)}
+        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+      >
+        Bearbeiten
+      </button>
+      <button
+        type="button"
+        onClick={() => setPwTarget(u)}
+        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+      >
+        Passwort
+      </button>
+      <button
+        type="button"
+        onClick={() => setDeleteTarget(u)}
+        disabled={isSelf(u) || isLastActiveAdmin(u)}
+        title={
+          isSelf(u)
+            ? "Du kannst dein eigenes Konto nicht löschen."
+            : isLastActiveAdmin(u)
+            ? "Der letzte aktive Admin kann nicht gelöscht werden."
+            : undefined
+        }
+        className="rounded-md border border-admin-danger-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Löschen
+      </button>
+    </div>
+  );
+
   return (
     <div>
       <PageHeader
@@ -183,7 +242,52 @@ export default function AdminUsers() {
           onError={setError}
         />
 
-        <div className="mt-8 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface">
+        {/* Mobile / tablet: card list — all actions stay visible. */}
+        <div className="mt-8 space-y-2 lg:hidden">
+          {loading ? (
+            <div className="rounded-lg border border-admin-border bg-admin-surface px-4 py-6 text-center text-admin-muted">
+              Lädt…
+            </div>
+          ) : users.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-admin-border bg-admin-surface px-4 py-10 text-center text-admin-muted">
+              Keine Benutzer.
+            </div>
+          ) : (
+            users.map((u) => (
+              <div
+                key={u.id}
+                className={`rounded-lg border border-admin-border bg-admin-surface p-4 ${
+                  u.is_active ? "" : "opacity-60"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium text-admin-fg">{u.display_name}</div>
+                    <div className="admin-mono truncate text-caption text-admin-muted">{u.email}</div>
+                  </div>
+                  {statusBadge(u)}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-label text-admin-fg2">
+                  <span className="inline-flex items-center gap-2">
+                    {roleLabel(u.role)}
+                    {isSelf(u) && (
+                      <Badge tone="primary" dot={false}>
+                        du
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="admin-mono text-admin-muted">
+                    {u.last_login_at ? new Date(u.last_login_at).toLocaleString("de-DE") : "—"}
+                  </span>
+                </div>
+                <div className="mt-3">{userActions(u)}</div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop: dense table. */}
+        <div className="mt-8 hidden overflow-x-auto rounded-lg border border-admin-border bg-admin-surface lg:block">
           <table className="w-full min-w-[720px] text-left text-ui">
             <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
               <tr>
@@ -228,68 +332,13 @@ export default function AdminUsers() {
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      {!u.is_active ? (
-                        <Badge tone="neutral">Deaktiviert</Badge>
-                      ) : isOnline(u) ? (
-                        <Badge tone="success">Online</Badge>
-                      ) : (
-                        <Badge tone="neutral">Offline</Badge>
-                      )}
-                    </td>
+                    <td className="px-4 py-3">{statusBadge(u)}</td>
                     <td className="admin-mono px-4 py-3 text-label text-admin-muted">
                       {u.last_login_at
                         ? new Date(u.last_login_at).toLocaleString("de-DE")
                         : "—"}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onToggleActive(u)}
-                          disabled={isSelf(u) || isLastActiveAdmin(u)}
-                          title={
-                            isSelf(u)
-                              ? "Du kannst dich nicht selbst deaktivieren."
-                              : isLastActiveAdmin(u)
-                              ? "Der letzte aktive Admin kann nicht deaktiviert werden."
-                              : undefined
-                          }
-                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          {u.is_active ? "Deaktivieren" : "Aktivieren"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openEdit(u)}
-                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-                        >
-                          Bearbeiten
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setPwTarget(u)}
-                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-                        >
-                          Passwort
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(u)}
-                          disabled={isSelf(u) || isLastActiveAdmin(u)}
-                          title={
-                            isSelf(u)
-                              ? "Du kannst dein eigenes Konto nicht löschen."
-                              : isLastActiveAdmin(u)
-                              ? "Der letzte aktive Admin kann nicht gelöscht werden."
-                              : undefined
-                          }
-                          className="rounded-md border border-admin-danger-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          Löschen
-                        </button>
-                      </div>
-                    </td>
+                    <td className="px-4 py-3">{userActions(u)}</td>
                   </tr>
                 ))
               )}

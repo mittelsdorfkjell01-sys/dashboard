@@ -135,6 +135,57 @@ export default function AdminSpots() {
   const total = data?.total ?? 0;
   const shown = data?.items.length ?? 0;
 
+  // Per-row actions — shared by the desktop table and the mobile/tablet cards
+  // so behaviour stays identical across layouts.
+  const rowActions = (s: SpotSummary) => (
+    <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+      <Link
+        to={`/admin/spot/${s.id}/edit`}
+        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+      >
+        Bearbeiten
+      </Link>
+      <a
+        href={`/spot/${s.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+      >
+        Ansehen ↗
+      </a>
+      {s.status !== "published" && (
+        <button
+          type="button"
+          disabled={busyId === s.id}
+          onClick={() => onGoLive(s)}
+          className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+        >
+          Go-Live
+        </button>
+      )}
+      {s.status === "published" && (
+        <button
+          type="button"
+          disabled={busyId === s.id}
+          onClick={() => runStatus(s, unpublishSpot, `„${s.name}" ist offline.`)}
+          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+        >
+          Offline
+        </button>
+      )}
+      {s.status !== "archived" && (
+        <button
+          type="button"
+          disabled={busyId === s.id}
+          onClick={() => runStatus(s, archiveSpot, `„${s.name}" archiviert.`)}
+          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+        >
+          Archivieren
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div>
       <PageHeader
@@ -150,54 +201,56 @@ export default function AdminSpots() {
         }
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      {/* Filters — full-width stack on mobile, flowing row on sm+. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <input
           type="search"
           placeholder="Suche Name / Slug"
           defaultValue={q}
           onChange={(e) => setFilter("q", e.target.value)}
-          className={`${selectCls} min-w-[200px] flex-1`}
+          className={`${selectCls} w-full sm:min-w-[220px] sm:flex-1`}
         />
-        <select
-          value={status}
-          onChange={(e) => setFilter("status", e.target.value)}
-          className={selectCls}
-          aria-label="Status"
-        >
-          <option value="">Alle Status</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {statusLabel(s)}
-            </option>
-          ))}
-        </select>
-        <select
-          value={regionId}
-          onChange={(e) => setFilter("region_id", e.target.value)}
-          className={selectCls}
-          aria-label="Region"
-        >
-          <option value="">Alle Regionen</option>
-          {regions.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sport}
-          onChange={(e) => setFilter("sport", e.target.value)}
-          className={selectCls}
-          aria-label="Sportart"
-        >
-          <option value="">Alle Sportarten</option>
-          {SPORTS.map((s) => (
-            <option key={s} value={s}>
-              {sportLabel(s)}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-2 gap-2 sm:contents">
+          <select
+            value={status}
+            onChange={(e) => setFilter("status", e.target.value)}
+            className={`${selectCls} w-full min-w-0 sm:w-auto`}
+            aria-label="Status"
+          >
+            <option value="">Alle Status</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {statusLabel(s)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={regionId}
+            onChange={(e) => setFilter("region_id", e.target.value)}
+            className={`${selectCls} w-full min-w-0 sm:w-auto`}
+            aria-label="Region"
+          >
+            <option value="">Alle Regionen</option>
+            {regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sport}
+            onChange={(e) => setFilter("sport", e.target.value)}
+            className={`${selectCls} col-span-2 w-full min-w-0 sm:col-span-1 sm:w-auto`}
+            aria-label="Sportart"
+          >
+            <option value="">Alle Sportarten</option>
+            {SPORTS.map((s) => (
+              <option key={s} value={s}>
+                {sportLabel(s)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {notice && (
@@ -217,7 +270,47 @@ export default function AdminSpots() {
         </div>
       )}
 
-      <div className="mt-4 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface">
+      {/* Mobile / tablet: card list — every action stays visible, no side-scroll. */}
+      <div className="mt-4 space-y-2 lg:hidden">
+        {!data ? (
+          <div className="rounded-lg border border-admin-border bg-admin-surface px-4 py-6 text-center text-admin-muted">
+            Lädt…
+          </div>
+        ) : data.items.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-admin-border bg-admin-surface px-4 py-10 text-center text-admin-muted">
+            Keine Spots gefunden. Filter anpassen.
+          </div>
+        ) : (
+          data.items.map((s) => (
+            <div
+              key={s.id}
+              onClick={() => navigate(`/admin/spot/${s.id}/edit`)}
+              className="cursor-pointer rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-medium text-admin-fg">{s.name}</div>
+                  <div className="admin-mono truncate text-caption text-admin-muted">{s.slug}</div>
+                </div>
+                <StatusBadge status={s.status} />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-label text-admin-fg2">
+                <span>{s.region_id ? regionName(s.region_id) : "— ohne Region"}</span>
+                <span className="text-admin-muted">
+                  {(s.sports ?? []).map(sportLabel).join(", ") || "—"}
+                </span>
+                <span className="admin-mono text-admin-muted">
+                  Conf. {s.confidence != null ? s.confidence.toFixed(2) : "—"}
+                </span>
+              </div>
+              <div className="mt-3">{rowActions(s)}</div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop: dense table. */}
+      <div className="mt-4 hidden overflow-x-auto rounded-lg border border-admin-border bg-admin-surface lg:block">
         <table className="w-full min-w-[820px] text-left text-ui">
           <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
             <tr>
@@ -267,58 +360,7 @@ export default function AdminSpots() {
                   <td className="admin-mono px-4 py-3 text-right text-admin-fg2">
                     {s.confidence != null ? s.confidence.toFixed(2) : "—"}
                   </td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        to={`/admin/spot/${s.id}/edit`}
-                        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-                      >
-                        Bearbeiten
-                      </Link>
-                      <a
-                        href={`/spot/${s.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-                      >
-                        Ansehen ↗
-                      </a>
-                      {s.status !== "published" && (
-                        <button
-                          type="button"
-                          disabled={busyId === s.id}
-                          onClick={() => onGoLive(s)}
-                          className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-                        >
-                          Go-Live
-                        </button>
-                      )}
-                      {s.status === "published" && (
-                        <button
-                          type="button"
-                          disabled={busyId === s.id}
-                          onClick={() =>
-                            runStatus(s, unpublishSpot, `„${s.name}" ist offline.`)
-                          }
-                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-                        >
-                          Offline
-                        </button>
-                      )}
-                      {s.status !== "archived" && (
-                        <button
-                          type="button"
-                          disabled={busyId === s.id}
-                          onClick={() =>
-                            runStatus(s, archiveSpot, `„${s.name}" archiviert.`)
-                          }
-                          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-                        >
-                          Archivieren
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                  <td className="px-4 py-3">{rowActions(s)}</td>
                 </tr>
               ))
             )}

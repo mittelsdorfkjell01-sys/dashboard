@@ -64,6 +64,9 @@
 
   background-color: var(--a-bg);
   color: var(--a-fg);
+  /* Render native controls (select, checkbox, scrollbars, date pickers) in
+     their dark variant so they match the theme instead of the OS light chrome. */
+  color-scheme: dark;
 }
 
 /* =========================================================================
