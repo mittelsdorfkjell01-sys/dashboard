@@ -10,7 +10,6 @@ import { roleLabel } from "../lib/labels";
 import type { AdminRole } from "../lib/api";
 import { Wordmark } from "./ui";
 import NotificationBell from "./admin/NotificationBell";
-import { AdminThemeToggle } from "./admin/theme";
 
 interface NavItem {
   to: string;
@@ -134,7 +133,6 @@ export default function AdminShell() {
             </Link>
             <div className="hidden md:block" />
             <div className="flex items-center gap-2 sm:gap-3">
-              <AdminThemeToggle />
               <NotificationBell />
               {user && (
                 <>

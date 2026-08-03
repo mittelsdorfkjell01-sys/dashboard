@@ -7,83 +7,40 @@
    admin route is mounted (and removes on unmount). Because it also lives on
    <body>, portaled dialogs (Modal → document.body) inherit the tokens too.
 
+   The admin is DARK ONLY — a single dark token set, no light mode, no toggle.
+
    Two jobs:
-   1. Define semantic CSS variables for light + dark (the source of truth).
+   1. Define the semantic CSS variables (the source of truth).
    2. Re-point the app's existing brand utilities (text-ink, bg-white,
       border-line, text-teal, …) at those tokens *within the scope only*, so
       the whole admin — including screens/components not individually
-      restyled — themes correctly and gains first-class dark mode with no
-      per-call-site edits. Specificity (.admin-scope .x = 0,2,0) beats the base
-      utility (.x = 0,1,0), so no `!important` is needed.
+      restyled — themes correctly with no per-call-site edits. Specificity
+      (.admin-scope .x = 0,2,0) beats the base utility (.x = 0,1,0), so no
+      `!important` is needed.
    ========================================================================= */
 
+/* The admin is dark-only — a single token set, no light mode, no toggle. */
 .admin-scope {
-  /* ---- Light theme (default) ------------------------------------------ */
-  --a-bg: #fbfbfb; /* app canvas */
-  --a-surface: #ffffff; /* panels, tables, cards */
-  --a-elevated: #ffffff; /* popovers, dialogs */
-  --a-hover: #f4f4f5; /* subtle row/control hover */
-  --a-active: #ececed; /* pressed / selected surface */
+  --a-bg: #0a0a0a; /* app canvas */
+  --a-surface: #111112; /* panels, tables, cards */
+  --a-elevated: #18181a; /* popovers, dialogs */
+  --a-hover: #1b1b1e; /* subtle row/control hover */
+  --a-active: #232327; /* pressed / selected surface */
 
-  --a-border: #e6e6e8; /* standard hairline */
-  --a-border-subtle: #f0f0f1; /* faint divider */
-  --a-border-strong: #d4d4d8; /* input / emphasized edge */
+  --a-border: #272729; /* standard hairline */
+  --a-border-subtle: #1c1c1f; /* faint divider */
+  --a-border-strong: #34343a; /* input / emphasized edge */
 
-  --a-fg: #18181b; /* primary text */
-  --a-fg2: #52525b; /* secondary text */
-  --a-muted: #71717a; /* captions, meta */
-  --a-faint: #a1a1aa; /* placeholders, disabled */
+  --a-fg: #fafafa; /* primary text */
+  --a-fg2: #a1a1aa; /* secondary text */
+  --a-muted: #7c7c85; /* captions, meta */
+  --a-faint: #55555c; /* placeholders, disabled */
 
   /* Accent — a single restrained thread of the surf brand's teal. */
-  --a-primary: #197888;
-  --a-primary-hover: #14636f;
-  --a-primary-fg: #ffffff;
-  --a-primary-bg: #ecf5f6; /* tinted surface (active nav, selected) */
-  --a-ring: #197888;
-
-  --a-success: #15803d;
-  --a-success-fg: #15803d;
-  --a-success-bg: #f0faf3;
-  --a-success-border: #cdeed6;
-  --a-warning: #b45309;
-  --a-warning-fg: #b45309;
-  --a-warning-bg: #fdf6ec;
-  --a-danger: #dc2626;
-  --a-danger-fg: #dc2626;
-  --a-danger-bg: #fef2f2;
-  --a-danger-border: #f6cccc;
-  --a-info: #197888;
-  --a-info-bg: #ecf5f6;
-
-  --a-shadow-pop: 0 8px 24px -8px rgba(24, 24, 27, 0.18),
-    0 2px 6px -2px rgba(24, 24, 27, 0.12);
-  --a-shadow-dialog: 0 24px 48px -12px rgba(24, 24, 27, 0.28),
-    0 8px 20px -8px rgba(24, 24, 27, 0.18);
-
-  background-color: var(--a-bg);
-  color: var(--a-fg);
-}
-
-.admin-scope[data-theme="dark"] {
-  --a-bg: #0a0a0a;
-  --a-surface: #111112;
-  --a-elevated: #18181a;
-  --a-hover: #1b1b1e;
-  --a-active: #232327;
-
-  --a-border: #272729;
-  --a-border-subtle: #1c1c1f;
-  --a-border-strong: #34343a;
-
-  --a-fg: #fafafa;
-  --a-fg2: #a1a1aa;
-  --a-muted: #7c7c85;
-  --a-faint: #55555c;
-
   --a-primary: #2fa6bb;
   --a-primary-hover: #43b7cb;
   --a-primary-fg: #04181d;
-  --a-primary-bg: #10262b;
+  --a-primary-bg: #10262b; /* tinted surface (active nav, selected) */
   --a-ring: #2fa6bb;
 
   --a-success: #4ade80;
@@ -104,19 +61,9 @@
     0 2px 6px -2px rgba(0, 0, 0, 0.5);
   --a-shadow-dialog: 0 24px 48px -12px rgba(0, 0, 0, 0.7),
     0 8px 20px -8px rgba(0, 0, 0, 0.55);
-}
 
-/* Smooth the light/dark flip without animating every re-render. */
-.admin-scope,
-.admin-scope [data-admin-tint] {
-  transition: background-color 0.18s ease, border-color 0.18s ease,
-    color 0.18s ease;
-}
-@media (prefers-reduced-motion: reduce) {
-  .admin-scope,
-  .admin-scope [data-admin-tint] {
-    transition: none;
-  }
+  background-color: var(--a-bg);
+  color: var(--a-fg);
 }
 
 /* =========================================================================
