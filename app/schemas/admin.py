@@ -50,6 +50,7 @@ class SpotUpdate(BaseModel):
 
     name: str | None = None
     slug: str | None = None
+    region_id: uuid.UUID | None = None
     lat: float | None = Field(default=None, ge=-90, le=90)
     lon: float | None = Field(default=None, ge=-180, le=180)
     sports: list[str] | None = None

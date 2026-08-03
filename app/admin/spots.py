@@ -133,6 +133,19 @@ def update_spot(
         spot.name = data["name"]
     if "slug" in data and data["slug"]:
         spot.slug = data["slug"]
+    # Reassigning the spot's region from the edit form. Without this the PATCH
+    # silently dropped region_id, so a region-less spot stayed region-less and
+    # kept showing under "Spots ohne Region" on the overview. None = clear.
+    if "region_id" in data:
+        if data["region_id"] is None:
+            spot.region_id = None
+        else:
+            from app.models import Region
+
+            region = db.get(Region, data["region_id"])
+            if region is None:
+                raise ValueError(f"Unbekannte Region: {data['region_id']}")
+            spot.region_id = region.id
     # Moving the pin: persist the new coordinates and re-resolve the ERA5 grid
     # cell so future climatology matches the corrected location. Without this the
     # PATCH silently dropped lat/lon and the pin snapped back on the next open.
