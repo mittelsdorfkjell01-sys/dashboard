@@ -93,15 +93,16 @@ def test_checklist_ready_with_na_counting():
     assert r["gaps"] == []
 
 
-def test_checklist_surf_requires_tide():
+def test_checklist_surf_no_longer_requires_tide():
     spot = _spot(
         sports=["surf"], editorial={"description": "x"},  # no tide
         climatology={"weeks": [1]}, image=_IMAGE,
     )
     r = build_checklist(spot, REQUIRED_FIELDS_V1)
-    assert "editorial.tide" in r["gaps"]
-    # usable_wind_directions is NOT required for a pure surf spot
+    # Gezeiten is no longer a readiness requirement (removed from the rank).
+    assert "editorial.tide" not in r["gaps"]
     assert "editorial.usable_wind_directions" not in r["gaps"]
+    assert r["gaps"] == [] and r["ready"] is True
 
 
 # --- provenance ------------------------------------------------------------

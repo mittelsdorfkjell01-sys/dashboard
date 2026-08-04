@@ -23,12 +23,9 @@ REQUIRED_FIELDS_V1: list[dict] = [
     {"entity": "spot", "field": "style", "applies_when": None, "severity": "recommended"},
     {"entity": "spot", "field": "facilities", "applies_when": None, "severity": "recommended"},
     {"entity": "spot", "field": "editorial.description", "applies_when": None, "severity": "required"},
-    {
-        "entity": "spot",
-        "field": "editorial.tide",
-        "applies_when": {"sports_any": ["surf"]},
-        "severity": "required",
-    },
+    # Gezeiten (editorial.tide) is intentionally NOT a requirement — it is hidden
+    # in the editor and must not affect the "Fertigstellen" rank. The row is
+    # removed from the DB by migration 0020.
 ]
 
 

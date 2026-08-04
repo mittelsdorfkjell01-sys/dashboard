@@ -67,7 +67,6 @@ const SECTIONS: Section[] = [
     title: "Redaktionell",
     fields: [
       { key: "editorial.description", label: "Beschreibung", value: (s) => s.editorial?.description ?? "—" },
-      { key: "editorial.tide", label: "Gezeiten", value: (s) => s.editorial?.tide ?? "—" },
       {
         key: "editorial.usable_wind_directions",
         label: "Nutzbare Windrichtungen",
