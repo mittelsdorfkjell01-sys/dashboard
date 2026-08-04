@@ -7,9 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
-import { ApiError, getAdminMapSpots, type AdminMapSpot } from "../lib/api";
+import { ApiError, archiveSpot, getAdminMapSpots, type AdminMapSpot } from "../lib/api";
 import { statusLabel } from "../lib/labels";
 import { PageHeader } from "../components/admin/ui";
+import ConfirmBar from "../components/admin/ConfirmBar";
 
 const STATUS_COLOR: Record<string, string> = {
   published: "#4A8159", // grün
@@ -35,12 +36,32 @@ const pinIcon = (color: string) =>
 export default function AdminMap() {
   const [spots, setSpots] = useState<AdminMapSpot[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Pending archive: set from a pin popup, confirmed via the top banner (✓).
+  const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     getAdminMapSpots()
       .then(setSpots)
       .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen."));
   }, []);
+
+  const onArchive = async () => {
+    if (!pending) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await archiveSpot(pending.id);
+      setSpots((prev) =>
+        prev.map((s) => (s.id === pending.id ? { ...s, status: "archived" } : s))
+      );
+      setPending(null);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Archivieren fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const center = useMemo<[number, number]>(() => {
     if (spots.length === 0) return [40.3, 9.3];
@@ -76,6 +97,17 @@ export default function AdminMap() {
         </div>
       )}
 
+      {pending && (
+        <div className="mt-4">
+          <ConfirmBar
+            message={`„${pending.name}" archivieren?`}
+            busy={busy}
+            onConfirm={onArchive}
+            onCancel={() => setPending(null)}
+          />
+        </div>
+      )}
+
       <div data-lenis-prevent className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-lg border border-admin-border">
         <MapContainer
           key={spots.length ? "loaded" : "init"}
@@ -96,15 +128,35 @@ export default function AdminMap() {
               icon={pinIcon(STATUS_COLOR[s.status] ?? fallbackColor)}
             >
               <Popup>
+                {/* Inline colours: the Leaflet popup keeps a white background,
+                    but the admin dark theme remaps `text-ink`/`text-muted` to
+                    light — so set explicit dark colours here for legibility. */}
                 <div className="min-w-[160px]">
-                  <p className="text-label font-semibold text-ink">{s.name}</p>
-                  <p className="mt-0.5 text-caption text-muted">{statusLabel(s.status)}</p>
-                  <Link
-                    to={`/admin/spot/${s.id}/edit`}
-                    className="mt-2 inline-block text-label font-medium text-teal hover:underline"
-                  >
-                    Bearbeiten →
-                  </Link>
+                  <p className="text-label font-semibold" style={{ color: "#000" }}>
+                    {s.name}
+                  </p>
+                  <p className="mt-0.5 text-caption" style={{ color: "#6B7280" }}>
+                    {statusLabel(s.status)}
+                  </p>
+                  <div className="mt-2 flex items-center gap-3">
+                    <Link
+                      to={`/admin/spot/${s.id}/edit`}
+                      className="text-label font-medium hover:underline"
+                      style={{ color: "#1E6E7E" }}
+                    >
+                      Bearbeiten →
+                    </Link>
+                    {s.status !== "archived" && (
+                      <button
+                        type="button"
+                        onClick={() => setPending({ id: s.id, name: s.name })}
+                        className="text-label font-medium hover:underline"
+                        style={{ color: "#B45309" }}
+                      >
+                        Archivieren
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Popup>
             </Marker>

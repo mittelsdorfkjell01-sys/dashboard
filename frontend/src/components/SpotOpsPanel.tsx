@@ -5,11 +5,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
+  archiveSpot,
   getEra5Status,
   getReadiness,
   getSpot,
+  goLiveSpot,
+  reactivateSpot,
   setFinishRank as saveFinishRank,
   triggerEra5,
+  unpublishSpot,
   type Era5Status,
   type Rank,
   type Readiness,
@@ -17,6 +21,7 @@ import {
 import { gapLabel, statusLabel } from "../lib/labels";
 import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
 import RankControl from "./admin/RankControl";
+import ConfirmBar from "./admin/ConfirmBar";
 import { Badge } from "./admin/ui";
 
 const ERA5_LABEL: Record<string, string> = {
@@ -41,6 +46,7 @@ export default function SpotOpsPanel({
   const [rankOverride, setRankOverride] = useState<Rank | null>(null);
   const [era5, setEra5] = useState<Era5Status | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingArchive, setPendingArchive] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +82,26 @@ export default function SpotOpsPanel({
     setTimeout(() => setNotice(null), 3000);
   };
 
+  const onGoLive = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      // Go-live is always allowed; the response carries any remaining gaps.
+      const res = (await goLiveSpot(spotId)) as { ready?: boolean; gaps?: string[] };
+      const gaps = res.gaps ?? [];
+      flash(
+        res.ready === false && gaps.length > 0
+          ? `Live gesetzt — es fehlen noch: ${gaps.map(gapLabel).join(", ")}`
+          : "Spot ist jetzt live."
+      );
+      await refresh();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const runStatus = async (fn: () => Promise<unknown>, msg: string) => {
     setBusy(true);
     setError(null);
@@ -100,13 +126,27 @@ export default function SpotOpsPanel({
   return (
     <div className="rounded-lg border border-admin-border bg-admin-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-ui font-semibold text-admin-fg">Status &amp; Fertigstellen</h2>
+        <h2 className="text-ui font-semibold text-admin-fg">Betrieb &amp; Veröffentlichung</h2>
         {readiness && (
           <Badge tone={readiness.ready ? "success" : "neutral"}>
             {readiness.ready ? "Bereit" : "Angaben offen"} · {statusLabel(readiness.status)}
           </Badge>
         )}
       </div>
+
+      {pendingArchive && (
+        <div className="mt-4">
+          <ConfirmBar
+            message="Spot archivieren?"
+            busy={busy}
+            onConfirm={() => {
+              setPendingArchive(false);
+              void runStatus(() => archiveSpot(spotId), "Spot archiviert.");
+            }}
+            onCancel={() => setPendingArchive(false)}
+          />
+        </div>
+      )}
 
       {/* Fertigstellen-Rang — „Auto" folgt den offenen Punkten; eine Farbe pinnt
           den Rang manuell (dieselbe Steuerung wie in der Übersichtsliste). */}
@@ -166,8 +206,8 @@ export default function SpotOpsPanel({
             </span>
           )}
           <p className="mt-1.5 text-caption text-admin-faint">
-            Veröffentlichen, Offline nehmen und Archivieren erfolgt auf der
-            Spots-Seite — die fehlenden Angaben sind hier nur ein Hinweis.
+            Veröffentlichen ist trotzdem möglich — die fehlenden Angaben sind nur
+            ein Hinweis.
           </p>
         </div>
       )}
@@ -188,6 +228,52 @@ export default function SpotOpsPanel({
         >
           Neu berechnen
         </button>
+      </div>
+
+      {/* Lifecycle actions — the single place a spot goes live / offline /
+          archived / reactivated (the list only links here via „Bearbeiten"). */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border pt-4">
+        {readiness?.status === "archived" ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              runStatus(() => reactivateSpot(spotId), "Spot ist wieder ein Entwurf.")
+            }
+            className="rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+          >
+            Reaktivieren
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={busy || readiness?.status === "published"}
+              onClick={onGoLive}
+              className="rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+            >
+              {readiness?.status === "published" ? "Live" : "Go-Live"}
+            </button>
+            {readiness?.status === "published" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => runStatus(() => unpublishSpot(spotId), "Spot ist offline.")}
+                className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+              >
+                Offline nehmen
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busy || pendingArchive}
+              onClick={() => setPendingArchive(true)}
+              className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+            >
+              Archivieren
+            </button>
+          </>
+        )}
       </div>
 
       {overrideKeys.length > 0 && (

@@ -135,11 +135,14 @@ def list_spots(
     sort: str = Query(default="name"),
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    exclude_status: str | None = Query(
+        default=None, description="Hide spots with this status (e.g. 'archived')"
+    ),
 ) -> dict:
     """Filtered, paginated spot list for the admin table (with total count)."""
     rows, total = admin_dashboard.list_spots(
         db, status=status, region_id=region_id, sport=sport, q=q,
-        sort=sort, limit=limit, offset=offset,
+        sort=sort, limit=limit, offset=offset, exclude_status=exclude_status,
     )
     return {
         "items": [SpotSummary.from_orm_spot(s).model_dump(mode="json") for s in rows],
@@ -423,13 +426,40 @@ def archive_spot(
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
 ) -> dict:
-    """Archive a spot (removed from listings, reversible via unpublish/live)."""
+    """Archive a spot (removed from listings, reversible via reactivate)."""
     try:
         return admin_spots.set_spot_status(spot_id, "archived", db=db, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.post("/spots/{spot_id}/reactivate")
+def reactivate_spot(
+    spot_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> dict:
+    """Reactivate an archived spot — moves it back into the draft workflow."""
+    try:
+        return admin_spots.reactivate_spot(spot_id, db=db, actor=actor)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+
+
+@router.delete("/spots/{spot_id}", status_code=204)
+def delete_spot(
+    spot_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> Response:
+    """Permanently delete a spot and its dependent rows (irreversible)."""
+    try:
+        admin_spots.delete_spot(spot_id, db=db, actor=actor)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    return Response(status_code=204)
 
 
 @router.post("/spots/{spot_id}/era5")

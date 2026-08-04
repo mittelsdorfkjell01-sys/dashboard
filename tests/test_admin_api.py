@@ -156,6 +156,47 @@ def test_unpublish_and_archive(admin, region_id, db):
     assert {"archive", "unpublish"} <= actions
 
 
+def test_reactivate_archived_spot_back_to_draft(admin, region_id, db):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    admin.post(f"/admin/spots/{sid}/archive")
+
+    resp = admin.post(f"/admin/spots/{sid}/reactivate")
+    assert resp.status_code == 200 and resp.json()["status"] == "draft"
+    assert db.get(Spot, sid).status == "draft"
+    actions = {
+        a.action
+        for a in db.scalars(select(SpotAudit).where(SpotAudit.spot_id == sid)).all()
+    }
+    assert "reactivate" in actions
+
+
+def test_delete_spot_removes_row(admin, region_id, db):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+
+    resp = admin.delete(f"/admin/spots/{sid}")
+    assert resp.status_code == 204
+    assert db.get(Spot, sid) is None
+    # Deleting a second time is a 404.
+    assert admin.delete(f"/admin/spots/{sid}").status_code == 404
+
+
+def test_list_exclude_status_hides_archived(admin, region_id):
+    active = _create_spot(admin, region_id)["id"]
+    archived = _create_spot(admin, region_id)["id"]
+    admin.post(f"/admin/spots/{archived}/archive")
+
+    ids = {
+        s["id"]
+        for s in admin.get(
+            "/admin/spots", params={"region_id": region_id, "exclude_status": "archived"}
+        ).json()["items"]
+    }
+    assert active in ids
+    assert archived not in ids
+
+
 def test_overview_recent_has_last_change(admin, region_id):
     """A freshly created spot surfaces in the dashboard 'recent' list with its
     latest audited change (here: the create)."""

@@ -5,11 +5,13 @@ import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
+import ConfirmBar from "../components/admin/ConfirmBar";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useAdminRegions } from "../lib/hooks";
 import {
   createSpot,
+  deleteSpot,
   fetchCommonsImages,
   getSpot,
   getReadiness,
@@ -124,6 +126,23 @@ export default function AdminSpotForm() {
   // the server can reject a stale overwrite (409). Refreshed on every save.
   const [loadedUpdatedAt, setLoadedUpdatedAt] = useState<string | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const onDelete = async () => {
+    if (!id) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await deleteSpot(id);
+      navigate("/admin/spots");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Löschen fehlgeschlagen.");
+      setPendingDelete(false);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const effectiveSlug = slugTouched ? slug : slugify(name);
   const isSurf = sports.includes("surf");
@@ -817,6 +836,38 @@ export default function AdminSpotForm() {
                 sich wiederherstellen.
               </p>
               <SpotCommentsPanel spotId={id} />
+            </section>
+          )}
+
+          {/* Danger zone: permanently delete the spot (edit mode only). */}
+          {isEdit && id && (
+            <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-5 sm:p-6">
+              <h2 className="text-ui font-semibold text-admin-danger">Spot löschen</h2>
+              <p className="mt-1 text-label text-admin-fg2">
+                Löscht diesen Spot endgültig samt aller Bewertungen, Tipps, Bilder
+                und Klimatologie. Das lässt sich nicht rückgängig machen — zum
+                Ausblenden lieber „Archivieren" verwenden.
+              </p>
+              {pendingDelete ? (
+                <div className="mt-4">
+                  <ConfirmBar
+                    tone="danger"
+                    message="Spot endgültig löschen?"
+                    busy={deleting}
+                    onConfirm={onDelete}
+                    onCancel={() => setPendingDelete(false)}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setPendingDelete(true)}
+                  className="mt-4 rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Spot löschen
+                </button>
+              )}
             </section>
           )}
 

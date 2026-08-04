@@ -905,6 +905,8 @@ export interface AdminSpotsQuery {
   sort?: string;
   limit?: number;
   offset?: number;
+  /** Hide spots with this status (e.g. "archived" for the non-archived tabs). */
+  exclude_status?: string;
 }
 
 export interface AdminSpotsResponse {
@@ -1046,6 +1048,14 @@ export const archiveSpot = (id: string) =>
   request<{ spot_id: string; status: string }>(`/admin/spots/${id}/archive`, {
     method: "POST",
   });
+
+export const reactivateSpot = (id: string) =>
+  request<{ spot_id: string; status: string }>(`/admin/spots/${id}/reactivate`, {
+    method: "POST",
+  });
+
+export const deleteSpot = (id: string) =>
+  request<void>(`/admin/spots/${id}`, { method: "DELETE" });
 
 export const triggerEra5 = (id: string) =>
   request<Era5Status>(`/admin/spots/${id}/era5`, { method: "POST" });

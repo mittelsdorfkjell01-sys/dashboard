@@ -30,9 +30,11 @@ _SORTS = {
 }
 
 
-def _spot_filters(stmt, *, status, region_id, sport, q):
+def _spot_filters(stmt, *, status, region_id, sport, q, exclude_status=None):
     if status:
         stmt = stmt.where(Spot.status == status)
+    if exclude_status:
+        stmt = stmt.where(Spot.status != exclude_status)
     if region_id is not None:
         stmt = stmt.where(Spot.region_id == region_id)
     if sport:
@@ -53,10 +55,12 @@ def list_spots(
     sort: str = "name",
     limit: int = 50,
     offset: int = 0,
+    exclude_status: str | None = None,
 ) -> tuple[list[Spot], int]:
     """Filtered, sorted, paginated spot list + total matching count."""
     base = _spot_filters(
-        select(Spot), status=status, region_id=region_id, sport=sport, q=q
+        select(Spot), status=status, region_id=region_id, sport=sport, q=q,
+        exclude_status=exclude_status,
     )
     total = db.scalar(
         _spot_filters(
@@ -65,6 +69,7 @@ def list_spots(
             region_id=region_id,
             sport=sport,
             q=q,
+            exclude_status=exclude_status,
         )
     )
     stmt = (

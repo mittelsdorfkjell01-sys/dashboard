@@ -1,24 +1,29 @@
-// Admin spot table (Sprint B): filter/search/paginate, plus per-row actions —
-// edit, go-live (surfaces the readiness gap list on 409), and ERA5 trigger.
+// Admin spot table (Sprint B): filter/search/paginate. Status is a tab bar
+// (archived spots live in their own tab, out of the other lists). Lifecycle
+// actions (go-live / offline / archive / reactivate) live on the spot editor's
+// „Betrieb & Veröffentlichung" panel — each row only links there via Bearbeiten.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
-  archiveSpot,
   getAdminSpots,
   getAdminRegionsFlat,
-  goLiveSpot,
-  unpublishSpot,
   type AdminSpotsResponse,
   type Region,
   type SpotSummary,
 } from "../lib/api";
-import { gapLabel, sportLabel, statusLabel } from "../lib/labels";
+import { sportLabel, statusLabel } from "../lib/labels";
 import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
-const STATUSES = ["draft", "published", "archived"];
+// Status tabs. "" = Alle (everything except archived); "archived" is its own tab.
+const STATUS_TABS: { key: string; label: string }[] = [
+  { key: "", label: "Alle" },
+  { key: "draft", label: "Entwürfe" },
+  { key: "published", label: "Veröffentlicht" },
+  { key: "archived", label: "Archiviert" },
+];
 const PAGE = 25;
 
 export default function AdminSpots() {
@@ -33,8 +38,6 @@ export default function AdminSpots() {
   const [data, setData] = useState<AdminSpotsResponse | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
 
   const regionName = useMemo(() => {
     const m = new Map(regions.map((r) => [r.id, r.name]));
@@ -51,6 +54,8 @@ export default function AdminSpots() {
       setData(
         await getAdminSpots({
           status: status || undefined,
+          // "Alle" (no status) hides archived; archived has its own tab.
+          exclude_status: status ? undefined : "archived",
           region_id: regionId || undefined,
           sport: sport || undefined,
           q: q || undefined,
@@ -67,11 +72,6 @@ export default function AdminSpots() {
     void load();
   }, [load]);
 
-  const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(null), 3000);
-  };
-
   const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -87,56 +87,14 @@ export default function AdminSpots() {
     setParams(next);
   };
 
-  const onGoLive = async (spot: SpotSummary) => {
-    setBusyId(spot.id);
-    setError(null);
-    try {
-      await goLiveSpot(spot.id);
-      flash(`„${spot.name}" ist jetzt live.`);
-      await load();
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        const detail = (e.detail as { detail?: { gaps?: string[] } } | null)?.detail;
-        const gaps = detail?.gaps ?? [];
-        setError(
-          `„${spot.name}" ist noch nicht bereit. Fehlt: ${gaps
-            .map(gapLabel)
-            .join(", ")}`
-        );
-      } else {
-        setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
-      }
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const runStatus = async (
-    spot: SpotSummary,
-    fn: (id: string) => Promise<unknown>,
-    msg: string
-  ) => {
-    setBusyId(spot.id);
-    setError(null);
-    try {
-      await fn(spot.id);
-      flash(msg);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   const selectCls =
     "h-9 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary";
 
   const total = data?.total ?? 0;
   const shown = data?.items.length ?? 0;
 
-  // Per-row actions — shared by the desktop table and the mobile/tablet cards
-  // so behaviour stays identical across layouts.
+  // Per-row action — only „Bearbeiten". Lifecycle actions (go-live / offline /
+  // archive / reactivate) live on the editor's „Betrieb & Veröffentlichung" panel.
   const rowActions = (s: SpotSummary) => (
     <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
       <Link
@@ -145,44 +103,6 @@ export default function AdminSpots() {
       >
         Bearbeiten
       </Link>
-      <a
-        href={`/spot/${s.id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-      >
-        Ansehen ↗
-      </a>
-      {s.status !== "published" && (
-        <button
-          type="button"
-          disabled={busyId === s.id}
-          onClick={() => onGoLive(s)}
-          className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-        >
-          Go-Live
-        </button>
-      )}
-      {s.status === "published" && (
-        <button
-          type="button"
-          disabled={busyId === s.id}
-          onClick={() => runStatus(s, unpublishSpot, `„${s.name}" ist offline.`)}
-          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-        >
-          Offline
-        </button>
-      )}
-      {s.status !== "archived" && (
-        <button
-          type="button"
-          disabled={busyId === s.id}
-          onClick={() => runStatus(s, archiveSpot, `„${s.name}" archiviert.`)}
-          className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-        >
-          Archivieren
-        </button>
-      )}
     </div>
   );
 
@@ -201,6 +121,27 @@ export default function AdminSpots() {
         }
       />
 
+      {/* Status tabs — archived spots live in their own tab, out of the others. */}
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-admin-border">
+        {STATUS_TABS.map((t) => {
+          const active = status === t.key;
+          return (
+            <button
+              key={t.key || "all"}
+              type="button"
+              onClick={() => setFilter("status", t.key)}
+              className={`-mb-px border-b-2 px-3 py-2 text-label font-medium transition-colors ${
+                active
+                  ? "border-admin-primary text-admin-fg"
+                  : "border-transparent text-admin-muted hover:text-admin-fg"
+              }`}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filters — full-width stack on mobile, flowing row on sm+. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <input
@@ -211,19 +152,6 @@ export default function AdminSpots() {
           className={`${selectCls} w-full sm:min-w-[220px] sm:flex-1`}
         />
         <div className="grid grid-cols-2 gap-2 sm:contents">
-          <select
-            value={status}
-            onChange={(e) => setFilter("status", e.target.value)}
-            className={`${selectCls} w-full min-w-0 sm:w-auto`}
-            aria-label="Status"
-          >
-            <option value="">Alle Status</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {statusLabel(s)}
-              </option>
-            ))}
-          </select>
           <select
             value={regionId}
             onChange={(e) => setFilter("region_id", e.target.value)}
@@ -253,14 +181,6 @@ export default function AdminSpots() {
         </div>
       </div>
 
-      {notice && (
-        <div
-          role="status"
-          className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success"
-        >
-          {notice}
-        </div>
-      )}
       {error && (
         <div
           role="alert"

@@ -351,6 +351,26 @@ def set_spot_status(
     return {"spot_id": str(spot.id), "status": spot.status}
 
 
+def reactivate_spot(spot_id, *, db: Session, actor: str | None = "admin") -> dict:
+    """Bring an archived spot back into the draft workflow. Reuses the same
+    "offline" move (→ draft); the caller drives it from the archived tab."""
+    spot = _load(db, spot_id)
+    spot.status = STATUS_DRAFT
+    record_audit(db, spot.id, "reactivate", {"status": STATUS_DRAFT}, actor)
+    db.commit()
+    db.refresh(spot)
+    return {"spot_id": str(spot.id), "status": spot.status}
+
+
+def delete_spot(spot_id, *, db: Session, actor: str | None = "admin") -> None:
+    """Permanently delete a spot. Dependent rows (ratings, tips, images, ERA5
+    jobs, audits, favourites, watches …) are removed by the database's
+    ON DELETE CASCADE / SET NULL rules. Irreversible — the caller confirms."""
+    spot = _load(db, spot_id)  # raises LookupError if unknown
+    db.delete(spot)
+    db.commit()
+
+
 def set_finish_rank(
     spot_id, rank: str | None, *, db: Session, actor: str | None = "admin"
 ) -> Any:
