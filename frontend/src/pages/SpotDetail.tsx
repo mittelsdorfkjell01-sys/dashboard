@@ -98,7 +98,9 @@ export default function SpotDetail() {
   // All from the backend record — no synthetic data.
   const facilities = facilitiesFromMap(spot.facilities);
   const months = climatologyToMonths(spot.climatology);
-  const waterType = waterTypeFromCharacter(spot.waterCharacter);
+  // waterCharacter is multi-select; the flow-map animation takes one cue — use
+  // the first (primary) character.
+  const waterType = waterTypeFromCharacter(spot.waterCharacter?.[0]);
   const currentWind = live?.current.wind ?? undefined;
   const mapCoords = spot.coords ?? [41.18, 9.32];
   const windDir = live?.current.dir ?? spot.windDir ?? 320;

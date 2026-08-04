@@ -90,12 +90,19 @@ class HeroImageError(ValueError):
     """A hero image failed validation (→ 422 at the API, in German)."""
 
 
-def validate_hero_image(data: bytes, content_type: str | None) -> tuple[int, int, str]:
+def validate_hero_image(
+    data: bytes, content_type: str | None, *, allow_below_min: bool = False
+) -> tuple[int, int, str]:
     """Validate raw bytes against the hero rules.
 
     Returns ``(width, height, ext)`` on success; raises :class:`HeroImageError`
     with a German message otherwise. The actual pixel format is verified with
     Pillow, not trusted from the declared content type.
+
+    ``allow_below_min`` skips only the minimum-resolution checks (used by the
+    admin upload, which mirrors the client's "below min is allowed with a
+    warning" behaviour). Format, byte size and landscape orientation are always
+    enforced.
     """
     from PIL import Image, UnidentifiedImageError
 
@@ -116,16 +123,18 @@ def validate_hero_image(data: bytes, content_type: str | None) -> tuple[int, int
     if ext is None:
         raise HeroImageError("Format muss JPG, PNG oder WebP sein.")
 
-    if width < HERO_MIN_WIDTH:
-        raise HeroImageError(
-            f"Zu klein: {width}×{height} px — mindestens {HERO_MIN_WIDTH} px Breite nötig."
-        )
-    if height < HERO_MIN_HEIGHT:
-        raise HeroImageError(
-            f"Zu niedrig: {width}×{height} px — mindestens {HERO_MIN_HEIGHT} px Höhe nötig."
-        )
     if height >= width:
         raise HeroImageError(f"Querformat erforderlich (aktuell {width}×{height} px).")
+
+    if not allow_below_min:
+        if width < HERO_MIN_WIDTH:
+            raise HeroImageError(
+                f"Zu klein: {width}×{height} px — mindestens {HERO_MIN_WIDTH} px Breite nötig."
+            )
+        if height < HERO_MIN_HEIGHT:
+            raise HeroImageError(
+                f"Zu niedrig: {width}×{height} px — mindestens {HERO_MIN_HEIGHT} px Höhe nötig."
+            )
 
     return width, height, ext
 

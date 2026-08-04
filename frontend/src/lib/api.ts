@@ -67,10 +67,10 @@ export interface SpotSummary {
   region_id: string | null;
   location: GeoPoint | null;
   sports: string[];
-  water_type: string | null;
+  water_type: string[];
   bottom_type: string | null;
-  level: string | null;
-  water_character: string | null;
+  level: string[];
+  water_character: string[];
   style: string[];
   facilities: FacilityMap | null;
   status: string;
@@ -1068,10 +1068,10 @@ export interface SpotCreateBody {
   lon: number;
   sports?: string[];
   slug?: string;
-  water_type?: string | null;
+  water_type?: string[];
   bottom_type?: string | null;
-  level?: string | null;
-  water_character?: string | null;
+  level?: string[];
+  water_character?: string[];
   style?: string[];
   facilities?: FacilityMap | null;
   facing?: number | null;

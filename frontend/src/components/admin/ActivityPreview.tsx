@@ -52,10 +52,10 @@ const SECTIONS: Section[] = [
     title: "Sportarten & Eigenschaften",
     fields: [
       { key: "sports", label: "Sportarten", value: (s) => s.sports.map(sportLabel).join(", ") || "—" },
-      { key: "level", label: "Level", value: (s) => levelLabel(s.level) || "—" },
-      { key: "water_type", label: "Gewässerart", value: (s) => s.water_type ?? "—" },
+      { key: "level", label: "Level", value: (s) => (s.level ?? []).map(levelLabel).join(", ") || "—" },
+      { key: "water_type", label: "Gewässerart", value: (s) => (s.water_type ?? []).join(", ") || "—" },
       { key: "bottom_type", label: "Untergrund", value: (s) => s.bottom_type ?? "—" },
-      { key: "water_character", label: "Wasserart", value: (s) => waterCharacterLabel(s.water_character) || "—" },
+      { key: "water_character", label: "Wasserart", value: (s) => (s.water_character ?? []).map(waterCharacterLabel).join(", ") || "—" },
       { key: "style", label: "Fahrstil", value: (s) => styleList(s.style) || "—" },
     ],
   },

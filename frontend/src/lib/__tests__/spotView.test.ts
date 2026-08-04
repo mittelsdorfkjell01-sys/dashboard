@@ -49,7 +49,7 @@ describe("facilitiesFromMap", () => {
 
 describe("spotFactsFrom", () => {
   it("only includes axes that are present", () => {
-    const facts = spotFactsFrom(baseSpot({ level: "advanced", sports: ["kitesurf"] }));
+    const facts = spotFactsFrom(baseSpot({ level: ["advanced"], sports: ["kitesurf"] }));
     const labels = facts.map((f) => f.label);
     expect(labels).toContain("Level");
     expect(labels).toContain("Sportarten");
@@ -59,7 +59,7 @@ describe("spotFactsFrom", () => {
 
   it("renders German labels and a comma-joined style list", () => {
     const facts = spotFactsFrom(
-      baseSpot({ level: "pro", waterCharacter: "welle_gross", style: ["freeride", "wave_riding"] })
+      baseSpot({ level: ["pro"], waterCharacter: ["welle_gross"], style: ["freeride", "wave_riding"] })
     );
     expect(facts.find((f) => f.label === "Level")?.value).toBe("Profi");
     expect(facts.find((f) => f.label === "Wasserart")?.value).toBe("Große Welle");

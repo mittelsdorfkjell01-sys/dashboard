@@ -9,10 +9,10 @@ const summary = (over: Partial<SpotSummary> = {}): SpotSummary => ({
   region_id: "r1",
   location: { lat: 54.4, lon: 10.2 },
   sports: ["kitesurf"],
-  water_type: "sea",
+  water_type: ["sea"],
   bottom_type: "sand",
-  level: "beginner",
-  water_character: "chop",
+  level: ["beginner"],
+  water_character: ["chop"],
   style: ["freeride"],
   facilities: { parking: { available: true } },
   status: "published",
@@ -43,8 +43,8 @@ describe("adaptSpot", () => {
     expect(s.uuid).toBe("uuid-1");
     expect(s.coords).toEqual([54.4, 10.2]);
     expect(s.region).toBe("Kieler Bucht, Deutschland");
-    expect(s.level).toBe("beginner");
-    expect(s.waterCharacter).toBe("chop");
+    expect(s.level).toEqual(["beginner"]);
+    expect(s.waterCharacter).toEqual(["chop"]);
     expect(s.style).toEqual(["freeride"]);
     expect(s.facilities).toEqual({ parking: { available: true } });
   });

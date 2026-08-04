@@ -317,7 +317,9 @@ async def upload_image(
 
     data = await file.read()
     try:
-        validate_hero_image(data, file.content_type)
+        # Admin operators may upload below-minimum-resolution heroes (the client
+        # shows a blur warning); format and landscape are still enforced.
+        validate_hero_image(data, file.content_type, allow_below_min=True)
         out, ext, _, _ = reencode_image(data, max_width=HERO_OUT_MAX_WIDTH)
     except HeroImageError as exc:
         raise HTTPException(status_code=422, detail=str(exc))

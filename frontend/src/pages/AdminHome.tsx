@@ -9,6 +9,8 @@ import {
   ApiError,
   getAdminOverview,
   type AdminOverview,
+  type Rank,
+  type RankedSpot,
 } from "../lib/api";
 import { gapLabel } from "../lib/labels";
 import { RANK_CARD, RANK_DOT } from "../lib/rank";
@@ -136,39 +138,29 @@ export default function AdminHome() {
         </div>
       )}
 
-      {/* Fertigstellen — the whole catalogue is being reworked, so every spot is
-          listed here with its traffic-light rank (worst first). The count is how
-          many still need work (not green). Rank can be set per row (Auto = derived
-          from the open points; a colour pins it manually). */}
+      {/* Fertigstellen — spots still being reworked, split into two columns:
+          left the red ones (a lot still to do), right the yellow ones (nearly
+          done). Green (finished) spots drop out of the list entirely. Each row
+          links straight to the editor — go-live/archive live on the Spots page. */}
       <section className="mt-6">
-        <Panel
-          title="Fertigstellen"
-          count={data.finish.filter((f) => f.rank !== "green").length}
-        >
-          {data.finish.length === 0 ? (
-            <Empty>Keine Spots.</Empty>
-          ) : (
-            data.finish.map((s) => (
-              <div
-                key={s.id}
-                className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${RANK_CARD[s.rank]}`}
-              >
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${RANK_DOT[s.rank]}`} />
-                <Link
-                  to={`/admin/spot/${s.id}/edit`}
-                  className="min-w-0 flex-1 hover:underline"
-                >
-                  <span className="text-label font-medium text-ink">{s.name}</span>
-                  <span className="mt-0.5 block text-caption text-muted">
-                    {s.gaps.length === 0
-                      ? "Fertig — nichts offen"
-                      : `Offen: ${s.gaps.map(gapLabel).join(", ")}`}
-                  </span>
-                </Link>
-              </div>
-            ))
-          )}
-        </Panel>
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-label font-semibold text-admin-fg">Fertigstellen</h2>
+          <span className="text-caption text-admin-muted">
+            ({data.finish.filter((f) => f.rank !== "green").length})
+          </span>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <FinishColumn
+            title="Viel zu tun"
+            rank="red"
+            spots={data.finish.filter((f) => f.rank === "red")}
+          />
+          <FinishColumn
+            title="Fast fertig"
+            rank="yellow"
+            spots={data.finish.filter((f) => f.rank === "yellow")}
+          />
+        </div>
       </section>
 
       {/* Secondary: raw counters */}
@@ -182,28 +174,52 @@ export default function AdminHome() {
   );
 }
 
-function Panel({
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="py-2 text-caption text-admin-muted">{children}</p>;
+}
+
+// One Fertigstellen column (red = viel zu tun, yellow = fast fertig). Rows link
+// straight to the editor; no per-row ops here.
+function FinishColumn({
   title,
-  count,
-  children,
+  rank,
+  spots,
 }: {
   title: string;
-  count: number;
-  children: React.ReactNode;
+  rank: Rank;
+  spots: RankedSpot[];
 }) {
   return (
     <section className="rounded-lg border border-admin-border bg-admin-surface p-4">
       <div className="mb-3 flex items-center gap-2">
-        <h2 className="text-label font-semibold text-admin-fg">{title}</h2>
-        <span className="text-caption text-admin-muted">({count})</span>
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${RANK_DOT[rank]}`} />
+        <h3 className="text-label font-semibold text-admin-fg">{title}</h3>
+        <span className="text-caption text-admin-muted">({spots.length})</span>
       </div>
-      <div className="space-y-2">{children}</div>
+      <div className="space-y-2">
+        {spots.length === 0 ? (
+          <Empty>Keine Spots.</Empty>
+        ) : (
+          spots.map((s) => (
+            <Link
+              key={s.id}
+              to={`/admin/spot/${s.id}/edit`}
+              className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-colors hover:brightness-105 ${RANK_CARD[rank]}`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="text-label font-medium text-ink">{s.name}</span>
+                <span className="mt-0.5 block text-caption text-muted">
+                  {s.gaps.length === 0
+                    ? "Fertig — nichts offen"
+                    : `Offen: ${s.gaps.map(gapLabel).join(", ")}`}
+                </span>
+              </span>
+            </Link>
+          ))
+        )}
+      </div>
     </section>
   );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="py-2 text-caption text-admin-muted">{children}</p>;
 }
 
 function Tile({

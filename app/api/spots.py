@@ -80,9 +80,9 @@ def list_spots(
     if sport is not None:
         stmt = stmt.where(Spot.sports.any(sport))
     if level is not None:
-        stmt = stmt.where(Spot.level == level)
+        stmt = stmt.where(Spot.level.any(level))
     if water_character is not None:
-        stmt = stmt.where(Spot.water_character == water_character)
+        stmt = stmt.where(Spot.water_character.any(water_character))
     if style:
         # Match spots offering ANY of the requested styles (array overlap).
         stmt = stmt.where(Spot.style.overlap(style))

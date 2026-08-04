@@ -47,7 +47,10 @@ def test_spatial_indexes_exist(db):
         "ix_spots_sports",
         "ix_spots_style",
         "ix_spots_region_status",
-        "ix_spots_water_level",
+        # water_type/level became arrays (0019) — the old composite btree was
+        # replaced by per-column GIN indexes.
+        "ix_spots_water_type",
+        "ix_spots_level",
         "ix_regions_center",
     }:
         assert expected in names

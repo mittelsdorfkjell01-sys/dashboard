@@ -14,8 +14,11 @@ from sqlalchemy import select
 from app.admin.constants import (
     validate_facilities,
     validate_level,
+    validate_levels,
     validate_styles,
     validate_water_character,
+    validate_water_characters,
+    validate_water_types,
 )
 from app.admin.deps import get_cds_client
 from app.main import app
@@ -40,6 +43,25 @@ def test_validate_water_character_rejects_unknown():
     assert validate_water_character("welle_gross") == "welle_gross"
     with pytest.raises(ValueError):
         validate_water_character("kabbel")
+
+
+def test_validate_multi_axes_dedup_and_reject():
+    # Multi-select level / water_character / water_type share the same rules.
+    assert validate_levels(["beginner", "beginner", "pro"]) == ["beginner", "pro"]
+    assert validate_levels(None) == []
+    assert validate_levels(["n/a"]) == ["n/a"]
+    with pytest.raises(ValueError):
+        validate_levels(["expert"])
+    with pytest.raises(ValueError):
+        validate_levels("beginner")  # a bare string is not a list
+
+    assert validate_water_characters(["chop", "flach"]) == ["chop", "flach"]
+    with pytest.raises(ValueError):
+        validate_water_characters(["kabbel"])
+
+    assert validate_water_types(["sea", "lagoon"]) == ["sea", "lagoon"]
+    with pytest.raises(ValueError):
+        validate_water_types(["river"])
 
 
 def test_validate_styles_dedups_and_validates():
@@ -131,41 +153,51 @@ def _create(admin, region_id, **overrides):
 
 
 def test_create_rejects_invalid_enum_422(admin, region_id):
-    assert _create(admin, region_id, level="expert").status_code == 422
-    assert _create(admin, region_id, water_character="kabbel").status_code == 422
+    assert _create(admin, region_id, level=["expert"]).status_code == 422
+    assert _create(admin, region_id, water_character=["kabbel"]).status_code == 422
+    assert _create(admin, region_id, water_type=["river"]).status_code == 422
     assert _create(admin, region_id, style=["loopy"]).status_code == 422
 
 
 def test_create_stores_categories_and_facilities(admin, region_id):
     resp = _create(
         admin, region_id,
-        level="advanced", water_character="welle_gross",
+        level=["intermediate", "advanced"], water_character=["welle_gross"],
+        water_type=["ocean", "sea"],
         style=["freeride", "big_air"],
         facilities={"parking": {"available": True}, "camping": {"available": False}},
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()
-    assert body["level"] == "advanced"
-    assert body["water_character"] == "welle_gross"
+    assert body["level"] == ["intermediate", "advanced"]
+    assert body["water_character"] == ["welle_gross"]
+    assert body["water_type"] == ["ocean", "sea"]
     assert body["style"] == ["freeride", "big_air"]
     assert body["facilities"]["parking"] == {"available": True}
 
 
 def test_get_spots_filters_by_category(admin, region_id):
-    _create(admin, region_id, level="advanced", water_character="welle_gross",
-            style=["wave_riding"])
-    _create(admin, region_id, level="beginner", water_character="flach",
+    # First spot carries two levels — a multi-value filter must match it on either.
+    _create(admin, region_id, level=["intermediate", "advanced"],
+            water_character=["welle_gross"], style=["wave_riding"])
+    _create(admin, region_id, level=["beginner"], water_character=["flach"],
             style=["freeride"])
 
     by_level = admin.get("/spots", params={"region_id": region_id, "level": "advanced"})
     assert by_level.status_code == 200
-    assert all(s["level"] == "advanced" for s in by_level.json())
+    assert all("advanced" in s["level"] for s in by_level.json())
     assert len(by_level.json()) == 1
+
+    # The same multi-level spot is also reachable via its other level.
+    by_level2 = admin.get(
+        "/spots", params={"region_id": region_id, "level": "intermediate"}
+    )
+    assert len(by_level2.json()) == 1
 
     by_water = admin.get(
         "/spots", params={"region_id": region_id, "water_character": "flach"}
     )
-    assert [s["water_character"] for s in by_water.json()] == ["flach"]
+    assert [s["water_character"] for s in by_water.json()] == [["flach"]]
 
     # style is a multi-value overlap filter
     by_style = admin.get(
@@ -176,7 +208,7 @@ def test_get_spots_filters_by_category(admin, region_id):
 
 
 def test_summary_carries_new_fields(admin, region_id):
-    _create(admin, region_id, water_character="chop", style=["freeride"])
+    _create(admin, region_id, water_character=["chop"], style=["freeride"])
     row = admin.get("/spots", params={"region_id": region_id}).json()[0]
     assert {"water_character", "style", "facilities"} <= set(row)
 
@@ -190,7 +222,7 @@ def test_readiness_requires_water_character_not_facilities(admin, region_id):
     assert "style" not in gaps
 
     # Setting water_character clears that gap even with unknown facilities.
-    admin.patch(f"/admin/spots/{spot['id']}", json={"water_character": "chop"})
+    admin.patch(f"/admin/spots/{spot['id']}", json={"water_character": ["chop"]})
     gaps2 = set(admin.get(f"/admin/spots/{spot['id']}/readiness").json()["gaps"])
     assert "water_character" not in gaps2
 

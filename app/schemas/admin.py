@@ -10,9 +10,10 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.admin.constants import (
     validate_facilities,
-    validate_level,
+    validate_levels,
     validate_styles,
-    validate_water_character,
+    validate_water_characters,
+    validate_water_types,
 )
 
 
@@ -23,20 +24,21 @@ class SpotCreate(BaseModel):
     lon: float = Field(ge=-180, le=180)
     sports: list[str] = Field(default_factory=list)
     slug: str | None = None
-    water_type: str | None = None
+    water_type: list[str] = Field(default_factory=list)
     bottom_type: str | None = None
-    level: str | None = None
-    water_character: str | None = None
+    level: list[str] = Field(default_factory=list)
+    water_character: list[str] = Field(default_factory=list)
     style: list[str] = Field(default_factory=list)
     facilities: dict[str, Any] | None = None
     facing: int | None = Field(default=None, ge=0, le=359)
     model_pref: str | None = None
     editorial: dict[str, Any] | None = None
 
-    _v_level = field_validator("level")(staticmethod(validate_level))
+    _v_level = field_validator("level")(staticmethod(validate_levels))
     _v_water = field_validator("water_character")(
-        staticmethod(validate_water_character)
+        staticmethod(validate_water_characters)
     )
+    _v_water_type = field_validator("water_type")(staticmethod(validate_water_types))
     _v_style = field_validator("style")(staticmethod(validate_styles))
     _v_fac = field_validator("facilities")(staticmethod(validate_facilities))
 
@@ -54,10 +56,10 @@ class SpotUpdate(BaseModel):
     lat: float | None = Field(default=None, ge=-90, le=90)
     lon: float | None = Field(default=None, ge=-180, le=180)
     sports: list[str] | None = None
-    water_type: str | None = None
+    water_type: list[str] | None = None
     bottom_type: str | None = None
-    level: str | None = None
-    water_character: str | None = None
+    level: list[str] | None = None
+    water_character: list[str] | None = None
     style: list[str] | None = None
     facilities: dict[str, Any] | None = None
     facing: int | None = Field(default=None, ge=0, le=359)
@@ -68,10 +70,11 @@ class SpotUpdate(BaseModel):
     # data column — excluded from ``to_data()``.
     expected_updated_at: datetime | None = None
 
-    _v_level = field_validator("level")(staticmethod(validate_level))
+    _v_level = field_validator("level")(staticmethod(validate_levels))
     _v_water = field_validator("water_character")(
-        staticmethod(validate_water_character)
+        staticmethod(validate_water_characters)
     )
+    _v_water_type = field_validator("water_type")(staticmethod(validate_water_types))
     _v_style = field_validator("style")(staticmethod(validate_styles))
     _v_fac = field_validator("facilities")(staticmethod(validate_facilities))
 

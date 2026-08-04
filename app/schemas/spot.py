@@ -23,10 +23,10 @@ class SpotSummary(BaseModel):
     region_id: uuid.UUID | None = None
     location: GeoPoint | None = None
     sports: list[str]
-    water_type: str | None = None
+    water_type: list[str] = []
     bottom_type: str | None = None
-    level: str | None = None
-    water_character: str | None = None
+    level: list[str] = []
+    water_character: list[str] = []
     style: list[str] = []
     facilities: dict[str, Any] | None = None
     status: str
@@ -43,10 +43,10 @@ class SpotSummary(BaseModel):
             region_id=spot.region_id,
             location=GeoPoint.from_geo(spot.location),
             sports=list(spot.sports or []),
-            water_type=spot.water_type,
+            water_type=list(spot.water_type or []),
             bottom_type=spot.bottom_type,
-            level=spot.level,
-            water_character=spot.water_character,
+            level=list(spot.level or []),
+            water_character=list(spot.water_character or []),
             style=list(spot.style or []),
             facilities=spot.facilities,
             status=spot.status,
@@ -67,10 +67,10 @@ class SpotRead(BaseModel):
     era5_cell: dict[str, Any] | None = None
     model_pref: str | None = None
     sports: list[str]
-    water_type: str | None = None
+    water_type: list[str] = []
     bottom_type: str | None = None
-    level: str | None = None
-    water_character: str | None = None
+    level: list[str] = []
+    water_character: list[str] = []
     style: list[str] = []
     facilities: dict[str, Any] | None = None
     status: str
@@ -96,10 +96,10 @@ class SpotRead(BaseModel):
             era5_cell=spot.era5_cell,
             model_pref=spot.model_pref,
             sports=list(spot.sports or []),
-            water_type=spot.water_type,
+            water_type=list(spot.water_type or []),
             bottom_type=spot.bottom_type,
-            level=spot.level,
-            water_character=spot.water_character,
+            level=list(spot.level or []),
+            water_character=list(spot.water_character or []),
             style=list(spot.style or []),
             facilities=spot.facilities,
             status=spot.status,

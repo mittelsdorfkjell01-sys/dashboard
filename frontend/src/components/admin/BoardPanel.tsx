@@ -12,6 +12,7 @@ import {
   type BoardTask,
 } from "../../lib/api";
 import { Button, Input, Textarea } from "../ui";
+import Modal from "../ui/Modal";
 import PromptDialog from "../ui/PromptDialog";
 import ConfirmDialog from "../ui/ConfirmDialog";
 
@@ -28,6 +29,7 @@ export default function BoardPanel() {
   const [editTarget, setEditTarget] = useState<BoardTask | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BoardTask | null>(null);
   const [dialogBusy, setDialogBusy] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
 
   const load = () =>
     getBoardTasks()
@@ -87,9 +89,7 @@ export default function BoardPanel() {
         </div>
       )}
 
-      <NewTaskForm onCreated={load} onError={setError} />
-
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {COLUMNS.map((col) => {
           const items = tasks.filter((t) => t.status === col.key);
           return (
@@ -112,7 +112,20 @@ export default function BoardPanel() {
               }`}
             >
               <div className="flex items-center justify-between px-1">
-                <p className="text-label font-semibold text-ink">{col.label}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-label font-semibold text-ink">{col.label}</p>
+                  {col.key === "open" && (
+                    <button
+                      type="button"
+                      onClick={() => setNewOpen(true)}
+                      aria-label="Neue Aufgabe"
+                      title="Neue Aufgabe"
+                      className="grid h-6 w-6 place-items-center rounded-full border border-line bg-white text-ink transition-colors hover:border-teal hover:text-teal"
+                    >
+                      <span aria-hidden className="text-[16px] leading-none">+</span>
+                    </button>
+                  )}
+                </div>
                 <span className="text-caption text-muted">{items.length}</span>
               </div>
               <div className="mt-2 space-y-2">
@@ -134,6 +147,13 @@ export default function BoardPanel() {
           );
         })}
       </div>
+
+      <NewTaskModal
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        onCreated={load}
+        onError={setError}
+      />
 
       <PromptDialog
         open={editTarget !== null}
@@ -199,10 +219,14 @@ function TaskCard({
   );
 }
 
-function NewTaskForm({
+function NewTaskModal({
+  open,
+  onClose,
   onCreated,
   onError,
 }: {
+  open: boolean;
+  onClose: () => void;
   onCreated: () => void | Promise<void>;
   onError: (msg: string) => void;
 }) {
@@ -210,15 +234,22 @@ function NewTaskForm({
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Reset the fields each time the mask opens.
+  useEffect(() => {
+    if (open) {
+      setTitle("");
+      setBody("");
+    }
+  }, [open]);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (busy || !title.trim()) return;
     setBusy(true);
     try {
       await createBoardTask(title.trim(), body.trim() || undefined);
-      setTitle("");
-      setBody("");
       await onCreated();
+      onClose();
     } catch (err) {
       onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
     } finally {
@@ -227,20 +258,35 @@ function NewTaskForm({
   };
 
   return (
-    <form onSubmit={submit} className="rounded-2xl bg-ink/5 p-4">
-      <p className="text-label font-semibold text-ink">Neue Aufgabe</p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titel" />
+    <Modal open={open} onClose={onClose} labelledBy="new-task-title">
+      <form onSubmit={submit}>
+        <h2 id="new-task-title" className="text-ui font-semibold text-ink">
+          Neue Aufgabe
+        </h2>
+        <label className="mt-4 block text-label text-ink-soft">Titel</label>
+        <Input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Titel"
+          className="mt-1.5"
+        />
+        <label className="mt-3 block text-label text-ink-soft">Details (optional)</label>
         <Textarea
-          className="min-h-[40px] resize-y"
+          className="mt-1.5 min-h-[96px] resize-y"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Details (optional)"
         />
-        <Button type="submit" disabled={busy || !title.trim()} className="shrink-0 self-start">
-          {busy ? "…" : "Anlegen"}
-        </Button>
-      </div>
-    </form>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+            Abbrechen
+          </Button>
+          <Button type="submit" disabled={busy || !title.trim()}>
+            {busy ? "…" : "Anlegen"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

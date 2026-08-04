@@ -120,10 +120,19 @@ def test_upload_valid_sets_image_record(admin, spot_id):
     assert img["url"].startswith("/media/spots/")
 
 
-def test_upload_too_small_rejected(admin, spot_id):
+def test_upload_below_min_accepted_for_admin(admin, spot_id):
+    # Admin operators may upload below-minimum-resolution heroes (the client
+    # shows a blur warning); the server mirrors that and stores it.
     resp = _upload(admin, spot_id, _img_bytes(1000, 700))
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["image"]["url"].startswith("/media/spots/")
+
+
+def test_upload_portrait_still_rejected(admin, spot_id):
+    # allow_below_min only relaxes resolution — orientation is still enforced.
+    resp = _upload(admin, spot_id, _img_bytes(700, 1000))
     assert resp.status_code == 422
-    assert "Zu klein" in resp.json()["detail"]
+    assert "Querformat" in resp.json()["detail"]
 
 
 def test_upload_wrong_format_rejected(admin, spot_id):

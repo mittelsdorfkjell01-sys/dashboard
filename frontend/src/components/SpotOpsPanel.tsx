@@ -5,14 +5,11 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ApiError,
-  archiveSpot,
   getEra5Status,
   getReadiness,
   getSpot,
-  goLiveSpot,
   setFinishRank as saveFinishRank,
   triggerEra5,
-  unpublishSpot,
   type Era5Status,
   type Rank,
   type Readiness,
@@ -79,26 +76,6 @@ export default function SpotOpsPanel({
     setTimeout(() => setNotice(null), 3000);
   };
 
-  const onGoLive = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      // Go-live is always allowed; the response carries any remaining gaps.
-      const res = (await goLiveSpot(spotId)) as { ready?: boolean; gaps?: string[] };
-      const gaps = res.gaps ?? [];
-      flash(
-        res.ready === false && gaps.length > 0
-          ? `Live gesetzt — es fehlen noch: ${gaps.map(gapLabel).join(", ")}`
-          : "Spot ist jetzt live."
-      );
-      await refresh();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const runStatus = async (fn: () => Promise<unknown>, msg: string) => {
     setBusy(true);
     setError(null);
@@ -123,7 +100,7 @@ export default function SpotOpsPanel({
   return (
     <div className="rounded-lg border border-admin-border bg-admin-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-ui font-semibold text-admin-fg">Betrieb &amp; Veröffentlichung</h2>
+        <h2 className="text-ui font-semibold text-admin-fg">Status &amp; Fertigstellen</h2>
         {readiness && (
           <Badge tone={readiness.ready ? "success" : "neutral"}>
             {readiness.ready ? "Bereit" : "Angaben offen"} · {statusLabel(readiness.status)}
@@ -189,8 +166,8 @@ export default function SpotOpsPanel({
             </span>
           )}
           <p className="mt-1.5 text-caption text-admin-faint">
-            Veröffentlichen ist trotzdem möglich — die fehlenden Angaben sind nur
-            ein Hinweis.
+            Veröffentlichen, Offline nehmen und Archivieren erfolgt auf der
+            Spots-Seite — die fehlenden Angaben sind hier nur ein Hinweis.
           </p>
         </div>
       )}
@@ -211,37 +188,6 @@ export default function SpotOpsPanel({
         >
           Neu berechnen
         </button>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border pt-4">
-        <button
-          type="button"
-          disabled={busy || readiness?.status === "published"}
-          onClick={onGoLive}
-          className="rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-        >
-          {readiness?.status === "published" ? "Live" : "Go-Live"}
-        </button>
-        {readiness?.status === "published" && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => runStatus(() => unpublishSpot(spotId), "Spot ist offline.")}
-            className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-          >
-            Offline nehmen
-          </button>
-        )}
-        {readiness?.status !== "archived" && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => runStatus(() => archiveSpot(spotId), "Spot archiviert.")}
-            className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-          >
-            Archivieren
-          </button>
-        )}
       </div>
 
       {overrideKeys.length > 0 && (

@@ -39,9 +39,11 @@ def make_spot(
         status="published",
         confidence=confidence,
         climatology=climatology,
-        water_type=water_type,
+        # water_type / level are multi-select array columns; callers still pass a
+        # single scalar for brevity, so wrap into a one-element list.
+        water_type=[water_type] if water_type else [],
         bottom_type=bottom_type,
-        level=level,
+        level=[level] if level else [],
         facing=facing,
         editorial=editorial,
     )

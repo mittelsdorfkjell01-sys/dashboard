@@ -80,8 +80,8 @@ def _create_spot(admin, region_id, **overrides):
     body = {
         "name": f"New Spot {suffix}", "slug": f"new-spot-{suffix}",
         "region_id": region_id, "lat": 54.41, "lon": 10.22,
-        "sports": ["kitesurf"], "water_type": "sea", "bottom_type": "sand",
-        "level": "beginner", "water_character": "chop",
+        "sports": ["kitesurf"], "water_type": ["sea"], "bottom_type": "sand",
+        "level": ["beginner"], "water_character": ["chop"],
     }
     body.update(overrides)
     resp = admin.post("/admin/spots", json=body)
@@ -332,7 +332,7 @@ def test_activity_groups_multiple_actions_into_one_slot_per_spot(admin, region_i
     sid = spot["id"]
     # Three separate edits on the same spot → still ONE activity slot.
     admin.patch(f"/admin/spots/{sid}", json={"name": "Edit A"})
-    admin.patch(f"/admin/spots/{sid}", json={"water_type": "lake"})
+    admin.patch(f"/admin/spots/{sid}", json={"water_type": ["lake"]})
     admin.patch(f"/admin/spots/{sid}", json={"bottom_type": "rock"})
 
     acts = admin.get("/admin/activity").json()
@@ -403,7 +403,7 @@ def test_board_task_crud(admin):
 
 def test_activity_shows_changed_fields(admin, region_id):
     spot = _create_spot(admin, region_id)
-    admin.patch(f"/admin/spots/{spot['id']}", json={"level": "advanced"})
+    admin.patch(f"/admin/spots/{spot['id']}", json={"level": ["advanced"]})
     acts = admin.get("/admin/activity").json()
     upd = next(
         (a for a in acts if a["target"] == spot["name"] and a["action"] == "update"),
@@ -740,8 +740,8 @@ def test_admin_notifications_flow(admin, region_id, db):
         payload={
             "name": "Vorschlag X", "slug": f"vorschlag-{uuid.uuid4().hex[:8]}",
             "region_id": region_id, "lat": 54.4, "lon": 10.2,
-            "sports": ["kitesurf"], "water_type": "sea", "bottom_type": "sand",
-            "level": "beginner", "water_character": "chop",
+            "sports": ["kitesurf"], "water_type": ["sea"], "bottom_type": "sand",
+            "level": ["beginner"], "water_character": ["chop"],
         },
         submitter_name="Gast",
     )

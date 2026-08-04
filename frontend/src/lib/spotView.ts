@@ -19,9 +19,13 @@ export function spotFactsFrom(spot: Spot): SpotFact[] {
   const facts: SpotFact[] = [];
   if (spot.sports && spot.sports.length)
     facts.push({ label: "Sportarten", value: spot.sports.map(sportLabel).join(", ") });
-  if (spot.level) facts.push({ label: "Level", value: levelLabel(spot.level) });
-  if (spot.waterCharacter)
-    facts.push({ label: "Wasserart", value: waterCharacterLabel(spot.waterCharacter) });
+  if (spot.level && spot.level.length)
+    facts.push({ label: "Level", value: spot.level.map(levelLabel).join(", ") });
+  if (spot.waterCharacter && spot.waterCharacter.length)
+    facts.push({
+      label: "Wasserart",
+      value: spot.waterCharacter.map(waterCharacterLabel).join(", "),
+    });
   if (spot.style && spot.style.length)
     facts.push({ label: "Fahrstil", value: styleList(spot.style) });
   return facts;

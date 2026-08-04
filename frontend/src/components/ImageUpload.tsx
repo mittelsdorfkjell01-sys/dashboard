@@ -14,7 +14,10 @@ export const HERO_REQ = {
 
 type Result =
   | { ok: true; width: number; height: number }
-  | { ok: false; reason: string; width?: number; height?: number };
+  // `belowMin` marks a failure that is *only* about being under the minimum
+  // resolution (too narrow / too short). The admin upload can override those
+  // with a warning; hard failures (format, size in bytes, portrait) never set it.
+  | { ok: false; reason: string; width?: number; height?: number; belowMin?: boolean };
 
 /** Client-side hero gate, reused by the public community upload (Sprint D). */
 export function validateHeroFile(file: File): Promise<Result> {
@@ -30,12 +33,12 @@ export function validateHeroFile(file: File): Promise<Result> {
     img.onload = () => {
       URL.revokeObjectURL(url);
       const { naturalWidth: w, naturalHeight: h } = img;
-      if (w < HERO_REQ.minWidth)
-        return resolve({ ok: false, width: w, height: h, reason: `Zu klein: ${w}×${h} px — mindestens ${HERO_REQ.minWidth} px Breite nötig.` });
-      if (h < HERO_REQ.minHeight)
-        return resolve({ ok: false, width: w, height: h, reason: `Zu niedrig: ${w}×${h} px — mindestens ${HERO_REQ.minHeight} px Höhe nötig.` });
       if (h >= w)
         return resolve({ ok: false, width: w, height: h, reason: `Querformat erforderlich (aktuell ${w}×${h} px).` });
+      if (w < HERO_REQ.minWidth)
+        return resolve({ ok: false, width: w, height: h, belowMin: true, reason: `Zu klein: ${w}×${h} px — empfohlen sind mindestens ${HERO_REQ.minWidth} px Breite.` });
+      if (h < HERO_REQ.minHeight)
+        return resolve({ ok: false, width: w, height: h, belowMin: true, reason: `Zu niedrig: ${w}×${h} px — empfohlen sind mindestens ${HERO_REQ.minHeight} px Höhe.` });
       resolve({ ok: true, width: w, height: h });
     };
     img.onerror = () => {
@@ -46,13 +49,27 @@ export function validateHeroFile(file: File): Promise<Result> {
   });
 }
 
-/** Admin image field: shows the size disclaimer and only lets a file through
- *  the gate when it satisfies HERO_REQ. `onAccept` fires with the valid file. */
-export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => void }) {
+/** Admin image field: shows the size disclaimer and lets a file through the
+ *  gate when it satisfies HERO_REQ. With `allowBelowMin`, a below-minimum image
+ *  is still accepted — but a warning disclaimer is shown that it may look blurry
+ *  on large screens. `onAccept` fires with the accepted file. */
+export default function ImageUpload({
+  onAccept,
+  allowBelowMin = false,
+}: {
+  onAccept?: (file: File) => void;
+  /** Admin-only: accept below-minimum-resolution images with a warning. */
+  allowBelowMin?: boolean;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+
+  // Accepted when it passes the gate outright, or when it only fails on
+  // resolution and the caller allows below-minimum images.
+  const isAccepted = (res: Result) =>
+    res.ok || (allowBelowMin && !res.ok && !!res.belowMin);
 
   const handleFile = async (file?: File | null) => {
     setPreview((p) => {
@@ -66,7 +83,7 @@ export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => v
     const res = await validateHeroFile(file);
     setResult(res);
     setFileName(file.name);
-    if (res.ok) {
+    if (isAccepted(res)) {
       setPreview(URL.createObjectURL(file));
       onAccept?.(file);
     }
@@ -84,7 +101,17 @@ export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => v
           <li>• Max. {Math.round(HERO_REQ.maxBytes / 1024 / 1024)} MB</li>
         </ul>
         <p className="mt-2 text-muted">
-          Kleinere Bilder werden <strong>abgelehnt</strong> — der Upload ist erst nach erfüllter Anforderung möglich.
+          {allowBelowMin ? (
+            <>
+              Kleinere Bilder können <strong>trotzdem hochgeladen</strong> werden — sie
+              erscheinen dann ggf. unscharf auf großen Bildschirmen.
+            </>
+          ) : (
+            <>
+              Kleinere Bilder werden <strong>abgelehnt</strong> — der Upload ist erst nach
+              erfüllter Anforderung möglich.
+            </>
+          )}
         </p>
       </div>
 
@@ -108,21 +135,25 @@ export default function ImageUpload({ onAccept }: { onAccept?: (file: File) => v
       </div>
 
       {/* Feedback */}
-      {result && !result.ok && (
+      {result && !result.ok && !isAccepted(result) && (
         <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
           ✕ {result.reason}
         </p>
       )}
+      {result && !result.ok && isAccepted(result) && (
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] font-medium text-amber-700">
+          ⚠ {result.reason} Das Bild wird verwendet, kann auf großen Bildschirmen
+          aber unscharf wirken.
+        </p>
+      )}
       {result?.ok && (
-        <div className="mt-3">
-          <p className="rounded-lg bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
-            ✓ {fileName} · {result.width}×{result.height} px — Anforderung erfüllt
-          </p>
-          {preview && (
-            <div className="mt-3 aspect-[21/9] overflow-hidden rounded-xl bg-line">
-              <img src={preview} alt="Vorschau" className="h-full w-full object-cover" />
-            </div>
-          )}
+        <p className="mt-3 rounded-lg bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
+          ✓ {fileName} · {result.width}×{result.height} px — Anforderung erfüllt
+        </p>
+      )}
+      {preview && (
+        <div className="mt-3 aspect-[21/9] overflow-hidden rounded-xl bg-line">
+          <img src={preview} alt="Vorschau" className="h-full w-full object-cover" />
         </div>
       )}
     </div>

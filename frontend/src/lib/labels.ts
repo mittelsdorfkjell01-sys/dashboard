@@ -13,6 +13,7 @@ export const WATER_CHARACTERS = [
   "tiefes_wasser",
 ] as const;
 export const STYLES = ["freeride", "freestyle", "big_air", "wave_riding"] as const;
+export const WATER_TYPES = ["ocean", "sea", "lake", "lagoon"] as const;
 export const FACILITY_KINDS: FacilityKind[] = [
   "parking",
   "shower",
@@ -34,6 +35,13 @@ export const WATER_CHARACTER_LABELS: Record<string, string> = {
   welle_klein: "Kleine Welle",
   welle_gross: "Große Welle",
   tiefes_wasser: "Tiefes Wasser",
+};
+
+export const WATER_TYPE_LABELS: Record<string, string> = {
+  ocean: "Ozean",
+  sea: "Meer",
+  lake: "See",
+  lagoon: "Lagune",
 };
 
 export const STYLE_LABELS: Record<string, string> = {
@@ -162,6 +170,8 @@ export const modelPrefLabel = (v?: string | null) =>
 export const levelLabel = (k?: string | null) => (k ? LEVEL_LABELS[k] ?? k : "");
 export const waterCharacterLabel = (k?: string | null) =>
   k ? WATER_CHARACTER_LABELS[k] ?? k : "";
+export const waterTypeLabel = (k?: string | null) =>
+  k ? WATER_TYPE_LABELS[k] ?? k : "";
 export const styleLabel = (k: string) => STYLE_LABELS[k] ?? k;
 export const facilityLabel = (k: FacilityKind) => FACILITY_LABELS[k] ?? k;
 export const sportLabel = (k: string) => SPORT_LABELS[k] ?? k;

@@ -27,6 +27,13 @@ def _polygon(ring: list[tuple[float, float]]):
     return from_shape(Polygon(ring), srid=4326)
 
 
+def _as_list(value) -> list[str]:
+    """Coerce a seed scalar (or None/list) into a multi-select array column."""
+    if value is None:
+        return []
+    return list(value) if isinstance(value, (list, tuple)) else [value]
+
+
 def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
     """Seed regions, spots, scoring_params and required_fields. Counts of new rows.
 
@@ -75,16 +82,18 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
         if existing is not None:
             continue
         region = region_by_slug[s["region_slug"]]
+        # water_type / level / water_character are multi-select arrays now; the
+        # seed data still carries a single scalar each, so wrap into a list.
         spot = Spot(
             slug=s["slug"],
             name=s["name"],
             region_id=region.id,
             location=_point(s["location"]),
             sports=s["sports"],
-            water_type=s["water_type"],
+            water_type=_as_list(s.get("water_type")),
             bottom_type=s["bottom_type"],
-            level=s["level"],
-            water_character=s.get("water_character"),
+            level=_as_list(s.get("level")),
+            water_character=_as_list(s.get("water_character")),
             style=s.get("style", []),
             facilities=s.get("facilities"),
             status=s["status"],

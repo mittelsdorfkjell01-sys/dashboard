@@ -69,8 +69,11 @@ export function activeFilterCount(f: FilterState): number {
  *  full spot set while only the grid narrows. */
 export function filterSpots(spots: Spot[], f: FilterState): Spot[] {
   return spots.filter((s) => {
-    if (f.level && s.level !== f.level) return false;
-    if (f.waterCharacter && s.waterCharacter !== f.waterCharacter) return false;
+    // level / waterCharacter are multi-select arrays; a single-select filter
+    // matches when the spot carries that value among its own.
+    if (f.level && !(s.level ?? []).includes(f.level)) return false;
+    if (f.waterCharacter && !(s.waterCharacter ?? []).includes(f.waterCharacter))
+      return false;
     if (f.styles.length && !f.styles.some((x) => (s.style ?? []).includes(x)))
       return false;
     return true;
@@ -80,8 +83,14 @@ export function filterSpots(spots: Spot[], f: FilterState): Spot[] {
 /** Client-side sort (the API already applied the filters). */
 export function sortSpots(spots: Spot[], sort: SortKey): Spot[] {
   const out = [...spots];
-  const levelRank = (s: Spot) =>
-    s.level ? LEVELS.indexOf(s.level as (typeof LEVELS)[number]) : 999;
+  // A spot can hold several levels; rank it by its *lowest* (most accessible)
+  // known level so "beginner → pro" sorting keeps mixed spots near beginners.
+  const levelRank = (s: Spot) => {
+    const idxs = (s.level ?? [])
+      .map((l) => LEVELS.indexOf(l as (typeof LEVELS)[number]))
+      .filter((i) => i >= 0);
+    return idxs.length ? Math.min(...idxs) : 999;
+  };
   switch (sort) {
     case "name-desc":
       return out.sort((a, b) => b.name.localeCompare(a.name, "de"));

@@ -36,8 +36,8 @@ export interface Spot {
   regionId?: string;
   sports?: string[];
   description?: string;
-  level?: string | null;
-  waterCharacter?: string | null;
+  level?: string[];
+  waterCharacter?: string[];
   style?: string[];
   facilities?: FacilityMap | null;
   /** Derived 52-week climatology (from the detail record); null when not derived. */

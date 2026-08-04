@@ -36,11 +36,18 @@ def _editorial(spot: Any) -> dict:
 
 
 def _level_distance(a: Any, b: Any) -> float | None:
-    try:
-        ia, ib = _LEVELS.index(a.level), _LEVELS.index(b.level)
-    except (AttributeError, ValueError):
+    """Closest-level distance between two multi-select level sets in [0, 1].
+
+    Both ``level`` columns are lists; the distance is the *minimum* pairwise gap
+    (two spots that share any level are as close as possible on this axis).
+    ``None`` when either side has no known level.
+    """
+    ia = [_LEVELS.index(v) for v in (getattr(a, "level", None) or []) if v in _LEVELS]
+    ib = [_LEVELS.index(v) for v in (getattr(b, "level", None) or []) if v in _LEVELS]
+    if not ia or not ib:
         return None
-    return abs(ia - ib) / (len(_LEVELS) - 1)
+    best = min(abs(x - y) for x in ia for y in ib)
+    return best / (len(_LEVELS) - 1)
 
 
 def wind_range(spot: Any, sport: str | None = None) -> list[float] | None:
@@ -82,10 +89,20 @@ def _categorical(a: str | None, b: str | None) -> float | None:
     return 0.0 if a == b else 1.0
 
 
+def _categorical_multi(a: Any, b: Any) -> float | None:
+    """Set-overlap distance for two multi-select lists: 0 if they share any
+    value, 1 if disjoint, ``None`` when either side is empty."""
+    sa = {v for v in (a or []) if v}
+    sb = {v for v in (b or []) if v}
+    if not sa or not sb:
+        return None
+    return 0.0 if sa & sb else 1.0
+
+
 def character_distance(a: Any, b: Any, sport: str | None = None) -> float:
     """Weighted character distance in [0, 1] (0 = identical feel)."""
     components = {
-        "water_type": _categorical(getattr(a, "water_type", None), getattr(b, "water_type", None)),
+        "water_type": _categorical_multi(getattr(a, "water_type", None), getattr(b, "water_type", None)),
         "bottom_type": _categorical(getattr(a, "bottom_type", None), getattr(b, "bottom_type", None)),
         "level": _level_distance(a, b),
         "wind_range": _wind_range_distance(a, b, sport),

@@ -33,12 +33,14 @@ import {
   MODEL_PREF_OPTIONS,
   STYLES,
   WATER_CHARACTERS,
+  WATER_TYPES,
   facilityLabel,
   gapLabel,
   levelLabel,
   sportLabel,
   styleLabel,
   waterCharacterLabel,
+  waterTypeLabel,
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
 
@@ -83,11 +85,11 @@ export default function AdminSpotForm() {
   const [lon, setLon] = useState("");
   const [mapView, setMapView] = useState<MapView | null>(null);
   const [sports, setSports] = useState<string[]>([]);
-  const [level, setLevel] = useState("");
-  const [waterCharacter, setWaterCharacter] = useState("");
+  const [level, setLevel] = useState<string[]>([]);
+  const [waterCharacter, setWaterCharacter] = useState<string[]>([]);
   const [styles, setStyles] = useState<string[]>([]);
   const [facing, setFacing] = useState("");
-  const [waterType, setWaterType] = useState("");
+  const [waterType, setWaterType] = useState<string[]>([]);
   const [bottomType, setBottomType] = useState("");
   const [tide, setTide] = useState("");
   const [facilities, setFacilities] = useState<
@@ -184,11 +186,11 @@ export default function AdminSpotForm() {
       setMapView({ center: mv.center as [number, number], zoom: mv.zoom });
     }
     setSports(s.sports ?? []);
-    setLevel(s.level ?? "");
-    setWaterCharacter(s.water_character ?? "");
+    setLevel(s.level ?? []);
+    setWaterCharacter(s.water_character ?? []);
     setStyles(s.style ?? []);
     setFacing(s.facing != null ? String(s.facing) : "");
-    setWaterType(s.water_type ?? "");
+    setWaterType(s.water_type ?? []);
     setBottomType(s.bottom_type ?? "");
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
     if (s.facilities) {
@@ -304,10 +306,10 @@ export default function AdminSpotForm() {
         lat: Number(lat),
         lon: Number(lon),
         sports,
-        level: level || null,
-        water_character: waterCharacter || null,
+        level,
+        water_character: waterCharacter,
         style: styles,
-        water_type: waterType || null,
+        water_type: waterType,
         bottom_type: bottomType || null,
         facing: facing !== "" ? Number(facing) : null,
         facilities: buildFacilities(),
@@ -518,35 +520,50 @@ export default function AdminSpotForm() {
           {/* Kategorien */}
           <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
             <h2 className="text-ui font-semibold text-admin-fg">Kategorien</h2>
-            <Field label="Level">
-              <select
-                id="f-level"
-                className={`${inputCls} scroll-mt-24`}
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-              >
-                <option value="">— unbekannt —</option>
+            <Field label="Level (Mehrfachauswahl)">
+              <div id="f-level" className="flex flex-wrap gap-1.5 scroll-mt-24">
                 {LEVELS.map((l) => (
-                  <option key={l} value={l}>
+                  <Chip
+                    key={l}
+                    active={level.includes(l)}
+                    onClick={() => setLevel(toggle(level, l))}
+                  >
                     {levelLabel(l)}
-                  </option>
+                  </Chip>
                 ))}
-              </select>
+              </div>
             </Field>
-            <Field label="Wasserart" hint="Pflichtfeld für die Veröffentlichung.">
-              <select
+            <Field
+              label="Wasserart (Mehrfachauswahl)"
+              hint="Pflichtfeld für die Veröffentlichung."
+            >
+              <div
                 id="f-water_character"
-                className={`${inputCls} scroll-mt-24`}
-                value={waterCharacter}
-                onChange={(e) => setWaterCharacter(e.target.value)}
+                className="flex flex-wrap gap-1.5 scroll-mt-24"
               >
-                <option value="">— unbekannt —</option>
                 {WATER_CHARACTERS.map((w) => (
-                  <option key={w} value={w}>
+                  <Chip
+                    key={w}
+                    active={waterCharacter.includes(w)}
+                    onClick={() => setWaterCharacter(toggle(waterCharacter, w))}
+                  >
                     {waterCharacterLabel(w)}
-                  </option>
+                  </Chip>
                 ))}
-              </select>
+              </div>
+            </Field>
+            <Field label="Wassertyp (Mehrfachauswahl)">
+              <div id="f-water_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
+                {WATER_TYPES.map((w) => (
+                  <Chip
+                    key={w}
+                    active={waterType.includes(w)}
+                    onClick={() => setWaterType(toggle(waterType, w))}
+                  >
+                    {waterTypeLabel(w)}
+                  </Chip>
+                ))}
+              </div>
             </Field>
             <Field label="Fahrstil (Mehrfachauswahl)">
               <div className="flex flex-wrap gap-1.5">
@@ -561,26 +578,15 @@ export default function AdminSpotForm() {
                 ))}
               </div>
             </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Wassertyp" hint="ocean | sea | lake | lagoon">
-                <input
-                  id="f-water_type"
-                  className={`${inputCls} scroll-mt-24`}
-                  value={waterType}
-                  onChange={(e) => setWaterType(e.target.value)}
-                  placeholder="sea"
-                />
-              </Field>
-              <Field label="Untergrund" hint="sand | rock | reef | mixed">
-                <input
-                  id="f-bottom_type"
-                  className={`${inputCls} scroll-mt-24`}
-                  value={bottomType}
-                  onChange={(e) => setBottomType(e.target.value)}
-                  placeholder="sand"
-                />
-              </Field>
-            </div>
+            <Field label="Untergrund" hint="sand | rock | reef | mixed">
+              <input
+                id="f-bottom_type"
+                className={`${inputCls} scroll-mt-24`}
+                value={bottomType}
+                onChange={(e) => setBottomType(e.target.value)}
+                placeholder="sand"
+              />
+            </Field>
           </section>
 
           {/* Ausrichtung */}
@@ -731,7 +737,7 @@ export default function AdminSpotForm() {
               </div>
             )}
             <div className="mt-3">
-              <ImageUpload onAccept={setHeroFile} />
+              <ImageUpload onAccept={setHeroFile} allowBelowMin />
             </div>
             {heroFile && (
               <div className="mt-3">

@@ -32,6 +32,10 @@ WATER_CHARACTERS: tuple[str, ...] = (
     "flach", "chop", "welle_klein", "welle_gross", "tiefes_wasser",
 )
 
+# Water type ("Wassertyp") — the body of water. Previously a free-text column;
+# now a controlled multi-select so the admin chips and validation agree.
+WATER_TYPES: tuple[str, ...] = ("ocean", "sea", "lake", "lagoon")
+
 # Riding style ("Fahrstil") — multi-select.
 STYLES: tuple[str, ...] = ("freeride", "freestyle", "big_air", "wave_riding")
 
@@ -99,19 +103,42 @@ def validate_water_character(value: str | None) -> str | None:
     return value
 
 
-def validate_styles(values: Iterable[str] | None) -> list[str]:
-    """Normalise a ``style`` multi-select: unique, order-preserved, all valid keys."""
+def _validate_multi(
+    values: Iterable[str] | None, vocab: tuple[str, ...], axis: str
+) -> list[str]:
+    """Normalise a controlled multi-select: unique, order-preserved, all valid
+    keys (the ``n/a`` sentinel is allowed as an explicit "not applicable")."""
     if not values:
         return []
     if isinstance(values, str):
-        raise ValueError("style must be a list of keys, not a string")
+        raise ValueError(f"{axis} must be a list of keys, not a string")
     out: list[str] = []
     for v in values:
-        if v not in STYLES:
-            raise ValueError(f"invalid style {v!r}; allowed: {list(STYLES)}")
+        if not is_na(v) and v not in vocab:
+            raise ValueError(f"invalid {axis} {v!r}; allowed: {list(vocab)}")
         if v not in out:
             out.append(v)
     return out
+
+
+def validate_styles(values: Iterable[str] | None) -> list[str]:
+    """Normalise a ``style`` multi-select: unique, order-preserved, all valid keys."""
+    return _validate_multi(values, STYLES, "style")
+
+
+def validate_levels(values: Iterable[str] | None) -> list[str]:
+    """Normalise a ``level`` multi-select (beginner..pro, or ``n/a``)."""
+    return _validate_multi(values, LEVELS, "level")
+
+
+def validate_water_characters(values: Iterable[str] | None) -> list[str]:
+    """Normalise a ``water_character`` multi-select."""
+    return _validate_multi(values, WATER_CHARACTERS, "water_character")
+
+
+def validate_water_types(values: Iterable[str] | None) -> list[str]:
+    """Normalise a ``water_type`` multi-select (ocean/sea/lake/lagoon, or ``n/a``)."""
+    return _validate_multi(values, WATER_TYPES, "water_type")
 
 
 def validate_facilities(value: dict | None) -> dict | None:

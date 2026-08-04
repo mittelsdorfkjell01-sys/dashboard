@@ -14,9 +14,10 @@ from app.admin.constants import (
     STATUS_DRAFT,
     STATUS_LIVE,
     validate_facilities,
-    validate_level,
+    validate_levels,
     validate_styles,
-    validate_water_character,
+    validate_water_characters,
+    validate_water_types,
 )
 from app.admin.readiness import validate_spot_readiness
 from app.services.overrides import (
@@ -77,8 +78,9 @@ def create_spot(
     editorial.update(data.get("editorial") or {})
 
     # Enforce the controlled category vocabularies (ValueError -> 422 at the API).
-    level = validate_level(data.get("level"))
-    water_character = validate_water_character(data.get("water_character"))
+    level = validate_levels(data.get("level"))
+    water_character = validate_water_characters(data.get("water_character"))
+    water_type = validate_water_types(data.get("water_type"))
     style = validate_styles(data.get("style"))
     facilities = validate_facilities(data.get("facilities"))
 
@@ -88,7 +90,7 @@ def create_spot(
         region_id=region.id,
         location=_point(lat, lon),
         sports=data.get("sports") or [],
-        water_type=data.get("water_type"),
+        water_type=water_type,
         bottom_type=data.get("bottom_type"),
         level=level,
         water_character=water_character,
@@ -157,15 +159,17 @@ def update_spot(
         spot.era5_cell = resolve_grid_cell(lat, lon)
     if "sports" in data and data["sports"] is not None:
         spot.sports = list(data["sports"])
-    for col in ("water_type", "bottom_type", "model_pref"):
+    for col in ("bottom_type", "model_pref"):
         if col in data:
             setattr(spot, col, data[col])
     if "facing" in data:
         spot.facing = data["facing"]
+    if "water_type" in data:
+        spot.water_type = validate_water_types(data["water_type"])
     if "level" in data:
-        spot.level = validate_level(data["level"])
+        spot.level = validate_levels(data["level"])
     if "water_character" in data:
-        spot.water_character = validate_water_character(data["water_character"])
+        spot.water_character = validate_water_characters(data["water_character"])
     if "style" in data:
         spot.style = validate_styles(data["style"])
     if "facilities" in data:

@@ -39,13 +39,21 @@ class Spot(Base, TimestampMixin):
     sports: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
-    water_type: Mapped[str | None] = mapped_column(String(30))   # ocean | sea | lake | lagoon
+    # Multi-select category axes (validated against app.admin.constants). Empty
+    # array = unknown. water_type: ocean|sea|lake|lagoon; level: beginner..pro.
+    water_type: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
+    )
     bottom_type: Mapped[str | None] = mapped_column(String(30))  # sand | rock | reef | mixed
-    level: Mapped[str | None] = mapped_column(String(30))        # beginner | intermediate | advanced | pro
+    level: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
+    )
 
-    # Category axes (validated against app.admin.constants). Wasserart — distinct
-    # from water_type: flach | chop | welle_klein | welle_gross | tiefes_wasser.
-    water_character: Mapped[str | None] = mapped_column(String(30))
+    # Wasserart — distinct from water_type: flach | chop | welle_klein |
+    # welle_gross | tiefes_wasser. Multi-select.
+    water_character: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
+    )
     # Fahrstil (multi-select): freeride | freestyle | big_air | wave_riding.
     style: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
@@ -78,5 +86,8 @@ class Spot(Base, TimestampMixin):
         Index("ix_spots_sports", "sports", postgresql_using="gin"),
         Index("ix_spots_style", "style", postgresql_using="gin"),
         Index("ix_spots_region_status", "region_id", "status"),
-        Index("ix_spots_water_level", "water_type", "level"),
+        # water_type + level are arrays now — GIN so membership filters
+        # (``value = ANY(col)`` / ``@>``) stay indexed.
+        Index("ix_spots_water_type", "water_type", postgresql_using="gin"),
+        Index("ix_spots_level", "level", postgresql_using="gin"),
     )
