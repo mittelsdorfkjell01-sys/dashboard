@@ -116,7 +116,9 @@ def test_go_live_always_allowed_with_advisory_gaps(admin, region_id, db):
     body = resp.json()
     assert body["status"] == "published"
     assert body["ready"] is False
-    assert {"editorial.description", "climatology", "image"} <= set(body["gaps"])
+    assert {"editorial.description", "image"} <= set(body["gaps"])
+    # Climatology is now computed synchronously on go-live, so it's no longer a gap.
+    assert "climatology" not in body["gaps"]
     # usable_wind_directions is no longer a requirement (field + rule removed).
     assert "editorial.usable_wind_directions" not in body["gaps"]
 
@@ -134,6 +136,20 @@ def test_go_live_always_allowed_with_advisory_gaps(admin, region_id, db):
 
     again = admin.post(f"/admin/spots/{sid}/live").json()
     assert again["ready"] is True and again["gaps"] == []
+
+
+def test_go_live_computes_climatology_inline(admin, region_id, db):
+    """Go-live derives + stores the climatology synchronously, in memory (no
+    Parquet) — the serverless-safe path, independent of ERA5_AUTOPROCESS."""
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+
+    body = admin.post(f"/admin/spots/{sid}/live").json()
+    assert "climatology" not in body["gaps"]
+
+    db.expire_all()  # compute_now committed in its own session
+    row = db.get(Spot, sid)
+    assert row.climatology and row.climatology.get("weeks")
 
 
 def test_unpublish_and_archive(admin, region_id, db):

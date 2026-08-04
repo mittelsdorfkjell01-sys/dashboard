@@ -176,6 +176,72 @@ def build_climatology_record(spot_id, *, db: Session) -> dict:
         raise
 
 
+def derive_and_store(spot: Spot, *, db: Session, client, years: int = 20) -> dict:
+    """Request-path climatology: fetch the hourly series *in memory* via the
+    client seam and persist the derived 52-week record — with **no on-disk
+    Parquet**.
+
+    :func:`build_climatology_record` hands the series from fetch to derive through
+    a Parquet raw file (pyarrow), which the serverless function deliberately does
+    NOT bundle (see ``api/requirements.txt``). This variant keeps everything in
+    memory so it can run on the request path — e.g. synchronously on go-live —
+    where background workers don't run reliably and pyarrow is absent.
+    """
+    from app.era5.bins import VARS
+    from app.era5.cds import (
+        CDS_DATASET,
+        build_cds_request,
+        last_full_years,
+        window_label,
+    )
+
+    lat, lon = _spot_lat_lon(spot)
+    cell = spot.era5_cell or resolve_grid_cell(lat, lon)
+    if not spot.era5_cell:
+        spot.era5_cell = cell
+
+    year_list = last_full_years(years)
+    request = build_cds_request(cell, year_list, list(VARS))
+    request_id = client.submit(CDS_DATASET, request)
+    state = client.poll(request_id)
+    if state != "completed":
+        raise RuntimeError(f"extract not ready (state={state})")
+    series = client.fetch_series(request_id)
+
+    record = derive_climatology(
+        series,
+        lat,
+        lon,
+        window_label(year_list),
+        smooth_window=get_settings().climatology_smooth_weeks,
+    )
+    spot.climatology = record
+
+    # Advance (or create) the spot's job to 'derived' so the overview/status
+    # strip reflects completion.
+    now = datetime.now(timezone.utc)
+    job = db.scalar(
+        select(Era5Job)
+        .where(Era5Job.spot_id == spot.id)
+        .order_by(Era5Job.created_at.desc())
+    )
+    if job is None:
+        job = Era5Job(
+            spot_id=spot.id,
+            cell=cell,
+            params={"window": window_label(year_list)},
+            status="derived",
+            started_at=now,
+        )
+        db.add(job)
+    else:
+        job.status = "derived"
+    job.completed_at = now
+    db.commit()
+    db.refresh(spot)
+    return record
+
+
 def recompute_climatology(spot_id, *, db: Session) -> dict:
     """Re-derive the climatology from the stored raw file, without any CDS call.
 

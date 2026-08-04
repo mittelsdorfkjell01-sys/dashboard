@@ -50,6 +50,27 @@ def process_one(spot_id, *, client, raw_dir: str | None = None) -> tuple[str, st
         db.close()
 
 
+def compute_now(spot_id, *, client) -> tuple[str, str]:
+    """Compute + store a spot's climatology **synchronously and in memory** (no
+    on-disk Parquet), in its own session. Serverless-safe — used inline on
+    go-live / the manual ERA5 trigger, where FastAPI background tasks don't run
+    reliably and pyarrow isn't bundled. Never raises."""
+    from app.era5 import pipeline
+
+    db = SessionLocal()
+    try:
+        spot = db.get(Spot, spot_id)
+        if spot is None:
+            return "fail", "unknown spot"
+        pipeline.derive_and_store(spot, db=db, client=client)
+        return "ok", "derived"
+    except Exception as exc:  # keep a compute failure from breaking the request
+        db.rollback()
+        return "fail", f"{type(exc).__name__}: {exc}"
+    finally:
+        db.close()
+
+
 def process_queue(*, client, raw_dir: str | None = None, pause: float = 0.0) -> dict[str, int]:
     """Process every spot that has a queued ERA5 job (skips ones already derived).
 

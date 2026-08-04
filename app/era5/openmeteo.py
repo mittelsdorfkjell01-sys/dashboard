@@ -92,11 +92,21 @@ class OpenMeteoHistoryClient:
         cache = os.path.join(
             self._raw_dir, "omcache", f"omh_{lat}_{lon}_{y0}-{y1}.parquet"
         )
-        if os.path.exists(cache):
-            return rawfile.read_raw(cache)
+        # The Parquet cache is an optimisation only. On the serverless request
+        # path pyarrow is not bundled and the filesystem is read-only, so a
+        # read/write may raise (ImportError / OSError) — fall back to a fresh
+        # in-memory fetch and skip caching rather than failing the whole compute.
+        try:
+            if os.path.exists(cache):
+                return rawfile.read_raw(cache)
+        except Exception:
+            pass
 
         series = self._build_series(lat, lon, y0, y1)
-        rawfile.write_raw(cache, series)
+        try:
+            rawfile.write_raw(cache, series)
+        except Exception:
+            pass
         return series
 
     # --- fetching -----------------------------------------------------------

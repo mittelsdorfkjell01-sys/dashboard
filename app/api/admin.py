@@ -380,7 +380,6 @@ def readiness(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
 @router.post("/spots/{spot_id}/live")
 def go_live(
     spot_id: uuid.UUID,
-    background: BackgroundTasks,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
     client=Depends(get_extract_client),
@@ -392,15 +391,26 @@ def go_live(
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
 
-    # Auto-start the climatology (ERA5) on go-live when it isn't ready yet, so
-    # publishing always kicks off the background computation. Best-effort — a
-    # trigger failure must never block go-live.
+    # Compute the climatology on go-live when it isn't ready yet. Done
+    # SYNCHRONOUSLY and in memory (era5_worker.compute_now): on serverless the
+    # FastAPI background task doesn't run reliably and pyarrow isn't bundled, so
+    # the old fire-and-forget path never actually produced a climatology. A
+    # queued job is still recorded first as a visible fallback. Best-effort —
+    # compute_now never raises and go-live already succeeded above.
     if "climatology" in (result.get("gaps") or []):
         try:
             trigger_era5_job(spot_id, db=db, client=client)
-            _maybe_autoprocess_era5(background, spot_id, client)
         except Exception:
             db.rollback()
+        from app.admin import era5_worker
+
+        outcome, _ = era5_worker.compute_now(spot_id, client=client)
+        if outcome == "ok":
+            # Reflect the freshly derived climatology in the response (compute_now
+            # committed it in its own session, so the request session is stale).
+            gaps = [g for g in (result.get("gaps") or []) if g != "climatology"]
+            result["gaps"] = gaps
+            result["ready"] = len(gaps) == 0
 
     return result
 
@@ -465,7 +475,6 @@ def delete_spot(
 @router.post("/spots/{spot_id}/era5")
 def trigger_era5(
     spot_id: uuid.UUID,
-    background: BackgroundTasks,
     db: Session = Depends(get_db),
     client=Depends(get_extract_client),
 ) -> dict:
@@ -473,7 +482,10 @@ def trigger_era5(
         trigger_era5_job(spot_id, db=db, client=client)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
-    _maybe_autoprocess_era5(background, spot_id, client)
+    # Compute synchronously and in memory (serverless-safe); see go_live.
+    from app.admin import era5_worker
+
+    era5_worker.compute_now(spot_id, client=client)
     return get_job_status(spot_id, db=db)
 
 
