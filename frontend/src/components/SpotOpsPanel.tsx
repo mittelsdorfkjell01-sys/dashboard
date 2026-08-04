@@ -21,7 +21,7 @@ import {
 import { gapLabel, statusLabel } from "../lib/labels";
 import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
 import RankControl from "./admin/RankControl";
-import ConfirmBar from "./admin/ConfirmBar";
+import ConfirmToast from "./admin/ConfirmToast";
 import { Badge } from "./admin/ui";
 
 const ERA5_LABEL: Record<string, string> = {
@@ -134,19 +134,16 @@ export default function SpotOpsPanel({
         )}
       </div>
 
-      {pendingArchive && (
-        <div className="mt-4">
-          <ConfirmBar
-            message="Spot archivieren?"
-            busy={busy}
-            onConfirm={() => {
-              setPendingArchive(false);
-              void runStatus(() => archiveSpot(spotId), "Spot archiviert.");
-            }}
-            onCancel={() => setPendingArchive(false)}
-          />
-        </div>
-      )}
+      <ConfirmToast
+        open={pendingArchive}
+        message="Spot archivieren?"
+        busy={busy}
+        onConfirm={() => {
+          setPendingArchive(false);
+          void runStatus(() => archiveSpot(spotId), "Spot archiviert.");
+        }}
+        onCancel={() => setPendingArchive(false)}
+      />
 
       {/* Fertigstellen-Rang — „Auto" folgt den offenen Punkten; eine Farbe pinnt
           den Rang manuell (dieselbe Steuerung wie in der Übersichtsliste). */}

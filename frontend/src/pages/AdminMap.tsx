@@ -10,7 +10,7 @@ import L from "leaflet";
 import { ApiError, archiveSpot, getAdminMapSpots, type AdminMapSpot } from "../lib/api";
 import { statusLabel } from "../lib/labels";
 import { PageHeader } from "../components/admin/ui";
-import ConfirmBar from "../components/admin/ConfirmBar";
+import ConfirmToast from "../components/admin/ConfirmToast";
 
 const STATUS_COLOR: Record<string, string> = {
   published: "#4A8159", // grün
@@ -36,9 +36,11 @@ const pinIcon = (color: string) =>
 export default function AdminMap() {
   const [spots, setSpots] = useState<AdminMapSpot[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // Pending archive: set from a pin popup, confirmed via the top banner (✓).
+  // Pending archive: set from a pin popup, confirmed via the top-right toast (✓).
   const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  // Archived spots are never drawn; draft/published can be toggled off.
+  const [show, setShow] = useState({ published: true, draft: true });
 
   useEffect(() => {
     getAdminMapSpots()
@@ -63,30 +65,55 @@ export default function AdminMap() {
     }
   };
 
-  const center = useMemo<[number, number]>(() => {
-    if (spots.length === 0) return [40.3, 9.3];
-    return [
-      spots.reduce((a, s) => a + s.lat, 0) / spots.length,
-      spots.reduce((a, s) => a + s.lon, 0) / spots.length,
-    ];
-  }, [spots]);
-
   const counts = useMemo(() => {
     const c: Record<string, number> = { published: 0, draft: 0, archived: 0 };
     for (const s of spots) c[s.status] = (c[s.status] ?? 0) + 1;
     return c;
   }, [spots]);
 
+  // Drawn spots: archived never shown; draft/published follow their toggle.
+  const visibleSpots = useMemo(
+    () =>
+      spots.filter((s) => {
+        if (s.status === "archived") return false;
+        if (s.status === "published") return show.published;
+        if (s.status === "draft") return show.draft;
+        return true;
+      }),
+    [spots, show]
+  );
+
+  const center = useMemo<[number, number]>(() => {
+    const base = visibleSpots.length ? visibleSpots : spots;
+    if (base.length === 0) return [40.3, 9.3];
+    return [
+      base.reduce((a, s) => a + s.lat, 0) / base.length,
+      base.reduce((a, s) => a + s.lon, 0) / base.length,
+    ];
+    // Only recompute on first load, not on every toggle (avoid map jumps).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spots]);
+
   return (
     <div>
       <PageHeader
         title="Karte"
-        description="Alle Spots — Marker anklicken, um zu bearbeiten."
+        description="Marker anklicken zum Bearbeiten. Archivierte Spots werden nicht angezeigt."
         actions={
-          <div className="flex flex-wrap items-center gap-4 text-label">
-            <Legend color={STATUS_COLOR.published} label={`Veröffentlicht (${counts.published ?? 0})`} />
-            <Legend color={STATUS_COLOR.draft} label={`Entwurf (${counts.draft ?? 0})`} />
-            <Legend color={STATUS_COLOR.archived} label={`Archiviert (${counts.archived ?? 0})`} />
+          <div className="flex flex-wrap items-center gap-2 text-label">
+            <LegendToggle
+              color={STATUS_COLOR.published}
+              label={`Veröffentlicht (${counts.published ?? 0})`}
+              active={show.published}
+              onClick={() => setShow((s) => ({ ...s, published: !s.published }))}
+            />
+            <LegendToggle
+              color={STATUS_COLOR.draft}
+              label={`Entwurf (${counts.draft ?? 0})`}
+              active={show.draft}
+              onClick={() => setShow((s) => ({ ...s, draft: !s.draft }))}
+            />
+            <span className="text-admin-faint">Archiviert ({counts.archived ?? 0}) · ausgeblendet</span>
           </div>
         }
       />
@@ -97,16 +124,13 @@ export default function AdminMap() {
         </div>
       )}
 
-      {pending && (
-        <div className="mt-4">
-          <ConfirmBar
-            message={`„${pending.name}" archivieren?`}
-            busy={busy}
-            onConfirm={onArchive}
-            onCancel={() => setPending(null)}
-          />
-        </div>
-      )}
+      <ConfirmToast
+        open={pending !== null}
+        message={`„${pending?.name ?? ""}" archivieren?`}
+        busy={busy}
+        onConfirm={onArchive}
+        onCancel={() => setPending(null)}
+      />
 
       <div data-lenis-prevent className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-lg border border-admin-border">
         <MapContainer
@@ -121,7 +145,7 @@ export default function AdminMap() {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             subdomains="abcd"
           />
-          {spots.map((s) => (
+          {visibleSpots.map((s) => (
             <Marker
               key={s.id}
               position={[s.lat, s.lon]}
@@ -167,11 +191,35 @@ export default function AdminMap() {
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
+// Legend entry that doubles as a show/hide toggle; dimmed + struck when off.
+function LegendToggle({
+  color,
+  label,
+  active,
+  onClick,
+}: {
+  color: string;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-admin-muted">
-      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={active ? "Ausblenden" : "Einblenden"}
+      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors ${
+        active
+          ? "border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover"
+          : "border-transparent text-admin-faint line-through hover:text-admin-muted"
+      }`}
+    >
+      <span
+        className="h-2.5 w-2.5 rounded-full"
+        style={{ backgroundColor: color, opacity: active ? 1 : 0.4 }}
+      />
       {label}
-    </span>
+    </button>
   );
 }

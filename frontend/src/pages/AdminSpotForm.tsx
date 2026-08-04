@@ -5,7 +5,7 @@ import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
-import ConfirmBar from "../components/admin/ConfirmBar";
+import ConfirmToast from "../components/admin/ConfirmToast";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useAdminRegions } from "../lib/hooks";
@@ -848,26 +848,14 @@ export default function AdminSpotForm() {
                 und Klimatologie. Das lässt sich nicht rückgängig machen — zum
                 Ausblenden lieber „Archivieren" verwenden.
               </p>
-              {pendingDelete ? (
-                <div className="mt-4">
-                  <ConfirmBar
-                    tone="danger"
-                    message="Spot endgültig löschen?"
-                    busy={deleting}
-                    onConfirm={onDelete}
-                    onCancel={() => setPendingDelete(false)}
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={() => setPendingDelete(true)}
-                  className="mt-4 rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Spot löschen
-                </button>
-              )}
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setPendingDelete(true)}
+                className="mt-4 rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Spot löschen
+              </button>
             </section>
           )}
 
@@ -964,6 +952,15 @@ export default function AdminSpotForm() {
           void doSave(true);
         }}
         onClose={() => setConflictOpen(false)}
+      />
+
+      <ConfirmToast
+        open={pendingDelete}
+        tone="danger"
+        message="Spot endgültig löschen?"
+        busy={deleting}
+        onConfirm={onDelete}
+        onCancel={() => setPendingDelete(false)}
       />
     </div>
   );
