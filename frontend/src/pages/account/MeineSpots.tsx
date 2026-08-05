@@ -8,6 +8,8 @@ import {
   type SubmissionStatus,
 } from "../../lib/account";
 import { Button, Input } from "../../components/ui";
+import Modal from "../../components/ui/Modal";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { PlusCircleIcon } from "../../lib/icons";
 
 type Badge = { label: string; cls: string };
@@ -38,6 +40,8 @@ export default function MeineSpots() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   useEffect(() => {
     const refresh = () => setSubs(listMySubmissions());
@@ -53,6 +57,7 @@ export default function MeineSpots() {
     try {
       await addSubmission(name);
       setName("");
+      setOpen(false);
     } catch (err) {
       setError(err instanceof AccountError ? err.message : "Einreichen fehlgeschlagen.");
     } finally {
@@ -62,35 +67,62 @@ export default function MeineSpots() {
 
   return (
     <div className="space-y-6">
-      <form
-        onSubmit={onSubmit}
-        className="rounded-2xl border border-line bg-white p-5"
+      <div className="flex justify-end">
+        <Button onClick={() => setOpen(true)}>
+          <PlusCircleIcon className="text-[18px]" /> Spot vorschlagen
+        </Button>
+      </div>
+      <Modal
+        open={open}
+        onClose={() => name.trim() ? setConfirmDiscard(true) : setOpen(false)}
+        labelledBy="suggest-spot-title"
       >
-        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-ink">
-          <PlusCircleIcon className="text-[18px] text-teal" />
-          Spot vorschlagen
-        </h2>
-        <p className="mt-1 text-[13px] text-muted">
-          Reiche einen neuen Spot ein — nach Prüfung erscheint er öffentlich.
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <form onSubmit={onSubmit} className="space-y-4">
+          <h2 id="suggest-spot-title" className="text-[18px] font-semibold text-ink">
+            Spot vorschlagen
+          </h2>
+          <div>
+            <label htmlFor="suggest-spot-name" className="text-[13px] font-medium text-ink">
+              Name des Spots
+            </label>
           <Input
+            id="suggest-spot-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Name des Spots, z. B. „Fehmarn Wulfener Hals“"
-            className="flex-1"
-            aria-label="Spot-Name"
+            className="mt-1 w-full"
           />
-          <Button type="submit" disabled={busy || !name.trim()}>
-            {busy ? "Sende …" : "Einreichen"}
-          </Button>
-        </div>
-        {error && (
-          <p role="alert" className="mt-2 text-[13px] font-medium text-red-600">
-            {error}
-          </p>
-        )}
-      </form>
+            <p className="mt-1 text-[12px] text-muted">
+              Der Vorschlag wird vor einer Veröffentlichung redaktionell geprüft.
+            </p>
+          </div>
+          {error && <p role="alert" className="text-[13px] font-medium text-red-600">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => name.trim() ? setConfirmDiscard(true) : setOpen(false)}
+              disabled={busy}
+            >
+              Abbrechen
+            </Button>
+            <Button type="submit" disabled={busy || !name.trim()}>
+              {busy ? "Sende …" : "Einreichen"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+      <ConfirmDialog
+        open={confirmDiscard}
+        title="Eingabe verwerfen?"
+        message="Der noch nicht eingereichte Spotname geht verloren."
+        confirmText="Verwerfen"
+        onCancel={() => setConfirmDiscard(false)}
+        onConfirm={() => {
+          setConfirmDiscard(false);
+          setName("");
+          setOpen(false);
+        }}
+      />
 
       {subs.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-line px-6 py-10 text-center text-[14px] text-muted">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
@@ -12,24 +12,29 @@ import "./index.css";
 import { LenisProvider } from "./lib/lenis";
 import ScrollManager from "./components/ScrollManager";
 import Landing from "./pages/Landing";
-import MapView from "./pages/MapView";
-import SpotDetail from "./pages/SpotDetail";
-import RegionDetail from "./pages/RegionDetail";
-import SearchResults from "./pages/SearchResults";
-import Impressum from "./pages/Impressum";
-import Datenschutz from "./pages/Datenschutz";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/ErrorBoundary";
 import RouteError from "./components/RouteError";
-import { ADMIN_DEPLOY, INCLUDE_ADMIN } from "./lib/target";
-import Auth from "./pages/Auth";
-import AccountLayout from "./pages/account/AccountLayout";
-import Profil from "./pages/account/Profil";
-import Favoriten from "./pages/account/Favoriten";
-import MeineSpots from "./pages/account/MeineSpots";
-import Einstellungen from "./pages/account/Einstellungen";
+import { ADMIN_DEPLOY } from "./lib/target";
 import { AuthProvider } from "./context/AuthContext";
 import { PrefsProvider } from "./context/PrefsContext";
+
+const MapView = React.lazy(() => import("./pages/MapView"));
+const SpotDetail = React.lazy(() => import("./pages/SpotDetail"));
+const RegionDetail = React.lazy(() => import("./pages/RegionDetail"));
+const SearchResults = React.lazy(() => import("./pages/SearchResults"));
+const Impressum = React.lazy(() => import("./pages/Impressum"));
+const Datenschutz = React.lazy(() => import("./pages/Datenschutz"));
+const Auth = React.lazy(() => import("./pages/Auth"));
+const AccountLayout = React.lazy(() => import("./pages/account/AccountLayout"));
+const Profil = React.lazy(() => import("./pages/account/Profil"));
+const Favoriten = React.lazy(() => import("./pages/account/Favoriten"));
+const MeineSpots = React.lazy(() => import("./pages/account/MeineSpots"));
+const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
+
+function RouteFallback() {
+  return <div role="status" className="grid min-h-[40vh] place-items-center text-[14px] text-muted">Lädt…</div>;
+}
 
 // The admin back office is code-split behind a build flag: the public build
 // (surfwinddata.com) never imports ./adminRoutes, so none of the admin UI ships.
@@ -62,7 +67,7 @@ async function bootstrap() {
     },
   ];
 
-  if (INCLUDE_ADMIN) {
+  if (__INCLUDE_ADMIN__) {
     routes.push(...(await import("./adminRoutes")).default);
   }
 
@@ -80,7 +85,9 @@ async function bootstrap() {
       element: (
         <>
           <ScrollManager />
-          <Outlet />
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
         </>
       ),
       errorElement: <RouteError />,

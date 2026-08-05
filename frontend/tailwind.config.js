@@ -9,7 +9,7 @@ export default {
         // white — these three are for light surfaces only.
         ink: "#241C17",
         "ink-soft": "#3D332C",
-        muted: "#7A6F66",
+        muted: "#6B625B",
         // Hairline borders/dividers.
         line: "#E6E1DA",
         // Surfaces: white is the default surface, `band` is the alternating
@@ -28,7 +28,7 @@ export default {
         // Attention color — wordmark, map markers, the live-status pulse, the
         // best-season highlight. Never a button, never a link, never body
         // text (2.8:1 on white — fails AA as text).
-        orange: "#E0823C",
+        orange: "#B45309",
         // Data accent, shared with the wind-speed scale. Passes AA as text
         // (4.6:1).
         green: "#4A8159",
@@ -103,20 +103,20 @@ export default {
         label: "0.8125rem", // 13px — control labels, chips, buttons (sm)
         ui: "0.875rem", // 14px — default control/body-UI text
         body: "0.9375rem", // 15px — reading copy
-        title: ["1.375rem", { lineHeight: "1.25", letterSpacing: "-0.01em" }], // 22px — module/panel titles
-        stat: ["clamp(3rem, 5vw, 4.25rem)", { lineHeight: "0.85", letterSpacing: "-0.03em" }], // big live numbers
+        title: ["1.375rem", { lineHeight: "1.25", letterSpacing: "0" }], // 22px — module/panel titles
+        stat: ["clamp(3rem, 5vw, 4.25rem)", { lineHeight: "0.85", letterSpacing: "0" }], // big live numbers
         // Editorial display scale — fluid hero/section titles (travel-journal).
-        "display-1": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "-0.03em" }],
-        "display-2": ["clamp(1.75rem, 3.5vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "-0.02em" }],
+        "display-1": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "0" }],
+        "display-2": ["clamp(1.75rem, 3.5vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "0" }],
 
         // --- spot-page dual type system ------------------------------------
         // The Info tab (travel-magazine) and Daten tab (weather instrument)
         // read as two different products sharing one brand, so they get two
         // separate type sets instead of one compromise scale.
-        "editorial-1": ["5.5rem", { lineHeight: "1.02", letterSpacing: "-0.03em" }], // 88px — Info: page title
-        "editorial-2": ["3.5rem", { lineHeight: "1.08", letterSpacing: "-0.03em" }], // 56px — Info: section headings
-        "editorial-3": ["3rem", { lineHeight: "1.08", letterSpacing: "-0.02em" }], // 48px — Info: header-card h1 (Figma Frame_9)
-        "editorial-4": ["2rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }], // 32px — Info: spot name + inline score (Figma Frame_9)
+        "editorial-1": ["5.5rem", { lineHeight: "1.02", letterSpacing: "0" }], // 88px — Info: page title
+        "editorial-2": ["3.5rem", { lineHeight: "1.08", letterSpacing: "0" }], // 56px — Info: section headings
+        "editorial-3": ["3rem", { lineHeight: "1.08", letterSpacing: "0" }], // 48px — Info: header-card h1 (Figma Frame_9)
+        "editorial-4": ["2rem", { lineHeight: "1.1", letterSpacing: "0" }], // 32px — Info: spot name + inline score (Figma Frame_9)
         lede: ["1.25rem", { lineHeight: "1.7" }], // 20px — Info: first paragraph
         prose: ["1.0625rem", { lineHeight: "1.75" }], // 17px — Info: running body copy, max-w-[62ch]
         "data-label": ["0.8125rem", { lineHeight: "1.2", letterSpacing: "0.14em" }], // 13px — Daten: section labels, uppercase

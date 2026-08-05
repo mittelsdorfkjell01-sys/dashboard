@@ -11,12 +11,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getMe, login as apiLogin, logout as apiLogout, type AuthUser } from "./api";
+import { ApiError, getMe, login as apiLogin, logout as apiLogout, type AuthUser } from "./api";
 
 interface AuthState {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  error: string | null;
+  login: (email: string, password: string, otp?: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -26,12 +27,18 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
+      setError(null);
       setUser(await getMe());
-    } catch {
-      setUser(null); // 401 (not logged in) or network error → treated as signed out
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setUser(null);
+      } else {
+        setError(err instanceof ApiError ? err.message : "Sitzung konnte nicht geprüft werden.");
+      }
     } finally {
       setLoading(false);
     }
@@ -41,8 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const u = await apiLogin(email, password);
+  const login = useCallback(async (email: string, password: string, otp?: string) => {
+    const u = await apiLogin(email, password, otp);
     setUser(u);
     return u;
   }, []);
@@ -56,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, error, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

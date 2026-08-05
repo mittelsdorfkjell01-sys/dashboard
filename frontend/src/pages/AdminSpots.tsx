@@ -4,7 +4,7 @@
 // „Betrieb & Veröffentlichung" panel — each row only links there via Bearbeiten.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   getAdminSpots,
@@ -15,6 +15,7 @@ import {
 } from "../lib/api";
 import { sportLabel, statusLabel } from "../lib/labels";
 import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
+import { createAdminReturnState } from "../lib/adminNavigation";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 // Status tabs. "" = Alle (everything except archived); "archived" is its own tab.
@@ -28,7 +29,9 @@ const PAGE = 25;
 
 export default function AdminSpots() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [params, setParams] = useSearchParams();
+  const editorState = createAdminReturnState(location, "Spots");
   const status = params.get("status") ?? "";
   const regionId = params.get("region_id") ?? "";
   const sport = params.get("sport") ?? "";
@@ -38,6 +41,7 @@ export default function AdminSpots() {
   const [data, setData] = useState<AdminSpotsResponse | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState(q);
 
   const regionName = useMemo(() => {
     const m = new Map(regions.map((r) => [r.id, r.name]));
@@ -72,6 +76,20 @@ export default function AdminSpots() {
     void load();
   }, [load]);
 
+  useEffect(() => setSearchText(q), [q]);
+
+  useEffect(() => {
+    if (searchText === q) return;
+    const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(params);
+      if (searchText.trim()) next.set("q", searchText.trim());
+      else next.delete("q");
+      next.delete("offset");
+      setParams(next);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchText, q, params, setParams]);
+
   const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -99,6 +117,7 @@ export default function AdminSpots() {
     <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
       <Link
         to={`/admin/spot/${s.id}/edit`}
+        state={editorState}
         className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
       >
         Bearbeiten
@@ -110,10 +129,10 @@ export default function AdminSpots() {
     <div>
       <PageHeader
         title="Spots"
-        description="Surfspots verwalten, veröffentlichen und archivieren."
         actions={
           <Link
             to="/admin/spot/new"
+            state={editorState}
             className="inline-flex items-center gap-1.5 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
           >
             <span aria-hidden className="text-[15px] leading-none">+</span> Neuer Spot
@@ -144,13 +163,15 @@ export default function AdminSpots() {
 
       {/* Filters — full-width stack on mobile, flowing row on sm+. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <input
-          type="search"
-          placeholder="Suche Name / Slug"
-          defaultValue={q}
-          onChange={(e) => setFilter("q", e.target.value)}
-          className={`${selectCls} w-full sm:min-w-[220px] sm:flex-1`}
-        />
+        <label className="w-full text-label font-medium text-admin-fg sm:min-w-[220px] sm:flex-1">
+          Suche
+          <input
+            type="search"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className={`${selectCls} mt-1 w-full`}
+          />
+        </label>
         <div className="grid grid-cols-2 gap-2 sm:contents">
           <select
             value={regionId}
@@ -204,7 +225,7 @@ export default function AdminSpots() {
           data.items.map((s) => (
             <div
               key={s.id}
-              onClick={() => navigate(`/admin/spot/${s.id}/edit`)}
+              onClick={() => navigate(`/admin/spot/${s.id}/edit`, { state: editorState })}
               className="cursor-pointer rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong"
             >
               <div className="flex items-start justify-between gap-3">
@@ -259,7 +280,7 @@ export default function AdminSpots() {
               data.items.map((s) => (
                 <tr
                   key={s.id}
-                  onClick={() => navigate(`/admin/spot/${s.id}/edit`)}
+                  onClick={() => navigate(`/admin/spot/${s.id}/edit`, { state: editorState })}
                   className="group cursor-pointer transition-colors hover:bg-admin-hover"
                 >
                   <td className="px-4 py-3">

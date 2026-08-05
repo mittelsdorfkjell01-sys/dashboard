@@ -184,9 +184,10 @@ def query_portfolio(
     """
     scorer = scorer or default_scorer(db)
     from app.models import Region, Spot
+    from app.public_catalog import PUBLISHED
 
     profile = _with_sport(profile, sport)
-    stmt = select(Spot)
+    stmt = select(Spot).where(Spot.status == PUBLISHED)
     if sport:
         stmt = stmt.where(Spot.sports.any(sport))
     spots = list(db.scalars(stmt).all())
@@ -196,7 +197,8 @@ def query_portfolio(
         return {"level": level, "sport": sport, "maps": [{"region_id": None, "pins": pins}]}
 
     region_names = {
-        str(r.id): r.name for r in db.scalars(select(Region)).all()
+        str(r.id): r.name
+        for r in db.scalars(select(Region).where(Region.status == PUBLISHED)).all()
     }
     by_region: dict[str, list] = {}
     for s in spots:
@@ -267,15 +269,22 @@ def _area_spots(area: dict, db: Session, sport: str | None) -> list:
     area is the whole catalogue (v1 = Europe).
     """
     from app.models import Spot
+    from app.public_catalog import PUBLISHED
 
     area = area or {}
     if area.get("region_id"):
-        stmt = select(Spot).where(Spot.region_id == area["region_id"])
+        stmt = select(Spot).where(
+            Spot.region_id == area["region_id"], Spot.status == PUBLISHED
+        )
         if sport:
             stmt = stmt.where(Spot.sports.any(sport))
         return list(db.scalars(stmt).all())
     if area.get("spot_id"):
-        spot = db.get(Spot, area["spot_id"])
+        spot = db.scalar(
+            select(Spot).where(
+                Spot.id == area["spot_id"], Spot.status == PUBLISHED
+            )
+        )
         return [spot] if spot is not None else []
     if area.get("bounds"):
         return [row[0] for row in bounds_query(area["bounds"], sport, db=db)]
@@ -292,8 +301,9 @@ def _area_spots(area: dict, db: Session, sport: str | None) -> list:
 def catalog_spots(db: Session, sport: str | None) -> list:
     """All spots in the catalogue (v1 scope = Europe), optionally sport-filtered."""
     from app.models import Spot
+    from app.public_catalog import PUBLISHED
 
-    stmt = select(Spot)
+    stmt = select(Spot).where(Spot.status == PUBLISHED)
     if sport:
         stmt = stmt.where(Spot.sports.any(sport))
     return list(db.scalars(stmt).all())
@@ -351,6 +361,7 @@ def best_regions_for_window(
     from app.search.timewindow import coverage_intensity, window_weeks
     from app.scoring.params import WEEK_GOOD_THRESHOLD, get_params
     from app.models import Region
+    from app.public_catalog import PUBLISHED
 
     weeks = window_weeks(window)
     thr = get_params(sport, db)["week_good_threshold"] if sport else WEEK_GOOD_THRESHOLD
@@ -358,10 +369,13 @@ def best_regions_for_window(
     ranked = []
     # Eager-load spots so the per-region loop isn't an N+1 of lazy loads.
     regions = db.scalars(
-        select(Region).options(selectinload(Region.spots))
+        select(Region)
+        .where(Region.status == PUBLISHED)
+        .options(selectinload(Region.spots))
     ).all()
     for region in regions:
-        series = region_score_series(list(region.spots), sport, profile, db)
+        public_spots = [s for s in region.spots if s.status == PUBLISHED]
+        series = region_score_series(public_spots, sport, profile, db)
         cov, inten = coverage_intensity(series, weeks, thr)
         ranked.append(
             {**_region_brief(region), "coverage": round(cov, 4),

@@ -160,10 +160,23 @@ def get_live_conditions(
     / ``gust_spread`` band; direction and air come from the primary model. Never
     persisted to Postgres.
     """
+    spot = _load_spot(db, spot_id)
+    return get_live_conditions_for_spot(spot, client=client, cache=cache)
+
+
+def get_live_conditions_for_spot(
+    spot: Spot,
+    *,
+    client: OpenMeteoClient | None = None,
+    cache: Cache | None = None,
+) -> dict:
+    """Assemble live conditions for an already-loaded spot.
+
+    Batch callers use this variant so database work stays in the request thread
+    while the independent weather requests can run with bounded concurrency.
+    """
     client = client or default_client()
     cache = cache or default_cache()
-
-    spot = _load_spot(db, spot_id)
     lat, lon = _spot_coords(spot)
     primary_model, models = _model_set(lat, lon, spot.model_pref)
     multi = len(models) > 1

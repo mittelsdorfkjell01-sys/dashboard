@@ -24,11 +24,13 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const switchMode = (m: Mode) => {
     setMode(m);
     setError(null);
+    setNotice(null);
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -36,9 +38,15 @@ export default function Auth() {
     setError(null);
     setBusy(true);
     try {
-      if (mode === "login") await login(email, password);
-      else await register(email, password, name);
-      navigate(redirect, { replace: true });
+      if (mode === "login") {
+        await login(email, password);
+        navigate(redirect, { replace: true });
+      } else {
+        await register(email, password, name);
+        setMode("login");
+        setPassword("");
+        setNotice("Registrierung verarbeitet. Du kannst dich jetzt anmelden.");
+      }
     } catch (err) {
       setError(err instanceof AccountError ? err.message : "Etwas ist schiefgelaufen.");
     } finally {
@@ -101,7 +109,7 @@ export default function Auth() {
               required
             />
           </Field>
-          <Field label="Passwort" required hint={mode === "register" ? "Mindestens 6 Zeichen." : undefined}>
+          <Field label="Passwort" required hint={mode === "register" ? "Mindestens 12 Zeichen." : undefined}>
             <Input
               type="password"
               value={password}
@@ -115,6 +123,11 @@ export default function Auth() {
           {error && (
             <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
               {error}
+            </p>
+          )}
+          {notice && (
+            <p role="status" className="rounded-xl bg-green-50 px-3 py-2 text-[13px] font-medium text-green-700">
+              {notice}
             </p>
           )}
 

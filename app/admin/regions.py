@@ -2,18 +2,13 @@
 
 from __future__ import annotations
 
-import re
 import uuid
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.admin.stock import StockImageClient
-
-
-def _slugify(name: str) -> str:
-    base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-    return base or uuid.uuid4().hex[:8]
+from app.names import available_slug, clean_display_name
 
 
 def _point(lat: float, lon: float):
@@ -48,8 +43,8 @@ def create_region(data: dict, *, db: Session) -> Any:
     if bbox and len(bbox) == 4:
         bounds = _bbox_polygon(bbox)
     region = Region(
-        slug=data.get("slug") or _slugify(data["name"]),
-        name=data["name"],
+        slug=available_slug(db, Region, data.get("slug") or data["name"]),
+        name=clean_display_name(data["name"]),
         country=data.get("country"),
         center=center,
         bounds=bounds,

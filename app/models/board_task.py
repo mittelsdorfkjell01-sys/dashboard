@@ -5,7 +5,7 @@ A tiny to-do the operator drags between "open" and "done". Not user-facing.
 
 import uuid
 
-from sqlalchemy import String, Text, text
+from sqlalchemy import CheckConstraint, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -27,3 +27,7 @@ class BoardTask(Base, TimestampMixin):
         String(20), nullable=False, server_default=text("'open'")
     )  # open | done
     author: Mapped[str | None] = mapped_column(String(120))
+
+    __table_args__ = (
+        CheckConstraint("status IN ('open', 'done')", name="ck_board_tasks_status"),
+    )

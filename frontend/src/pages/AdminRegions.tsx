@@ -2,7 +2,7 @@
 // edit the model_pref default, and fetch a credited stock image.
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ApiError,
   createRegion,
@@ -11,14 +11,23 @@ import {
   type AdminRegionEntry,
 } from "../lib/api";
 import { Button, Input } from "../components/ui";
+import Modal from "../components/ui/Modal";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { PageHeader, Badge } from "../components/admin/ui";
+import { createAdminReturnState } from "../lib/adminNavigation";
+import { PlusIcon } from "../lib/icons";
 
 export default function AdminRegions() {
+  const location = useLocation();
+  const editorState = createAdminReturnState(location, "Regionen");
   const [entries, setEntries] = useState<AdminRegionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createDirty, setCreateDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -59,7 +68,11 @@ export default function AdminRegions() {
     <div>
       <PageHeader
         title="Regionen"
-        description="Regionen anlegen, bearbeiten und ein Stock-Bild abrufen. Das Wettermodell wird automatisch nach den Koordinaten gewählt."
+        actions={
+          <Button onClick={() => setCreateOpen(true)}>
+            <PlusIcon className="text-[16px]" /> Region anlegen
+          </Button>
+        }
       />
 
       {notice && (
@@ -79,12 +92,34 @@ export default function AdminRegions() {
         </div>
       )}
 
-      <CreateRegionForm
-        onCreated={async (name) => {
-          flash(`Region „${name}" angelegt.`);
-          await load();
+      <Modal
+        open={createOpen}
+        onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+        labelledBy="create-region-title"
+      >
+        <CreateRegionForm
+          onDirtyChange={setCreateDirty}
+          onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+          onCreated={async (name) => {
+            setCreateDirty(false);
+            setCreateOpen(false);
+            flash(`Region „${name}" angelegt.`);
+            await load();
+          }}
+          onError={setError}
+        />
+      </Modal>
+      <ConfirmDialog
+        open={confirmDiscard}
+        title="Eingaben verwerfen?"
+        message="Die noch nicht gespeicherten Angaben zur Region gehen verloren."
+        confirmText="Verwerfen"
+        onCancel={() => setConfirmDiscard(false)}
+        onConfirm={() => {
+          setConfirmDiscard(false);
+          setCreateDirty(false);
+          setCreateOpen(false);
         }}
-        onError={setError}
       />
 
       {/* Card list: single column, two columns on wide desktops (2xl) so the
@@ -101,6 +136,7 @@ export default function AdminRegions() {
               entry={entry}
               busy={busyId === entry.region.id}
               onStockImage={() => onStockImage(entry.region.id, entry.region.name)}
+              editorState={editorState}
             />
           ))
         )}
@@ -113,10 +149,12 @@ function RegionCard({
   entry,
   busy,
   onStockImage,
+  editorState,
 }: {
   entry: AdminRegionEntry;
   busy: boolean;
   onStockImage: () => void;
+  editorState: ReturnType<typeof createAdminReturnState>;
 }) {
   const { region, spot_counts } = entry;
 
@@ -146,6 +184,7 @@ function RegionCard({
           )}
           <Link
             to={`/admin/region/${region.id}/edit`}
+            state={editorState}
             className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
           >
             Bearbeiten
@@ -175,9 +214,13 @@ function RegionCard({
 function CreateRegionForm({
   onCreated,
   onError,
+  onCancel,
+  onDirtyChange,
 }: {
   onCreated: (name: string) => void | Promise<void>;
   onError: (msg: string) => void;
+  onCancel: () => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
@@ -194,6 +237,7 @@ function CreateRegionForm({
       });
       setName("");
       setCountry("");
+      onDirtyChange(false);
       await onCreated(name.trim());
     } catch (err) {
       onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
@@ -203,31 +247,43 @@ function CreateRegionForm({
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="mt-6 rounded-lg border border-admin-border bg-admin-hover p-4 sm:p-5"
-      noValidate
-    >
-      <p className="text-ui font-semibold text-admin-fg">Neue Region anlegen</p>
-      <p className="mt-1 text-caption text-admin-muted">
-        Nur Name (+ Land) — Mittelpunkt und Fläche werden automatisch aus dem
-        Namen bestimmt.
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+    <form onSubmit={submit} className="space-y-4" noValidate>
+      <h2 id="create-region-title" className="text-[18px] font-semibold text-admin-fg">
+        Region anlegen
+      </h2>
+      <div>
+        <label htmlFor="create-region-name" className="text-label font-medium text-admin-fg">
+          Name
+        </label>
         <Input
-          className="min-w-[220px] flex-1"
-          placeholder="Name (z. B. Sardinien)"
+          id="create-region-name"
+          className="mt-1 w-full"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); onDirtyChange(true); }}
           required
         />
+      </div>
+      <div>
+        <label htmlFor="create-region-country" className="text-label font-medium text-admin-fg">
+          Landcode
+        </label>
         <Input
-          className="w-40"
-          placeholder="Land (z. B. IT)"
+          id="create-region-country"
+          className="mt-1 w-full"
+          placeholder="z. B. IT"
+          maxLength={2}
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
+          onChange={(e) => { setCountry(e.target.value.toUpperCase()); onDirtyChange(true); }}
         />
-        <Button type="submit" disabled={busy || !name.trim()} className="shrink-0">
+        <p className="mt-1 text-caption text-admin-muted">
+          Mittelpunkt und Fläche werden anhand von Name und Land ermittelt.
+        </p>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
+          Abbrechen
+        </Button>
+        <Button type="submit" disabled={busy || !name.trim()}>
           {busy ? "Suche…" : "Anlegen"}
         </Button>
       </div>

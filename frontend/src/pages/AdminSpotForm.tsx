@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import ImageUpload from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
@@ -13,7 +13,7 @@ import {
   createSpot,
   deleteSpot,
   fetchCommonsImages,
-  getSpot,
+  getAdminSpot,
   getReadiness,
   getSpotImages,
   removeImage,
@@ -45,6 +45,13 @@ import {
   waterTypeLabel,
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
+import { PageHeader } from "../components/admin/ui";
+import AdminBackButton, {
+  useAdminBackNavigation,
+} from "../components/admin/AdminBackButton";
+import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import { type AdminNavigationState } from "../lib/adminNavigation";
+import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
@@ -76,6 +83,12 @@ export default function AdminSpotForm() {
   const { id } = useParams(); // present => edit mode
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const location = useLocation();
+  const back = useAdminBackNavigation({
+    fallbackTo: "/admin/spots",
+    fallbackLabel: "Spots",
+  });
+  const { blocker, markDirty, markClean } = useUnsavedChangesGuard();
   const { data: regions } = useAdminRegions();
 
   const [name, setName] = useState("");
@@ -135,7 +148,8 @@ export default function AdminSpotForm() {
     setError(null);
     try {
       await deleteSpot(id);
-      navigate("/admin/spots");
+      markClean();
+      back.goBack();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Löschen fehlgeschlagen.");
       setPendingDelete(false);
@@ -173,6 +187,7 @@ export default function AdminSpotForm() {
         source: attrSource.trim(),
       });
       seedImage((spot.image as ImageRecord | null) ?? null);
+      markClean("attribution");
       setAttrMsg("Attribution gespeichert.");
       setTimeout(() => setAttrMsg(null), 2500);
     } catch (e) {
@@ -187,7 +202,7 @@ export default function AdminSpotForm() {
   // Populate every field from a freshly-loaded spot. Also captures the
   // `updated_at` used as the optimistic-locking token on save. Reused by the
   // edit-mode prefill and by the conflict dialog's "Neu laden".
-  const applySpot = (s: Awaited<ReturnType<typeof getSpot>>) => {
+  const applySpot = (s: Awaited<ReturnType<typeof getAdminSpot>>) => {
     setLoadedUpdatedAt(s.updated_at);
     setModelPref(s.model_pref ?? "");
     setName(s.name);
@@ -230,9 +245,21 @@ export default function AdminSpotForm() {
   useEffect(() => {
     if (!id) return;
     let alive = true;
-    getSpot(id)
+    getAdminSpot(id)
       .then((s) => {
-        if (alive) applySpot(s);
+        if (!alive) return;
+        applySpot(s);
+        markClean();
+        const state = location.state as AdminNavigationState | null;
+        if (state?.adminJustCreated?.id === id) {
+          getReadiness(id)
+            .then((result) => {
+              if (!alive) return;
+              setReadiness(result);
+              setSavedId(id);
+            })
+            .catch(() => {});
+        }
       })
       .catch((e) =>
         alive && setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
@@ -356,6 +383,18 @@ export default function AdminSpotForm() {
       const r = await getReadiness(spot.id);
       setReadiness(r);
       setSavedId(spot.id);
+      setHeroFile(null);
+      setCredit("");
+      markClean("main");
+      if (!isEdit) {
+        navigate(`/admin/spot/${spot.id}/edit`, {
+          replace: true,
+          state: {
+            ...((location.state as AdminNavigationState | null) ?? {}),
+            adminJustCreated: { id: spot.id },
+          },
+        });
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 409) {
@@ -392,7 +431,7 @@ export default function AdminSpotForm() {
     setConflictOpen(false);
     if (!id) return;
     setLoadingExisting(true);
-    getSpot(id)
+    getAdminSpot(id)
       .then(applySpot)
       .catch((e) =>
         setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
@@ -418,9 +457,14 @@ export default function AdminSpotForm() {
 
   return (
     <div className="w-full">
+      <AdminBackButton onClick={back.goBack} label={back.label} className="mb-2" />
+      <PageHeader
+        title={isEdit ? `Spot bearbeiten — ${name || "Spot"}` : "Neuen Spot anlegen"}
+      />
       <form
+        id="admin-spot-form"
         onSubmit={onSubmit}
-        className="xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8"
+        className="pb-20 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8 xl:pb-0"
       >
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">
@@ -431,7 +475,10 @@ export default function AdminSpotForm() {
               <input
                 className={inputCls}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  markDirty("main");
+                  setName(e.target.value);
+                }}
                 placeholder="z. B. Laboe"
               />
             </Field>
@@ -441,7 +488,10 @@ export default function AdminSpotForm() {
               <select
                 className={inputCls}
                 value={regionId}
-                onChange={(e) => setRegionId(e.target.value)}
+                onChange={(e) => {
+                  markDirty("main");
+                  setRegionId(e.target.value);
+                }}
               >
                 <option value="">— Region wählen —</option>
                 {regionOptions.map((r) => (
@@ -457,7 +507,10 @@ export default function AdminSpotForm() {
                 <select
                   className={inputCls}
                   value={modelPref}
-                  onChange={(e) => setModelPref(e.target.value)}
+                  onChange={(e) => {
+                    markDirty("main");
+                    setModelPref(e.target.value);
+                  }}
                 >
                   <option value="">— vom Region-Default erben —</option>
                   {MODEL_PREF_OPTIONS.map((o) => (
@@ -473,7 +526,10 @@ export default function AdminSpotForm() {
                 <input
                   className={inputCls}
                   value={lat}
-                  onChange={(e) => setLat(e.target.value)}
+                  onChange={(e) => {
+                    markDirty("main");
+                    setLat(e.target.value);
+                  }}
                   inputMode="decimal"
                   placeholder="54.41"
                 />
@@ -482,7 +538,10 @@ export default function AdminSpotForm() {
                 <input
                   className={inputCls}
                   value={lon}
-                  onChange={(e) => setLon(e.target.value)}
+                  onChange={(e) => {
+                    markDirty("main");
+                    setLon(e.target.value);
+                  }}
                   inputMode="decimal"
                   placeholder="10.22"
                 />
@@ -498,6 +557,7 @@ export default function AdminSpotForm() {
                   lon={lon === "" ? null : Number(lon)}
                   mapView={mapView}
                   onPositionChange={(la, lo) => {
+                    markDirty("main");
                     setLat(String(la));
                     setLon(String(lo));
                     setFieldErrors((prev) => {
@@ -505,7 +565,10 @@ export default function AdminSpotForm() {
                       return rest;
                     });
                   }}
-                  onViewChange={setMapView}
+                  onViewChange={(view) => {
+                    markDirty("main");
+                    setMapView(view);
+                  }}
                 />
               </div>
             </div>
@@ -514,7 +577,10 @@ export default function AdminSpotForm() {
                 id="f-description"
                 className={`${inputCls} min-h-[120px] resize-y scroll-mt-24`}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  markDirty("main");
+                  setDescription(e.target.value);
+                }}
                 placeholder="Charakter des Spots, Bedingungen, Besonderheiten …"
               />
             </Field>
@@ -528,7 +594,10 @@ export default function AdminSpotForm() {
                 <Chip
                   key={s}
                   active={sports.includes(s)}
-                  onClick={() => setSports(toggle(sports, s))}
+                  onClick={() => {
+                    markDirty("main");
+                    setSports(toggle(sports, s));
+                  }}
                 >
                   {sportLabel(s)}
                 </Chip>
@@ -545,7 +614,10 @@ export default function AdminSpotForm() {
                   <Chip
                     key={l}
                     active={level.includes(l)}
-                    onClick={() => setLevel(toggle(level, l))}
+                    onClick={() => {
+                      markDirty("main");
+                      setLevel(toggle(level, l));
+                    }}
                   >
                     {levelLabel(l)}
                   </Chip>
@@ -564,7 +636,10 @@ export default function AdminSpotForm() {
                   <Chip
                     key={w}
                     active={waterCharacter.includes(w)}
-                    onClick={() => setWaterCharacter(toggle(waterCharacter, w))}
+                    onClick={() => {
+                      markDirty("main");
+                      setWaterCharacter(toggle(waterCharacter, w));
+                    }}
                   >
                     {waterCharacterLabel(w)}
                   </Chip>
@@ -577,7 +652,10 @@ export default function AdminSpotForm() {
                   <Chip
                     key={w}
                     active={waterType.includes(w)}
-                    onClick={() => setWaterType(toggle(waterType, w))}
+                    onClick={() => {
+                      markDirty("main");
+                      setWaterType(toggle(waterType, w));
+                    }}
                   >
                     {waterTypeLabel(w)}
                   </Chip>
@@ -590,7 +668,10 @@ export default function AdminSpotForm() {
                   <Chip
                     key={s}
                     active={styles.includes(s)}
-                    onClick={() => setStyles(toggle(styles, s))}
+                    onClick={() => {
+                      markDirty("main");
+                      setStyles(toggle(styles, s));
+                    }}
                   >
                     {styleLabel(s)}
                   </Chip>
@@ -602,7 +683,10 @@ export default function AdminSpotForm() {
                 id="f-bottom_type"
                 className={`${inputCls} scroll-mt-24`}
                 value={bottomType}
-                onChange={(e) => setBottomType(e.target.value)}
+                onChange={(e) => {
+                  markDirty("main");
+                  setBottomType(e.target.value);
+                }}
                 placeholder="sand"
               />
             </Field>
@@ -615,7 +699,10 @@ export default function AdminSpotForm() {
               <input
                 className={inputCls}
                 value={facing}
-                onChange={(e) => setFacing(e.target.value)}
+                onChange={(e) => {
+                  markDirty("main");
+                  setFacing(e.target.value);
+                }}
                 inputMode="numeric"
                 placeholder="45"
               />
@@ -651,12 +738,13 @@ export default function AdminSpotForm() {
                       <Chip
                         key={st}
                         active={facilities[k].state === st}
-                        onClick={() =>
+                        onClick={() => {
+                          markDirty("main");
                           setFacilities((prev) => ({
                             ...prev,
                             [k]: { ...prev[k], state: st },
-                          }))
-                        }
+                          }));
+                        }}
                       >
                         {label}
                       </Chip>
@@ -666,12 +754,13 @@ export default function AdminSpotForm() {
                     className={`${inputCls} mt-2 sm:mt-0 disabled:cursor-not-allowed disabled:opacity-50`}
                     value={facilities[k].note}
                     disabled={facilities[k].state === "unknown"}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      markDirty("main");
                       setFacilities((prev) => ({
                         ...prev,
                         [k]: { ...prev[k], note: e.target.value },
-                      }))
-                    }
+                      }));
+                    }}
                     placeholder={
                       facilities[k].state === "unknown" ? "Notiz (erst bei ja/nein)" : "Notiz (optional)"
                     }
@@ -710,7 +799,10 @@ export default function AdminSpotForm() {
                       <input
                         className={inputCls}
                         value={attrCredit}
-                        onChange={(e) => setAttrCredit(e.target.value)}
+                        onChange={(e) => {
+                          markDirty("attribution");
+                          setAttrCredit(e.target.value);
+                        }}
                         placeholder="Fotograf:in"
                       />
                     </Field>
@@ -718,7 +810,10 @@ export default function AdminSpotForm() {
                       <input
                         className={inputCls}
                         value={attrLicense}
-                        onChange={(e) => setAttrLicense(e.target.value)}
+                        onChange={(e) => {
+                          markDirty("attribution");
+                          setAttrLicense(e.target.value);
+                        }}
                         placeholder="z. B. CC BY-SA 4.0"
                       />
                     </Field>
@@ -726,7 +821,10 @@ export default function AdminSpotForm() {
                       <input
                         className={inputCls}
                         value={attrSource}
-                        onChange={(e) => setAttrSource(e.target.value)}
+                        onChange={(e) => {
+                          markDirty("attribution");
+                          setAttrSource(e.target.value);
+                        }}
                         placeholder="z. B. wikimedia_commons"
                       />
                     </Field>
@@ -756,7 +854,13 @@ export default function AdminSpotForm() {
               </div>
             )}
             <div className="mt-3">
-              <ImageUpload onAccept={setHeroFile} allowBelowMin />
+              <ImageUpload
+                onAccept={(file) => {
+                  markDirty("main");
+                  setHeroFile(file);
+                }}
+                allowBelowMin
+              />
             </div>
             {heroFile && (
               <div className="mt-3">
@@ -764,7 +868,10 @@ export default function AdminSpotForm() {
                   <input
                     className={inputCls}
                     value={credit}
-                    onChange={(e) => setCredit(e.target.value)}
+                    onChange={(e) => {
+                      markDirty("main");
+                      setCredit(e.target.value);
+                    }}
                     placeholder="Fotograf:in / Quelle"
                   />
                 </Field>
@@ -896,15 +1003,6 @@ export default function AdminSpotForm() {
                 >
                   Zur Spot-Seite
                 </Link>
-                {!isEdit && (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/admin/spot/${savedId}/edit`)}
-                    className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-                  >
-                    Weiter bearbeiten
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -924,9 +1022,12 @@ export default function AdminSpotForm() {
                 : "Spot anlegen"}
             </button>
             <div className="mt-3 flex items-center justify-between text-label">
-              <Link to="/" className="text-admin-muted transition-colors hover:text-admin-fg">
-                Abbrechen
-              </Link>
+              <AdminBackButton
+                onClick={back.goBack}
+                label={back.label}
+                text="Abbrechen"
+                showIcon={false}
+              />
               {isEdit && id && (
                 <a
                   href={`/spot/${id}`}
@@ -943,6 +1044,24 @@ export default function AdminSpotForm() {
         </aside>
       </form>
 
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">
+        <AdminBackButton
+          onClick={back.goBack}
+          label={back.label}
+          text="Abbrechen"
+          showIcon={false}
+          className="min-h-11 flex-1 justify-center"
+        />
+        <button
+          type="submit"
+          form="admin-spot-form"
+          disabled={submitting}
+          className="min-h-11 flex-1 rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg disabled:opacity-50"
+        >
+          {submitting ? "Speichern …" : isEdit ? "Speichern" : "Spot anlegen"}
+        </button>
+      </div>
+
       <ConflictDialog
         open={conflictOpen}
         busy={submitting}
@@ -953,6 +1072,7 @@ export default function AdminSpotForm() {
         }}
         onClose={() => setConflictOpen(false)}
       />
+      <UnsavedChangesDialog blocker={blocker} />
 
       <ConfirmToast
         open={pendingDelete}

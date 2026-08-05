@@ -17,14 +17,17 @@ from app.models import Favorite, SpotSubmission
 ACCT_COOKIE = get_settings().app_auth_cookie_name
 
 
-def _register(c: TestClient, email: str | None = None, pw: str = "pw-123456") -> dict:
+def _register(c: TestClient, email: str | None = None, pw: str = "pw-123456789") -> dict:
     email = email or f"visitor-{uuid.uuid4().hex[:8]}@example.com"
     resp = c.post(
         "/account/register",
         json={"email": email, "password": pw, "displayName": "Test Visitor"},
     )
-    assert resp.status_code == 201, resp.text
-    return {"email": email, "password": pw, "body": resp.json(), "client": c}
+    assert resp.status_code == 202, resp.text
+    login = c.post("/account/login", json={"email": email, "password": pw})
+    assert login.status_code == 200, login.text
+    c.headers["X-CSRF-Token"] = c.cookies.get(get_settings().csrf_cookie_name)
+    return {"email": email, "password": pw, "body": login.json(), "client": c}
 
 
 @pytest.fixture
@@ -60,7 +63,7 @@ def _cleanup(db):
 
 # --- registration / session ------------------------------------------------
 
-def test_register_sets_cookie_and_returns_account(acct):
+def test_register_then_login_returns_account(acct):
     body = acct["body"]
     assert body["email"] == acct["email"]
     assert body["displayName"] == "Test Visitor"
@@ -68,13 +71,17 @@ def test_register_sets_cookie_and_returns_account(acct):
     assert acct["client"].cookies.get(ACCT_COOKIE)
 
 
-def test_register_duplicate_email_409(anon_client):
+def test_register_duplicate_email_has_generic_response(anon_client):
     first = _register(anon_client)
     other = TestClient(app)
     dup = other.post("/account/register", json={
-        "email": first["email"], "password": "pw-123456", "displayName": "X",
+        "email": first["email"], "password": "pw-123456789", "displayName": "X",
     })
-    assert dup.status_code == 409
+    assert dup.status_code == 202
+    assert dup.json() == {
+        "accepted": True,
+        "message": "Falls noch kein Konto existierte, wurde es angelegt. Du kannst dich jetzt anmelden.",
+    }
 
 
 def test_register_weak_password_400(anon_client):
@@ -158,16 +165,16 @@ def test_change_password(acct):
     c = acct["client"]
     # wrong current password
     assert c.post("/account/password", json={
-        "oldPassword": "nope", "newPassword": "brandnew-1",
+        "oldPassword": "nope", "newPassword": "brandnew-123",
     }).status_code == 400
     # correct
     assert c.post("/account/password", json={
-        "oldPassword": acct["password"], "newPassword": "brandnew-1",
+        "oldPassword": acct["password"], "newPassword": "brandnew-123",
     }).status_code == 204
     # new password works
     fresh = TestClient(app)
     assert fresh.post("/account/login", json={
-        "email": acct["email"], "password": "brandnew-1",
+        "email": acct["email"], "password": "brandnew-123",
     }).status_code == 200
 
 

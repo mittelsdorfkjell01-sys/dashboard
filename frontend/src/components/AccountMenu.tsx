@@ -54,10 +54,10 @@ export default function AccountMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Konto-Menü"
-        className="flex items-center gap-2.5 rounded-2xl bg-teal px-3.5 py-2 text-white transition-colors hover:bg-teal-hover"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-2.5 rounded-2xl bg-teal p-2 text-white transition-colors hover:bg-teal-hover sm:min-h-0 sm:min-w-0 sm:justify-start sm:px-3.5 sm:py-2"
       >
         <MenuIcon className="text-[20px]" />
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-white/20">
+        <span className="hidden h-7 w-7 place-items-center rounded-full bg-white/20 sm:grid">
           <UserIcon className="text-[16px]" />
         </span>
       </button>

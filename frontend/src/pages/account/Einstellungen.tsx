@@ -1,7 +1,14 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { usePrefs } from "../../context/PrefsContext";
-import { updateProfile, changePassword, AccountError } from "../../lib/account";
+import {
+  updateProfile,
+  changePassword,
+  deleteAccount,
+  downloadAccountExport,
+  AccountError,
+} from "../../lib/account";
 import {
   formatWind,
   formatWave,
@@ -14,6 +21,10 @@ import {
   type TempUnit,
 } from "../../lib/units";
 import { Button, Field, Input, fieldClass } from "../../components/ui";
+import Modal from "../../components/ui/Modal";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import UnsavedChangesDialog from "../../components/admin/UnsavedChangesDialog";
+import { useUnsavedChangesGuard } from "../../lib/useUnsavedChangesGuard";
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -38,21 +49,38 @@ function Note({ kind, children }: { kind: "ok" | "err"; children: ReactNode }) {
 }
 
 export default function Einstellungen() {
+  const { blocker, markDirty, markClean } = useUnsavedChangesGuard();
+  const setProfileDirty = useCallback(
+    (value: boolean) => value ? markDirty("profile") : markClean("profile"),
+    [markClean, markDirty]
+  );
+  const setPasswordDirty = useCallback(
+    (value: boolean) => value ? markDirty("password") : markClean("password"),
+    [markClean, markDirty]
+  );
   return (
+    <>
     <div className="space-y-6">
-      <ProfileSection />
-      <PasswordSection />
+      <ProfileSection onDirtyChange={setProfileDirty} />
+      <PasswordSection onDirtyChange={setPasswordDirty} />
       <UnitsSection />
+      <PrivacySection />
     </div>
+    <UnsavedChangesDialog blocker={blocker} />
+    </>
   );
 }
 
-function ProfileSection() {
+function ProfileSection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
   const { user, setUser } = useAuth();
   const [name, setName] = useState(user?.displayName ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    onDirtyChange(name !== (user?.displayName ?? "") || email !== (user?.email ?? ""));
+  }, [email, name, onDirtyChange, user?.displayName, user?.email]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -97,11 +125,15 @@ function ProfileSection() {
   );
 }
 
-function PasswordSection() {
+function PasswordSection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    onDirtyChange(Boolean(oldPw || newPw));
+  }, [newPw, oldPw, onDirtyChange]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -133,7 +165,7 @@ function PasswordSection() {
             autoComplete="current-password"
           />
         </Field>
-        <Field label="Neues Passwort" hint="Mindestens 6 Zeichen.">
+        <Field label="Neues Passwort" hint="Mindestens 12 Zeichen.">
           <Input
             type="password"
             value={newPw}
@@ -148,6 +180,96 @@ function PasswordSection() {
           {note && <Note kind={note.kind}>{note.msg}</Note>}
         </div>
       </form>
+    </Panel>
+  );
+}
+
+function PrivacySection() {
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [discardOpen, setDiscardOpen] = useState(false);
+
+  const close = () => {
+    if (busy) return;
+    if (password) setDiscardOpen(true);
+    else setOpen(false);
+  };
+
+  const remove = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await deleteAccount(password);
+      setUser(null);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err instanceof AccountError ? err.message : "Konto konnte nicht gelöscht werden.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Panel title="Daten & Konto">
+      <div className="flex flex-wrap gap-3">
+        <Button type="button" variant="secondary" onClick={() => void downloadAccountExport()}>
+          Datenexport herunterladen
+        </Button>
+        <Button type="button" variant="danger" onClick={() => setOpen(true)}>
+          Konto löschen
+        </Button>
+      </div>
+      <Modal
+        open={open}
+        onClose={close}
+        labelledBy="delete-account-title"
+        describedBy="delete-account-description"
+      >
+        <form onSubmit={remove} className="space-y-4">
+          <div>
+            <h2 id="delete-account-title" className="text-[18px] font-semibold text-ink">
+              Konto endgültig löschen
+            </h2>
+            <p id="delete-account-description" className="mt-2 text-[14px] text-muted">
+              Favoriten werden gelöscht. Veröffentlichte Beiträge bleiben anonymisiert erhalten.
+            </p>
+          </div>
+          <Field label="Passwort zur Bestätigung">
+            <Input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+            />
+          </Field>
+          {error && <p role="alert" className="text-[13px] text-red-600">{error}</p>}
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="secondary" onClick={close} disabled={busy}>
+              Abbrechen
+            </Button>
+            <Button type="submit" variant="danger" disabled={busy || !password}>
+              {busy ? "Lösche …" : "Endgültig löschen"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+      <ConfirmDialog
+        open={discardOpen}
+        title="Löschung abbrechen?"
+        message="Das eingegebene Passwort wird verworfen."
+        confirmText="Verwerfen"
+        variant="danger"
+        onCancel={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          setDiscardOpen(false);
+          setPassword("");
+          setOpen(false);
+        }}
+      />
     </Panel>
   );
 }

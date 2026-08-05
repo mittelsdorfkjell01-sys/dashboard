@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -7,6 +7,10 @@ import {
   markNotificationRead,
   type AdminNotification,
 } from "../../lib/api";
+import {
+  adminSectionLabel,
+  createAdminReturnState,
+} from "../../lib/adminNavigation";
 
 const POLL_MS = 60_000; // minute polling for the badge
 
@@ -17,6 +21,7 @@ const POLL_MS = 60_000; // minute polling for the badge
  */
 export default function NotificationBell() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AdminNotification[] | null>(null);
@@ -67,7 +72,13 @@ export default function NotificationBell() {
       setUnread((u) => Math.max(0, u - 1));
     }
     setOpen(false);
-    navigate(n.spot_id ? `/admin/spot/${n.spot_id}/edit` : "/admin/review");
+    if (n.spot_id) {
+      navigate(`/admin/spot/${n.spot_id}/edit`, {
+        state: createAdminReturnState(location, adminSectionLabel(location.pathname)),
+      });
+    } else {
+      navigate("/admin/review");
+    }
   };
 
   const markAll = async () => {

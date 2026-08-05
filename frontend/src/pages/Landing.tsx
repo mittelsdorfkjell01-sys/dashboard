@@ -20,7 +20,7 @@ export default function Landing() {
   const location = useLocation();
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
-  const { data: allSpots } = useSpots({ status: "published" });
+  const { data: allSpots } = useSpots();
   const spots = allSpots ?? [];
 
   return (

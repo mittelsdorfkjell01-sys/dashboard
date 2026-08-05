@@ -1,5 +1,6 @@
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
@@ -13,6 +14,7 @@ from app.live.cache import Cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
 from app.models import Spot
+from app.public_catalog import PUBLISHED, get_published_spot
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
 from app.scoring import (
@@ -50,7 +52,6 @@ def list_spots(
     response: Response,
     db: Session = Depends(get_db),
     region_id: uuid.UUID | None = Query(default=None),
-    status: str | None = Query(default=None),
     sport: str | None = Query(default=None, description="Filter to spots offering this sport"),
     level: str | None = Query(default=None, description="Filter to spots at this rider level"),
     water_character: str | None = Query(
@@ -67,7 +68,7 @@ def list_spots(
     Fetch a single spot's full record (incl. climatology) via ``GET /spots/{id}``.
     """
     # Don't even load the heavy JSONB columns for a list view.
-    stmt = select(Spot).options(
+    stmt = select(Spot).where(Spot.status == PUBLISHED).options(
         defer(Spot.climatology),
         defer(Spot.editorial),
         defer(Spot.overrides),
@@ -75,8 +76,6 @@ def list_spots(
     ).order_by(Spot.name)
     if region_id is not None:
         stmt = stmt.where(Spot.region_id == region_id)
-    if status is not None:
-        stmt = stmt.where(Spot.status == status)
     if sport is not None:
         stmt = stmt.where(Spot.sports.any(sport))
     if level is not None:
@@ -126,7 +125,12 @@ def list_top_spots(
         ids = []
 
     if ids:
-        by_id = {s.id: s for s in db.scalars(select(Spot).where(Spot.id.in_(ids)))}
+        by_id = {
+            s.id: s
+            for s in db.scalars(
+                select(Spot).where(Spot.id.in_(ids), Spot.status == PUBLISHED)
+            )
+        }
         ordered = [by_id[i] for i in ids if i in by_id]
     else:
         # Graceful fallback: the pre-ranking behaviour (published spots by name).
@@ -161,7 +165,7 @@ def get_spots_live_batch(
     if len(tokens) > 20:
         raise HTTPException(status_code=400, detail="Too many ids (max 20)")
 
-    out: list[LiveConditionsRead] = []
+    parsed: list[uuid.UUID] = []
     seen: set[str] = set()
     for token in tokens:
         if token in seen:
@@ -171,21 +175,37 @@ def get_spots_live_batch(
             spot_id = uuid.UUID(token)
         except ValueError:
             continue
-        try:
-            data = live_service.get_live_conditions(
-                spot_id, db=db, client=client, cache=cache
-            )
-        except LookupError:
-            continue
-        out.append(LiveConditionsRead.model_validate(data))
-    return out
+        parsed.append(spot_id)
+
+    rows = list(
+        db.scalars(select(Spot).where(Spot.id.in_(parsed), Spot.status == PUBLISHED))
+    )
+    by_id = {spot.id: spot for spot in rows}
+    ordered = [by_id[spot_id] for spot_id in parsed if spot_id in by_id]
+    results: dict[uuid.UUID, LiveConditionsRead] = {}
+    with ThreadPoolExecutor(max_workers=min(4, len(ordered) or 1)) as pool:
+        futures = {
+            pool.submit(
+                live_service.get_live_conditions_for_spot,
+                spot,
+                client=client,
+                cache=cache,
+            ): spot.id
+            for spot in ordered
+        }
+        for future in as_completed(futures):
+            try:
+                results[futures[future]] = LiveConditionsRead.model_validate(future.result())
+            except Exception:
+                logger.exception("live batch failed for spot %s", futures[future])
+    return [results[spot.id] for spot in ordered if spot.id in results]
 
 
 @router.get("/{spot_id}", response_model=SpotRead)
 def get_spot(
     spot_id: uuid.UUID, response: Response, db: Session = Depends(get_db)
 ) -> SpotRead:
-    spot = db.get(Spot, spot_id)
+    spot = get_published_spot(db, spot_id)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     set_public_cache(response)
@@ -200,6 +220,8 @@ def get_spot_live(
     cache: Cache = Depends(get_cache),
 ) -> LiveConditionsRead:
     """Current conditions for a spot (Open-Meteo, cached). Not persisted."""
+    if get_published_spot(db, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
     try:
         data = live_service.get_live_conditions(
             spot_id, db=db, client=client, cache=cache
@@ -220,6 +242,8 @@ def get_spot_forecast(
     cache: Cache = Depends(get_cache),
 ) -> ForecastSeriesRead:
     """7-day forecast with a confidence tier per day. Horizon hard-capped at 7."""
+    if get_published_spot(db, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
     try:
         data = live_service.get_forecast_series(
             spot_id, days, db=db, client=client, cache=cache
@@ -239,6 +263,8 @@ def get_spot_badge(
     cache: Cache = Depends(get_cache),
 ) -> dict:
     """Now-badge: rate current conditions (gut / mäßig / nein) for the spot."""
+    if get_published_spot(db, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
     profile = {"level": level} if level else None
     try:
         return score_live(spot_id, profile, sport, db=db, client=client, cache=cache)
@@ -258,7 +284,7 @@ def get_spot_season(
 ) -> dict:
     """Seasonal curve. ``stage=1`` is descriptive (no gates); ``stage=2`` scores
     the usable-hours curve over 52 weeks."""
-    spot = db.get(Spot, spot_id)
+    spot = get_published_spot(db, spot_id)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     if not (spot.climatology and spot.climatology.get("weeks")):
@@ -294,6 +320,8 @@ def get_spot_similar(
     db: Session = Depends(get_db),
 ) -> dict:
     """Spots similar in character (feel), season (when they run), or both."""
+    if get_published_spot(db, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
     profile = {"level": level} if level else None
     try:
         return similarity_service.find_similar_spots(
@@ -315,6 +343,8 @@ def get_spot_alternatives(
     db: Session = Depends(get_db),
 ) -> dict:
     """Character-similar spots that are running in the chosen week, ranked."""
+    if get_published_spot(db, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
     profile = {"level": level} if level else None
     time_context = {"week": week} if week else None
     try:

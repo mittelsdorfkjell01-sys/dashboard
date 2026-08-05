@@ -17,10 +17,14 @@ from app.api import (
     spots,
 )
 from app.config import get_settings
+from app.csrf import CSRFMiddleware
+from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(CSRFMiddleware)
 
 
 @app.on_event("startup")

@@ -27,6 +27,7 @@ from app.models import (
     SpotRating,
     SpotSubmission,
 )
+from app.public_catalog import get_published_spot
 
 _ANON = "Anonym"
 
@@ -38,8 +39,15 @@ def _require_spot(db: Session, spot_id) -> Spot:
     return spot
 
 
+def _require_public_spot(db: Session, spot_id) -> Spot:
+    spot = get_published_spot(db, spot_id)
+    if spot is None:
+        raise LookupError(f"unknown spot {spot_id}")
+    return spot
+
+
 def spot_exists(db: Session, spot_id) -> bool:
-    return db.get(Spot, spot_id) is not None
+    return get_published_spot(db, spot_id) is not None
 
 
 def count_gallery_images(db: Session, spot_id) -> int:
@@ -94,7 +102,7 @@ def create_rating(
     author_email: str | None = None,
     ip_hash: str | None = None,
 ) -> SpotRating:
-    _require_spot(db, spot_id)
+    _require_public_spot(db, spot_id)
     if not isinstance(stars, int) or not (1 <= stars <= 5):
         raise ValueError("stars muss zwischen 1 und 5 liegen.")
     validate_skill_level(skill_level)
@@ -123,7 +131,7 @@ def create_rating(
 
 
 def list_ratings(db: Session, spot_id) -> tuple[list[SpotRating], dict]:
-    _require_spot(db, spot_id)
+    _require_public_spot(db, spot_id)
     rows = db.scalars(
         select(SpotRating)
         .where(SpotRating.spot_id == spot_id, SpotRating.status == "published")
@@ -144,7 +152,7 @@ def create_tip(
     parent_id=None,
     ip_hash: str | None = None,
 ) -> LocalTip:
-    _require_spot(db, spot_id)
+    _require_public_spot(db, spot_id)
     if not (body and body.strip()):
         raise ValueError("Der Tipp darf nicht leer sein.")
     if parent_id is not None:
@@ -175,7 +183,7 @@ def create_tip(
 
 
 def list_tips(db: Session, spot_id) -> list[LocalTip]:
-    _require_spot(db, spot_id)
+    _require_public_spot(db, spot_id)
     return list(
         db.scalars(
             select(LocalTip)
@@ -304,7 +312,7 @@ def create_commons_image_records(db: Session, spot_id, results: list[dict]) -> l
 
 
 def list_images(db: Session, spot_id) -> list[SpotImage]:
-    _require_spot(db, spot_id)
+    _require_public_spot(db, spot_id)
     return list(
         db.scalars(
             select(SpotImage)

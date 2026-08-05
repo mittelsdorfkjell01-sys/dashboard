@@ -1,11 +1,16 @@
 import LandingHeader from "../components/LandingHeader";
 import Footer from "../components/Footer";
 
-/**
- * Impressum — legally required in DE (§ 5 DDG). Ships as a clearly marked
- * placeholder: the operator MUST replace the bracketed fields with real data
- * before going live. Deliberately contains no invented identity details.
- */
+const legal = {
+  operator: import.meta.env.VITE_LEGAL_OPERATOR || "Nicht für Produktion freigegeben",
+  street: import.meta.env.VITE_LEGAL_STREET || "Entwicklungsansicht",
+  postalCity: import.meta.env.VITE_LEGAL_POSTAL_CITY || "Entwicklungsansicht",
+  country: import.meta.env.VITE_LEGAL_COUNTRY || "Deutschland",
+  email: import.meta.env.VITE_LEGAL_EMAIL || "nicht-konfiguriert@example.invalid",
+  phone: import.meta.env.VITE_LEGAL_PHONE || "",
+  responsible: import.meta.env.VITE_LEGAL_RESPONSIBLE || import.meta.env.VITE_LEGAL_OPERATOR || "Nicht freigegeben",
+};
+
 export default function Impressum() {
   return (
     <div className="relative min-h-screen bg-white">
@@ -13,35 +18,27 @@ export default function Impressum() {
       <main className="mx-auto max-w-[760px] px-4 pb-24 pt-32 sm:px-8">
         <h1 className="text-[28px] font-semibold text-ink">Impressum</h1>
         <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-ink-soft">
-          <p className="rounded-2xl border border-orange/30 bg-orange/5 p-4 text-[14px] text-ink-soft">
-            Platzhalter — hier müssen vor dem Live-Gang die gesetzlich
-            vorgeschriebenen Angaben nach § 5 DDG (ehemals TMG) eingetragen
-            werden. Bitte die eckigen Klammern durch die echten Betreiberdaten
-            ersetzen.
-          </p>
-
           <h2 className="text-[16px] font-semibold text-ink">Angaben gemäß § 5 DDG</h2>
           <p>
-            [Name / Firma]
+            {legal.operator}
             <br />
-            [Straße und Hausnummer]
+            {legal.street}
             <br />
-            [PLZ und Ort]
+            {legal.postalCity}
             <br />
-            [Land]
+            {legal.country}
           </p>
 
           <h2 className="text-[16px] font-semibold text-ink">Kontakt</h2>
           <p>
-            Telefon: [Telefonnummer]
-            <br />
-            E-Mail: [E-Mail-Adresse]
+            {legal.phone && <>Telefon: {legal.phone}<br /></>}
+            E-Mail: <a className="text-teal underline" href={`mailto:${legal.email}`}>{legal.email}</a>
           </p>
 
           <h2 className="text-[16px] font-semibold text-ink">
             Verantwortlich für den Inhalt
           </h2>
-          <p>[Name und Anschrift der verantwortlichen Person]</p>
+          <p>{legal.responsible}, {legal.street}, {legal.postalCity}</p>
         </div>
       </main>
       <Footer />

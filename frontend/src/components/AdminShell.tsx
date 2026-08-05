@@ -3,8 +3,8 @@
 // to the independent admin design system (monochrome tokens + dark mode); the
 // navigation structure, routes and behaviour are unchanged.
 
-import type { ReactNode } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { roleLabel } from "../lib/labels";
 import type { AdminRole } from "../lib/api";
@@ -88,7 +88,15 @@ function sideNavClass({ isActive }: { isActive: boolean }) {
 export default function AdminShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const mobileNavRef = useRef<HTMLElement>(null);
   const items = NAV.filter((n) => !n.role || n.role === user?.role);
+
+  useEffect(() => {
+    mobileNavRef.current
+      ?.querySelector<HTMLElement>('[aria-current="page"]')
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [location.pathname]);
 
   const onLogout = async () => {
     await logout();
@@ -162,7 +170,11 @@ export default function AdminShell() {
           </header>
 
           {/* Compact top nav — used below the sidebar breakpoint (tablet, half-screen, mobile). */}
-          <nav className="no-scrollbar flex gap-1.5 overflow-x-auto border-b border-admin-border bg-admin-surface px-4 py-2 lg:hidden">
+          <nav
+            ref={mobileNavRef}
+            aria-label="Dashboard-Navigation"
+            className="no-scrollbar flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain border-b border-admin-border bg-admin-surface px-4 py-2 lg:hidden"
+          >
             {items.map((n) => (
               <NavLink
                 key={n.to}

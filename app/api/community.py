@@ -19,8 +19,9 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.community import service
 from app.community.ratelimit import RateLimiter, enforce, get_rate_limiter
@@ -28,14 +29,18 @@ from app.community.security import check_honeypot, ip_hash
 from app.config import get_settings
 from app.db.session import get_db
 from app.media import (
+    GALLERY_MAX_BYTES,
     GALLERY_OUT_MAX_WIDTH,
     GALLERY_OUT_QUALITY,
+    HERO_MAX_BYTES,
     HERO_OUT_MAX_WIDTH,
     HERO_OUT_QUALITY,
     HeroImageError,
     IMAGE_LICENSE_VERSION,
+    delete_url,
     license_terms,
     reencode_image,
+    read_upload_limited,
     save_spot_image,
     validate_gallery_image,
     validate_hero_image,
@@ -119,35 +124,43 @@ class ImageOut(BaseModel):
 # --- write schemas (with honeypot) -----------------------------------------
 
 class RatingIn(BaseModel):
-    stars: int
-    skill_level: str
-    sport: str
-    conditions: str
-    author_name: str | None = None
-    author_email: str | None = None
-    website: str | None = None  # honeypot — must stay empty
+    stars: int = Field(ge=1, le=5)
+    skill_level: str = Field(min_length=1, max_length=20)
+    sport: str = Field(min_length=1, max_length=20)
+    conditions: str = Field(min_length=3, max_length=4_000)
+    author_name: str | None = Field(default=None, max_length=120)
+    author_email: EmailStr | None = None
+    website: str | None = Field(default=None, max_length=500)
+
+    model_config = {"extra": "forbid"}
 
 
 class TipIn(BaseModel):
-    body: str
-    author_name: str | None = None
-    author_email: str | None = None
+    body: str = Field(min_length=1, max_length=4_000)
+    author_name: str | None = Field(default=None, max_length=120)
+    author_email: EmailStr | None = None
     parent_id: uuid.UUID | None = None  # set when this is a reply
-    website: str | None = None  # honeypot
+    website: str | None = Field(default=None, max_length=500)
+
+    model_config = {"extra": "forbid"}
 
 
 class SubmissionIn(BaseModel):
-    payload: dict
-    submitter_name: str | None = None
-    submitter_email: str | None = None
-    website: str | None = None  # honeypot
+    payload: dict = Field(max_length=100)
+    submitter_name: str | None = Field(default=None, max_length=120)
+    submitter_email: EmailStr | None = None
+    website: str | None = Field(default=None, max_length=500)
+
+    model_config = {"extra": "forbid"}
 
 
 class ReportIn(BaseModel):
-    reason: str
-    note: str | None = None
-    reporter_email: str | None = None
-    website: str | None = None  # honeypot
+    reason: str = Field(min_length=1, max_length=30)
+    note: str | None = Field(default=None, max_length=2_000)
+    reporter_email: EmailStr | None = None
+    website: str | None = Field(default=None, max_length=500)
+
+    model_config = {"extra": "forbid"}
 
 
 # --- license (for the upload form) -----------------------------------------
@@ -280,18 +293,23 @@ async def post_image(
             detail=f"Maximal {MAX_GALLERY_PER_SPOT} Galeriebilder pro Spot.",
         )
 
-    data = await file.read()
     try:
+        data = await read_upload_limited(
+            file,
+            HERO_MAX_BYTES if kind == "hero_candidate" else GALLERY_MAX_BYTES,
+        )
         # Validate the original, then re-encode (downscale + AVIF/WebP) so a large
         # heavy upload is accepted but only a small optimised file is stored.
         if kind == "hero_candidate":
-            validate_hero_image(data, file.content_type)
-            out, ext, width, height = reencode_image(
+            await run_in_threadpool(validate_hero_image, data, file.content_type)
+            out, ext, width, height = await run_in_threadpool(
+                reencode_image,
                 data, max_width=HERO_OUT_MAX_WIDTH, quality=HERO_OUT_QUALITY
             )
         else:
-            validate_gallery_image(data, file.content_type)
-            out, ext, width, height = reencode_image(
+            await run_in_threadpool(validate_gallery_image, data, file.content_type)
+            out, ext, width, height = await run_in_threadpool(
+                reencode_image,
                 data, max_width=GALLERY_OUT_MAX_WIDTH, quality=GALLERY_OUT_QUALITY
             )
     except HeroImageError as exc:
@@ -299,7 +317,8 @@ async def post_image(
 
     settings = get_settings()
     image_id = uuid.uuid4()
-    url = save_spot_image(
+    url = await run_in_threadpool(
+        save_spot_image,
         spot_id, image_id, out, ext,
         media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
     )
@@ -307,12 +326,20 @@ async def post_image(
     # asked for review (the standalone "add a photo" form, decoupled from the
     # rating/tip composer); hero_candidate always awaits approval.
     status = "pending" if (kind == "hero_candidate" or review) else "approved"
-    image = service.create_image_record(
-        db, spot_id,
-        url=url, kind=kind, width=width, height=height, status=status,
-        license_version=IMAGE_LICENSE_VERSION, license_accepted_at=datetime.now(timezone.utc),
-        credit=credit, ip_hash=ip_hash(request),
-    )
+    try:
+        image = service.create_image_record(
+            db, spot_id,
+            url=url, kind=kind, width=width, height=height, status=status,
+            license_version=IMAGE_LICENSE_VERSION,
+            license_accepted_at=datetime.now(timezone.utc),
+            credit=credit, ip_hash=ip_hash(request),
+        )
+    except Exception:
+        db.rollback()
+        delete_url(
+            url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix
+        )
+        raise
     return ImageOut.of(image)
 
 

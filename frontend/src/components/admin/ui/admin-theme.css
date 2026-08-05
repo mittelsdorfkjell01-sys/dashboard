@@ -33,7 +33,7 @@
 
   --a-fg: #fafafa; /* primary text */
   --a-fg2: #a1a1aa; /* secondary text */
-  --a-muted: #7c7c85; /* captions, meta */
+  --a-muted: #92929c; /* captions, meta */
   --a-faint: #55555c; /* placeholders, disabled */
 
   /* Accent — a single restrained thread of the surf brand's teal. */
@@ -83,6 +83,12 @@
 }
 .admin-scope .text-muted {
   color: var(--a-muted);
+}
+.admin-scope .wordmark.text-orange {
+  color: #fb923c;
+}
+.admin-scope .wordmark.text-teal {
+  color: #43b7cb;
 }
 /* Accents (exclude the brand wordmark, which keeps its orange/teal). */
 .admin-scope .text-teal:not(.wordmark) {
@@ -229,36 +235,5 @@
   font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas,
     "Liberation Mono", monospace;
   font-feature-settings: "tnum" 1, "cv01" 1;
-  letter-spacing: -0.01em;
-}
-
-/* Skeleton shimmer for loading states (matches token surfaces). */
-.admin-skeleton {
-  position: relative;
-  overflow: hidden;
-  background-color: var(--a-hover);
-  border-radius: 6px;
-}
-.admin-skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--a-surface) 60%, transparent),
-    transparent
-  );
-  animation: admin-shimmer 1.4s ease-in-out infinite;
-}
-@keyframes admin-shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .admin-skeleton::after {
-    animation: none;
-  }
+  letter-spacing: 0;
 }

@@ -15,6 +15,9 @@ from app.config import Settings, get_settings
 # --- redirect the app to the test database BEFORE engine creation ---------
 _TEST_URL = Settings().test_database_url
 os.environ["DATABASE_URL"] = _TEST_URL
+os.environ["APP_ENV"] = "test"
+os.environ["DEPLOYMENT_MODE"] = "admin"
+os.environ["ENABLE_ADMIN_API"] = "true"
 # Keep ERA5 background auto-processing off in tests (a dev .env may enable it);
 # tests that exercise it flip the setting explicitly.
 os.environ["ERA5_AUTOPROCESS"] = "false"
@@ -29,6 +32,7 @@ from sqlalchemy.exc import OperationalError  # noqa: E402
 
 from app.db.session import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
+from app.community.ratelimit import NoLimitRateLimiter, get_rate_limiter  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,6 +67,8 @@ def _migrated_db():
             conn.execute(text("CREATE SCHEMA public"))
         command.upgrade(_alembic_config(), "head")
     except OperationalError as exc:
+        if os.environ.get("CI"):
+            raise RuntimeError("CI integration database unavailable") from exc
         DB_AVAILABLE = False
         print(f"\n[tests] test database unavailable — DB tests skipped: {exc}")
     yield
@@ -113,7 +119,16 @@ def _login(c: TestClient, creds: dict) -> TestClient:
         "/auth/login", json={"email": creds["email"], "password": creds["password"]}
     )
     assert resp.status_code == 200, resp.text
+    c.headers["X-CSRF-Token"] = c.cookies.get(get_settings().csrf_cookie_name)
     return c
+
+
+@pytest.fixture(autouse=True)
+def _unlimited_default_rate_limiter():
+    """Keep general tests independent; limiter-specific tests replace this."""
+    app.dependency_overrides[get_rate_limiter] = lambda: NoLimitRateLimiter()
+    yield
+    app.dependency_overrides[get_rate_limiter] = lambda: NoLimitRateLimiter()
 
 
 @pytest.fixture

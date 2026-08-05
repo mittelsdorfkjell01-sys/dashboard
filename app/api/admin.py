@@ -17,7 +17,9 @@ from fastapi import (
     UploadFile,
 )
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.admin import dashboard as admin_dashboard
 from app.admin import notifications as admin_notifications
@@ -33,9 +35,12 @@ from app.db.session import get_db
 from app.api.community import ImageOut
 from app.search.deps import get_geocoder
 from app.media import (
+    HERO_MAX_BYTES,
     HERO_OUT_MAX_WIDTH,
     HeroImageError,
+    delete_url,
     reencode_image,
+    read_upload_limited,
     save_hero_image,
     validate_hero_image,
 )
@@ -110,6 +115,14 @@ def _maybe_autoprocess_era5(background: BackgroundTasks, spot_id, client) -> Non
         )
 
 
+def _catalog_conflict(db: Session, exc: IntegrityError) -> HTTPException:
+    db.rollback()
+    return HTTPException(
+        status_code=409,
+        detail="Name oder Slug ist bereits vergeben. Bitte den bestehenden Eintrag prüfen.",
+    )
+
+
 # --- dashboard (Sprint B) --------------------------------------------------
 
 @router.get("/overview")
@@ -120,9 +133,24 @@ def overview(db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/map-spots")
-def map_spots(db: Session = Depends(get_db)) -> list[dict]:
-    """All spots with coordinates for the admin map (id/name/status/lat/lon)."""
-    return admin_dashboard.map_spots(db)
+def map_spots(
+    db: Session = Depends(get_db),
+    west: float | None = Query(default=None, ge=-180, le=180),
+    south: float | None = Query(default=None, ge=-90, le=90),
+    east: float | None = Query(default=None, ge=-180, le=180),
+    north: float | None = Query(default=None, ge=-90, le=90),
+    limit: int = Query(default=5000, ge=1, le=5000),
+) -> list[dict]:
+    """Coordinate-only map records, optionally restricted to the viewport."""
+    values = (west, south, east, north)
+    if any(value is not None for value in values) and not all(
+        value is not None for value in values
+    ):
+        raise HTTPException(status_code=422, detail="Viewport-Grenzen müssen vollständig sein.")
+    bounds = values if all(value is not None for value in values) else None
+    if bounds is not None and (bounds[0] >= bounds[2] or bounds[1] >= bounds[3]):
+        raise HTTPException(status_code=422, detail="Viewport-Grenzen sind ungültig.")
+    return admin_dashboard.map_spots(db, bounds=bounds, limit=limit)
 
 
 @router.get("/spots")
@@ -164,6 +192,14 @@ def list_regions(db: Session = Depends(get_db)) -> list[dict]:
     ]
 
 
+@router.get("/regions/{region_id}/record", response_model=RegionRead)
+def get_region_record(region_id: uuid.UUID, db: Session = Depends(get_db)) -> RegionRead:
+    region = db.get(Region, region_id)
+    if region is None:
+        raise HTTPException(status_code=404, detail="Region not found")
+    return RegionRead.from_orm_region(region)
+
+
 # --- spots -----------------------------------------------------------------
 
 @router.post("/spots", response_model=SpotRead, status_code=201)
@@ -180,6 +216,13 @@ def create_spot(
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except admin_spots.DuplicateSpotError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "duplicate_spot", "message": str(exc), "candidates": exc.candidates},
+        )
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     _maybe_autoprocess_era5(background, spot.id, client)
     return SpotRead.from_orm_spot(spot)
 
@@ -203,6 +246,8 @@ def update_spot(
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return SpotRead.from_orm_spot(spot)
 
 
@@ -315,28 +360,42 @@ async def upload_image(
     image with ``source='upload'``, ``license='own'`` and the given credit."""
     if not (credit and credit.strip()):
         raise HTTPException(status_code=422, detail="Bild-Credit ist erforderlich.")
-    if db.get(Spot, spot_id) is None:
+    spot = db.get(Spot, spot_id)
+    if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
 
-    data = await file.read()
     try:
+        data = await read_upload_limited(file, HERO_MAX_BYTES)
         # Admin operators may upload below-minimum-resolution heroes (the client
         # shows a blur warning); format and landscape are still enforced.
-        validate_hero_image(data, file.content_type, allow_below_min=True)
-        out, ext, _, _ = reencode_image(data, max_width=HERO_OUT_MAX_WIDTH)
+        await run_in_threadpool(
+            validate_hero_image, data, file.content_type, allow_below_min=True
+        )
+        out, ext, _, _ = await run_in_threadpool(
+            reencode_image, data, max_width=HERO_OUT_MAX_WIDTH
+        )
     except HeroImageError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
     settings = get_settings()
-    url = save_hero_image(
+    old_url = (spot.image or {}).get("url") if isinstance(spot.image, dict) else None
+    url = await run_in_threadpool(
+        save_hero_image,
         spot_id, out, ext,
         media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
     )
-    spot = admin_spots.manage_spot_image(
-        spot_id,
-        {"url": url, "source": "upload", "license": "own", "credit": credit.strip()},
-        db=db, actor=actor,
-    )
+    try:
+        spot = admin_spots.manage_spot_image(
+            spot_id,
+            {"url": url, "source": "upload", "license": "own", "credit": credit.strip()},
+            db=db, actor=actor,
+        )
+    except Exception:
+        db.rollback()
+        delete_url(url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
+        raise
+    if old_url != url:
+        delete_url(old_url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
     return SpotRead.from_orm_spot(spot)
 
 
@@ -367,6 +426,14 @@ def effective_view(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
         return admin_spots.spot_effective_view(spot_id, db=db)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+
+
+@router.get("/spots/{spot_id}/record", response_model=SpotRead)
+def get_spot_record(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> SpotRead:
+    spot = db.get(Spot, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    return SpotRead.from_orm_spot(spot)
 
 
 @router.get("/spots/{spot_id}/readiness")
@@ -592,7 +659,10 @@ def create_region(
         if hit.get("bounds"):
             b = hit["bounds"]
             data["bounds"] = [b["min_lon"], b["min_lat"], b["max_lon"], b["max_lat"]]
-    region = admin_regions.create_region(data, db=db)
+    try:
+        region = admin_regions.create_region(data, db=db)
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return RegionRead.from_orm_region(region)
 
 
@@ -604,6 +674,8 @@ def update_defaults(
         region = admin_regions.update_region_defaults(region_id, body.defaults, db=db)
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return RegionRead.from_orm_region(region)
 
 
@@ -647,6 +719,8 @@ def update_region(
         region = admin_regions.update_region(region_id, body.to_data(), db=db)
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return RegionRead.from_orm_region(region)
 
 
@@ -730,28 +804,40 @@ async def upload_region_image(
 
     if not (credit and credit.strip()):
         raise HTTPException(status_code=422, detail="Bild-Credit ist erforderlich.")
-    if db.get(Region, region_id) is None:
+    region = db.get(Region, region_id)
+    if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
 
-    data = await file.read()
     try:
-        validate_hero_image(data, file.content_type)
-        out, ext, _, _ = reencode_image(data, max_width=HERO_OUT_MAX_WIDTH)
+        data = await read_upload_limited(file, HERO_MAX_BYTES)
+        await run_in_threadpool(validate_hero_image, data, file.content_type)
+        out, ext, _, _ = await run_in_threadpool(
+            reencode_image, data, max_width=HERO_OUT_MAX_WIDTH
+        )
     except HeroImageError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
     settings = get_settings()
     from app.media import save_region_hero_image
 
-    url = save_region_hero_image(
+    old_url = (region.image or {}).get("url") if isinstance(region.image, dict) else None
+    url = await run_in_threadpool(
+        save_region_hero_image,
         region_id, out, ext,
         media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
     )
-    region = admin_regions.set_region_image(
-        region_id,
-        {"url": url, "source": "upload", "license": "own", "credit": credit.strip()},
-        db=db,
-    )
+    try:
+        region = admin_regions.set_region_image(
+            region_id,
+            {"url": url, "source": "upload", "license": "own", "credit": credit.strip()},
+            db=db,
+        )
+    except Exception:
+        db.rollback()
+        delete_url(url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
+        raise
+    if old_url != url:
+        delete_url(old_url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
     return RegionRead.from_orm_region(region)
 
 

@@ -1,17 +1,11 @@
-"""Own full-text index over spots + regions (name, country, slug, aliases).
-
-Seed-scale data, so the "index" is an in-memory normalised match rather than a
-Postgres FTS column — accent-folded, case-insensitive, grouped into regions vs
-spots and ordered by match quality. Aliases live in a JSONB ``aliases`` list
-(``editorial.aliases`` on spots, ``defaults.aliases`` on regions).
-"""
+"""Indexed text search over the published spot and region catalogue."""
 
 from __future__ import annotations
 
 import unicodedata
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 # Match quality scores (higher = better).
@@ -93,9 +87,35 @@ def match_entities(
 
 
 def search_entities(query: str, *, db: Session) -> dict[str, list[Any]]:
-    """Full-text entity search over all spots + regions in the database."""
+    """Trigram-ranked search with hard limits and a mandatory published scope."""
     from app.models import Region, Spot
+    from app.public_catalog import PUBLISHED
 
-    spots = list(db.scalars(select(Spot)).all())
-    regions = list(db.scalars(select(Region)).all())
-    return match_entities(query, spots, regions)
+    query_n = normalize(query)
+    if not query_n:
+        return {"regionen": [], "spots": []}
+
+    def _query(model, extra_columns):
+        similarity = func.similarity(model.normalized_name, query_n)
+        exact_rank = case(
+            (model.normalized_name == query_n, 4.0),
+            (model.normalized_name.startswith(query_n), 2.0),
+            else_=similarity,
+        )
+        filters = [
+            model.normalized_name.op("%") (query_n),
+            model.normalized_name.startswith(query_n),
+            model.slug.ilike(f"%{query_n}%"),
+        ]
+        filters.extend(column.ilike(f"%{query_n}%") for column in extra_columns)
+        stmt = (
+            select(model)
+            .where(model.status == PUBLISHED, or_(*filters))
+            .order_by(exact_rank.desc(), model.name.asc())
+            .limit(20)
+        )
+        return list(db.scalars(stmt).all())
+
+    spots = _query(Spot, [])
+    regions = _query(Region, [Region.country])
+    return {"regionen": regions, "spots": spots}

@@ -4,19 +4,17 @@
 // dark mode without touching public styling. All colors come from the admin
 // tokens (see admin-theme.css); never hard-code hex here.
 
-import type { HTMLAttributes, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 /* ------------------------------------------------------------------------- */
-/* Page header — title + contextual description + right-aligned actions.     */
+/* Page header — one compact title plus right-aligned actions.               */
 /* ------------------------------------------------------------------------- */
 export function PageHeader({
   title,
-  description,
   actions,
   className = "",
 }: {
   title: ReactNode;
-  description?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }) {
@@ -25,12 +23,9 @@ export function PageHeader({
       className={`mb-6 flex flex-col gap-3 border-b border-admin-border pb-5 sm:flex-row sm:items-start sm:justify-between ${className}`}
     >
       <div className="min-w-0">
-        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.01em] text-admin-fg">
+        <h1 className="text-[22px] font-semibold leading-tight text-admin-fg">
           {title}
         </h1>
-        {description && (
-          <p className="mt-1 text-ui text-admin-muted">{description}</p>
-        )}
       </div>
       {actions && (
         <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
@@ -38,43 +33,6 @@ export function PageHeader({
     </div>
   );
 }
-
-/* ------------------------------------------------------------------------- */
-/* Section label — small uppercase caption over a group of controls/rows.    */
-/* ------------------------------------------------------------------------- */
-export function SectionLabel({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`text-caption font-semibold uppercase tracking-[0.08em] text-admin-muted ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------------- */
-/* Panel — the standard admin surface: hairline border, 8px radius, no drop  */
-/* shadow (borders carry the elevation, per the design language).            */
-/* ------------------------------------------------------------------------- */
-export function Panel({
-  className = "",
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      data-admin-tint
-      className={`rounded-lg border border-admin-border bg-admin-surface ${className}`}
-      {...props}
-    />
-  );
-}
-
 /* ------------------------------------------------------------------------- */
 /* Badge / status — small indicator dot + text. Color is never the only cue: */
 /* the label always carries the meaning.                                     */
@@ -138,40 +96,5 @@ export function Badge({
       )}
       {children}
     </span>
-  );
-}
-
-/* ------------------------------------------------------------------------- */
-/* Skeleton — loading placeholder that matches token surfaces + shimmers.    */
-/* ------------------------------------------------------------------------- */
-export function Skeleton({
-  className = "",
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return <div className={`admin-skeleton ${className}`} {...props} />;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Empty state — calm, centered, no illustration.                           */
-/* ------------------------------------------------------------------------- */
-export function EmptyState({
-  title,
-  hint,
-  action,
-  className = "",
-}: {
-  title: ReactNode;
-  hint?: ReactNode;
-  action?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`flex flex-col items-center justify-center rounded-lg border border-dashed border-admin-border bg-admin-surface px-6 py-14 text-center ${className}`}
-    >
-      <p className="text-ui font-medium text-admin-fg">{title}</p>
-      {hint && <p className="mt-1 max-w-sm text-label text-admin-muted">{hint}</p>}
-      {action && <div className="mt-4">{action}</div>}
-    </div>
   );
 }

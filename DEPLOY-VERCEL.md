@@ -20,7 +20,7 @@ The split is driven by two flags:
 | Flag | Public project | Admin project | Effect |
 |---|---|---|---|
 | `VITE_INCLUDE_ADMIN` (build) | *unset* | `true` | Admin UI compiled into the bundle only when `true`; the public build ships zero admin code (no admin chunk, no `/admin`/`/auth` strings). |
-| `ENABLE_ADMIN_API` (runtime) | `false` | *unset* (default `true`) | Public function drops the `/auth` + `/admin*` routers entirely — its origin exposes only public + community endpoints. |
+| `ENABLE_ADMIN_API` (runtime) | `false` | `true` | Public function drops the `/auth` + `/admin*` routers entirely. The default is fail-closed (`false`). |
 
 Both projects: **Root Directory = repo root** (so the full-stack `vercel.json`
 bundles `api/index.py`), same build command. Local `npm run dev` always includes
@@ -93,27 +93,33 @@ Directory = repo root** (the included `vercel.json` drives the build).
 | `BLOB_READ_WRITE_TOKEN` | (auto-added by each project's Blob store — leave it) |
 | `ERA5_AUTOPROCESS` | `false` (no background threads on serverless) |
 | `API_DEBUG` | `false` |
+| `APP_ENV` | `production` |
+| `COOKIE_SECURE` | `true` |
+| `JWT_SECRET` | independent `openssl rand -base64 48` secret per project |
 
 **Public project** (`surfwinddata.com`) — add only:
 
 | Key | Value |
 |---|---|
 | `ENABLE_ADMIN_API` | `false` (drops `/auth` + `/admin*`) |
+| `DEPLOYMENT_MODE` | `public` |
 
-*(no `VITE_INCLUDE_ADMIN`, no `JWT_SECRET`/`ADMIN_BOOTSTRAP_*` — the public build has no admin.)*
+*(no `VITE_INCLUDE_ADMIN` or `ADMIN_BOOTSTRAP_*` — the public build has no admin. `JWT_SECRET` is still required because public accounts use signed sessions.)*
 
 **Admin project** (`kjellmittelsdorf.de`) — add:
 
 | Key | Value |
 |---|---|
 | `VITE_INCLUDE_ADMIN` | `true` (compiles the admin UI into the build) |
-| `JWT_SECRET` | `openssl rand -base64 48` |
+| `DEPLOYMENT_MODE` | `admin` |
+| `ENABLE_ADMIN_API` | `true` |
 | `ADMIN_BOOTSTRAP_EMAIL` | your admin email |
 | `ADMIN_BOOTSTRAP_PASSWORD` | a strong password (change after first login) |
 | `COOKIE_SECURE` | `true` |
 | `TAKEDOWN_CONTACT_EMAIL` | e.g. `abuse@kjellmittelsdorf.de` |
 
-*(leave `ENABLE_ADMIN_API` unset — it defaults to `true`.)*
+Production configuration is validated at process start; unsafe combinations do
+not boot.
 
 3. **Deploy both.** Point `surfwinddata.com` at the public project and
    `kjellmittelsdorf.de` at the admin project (Settings → Domains).

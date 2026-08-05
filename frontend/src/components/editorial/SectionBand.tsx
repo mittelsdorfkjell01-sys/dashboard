@@ -75,7 +75,7 @@ export default function SectionBand({
       className={`${id ? "scroll-mt-24" : ""} ${TONE_BG[tone]}`}
     >
       <div
-        className={`mx-auto ${WIDTH_MAX[width]} ${
+        className={`mx-auto min-w-0 max-w-full ${WIDTH_MAX[width]} ${
           isBleed ? "px-0" : "px-4 sm:px-8"
         } ${PAD_Y[pad]} ${className}`}
       >

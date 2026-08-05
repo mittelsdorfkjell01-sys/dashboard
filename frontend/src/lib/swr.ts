@@ -19,6 +19,19 @@ interface Entry<T> {
 
 const store = new Map<string, Entry<unknown>>();
 const subscribers = new Map<string, Set<() => void>>();
+const MAX_ENTRIES = 200;
+const MAX_AGE_MS = 5 * 60 * 1000;
+
+function storeEntry(key: string, entry: Entry<unknown>) {
+  store.delete(key);
+  store.set(key, entry);
+  while (store.size > MAX_ENTRIES) {
+    const oldest = store.keys().next().value as string | undefined;
+    if (!oldest) break;
+    store.delete(oldest);
+    subscribers.delete(oldest);
+  }
+}
 
 function notify(key: string) {
   subscribers.get(key)?.forEach((fn) => fn());
@@ -34,21 +47,21 @@ export function revalidate<T>(
 
   const inflight = fetcher()
     .then((data) => {
-      store.set(key, { data, ts: Date.now() });
+      storeEntry(key, { data, ts: Date.now() });
     })
     .catch((err) => {
       const cur = store.get(key) as Entry<T> | undefined;
       // Keep stale data on a background failure; only surface an error when
       // there is nothing cached to show.
       if (cur && cur.data !== undefined) {
-        store.set(key, { data: cur.data, ts: cur.ts });
+        storeEntry(key, { data: cur.data, ts: cur.ts });
       } else {
-        store.set(key, { error: errMessage(err), ts: Date.now() });
+        storeEntry(key, { error: errMessage(err), ts: Date.now() });
       }
     })
     .finally(() => notify(key));
 
-  store.set(key, { ...(existing ?? {}), inflight });
+  storeEntry(key, { ...(existing ?? {}), inflight });
   return inflight;
 }
 
@@ -92,15 +105,17 @@ export function useSwr<T>(
     void revalidate(key, fetcher);
     return () => {
       set!.delete(force);
+      if (set!.size === 0) subscribers.delete(key);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   const entry = key ? (store.get(key) as Entry<T> | undefined) : undefined;
+  const expired = !!entry?.ts && Date.now() - entry.ts > MAX_AGE_MS;
   const hasData = !!entry && entry.data !== undefined;
   return {
-    data: hasData ? (entry!.data as T) : null,
-    loading: !!key && !hasData && !entry?.error,
+    data: hasData && !expired ? (entry!.data as T) : null,
+    loading: !!key && (!hasData || expired) && !entry?.error,
     error: entry?.error ?? null,
     reload: () => {
       if (key) void revalidate(key, fetcher);

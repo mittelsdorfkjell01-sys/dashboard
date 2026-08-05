@@ -2,8 +2,8 @@
 submissions, images and image reports.
 
 Pseudonymous by design — each carries an ``author``/``submitter`` name and an
-optional, non-public email. A nullable ``app_user_id`` is reserved for a future
-real-account system (kept unconstrained here — no users table yet). ``ip_hash``
+optional, non-public email. A nullable ``app_user_id`` links to a public account
+and becomes NULL when that account is deleted. ``ip_hash``
 holds a salted hash of the client IP for rate-limiting, never the raw address.
 
 Post-moderation: ratings/tips default to ``published`` and are hidden reactively;
@@ -54,7 +54,9 @@ class SpotRating(Base, TimestampMixin):
     conditions: Mapped[str] = mapped_column(Text, nullable=False)
     author_name: Mapped[str] = mapped_column(String(120), nullable=False)
     author_email: Mapped[str | None] = mapped_column(String(255))  # not public
-    app_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    app_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_users.id", ondelete="SET NULL")
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default=text("'published'")
     )
@@ -65,7 +67,12 @@ class SpotRating(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint("stars >= 1 AND stars <= 5", name="ck_rating_stars_1_5"),
+        CheckConstraint(
+            "status IN ('pending', 'published', 'rejected', 'hidden')",
+            name="ck_spot_ratings_status",
+        ),
         Index("ix_rating_spot", "spot_id"),
+        Index("ix_rating_app_user", "app_user_id"),
     )
 
 
@@ -79,7 +86,9 @@ class LocalTip(Base, TimestampMixin):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     author_name: Mapped[str] = mapped_column(String(120), nullable=False)
     author_email: Mapped[str | None] = mapped_column(String(255))
-    app_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    app_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_users.id", ondelete="SET NULL")
+    )
     # A reply points at the comment it answers (same table); top-level comments
     # have ``parent_id = NULL``. CASCADE so deleting a comment removes its
     # replies with it.
@@ -95,8 +104,13 @@ class LocalTip(Base, TimestampMixin):
     ip_hash: Mapped[str | None] = mapped_column(String(64))
 
     __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'published', 'rejected', 'hidden')",
+            name="ck_local_tips_status",
+        ),
         Index("ix_tip_spot", "spot_id"),
         Index("ix_tip_parent", "parent_id"),
+        Index("ix_tip_app_user", "app_user_id"),
     )
 
 
@@ -111,7 +125,9 @@ class SpotSubmission(Base, TimestampMixin):
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     submitter_name: Mapped[str] = mapped_column(String(120), nullable=False)
     submitter_email: Mapped[str | None] = mapped_column(String(255))
-    app_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    app_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_users.id", ondelete="SET NULL")
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default=text("'pending'")
     )
@@ -124,8 +140,18 @@ class SpotSubmission(Base, TimestampMixin):
     ip_hash: Mapped[str | None] = mapped_column(String(64))
 
     __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected', 'merged')",
+            name="ck_spot_submissions_status",
+        ),
         Index("ix_submission_status", "status"),
         Index("ix_submission_app_user", "app_user_id"),
+        Index(
+            "uq_submission_resulting_spot",
+            "resulting_spot_id",
+            unique=True,
+            postgresql_where=text("resulting_spot_id IS NOT NULL"),
+        ),
     )
 
 
@@ -148,7 +174,9 @@ class SpotImage(Base, TimestampMixin):
     )
     credit: Mapped[str | None] = mapped_column(String(200))  # name or IG handle
     submitter_email: Mapped[str | None] = mapped_column(String(255))
-    app_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    app_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_users.id", ondelete="SET NULL")
+    )
     # Nullable: images auto-fetched from an external source (Wikimedia Commons)
     # were never "accepted" by an uploader — there's no consent event to date.
     license_version: Mapped[str | None] = mapped_column(String(20))
@@ -167,7 +195,19 @@ class SpotImage(Base, TimestampMixin):
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ip_hash: Mapped[str | None] = mapped_column(String(64))
 
-    __table_args__ = (Index("ix_image_spot_status", "spot_id", "status"),)
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('gallery', 'hero_candidate')",
+            name="ck_spot_images_kind",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'published_hero', 'rejected', 'removed')",
+            name="ck_spot_images_status",
+        ),
+        CheckConstraint("report_count >= 0", name="ck_spot_images_report_count"),
+        Index("ix_image_spot_status", "spot_id", "status"),
+        Index("ix_image_app_user", "app_user_id"),
+    )
 
 
 class ImageReport(Base, TimestampMixin):

@@ -40,4 +40,6 @@ def current_account(
         raise HTTPException(
             status_code=401, detail="Konto nicht gefunden oder deaktiviert."
         )
+    if payload.get("ver") != user.session_version:
+        raise HTTPException(status_code=401, detail="Sitzung wurde widerrufen.")
     return user

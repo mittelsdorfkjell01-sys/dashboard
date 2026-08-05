@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import re
 import uuid
+from difflib import SequenceMatcher
 from typing import Any
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin.audit import record_audit
@@ -19,6 +20,7 @@ from app.admin.constants import (
     validate_water_characters,
     validate_water_types,
 )
+from app.names import available_slug, clean_display_name, normalize_name
 from app.admin.readiness import validate_spot_readiness
 from app.services.overrides import (
     OVERRIDABLE_FIELDS,
@@ -35,9 +37,12 @@ class NotReadyError(Exception):
         self.checklist = checklist
 
 
-def _slugify(name: str) -> str:
-    base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-    return base or uuid.uuid4().hex[:8]
+class DuplicateSpotError(ValueError):
+    """A likely duplicate was found close to the requested coordinates."""
+
+    def __init__(self, candidates: list[dict[str, str]]):
+        super().__init__("Ein sehr ähnlicher Spot existiert bereits in der Nähe.")
+        self.candidates = candidates
 
 
 def _point(lat: float, lon: float):
@@ -57,7 +62,12 @@ def _load(db: Session, spot_id):
 
 
 def create_spot(
-    data: dict, *, db: Session, client=None, actor: str | None = "admin"
+    data: dict,
+    *,
+    db: Session,
+    client=None,
+    actor: str | None = "admin",
+    commit: bool = True,
 ) -> Any:
     """Create a draft spot, inherit region defaults, and kick off the ERA5 job.
 
@@ -74,6 +84,20 @@ def create_spot(
     defaults = region.defaults or {}
 
     lat, lon = float(data["lat"]), float(data["lon"])
+    normalized = normalize_name(data["name"])
+    nearby = db.scalars(
+        select(Spot).where(
+            Spot.region_id == region.id,
+            func.ST_DWithin(Spot.location, _point(lat, lon), 5_000),
+        )
+    ).all()
+    duplicates = [
+        {"id": str(candidate.id), "name": candidate.name}
+        for candidate in nearby
+        if SequenceMatcher(None, normalized, candidate.normalized_name).ratio() >= 0.9
+    ]
+    if duplicates:
+        raise DuplicateSpotError(duplicates)
     editorial = dict(defaults.get("spot_template") or {})
     editorial.update(data.get("editorial") or {})
 
@@ -85,8 +109,8 @@ def create_spot(
     facilities = validate_facilities(data.get("facilities"))
 
     spot = Spot(
-        slug=data.get("slug") or _slugify(data["name"]),
-        name=data["name"],
+        slug=available_slug(db, Spot, data.get("slug") or data["name"]),
+        name=clean_display_name(data["name"]),
         region_id=region.id,
         location=_point(lat, lon),
         sports=data.get("sports") or [],
@@ -105,11 +129,12 @@ def create_spot(
     db.add(spot)
     db.flush()  # assign spot.id
     record_audit(db, spot.id, "create", {"name": spot.name}, actor)
-    db.commit()
-    db.refresh(spot)
+    if commit:
+        db.commit()
+        db.refresh(spot)
 
     # Best-effort ERA5 trigger (idempotent); never blocks spot creation.
-    if client is not None:
+    if commit and client is not None:
         from app.admin.jobs import trigger_era5_job
 
         try:

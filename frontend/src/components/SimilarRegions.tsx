@@ -19,7 +19,7 @@ export default function SimilarRegions({
   limit?: number;
 }) {
   const { data: regions } = useRegions();
-  const { data: spots } = useSpots({ status: "published" });
+  const { data: spots } = useSpots();
   if (!regions || !spots) return null;
 
   const byRegion = new Map<string, Spot[]>();

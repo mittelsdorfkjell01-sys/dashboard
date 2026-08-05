@@ -1,11 +1,12 @@
 import uuid
 
 from geoalchemy2 import Geography
-from sqlalchemy import ForeignKey, Index, SmallInteger, String, Float, text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, SmallInteger, String, Float, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.db.base import Base, TimestampMixin
+from app.names import clean_display_name, normalize_name
 
 
 class Spot(Base, TimestampMixin):
@@ -19,10 +20,11 @@ class Spot(Base, TimestampMixin):
     )
     slug: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(240), nullable=False)
 
     region_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("regions.id", ondelete="CASCADE"),
+        ForeignKey("regions.id", ondelete="RESTRICT"),
         nullable=True,
     )
 
@@ -82,12 +84,46 @@ class Spot(Base, TimestampMixin):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'published', 'archived')",
+            name="ck_spots_status",
+        ),
+        CheckConstraint(
+            "finish_rank IS NULL OR finish_rank IN ('red', 'yellow', 'green')",
+            name="ck_spots_finish_rank",
+        ),
+        CheckConstraint("facing IS NULL OR (facing >= 0 AND facing <= 359)", name="ck_spots_facing"),
         Index("ix_spots_location", "location", postgresql_using="gist"),
         Index("ix_spots_sports", "sports", postgresql_using="gin"),
         Index("ix_spots_style", "style", postgresql_using="gin"),
         Index("ix_spots_region_status", "region_id", "status"),
+        Index(
+            "ix_spots_normalized_name_trgm",
+            "normalized_name",
+            postgresql_using="gin",
+            postgresql_ops={"normalized_name": "gin_trgm_ops"},
+        ),
         # water_type + level are arrays now — GIN so membership filters
         # (``value = ANY(col)`` / ``@>``) stay indexed.
         Index("ix_spots_water_type", "water_type", postgresql_using="gin"),
         Index("ix_spots_level", "level", postgresql_using="gin"),
+        Index(
+            "uq_spots_region_normalized_name",
+            "region_id",
+            "normalized_name",
+            unique=True,
+            postgresql_where=text("region_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_spots_unassigned_normalized_name",
+            "normalized_name",
+            unique=True,
+            postgresql_where=text("region_id IS NULL"),
+        ),
     )
+
+    @validates("name")
+    def _set_name(self, _key: str, value: str) -> str:
+        cleaned = clean_display_name(value)
+        self.normalized_name = normalize_name(cleaned)
+        return cleaned

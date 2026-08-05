@@ -4,7 +4,7 @@
 // a direct link. Raw counters are demoted to a compact strip at the bottom.
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   ApiError,
   getAdminOverview,
@@ -16,6 +16,7 @@ import { gapLabel } from "../lib/labels";
 import { RANK_CARD, RANK_DOT } from "../lib/rank";
 import BoardPanel from "../components/admin/BoardPanel";
 import { Badge, type BadgeTone } from "../components/admin/ui";
+import { createAdminReturnState } from "../lib/adminNavigation";
 
 type Tone = "red" | "orange" | "teal";
 interface Task {
@@ -54,6 +55,8 @@ function buildTasks(data: AdminOverview): Task[] {
 }
 
 export default function AdminHome() {
+  const location = useLocation();
+  const editorState = createAdminReturnState(location, "Übersicht");
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +79,9 @@ export default function AdminHome() {
 
   return (
     <div>
+      <h1 className="mb-6 border-b border-admin-border pb-5 text-[22px] font-semibold leading-tight text-admin-fg">
+        Übersicht
+      </h1>
       {/* Region-less spots — most urgent, flagged red at the very top. */}
       {data.no_region.length > 0 && (
         <section className="mt-6 rounded-2xl border-2 border-red-400 bg-red-50/50 p-4">
@@ -91,6 +97,7 @@ export default function AdminHome() {
               <Link
                 key={s.id}
                 to={`/admin/spot/${s.id}/edit`}
+                state={editorState}
                 className="rounded-lg bg-white px-3 py-1.5 text-label font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-100"
               >
                 {s.name} →
@@ -104,7 +111,6 @@ export default function AdminHome() {
           "Fertigstellen" working list. Replaces the old Team-Notizen. */}
       <section className="mt-6">
         <h2 className="text-body font-semibold text-ink">Board</h2>
-        <p className="mt-1 text-label text-muted">Aufgaben fürs Team.</p>
         <div className="mt-3">
           <BoardPanel />
         </div>
@@ -154,11 +160,13 @@ export default function AdminHome() {
             title="Viel zu tun"
             rank="red"
             spots={data.finish.filter((f) => f.rank === "red")}
+            editorState={editorState}
           />
           <FinishColumn
             title="Fast fertig"
             rank="yellow"
             spots={data.finish.filter((f) => f.rank === "yellow")}
+            editorState={editorState}
           />
         </div>
       </section>
@@ -184,10 +192,12 @@ function FinishColumn({
   title,
   rank,
   spots,
+  editorState,
 }: {
   title: string;
   rank: Rank;
   spots: RankedSpot[];
+  editorState: ReturnType<typeof createAdminReturnState>;
 }) {
   return (
     <section className="rounded-lg border border-admin-border bg-admin-surface p-4">
@@ -204,6 +214,7 @@ function FinishColumn({
             <Link
               key={s.id}
               to={`/admin/spot/${s.id}/edit`}
+              state={editorState}
               className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 transition-colors hover:brightness-105 ${RANK_CARD[rank]}`}
             >
               <span className="min-w-0 flex-1">

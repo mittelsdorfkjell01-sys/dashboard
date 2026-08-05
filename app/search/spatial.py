@@ -13,6 +13,7 @@ from sqlalchemy import cast, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Spot
+from app.public_catalog import PUBLISHED
 
 # Adaptive-radius defaults for nearby search.
 START_RADIUS_KM = 25.0
@@ -34,9 +35,12 @@ def _within_radius(
     center = _point_geog(lat, lon)
     dist = func.ST_Distance(Spot.location, center).label("d")
     stmt = _sport_filter(
-        select(Spot, dist).where(func.ST_DWithin(Spot.location, center, radius_km * 1000.0)),
+        select(Spot, dist).where(
+            Spot.status == PUBLISHED,
+            func.ST_DWithin(Spot.location, center, radius_km * 1000.0),
+        ),
         sport,
-    ).order_by("d")
+    ).order_by("d").limit(2_000)
     return [(row[0], float(row[1])) for row in db.execute(stmt).all()]
 
 
@@ -55,13 +59,14 @@ def search_nearby_spots(
     ``min_results`` spots are found or ``max_km`` is reached.
     """
     lat, lon = point["lat"], point["lon"]
+    all_rows = _within_radius(db, lat, lon, max_km, sport)
     radius = start_km
-    rows: list[tuple[Spot, float]] = []
-    while True:
-        rows = _within_radius(db, lat, lon, radius, sport)
-        if len(rows) >= min_results or radius >= max_km:
+    while radius < max_km:
+        rows = [row for row in all_rows if row[1] <= radius * 1000]
+        if len(rows) >= min_results:
             return rows
         radius = min(radius * 2.0, max_km)
+    return all_rows
 
 
 def search_by_geometry(
@@ -95,10 +100,11 @@ def bounds_query(
     dist = func.ST_Distance(Spot.location, center).label("d")
     stmt = _sport_filter(
         select(Spot, dist).where(
+            Spot.status == PUBLISHED,
             func.ST_Within(cast(Spot.location, Geometry), envelope)
         ),
         sport,
-    ).order_by("d")
+    ).order_by("d").limit(2_000)
     return [(row[0], float(row[1])) for row in db.execute(stmt).all()]
 
 

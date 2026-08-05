@@ -27,7 +27,6 @@ export default function AdminActivity() {
     <div>
       <PageHeader
         title="Aktivität"
-        description="Letzte Änderungen durch das Team — pro Spot zusammengefasst (ein Eintrag je Spot, nicht je Aktion)."
         actions={
           <Input
             type="search"

@@ -12,7 +12,7 @@ effectively case-insensitive without needing the ``citext`` extension.
 
 import uuid
 
-from sqlalchemy import Boolean, DateTime, String, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Integer, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -43,7 +43,17 @@ class AdminUser(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("true")
     )
+    session_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     last_login_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
     # Presence heartbeat: refreshed (throttled) on every authenticated request
     # so the user table can show a real online/offline indicator.
     last_seen_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
+    totp_secret_encrypted: Mapped[str | None] = mapped_column(String(512))
+    totp_enabled_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
+    totp_last_step: Mapped[int | None] = mapped_column(Integer)
+
+    __table_args__ = (
+        CheckConstraint("role IN ('admin', 'curator')", name="ck_admin_users_role"),
+    )

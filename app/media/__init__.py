@@ -13,6 +13,7 @@ from app.media.hero import (
     HERO_OUT_QUALITY,
     HeroImageError,
     reencode_image,
+    read_upload_limited,
     save_hero_image,
     save_region_hero_image,
     save_spot_image,
@@ -24,6 +25,7 @@ from app.media.license import (
     IMAGE_LICENSE_VERSION,
     license_terms,
 )
+from app.media.storage import delete_url
 
 __all__ = [
     "HERO_MAX_BYTES",
@@ -38,6 +40,7 @@ __all__ = [
     "GALLERY_OUT_QUALITY",
     "HeroImageError",
     "reencode_image",
+    "read_upload_limited",
     "save_hero_image",
     "save_region_hero_image",
     "save_spot_image",
@@ -46,4 +49,5 @@ __all__ = [
     "IMAGE_LICENSE_TERMS",
     "IMAGE_LICENSE_VERSION",
     "license_terms",
+    "delete_url",
 ]

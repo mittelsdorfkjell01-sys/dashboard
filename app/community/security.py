@@ -15,10 +15,14 @@ from app.config import get_settings
 
 
 def client_ip(request: Request) -> str:
-    """Best-effort client IP, honouring a single X-Forwarded-For hop."""
+    """Client IP resolved only through an explicitly trusted proxy depth."""
     fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
+    trusted_hops = max(0, get_settings().trusted_proxy_hops)
+    if fwd and trusted_hops:
+        chain = [part.strip() for part in fwd.split(",") if part.strip()]
+        if chain:
+            index = max(0, len(chain) - trusted_hops)
+            return chain[index]
     return request.client.host if request.client else ""
 
 

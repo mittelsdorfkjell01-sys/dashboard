@@ -141,17 +141,6 @@ export interface MonthWind {
   weeks: number[];
 }
 
-/** "Right now" readings for the live strip. */
-export interface LiveConditions {
-  wind: number;
-  gust: number;
-  windDir: number;
-  wave: number;
-  period: number;
-  waterTemp: number;
-  airTemp: number;
-}
-
 export interface SpotFact {
   label: string;
   value: string;

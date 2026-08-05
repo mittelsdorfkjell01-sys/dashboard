@@ -32,7 +32,7 @@ export default function SearchBar() {
 
   // "Wohin?" results (owned here so ↑/↓/Enter can navigate them). Spots first,
   // then Regionen — the flat order the arrow keys move through.
-  const { data: spots } = useSpots({ status: "published" });
+  const { data: spots } = useSpots();
   const { data: regions } = useRegions();
   const q = val.whereText.trim().toLowerCase();
   const regionById = useMemo(

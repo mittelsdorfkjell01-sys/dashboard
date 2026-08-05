@@ -12,7 +12,7 @@ const SIZE: Record<WordmarkSize, { brand: string; data: string }> = {
   sm: { brand: "text-[18px]", data: "text-[10px]" },
   md: { brand: "text-[26px] sm:text-[30px]", data: "text-[13px] sm:text-[15px]" },
   lg: { brand: "text-[32px]", data: "text-[16px]" },
-  xl: { brand: "text-[46px] sm:text-[58px]", data: "text-[22px] sm:text-[28px]" },
+  xl: { brand: "text-[34px] sm:text-[58px]", data: "text-[16px] sm:text-[28px]" },
 };
 
 export default function Wordmark({

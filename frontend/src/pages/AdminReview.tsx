@@ -3,7 +3,7 @@
 // and the list refreshes after a decision.
 
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { resolveMediaUrl } from "../lib/api";
 import {
   ApiError,
@@ -14,6 +14,8 @@ import {
   getReviewQueue,
   hideRating,
   hideTip,
+  restoreRating,
+  restoreTip,
   rejectImage,
   rejectSubmission,
   removeImage,
@@ -25,6 +27,7 @@ import {
 import { SPORT_LABELS } from "../lib/labels";
 import PromptDialog from "../components/ui/PromptDialog";
 import { PageHeader, Badge } from "../components/admin/ui";
+import { createAdminReturnState } from "../lib/adminNavigation";
 
 type Tab = "submissions" | "hero" | "gallery" | "reported" | "content";
 
@@ -41,9 +44,13 @@ const TABS: { key: Tab; label: string; count: (q: ReviewQueue) => number }[] = [
 ];
 
 export default function AdminReview() {
+  const [params, setParams] = useSearchParams();
   const [queue, setQueue] = useState<ReviewQueue | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
-  const [tab, setTab] = useState<Tab>("submissions");
+  const requestedTab = params.get("tab");
+  const tab: Tab = TABS.some((item) => item.key === requestedTab)
+    ? (requestedTab as Tab)
+    : "submissions";
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -95,11 +102,17 @@ export default function AdminReview() {
     run: (note?: string) => Promise<unknown>
   ) => setNoteAction({ title, confirmText, run });
 
+  const selectTab = (nextTab: Tab) => {
+    const next = new URLSearchParams(params);
+    if (nextTab === "submissions") next.delete("tab");
+    else next.set("tab", nextTab);
+    setParams(next, { replace: true });
+  };
+
   return (
     <div>
       <PageHeader
         title="Review"
-        description="Nutzer-Beiträge sichten und entscheiden. Jede Aktion wird protokolliert."
       />
 
       {error && (
@@ -114,7 +127,7 @@ export default function AdminReview() {
           <button
             key={t.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => selectTab(t.key)}
             className={`-mb-px flex items-center gap-2 border-b-2 px-3 py-2 text-ui font-medium transition-colors ${
               tab === t.key
                 ? "border-admin-primary text-admin-fg"
@@ -257,9 +270,15 @@ export default function AdminReview() {
                       <p className="mt-1 text-ui text-admin-fg">{r.conditions}</p>
                     </div>
                     <Actions>
-                      <Reject busy={busy} onClick={() => act(() => hideRating(r.id))}>
-                        Verbergen
-                      </Reject>
+                      {r.status === "hidden" ? (
+                        <Neutral busy={busy} onClick={() => act(() => restoreRating(r.id))}>
+                          Wiederherstellen
+                        </Neutral>
+                      ) : (
+                        <Reject busy={busy} onClick={() => act(() => hideRating(r.id))}>
+                          Verbergen
+                        </Reject>
+                      )}
                     </Actions>
                   </Card>
                 ))}
@@ -273,9 +292,15 @@ export default function AdminReview() {
                       <p className="mt-1 text-ui text-admin-fg">{t.body}</p>
                     </div>
                     <Actions>
-                      <Reject busy={busy} onClick={() => act(() => hideTip(t.id))}>
-                        Verbergen
-                      </Reject>
+                      {t.status === "hidden" ? (
+                        <Neutral busy={busy} onClick={() => act(() => restoreTip(t.id))}>
+                          Wiederherstellen
+                        </Neutral>
+                      ) : (
+                        <Reject busy={busy} onClick={() => act(() => hideTip(t.id))}>
+                          Verbergen
+                        </Reject>
+                      )}
                     </Actions>
                   </Card>
                 ))}
@@ -499,6 +524,8 @@ function ImagePreview({
   spotId: string;
   badge?: string;
 }) {
+  const location = useLocation();
+  const editorState = createAdminReturnState(location, "Review");
   return (
     <div className="flex min-w-0 items-start gap-3">
       <img
@@ -509,7 +536,11 @@ function ImagePreview({
       <div className="min-w-0 text-label">
         {credit && <div className="text-ink">Credit: {credit}</div>}
         {badge && <div className="font-medium text-ink">{badge}</div>}
-        <Link to={`/admin/spot/${spotId}/edit`} className="text-muted hover:underline">
+        <Link
+          to={`/admin/spot/${spotId}/edit`}
+          state={editorState}
+          className="text-muted hover:underline"
+        >
           Zum Spot
         </Link>
       </div>

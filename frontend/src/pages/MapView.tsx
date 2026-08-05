@@ -23,7 +23,7 @@ const pinIcon = L.divIcon({
 export default function MapView() {
   const navigate = useNavigate();
   const [map, setMap] = useState<LeafletMap | null>(null);
-  const { data: spots } = useSpots({ status: "published" });
+  const { data: spots } = useSpots();
 
   const withCoords = useMemo(
     () => (spots ?? []).filter((s) => s.coords),

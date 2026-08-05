@@ -29,12 +29,13 @@ _ALG = "HS256"
 _TYP = "app"
 
 
-def create_app_session_token(user_id: uuid.UUID) -> str:
+def create_app_session_token(user_id: uuid.UUID, session_version: int = 0) -> str:
     settings = get_settings()
     now = dt.datetime.now(dt.timezone.utc)
     payload = {
         "sub": str(user_id),
         "typ": _TYP,
+        "ver": session_version,
         "iat": now,
         "exp": now + dt.timedelta(hours=settings.app_jwt_ttl_hours),
     }

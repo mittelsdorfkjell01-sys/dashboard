@@ -1,7 +1,8 @@
 from functools import lru_cache
-from typing import Annotated
+from datetime import datetime, timezone
+from typing import Annotated, Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -34,6 +35,11 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
 
+    # Production must declare both values explicitly. Admin exposure defaults to
+    # off, so a missing environment variable cannot publish the back office.
+    app_env: Literal["development", "test", "production"] = "development"
+    deployment_mode: Literal["development", "public", "admin"] = "development"
+
     api_title: str = "Surfwinddate API"
     api_debug: bool = True
 
@@ -41,12 +47,13 @@ class Settings(BaseSettings):
     # runs the admin bootstrap. True on the admin deployment (kjellmittelsdorf.de);
     # set ENABLE_ADMIN_API=false on the public deployment (surfwinddata.com) so its
     # origin serves only the public + community endpoints — no /auth, no /admin.
-    enable_admin_api: bool = True
+    enable_admin_api: bool = False
 
     # Browser origins allowed to call the API (CORS). The Vite dev server runs on
     # 5173 by default. NoDecode keeps pydantic-settings from JSON-parsing the env
     # var so the validator below can accept a comma-separated list too.
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    trusted_proxy_hops: int = 0
 
     # Where uploaded hero images are stored on disk, and the URL prefix they are
     # served from (StaticFiles mount in app.main). The stored image URL is
@@ -87,6 +94,63 @@ class Settings(BaseSettings):
             return [o.strip() for o in s.split(",") if o.strip()]
         return v
 
+    @field_validator("break_glass_allowed_ips", mode="before")
+    @classmethod
+    def _split_ips(cls, v):
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
+
+    @model_validator(mode="after")
+    def _validate_deployment_security(self):
+        if self.deployment_mode == "public" and self.enable_admin_api:
+            raise ValueError("Public deployments must set ENABLE_ADMIN_API=false")
+        if self.deployment_mode == "admin" and not self.enable_admin_api:
+            raise ValueError("Admin deployments must set ENABLE_ADMIN_API=true")
+
+        if self.app_env == "production":
+            errors: list[str] = []
+            if self.deployment_mode == "development":
+                errors.append("DEPLOYMENT_MODE must be public or admin")
+            if self.api_debug:
+                errors.append("API_DEBUG must be false")
+            if not self.cookie_secure:
+                errors.append("COOKIE_SECURE must be true")
+            if (
+                self.jwt_secret == "dev-insecure-change-me"
+                or len(self.jwt_secret.encode("utf-8")) < 32
+            ):
+                errors.append("JWT_SECRET must be a unique secret of at least 32 bytes")
+            if any(origin.startswith("http://") for origin in self.cors_origins):
+                errors.append("CORS_ORIGINS must use HTTPS in production")
+            if self.deployment_mode == "admin" and not self.mfa_encryption_key:
+                errors.append("MFA_ENCRYPTION_KEY must be set on admin deployments")
+            elif self.deployment_mode == "admin":
+                try:
+                    from cryptography.fernet import Fernet
+
+                    Fernet((self.mfa_encryption_key or "").encode("ascii"))
+                except (ValueError, TypeError):
+                    errors.append("MFA_ENCRYPTION_KEY must be a valid Fernet key")
+            if not self.password_breach_check_enabled:
+                errors.append("PASSWORD_BREACH_CHECK_ENABLED must be true")
+            if self.admin_key:
+                try:
+                    expiry = datetime.fromisoformat(
+                        (self.break_glass_expires_at or "").replace("Z", "+00:00")
+                    )
+                    if expiry.tzinfo is None:
+                        raise ValueError
+                    if expiry <= datetime.now(timezone.utc):
+                        errors.append("BREAK_GLASS_EXPIRES_AT must be in the future")
+                except ValueError:
+                    errors.append("BREAK_GLASS_EXPIRES_AT must be a timezone-aware ISO timestamp")
+                if not self.break_glass_allowed_ips:
+                    errors.append("BREAK_GLASS_ALLOWED_IPS must restrict ADMIN_KEY use")
+            if errors:
+                raise ValueError("Unsafe production configuration: " + "; ".join(errors))
+        return self
+
     # Directory where ERA5 raw extracts (Parquet) are stored by the pipeline.
     era5_raw_dir: str = "data/era5_raw"
 
@@ -126,6 +190,8 @@ class Settings(BaseSettings):
     # X-Admin-Key is accepted as an emergency admin (actor="break-glass"). The
     # regular path is the cookie session below. Default None => break-glass off.
     admin_key: str | None = None
+    break_glass_expires_at: str | None = None
+    break_glass_allowed_ips: Annotated[list[str], NoDecode] = []
 
     # --- Admin auth (Sprint A) ---------------------------------------------
     # Secret used to sign the session JWT. MUST be overridden in production; the
@@ -135,6 +201,7 @@ class Settings(BaseSettings):
     jwt_ttl_hours: int = 12
     # httpOnly cookie carrying the session JWT.
     auth_cookie_name: str = "swd_session"
+    csrf_cookie_name: str = "swd_csrf"
     # Set True behind HTTPS in production so the cookie is only sent over TLS.
     cookie_secure: bool = False
     # SameSite policy for the session cookie ("lax" is right for a same-site SPA).
@@ -144,6 +211,10 @@ class Settings(BaseSettings):
     # admin is created from these. Never hard-code a password default.
     admin_bootstrap_email: str | None = None
     admin_bootstrap_password: str | None = None
+    # Fernet key used to encrypt TOTP seeds at rest. Keep it stable across
+    # deploys; rotating it requires re-enrolling every enabled account.
+    mfa_encryption_key: str | None = None
+    password_breach_check_enabled: bool = False
 
     # --- Public accounts (visitor sign-up) ---------------------------------
     # Separate session cookie from the admin one, so a visitor account and an
@@ -155,7 +226,8 @@ class Settings(BaseSettings):
     # get the shorter jwt_ttl_hours above.
     app_jwt_ttl_hours: int = 720  # 30 days
     # Minimum password length enforced on registration / change (mirrors the FE).
-    app_password_min_length: int = 6
+    app_password_min_length: int = 12
+    ugc_personal_data_retention_days: int = 90
 
     # Contact address surfaced by the take-down / image-report flow (Sprint C).
     takedown_contact_email: str | None = None

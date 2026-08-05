@@ -8,7 +8,7 @@ import {
   archiveSpot,
   getEra5Status,
   getReadiness,
-  getSpot,
+  getAdminSpot,
   goLiveSpot,
   reactivateSpot,
   setFinishRank as saveFinishRank,
@@ -53,7 +53,7 @@ export default function SpotOpsPanel({
   const refresh = useCallback(async () => {
     const [r, spot, e] = await Promise.all([
       getReadiness(spotId).catch(() => null),
-      getSpot(spotId).catch(() => null),
+      getAdminSpot(spotId).catch(() => null),
       getEra5Status(spotId).catch(() => null),
     ]);
     setReadiness(r);

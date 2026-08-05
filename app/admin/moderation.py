@@ -113,17 +113,17 @@ def review_queue(db: Session) -> dict[str, Any]:
         .where(SpotImage.report_count > 0)
         .order_by(SpotImage.report_count.desc())
     ).all()
-    # Show all *published* tips/ratings (flagged first) so the operator can hide
-    # any of them — they go live immediately (post-moderation).
+    # Include hidden rows so moderation decisions remain reversible in the same
+    # workflow instead of requiring a spot-specific maintenance route.
     tips = db.scalars(
         select(LocalTip)
-        .where(LocalTip.status == "published")
+        .where(LocalTip.status.in_(("published", "hidden")))
         .order_by(LocalTip.flagged.desc(), LocalTip.created_at.desc())
         .limit(100)
     ).all()
     ratings = db.scalars(
         select(SpotRating)
-        .where(SpotRating.status == "published")
+        .where(SpotRating.status.in_(("published", "hidden")))
         .order_by(SpotRating.flagged.desc(), SpotRating.created_at.desc())
         .limit(100)
     ).all()
@@ -232,7 +232,11 @@ def approve_submission(
 
     from app.schemas.admin import SpotCreate
 
-    sub = db.get(SpotSubmission, submission_id)
+    sub = db.scalar(
+        select(SpotSubmission)
+        .where(SpotSubmission.id == submission_id)
+        .with_for_update()
+    )
     if sub is None:
         raise LookupError("submission not found")
     if sub.status != "pending":
@@ -243,7 +247,9 @@ def approve_submission(
         data = SpotCreate.model_validate(merged).to_data()
     except ValidationError as exc:
         raise IncompleteSubmissionError(_incomplete_message(exc)) from exc
-    spot = admin_spots.create_spot(data, db=db, client=client, actor=actor)
+    spot = admin_spots.create_spot(
+        data, db=db, client=None, actor=actor, commit=False
+    )
 
     sub.status = "merged"
     sub.resulting_spot_id = spot.id
@@ -254,13 +260,27 @@ def approve_submission(
         target_type="submission", target_id=sub.id, note=f"spot {spot.id}",
     )
     db.commit()
+    db.refresh(spot)
+    if client is not None:
+        from app.admin.jobs import trigger_era5_job
+
+        try:
+            trigger_era5_job(spot.id, db=db, client=client)
+        except Exception:
+            db.rollback()
     return spot
 
 
 def reject_submission(db: Session, submission_id, *, actor: str, note: str | None = None) -> None:
-    sub = db.get(SpotSubmission, submission_id)
+    sub = db.scalar(
+        select(SpotSubmission)
+        .where(SpotSubmission.id == submission_id)
+        .with_for_update()
+    )
     if sub is None:
         raise LookupError("submission not found")
+    if sub.status != "pending":
+        raise ValueError(f"submission already {sub.status}")
     sub.status = "rejected"
     sub.review_note = note
     sub.reviewed_by = actor
@@ -275,7 +295,9 @@ def reject_submission(db: Session, submission_id, *, actor: str, note: str | Non
 # --- images ----------------------------------------------------------------
 
 def _get_image(db: Session, image_id) -> SpotImage:
-    img = db.get(SpotImage, image_id)
+    img = db.scalar(
+        select(SpotImage).where(SpotImage.id == image_id).with_for_update()
+    )
     if img is None:
         raise LookupError("image not found")
     return img
@@ -287,6 +309,8 @@ def approve_image(db: Session, image_id, *, actor: str) -> SpotImage:
     (uploaded via the standalone "add a photo" form, decoupled from the
     composer) is simply marked approved and becomes publicly visible."""
     img = _get_image(db, image_id)
+    if img.status != "pending":
+        raise ValueError(f"image cannot be approved from {img.status}")
     if img.kind == "hero_candidate":
         return approve_hero_image(db, image_id, actor=actor)
     img.status = "approved"
@@ -304,6 +328,8 @@ def approve_image(db: Session, image_id, *, actor: str) -> SpotImage:
 def approve_hero_image(db: Session, image_id, *, actor: str) -> SpotImage:
     """Promote a hero candidate to the spot's hero image (``spot.image`` JSONB)."""
     img = _get_image(db, image_id)
+    if img.status != "pending":
+        raise ValueError(f"hero image cannot be approved from {img.status}")
     admin_spots.manage_spot_image(
         img.spot_id,
         {
@@ -328,6 +354,8 @@ def approve_hero_image(db: Session, image_id, *, actor: str) -> SpotImage:
 
 def reject_image(db: Session, image_id, *, actor: str, note: str | None = None) -> SpotImage:
     img = _get_image(db, image_id)
+    if img.status != "pending":
+        raise ValueError(f"image cannot be rejected from {img.status}")
     img.status = "rejected"
     img.reviewed_by = actor
     img.reviewed_at = _now()
@@ -342,6 +370,8 @@ def reject_image(db: Session, image_id, *, actor: str, note: str | None = None) 
 
 def remove_image(db: Session, image_id, *, actor: str, note: str | None = None) -> SpotImage:
     img = _get_image(db, image_id)
+    if img.status not in ("approved", "published_hero"):
+        raise ValueError(f"image cannot be removed from {img.status}")
     img.status = "removed"
     img.reviewed_by = actor
     img.reviewed_at = _now()
@@ -356,6 +386,8 @@ def remove_image(db: Session, image_id, *, actor: str, note: str | None = None) 
 
 def dismiss_reports(db: Session, image_id, *, actor: str) -> SpotImage:
     img = _get_image(db, image_id)
+    if img.report_count <= 0:
+        raise ValueError("image has no reports")
     img.report_count = 0
     # clear the underlying report rows too
     for rep in db.scalars(select(ImageReport).where(ImageReport.image_id == img.id)).all():
@@ -372,9 +404,12 @@ def dismiss_reports(db: Session, image_id, *, actor: str) -> SpotImage:
 # --- tips & ratings --------------------------------------------------------
 
 def set_tip_status(db: Session, tip_id, status: str, *, actor: str) -> LocalTip:
-    tip = db.get(LocalTip, tip_id)
+    tip = db.scalar(select(LocalTip).where(LocalTip.id == tip_id).with_for_update())
     if tip is None:
         raise LookupError("tip not found")
+    expected = "published" if status == "hidden" else "hidden"
+    if tip.status != expected:
+        raise ValueError(f"tip cannot change from {tip.status} to {status}")
     tip.status = status
     if status != "hidden":
         tip.flagged = False
@@ -388,9 +423,14 @@ def set_tip_status(db: Session, tip_id, status: str, *, actor: str) -> LocalTip:
 
 
 def set_rating_status(db: Session, rating_id, status: str, *, actor: str) -> SpotRating:
-    rating = db.get(SpotRating, rating_id)
+    rating = db.scalar(
+        select(SpotRating).where(SpotRating.id == rating_id).with_for_update()
+    )
     if rating is None:
         raise LookupError("rating not found")
+    expected = "published" if status == "hidden" else "hidden"
+    if rating.status != expected:
+        raise ValueError(f"rating cannot change from {rating.status} to {status}")
     rating.status = status
     if status != "hidden":
         rating.flagged = False

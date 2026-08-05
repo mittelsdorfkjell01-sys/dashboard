@@ -3,7 +3,7 @@
 // which spots belong to it (reassign in/out — fixes wrong auto-assignment).
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   ApiError,
   assignSpotRegion,
@@ -11,8 +11,8 @@ import {
   bulkUnassignSpotRegion,
   computeRegionMonths,
   deleteRegion,
+  getAdminRegion,
   getAdminSpots,
-  getRegion,
   getAdminRegionsFlat,
   publishRegion,
   unpublishRegion,
@@ -30,6 +30,11 @@ import ConflictDialog from "../components/admin/ConflictDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { Button, Input, Textarea } from "../components/ui";
 import { Badge } from "../components/admin/ui";
+import AdminBackButton, {
+  useAdminBackNavigation,
+} from "../components/admin/AdminBackButton";
+import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 
 const label = "text-label font-medium text-admin-fg";
 const MONTHS_SHORT = [
@@ -39,7 +44,11 @@ const MONTHS_SHORT = [
 
 export default function AdminRegionForm() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const back = useAdminBackNavigation({
+    fallbackTo: "/admin/regions",
+    fallbackLabel: "Regionen",
+  });
+  const { blocker, markDirty, markClean } = useUnsavedChangesGuard();
 
   const [region, setRegion] = useState<Region | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -76,7 +85,7 @@ export default function AdminRegionForm() {
 
   const loadRegion = async () => {
     if (!id) return;
-    const r = await getRegion(id);
+    const r = await getAdminRegion(id);
     setRegion(r);
     setName(r.name);
     setCountry(r.country ?? "");
@@ -85,6 +94,7 @@ export default function AdminRegionForm() {
       Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
     );
     setSeasonMode(r.season?.mode === "auto" ? "auto" : "manual");
+    markClean();
   };
 
   const computeMonths = async () => {
@@ -98,6 +108,7 @@ export default function AdminRegionForm() {
         Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
       );
       setSeasonMode("auto");
+      markClean("season");
       flash("Windmonate aus der Spot-Klimatologie berechnet.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Berechnen fehlgeschlagen.");
@@ -156,6 +167,8 @@ export default function AdminRegionForm() {
         expected_updated_at: force ? undefined : region?.updated_at,
       });
       setRegion(updated);
+      markClean("fields");
+      markClean("season");
       flash("Region gespeichert.");
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -184,6 +197,7 @@ export default function AdminRegionForm() {
       });
       setRegion(r);
       setImgUrl("");
+      markClean("image");
       flash("Titelbild gesetzt.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Bild setzen fehlgeschlagen.");
@@ -208,6 +222,7 @@ export default function AdminRegionForm() {
     try {
       const r = await uploadRegionImage(id, file, imgCredit.trim());
       setRegion(r);
+      markClean("image");
       flash("Titelbild hochgeladen.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Upload fehlgeschlagen.");
@@ -277,7 +292,8 @@ export default function AdminRegionForm() {
 
   const toggle = (set: Set<string>, sid: string) => {
     const next = new Set(set);
-    next.has(sid) ? next.delete(sid) : next.add(sid);
+    if (next.has(sid)) next.delete(sid);
+    else next.add(sid);
     return next;
   };
 
@@ -287,7 +303,8 @@ export default function AdminRegionForm() {
     setError(null);
     try {
       await deleteRegion(id);
-      navigate("/admin/regions");
+      markClean();
+      back.goBack();
     } catch (err) {
       setDeleteOpen(false);
       setError(err instanceof ApiError ? err.message : "Löschen fehlgeschlagen.");
@@ -302,14 +319,8 @@ export default function AdminRegionForm() {
 
   return (
     <div className="w-full">
-      <button
-        type="button"
-        onClick={() => navigate("/admin/regions")}
-        className="text-label text-admin-muted transition-colors hover:text-admin-fg"
-      >
-        ← Regionen
-      </button>
-      <h1 className="mt-2 border-b border-admin-border pb-5 text-[22px] font-semibold leading-tight tracking-[-0.01em] text-admin-fg">
+      <AdminBackButton onClick={back.goBack} label={back.label} />
+      <h1 className="mt-2 border-b border-admin-border pb-5 text-[22px] font-semibold leading-tight text-admin-fg">
         Region bearbeiten — {region.name}
       </h1>
 
@@ -331,14 +342,24 @@ export default function AdminRegionForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className={label}>Name</span>
-            <Input className="mt-1.5" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              className="mt-1.5"
+              value={name}
+              onChange={(e) => {
+                markDirty("fields");
+                setName(e.target.value);
+              }}
+            />
           </label>
           <label className="block">
             <span className={label}>Land</span>
             <Input
               className="mt-1.5"
               value={country}
-              onChange={(e) => setCountry(e.target.value)}
+              onChange={(e) => {
+                markDirty("fields");
+                setCountry(e.target.value);
+              }}
               placeholder="z. B. DE"
             />
           </label>
@@ -348,7 +369,10 @@ export default function AdminRegionForm() {
           <Textarea
             className="mt-1.5 min-h-[120px] resize-y"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              markDirty("fields");
+              setDescription(e.target.value);
+            }}
             placeholder="Beschreibung der Region…"
           />
         </label>
@@ -359,7 +383,10 @@ export default function AdminRegionForm() {
             <div className="inline-flex overflow-hidden rounded-lg border border-line">
               <button
                 type="button"
-                onClick={() => setSeasonMode("manual")}
+                onClick={() => {
+                  markDirty("season");
+                  setSeasonMode("manual");
+                }}
                 className={`px-3 py-1 text-label font-medium ${
                   seasonMode === "manual" ? "bg-teal text-white" : "bg-white text-ink hover:bg-teal/5"
                 }`}
@@ -393,13 +420,14 @@ export default function AdminRegionForm() {
                   key={month}
                   type="button"
                   disabled={locked}
-                  onClick={() =>
+                  onClick={() => {
+                    markDirty("season");
                     setBestMonths((prev) =>
                       prev.includes(month)
                         ? prev.filter((x) => x !== month)
                         : [...prev, month]
-                    )
-                  }
+                    );
+                  }}
                   className={`rounded-lg px-3 py-1.5 text-label font-medium ${
                     on
                       ? "bg-teal text-white"
@@ -440,13 +468,19 @@ export default function AdminRegionForm() {
           <div className="min-w-[240px] flex-1 space-y-2">
             <Input
               value={imgCredit}
-              onChange={(e) => setImgCredit(e.target.value)}
+              onChange={(e) => {
+                markDirty("image");
+                setImgCredit(e.target.value);
+              }}
               placeholder="Credit / Urheber (für Upload Pflicht)"
             />
             <div className="flex gap-2">
               <Input
                 value={imgUrl}
-                onChange={(e) => setImgUrl(e.target.value)}
+                onChange={(e) => {
+                  markDirty("image");
+                  setImgUrl(e.target.value);
+                }}
                 placeholder="Bild-URL setzen"
               />
               <button
@@ -458,7 +492,7 @@ export default function AdminRegionForm() {
                 Setzen
               </button>
             </div>
-            <div>
+    <div className="pb-20 xl:pb-0">
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -740,6 +774,24 @@ export default function AdminRegionForm() {
         }}
         onClose={() => setConflictOpen(false)}
       />
+      <UnsavedChangesDialog blocker={blocker} />
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">
+        <AdminBackButton
+          onClick={back.goBack}
+          label={back.label}
+          text="Abbrechen"
+          showIcon={false}
+          className="min-h-11 flex-1 justify-center"
+        />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void doSaveFields(false)}
+          className="min-h-11 flex-1 rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg disabled:opacity-50"
+        >
+          {busy ? "Speichern …" : "Speichern"}
+        </button>
+      </div>
     </div>
   );
 }

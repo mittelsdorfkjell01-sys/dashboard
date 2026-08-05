@@ -6,10 +6,14 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   ApiError,
   createAdminUser,
+  confirmAdminMfa,
   deleteAdminUser,
+  disableAdminMfa,
   getAdminUsers,
   getMe,
   setAdminUserPassword,
+  resetAdminUserMfa,
+  setupAdminMfa,
   updateAdminUser,
   type AdminUserRecord,
   type AuthUser,
@@ -20,6 +24,7 @@ import PromptDialog from "../components/ui/PromptDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
 import { PageHeader, Badge } from "../components/admin/ui";
+import { PlusIcon } from "../lib/icons";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
@@ -35,6 +40,12 @@ export default function AdminUsers() {
   const [editEmail, setEditEmail] = useState("");
   const [editName, setEditName] = useState("");
   const [dialogBusy, setDialogBusy] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createDirty, setCreateDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [editDiscard, setEditDiscard] = useState(false);
+  const [mfaOpen, setMfaOpen] = useState(false);
+  const [mfaResetTarget, setMfaResetTarget] = useState<AdminUserRecord | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -148,6 +159,14 @@ export default function AdminUsers() {
     }
   };
 
+  const requestCloseEdit = () => {
+    if (!editTarget || dialogBusy) return;
+    const dirty =
+      editEmail !== editTarget.email || editName !== editTarget.display_name;
+    if (dirty) setEditDiscard(true);
+    else setEditTarget(null);
+  };
+
   // Status badge + actions — shared by the desktop table and the mobile cards.
   const statusBadge = (u: AdminUserRecord) =>
     !u.is_active ? (
@@ -189,6 +208,15 @@ export default function AdminUsers() {
       >
         Passwort
       </button>
+      {u.mfa_enabled && !isSelf(u) && (
+        <button
+          type="button"
+          onClick={() => setMfaResetTarget(u)}
+          className="rounded-md border border-admin-warning-bg bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-warning transition-colors hover:bg-admin-warning-bg"
+        >
+          2FA zurücksetzen
+        </button>
+      )}
       <button
         type="button"
         onClick={() => setDeleteTarget(u)}
@@ -210,8 +238,17 @@ export default function AdminUsers() {
   return (
     <div>
       <PageHeader
-        title="Benutzerverwaltung"
-        description="Alle Operatoren haben volle Admin-Rechte. Du kannst dein eigenes Konto und den letzten aktiven Admin nicht deaktivieren oder löschen."
+        title="Benutzer"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setMfaOpen(true)}>
+              2FA {me?.mfa_enabled ? "aktiv" : "einrichten"}
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <PlusIcon className="text-[16px]" /> Benutzer anlegen
+            </Button>
+          </div>
+        }
       />
 
         {notice && (
@@ -231,12 +268,67 @@ export default function AdminUsers() {
           </div>
         )}
 
-        <CreateUserForm
-          onCreated={async (email) => {
-            flash(`Benutzer ${email} angelegt.`);
-            await load();
+        <Modal
+          open={createOpen}
+          onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+          labelledBy="create-user-title"
+        >
+          <CreateUserForm
+            onDirtyChange={setCreateDirty}
+            onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+            onCreated={async (email) => {
+              setCreateDirty(false);
+              setCreateOpen(false);
+              flash(`Benutzer ${email} angelegt.`);
+              await load();
+            }}
+            onError={setError}
+          />
+        </Modal>
+        <ConfirmDialog
+          open={confirmDiscard}
+          title="Eingaben verwerfen?"
+          message="Die noch nicht gespeicherten Benutzerdaten gehen verloren."
+          confirmText="Verwerfen"
+          onCancel={() => setConfirmDiscard(false)}
+          onConfirm={() => {
+            setConfirmDiscard(false);
+            setCreateDirty(false);
+            setCreateOpen(false);
           }}
-          onError={setError}
+        />
+        <MfaModal
+          open={mfaOpen}
+          enabled={Boolean(me?.mfa_enabled)}
+          onClose={() => setMfaOpen(false)}
+          onChanged={async () => {
+            setMe(await getMe());
+            setMfaOpen(false);
+            flash("Zwei-Faktor-Schutz aktualisiert.");
+          }}
+        />
+        <ConfirmDialog
+          open={mfaResetTarget !== null}
+          title="2FA zurücksetzen"
+          message={mfaResetTarget ? `${mfaResetTarget.email} muss 2FA anschließend neu einrichten.` : undefined}
+          confirmText="Zurücksetzen"
+          variant="danger"
+          busy={dialogBusy}
+          onCancel={() => setMfaResetTarget(null)}
+          onConfirm={async () => {
+            if (!mfaResetTarget) return;
+            setDialogBusy(true);
+            try {
+              await resetAdminUserMfa(mfaResetTarget.id);
+              flash(`2FA für ${mfaResetTarget.email} zurückgesetzt.`);
+              setMfaResetTarget(null);
+              await load();
+            } catch (e) {
+              setError(e instanceof ApiError ? e.message : "2FA-Reset fehlgeschlagen.");
+            } finally {
+              setDialogBusy(false);
+            }
+          }}
         />
 
         {/* Mobile / tablet: card list — all actions stay visible. */}
@@ -345,27 +437,29 @@ export default function AdminUsers() {
 
         <Modal
           open={editTarget !== null}
-          onClose={() => setEditTarget(null)}
+          onClose={requestCloseEdit}
           labelledBy="edit-user-title"
         >
           <h2 id="edit-user-title" className="text-ui font-semibold text-ink">
             Benutzer bearbeiten
           </h2>
-          <label className="mt-3 block text-label text-ink-soft">E-Mail</label>
+          <label htmlFor="edit-user-email" className="mt-3 block text-label text-ink-soft">E-Mail</label>
           <Input
+            id="edit-user-email"
             type="email"
             value={editEmail}
             onChange={(e) => setEditEmail(e.target.value)}
             className="mt-1"
           />
-          <label className="mt-3 block text-label text-ink-soft">Anzeigename</label>
+          <label htmlFor="edit-user-name" className="mt-3 block text-label text-ink-soft">Anzeigename</label>
           <Input
+            id="edit-user-name"
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             className="mt-1"
           />
           <div className="mt-5 flex items-center justify-end gap-2">
-            <Button variant="ghost" onClick={() => setEditTarget(null)} disabled={dialogBusy}>
+            <Button variant="ghost" onClick={requestCloseEdit} disabled={dialogBusy}>
               Abbrechen
             </Button>
             <Button
@@ -376,6 +470,18 @@ export default function AdminUsers() {
             </Button>
           </div>
         </Modal>
+        <ConfirmDialog
+          open={editDiscard}
+          title="Änderungen verwerfen?"
+          message="E-Mail oder Anzeigename wurden noch nicht gespeichert."
+          confirmText="Verwerfen"
+          variant="danger"
+          onCancel={() => setEditDiscard(false)}
+          onConfirm={() => {
+            setEditDiscard(false);
+            setEditTarget(null);
+          }}
+        />
 
         <PromptDialog
           open={pwTarget !== null}
@@ -406,9 +512,13 @@ export default function AdminUsers() {
 function CreateUserForm({
   onCreated,
   onError,
+  onCancel,
+  onDirtyChange,
 }: {
   onCreated: (email: string) => void | Promise<void>;
   onError: (msg: string) => void;
+  onCancel: () => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -428,6 +538,7 @@ function CreateUserForm({
       setEmail("");
       setDisplayName("");
       setPassword("");
+      onDirtyChange(false);
       await onCreated(email.trim());
     } catch (err) {
       onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
@@ -437,39 +548,215 @@ function CreateUserForm({
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="mt-6 rounded-lg border border-admin-border bg-admin-hover p-4 sm:p-5"
-      noValidate
-    >
-      <p className="text-ui font-semibold text-admin-fg">Neuen Admin anlegen</p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <form onSubmit={submit} className="space-y-4" noValidate>
+      <h2 id="create-user-title" className="text-[18px] font-semibold text-admin-fg">
+        Benutzer anlegen
+      </h2>
+      <p className="rounded-md border border-admin-info-bg bg-admin-info-bg px-3 py-2 text-label text-admin-info">
+        Neue Benutzer erhalten Zugriff auf das Dashboard. Das Passwort muss mindestens 12 Zeichen lang sein.
+      </p>
+      <div>
+        <label htmlFor="create-user-email" className="text-label font-medium text-admin-fg">E-Mail</label>
         <Input
+          id="create-user-email"
           type="email"
-          placeholder="E-Mail"
+          className="mt-1 w-full"
           autoComplete="off"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); onDirtyChange(true); }}
           required
         />
+      </div>
+      <div>
+        <label htmlFor="create-user-name" className="text-label font-medium text-admin-fg">Anzeigename</label>
         <Input
+          id="create-user-name"
           type="text"
-          placeholder="Anzeigename (optional)"
+          className="mt-1 w-full"
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          onChange={(e) => { setDisplayName(e.target.value); onDirtyChange(true); }}
         />
+      </div>
+      <div>
+        <label htmlFor="create-user-password" className="text-label font-medium text-admin-fg">Passwort</label>
         <Input
+          id="create-user-password"
           type="password"
-          placeholder="Passwort"
+          className="mt-1 w-full"
           autoComplete="new-password"
+          minLength={12}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => { setPassword(e.target.value); onDirtyChange(true); }}
           required
         />
-        <Button type="submit" disabled={busy || !email || !password} className="shrink-0">
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
+          Abbrechen
+        </Button>
+        <Button type="submit" disabled={busy || !email || password.length < 12}>
           {busy ? "…" : "Anlegen"}
         </Button>
       </div>
     </form>
+  );
+}
+
+function MfaModal({
+  open,
+  enabled,
+  onClose,
+  onChanged,
+}: {
+  open: boolean;
+  enabled: boolean;
+  onClose: () => void;
+  onChanged: () => void | Promise<void>;
+}) {
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [secret, setSecret] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [discardOpen, setDiscardOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setPassword("");
+      setCode("");
+      setSecret("");
+      setError("");
+      setDiscardOpen(false);
+    }
+  }, [open]);
+
+  const requestClose = () => {
+    if (busy) return;
+    if (password || code || secret) setDiscardOpen(true);
+    else onClose();
+  };
+
+  const start = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await setupAdminMfa(password);
+      setSecret(result.secret);
+      setPassword("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Einrichtung fehlgeschlagen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const finish = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await confirmAdminMfa(code);
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Code konnte nicht bestätigt werden.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disable = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await disableAdminMfa(password, code);
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "2FA konnte nicht deaktiviert werden.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const codeField = (
+    <div>
+      <label htmlFor="mfa-code" className="text-label font-medium text-admin-fg">
+        Sechsstelliger Code
+      </label>
+      <Input
+        id="mfa-code"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={6}
+        value={code}
+        onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+        className="mt-1 w-full"
+      />
+    </div>
+  );
+
+  return (
+    <>
+      <Modal open={open} onClose={requestClose} labelledBy="mfa-title">
+        <div className="space-y-4">
+          <h2 id="mfa-title" className="text-[18px] font-semibold text-admin-fg">
+            Zwei-Faktor-Schutz
+          </h2>
+          {enabled ? (
+            <>
+              <p className="text-label text-admin-muted">
+                Zum Deaktivieren sind Passwort und aktueller Authenticator-Code erforderlich.
+              </p>
+              <div>
+                <label htmlFor="mfa-password" className="text-label font-medium text-admin-fg">Passwort</label>
+                <Input id="mfa-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full" />
+              </div>
+              {codeField}
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={requestClose} disabled={busy}>Abbrechen</Button>
+                <Button variant="danger" onClick={disable} disabled={busy || !password || code.length !== 6}>2FA deaktivieren</Button>
+              </div>
+            </>
+          ) : secret ? (
+            <>
+              <p className="text-label text-admin-muted">
+                Hinterlege dieses Secret in deiner Authenticator-App und bestätige den ersten Code.
+              </p>
+              <code className="block break-all rounded-md border border-admin-border bg-admin-bg p-3 text-label text-admin-fg" aria-label="TOTP Secret">{secret}</code>
+              {codeField}
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={requestClose} disabled={busy}>Abbrechen</Button>
+                <Button onClick={finish} disabled={busy || code.length !== 6}>Aktivieren</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-label text-admin-muted">
+                Bestätige zuerst dein Passwort. Danach wird das einmalig sichtbare Secret erzeugt.
+              </p>
+              <div>
+                <label htmlFor="mfa-password" className="text-label font-medium text-admin-fg">Passwort</label>
+                <Input id="mfa-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={requestClose} disabled={busy}>Abbrechen</Button>
+                <Button onClick={start} disabled={busy || !password}>Einrichtung starten</Button>
+              </div>
+            </>
+          )}
+          {error && <p role="alert" className="text-label text-admin-danger">{error}</p>}
+        </div>
+      </Modal>
+      <ConfirmDialog
+        open={discardOpen}
+        title="2FA-Einrichtung verlassen?"
+        message="Nicht bestätigte Eingaben und das angezeigte Secret werden verworfen."
+        confirmText="Verwerfen"
+        variant="danger"
+        onCancel={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          setDiscardOpen(false);
+          onClose();
+        }}
+      />
+    </>
   );
 }

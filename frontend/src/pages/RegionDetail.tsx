@@ -58,7 +58,7 @@ export default function RegionDetail() {
     error: spotsError,
     reload: reloadSpots,
   } = useSpots(
-    backendRegion ? { region_id: backendRegion.id, status: "published" } : {}
+    backendRegion ? { region_id: backendRegion.id } : {}
   );
   const { data: seasonRaw } = useRegionSeason(backendRegion?.id);
   const { data: bestWeeksRaw } = useBestWeeks(backendRegion?.id);

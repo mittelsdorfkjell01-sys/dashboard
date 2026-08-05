@@ -14,7 +14,8 @@ from sqlalchemy.orm import Session
 
 from app.account.security import hash_password, verify_password
 from app.config import get_settings
-from app.models import AppUser, Favorite, Spot, SpotSubmission
+from app.password_policy import ensure_password_safe
+from app.models import AppUser, Favorite, LocalTip, Spot, SpotImage, SpotRating, SpotSubmission
 from app.models.app_user import normalize_email
 
 
@@ -35,9 +36,7 @@ def get_by_email(db: Session, email: str) -> AppUser | None:
 
 
 def _validate_password(password: str) -> None:
-    min_len = get_settings().app_password_min_length
-    if len(password or "") < min_len:
-        raise ValueError(f"Das Passwort muss mindestens {min_len} Zeichen haben.")
+    ensure_password_safe(password, min_length=get_settings().app_password_min_length)
 
 
 def _validate_email(email: str) -> str:
@@ -52,11 +51,12 @@ def register(
 ) -> AppUser:
     email = _validate_email(email)
     _validate_password(password)
+    password_hash = hash_password(password)
     if get_by_email(db, email) is not None:
         raise EmailExistsError("Für diese E-Mail existiert bereits ein Konto.")
     user = AppUser(
         email=email,
-        password_hash=hash_password(password),
+        password_hash=password_hash,
         display_name=(display_name or "").strip() or email.split("@")[0],
     )
     db.add(user)
@@ -98,8 +98,100 @@ def update_profile(
 def change_password(db: Session, user: AppUser, old_pw: str, new_pw: str) -> None:
     if not verify_password(old_pw, user.password_hash):
         raise AuthError("Das aktuelle Passwort ist falsch.")
-    _validate_password(new_pw)
+    ensure_password_safe(new_pw, min_length=get_settings().app_password_min_length)
     user.password_hash = hash_password(new_pw)
+    user.session_version += 1
+    db.flush()
+
+
+def export_account_data(db: Session, user: AppUser) -> dict:
+    """Return every account-linked record without credentials or abuse hashes."""
+    ratings = db.scalars(select(SpotRating).where(SpotRating.app_user_id == user.id)).all()
+    tips = db.scalars(select(LocalTip).where(LocalTip.app_user_id == user.id)).all()
+    submissions = db.scalars(
+        select(SpotSubmission).where(SpotSubmission.app_user_id == user.id)
+    ).all()
+    images = db.scalars(select(SpotImage).where(SpotImage.app_user_id == user.id)).all()
+    favorites = db.scalars(select(Favorite).where(Favorite.app_user_id == user.id)).all()
+
+    def stamp(row) -> dict:
+        data = {
+            "id": str(row.id),
+            "created_at": row.created_at.isoformat(),
+        }
+        if getattr(row, "updated_at", None):
+            data["updated_at"] = row.updated_at.isoformat()
+        return data
+
+    return {
+        "account": {
+            "id": str(user.id),
+            "email": user.email,
+            "display_name": user.display_name,
+            "created_at": user.created_at.isoformat(),
+        },
+        "favorites": [{**stamp(row), "spot_id": str(row.spot_id)} for row in favorites],
+        "ratings": [
+            {
+                **stamp(row), "spot_id": str(row.spot_id), "stars": row.stars,
+                "skill_level": row.skill_level, "sport": row.sport,
+                "conditions": row.conditions, "status": row.status,
+            }
+            for row in ratings
+        ],
+        "tips": [
+            {
+                **stamp(row), "spot_id": str(row.spot_id),
+                "parent_id": str(row.parent_id) if row.parent_id else None,
+                "body": row.body, "status": row.status,
+            }
+            for row in tips
+        ],
+        "submissions": [
+            {
+                **stamp(row), "payload": row.payload, "status": row.status,
+                "review_note": row.review_note,
+                "resulting_spot_id": str(row.resulting_spot_id) if row.resulting_spot_id else None,
+            }
+            for row in submissions
+        ],
+        "images": [
+            {
+                **stamp(row), "spot_id": str(row.spot_id), "url": row.url,
+                "kind": row.kind, "status": row.status, "credit": row.credit,
+                "license_version": row.license_version,
+                "license_accepted_at": row.license_accepted_at.isoformat()
+                if row.license_accepted_at else None,
+            }
+            for row in images
+        ],
+    }
+
+
+def delete_account(db: Session, user: AppUser, password: str) -> None:
+    """Anonymize retained UGC, remove favourites, and delete the account."""
+    if not verify_password(password, user.password_hash):
+        raise AuthError("Das Passwort ist falsch.")
+
+    for model, email_field, name_field in (
+        (SpotRating, "author_email", "author_name"),
+        (LocalTip, "author_email", "author_name"),
+        (SpotSubmission, "submitter_email", "submitter_name"),
+    ):
+        rows = db.scalars(select(model).where(model.app_user_id == user.id)).all()
+        for row in rows:
+            setattr(row, email_field, None)
+            setattr(row, name_field, "Gelöschtes Konto")
+            row.ip_hash = None
+            row.app_user_id = None
+
+    for image in db.scalars(select(SpotImage).where(SpotImage.app_user_id == user.id)).all():
+        image.submitter_email = None
+        image.ip_hash = None
+        image.app_user_id = None
+
+    db.execute(delete(Favorite).where(Favorite.app_user_id == user.id))
+    db.delete(user)
     db.flush()
 
 

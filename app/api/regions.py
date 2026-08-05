@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api._http_cache import set_public_cache
 from app.db.session import get_db
 from app.models import Region
+from app.public_catalog import PUBLISHED, get_published_region
 from app.schemas import RegionRead
 from app.scoring.region import aggregate_region_season, region_when_to_go
 
@@ -19,15 +20,9 @@ def list_regions(
     db: Session = Depends(get_db),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
-    status: str | None = Query(default=None),
 ) -> list[RegionRead]:
-    """Public listing shows only published regions. The admin passes
-    ``status=all`` to see drafts too (or a specific status)."""
-    stmt = select(Region).order_by(Region.name)
-    if status is None:
-        stmt = stmt.where(Region.status == "published")
-    elif status != "all":
-        stmt = stmt.where(Region.status == status)
+    """List published regions. Editorial states are never public."""
+    stmt = select(Region).where(Region.status == PUBLISHED).order_by(Region.name)
     rows = db.scalars(stmt.limit(limit).offset(offset)).all()
     set_public_cache(response)
     return [RegionRead.from_orm_region(r) for r in rows]
@@ -37,9 +32,9 @@ def list_regions(
 def get_region_by_slug(
     slug: str, response: Response, db: Session = Depends(get_db)
 ) -> RegionRead:
-    """Resolve a region by slug regardless of status — powers the region page +
-    draft preview (like the spot detail, which is not status-filtered)."""
-    region = db.scalar(select(Region).where(Region.slug == slug))
+    region = db.scalar(
+        select(Region).where(Region.slug == slug, Region.status == PUBLISHED)
+    )
     if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
     set_public_cache(response)
@@ -50,7 +45,7 @@ def get_region_by_slug(
 def get_region(
     region_id: uuid.UUID, response: Response, db: Session = Depends(get_db)
 ) -> RegionRead:
-    region = db.get(Region, region_id)
+    region = get_published_region(db, region_id)
     if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
     set_public_cache(response)
@@ -67,7 +62,7 @@ def get_region_season(
     """Region season aggregate (52 weeks of ``spots_working`` + median wind/sst/air).
 
     Computed and cached on `regions.season`; recomputed when a `sport` is given."""
-    region = db.get(Region, region_id)
+    region = get_published_region(db, region_id)
     if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
 

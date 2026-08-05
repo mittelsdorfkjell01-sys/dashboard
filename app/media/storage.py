@@ -16,6 +16,8 @@ against a real ``BLOB_READ_WRITE_TOKEN`` on a deploy — it is inert in local mo
 from __future__ import annotations
 
 import os
+import tempfile
+from urllib.parse import urlparse
 
 from app.config import get_settings
 
@@ -38,8 +40,19 @@ def put(key: str, data: bytes, ext: str, *, media_dir: str, url_prefix: str) -> 
 
     path = os.path.join(media_dir, *key.split("/"))
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "wb") as fh:
-        fh.write(data)
+    fd, temporary_path = tempfile.mkstemp(prefix=".upload-", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(temporary_path, path)
+    except Exception:
+        try:
+            os.remove(temporary_path)
+        except FileNotFoundError:
+            pass
+        raise
     return f"{url_prefix.rstrip('/')}/{key}"
 
 
@@ -52,6 +65,37 @@ def delete(key: str, *, media_dir: str) -> None:
     path = os.path.join(media_dir, *key.split("/"))
     if os.path.exists(path):
         os.remove(path)
+
+
+def delete_url(url: str | None, *, media_dir: str, url_prefix: str) -> None:
+    """Delete only URLs created by this storage module.
+
+    External image URLs are ignored. Local paths are resolved below
+    ``media_dir`` so an unexpected database value cannot escape that directory.
+    """
+    if not url:
+        return
+    settings = get_settings()
+    if settings.media_backend == "blob":
+        if url.startswith("https://"):
+            _blob_delete_url(url)
+        return
+
+    parsed = urlparse(url)
+    if parsed.scheme or parsed.netloc:
+        return
+    prefix = f"{url_prefix.rstrip('/')}/"
+    if not parsed.path.startswith(prefix):
+        return
+    key = parsed.path[len(prefix):]
+    root = os.path.realpath(media_dir)
+    path = os.path.realpath(os.path.join(root, *key.split("/")))
+    if os.path.commonpath((root, path)) != root:
+        return
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
 
 
 # --- Vercel Blob REST backend ----------------------------------------------
@@ -92,15 +136,25 @@ def _blob_delete(key: str) -> None:
     base = getattr(settings, "blob_public_base", None)
     if not base:
         return
+    _blob_delete_url(f"{base.rstrip('/')}/{key}")
+
+
+def _blob_delete_url(url: str) -> None:
+    import httpx
+
+    token = get_settings().blob_read_write_token
+    if not token:
+        return
     try:
-        httpx.post(
+        response = httpx.post(
             f"{_BLOB_API}/delete",
             headers={
                 "authorization": f"Bearer {token}",
                 "content-type": "application/json",
             },
-            json={"urls": [f"{base.rstrip('/')}/{key}"]},
+            json={"urls": [url]},
             timeout=15.0,
         )
+        response.raise_for_status()
     except Exception:
         pass

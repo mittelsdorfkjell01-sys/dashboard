@@ -5,21 +5,23 @@
 // (not the app root), so the public build has no auth context and makes no
 // /auth/me call.
 
+import React from "react";
 import { Outlet, type RouteObject } from "react-router-dom";
-import AdminLogin from "./pages/AdminLogin";
-import AdminHome from "./pages/AdminHome";
-import AdminSpots from "./pages/AdminSpots";
-import AdminRegions from "./pages/AdminRegions";
-import AdminRegionForm from "./pages/AdminRegionForm";
-import AdminReview from "./pages/AdminReview";
-import AdminMap from "./pages/AdminMap";
-import AdminActivity from "./pages/AdminActivity";
-import AdminSpotForm from "./pages/AdminSpotForm";
-import AdminUsers from "./pages/AdminUsers";
 import AdminShell from "./components/AdminShell";
 import RequireAuth from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth";
 import { AdminThemeProvider } from "./components/admin/theme";
+
+const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
+const AdminHome = React.lazy(() => import("./pages/AdminHome"));
+const AdminSpots = React.lazy(() => import("./pages/AdminSpots"));
+const AdminRegions = React.lazy(() => import("./pages/AdminRegions"));
+const AdminRegionForm = React.lazy(() => import("./pages/AdminRegionForm"));
+const AdminReview = React.lazy(() => import("./pages/AdminReview"));
+const AdminMap = React.lazy(() => import("./pages/AdminMap"));
+const AdminActivity = React.lazy(() => import("./pages/AdminActivity"));
+const AdminSpotForm = React.lazy(() => import("./pages/AdminSpotForm"));
+const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 
 const adminRoutes: RouteObject[] = [
   {

@@ -193,14 +193,29 @@ export interface Readiness {
 // --- request core ----------------------------------------------------------
 
 const REQUEST_TIMEOUT_MS = 15000;
+type RequestOptions = RequestInit & { timeoutMs?: number };
 
-export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+function cookieValue(name: string): string | undefined {
+  return document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+}
+
+export async function request<T>(path: string, init?: RequestOptions): Promise<T> {
+  const { timeoutMs = REQUEST_TIMEOUT_MS, ...fetchInit } = init ?? {};
   const headers: Record<string, string> = {
-    ...(init?.body && !(init.body instanceof FormData)
+    ...(fetchInit.body && !(fetchInit.body instanceof FormData)
       ? { "Content-Type": "application/json" }
       : {}),
-    ...((init?.headers as Record<string, string>) || {}),
+    ...((fetchInit.headers as Record<string, string>) || {}),
   };
+  const method = (fetchInit.method ?? "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const csrf = cookieValue("swd_csrf");
+    if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf);
+  }
   // LOCAL DEV break-glass: when VITE_ADMIN_KEY is set, send it on EVERY request
   // (incl. /auth/me) so the admin area works without the cookie login. Falls back
   // to a session-entered key on /admin only. Unset in prod → normal cookie auth.
@@ -213,11 +228,11 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   let resp: Response;
   try {
     resp = await fetch(`${API_BASE}${path}`, {
-      ...init,
+      ...fetchInit,
       headers,
       // Send/receive the httpOnly session cookie (Sprint A auth) on every call.
       credentials: "include",
@@ -273,7 +288,6 @@ function qs(params: Record<string, unknown>): string {
 
 export interface SpotQuery {
   region_id?: string;
-  status?: string;
   sport?: string;
   level?: string;
   water_character?: string;
@@ -304,12 +318,15 @@ export const getSpotsLive = (ids: string[]) =>
 /** Public region listing — published only. */
 export const getRegions = () => request<Region[]>(`/regions`);
 
-/** Flat admin region list (Region[], includes drafts) — for dropdowns/pickers. */
-export const getAdminRegionsFlat = () => request<Region[]>(`/regions?status=all`);
+/** Flat protected region list (Region[], includes editorial states). */
+export async function getAdminRegionsFlat(): Promise<Region[]> {
+  const entries = await request<AdminRegionEntry[]>(`/admin/regions`);
+  return entries.map((entry) => entry.region);
+}
 
 export const getRegion = (id: string) => request<Region>(`/regions/${id}`);
 
-/** Resolve a region by slug regardless of status (so draft preview works). */
+/** Resolve a published region by slug. */
 export async function getRegionBySlug(slug: string): Promise<Region | undefined> {
   try {
     return await request<Region>(`/regions/by-slug/${encodeURIComponent(slug)}`);
@@ -402,17 +419,34 @@ export interface AuthUser {
   email: string;
   display_name: string;
   role: AdminRole;
+  mfa_enabled: boolean;
 }
 
-export const login = (email: string, password: string) =>
+export const login = (email: string, password: string, otp?: string) =>
   request<AuthUser>(`/auth/login`, {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, otp: otp || undefined }),
   });
 
 export const logout = () => request<void>(`/auth/logout`, { method: "POST" });
 
 export const getMe = () => request<AuthUser>(`/auth/me`);
+
+export const setupAdminMfa = (password: string) =>
+  request<{ secret: string; provisioning_uri: string }>(`/auth/mfa/setup`, {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+export const confirmAdminMfa = (code: string) =>
+  request<{ mfa_enabled: boolean }>(`/auth/mfa/confirm`, {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+export const disableAdminMfa = (password: string, code: string) =>
+  request<{ mfa_enabled: boolean }>(`/auth/mfa/disable`, {
+    method: "POST",
+    body: JSON.stringify({ password, code }),
+  });
 
 // --- admin user management (admin role only) -------------------------------
 
@@ -425,9 +459,12 @@ export interface AdminUserRecord {
   last_login_at: string | null;
   last_seen_at: string | null;
   created_at: string;
+  mfa_enabled: boolean;
 }
 
 export const getAdminUsers = () => request<AdminUserRecord[]>(`/admin/users`);
+export const resetAdminUserMfa = (id: string) =>
+  request<void>(`/admin/users/${id}/mfa`, { method: "DELETE" });
 
 export const createAdminUser = (body: {
   email: string;
@@ -562,6 +599,7 @@ export function uploadSpotImage(
   return request<CommunityImage>(`/spots/${spotId}/images`, {
     method: "POST",
     body: fd,
+    timeoutMs: 120_000,
   });
 }
 
@@ -813,8 +851,12 @@ export interface AdminMapSpot {
   lat: number;
   lon: number;
 }
-export const getAdminMapSpots = () =>
-  request<AdminMapSpot[]>(`/admin/map-spots`);
+export const getAdminMapSpots = (bounds?: [number, number, number, number]) => {
+  const query = bounds
+    ? `?west=${bounds[0]}&south=${bounds[1]}&east=${bounds[2]}&north=${bounds[3]}`
+    : "";
+  return request<AdminMapSpot[]>(`/admin/map-spots${query}`);
+};
 
 // --- team notes + activity (admin) -----------------------------------------
 
@@ -921,6 +963,9 @@ export const getAdminSpots = (params: AdminSpotsQuery = {}) =>
     `/admin/spots${qs(params as Record<string, unknown>)}`
   );
 
+export const getAdminSpot = (id: string) =>
+  request<SpotRead>(`/admin/spots/${id}/record`);
+
 export interface AdminRegionEntry {
   region: Region;
   spot_counts: StatusCounts;
@@ -928,6 +973,9 @@ export interface AdminRegionEntry {
 
 export const getAdminRegions = () =>
   request<AdminRegionEntry[]>(`/admin/regions`);
+
+export const getAdminRegion = (id: string) =>
+  request<Region>(`/admin/regions/${id}/record`);
 
 export interface GeocodeHit {
   name: string;
@@ -1004,6 +1052,7 @@ export function uploadRegionImage(id: string, file: File, credit: string): Promi
   return request<Region>(`/admin/regions/${id}/image/upload`, {
     method: "POST",
     body: fd,
+    timeoutMs: 120_000,
   });
 }
 
@@ -1058,7 +1107,7 @@ export const deleteSpot = (id: string) =>
   request<void>(`/admin/spots/${id}`, { method: "DELETE" });
 
 export const triggerEra5 = (id: string) =>
-  request<Era5Status>(`/admin/spots/${id}/era5`, { method: "POST" });
+  request<Era5Status>(`/admin/spots/${id}/era5`, { method: "POST", timeoutMs: 60_000 });
 
 export const getEra5Status = (id: string) =>
   request<Era5Status>(`/admin/spots/${id}/era5`);
@@ -1067,6 +1116,7 @@ export const getEra5Status = (id: string) =>
 export const processEra5Queue = () =>
   request<{ queued: number; scheduled: boolean }>(`/admin/era5/process-queue`, {
     method: "POST",
+    timeoutMs: 60_000,
   });
 
 // --- admin endpoints -------------------------------------------------------
@@ -1144,5 +1194,6 @@ export async function uploadHeroImage(
   return request<SpotRead>(`/admin/spots/${id}/image/upload`, {
     method: "POST",
     body: fd,
+    timeoutMs: 120_000,
   });
 }

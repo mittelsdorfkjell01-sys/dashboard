@@ -272,6 +272,18 @@
   background: #dfeaea;
 }
 
+.swd-admin-cluster {
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #1e6e7e;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 /* Colour wash over the CARTO Voyager basemap: water leans light blue,
    land leans light green. Applies only to map tiles, so the pins, labels
    overlay and controls keep their own colours. */

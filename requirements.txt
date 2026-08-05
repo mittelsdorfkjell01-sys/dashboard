@@ -1,6 +1,6 @@
 # --- Runtime ---
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
 sqlalchemy==2.0.36
 geoalchemy2==0.16.0
 alembic==1.14.0
@@ -10,22 +10,25 @@ pydantic-settings==2.7.0
 redis==5.2.1
 shapely==2.0.6
 httpx==0.28.1            # Open-Meteo client (Sprint 3 live path) + test client
-python-multipart==0.0.20  # multipart/form-data parsing for the hero-image upload
-pillow==11.1.0            # server-side hero-image dimension/format validation
+python-multipart==0.0.32  # multipart/form-data parsing for the hero-image upload
+pillow==12.3.0            # server-side hero-image dimension/format validation
 pillow-avif-plugin==1.5.5 # AVIF encode on upload (falls back to built-in WebP if absent)
 
 # --- Auth (Sprint A) ---
 bcrypt==5.0.0            # admin password hashing (used directly; passlib dropped)
-PyJWT==2.10.1           # short-lived JWT for the httpOnly admin session cookie
+PyJWT==2.13.0           # short-lived JWT for the httpOnly admin session cookie
+pyotp==2.10.0
+cryptography==50.0.0
+email-validator==2.2.0  # Pydantic EmailStr validation
 
 # --- Climatology pipeline ---
 # Data source is Open-Meteo Historical (ERA5 via archive-api + waves via
 # marine-api) over plain HTTP (uses httpx, above) — no CDS credentials needed.
 numpy==2.4.6
-pyarrow==18.1.0          # on-disk format for raw extracts (Parquet)
+pyarrow==25.0.0          # on-disk format for raw extracts (Parquet)
 # OPTIONAL, not on the default path: the Copernicus CDS adapter (app/era5/_real_cds.py)
 # needs `cdsapi` (+ `xarray`/`netCDF4` and ~/.cdsapirc). Install only if you opt into it:
 #   pip install cdsapi xarray netCDF4
 
 # --- Testing ---
-pytest==8.3.4
+pytest==9.1.1

@@ -35,12 +35,14 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-def create_session_token(user_id: uuid.UUID, role: str) -> str:
+def create_session_token(user_id: uuid.UUID, role: str, session_version: int = 0) -> str:
     settings = get_settings()
     now = dt.datetime.now(dt.timezone.utc)
     payload = {
         "sub": str(user_id),
         "role": role,
+        "typ": "admin",
+        "ver": session_version,
         "iat": now,
         "exp": now + dt.timedelta(hours=settings.jwt_ttl_hours),
     }
@@ -49,4 +51,7 @@ def create_session_token(user_id: uuid.UUID, role: str) -> str:
 
 def decode_session_token(token: str) -> dict:
     """Decode + verify signature/expiry. Raises ``jwt.PyJWTError`` on failure."""
-    return jwt.decode(token, get_settings().jwt_secret, algorithms=[_ALG])
+    payload = jwt.decode(token, get_settings().jwt_secret, algorithms=[_ALG])
+    if payload.get("typ") != "admin":
+        raise jwt.InvalidTokenError("not an admin session token")
+    return payload

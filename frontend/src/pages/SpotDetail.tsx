@@ -121,7 +121,7 @@ export default function SpotDetail() {
     : [];
 
   return (
-    <div className="relative min-h-screen bg-page">
+    <div className="relative min-h-screen min-w-0 max-w-full overflow-x-clip bg-page">
       <LandingHeader
         width="body"
         left={
@@ -129,15 +129,15 @@ export default function SpotDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl bg-teal py-2 pl-2.5 pr-4 text-ui font-medium text-white transition-colors hover:bg-teal-hover"
+            className="pointer-events-auto inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-2xl bg-teal p-2 text-ui font-medium text-white transition-colors hover:bg-teal-hover sm:min-h-0 sm:min-w-0 sm:justify-start sm:py-2 sm:pl-2.5 sm:pr-4"
           >
             <ChevronDownIcon width={18} height={18} className="rotate-90" />
-            Zurück
+            <span className="hidden sm:inline">Zurück</span>
           </button>
         }
       />
 
-      <main>
+      <main className="min-w-0 max-w-full">
         {/* Clean hero image — the spot identity (name/region/score) now lives in
             the Info column below, not in an overlay on the photo (Figma Frame_9). */}
         <EditorialHero
@@ -164,8 +164,8 @@ export default function SpotDetail() {
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md">
-              <div className="grid gap-x-8 gap-y-10 lg:grid-cols-[5fr_6fr_5fr]">
-                <div>
+              <div className="grid min-w-0 gap-x-8 gap-y-10 lg:grid-cols-[5fr_6fr_5fr]">
+                <div className="min-w-0">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
@@ -213,7 +213,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -221,7 +221,7 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-6">
+                <div className="flex min-w-0 flex-col gap-6">
                   <Facilities items={facilities} variant="list" />
                   <SpotCommentBox
                     spotId={id}

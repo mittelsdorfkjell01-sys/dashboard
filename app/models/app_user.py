@@ -13,7 +13,7 @@ case-insensitive without needing ``citext``.
 
 import uuid
 
-from sqlalchemy import Boolean, String, text
+from sqlalchemy import Boolean, Integer, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,4 +37,7 @@ class AppUser(Base, TimestampMixin):
     display_name: Mapped[str] = mapped_column(String(120), nullable=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("true")
+    )
+    session_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
     )

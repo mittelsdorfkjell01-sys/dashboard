@@ -16,6 +16,7 @@ from app.auth.security import hash_password, verify_password
 from app.config import get_settings
 from app.models import AdminUser
 from app.models.admin_user import ROLES, normalize_email
+from app.password_policy import ensure_password_safe
 
 
 class EmailExistsError(ValueError):
@@ -49,8 +50,7 @@ def create_user(
 ) -> AdminUser:
     if role not in ROLES:
         raise ValueError(f"Ungültige Rolle: {role!r} (erlaubt: {', '.join(ROLES)}).")
-    if not (password and password.strip()):
-        raise ValueError("Passwort darf nicht leer sein.")
+    ensure_password_safe(password)
     email = normalize_email(email)
     if not email:
         raise ValueError("E-Mail darf nicht leer sein.")
@@ -78,9 +78,9 @@ def authenticate(db: Session, email: str, password: str) -> AdminUser | None:
 
 
 def set_password(db: Session, user: AdminUser, new_password: str) -> None:
-    if not (new_password and new_password.strip()):
-        raise ValueError("Passwort darf nicht leer sein.")
+    ensure_password_safe(new_password)
     user.password_hash = hash_password(new_password)
+    user.session_version += 1
     db.flush()
 
 

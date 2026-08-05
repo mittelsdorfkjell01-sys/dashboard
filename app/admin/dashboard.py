@@ -268,7 +268,7 @@ def recent_spots(db: Session, *, limit: int = 8) -> list[dict[str, Any]]:
     ]
 
 
-def ranked_spots(db: Session, *, limit: int = 500) -> list[dict[str, Any]]:
+def ranked_spots(db: Session, *, limit: int | None = 500) -> list[dict[str, Any]]:
     """Every spot with its "Fertigstellen" traffic-light rank.
 
     The whole catalogue is being reworked, so this lists ALL spots (not just the
@@ -299,6 +299,7 @@ def ranked_spots(db: Session, *, limit: int = 500) -> list[dict[str, Any]]:
                     "rank": effective_rank(gaps, s.finish_rank),
                     "rank_auto": auto_rank(gaps),
                     "finish_rank": s.finish_rank,
+                    "updated_at": s.updated_at.isoformat(),
                 }
             )
         except Exception:
@@ -309,35 +310,34 @@ def ranked_spots(db: Session, *, limit: int = 500) -> list[dict[str, Any]]:
             )
     order = {"red": 0, "yellow": 1, "green": 2}
     out.sort(key=lambda r: (order.get(r["rank"], 3), r["name"].lower()))
-    return out[:limit]
+    return out[:limit] if limit is not None else out
 
 
-def map_spots(db: Session) -> list[dict[str, Any]]:
-    """Lightweight payload for the admin map: every spot with a resolvable
-    location, as ``{id, name, status, lat, lon}``. Heavy JSONB columns are
-    deferred; spots without coordinates are skipped."""
-    from geoalchemy2.shape import to_shape
+def map_spots(
+    db: Session,
+    *,
+    bounds: tuple[float, float, float, float] | None = None,
+    limit: int = 5000,
+) -> list[dict[str, Any]]:
+    """Return lightweight map records, optionally limited to a viewport.
 
-    rows = db.scalars(
-        select(Spot).options(
-            defer(Spot.climatology), defer(Spot.editorial),
-            defer(Spot.overrides), defer(Spot.era5_cell),
-        )
-    ).all()
-    out: list[dict[str, Any]] = []
-    for s in rows:
-        if s.location is None:
-            continue
-        try:
-            point = to_shape(s.location)
-        except Exception:
-            logger.exception("map_spots: skipping spot %s", getattr(s, "id", None))
-            continue
-        out.append(
-            {"id": str(s.id), "name": s.name, "status": s.status,
-             "lat": point.y, "lon": point.x}
-        )
-    return out
+    Heavy JSONB columns are never loaded; spots without coordinates are skipped.
+    """
+    from geoalchemy2 import Geometry
+
+    point = Spot.location.cast(Geometry(geometry_type="POINT", srid=4326))
+    stmt = select(
+        Spot.id, Spot.name, Spot.status, func.ST_Y(point), func.ST_X(point)
+    ).where(Spot.location.is_not(None))
+    if bounds is not None:
+        west, south, east, north = bounds
+        envelope = func.ST_MakeEnvelope(west, south, east, north, 4326)
+        stmt = stmt.where(func.ST_Intersects(point, envelope))
+    rows = db.execute(stmt.order_by(Spot.id).limit(limit)).all()
+    return [
+        {"id": str(spot_id), "name": name, "status": status, "lat": lat, "lon": lon}
+        for spot_id, name, status, lat, lon in rows
+    ]
 
 
 def no_region_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:
@@ -360,18 +360,23 @@ def overview(db: Session) -> dict[str, Any]:
 
     spots = _status_counts(db)
     regions_count = int(db.scalar(select(func.count()).select_from(Region)) or 0)
-    open_gaps = not_live_gaps(db, limit=100)
-    ranked = ranked_spots(db)
+    ranked = ranked_spots(db, limit=None)
+    not_live = [r for r in ranked if r["status"] != "published" and not r["ready"]]
+    drafts = sorted(
+        (r for r in ranked if r["status"] == "draft"),
+        key=lambda row: row["updated_at"],
+        reverse=True,
+    )[:100]
     return {
         "spots": spots,
         "regions": regions_count,
-        "readiness_open": len(open_gaps),
-        "not_live": open_gaps[:20],
+        "readiness_open": len(not_live),
+        "not_live": not_live[:20],
         # Fertigstellen: every spot, ranked; the count is how many aren't green.
         "finish": ranked,
         "finish_open": sum(1 for r in ranked if r["rank"] != "green"),
         "no_region": no_region_spots(db),
-        "drafts": draft_spots(db, limit=100),
+        "drafts": drafts,
         "recent": recent_spots(db),
         "review": review_counts(db),
         "team_notes": list_notes(db, limit=12),

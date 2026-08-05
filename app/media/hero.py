@@ -13,6 +13,7 @@ re-validates because a client gate can be bypassed.
 from __future__ import annotations
 
 import io
+import uuid
 import os
 
 from app.media import storage
@@ -26,6 +27,8 @@ HERO_MAX_BYTES = 40 * 1024 * 1024  # 40 MB original (re-encoded down on save)
 GALLERY_MIN_WIDTH = 1280
 GALLERY_MIN_HEIGHT = 720
 GALLERY_MAX_BYTES = 40 * 1024 * 1024  # 40 MB
+MAX_IMAGE_PIXELS = 50_000_000
+UPLOAD_CHUNK_BYTES = 1024 * 1024
 
 # --- output re-encoding -----------------------------------------------------
 HERO_OUT_MAX_WIDTH = 3840     # 4K wide is plenty; downscale beyond this
@@ -34,9 +37,6 @@ GALLERY_OUT_MAX_WIDTH = 2560
 # a high quality (≈ JPEG 90 in size); gallery thumbnails can be lighter.
 HERO_OUT_QUALITY = 82
 GALLERY_OUT_QUALITY = 68
-
-# All extensions a stored hero could have, so a re-upload clears stale files.
-_ALL_HERO_EXTS = ("jpg", "png", "webp", "avif")
 
 # Accepted *input* content types -> canonical extension (output is avif/webp).
 _CONTENT_TYPE_EXT = {
@@ -64,6 +64,8 @@ def reencode_image(data: bytes, *, max_width: int, quality: int = HERO_OUT_QUALI
     ``(bytes, ext, width, height)``. Raises :class:`HeroImageError` if unreadable."""
     from PIL import Image, UnidentifiedImageError
 
+    Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
+
     if AVIF_AVAILABLE:
         import pillow_avif  # noqa: F401
 
@@ -81,13 +83,29 @@ def reencode_image(data: bytes, *, max_width: int, quality: int = HERO_OUT_QUALI
                 img.save(out, format="WEBP", quality=quality, method=6)
                 ext = "webp"
             fw, fh = img.size
-    except (UnidentifiedImageError, OSError):
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
         raise HeroImageError("Bild konnte nicht verarbeitet werden.")
     return out.getvalue(), ext, fw, fh
 
 
 class HeroImageError(ValueError):
     """A hero image failed validation (→ 422 at the API, in German)."""
+
+
+async def read_upload_limited(upload, max_bytes: int) -> bytes:
+    """Read an UploadFile in bounded chunks and abort before retaining excess."""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await upload.read(UPLOAD_CHUNK_BYTES)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            mb = max_bytes // (1024 * 1024)
+            raise HeroImageError(f"Datei zu groß (max. {mb} MB).")
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def validate_hero_image(
@@ -106,9 +124,13 @@ def validate_hero_image(
     """
     from PIL import Image, UnidentifiedImageError
 
+    Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
+
     if len(data) > HERO_MAX_BYTES:
         mb = HERO_MAX_BYTES // (1024 * 1024)
         raise HeroImageError(f"Datei zu groß (max. {mb} MB).")
+    if content_type not in _CONTENT_TYPE_EXT:
+        raise HeroImageError("Format muss JPG, PNG oder WebP sein.")
 
     try:
         with Image.open(io.BytesIO(data)) as img:
@@ -116,7 +138,7 @@ def validate_hero_image(
         with Image.open(io.BytesIO(data)) as img:
             fmt = (img.format or "").upper()
             width, height = img.size
-    except (UnidentifiedImageError, OSError):
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
         raise HeroImageError("Bild konnte nicht gelesen werden.")
 
     ext = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}.get(fmt)
@@ -142,14 +164,11 @@ def validate_hero_image(
 def save_hero_image(spot_id, data: bytes, ext: str, *, media_dir: str, url_prefix: str) -> str:
     """Write the hero image to ``{media_dir}/spots/{spot_id}/hero.{ext}``.
 
-    Removes any previously-stored hero (a spot has exactly one) so a re-upload
-    with a different extension can't leave a stale file behind. Returns the
-    public URL (root-relative for local storage, absolute for Blob)."""
-    for existing_ext in _ALL_HERO_EXTS:
-        if existing_ext != ext:
-            storage.delete(f"spots/{spot_id}/hero.{existing_ext}", media_dir=media_dir)
+    Uses a versioned key so the prior DB reference remains valid until the new
+    object and database update both succeed."""
+    version = uuid.uuid4().hex
     return storage.put(
-        f"spots/{spot_id}/hero.{ext}", data, ext,
+        f"spots/{spot_id}/hero-{version}.{ext}", data, ext,
         media_dir=media_dir, url_prefix=url_prefix,
     )
 
@@ -159,13 +178,10 @@ def save_region_hero_image(
 ) -> str:
     """Write a region hero to ``{media_dir}/regions/{region_id}/hero.{ext}``.
 
-    Mirrors :func:`save_hero_image` (a region has one hero); clears a stale
-    other-extension file so a re-upload can't leave two behind."""
-    for existing_ext in _ALL_HERO_EXTS:
-        if existing_ext != ext:
-            storage.delete(f"regions/{region_id}/hero.{existing_ext}", media_dir=media_dir)
+    Mirrors :func:`save_hero_image` with a versioned key."""
+    version = uuid.uuid4().hex
     return storage.put(
-        f"regions/{region_id}/hero.{ext}", data, ext,
+        f"regions/{region_id}/hero-{version}.{ext}", data, ext,
         media_dir=media_dir, url_prefix=url_prefix,
     )
 
@@ -174,13 +190,15 @@ def _read_image(data: bytes) -> tuple[int, int, str]:
     """Verify the bytes are a real JPG/PNG and return ``(width, height, ext)``."""
     from PIL import Image, UnidentifiedImageError
 
+    Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
+
     try:
         with Image.open(io.BytesIO(data)) as img:
             img.verify()
         with Image.open(io.BytesIO(data)) as img:
             fmt = (img.format or "").upper()
             width, height = img.size
-    except (UnidentifiedImageError, OSError):
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
         raise HeroImageError("Bild konnte nicht gelesen werden.")
     ext = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}.get(fmt)
     if ext is None:

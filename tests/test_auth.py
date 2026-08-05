@@ -7,6 +7,9 @@ the ``admin_users`` table.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timedelta, timezone
+
+import pyotp
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -59,6 +62,43 @@ def test_logout_clears_session(client):
     assert client.get("/auth/me").status_code == 401
 
 
+def test_totp_mfa_is_required_after_enrollment(client, db):
+    from app.models import AdminUser
+    from app.auth import mfa
+
+    setup = client.post("/auth/mfa/setup", json={"password": TEST_ADMIN["password"]})
+    assert setup.status_code == 200, setup.text
+    secret = setup.json()["secret"]
+    current = pyotp.TOTP(secret).now()
+    confirm = client.post("/auth/mfa/confirm", json={"code": current})
+    assert confirm.status_code == 200, confirm.text
+    assert confirm.json()["mfa_enabled"] is True
+
+    try:
+        fresh = TestClient(app)
+        missing = fresh.post(
+            "/auth/login",
+            json={"email": TEST_ADMIN["email"], "password": TEST_ADMIN["password"]},
+        )
+        assert missing.status_code == 401
+        future_code = pyotp.TOTP(secret).at(datetime.now(timezone.utc) + timedelta(seconds=30))
+        accepted = fresh.post(
+            "/auth/login",
+            json={
+                "email": TEST_ADMIN["email"],
+                "password": TEST_ADMIN["password"],
+                "otp": future_code,
+            },
+        )
+        assert accepted.status_code == 200, accepted.text
+    finally:
+        user = db.execute(
+            select(AdminUser).where(AdminUser.email == TEST_ADMIN["email"])
+        ).scalar_one()
+        mfa.disable(user)
+        db.commit()
+
+
 # --- guards ----------------------------------------------------------------
 
 def test_admin_routes_require_auth(anon_client):
@@ -80,7 +120,7 @@ def test_admin_can_manage_users(client):
     email = f"new-{uuid.uuid4().hex[:8]}@test.local"
     created = client.post(
         "/admin/users",
-        json={"email": email, "password": "pw-123456", "role": "curator"},
+        json={"email": email, "password": "pw-123456789", "role": "curator"},
     )
     assert created.status_code == 201, created.text
     uid = created.json()["id"]
@@ -88,7 +128,7 @@ def test_admin_can_manage_users(client):
 
     # duplicate email → 409
     dup = client.post(
-        "/admin/users", json={"email": email, "password": "pw-123456"}
+        "/admin/users", json={"email": email, "password": "pw-123456789"}
     )
     assert dup.status_code == 409
 
@@ -99,13 +139,13 @@ def test_admin_can_manage_users(client):
 
     # reset password
     assert (
-        client.post(f"/admin/users/{uid}/password", json={"password": "brandnew-1"}).status_code
+        client.post(f"/admin/users/{uid}/password", json={"password": "brandnew-123"}).status_code
         == 204
     )
 
     # the new account can now log in with the new password
     other = TestClient(app)
-    login = other.post("/auth/login", json={"email": email, "password": "brandnew-1"})
+    login = other.post("/auth/login", json={"email": email, "password": "brandnew-123"})
     assert login.status_code == 200
 
 
@@ -232,7 +272,7 @@ def test_audit_actor_is_logged_in_email(client, db):
 
 def test_create_user_defaults_to_admin(client):
     email = f"defadm-{uuid.uuid4().hex[:8]}@test.local"
-    created = client.post("/admin/users", json={"email": email, "password": "pw-123456"})
+    created = client.post("/admin/users", json={"email": email, "password": "pw-123456789"})
     assert created.status_code == 201, created.text
     # No role granularity: new accounts are admins.
     assert created.json()["role"] == "admin"
@@ -241,7 +281,7 @@ def test_create_user_defaults_to_admin(client):
 def test_delete_admin_user(client):
     email = f"deltarget-{uuid.uuid4().hex[:8]}@test.local"
     uid = client.post(
-        "/admin/users", json={"email": email, "password": "pw-123456"}
+        "/admin/users", json={"email": email, "password": "pw-123456789"}
     ).json()["id"]
 
     assert client.delete(f"/admin/users/{uid}").status_code == 204
@@ -260,7 +300,7 @@ def test_cannot_delete_self(client):
 def test_update_user_email_and_name(client):
     email = f"e-{uuid.uuid4().hex[:8]}@test.local"
     uid = client.post(
-        "/admin/users", json={"email": email, "password": "pw-123456"}
+        "/admin/users", json={"email": email, "password": "pw-123456789"}
     ).json()["id"]
 
     new_email = f"e2-{uuid.uuid4().hex[:8]}@test.local"

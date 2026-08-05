@@ -13,7 +13,7 @@ export default function RequireAuth({
   role?: AdminRole;
   children: ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading, error, refresh } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -24,9 +24,31 @@ export default function RequireAuth({
     );
   }
 
+  if (error && !user) {
+    return (
+      <div role="alert" className="mx-auto grid min-h-[50vh] max-w-md place-items-center p-6 text-center">
+        <div>
+          <p className="text-[15px] font-medium text-ink">Dashboard nicht erreichbar</p>
+          <p className="mt-2 text-[13px] text-muted">{error}</p>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="mt-4 min-h-11 rounded-lg bg-teal px-4 py-2 text-[14px] font-medium text-white"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
-      <Navigate to="/admin/login" replace state={{ from: location.pathname }} />
+      <Navigate
+        to="/admin/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
     );
   }
 

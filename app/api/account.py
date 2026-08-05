@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.account import service
@@ -20,6 +21,8 @@ from app.account.service import AuthError, EmailExistsError
 from app.config import get_settings
 from app.db.session import get_db
 from app.models import AppUser
+from app.community.ratelimit import RateLimiter, enforce, get_rate_limiter
+from app.csrf import clear_csrf_cookie, set_csrf_cookie
 
 router = APIRouter(prefix="/account", tags=["account"])
 
@@ -27,34 +30,38 @@ router = APIRouter(prefix="/account", tags=["account"])
 # --- schemas ---------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    display_name: str = Field(default="", alias="displayName")
+    email: EmailStr
+    password: str = Field(min_length=12, max_length=1024)
+    display_name: str = Field(default="", alias="displayName", max_length=120)
 
     model_config = {"populate_by_name": True}
 
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=1024)
 
 
 class ProfilePatch(BaseModel):
-    display_name: str | None = Field(default=None, alias="displayName")
-    email: str | None = None
+    display_name: str | None = Field(default=None, alias="displayName", max_length=120)
+    email: EmailStr | None = None
 
     model_config = {"populate_by_name": True}
 
 
 class PasswordChange(BaseModel):
-    old_password: str = Field(alias="oldPassword")
-    new_password: str = Field(alias="newPassword")
+    old_password: str = Field(alias="oldPassword", min_length=1, max_length=1024)
+    new_password: str = Field(alias="newPassword", min_length=12, max_length=1024)
 
     model_config = {"populate_by_name": True}
 
 
 class SubmissionRequest(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=200)
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=1024)
 
 
 class AccountOut(BaseModel):
@@ -73,19 +80,25 @@ class AccountOut(BaseModel):
         )
 
 
+class RegisterAccepted(BaseModel):
+    accepted: bool = True
+    message: str = "Falls noch kein Konto existierte, wurde es angelegt. Du kannst dich jetzt anmelden."
+
+
 # --- helpers ---------------------------------------------------------------
 
 def _set_session_cookie(response: Response, user: AppUser) -> None:
     settings = get_settings()
     response.set_cookie(
         key=settings.app_auth_cookie_name,
-        value=create_app_session_token(user.id),
+        value=create_app_session_token(user.id, user.session_version),
         max_age=settings.app_jwt_ttl_hours * 3600,
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         path="/",
     )
+    set_csrf_cookie(response)
 
 
 def _clear_session_cookie(response: Response) -> None:
@@ -97,14 +110,20 @@ def _clear_session_cookie(response: Response) -> None:
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
     )
+    clear_csrf_cookie(response)
 
 
 # --- auth ------------------------------------------------------------------
 
-@router.post("/register", response_model=AccountOut, status_code=201)
+@router.post("/register", response_model=RegisterAccepted, status_code=202)
 def register(
-    body: RegisterRequest, response: Response, db: Session = Depends(get_db)
-) -> AccountOut:
+    body: RegisterRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    limiter: RateLimiter = Depends(get_rate_limiter),
+) -> RegisterAccepted:
+    enforce(limiter, request, "account-register", limit=5, window=3600)
     try:
         user = service.register(
             db,
@@ -112,19 +131,24 @@ def register(
             password=body.password,
             display_name=body.display_name,
         )
-    except EmailExistsError as exc:
-        raise HTTPException(status_code=409, detail=str(exc))
+    except EmailExistsError:
+        db.rollback()
+        return RegisterAccepted()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     db.commit()
-    _set_session_cookie(response, user)
-    return AccountOut.of(user)
+    return RegisterAccepted()
 
 
 @router.post("/login", response_model=AccountOut)
 def login(
-    body: LoginRequest, response: Response, db: Session = Depends(get_db)
+    body: LoginRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    limiter: RateLimiter = Depends(get_rate_limiter),
 ) -> AccountOut:
+    enforce(limiter, request, "account-login", limit=12, window=900)
     try:
         user = service.authenticate(db, body.email, body.password)
     except AuthError as exc:
@@ -177,6 +201,32 @@ def change_password(
         raise HTTPException(status_code=400, detail=str(exc))
     db.commit()
     return Response(status_code=204)
+
+
+@router.get("/export")
+def export_account(
+    user: AppUser = Depends(current_account), db: Session = Depends(get_db)
+) -> JSONResponse:
+    response = JSONResponse(service.export_account_data(db, user))
+    response.headers["Content-Disposition"] = 'attachment; filename="surfwinddata-export.json"'
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@router.delete("", status_code=204)
+def delete_account(
+    body: DeleteAccountRequest,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> Response:
+    try:
+        service.delete_account(db, user, body.password)
+    except AuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    db.commit()
+    response = Response(status_code=204)
+    _clear_session_cookie(response)
+    return response
 
 
 # --- favourites ------------------------------------------------------------

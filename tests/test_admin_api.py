@@ -409,6 +409,24 @@ def test_map_spots_lists_all_with_coordinates(admin, region_id):
     assert mine["name"] == spot["name"]
 
 
+def test_map_spots_can_be_limited_to_viewport(admin, region_id):
+    spot = _create_spot(admin, region_id)  # lat 54.41 / lon 10.22
+
+    inside = admin.get(
+        "/admin/map-spots",
+        params={"west": 10, "south": 54, "east": 11, "north": 55},
+    )
+    outside = admin.get(
+        "/admin/map-spots",
+        params={"west": -10, "south": 30, "east": 0, "north": 40},
+    )
+
+    assert inside.status_code == 200
+    assert any(row["id"] == spot["id"] for row in inside.json())
+    assert all(row["id"] != spot["id"] for row in outside.json())
+    assert admin.get("/admin/map-spots", params={"west": 10}).status_code == 422
+
+
 def test_overview_has_team_notes_and_review(admin):
     body = admin.get("/admin/overview").json()
     assert "team_notes" in body and isinstance(body["team_notes"], list)

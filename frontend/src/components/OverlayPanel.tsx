@@ -52,12 +52,12 @@ export default function OverlayPanel({
 
   useEffect(() => {
     if (!open) return;
+    const trigger = triggerRef.current;
     panelRef.current?.focus();
     return () => {
-      triggerRef.current?.focus();
+      trigger?.focus();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, triggerRef]);
 
   useEffect(() => {
     if (!open) return;

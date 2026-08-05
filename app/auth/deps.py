@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -23,6 +24,9 @@ from app.auth.security import decode_session_token
 from app.config import get_settings
 from app.db.session import get_db
 from app.models import AdminUser
+from app.community.security import client_ip
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -36,11 +40,25 @@ class Principal:
 
 
 def _break_glass(request: Request) -> Principal | None:
-    key = get_settings().admin_key
+    settings = get_settings()
+    key = settings.admin_key
     if not key:
         return None
     provided = request.headers.get("X-Admin-Key")
     if provided and secrets.compare_digest(provided, key):
+        try:
+            expires = datetime.fromisoformat(
+                (settings.break_glass_expires_at or "").replace("Z", "+00:00")
+            )
+            if expires.tzinfo is None:
+                return None
+        except ValueError:
+            return None
+        remote = client_ip(request)
+        if expires <= datetime.now(timezone.utc) or remote not in settings.break_glass_allowed_ips:
+            logger.warning("rejected break-glass use from %s on %s", remote, request.url.path)
+            return None
+        logger.critical("break-glass access from %s on %s", remote, request.url.path)
         return Principal(email="break-glass", role="admin", is_break_glass=True)
     return None
 
@@ -69,6 +87,8 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> Principal:
         raise HTTPException(
             status_code=401, detail="Konto nicht gefunden oder deaktiviert."
         )
+    if payload.get("ver") != user.session_version:
+        raise HTTPException(status_code=401, detail="Sitzung wurde widerrufen.")
 
     # Presence heartbeat (throttled). Best-effort — never fail the request on it.
     now = datetime.now(timezone.utc)

@@ -18,9 +18,9 @@ export default function DatenSection({
   children: ReactNode;
 }) {
   return (
-    <section className={`border-t border-line px-4 py-3 sm:px-8 ${className}`}>
+    <section className={`min-w-0 max-w-full overflow-hidden border-t border-line px-4 py-3 sm:px-8 ${className}`}>
       {label && <p className="mb-3 text-data-label uppercase text-muted">{label}</p>}
-      {children}
+      <div className="min-w-0 max-w-full">{children}</div>
     </section>
   );
 }

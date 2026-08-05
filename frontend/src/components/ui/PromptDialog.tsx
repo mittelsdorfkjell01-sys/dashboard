@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
 import Button from "./Button";
 import Input from "./Input";
+import ConfirmDialog from "./ConfirmDialog";
 
 /**
  * Reusable single-input dialog — the accessible replacement for
@@ -35,11 +36,13 @@ export default function PromptDialog({
   onCancel: () => void;
 }) {
   const [value, setValue] = useState(initialValue);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
       setValue(initialValue);
+      setDiscardOpen(false);
       // Focus after the modal has mounted.
       queueMicrotask(() => inputRef.current?.focus());
     }
@@ -50,13 +53,21 @@ export default function PromptDialog({
     onConfirm(value);
   };
 
+  const requestCancel = () => {
+    if (busy) return;
+    if (value !== initialValue) setDiscardOpen(true);
+    else onCancel();
+  };
+
   return (
-    <Modal open={open} onClose={onCancel} labelledBy="prompt-title">
+    <>
+    <Modal open={open} onClose={requestCancel} labelledBy="prompt-title">
       <h2 id="prompt-title" className="text-ui font-semibold text-ink">
         {title}
       </h2>
-      {label && <label className="mt-3 block text-label text-ink-soft">{label}</label>}
+      {label && <label htmlFor="prompt-input" className="mt-3 block text-label text-ink-soft">{label}</label>}
       <Input
+        id="prompt-input"
         ref={inputRef}
         type={type}
         value={value}
@@ -72,7 +83,7 @@ export default function PromptDialog({
         className="mt-2"
       />
       <div className="mt-5 flex items-center justify-end gap-2">
-        <Button variant="ghost" onClick={onCancel} disabled={busy}>
+        <Button variant="ghost" onClick={requestCancel} disabled={busy}>
           Abbrechen
         </Button>
         <Button onClick={submit} disabled={busy || (!allowEmpty && !value.trim())}>
@@ -80,5 +91,18 @@ export default function PromptDialog({
         </Button>
       </div>
     </Modal>
+    <ConfirmDialog
+      open={discardOpen}
+      title="Eingabe verwerfen?"
+      message="Die noch nicht gespeicherte Eingabe geht verloren."
+      confirmText="Verwerfen"
+      variant="danger"
+      onCancel={() => setDiscardOpen(false)}
+      onConfirm={() => {
+        setDiscardOpen(false);
+        onCancel();
+      }}
+    />
+    </>
   );
 }

@@ -109,8 +109,8 @@ export default function HourTable({
   const rowClass = (core: boolean) => (!core && !showAllRows ? "hidden sm:table-row" : "");
 
   return (
-    <div>
-      <div className="overflow-x-auto">
+    <div className="min-w-0 max-w-full">
+      <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
         <table className="w-full border-collapse">
           <caption className="sr-only">
             Stundenvorhersage, 7 Tage, stündlich: Wind, Böen, Windrichtung, Wellenhöhe, Swell-Richtung,

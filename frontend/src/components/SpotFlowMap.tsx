@@ -158,7 +158,9 @@ export default function SpotFlowMap({
 }) {
   // Effective framing: admin's saved view wins, else default (spot-centred).
   const effZoom = zoom ?? MAP_ZOOM;
-  const effCenter: [number, number] = mapCenter ?? coords;
+  const effLat = mapCenter?.[0] ?? coords[0];
+  const effLon = mapCenter?.[1] ?? coords[1];
+  const effCenter = useMemo<[number, number]>(() => [effLat, effLon], [effLat, effLon]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const reduce = useReducedMotion();
@@ -523,7 +525,7 @@ export default function SpotFlowMap({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [effCenter[0], effCenter[1], effZoom, windDir, windKts, waveDir, coast, period, waterType]);
+  }, [effCenter, effZoom, windDir, windKts, waveDir, coast, period, waterType]);
 
   const c = live?.current;
   const windValue = useCountUp(typeof c?.wind === "number" ? Math.round(c.wind) : null, overlayVisible, reduce);

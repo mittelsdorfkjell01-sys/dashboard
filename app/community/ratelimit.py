@@ -8,6 +8,7 @@ a FastAPI dependency (``get_rate_limiter``) so tests can override it.
 from __future__ import annotations
 
 import time
+import threading
 from typing import Protocol
 
 from fastapi import HTTPException, Request
@@ -27,6 +28,7 @@ class RedisRateLimiter:
         import redis
 
         self._r = redis.Redis.from_url(url or get_settings().redis_url)
+        self._fallback = InMemoryRateLimiter()
 
     def allow(self, key: str, limit: int, window: int) -> bool:
         try:
@@ -35,8 +37,8 @@ class RedisRateLimiter:
                 self._r.expire(key, window)
             return int(n) <= limit
         except Exception:
-            # A broken cache must not take down writes — fail open.
-            return True
+            # Preserve a per-process protection level during cache outages.
+            return self._fallback.allow(key, limit, window)
 
 
 class InMemoryRateLimiter:
@@ -44,15 +46,23 @@ class InMemoryRateLimiter:
 
     def __init__(self) -> None:
         self._hits: dict[str, tuple[int, float]] = {}
+        self._lock = threading.Lock()
 
     def allow(self, key: str, limit: int, window: int) -> bool:
         now = time.time()
-        count, reset = self._hits.get(key, (0, now + window))
-        if now > reset:
-            count, reset = 0, now + window
-        count += 1
-        self._hits[key] = (count, reset)
-        return count <= limit
+        with self._lock:
+            if len(self._hits) > 10_000:
+                self._hits = {
+                    item_key: value
+                    for item_key, value in self._hits.items()
+                    if value[1] >= now
+                }
+            count, reset = self._hits.get(key, (0, now + window))
+            if now > reset:
+                count, reset = 0, now + window
+            count += 1
+            self._hits[key] = (count, reset)
+            return count <= limit
 
 
 class NoLimitRateLimiter:

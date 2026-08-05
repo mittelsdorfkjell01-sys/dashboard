@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { getSpot, type ActivityItem, type SpotRead } from "../../lib/api";
+import { Link, useLocation } from "react-router-dom";
+import { getAdminSpot, type ActivityItem, type SpotRead } from "../../lib/api";
 import {
   actionLabel,
   facilityLabel,
@@ -12,6 +12,7 @@ import {
 } from "../../lib/labels";
 import type { FacilityKind } from "../../lib/api";
 import Modal from "../ui/Modal";
+import { createAdminReturnState } from "../../lib/adminNavigation";
 
 /**
  * Activity preview. Clicking a spot activity opens a read-only view laid out
@@ -136,6 +137,8 @@ export default function ActivityPreview({
   item: ActivityItem | null;
   onClose: () => void;
 }) {
+  const location = useLocation();
+  const editorState = createAdminReturnState(location, "Aktivität");
   const open = item !== null && item.kind === "spot" && !!item.target_id;
   const [spot, setSpot] = useState<SpotRead | null>(null);
   const [loading, setLoading] = useState(false);
@@ -146,7 +149,7 @@ export default function ActivityPreview({
     setSpot(null);
     setError(null);
     setLoading(true);
-    getSpot(item.target_id)
+    getAdminSpot(item.target_id)
       .then(setSpot)
       .catch(() => setError("Spot konnte nicht geladen werden."))
       .finally(() => setLoading(false));
@@ -174,6 +177,7 @@ export default function ActivityPreview({
         {item.target_id && (
           <Link
             to={`/admin/spot/${item.target_id}/edit`}
+            state={editorState}
             className="shrink-0 rounded-lg border border-teal/30 px-3 py-1.5 text-caption font-medium text-teal hover:bg-teal/5"
           >
             Öffnen →

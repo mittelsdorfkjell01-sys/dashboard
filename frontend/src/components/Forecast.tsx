@@ -219,7 +219,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
       </table>
 
       {/* Ebene 1 — Wochenüberblick, always visible */}
-      <div className="overflow-x-auto no-scrollbar snap-x-mandatory">
+      <div className="min-w-0 max-w-full overflow-x-auto no-scrollbar snap-x-mandatory">
         <div className="grid grid-flow-col auto-cols-[minmax(112px,1fr)] divide-x divide-line">
           {blocks.map((d, i) => (
             <button

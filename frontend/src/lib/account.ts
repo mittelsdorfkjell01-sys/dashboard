@@ -110,8 +110,8 @@ export async function register(input: {
   email: string;
   password: string;
   displayName: string;
-}): Promise<Account> {
-  const acc = await call<Account>("/account/register", {
+}): Promise<void> {
+  await call<{ accepted: boolean; message: string }>("/account/register", {
     method: "POST",
     body: JSON.stringify({
       email: input.email,
@@ -119,8 +119,6 @@ export async function register(input: {
       displayName: input.displayName,
     }),
   });
-  await hydrate();
-  return acc;
 }
 
 export async function login(input: {
@@ -158,6 +156,26 @@ export async function changePassword(oldPw: string, newPw: string): Promise<void
     method: "POST",
     body: JSON.stringify({ oldPassword: oldPw, newPassword: newPw }),
   });
+}
+
+export async function downloadAccountExport(): Promise<void> {
+  const data = await call<Record<string, unknown>>("/account/export");
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+  );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "surfwinddata-export.json";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function deleteAccount(password: string): Promise<void> {
+  await call<void>("/account", {
+    method: "DELETE",
+    body: JSON.stringify({ password }),
+  });
+  clearCaches();
 }
 
 // --- favourites ------------------------------------------------------------

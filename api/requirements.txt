@@ -8,7 +8,7 @@
 #   - pytest   -> excluded (tests don't run in the function).
 # Keep this in sync with the runtime imports of app/ (minus the above).
 
-fastapi==0.115.6
+fastapi==0.141.1
 sqlalchemy==2.0.36
 geoalchemy2==0.16.0
 psycopg[binary]==3.2.3
@@ -17,9 +17,12 @@ pydantic-settings==2.7.0
 redis==5.2.1
 shapely==2.0.6
 httpx==0.28.1
-python-multipart==0.0.20
-pillow==11.1.0
+python-multipart==0.0.32
+pillow==12.3.0
 pillow-avif-plugin==1.5.5
 bcrypt==5.0.0
-PyJWT==2.10.1
+PyJWT==2.13.0
+pyotp==2.10.0
+cryptography==50.0.0
+email-validator==2.2.0
 numpy==2.4.6

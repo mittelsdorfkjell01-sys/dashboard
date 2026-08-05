@@ -233,6 +233,7 @@ function NewTaskModal({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
 
   // Reset the fields each time the mask opens.
   useEffect(() => {
@@ -257,29 +258,38 @@ function NewTaskModal({
     }
   };
 
+  const close = () => {
+    if (busy) return;
+    if (title.trim() || body.trim()) setDiscardOpen(true);
+    else onClose();
+  };
+
   return (
-    <Modal open={open} onClose={onClose} labelledBy="new-task-title">
+    <>
+    <Modal open={open} onClose={close} labelledBy="new-task-title">
       <form onSubmit={submit}>
         <h2 id="new-task-title" className="text-ui font-semibold text-ink">
           Neue Aufgabe
         </h2>
-        <label className="mt-4 block text-label text-ink-soft">Titel</label>
+        <label htmlFor="new-task-title-input" className="mt-4 block text-label text-ink-soft">Titel</label>
         <Input
+          id="new-task-title-input"
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Titel"
           className="mt-1.5"
         />
-        <label className="mt-3 block text-label text-ink-soft">Details (optional)</label>
+        <label htmlFor="new-task-body" className="mt-3 block text-label text-ink-soft">Details (optional)</label>
         <Textarea
+          id="new-task-body"
           className="mt-1.5 min-h-[96px] resize-y"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Details (optional)"
         />
         <div className="mt-5 flex items-center justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+          <Button type="button" variant="ghost" onClick={close} disabled={busy}>
             Abbrechen
           </Button>
           <Button type="submit" disabled={busy || !title.trim()}>
@@ -288,5 +298,18 @@ function NewTaskModal({
         </div>
       </form>
     </Modal>
+    <ConfirmDialog
+      open={discardOpen}
+      title="Aufgabe verwerfen?"
+      message="Titel und Details wurden noch nicht gespeichert."
+      confirmText="Verwerfen"
+      variant="danger"
+      onCancel={() => setDiscardOpen(false)}
+      onConfirm={() => {
+        setDiscardOpen(false);
+        onClose();
+      }}
+    />
+    </>
   );
 }

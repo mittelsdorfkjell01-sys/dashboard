@@ -69,6 +69,8 @@ def approve_submission(
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Einreichung nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     except moderation.IncompleteSubmissionError as exc:
         # Missing/invalid fields the admin still needs to supply.
         raise HTTPException(status_code=422, detail=str(exc))
@@ -104,7 +106,7 @@ def approve_image(
     except LookupError:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden.")
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(img.id), "status": img.status}
 
 
@@ -119,6 +121,8 @@ def reject_image(
         img = moderation.reject_image(db, image_id, actor=actor, note=body.note)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(img.id), "status": img.status}
 
 
@@ -133,6 +137,8 @@ def remove_image(
         img = moderation.remove_image(db, image_id, actor=actor, note=body.note)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(img.id), "status": img.status}
 
 
@@ -146,6 +152,8 @@ def dismiss_reports(
         img = moderation.dismiss_reports(db, image_id, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(img.id), "report_count": img.report_count}
 
 
@@ -166,6 +174,8 @@ def hide_tip(
         tip = moderation.set_tip_status(db, tip_id, "hidden", actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Tipp nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(tip.id), "status": tip.status}
 
 
@@ -177,6 +187,8 @@ def restore_tip(
         tip = moderation.set_tip_status(db, tip_id, "published", actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Tipp nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(tip.id), "status": tip.status}
 
 
@@ -188,6 +200,8 @@ def hide_rating(
         rating = moderation.set_rating_status(db, rating_id, "hidden", actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bewertung nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(rating.id), "status": rating.status}
 
 
@@ -199,4 +213,6 @@ def restore_rating(
         rating = moderation.set_rating_status(db, rating_id, "published", actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bewertung nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(rating.id), "status": rating.status}

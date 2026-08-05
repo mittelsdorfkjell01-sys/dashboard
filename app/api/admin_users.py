@@ -7,9 +7,11 @@ role, whereas the rest of ``/admin/*`` also allows ``curator``.
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import service
@@ -35,6 +37,7 @@ class AdminUserOut(BaseModel):
     last_login_at: str | None = None
     last_seen_at: str | None = None
     created_at: str
+    mfa_enabled: bool
 
     @classmethod
     def from_user(cls, u: AdminUser) -> "AdminUserOut":
@@ -47,27 +50,28 @@ class AdminUserOut(BaseModel):
             last_login_at=u.last_login_at.isoformat() if u.last_login_at else None,
             last_seen_at=u.last_seen_at.isoformat() if u.last_seen_at else None,
             created_at=u.created_at.isoformat(),
+            mfa_enabled=u.totp_enabled_at is not None,
         )
 
 
 class AdminUserCreate(BaseModel):
-    email: str
-    password: str
-    display_name: str | None = None
+    email: EmailStr
+    password: str = Field(min_length=12, max_length=1024)
+    display_name: str | None = Field(default=None, max_length=120)
     # Two operators, both full admins — no role granularity. New accounts are
     # admins; the UI exposes no role picker.
-    role: str = "admin"
+    role: Literal["admin", "curator"] = "admin"
 
 
 class AdminUserUpdate(BaseModel):
-    role: str | None = None
+    role: Literal["admin", "curator"] | None = None
     is_active: bool | None = None
-    display_name: str | None = None
-    email: str | None = None
+    display_name: str | None = Field(default=None, max_length=120)
+    email: EmailStr | None = None
 
 
 class PasswordUpdate(BaseModel):
-    password: str
+    password: str = Field(min_length=12, max_length=1024)
 
 
 @router.get("", response_model=list[AdminUserOut])
@@ -113,6 +117,7 @@ def update_user(
                 detail="Der letzte aktive Admin kann nicht herabgestuft werden.",
             )
         user.role = body.role
+        user.session_version += 1
     if body.display_name is not None:
         name = body.display_name.strip()
         if name:
@@ -149,7 +154,9 @@ def update_user(
                 status_code=422,
                 detail="Der letzte aktive Admin kann nicht deaktiviert werden.",
             )
-        user.is_active = body.is_active
+        if user.is_active != body.is_active:
+            user.is_active = body.is_active
+            user.session_version += 1
     db.flush()
     db.commit()
     return AdminUserOut.from_user(user)
@@ -166,6 +173,27 @@ def set_user_password(
         service.set_password(db, user, body.password)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/{user_id}/mfa", status_code=204)
+def reset_user_mfa(
+    user_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_role("admin")),
+):
+    from app.auth import mfa
+
+    user = db.get(AdminUser, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden.")
+    if principal.user_id == user.id:
+        raise HTTPException(
+            status_code=422,
+            detail="Die eigene 2FA muss mit Passwort und aktuellem Code deaktiviert werden.",
+        )
+    mfa.disable(user)
     db.commit()
     return Response(status_code=204)
 
@@ -197,9 +225,13 @@ def delete_user(
 def _is_last_active_admin(db: Session, user: AdminUser) -> bool:
     if user.role != "admin":
         return False
-    others = [
-        u
-        for u in service.list_users(db)
-        if u.role == "admin" and u.is_active and u.id != user.id
-    ]
+    # Lock the complete invariant set. Concurrent demote/deactivate/delete
+    # requests then serialize and the second request observes the first commit.
+    active_admins = db.scalars(
+        select(AdminUser)
+        .where(AdminUser.role == "admin", AdminUser.is_active.is_(True))
+        .order_by(AdminUser.id)
+        .with_for_update()
+    ).all()
+    others = [u for u in active_admins if u.id != user.id]
     return len(others) == 0

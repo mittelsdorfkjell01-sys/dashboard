@@ -131,8 +131,11 @@ def _alt_brief(r: dict) -> dict:
 
 def _load_spot(db: Session, spot_id):
     from app.models import Spot
+    from app.public_catalog import PUBLISHED
 
-    spot = db.get(Spot, spot_id)
+    spot = db.scalar(
+        select(Spot).where(Spot.id == spot_id, Spot.status == PUBLISHED)
+    )
     if spot is None:
         raise LookupError(f"unknown spot {spot_id}")
     return spot
@@ -140,8 +143,9 @@ def _load_spot(db: Session, spot_id):
 
 def _candidates(db: Session, sport: str | None) -> list:
     from app.models import Spot
+    from app.public_catalog import PUBLISHED
 
-    stmt = select(Spot)
+    stmt = select(Spot).where(Spot.status == PUBLISHED)
     if sport:
         stmt = stmt.where(Spot.sports.any(sport))
     return list(db.scalars(stmt).all())

@@ -8,7 +8,7 @@
 // requests, not two. The composer (in the feed) is the only place a photo
 // gets attached to a post; the gallery only ever reads photos back out.
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ApiError,
   getImageLicense,
@@ -695,7 +695,10 @@ function Lightbox({
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
-  const go = (delta: number) => onIndexChange((index + delta + items.length) % items.length);
+  const go = useCallback(
+    (delta: number) => onIndexChange((index + delta + items.length) % items.length),
+    [index, items.length, onIndexChange]
+  );
 
   useEffect(() => {
     dialogRef.current?.focus();
@@ -729,7 +732,7 @@ function Lightbox({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [index, items.length]);
+  }, [go, onClose]);
 
   const img = items[index];
 

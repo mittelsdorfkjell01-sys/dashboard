@@ -4,14 +4,23 @@
 // single place that owns programmatic scrolling, so there are no competing
 // scrollTo calls fighting Lenis.
 
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLayoutEffect } from "react";
+import { useLocation, useNavigationType } from "react-router-dom";
 import { getLenis } from "../lib/lenis";
 
-export default function ScrollManager() {
-  const { pathname, hash } = useLocation();
+const scrollPositions = new Map<string, number>();
 
-  useEffect(() => {
+export default function ScrollManager() {
+  const { pathname, hash, key } = useLocation();
+  const navigationType = useNavigationType();
+
+  useLayoutEffect(() => {
+    return () => {
+      scrollPositions.set(key, window.scrollY);
+    };
+  }, [key]);
+
+  useLayoutEffect(() => {
     const lenis = getLenis();
 
     if (hash) {
@@ -23,10 +32,10 @@ export default function ScrollManager() {
       }
     }
 
-    // New route → jump to the top instantly (no animated scroll between pages).
-    if (lenis) lenis.scrollTo(0, { immediate: true });
-    else window.scrollTo(0, 0);
-  }, [pathname, hash]);
+    const target = navigationType === "POP" ? scrollPositions.get(key) ?? 0 : 0;
+    if (lenis) lenis.scrollTo(target, { immediate: true });
+    else window.scrollTo(0, target);
+  }, [pathname, hash, key, navigationType]);
 
   return null;
 }

@@ -1,16 +1,18 @@
-// Admin map: every spot (incl. drafts), colour-coded by status — draft = light
+// Admin map: spots in the current viewport (incl. drafts), colour-coded by status — draft = light
 // red, published = green, archived = grey. Markers link into the editor. Reads
 // the same spots as everywhere else via a lightweight coordinates-only endpoint;
 // it's an admin-only view, independent of the public map.
 
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import Supercluster from "supercluster";
 import { ApiError, archiveSpot, getAdminMapSpots, type AdminMapSpot } from "../lib/api";
 import { statusLabel } from "../lib/labels";
 import { PageHeader } from "../components/admin/ui";
 import ConfirmToast from "../components/admin/ConfirmToast";
+import { createAdminReturnState } from "../lib/adminNavigation";
 
 const STATUS_COLOR: Record<string, string> = {
   published: "#4A8159", // grün
@@ -18,6 +20,8 @@ const STATUS_COLOR: Record<string, string> = {
   archived: "#9CA3AF", // grau
 };
 const fallbackColor = "#9CA3AF";
+type MapPoint = { spot: AdminMapSpot };
+type Viewport = { bounds: [number, number, number, number]; zoom: number };
 
 /** Teardrop pin as a Leaflet divIcon, filled with the status colour. */
 const pinIcon = (color: string) =>
@@ -33,20 +37,37 @@ const pinIcon = (color: string) =>
     popupAnchor: [0, -32],
   });
 
+const clusterIcon = (count: number) =>
+  L.divIcon({
+    className: "swd-admin-cluster",
+    html: `<span>${count}</span>`,
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+  });
+
 export default function AdminMap() {
+  const location = useLocation();
+  const [params, setParams] = useSearchParams();
+  const editorState = createAdminReturnState(location, "Karte");
   const [spots, setSpots] = useState<AdminMapSpot[]>([]);
   const [error, setError] = useState<string | null>(null);
   // Pending archive: set from a pin popup, confirmed via the top-right toast (✓).
   const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  // Archived spots are never drawn; draft/published can be toggled off.
-  const [show, setShow] = useState({ published: true, draft: true });
+  const requestSequence = useRef(0);
+  // Archived spots are never drawn; visibility lives in the URL so returning
+  // from an editor restores the same working view.
+  const show = useMemo(() => ({
+    published: params.get("published") !== "0",
+    draft: params.get("draft") !== "0",
+  }), [params]);
 
-  useEffect(() => {
-    getAdminMapSpots()
-      .then(setSpots)
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen."));
-  }, []);
+  const toggleVisibility = (key: "published" | "draft") => {
+    const next = new URLSearchParams(params);
+    if (show[key]) next.set(key, "0");
+    else next.delete(key);
+    setParams(next, { replace: true });
+  };
 
   const onArchive = async () => {
     if (!pending) return;
@@ -84,36 +105,68 @@ export default function AdminMap() {
   );
 
   const center = useMemo<[number, number]>(() => {
-    const base = visibleSpots.length ? visibleSpots : spots;
-    if (base.length === 0) return [40.3, 9.3];
-    return [
-      base.reduce((a, s) => a + s.lat, 0) / base.length,
-      base.reduce((a, s) => a + s.lon, 0) / base.length,
-    ];
-    // Only recompute on first load, not on every toggle (avoid map jumps).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spots]);
+    const lat = params.has("lat") ? Number(params.get("lat")) : Number.NaN;
+    const lon = params.has("lon") ? Number(params.get("lon")) : Number.NaN;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) return [lat, lon];
+    return [45, 10];
+  }, [params]);
+
+  const requestedZoom = params.has("z") ? Number(params.get("z")) : 6;
+  const initialZoom = Number.isFinite(requestedZoom)
+    ? Math.min(18, Math.max(2, requestedZoom))
+    : 6;
+  const [viewport, setViewport] = useState<Viewport>({
+    bounds: [-180, -85, 180, 85],
+    zoom: initialZoom,
+  });
+  const loadViewport = useCallback((next: Viewport) => {
+    setViewport(next);
+    setError(null);
+    const sequence = ++requestSequence.current;
+    getAdminMapSpots(next.bounds)
+      .then((rows) => {
+        if (sequence === requestSequence.current) setSpots(rows);
+      })
+      .catch((e) => {
+        if (sequence === requestSequence.current) {
+          setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.");
+        }
+      });
+  }, []);
+  const clusterIndex = useMemo(() => {
+    const index = new Supercluster<MapPoint>({ radius: 54, maxZoom: 16 });
+    return index.load(
+      visibleSpots.map((spot) => ({
+        type: "Feature" as const,
+        properties: { spot },
+        geometry: { type: "Point" as const, coordinates: [spot.lon, spot.lat] },
+      }))
+    );
+  }, [visibleSpots]);
+  const clusteredSpots = useMemo(
+    () => clusterIndex.getClusters(viewport.bounds, Math.round(viewport.zoom)),
+    [clusterIndex, viewport]
+  );
 
   return (
     <div>
       <PageHeader
         title="Karte"
-        description="Marker anklicken zum Bearbeiten. Archivierte Spots werden nicht angezeigt."
         actions={
           <div className="flex flex-wrap items-center gap-2 text-label">
             <LegendToggle
               color={STATUS_COLOR.published}
-              label={`Veröffentlicht (${counts.published ?? 0})`}
+              label={`Veröffentlicht (${counts.published ?? 0} im Ausschnitt)`}
               active={show.published}
-              onClick={() => setShow((s) => ({ ...s, published: !s.published }))}
+              onClick={() => toggleVisibility("published")}
             />
             <LegendToggle
               color={STATUS_COLOR.draft}
-              label={`Entwurf (${counts.draft ?? 0})`}
+              label={`Entwurf (${counts.draft ?? 0} im Ausschnitt)`}
               active={show.draft}
-              onClick={() => setShow((s) => ({ ...s, draft: !s.draft }))}
+              onClick={() => toggleVisibility("draft")}
             />
-            <span className="text-admin-faint">Archiviert ({counts.archived ?? 0}) · ausgeblendet</span>
+            <span className="text-admin-faint">Archiviert ({counts.archived ?? 0} im Ausschnitt) · ausgeblendet</span>
           </div>
         }
       />
@@ -134,18 +187,33 @@ export default function AdminMap() {
 
       <div data-lenis-prevent className="mt-4 h-[calc(100vh-220px)] min-h-[420px] overflow-hidden rounded-lg border border-admin-border">
         <MapContainer
-          key={spots.length ? "loaded" : "init"}
           center={center}
-          zoom={6}
+          zoom={initialZoom}
           scrollWheelZoom
           className="h-full w-full"
         >
+          <MapUrlState onViewport={loadViewport} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             subdomains="abcd"
           />
-          {visibleSpots.map((s) => (
+          {clusteredSpots.map((feature) => {
+            const [lon, lat] = feature.geometry.coordinates;
+            if ("cluster" in feature.properties && feature.properties.cluster) {
+              return (
+                <ClusterMarker
+                  key={`cluster-${feature.properties.cluster_id}`}
+                  position={[lat, lon]}
+                  count={feature.properties.point_count}
+                  expansionZoom={clusterIndex.getClusterExpansionZoom(
+                    feature.properties.cluster_id
+                  )}
+                />
+              );
+            }
+            const s = (feature.properties as MapPoint).spot;
+            return (
             <Marker
               key={s.id}
               position={[s.lat, s.lon]}
@@ -165,6 +233,7 @@ export default function AdminMap() {
                   <div className="mt-2 flex items-center gap-3">
                     <Link
                       to={`/admin/spot/${s.id}/edit`}
+                      state={editorState}
                       className="text-label font-medium hover:underline"
                       style={{ color: "#1E6E7E" }}
                     >
@@ -184,11 +253,63 @@ export default function AdminMap() {
                 </div>
               </Popup>
             </Marker>
-          ))}
+            );
+          })}
         </MapContainer>
       </div>
     </div>
   );
+}
+
+function ClusterMarker({
+  position,
+  count,
+  expansionZoom,
+}: {
+  position: [number, number];
+  count: number;
+  expansionZoom: number;
+}) {
+  const map = useMap();
+  return (
+    <Marker
+      position={position}
+      icon={clusterIcon(count)}
+      eventHandlers={{ click: () => map.setView(position, expansionZoom) }}
+      title={`${count} Spots`}
+    />
+  );
+}
+
+function MapUrlState({ onViewport }: { onViewport: (viewport: Viewport) => void }) {
+  const [params, setParams] = useSearchParams();
+
+  const map = useMapEvents({
+    moveend(event) {
+      const map = event.target;
+      const center = map.getCenter();
+      const bounds = map.getBounds();
+      onViewport({
+        bounds: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+        zoom: map.getZoom(),
+      });
+      const next = new URLSearchParams(params);
+      next.set("lat", center.lat.toFixed(5));
+      next.set("lon", center.lng.toFixed(5));
+      next.set("z", String(map.getZoom()));
+      setParams(next, { replace: true });
+    },
+  });
+
+  useEffect(() => {
+    const bounds = map.getBounds();
+    onViewport({
+      bounds: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
+      zoom: map.getZoom(),
+    });
+  }, [map, onViewport]);
+
+  return null;
 }
 
 // Legend entry that doubles as a show/hide toggle; dimmed + struck when off.
