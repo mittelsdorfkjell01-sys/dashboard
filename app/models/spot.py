@@ -56,7 +56,7 @@ class Spot(Base, TimestampMixin):
     water_character: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
-    # Fahrstil (multi-select): freeride | freestyle | big_air | wave_riding.
+    # Fahrstil: freeride | freestyle | big_air | wave_riding | wavekite.
     style: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )

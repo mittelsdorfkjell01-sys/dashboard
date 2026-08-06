@@ -14,7 +14,12 @@ from sqlalchemy.orm import Session
 
 from app.admin import moderation
 from app.admin.deps import get_extract_client
-from app.auth.deps import get_actor, require_role
+from app.auth.deps import Principal, current_user, get_actor, require_role
+from app.admin.duplicates import (
+    ExactDuplicateError,
+    LikelyDuplicateError,
+    duplicate_detail,
+)
 from app.db.session import get_db
 
 
@@ -28,10 +33,11 @@ class SubmissionApprove(BaseModel):
     lat: float | None = None
     lon: float | None = None
     sports: list[str] | None = None
+    allow_duplicate: bool = False
 
     def completion(self) -> dict:
         # Only the fields actually provided — never overwrite the payload with nulls.
-        data = self.model_dump(exclude_none=True)
+        data = self.model_dump(exclude_none=True, exclude={"allow_duplicate"})
         if "region_id" in data:
             data["region_id"] = str(data["region_id"])
         return data
@@ -60,20 +66,34 @@ def approve_submission(
     body: SubmissionApprove | None = None,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
+    principal: Principal = Depends(current_user),
     client=Depends(get_extract_client),
 ) -> dict:
+    if body and body.allow_duplicate and principal.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Nur Administratoren dürfen eine mögliche Dublette bestätigen.",
+        )
     completion = body.completion() if body else {}
     try:
         spot = moderation.approve_submission(
-            db, submission_id, actor=actor, client=client, completion=completion
+            db,
+            submission_id,
+            actor=actor,
+            client=client,
+            completion=completion,
+            allow_duplicate=body.allow_duplicate if body else False,
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Einreichung nicht gefunden.")
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc))
     except moderation.IncompleteSubmissionError as exc:
         # Missing/invalid fields the admin still needs to supply.
         raise HTTPException(status_code=422, detail=str(exc))
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=duplicate_detail(exc, role=principal.role),
+        )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     return {"spot_id": str(spot.id), "status": spot.status}

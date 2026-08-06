@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
-import uuid
+import logging
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.admin.stock import StockImageClient
+from app.admin.duplicates import (
+    enforce_duplicates,
+    find_region_duplicates,
+    find_spot_duplicates,
+)
 from app.names import available_slug, clean_display_name
+
+logger = logging.getLogger(__name__)
 
 
 def _point(lat: float, lon: float):
@@ -31,7 +38,13 @@ def _bbox_polygon(bbox):
     return from_shape(Polygon(ring), srid=4326)
 
 
-def create_region(data: dict, *, db: Session) -> Any:
+def create_region(
+    data: dict,
+    *,
+    db: Session,
+    allow_duplicate: bool = False,
+    actor: str | None = None,
+) -> Any:
     """Create a region with optional centre + bounds and defaults template."""
     from app.models import Region
 
@@ -42,6 +55,18 @@ def create_region(data: dict, *, db: Session) -> Any:
     bbox = data.get("bounds")
     if bbox and len(bbox) == 4:
         bounds = _bbox_polygon(bbox)
+    duplicate_candidates = enforce_duplicates(
+        "Region",
+        find_region_duplicates(
+            db,
+            name=data["name"],
+            country=data.get("country"),
+            lat=data.get("lat"),
+            lon=data.get("lon"),
+            bounds=bounds,
+        ),
+        allow_likely=allow_duplicate,
+    )
     region = Region(
         slug=available_slug(db, Region, data.get("slug") or data["name"]),
         name=clean_display_name(data["name"]),
@@ -57,10 +82,19 @@ def create_region(data: dict, *, db: Session) -> Any:
     db.add(region)
     db.commit()
     db.refresh(region)
+    if duplicate_candidates:
+        logger.warning(
+            "region duplicate override by %s for %s against %s",
+            actor,
+            region.id,
+            [item["id"] for item in duplicate_candidates],
+        )
     return region
 
 
-def assign_spot_to_region(spot_id, region_id, *, db: Session) -> Any:
+def assign_spot_to_region(
+    spot_id, region_id, *, db: Session, allow_duplicate: bool = False
+) -> Any:
     """Move a spot to a region, inheriting ``model_pref`` if unset."""
     from app.models import Region, Spot
 
@@ -70,6 +104,21 @@ def assign_spot_to_region(spot_id, region_id, *, db: Session) -> Any:
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
+    from geoalchemy2.shape import to_shape
+
+    point = to_shape(spot.location)
+    enforce_duplicates(
+        "Spot",
+        find_spot_duplicates(
+            db,
+            name=spot.name,
+            region_id=region.id,
+            lat=float(point.y),
+            lon=float(point.x),
+            exclude_id=spot.id,
+        ),
+        allow_likely=allow_duplicate,
+    )
     spot.region_id = region.id
     if not spot.model_pref and region.defaults:
         spot.model_pref = region.defaults.get("model_pref")
@@ -78,7 +127,9 @@ def assign_spot_to_region(spot_id, region_id, *, db: Session) -> Any:
     return spot
 
 
-def assign_spots_to_region(spot_ids, region_id, *, db: Session) -> int:
+def assign_spots_to_region(
+    spot_ids, region_id, *, db: Session, allow_duplicate: bool = False
+) -> int:
     """Move several spots to a region in one transaction (inheriting
     ``model_pref`` where unset). Returns the count moved. Raises LookupError if
     the region or any spot id is unknown — nothing is committed on error."""
@@ -97,6 +148,21 @@ def assign_spots_to_region(spot_ids, region_id, *, db: Session) -> int:
     for spot in spots:
         if spot.region_id == region.id:
             continue
+        from geoalchemy2.shape import to_shape
+
+        point = to_shape(spot.location)
+        enforce_duplicates(
+            "Spot",
+            find_spot_duplicates(
+                db,
+                name=spot.name,
+                region_id=region.id,
+                lat=float(point.y),
+                lon=float(point.x),
+                exclude_id=spot.id,
+            ),
+            allow_likely=allow_duplicate,
+        )
         spot.region_id = region.id
         if not spot.model_pref and region.defaults:
             spot.model_pref = region.defaults.get("model_pref")
@@ -154,7 +220,9 @@ def set_region_status(region_id, status: str, *, db: Session) -> Any:
     return region
 
 
-def unassign_spots_from_region(spot_ids, *, db: Session) -> int:
+def unassign_spots_from_region(
+    spot_ids, *, db: Session, allow_duplicate: bool = False
+) -> int:
     """Drag a spot out of every region → region-less (region_id NULL). It then
     surfaces at the top of the Übersicht until a region is picked. Returns the
     count changed; unknown ids are ignored (idempotent)."""
@@ -165,13 +233,35 @@ def unassign_spots_from_region(spot_ids, *, db: Session) -> int:
     changed = 0
     for spot in spots:
         if spot.region_id is not None:
+            from geoalchemy2.shape import to_shape
+
+            point = to_shape(spot.location)
+            enforce_duplicates(
+                "Spot",
+                find_spot_duplicates(
+                    db,
+                    name=spot.name,
+                    region_id=None,
+                    lat=float(point.y),
+                    lon=float(point.x),
+                    exclude_id=spot.id,
+                ),
+                allow_likely=allow_duplicate,
+            )
             spot.region_id = None
             changed += 1
     db.commit()
     return changed
 
 
-def update_region(region_id, data: dict, *, db: Session) -> Any:
+def update_region(
+    region_id,
+    data: dict,
+    *,
+    db: Session,
+    allow_duplicate: bool = False,
+    actor: str | None = None,
+) -> Any:
     """Patch a region's editorial fields. Only keys present in ``data`` are
     applied; ``defaults`` is merged, ``season``/``name``/``description`` replaced."""
     from app.models import Region
@@ -179,6 +269,22 @@ def update_region(region_id, data: dict, *, db: Session) -> Any:
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
+    from geoalchemy2.shape import to_shape
+
+    point = to_shape(region.center) if region.center is not None else None
+    duplicate_candidates = enforce_duplicates(
+        "Region",
+        find_region_duplicates(
+            db,
+            name=data.get("name") or region.name,
+            country=data.get("country", region.country),
+            lat=float(point.y) if point is not None else None,
+            lon=float(point.x) if point is not None else None,
+            bounds=region.bounds,
+            exclude_id=region.id,
+        ),
+        allow_likely=allow_duplicate,
+    )
     if "name" in data and data["name"]:
         region.name = data["name"]
     if "country" in data:
@@ -193,6 +299,13 @@ def update_region(region_id, data: dict, *, db: Session) -> Any:
         region.defaults = merged
     db.commit()
     db.refresh(region)
+    if duplicate_candidates:
+        logger.warning(
+            "region duplicate override by %s for %s against %s",
+            actor,
+            region.id,
+            [item["id"] for item in duplicate_candidates],
+        )
     return region
 
 

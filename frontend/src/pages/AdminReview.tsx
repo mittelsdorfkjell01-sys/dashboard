@@ -28,6 +28,13 @@ import { SPORT_LABELS } from "../lib/labels";
 import PromptDialog from "../components/ui/PromptDialog";
 import { PageHeader, Badge } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
+import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
+import {
+  parseDuplicateConflict,
+  type DuplicateConflict,
+} from "../lib/duplicateConflicts";
 
 type Tab = "submissions" | "hero" | "gallery" | "reported" | "content";
 
@@ -44,6 +51,7 @@ const TABS: { key: Tab; label: string; count: (q: ReviewQueue) => number }[] = [
 ];
 
 export default function AdminReview() {
+  const { blocker, setDirty } = useUnsavedChangesGuard();
   const [params, setParams] = useSearchParams();
   const [queue, setQueue] = useState<ReviewQueue | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -53,6 +61,10 @@ export default function AdminReview() {
     : "submissions";
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    conflict: DuplicateConflict;
+    retry: () => void;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -76,13 +88,18 @@ export default function AdminReview() {
       });
   }, []);
 
-  const act = async (fn: () => Promise<unknown>) => {
+  const act = async (fn: () => Promise<unknown>, duplicateRetry?: () => void) => {
     setBusy(true);
     setError(null);
     try {
       await fn();
       await load();
     } catch (e) {
+      const duplicate = parseDuplicateConflict(e);
+      if (duplicate && duplicateRetry) {
+        setDuplicateWarning({ conflict: duplicate, retry: duplicateRetry });
+        return;
+      }
       setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
     } finally {
       setBusy(false);
@@ -108,6 +125,20 @@ export default function AdminReview() {
     else next.set("tab", nextTab);
     setParams(next, { replace: true });
   };
+
+  const approve = (
+    submissionId: string,
+    completion: SubmissionCompletion,
+    allowDuplicate = false
+  ) => void act(
+    () => approveSubmission(submissionId, {
+      ...completion,
+      allow_duplicate: allowDuplicate,
+    }),
+    allowDuplicate
+      ? undefined
+      : () => approve(submissionId, completion, true)
+  );
 
   return (
     <div>
@@ -158,7 +189,7 @@ export default function AdminReview() {
                   submission={s}
                   regions={regions}
                   busy={busy}
-                  onApprove={(completion) => act(() => approveSubmission(s.id, completion))}
+                  onApprove={(completion) => approve(s.id, completion)}
                   onReject={() =>
                     askNote("Einreichung ablehnen", "Ablehnen", (note) =>
                       rejectSubmission(s.id, note)
@@ -322,6 +353,18 @@ export default function AdminReview() {
           if (action) void act(() => action.run(note.trim() || undefined));
         }}
         onCancel={() => setNoteAction(null)}
+        onDirtyChange={(dirty) => setDirty("review-note", dirty)}
+      />
+      <UnsavedChangesDialog blocker={blocker} />
+      <DuplicateWarningDialog
+        conflict={duplicateWarning?.conflict ?? null}
+        busy={busy}
+        onClose={() => setDuplicateWarning(null)}
+        onOverride={() => {
+          const retry = duplicateWarning?.retry;
+          setDuplicateWarning(null);
+          retry?.();
+        }}
       />
     </div>
   );

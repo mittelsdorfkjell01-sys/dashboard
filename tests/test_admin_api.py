@@ -10,6 +10,7 @@ import uuid
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.admin.deps import get_cds_client, get_stock_client
 from app.main import app
@@ -87,6 +88,206 @@ def _create_spot(admin, region_id, **overrides):
     resp = admin.post("/admin/spots", json=body)
     assert resp.status_code == 201, resp.text
     return resp.json()
+
+
+def _create_region(admin, *, name: str, lat: float, lon: float, country: str = "DE"):
+    suffix = uuid.uuid4().hex[:8]
+    resp = admin.post("/admin/regions", json={
+        "name": name,
+        "slug": f"test-region-{suffix}",
+        "country": country,
+        "lat": lat,
+        "lon": lon,
+    })
+    assert resp.status_code == 201, resp.text
+    return resp.json()
+
+
+# --- catalogue duplicate protection ---------------------------------------
+
+def test_exact_spot_duplicate_is_blocked_and_lists_candidate(admin, region_id):
+    suffix = uuid.uuid4().hex[:8]
+    existing = _create_spot(admin, region_id, name=f"Exact Coast {suffix}")
+    response = admin.post("/admin/spots", json={
+        "name": f"  exact   coast {suffix.upper()}  ",
+        "region_id": region_id,
+        "lat": 54.42,
+        "lon": 10.23,
+        "sports": ["kitesurf"],
+    })
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == "exact_duplicate"
+    assert detail["override_allowed"] is False
+    assert detail["candidates"][0]["id"] == existing["id"]
+
+
+def test_likely_spot_duplicate_can_be_explicitly_overridden(admin, region_id, db):
+    suffix = uuid.uuid4().hex[:8]
+    existing = _create_spot(
+        admin, region_id, name=f"Probable Long Coast {suffix} Alpha", lat=54.410, lon=10.220
+    )
+    body = {
+        "name": f"Probable Long Coast {suffix} Alphaa",
+        "region_id": region_id,
+        "lat": 54.411,
+        "lon": 10.221,
+        "sports": ["kitesurf"],
+    }
+    warning = admin.post("/admin/spots", json=body)
+    assert warning.status_code == 409, warning.text
+    detail = warning.json()["detail"]
+    assert detail["code"] == "likely_duplicate"
+    assert detail["override_allowed"] is True
+    candidate = detail["candidates"][0]
+    assert candidate["id"] == existing["id"]
+    assert candidate["region_name"]
+    assert isinstance(candidate["distance_m"], int)
+
+    created = admin.post("/admin/spots", json={**body, "allow_duplicate": True})
+    assert created.status_code == 201, created.text
+    audit = db.scalar(
+        select(SpotAudit).where(
+            SpotAudit.spot_id == created.json()["id"],
+            SpotAudit.action == "create",
+        )
+    )
+    assert existing["id"] in audit.changes["duplicate_override"]
+
+
+def test_spot_duplicate_check_runs_for_coordinate_change(admin, region_id):
+    other = _create_region(
+        admin,
+        name=f"Test Region Far {uuid.uuid4().hex[:8]}",
+        lat=48.0,
+        lon=8.0,
+    )
+    suffix = uuid.uuid4().hex[:8]
+    _create_spot(
+        admin, region_id, name=f"Coordinate Coast {suffix} Alpha", lat=54.4, lon=10.2
+    )
+    moving = _create_spot(
+        admin, other["id"], name=f"Coordinate Coast {suffix} Alphaa", lat=48.0, lon=8.0
+    )
+    response = admin.patch(
+        f"/admin/spots/{moving['id']}",
+        json={"lat": 54.401, "lon": 10.201},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "likely_duplicate"
+
+
+def test_spot_duplicate_check_runs_for_region_change(admin, region_id):
+    other = _create_region(
+        admin,
+        name=f"Test Region Switch {uuid.uuid4().hex[:8]}",
+        lat=48.0,
+        lon=8.0,
+    )
+    name = f"Region Switch Coast {uuid.uuid4().hex[:8]}"
+    _create_spot(admin, region_id, name=name, lat=54.4, lon=10.2)
+    moving = _create_spot(admin, other["id"], name=name, lat=48.0, lon=8.0)
+    response = admin.patch(
+        f"/admin/spots/{moving['id']}", json={"region_id": region_id}
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "exact_duplicate"
+
+
+def test_database_constraint_remains_race_safe_for_exact_spots(admin, region_id, db):
+    from geoalchemy2.shape import from_shape
+    from shapely.geometry import Point
+
+    existing = _create_spot(admin, region_id, name=f"Race Coast {uuid.uuid4().hex[:8]}")
+    db.add(Spot(
+        slug=f"race-copy-{uuid.uuid4().hex[:8]}",
+        name=existing["name"].upper(),
+        region_id=uuid.UUID(region_id),
+        location=from_shape(Point(10.3, 54.5), srid=4326),
+        sports=[], water_type=[], level=[], water_character=[], style=[], status="draft",
+    ))
+    with pytest.raises(IntegrityError):
+        db.flush()
+    db.rollback()
+
+
+def test_exact_region_duplicate_without_coordinates_is_blocked(admin):
+    suffix = uuid.uuid4().hex[:8]
+    existing = _create_region(
+        admin, name=f"Test Exact Region {suffix}", lat=52.0, lon=9.0
+    )
+    response = admin.post("/admin/regions", json={
+        "name": f" test  exact region {suffix.upper()} ",
+        "country": "DE",
+    })
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == "exact_duplicate"
+    assert detail["candidates"][0]["id"] == existing["id"]
+
+
+def test_likely_region_duplicate_without_coordinates_warns_before_geocoding(admin):
+    suffix = uuid.uuid4().hex[:8]
+    existing = _create_region(
+        admin, name=f"Test Missing Coordinates {suffix} Alpha", lat=51.0, lon=7.0
+    )
+    response = admin.post("/admin/regions", json={
+        "name": f"Test Missing Coordinates {suffix} Alphaa",
+        "country": "DE",
+    })
+    assert response.status_code == 409, response.text
+    detail = response.json()["detail"]
+    assert detail["code"] == "likely_duplicate"
+    assert detail["candidates"][0]["id"] == existing["id"]
+    assert detail["candidates"][0]["distance_m"] is None
+
+
+def test_likely_region_duplicate_create_update_and_admin_override(admin):
+    suffix = uuid.uuid4().hex[:8]
+    existing = _create_region(
+        admin, name=f"Test Probable Region {suffix} Alpha", lat=52.0, lon=9.0
+    )
+    body = {
+        "name": f"Test Probable Region {suffix} Alphaa",
+        "slug": f"test-region-{uuid.uuid4().hex[:8]}",
+        "country": "DE",
+        "lat": 52.01,
+        "lon": 9.01,
+    }
+    warning = admin.post("/admin/regions", json=body)
+    assert warning.status_code == 409, warning.text
+    assert warning.json()["detail"]["candidates"][0]["id"] == existing["id"]
+    created = admin.post("/admin/regions", json={**body, "allow_duplicate": True})
+    assert created.status_code == 201, created.text
+
+    unrelated = _create_region(
+        admin, name=f"Test Unrelated Region {uuid.uuid4().hex[:8]}", lat=52.02, lon=9.02
+    )
+    edited = admin.patch(
+        f"/admin/regions/{unrelated['id']}",
+        json={"name": f"Test Probable Region {suffix} Alphaaa"},
+    )
+    assert edited.status_code == 409
+    assert edited.json()["detail"]["code"] == "likely_duplicate"
+
+
+def test_curator_cannot_override_likely_duplicate(admin, curator_client):
+    suffix = uuid.uuid4().hex[:8]
+    existing = _create_region(
+        admin, name=f"Test Curator Region {suffix} Alpha", lat=53.0, lon=8.0
+    )
+    other = _create_region(
+        admin, name=f"Test Different Region {uuid.uuid4().hex[:8]}", lat=53.01, lon=8.01
+    )
+    response = curator_client.patch(
+        f"/admin/regions/{other['id']}",
+        json={
+            "name": f"Test Curator Region {suffix} Alphaa",
+            "allow_duplicate": True,
+        },
+    )
+    assert response.status_code == 403
+    assert existing["id"]
 
 
 # --- create: draft + template + ERA5 job -----------------------------------

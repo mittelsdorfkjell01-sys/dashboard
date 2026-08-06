@@ -44,6 +44,7 @@ class SpotCreate(AdminWriteModel):
     facing: int | None = Field(default=None, ge=0, le=359)
     model_pref: str | None = Field(default=None, max_length=50)
     editorial: dict[str, Any] | None = None
+    allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
     _v_water = field_validator("water_character")(
@@ -67,7 +68,7 @@ class SpotCreate(AdminWriteModel):
         return _bounded_json(value, label=info.field_name)
 
     def to_data(self) -> dict:
-        return self.model_dump(exclude_none=False)
+        return self.model_dump(exclude_none=False, exclude={"allow_duplicate"})
 
 
 class SpotUpdate(AdminWriteModel):
@@ -93,6 +94,7 @@ class SpotUpdate(AdminWriteModel):
     # the route rejects the write (409) if the row changed meanwhile. Never a
     # data column — excluded from ``to_data()``.
     expected_updated_at: datetime | None = None
+    allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
     _v_water = field_validator("water_character")(
@@ -128,7 +130,10 @@ class SpotUpdate(AdminWriteModel):
     def to_data(self) -> dict:
         """Only the fields the client actually sent (so absent ≠ null-clear).
         The locking token is stripped — it is not a persisted field."""
-        return self.model_dump(exclude_unset=True, exclude={"expected_updated_at"})
+        return self.model_dump(
+            exclude_unset=True,
+            exclude={"expected_updated_at", "allow_duplicate"},
+        )
 
 
 class MetadataUpdate(AdminWriteModel):
@@ -184,6 +189,7 @@ class RegionCreate(AdminWriteModel):
     description: str | None = Field(default=None, max_length=20_000)
     defaults: dict[str, Any] | None = None
     season: dict[str, Any] | None = None
+    allow_duplicate: bool = False
 
     @model_validator(mode="after")
     def _coordinates_are_a_pair(self):
@@ -210,7 +216,7 @@ class RegionCreate(AdminWriteModel):
         return _bounded_json(value, label=info.field_name)
 
     def to_data(self) -> dict:
-        return self.model_dump(exclude_none=False)
+        return self.model_dump(exclude_none=False, exclude={"allow_duplicate"})
 
 
 class RegionDefaultsUpdate(AdminWriteModel):
@@ -227,6 +233,7 @@ class RegionUpdate(AdminWriteModel):
     season: dict[str, Any] | None = None
     # See SpotUpdate.expected_updated_at.
     expected_updated_at: datetime | None = None
+    allow_duplicate: bool = False
 
     @field_validator("name")
     @classmethod
@@ -244,7 +251,10 @@ class RegionUpdate(AdminWriteModel):
         return _bounded_json(value, label=info.field_name)
 
     def to_data(self) -> dict:
-        return self.model_dump(exclude_unset=True, exclude={"expected_updated_at"})
+        return self.model_dump(
+            exclude_unset=True,
+            exclude={"expected_updated_at", "allow_duplicate"},
+        )
 
 
 class RegionImageRequest(AdminWriteModel):
@@ -259,12 +269,15 @@ class RegionImageRequest(AdminWriteModel):
 
 class AssignRegionRequest(AdminWriteModel):
     region_id: uuid.UUID
+    allow_duplicate: bool = False
 
 
 class BulkAssignRegionRequest(AdminWriteModel):
     spot_ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
     region_id: uuid.UUID
+    allow_duplicate: bool = False
 
 
 class BulkUnassignRegionRequest(AdminWriteModel):
     spot_ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
+    allow_duplicate: bool = False

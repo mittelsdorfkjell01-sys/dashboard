@@ -27,6 +27,7 @@ import {
 import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
+import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { Button, Input, Textarea } from "../components/ui";
 import { Badge } from "../components/admin/ui";
@@ -34,7 +35,14 @@ import AdminBackButton, {
   useAdminBackNavigation,
 } from "../components/admin/AdminBackButton";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
-import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
+import {
+  stableFormValue,
+  useUnsavedChangesGuard,
+} from "../lib/useUnsavedChangesGuard";
+import {
+  parseDuplicateConflict,
+  type DuplicateConflict,
+} from "../lib/duplicateConflicts";
 
 const label = "text-label font-medium text-admin-fg";
 const MONTHS_SHORT = [
@@ -48,7 +56,7 @@ export default function AdminRegionForm() {
     fallbackTo: "/admin/regions",
     fallbackLabel: "Regionen",
   });
-  const { blocker, markDirty, markClean } = useUnsavedChangesGuard();
+  const { blocker, markDirty, markClean, setDirty } = useUnsavedChangesGuard();
 
   const [region, setRegion] = useState<Region | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -68,6 +76,10 @@ export default function AdminRegionForm() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    conflict: DuplicateConflict;
+    retry: () => void;
+  } | null>(null);
   const [spotSearch, setSpotSearch] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [dragOverRight, setDragOverRight] = useState(false);
@@ -77,6 +89,23 @@ export default function AdminRegionForm() {
   const [selOut, setSelOut] = useState<Set<string>>(new Set());
   const [moveOutTarget, setMoveOutTarget] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [fieldsBaseline, setFieldsBaseline] = useState<string | null>(null);
+  const [seasonBaseline, setSeasonBaseline] = useState<string | null>(null);
+  const [imageBaseline, setImageBaseline] = useState(stableFormValue({ url: "", credit: "" }));
+
+  const fieldsValue = stableFormValue({ name, country, description });
+  const seasonValue = stableFormValue({ bestMonths, seasonMode });
+  const imageValue = stableFormValue({ url: imgUrl, credit: imgCredit });
+
+  useEffect(() => {
+    setDirty("fields", fieldsBaseline !== null && fieldsValue !== fieldsBaseline);
+  }, [fieldsBaseline, fieldsValue, setDirty]);
+  useEffect(() => {
+    setDirty("season", seasonBaseline !== null && seasonValue !== seasonBaseline);
+  }, [seasonBaseline, seasonValue, setDirty]);
+  useEffect(() => {
+    setDirty("image", imageValue !== imageBaseline);
+  }, [imageBaseline, imageValue, setDirty]);
 
   const flash = (m: string) => {
     setNotice(m);
@@ -90,10 +119,16 @@ export default function AdminRegionForm() {
     setName(r.name);
     setCountry(r.country ?? "");
     setDescription(r.description ?? "");
-    setBestMonths(
-      Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
+    const months = Array.isArray(r.season?.best_months)
+      ? (r.season!.best_months as number[])
+      : [];
+    const mode = r.season?.mode === "auto" ? "auto" : "manual";
+    setBestMonths(months);
+    setSeasonMode(mode);
+    setFieldsBaseline(
+      stableFormValue({ name: r.name, country: r.country ?? "", description: r.description ?? "" })
     );
-    setSeasonMode(r.season?.mode === "auto" ? "auto" : "manual");
+    setSeasonBaseline(stableFormValue({ bestMonths: months, seasonMode: mode }));
     markClean();
   };
 
@@ -108,6 +143,14 @@ export default function AdminRegionForm() {
         Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
       );
       setSeasonMode("auto");
+      setSeasonBaseline(
+        stableFormValue({
+          bestMonths: Array.isArray(r.season?.best_months)
+            ? (r.season!.best_months as number[])
+            : [],
+          seasonMode: "auto",
+        })
+      );
       markClean("season");
       flash("Windmonate aus der Spot-Klimatologie berechnet.");
     } catch (err) {
@@ -145,7 +188,7 @@ export default function AdminRegionForm() {
     regions.find((r) => r.id === rid)?.name ?? "—";
 
   // `force` skips the optimistic-locking token (conflict dialog → overwrite).
-  const doSaveFields = async (force: boolean) => {
+  const doSaveFields = async (force: boolean, allowDuplicate = false) => {
     if (!id) return;
     setBusy(true);
     setError(null);
@@ -165,12 +208,40 @@ export default function AdminRegionForm() {
         description: description.trim() ? description.trim() : null,
         season,
         expected_updated_at: force ? undefined : region?.updated_at,
+        allow_duplicate: allowDuplicate,
       });
       setRegion(updated);
+      const updatedMonths = Array.isArray(updated.season?.best_months)
+        ? (updated.season!.best_months as number[])
+        : [];
+      const updatedMode = updated.season?.mode === "auto" ? "auto" : "manual";
+      setName(updated.name);
+      setCountry(updated.country ?? "");
+      setDescription(updated.description ?? "");
+      setBestMonths(updatedMonths);
+      setSeasonMode(updatedMode);
+      setFieldsBaseline(
+        stableFormValue({
+          name: updated.name,
+          country: updated.country ?? "",
+          description: updated.description ?? "",
+        })
+      );
+      setSeasonBaseline(
+        stableFormValue({ bestMonths: updatedMonths, seasonMode: updatedMode })
+      );
       markClean("fields");
       markClean("season");
       flash("Region gespeichert.");
     } catch (err) {
+      const duplicate = parseDuplicateConflict(err);
+      if (duplicate) {
+        setDuplicateWarning({
+          conflict: duplicate,
+          retry: () => void doSaveFields(force, true),
+        });
+        return;
+      }
       if (err instanceof ApiError && err.status === 409) {
         setConflictOpen(true);
         return;
@@ -197,6 +268,8 @@ export default function AdminRegionForm() {
       });
       setRegion(r);
       setImgUrl("");
+      setImgCredit("");
+      setImageBaseline(stableFormValue({ url: "", credit: "" }));
       markClean("image");
       flash("Titelbild gesetzt.");
     } catch (err) {
@@ -222,6 +295,8 @@ export default function AdminRegionForm() {
     try {
       const r = await uploadRegionImage(id, file, imgCredit.trim());
       setRegion(r);
+      setImgCredit("");
+      setImageBaseline(stableFormValue({ url: "", credit: "" }));
       markClean("image");
       flash("Titelbild hochgeladen.");
     } catch (err) {
@@ -231,45 +306,69 @@ export default function AdminRegionForm() {
     }
   };
 
-  const reassign = async (spotId: string, regionId: string) => {
+  const reassign = async (spotId: string, regionId: string, allowDuplicate = false) => {
     setBusy(true);
     setError(null);
     try {
-      await assignSpotRegion(spotId, regionId);
+      await assignSpotRegion(spotId, regionId, allowDuplicate);
       await loadSpots();
       flash("Spot verschoben.");
     } catch (err) {
+      const duplicate = parseDuplicateConflict(err);
+      if (duplicate) {
+        setDuplicateWarning({
+          conflict: duplicate,
+          retry: () => void reassign(spotId, regionId, true),
+        });
+        return;
+      }
       setError(err instanceof ApiError ? err.message : "Verschieben fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
   };
 
-  const bulkMove = async (ids: string[], regionId: string) => {
+  const bulkMove = async (ids: string[], regionId: string, allowDuplicate = false) => {
     if (ids.length === 0 || !regionId) return;
     setBusy(true);
     setError(null);
     try {
-      const { moved } = await bulkAssignSpotRegion(ids, regionId);
+      const { moved } = await bulkAssignSpotRegion(ids, regionId, allowDuplicate);
       setSelIn(new Set());
       setSelOut(new Set());
       await loadSpots();
       flash(`${moved} Spot(s) verschoben.`);
     } catch (err) {
+      const duplicate = parseDuplicateConflict(err);
+      if (duplicate) {
+        setDuplicateWarning({
+          conflict: duplicate,
+          retry: () => void bulkMove(ids, regionId, true),
+        });
+        return;
+      }
       setError(err instanceof ApiError ? err.message : "Verschieben fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
   };
 
-  const unassign = async (spotId: string) => {
+  const unassign = async (spotId: string, allowDuplicate = false) => {
     setBusy(true);
     setError(null);
     try {
-      await bulkUnassignSpotRegion([spotId]);
+      await bulkUnassignSpotRegion([spotId], allowDuplicate);
       await loadSpots();
       flash("Spot ohne Region gesetzt.");
     } catch (err) {
+      const duplicate = parseDuplicateConflict(err);
+      if (duplicate) {
+        setDuplicateWarning({
+          conflict: duplicate,
+          retry: () => void unassign(spotId, true),
+        });
+        return;
+      }
       setError(err instanceof ApiError ? err.message : "Aktion fehlgeschlagen.");
     } finally {
       setBusy(false);
@@ -771,6 +870,16 @@ export default function AdminRegionForm() {
           void doSaveFields(true);
         }}
         onClose={() => setConflictOpen(false)}
+      />
+      <DuplicateWarningDialog
+        conflict={duplicateWarning?.conflict ?? null}
+        busy={busy}
+        onClose={() => setDuplicateWarning(null)}
+        onOverride={() => {
+          const retry = duplicateWarning?.retry;
+          setDuplicateWarning(null);
+          retry?.();
+        }}
       />
       <UnsavedChangesDialog blocker={blocker} />
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">

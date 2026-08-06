@@ -15,6 +15,11 @@ import { Button, Input, Textarea } from "../ui";
 import Modal from "../ui/Modal";
 import PromptDialog from "../ui/PromptDialog";
 import ConfirmDialog from "../ui/ConfirmDialog";
+import UnsavedChangesDialog from "./UnsavedChangesDialog";
+import {
+  useFormDirty,
+  useUnsavedChangesGuard,
+} from "../../lib/useUnsavedChangesGuard";
 
 type Status = "open" | "done";
 const COLUMNS: { key: Status; label: string }[] = [
@@ -23,6 +28,7 @@ const COLUMNS: { key: Status; label: string }[] = [
 ];
 
 export default function BoardPanel() {
+  const { blocker, setDirty } = useUnsavedChangesGuard();
   const [tasks, setTasks] = useState<BoardTask[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<Status | null>(null);
@@ -153,6 +159,7 @@ export default function BoardPanel() {
         onClose={() => setNewOpen(false)}
         onCreated={load}
         onError={setError}
+        onDirtyChange={(dirty) => setDirty("new-task", dirty)}
       />
 
       <PromptDialog
@@ -163,6 +170,7 @@ export default function BoardPanel() {
         busy={dialogBusy}
         onConfirm={rename}
         onCancel={() => setEditTarget(null)}
+        onDirtyChange={(dirty) => setDirty("edit-task", dirty)}
       />
       <ConfirmDialog
         open={deleteTarget !== null}
@@ -172,6 +180,7 @@ export default function BoardPanel() {
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}
       />
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 }
@@ -224,16 +233,21 @@ function NewTaskModal({
   onClose,
   onCreated,
   onError,
+  onDirtyChange,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void | Promise<void>;
   onError: (msg: string) => void;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const dirty = useFormDirty({ title, body }, { title: "", body: "" }, open);
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   // Reset the fields each time the mask opens.
   useEffect(() => {
@@ -260,7 +274,7 @@ function NewTaskModal({
 
   const close = () => {
     if (busy) return;
-    if (title.trim() || body.trim()) setDiscardOpen(true);
+    if (dirty) setDiscardOpen(true);
     else onClose();
   };
 

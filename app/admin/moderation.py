@@ -220,6 +220,7 @@ def approve_submission(
     actor: str,
     client=None,
     completion: dict | None = None,
+    allow_duplicate: bool = False,
 ) -> Any:
     """Create a **draft** spot from the proposal and link it back.
 
@@ -248,7 +249,12 @@ def approve_submission(
     except ValidationError as exc:
         raise IncompleteSubmissionError(_incomplete_message(exc)) from exc
     spot = admin_spots.create_spot(
-        data, db=db, client=None, actor=actor, commit=False
+        data,
+        db=db,
+        client=None,
+        actor=actor,
+        commit=False,
+        allow_duplicate=allow_duplicate,
     )
 
     sub.status = "merged"

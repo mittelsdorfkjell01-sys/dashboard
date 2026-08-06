@@ -25,8 +25,14 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
 import { PageHeader, Badge } from "../components/admin/ui";
 import { PlusIcon } from "../lib/icons";
+import {
+  useFormDirty,
+  useUnsavedChangesGuard,
+} from "../lib/useUnsavedChangesGuard";
+import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 
 export default function AdminUsers() {
+  const { blocker, setDirty } = useUnsavedChangesGuard();
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [me, setMe] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,14 @@ export default function AdminUsers() {
   const [editDiscard, setEditDiscard] = useState(false);
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaResetTarget, setMfaResetTarget] = useState<AdminUserRecord | null>(null);
+  const editDirty = useFormDirty(
+    { email: editEmail, displayName: editName },
+    { email: editTarget?.email ?? "", displayName: editTarget?.display_name ?? "" },
+    editTarget !== null
+  );
+
+  useEffect(() => setDirty("create-user", createDirty), [createDirty, setDirty]);
+  useEffect(() => setDirty("edit-user", editDirty), [editDirty, setDirty]);
 
   const load = async () => {
     setLoading(true);
@@ -161,9 +175,7 @@ export default function AdminUsers() {
 
   const requestCloseEdit = () => {
     if (!editTarget || dialogBusy) return;
-    const dirty =
-      editEmail !== editTarget.email || editName !== editTarget.display_name;
-    if (dirty) setEditDiscard(true);
+    if (editDirty) setEditDiscard(true);
     else setEditTarget(null);
   };
 
@@ -268,23 +280,25 @@ export default function AdminUsers() {
           </div>
         )}
 
-        <Modal
-          open={createOpen}
-          onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
-          labelledBy="create-user-title"
-        >
-          <CreateUserForm
-            onDirtyChange={setCreateDirty}
-            onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
-            onCreated={async (email) => {
-              setCreateDirty(false);
-              setCreateOpen(false);
-              flash(`Benutzer ${email} angelegt.`);
-              await load();
-            }}
-            onError={setError}
-          />
-        </Modal>
+        {createOpen && (
+          <Modal
+            open
+            onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+            labelledBy="create-user-title"
+          >
+            <CreateUserForm
+              onDirtyChange={setCreateDirty}
+              onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+              onCreated={async (email) => {
+                setCreateDirty(false);
+                setCreateOpen(false);
+                flash(`Benutzer ${email} angelegt.`);
+                await load();
+              }}
+              onError={setError}
+            />
+          </Modal>
+        )}
         <ConfirmDialog
           open={confirmDiscard}
           title="Eingaben verwerfen?"
@@ -306,6 +320,7 @@ export default function AdminUsers() {
             setMfaOpen(false);
             flash("Zwei-Faktor-Schutz aktualisiert.");
           }}
+          onDirtyChange={(dirty) => setDirty("mfa", dirty)}
         />
         <ConfirmDialog
           open={mfaResetTarget !== null}
@@ -492,6 +507,7 @@ export default function AdminUsers() {
           busy={dialogBusy}
           onConfirm={onResetPassword}
           onCancel={() => setPwTarget(null)}
+          onDirtyChange={(dirty) => setDirty("reset-password", dirty)}
         />
         <ConfirmDialog
           open={deleteTarget !== null}
@@ -505,6 +521,7 @@ export default function AdminUsers() {
           onConfirm={onDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+        <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 }
@@ -524,6 +541,12 @@ function CreateUserForm({
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const dirty = useFormDirty(
+    { email, displayName, password },
+    { email: "", displayName: "", password: "" }
+  );
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -563,7 +586,7 @@ function CreateUserForm({
           className="mt-1 w-full"
           autoComplete="off"
           value={email}
-          onChange={(e) => { setEmail(e.target.value); onDirtyChange(true); }}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
       </div>
@@ -574,7 +597,7 @@ function CreateUserForm({
           type="text"
           className="mt-1 w-full"
           value={displayName}
-          onChange={(e) => { setDisplayName(e.target.value); onDirtyChange(true); }}
+          onChange={(e) => setDisplayName(e.target.value)}
         />
       </div>
       <div>
@@ -586,7 +609,7 @@ function CreateUserForm({
           autoComplete="new-password"
           minLength={12}
           value={password}
-          onChange={(e) => { setPassword(e.target.value); onDirtyChange(true); }}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
       </div>
@@ -607,11 +630,13 @@ function MfaModal({
   enabled,
   onClose,
   onChanged,
+  onDirtyChange,
 }: {
   open: boolean;
   enabled: boolean;
   onClose: () => void;
   onChanged: () => void | Promise<void>;
+  onDirtyChange: (dirty: boolean) => void;
 }) {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -619,6 +644,11 @@ function MfaModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
+  const dirty = useFormDirty({ password, code, secret }, {
+    password: "", code: "", secret: "",
+  }, open);
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   useEffect(() => {
     if (open) {
@@ -632,7 +662,7 @@ function MfaModal({
 
   const requestClose = () => {
     if (busy) return;
-    if (password || code || secret) setDiscardOpen(true);
+    if (dirty) setDiscardOpen(true);
     else onClose();
   };
 

@@ -11,6 +11,7 @@ import { Button, Input } from "../../components/ui";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { PlusCircleIcon } from "../../lib/icons";
+import { useFormDirty } from "../../lib/useUnsavedChangesGuard";
 
 type Badge = { label: string; cls: string };
 
@@ -42,6 +43,7 @@ export default function MeineSpots() {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirty = useFormDirty(name, "", open);
 
   useEffect(() => {
     const refresh = () => setSubs(listMySubmissions());
@@ -74,7 +76,7 @@ export default function MeineSpots() {
       </div>
       <Modal
         open={open}
-        onClose={() => name.trim() ? setConfirmDiscard(true) : setOpen(false)}
+        onClose={() => dirty ? setConfirmDiscard(true) : setOpen(false)}
         labelledBy="suggest-spot-title"
       >
         <form onSubmit={onSubmit} className="space-y-4">
@@ -100,7 +102,7 @@ export default function MeineSpots() {
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
-              onClick={() => name.trim() ? setConfirmDiscard(true) : setOpen(false)}
+              onClick={() => dirty ? setConfirmDiscard(true) : setOpen(false)}
               disabled={busy}
             >
               Abbrechen

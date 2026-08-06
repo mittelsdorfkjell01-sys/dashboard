@@ -159,6 +159,38 @@ def test_name_only_submission_needs_completion_then_approves(client, spot_id, db
     assert str(merged.resulting_spot_id) == new_id
 
 
+def test_submission_approval_uses_duplicate_warning_and_explicit_override(
+    client, spot_id, db
+):
+    existing_id, region_id = spot_id
+    existing = db.get(Spot, uuid.UUID(existing_id))
+    sub = SpotSubmission(
+        payload={
+            "name": f"{existing.name} West",
+            "region_id": region_id,
+            "lat": 54.411,
+            "lon": 10.221,
+            "sports": ["kitesurf"],
+        },
+        submitter_name="Gast",
+        status="pending",
+    )
+    db.add(sub)
+    db.commit()
+
+    warning = client.post(f"/admin/submissions/{sub.id}/approve")
+    assert warning.status_code == 409, warning.text
+    assert warning.json()["detail"]["code"] == "likely_duplicate"
+    db.refresh(sub)
+    assert sub.status == "pending"
+
+    approved = client.post(
+        f"/admin/submissions/{sub.id}/approve",
+        json={"allow_duplicate": True},
+    )
+    assert approved.status_code == 201, approved.text
+
+
 def test_already_decided_submission_conflicts(client, spot_id, db):
     """A submission that was already merged/rejected → 409, not 422."""
     _, region_id = spot_id

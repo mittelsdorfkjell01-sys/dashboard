@@ -3,6 +3,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import Input from "./Input";
 import ConfirmDialog from "./ConfirmDialog";
+import { useFormDirty } from "../../lib/useUnsavedChangesGuard";
 
 /**
  * Reusable single-input dialog — the accessible replacement for
@@ -21,6 +22,7 @@ export default function PromptDialog({
   allowEmpty = false,
   onConfirm,
   onCancel,
+  onDirtyChange,
 }: {
   open: boolean;
   title: string;
@@ -34,10 +36,14 @@ export default function PromptDialog({
   allowEmpty?: boolean;
   onConfirm: (value: string) => void;
   onCancel: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [value, setValue] = useState(initialValue);
   const [discardOpen, setDiscardOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dirty = useFormDirty(value, initialValue, open);
+
+  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
 
   useEffect(() => {
     if (open) {
@@ -55,7 +61,7 @@ export default function PromptDialog({
 
   const requestCancel = () => {
     if (busy) return;
-    if (value !== initialValue) setDiscardOpen(true);
+    if (dirty) setDiscardOpen(true);
     else onCancel();
   };
 

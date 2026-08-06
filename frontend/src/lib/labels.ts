@@ -12,7 +12,13 @@ export const WATER_CHARACTERS = [
   "welle_gross",
   "tiefes_wasser",
 ] as const;
-export const STYLES = ["freeride", "freestyle", "big_air", "wave_riding"] as const;
+export const STYLES = [
+  "freeride",
+  "freestyle",
+  "big_air",
+  "wave_riding",
+  "wavekite",
+] as const;
 export const WATER_TYPES = ["ocean", "sea", "lake", "lagoon"] as const;
 export const FACILITY_KINDS: FacilityKind[] = [
   "parking",
@@ -49,6 +55,7 @@ export const STYLE_LABELS: Record<string, string> = {
   freestyle: "Freestyle",
   big_air: "Big Air",
   wave_riding: "Wellenreiten",
+  wavekite: "Wavekite",
 };
 
 export const FACILITY_LABELS: Record<FacilityKind, string> = {

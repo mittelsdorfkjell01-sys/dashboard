@@ -37,7 +37,13 @@ WATER_CHARACTERS: tuple[str, ...] = (
 WATER_TYPES: tuple[str, ...] = ("ocean", "sea", "lake", "lagoon")
 
 # Riding style ("Fahrstil") — multi-select.
-STYLES: tuple[str, ...] = ("freeride", "freestyle", "big_air", "wave_riding")
+STYLES: tuple[str, ...] = (
+    "freeride",
+    "freestyle",
+    "big_air",
+    "wave_riding",
+    "wavekite",
+)
 
 # Facility kinds — exactly these five.
 FACILITY_KINDS: tuple[str, ...] = ("parking", "shower", "food", "camping", "school")

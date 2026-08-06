@@ -28,7 +28,14 @@ from app.admin import spots as admin_spots
 from app.admin import team as admin_team
 from app.admin.deps import get_commons_client, get_extract_client, get_stock_client
 from app.admin.jobs import get_job_status, trigger_era5_job
-from app.auth.deps import get_actor, require_role
+from app.auth.deps import Principal, current_user, get_actor, require_role
+from app.admin.duplicates import (
+    ExactDuplicateError,
+    LikelyDuplicateError,
+    duplicate_detail,
+    enforce_duplicates,
+    find_region_duplicates,
+)
 from app.admin.readiness import validate_spot_readiness
 from app.config import get_settings
 from app.db.session import get_db
@@ -123,6 +130,22 @@ def _catalog_conflict(db: Session, exc: IntegrityError) -> HTTPException:
     )
 
 
+def _allow_duplicate(requested: bool, principal: Principal) -> bool:
+    if requested and principal.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Nur Administratoren dürfen eine mögliche Dublette bestätigen.",
+        )
+    return requested
+
+
+def _duplicate_conflict(exc: ExactDuplicateError | LikelyDuplicateError, principal: Principal):
+    return HTTPException(
+        status_code=409,
+        detail=duplicate_detail(exc, role=principal.role),
+    )
+
+
 # --- dashboard (Sprint B) --------------------------------------------------
 
 @router.get("/overview")
@@ -209,18 +232,20 @@ def create_spot(
     db: Session = Depends(get_db),
     client=Depends(get_extract_client),
     actor: str = Depends(get_actor),
+    principal: Principal = Depends(current_user),
 ):
     try:
         spot = admin_spots.create_spot(
-            body.to_data(), db=db, client=client, actor=actor
+            body.to_data(),
+            db=db,
+            client=client,
+            actor=actor,
+            allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
-    except admin_spots.DuplicateSpotError as exc:
-        raise HTTPException(
-            status_code=409,
-            detail={"code": "duplicate_spot", "message": str(exc), "candidates": exc.candidates},
-        )
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise _duplicate_conflict(exc, principal)
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
     _maybe_autoprocess_era5(background, spot.id, client)
@@ -233,6 +258,7 @@ def update_spot(
     body: SpotUpdate,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
+    principal: Principal = Depends(current_user),
 ):
     """Patch a spot: editorial (merged) + structural/category columns. Only the
     fields present in the request are applied. Invalid enum values → 422.
@@ -240,10 +266,16 @@ def update_spot(
     _guard_version(db, Spot, spot_id, body.expected_updated_at)
     try:
         spot = admin_spots.update_spot(
-            spot_id, body.to_data(), db=db, actor=actor
+            spot_id,
+            body.to_data(),
+            db=db,
+            actor=actor,
+            allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise _duplicate_conflict(exc, principal)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except IntegrityError as exc:
@@ -583,33 +615,71 @@ def era5_status(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
 
 @router.post("/spots/{spot_id}/assign-region", response_model=SpotRead)
 def assign_region(
-    spot_id: uuid.UUID, body: AssignRegionRequest, db: Session = Depends(get_db)
+    spot_id: uuid.UUID,
+    body: AssignRegionRequest,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(current_user),
 ):
     try:
-        spot = admin_regions.assign_spot_to_region(spot_id, body.region_id, db=db)
+        spot = admin_regions.assign_spot_to_region(
+            spot_id,
+            body.region_id,
+            db=db,
+            allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
+        )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise _duplicate_conflict(exc, principal)
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return SpotRead.from_orm_spot(spot)
 
 
 @router.post("/spots/bulk-assign-region")
-def bulk_assign_region(body: BulkAssignRegionRequest, db: Session = Depends(get_db)) -> dict:
+def bulk_assign_region(
+    body: BulkAssignRegionRequest,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(current_user),
+) -> dict:
     """Move several spots to a region at once (both directions — the caller
     picks the target). All-or-nothing: an unknown id rolls the batch back."""
     try:
         moved = admin_regions.assign_spots_to_region(
-            body.spot_ids, body.region_id, db=db
+            body.spot_ids,
+            body.region_id,
+            db=db,
+            allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        db.rollback()
+        raise _duplicate_conflict(exc, principal)
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return {"moved": moved}
 
 
 @router.post("/spots/bulk-unassign-region")
-def bulk_unassign_region(body: BulkUnassignRegionRequest, db: Session = Depends(get_db)) -> dict:
+def bulk_unassign_region(
+    body: BulkUnassignRegionRequest,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(current_user),
+) -> dict:
     """Make spots region-less (drag out of a region without a target). They then
     show at the top of the Übersicht until a region is assigned."""
-    changed = admin_regions.unassign_spots_from_region(body.spot_ids, db=db)
+    try:
+        changed = admin_regions.unassign_spots_from_region(
+            body.spot_ids,
+            db=db,
+            allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
+        )
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        db.rollback()
+        raise _duplicate_conflict(exc, principal)
+    except IntegrityError as exc:
+        raise _catalog_conflict(db, exc)
     return {"changed": changed}
 
 
@@ -636,9 +706,31 @@ def geocode(q: str = Query(..., min_length=2), geocoder=Depends(get_geocoder)) -
 
 @router.post("/regions", response_model=RegionRead, status_code=201)
 def create_region(
-    body: RegionCreate, db: Session = Depends(get_db), geocoder=Depends(get_geocoder)
+    body: RegionCreate,
+    db: Session = Depends(get_db),
+    geocoder=Depends(get_geocoder),
+    actor: str = Depends(get_actor),
+    principal: Principal = Depends(current_user),
 ):
     data = body.to_data()
+    allow_duplicate = _allow_duplicate(body.allow_duplicate, principal)
+    try:
+        # Name+country works even when neither the request nor an existing
+        # region has coordinates. The service repeats this after geocoding to
+        # add distance and bounds-overlap signals.
+        enforce_duplicates(
+            "Region",
+            find_region_duplicates(
+                db,
+                name=body.name,
+                country=body.country,
+                lat=body.lat,
+                lon=body.lon,
+            ),
+            allow_likely=allow_duplicate,
+        )
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise _duplicate_conflict(exc, principal)
     # A region is an area — the operator gives a name, we resolve the centre +
     # bounding box automatically (Open-Meteo geocoder) instead of typing lat/lon.
     if data.get("lat") is None or data.get("lon") is None:
@@ -660,7 +752,14 @@ def create_region(
             b = hit["bounds"]
             data["bounds"] = [b["min_lon"], b["min_lat"], b["max_lon"], b["max_lat"]]
     try:
-        region = admin_regions.create_region(data, db=db)
+        region = admin_regions.create_region(
+            data,
+            db=db,
+            allow_duplicate=allow_duplicate,
+            actor=actor,
+        )
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise _duplicate_conflict(exc, principal)
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
     return RegionRead.from_orm_region(region)
@@ -710,15 +809,27 @@ def fetch_commons_images(
 
 @router.patch("/regions/{region_id}", response_model=RegionRead)
 def update_region(
-    region_id: uuid.UUID, body: RegionUpdate, db: Session = Depends(get_db)
+    region_id: uuid.UUID,
+    body: RegionUpdate,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+    principal: Principal = Depends(current_user),
 ):
     """Edit a region: description, season (Windmonate), defaults, name.
     Optimistic lock: send ``expected_updated_at`` → 409 on a stale write."""
     _guard_version(db, Region, region_id, body.expected_updated_at)
     try:
-        region = admin_regions.update_region(region_id, body.to_data(), db=db)
+        region = admin_regions.update_region(
+            region_id,
+            body.to_data(),
+            db=db,
+            allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
+            actor=actor,
+        )
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
+    except (ExactDuplicateError, LikelyDuplicateError) as exc:
+        raise _duplicate_conflict(exc, principal)
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
     return RegionRead.from_orm_region(region)

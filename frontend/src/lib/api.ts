@@ -694,6 +694,7 @@ export interface SubmissionCompletion {
   lat?: number;
   lon?: number;
   sports?: string[];
+  allow_duplicate?: boolean;
 }
 export const approveSubmission = (id: string, completion: SubmissionCompletion = {}) =>
   request<{ spot_id: string; status: string }>(
@@ -995,6 +996,7 @@ export interface RegionCreateBody {
   lat?: number;
   lon?: number;
   defaults?: Record<string, unknown> | null;
+  allow_duplicate?: boolean;
 }
 
 export const createRegion = (body: RegionCreateBody) =>
@@ -1025,6 +1027,7 @@ export const updateRegion = (
     season?: Record<string, unknown> | null;
     /** Optimistic-locking token; omit to force an overwrite after a 409. */
     expected_updated_at?: string;
+    allow_duplicate?: boolean;
   }
 ) =>
   request<Region>(`/admin/regions/${id}`, {
@@ -1057,24 +1060,36 @@ export function uploadRegionImage(id: string, file: File, credit: string): Promi
 }
 
 /** Move a spot into a region (reassign). */
-export const assignSpotRegion = (spotId: string, regionId: string) =>
+export const assignSpotRegion = (
+  spotId: string,
+  regionId: string,
+  allowDuplicate = false
+) =>
   request<SpotRead>(`/admin/spots/${spotId}/assign-region`, {
     method: "POST",
-    body: JSON.stringify({ region_id: regionId }),
+    body: JSON.stringify({ region_id: regionId, allow_duplicate: allowDuplicate }),
   });
 
 /** Move several spots into a region at once (both directions). */
-export const bulkAssignSpotRegion = (spotIds: string[], regionId: string) =>
+export const bulkAssignSpotRegion = (
+  spotIds: string[],
+  regionId: string,
+  allowDuplicate = false
+) =>
   request<{ moved: number }>(`/admin/spots/bulk-assign-region`, {
     method: "POST",
-    body: JSON.stringify({ spot_ids: spotIds, region_id: regionId }),
+    body: JSON.stringify({
+      spot_ids: spotIds,
+      region_id: regionId,
+      allow_duplicate: allowDuplicate,
+    }),
   });
 
 /** Make spots region-less (drag out of a region without a target). */
-export const bulkUnassignSpotRegion = (spotIds: string[]) =>
+export const bulkUnassignSpotRegion = (spotIds: string[], allowDuplicate = false) =>
   request<{ changed: number }>(`/admin/spots/bulk-unassign-region`, {
     method: "POST",
-    body: JSON.stringify({ spot_ids: spotIds }),
+    body: JSON.stringify({ spot_ids: spotIds, allow_duplicate: allowDuplicate }),
   });
 
 // --- admin spot actions (go-live / ERA5) -----------------------------------
@@ -1136,6 +1151,7 @@ export interface SpotCreateBody {
   facilities?: FacilityMap | null;
   facing?: number | null;
   editorial?: Record<string, any> | null;
+  allow_duplicate?: boolean;
 }
 
 export type SpotUpdateBody = Partial<SpotCreateBody> & {

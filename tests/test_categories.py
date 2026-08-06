@@ -65,9 +65,10 @@ def test_validate_multi_axes_dedup_and_reject():
 
 
 def test_validate_styles_dedups_and_validates():
-    assert validate_styles(["freeride", "freeride", "wave_riding"]) == [
+    assert validate_styles(["freeride", "freeride", "wave_riding", "wavekite"]) == [
         "freeride",
         "wave_riding",
+        "wavekite",
     ]
     assert validate_styles(None) == []
     with pytest.raises(ValueError):

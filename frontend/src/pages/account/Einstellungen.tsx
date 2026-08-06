@@ -24,7 +24,10 @@ import { Button, Field, Input, fieldClass } from "../../components/ui";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import UnsavedChangesDialog from "../../components/admin/UnsavedChangesDialog";
-import { useUnsavedChangesGuard } from "../../lib/useUnsavedChangesGuard";
+import {
+  useFormDirty,
+  useUnsavedChangesGuard,
+} from "../../lib/useUnsavedChangesGuard";
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -49,7 +52,7 @@ function Note({ kind, children }: { kind: "ok" | "err"; children: ReactNode }) {
 }
 
 export default function Einstellungen() {
-  const { blocker, markDirty, markClean } = useUnsavedChangesGuard();
+  const { blocker, markDirty, markClean, setDirty } = useUnsavedChangesGuard();
   const setProfileDirty = useCallback(
     (value: boolean) => value ? markDirty("profile") : markClean("profile"),
     [markClean, markDirty]
@@ -64,7 +67,7 @@ export default function Einstellungen() {
       <ProfileSection onDirtyChange={setProfileDirty} />
       <PasswordSection onDirtyChange={setPasswordDirty} />
       <UnitsSection />
-      <PrivacySection />
+      <PrivacySection onDirtyChange={(dirty) => setDirty("delete-account", dirty)} />
     </div>
     <UnsavedChangesDialog blocker={blocker} />
     </>
@@ -184,7 +187,7 @@ function PasswordSection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) =>
   );
 }
 
-function PrivacySection() {
+function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -192,10 +195,13 @@ function PrivacySection() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
+  const dirty = useFormDirty(password, "", open);
+
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   const close = () => {
     if (busy) return;
-    if (password) setDiscardOpen(true);
+    if (dirty) setDiscardOpen(true);
     else setOpen(false);
   };
 

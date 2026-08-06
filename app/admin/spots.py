@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import uuid
-from difflib import SequenceMatcher
 from typing import Any
 
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin.audit import record_audit
@@ -20,8 +17,9 @@ from app.admin.constants import (
     validate_water_characters,
     validate_water_types,
 )
-from app.names import available_slug, clean_display_name, normalize_name
+from app.names import available_slug, clean_display_name
 from app.admin.readiness import validate_spot_readiness
+from app.admin.duplicates import enforce_duplicates, find_spot_duplicates
 from app.services.overrides import (
     OVERRIDABLE_FIELDS,
     apply_overrides_with_provenance,
@@ -35,14 +33,6 @@ class NotReadyError(Exception):
         super().__init__(f"spot not ready; missing: {gaps}")
         self.gaps = gaps
         self.checklist = checklist
-
-
-class DuplicateSpotError(ValueError):
-    """A likely duplicate was found close to the requested coordinates."""
-
-    def __init__(self, candidates: list[dict[str, str]]):
-        super().__init__("Ein sehr ähnlicher Spot existiert bereits in der Nähe.")
-        self.candidates = candidates
 
 
 def _point(lat: float, lon: float):
@@ -68,6 +58,7 @@ def create_spot(
     client=None,
     actor: str | None = "admin",
     commit: bool = True,
+    allow_duplicate: bool = False,
 ) -> Any:
     """Create a draft spot, inherit region defaults, and kick off the ERA5 job.
 
@@ -84,20 +75,17 @@ def create_spot(
     defaults = region.defaults or {}
 
     lat, lon = float(data["lat"]), float(data["lon"])
-    normalized = normalize_name(data["name"])
-    nearby = db.scalars(
-        select(Spot).where(
-            Spot.region_id == region.id,
-            func.ST_DWithin(Spot.location, _point(lat, lon), 5_000),
-        )
-    ).all()
-    duplicates = [
-        {"id": str(candidate.id), "name": candidate.name}
-        for candidate in nearby
-        if SequenceMatcher(None, normalized, candidate.normalized_name).ratio() >= 0.9
-    ]
-    if duplicates:
-        raise DuplicateSpotError(duplicates)
+    duplicate_candidates = enforce_duplicates(
+        "Spot",
+        find_spot_duplicates(
+            db,
+            name=data["name"],
+            region_id=region.id,
+            lat=lat,
+            lon=lon,
+        ),
+        allow_likely=allow_duplicate,
+    )
     editorial = dict(defaults.get("spot_template") or {})
     editorial.update(data.get("editorial") or {})
 
@@ -128,7 +116,10 @@ def create_spot(
     )
     db.add(spot)
     db.flush()  # assign spot.id
-    record_audit(db, spot.id, "create", {"name": spot.name}, actor)
+    changes: dict[str, Any] = {"name": spot.name}
+    if duplicate_candidates:
+        changes["duplicate_override"] = [item["id"] for item in duplicate_candidates]
+    record_audit(db, spot.id, "create", changes, actor)
     if commit:
         db.commit()
         db.refresh(spot)
@@ -145,7 +136,12 @@ def create_spot(
 
 
 def update_spot(
-    spot_id, data: dict, *, db: Session, actor: str | None = "admin"
+    spot_id,
+    data: dict,
+    *,
+    db: Session,
+    actor: str | None = "admin",
+    allow_duplicate: bool = False,
 ) -> Any:
     """Patch a spot's editorial/structural columns. Only keys present in ``data``
     are touched (so ``None`` means "clear", absent means "leave as is").
@@ -155,6 +151,25 @@ def update_spot(
     a partial editorial patch keeps untouched keys.
     """
     spot = _load(db, spot_id)
+
+    from geoalchemy2.shape import to_shape
+
+    point = to_shape(spot.location)
+    proposed_region_id = data.get("region_id", spot.region_id)
+    proposed_lat = float(data.get("lat", point.y))
+    proposed_lon = float(data.get("lon", point.x))
+    duplicate_candidates = enforce_duplicates(
+        "Spot",
+        find_spot_duplicates(
+            db,
+            name=data.get("name") or spot.name,
+            region_id=proposed_region_id,
+            lat=proposed_lat,
+            lon=proposed_lon,
+            exclude_id=spot.id,
+        ),
+        allow_likely=allow_duplicate,
+    )
 
     if "name" in data and data["name"]:
         spot.name = data["name"]
@@ -207,7 +222,10 @@ def update_spot(
             merged[key] = value
         spot.editorial = merged or None
 
-    record_audit(db, spot.id, "update", {"fields": sorted(data)}, actor)
+    changes: dict[str, Any] = {"fields": sorted(data)}
+    if duplicate_candidates:
+        changes["duplicate_override"] = [item["id"] for item in duplicate_candidates]
+    record_audit(db, spot.id, "update", changes, actor)
     db.commit()
     db.refresh(spot)
     return spot

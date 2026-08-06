@@ -16,8 +16,19 @@ import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { PageHeader, Badge } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import { PlusIcon } from "../lib/icons";
+import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
+import {
+  parseDuplicateConflict,
+  type DuplicateConflict,
+} from "../lib/duplicateConflicts";
+import {
+  useFormDirty,
+  useUnsavedChangesGuard,
+} from "../lib/useUnsavedChangesGuard";
+import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 
 export default function AdminRegions() {
+  const { blocker, setDirty } = useUnsavedChangesGuard();
   const location = useLocation();
   const editorState = createAdminReturnState(location, "Regionen");
   const [entries, setEntries] = useState<AdminRegionEntry[]>([]);
@@ -28,6 +39,8 @@ export default function AdminRegions() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createDirty, setCreateDirty] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  useEffect(() => setDirty("create-region", createDirty), [createDirty, setDirty]);
 
   const load = async () => {
     setLoading(true);
@@ -92,23 +105,25 @@ export default function AdminRegions() {
         </div>
       )}
 
-      <Modal
-        open={createOpen}
-        onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
-        labelledBy="create-region-title"
-      >
-        <CreateRegionForm
-          onDirtyChange={setCreateDirty}
-          onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
-          onCreated={async (name) => {
-            setCreateDirty(false);
-            setCreateOpen(false);
-            flash(`Region „${name}" angelegt.`);
-            await load();
-          }}
-          onError={setError}
-        />
-      </Modal>
+      {createOpen && (
+        <Modal
+          open
+          onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+          labelledBy="create-region-title"
+        >
+          <CreateRegionForm
+            onDirtyChange={setCreateDirty}
+            onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
+            onCreated={async (name) => {
+              setCreateDirty(false);
+              setCreateOpen(false);
+              flash(`Region „${name}" angelegt.`);
+              await load();
+            }}
+            onError={setError}
+          />
+        </Modal>
+      )}
       <ConfirmDialog
         open={confirmDiscard}
         title="Eingaben verwerfen?"
@@ -121,6 +136,7 @@ export default function AdminRegions() {
           setCreateOpen(false);
         }}
       />
+      <UnsavedChangesDialog blocker={blocker} />
 
       {/* Card list: single column, two columns on wide desktops (2xl) so the
           cards don't stretch into a huge empty middle. */}
@@ -225,25 +241,39 @@ function CreateRegionForm({
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
   const [busy, setBusy] = useState(false);
+  const [duplicateConflict, setDuplicateConflict] = useState<DuplicateConflict | null>(null);
+  const dirty = useFormDirty({ name, country }, { name: "", country: "" });
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
+
+  const save = async (allowDuplicate = false) => {
     setBusy(true);
     try {
       // No coordinates: the backend geocodes the name → centre + bounds.
       await createRegion({
         name: name.trim(),
         country: country.trim() || undefined,
+        allow_duplicate: allowDuplicate,
       });
       setName("");
       setCountry("");
       onDirtyChange(false);
       await onCreated(name.trim());
     } catch (err) {
+      const duplicate = parseDuplicateConflict(err);
+      if (duplicate) {
+        setDuplicateConflict(duplicate);
+        return;
+      }
       onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    void save(false);
   };
 
   return (
@@ -259,7 +289,7 @@ function CreateRegionForm({
           id="create-region-name"
           className="mt-1 w-full"
           value={name}
-          onChange={(e) => { setName(e.target.value); onDirtyChange(true); }}
+          onChange={(e) => setName(e.target.value)}
           required
         />
       </div>
@@ -273,7 +303,7 @@ function CreateRegionForm({
           placeholder="z. B. IT"
           maxLength={2}
           value={country}
-          onChange={(e) => { setCountry(e.target.value.toUpperCase()); onDirtyChange(true); }}
+          onChange={(e) => setCountry(e.target.value.toUpperCase())}
         />
         <p className="mt-1 text-caption text-admin-muted">
           Mittelpunkt und Fläche werden anhand von Name und Land ermittelt.
@@ -287,6 +317,15 @@ function CreateRegionForm({
           {busy ? "Suche…" : "Anlegen"}
         </Button>
       </div>
+      <DuplicateWarningDialog
+        conflict={duplicateConflict}
+        busy={busy}
+        onClose={() => setDuplicateConflict(null)}
+        onOverride={() => {
+          setDuplicateConflict(null);
+          void save(true);
+        }}
+      />
     </form>
   );
 }

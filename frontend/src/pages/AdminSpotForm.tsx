@@ -5,6 +5,7 @@ import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import ConflictDialog from "../components/admin/ConflictDialog";
+import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmToast from "../components/admin/ConfirmToast";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import { ErrorBanner } from "../components/AsyncStates";
@@ -51,7 +52,14 @@ import AdminBackButton, {
 } from "../components/admin/AdminBackButton";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 import { type AdminNavigationState } from "../lib/adminNavigation";
-import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
+import {
+  stableFormValue,
+  useUnsavedChangesGuard,
+} from "../lib/useUnsavedChangesGuard";
+import {
+  parseDuplicateConflict,
+  type DuplicateConflict,
+} from "../lib/duplicateConflicts";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
@@ -88,7 +96,7 @@ export default function AdminSpotForm() {
     fallbackTo: "/admin/spots",
     fallbackLabel: "Spots",
   });
-  const { blocker, markDirty, markClean } = useUnsavedChangesGuard();
+  const { blocker, markDirty, markClean, setDirty } = useUnsavedChangesGuard();
   const { data: regions } = useAdminRegions();
 
   const [name, setName] = useState("");
@@ -139,8 +147,14 @@ export default function AdminSpotForm() {
   // the server can reject a stale overwrite (409). Refreshed on every save.
   const [loadedUpdatedAt, setLoadedUpdatedAt] = useState<string | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [duplicateConflict, setDuplicateConflict] = useState<DuplicateConflict | null>(null);
   const [pendingDelete, setPendingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [mainBaseline, setMainBaseline] = useState<string | null>(null);
+  const [captureMainBaseline, setCaptureMainBaseline] = useState(!isEdit);
+  const [attributionBaseline, setAttributionBaseline] = useState(
+    stableFormValue({ credit: "", license: "", source: "" })
+  );
 
   const onDelete = async () => {
     if (!id) return;
@@ -160,6 +174,49 @@ export default function AdminSpotForm() {
 
   const effectiveSlug = slugTouched ? slug : slugify(name);
   const isSurf = sports.includes("surf");
+  const mainFormValue = stableFormValue({
+    name,
+    slug: effectiveSlug,
+    regionId,
+    description,
+    lat,
+    lon,
+    mapView,
+    sports,
+    level,
+    waterCharacter,
+    styles,
+    facing,
+    waterType,
+    bottomType,
+    tide,
+    facilities,
+    modelPref,
+    heroFile,
+    credit,
+  });
+  const attributionValue = stableFormValue({
+    credit: attrCredit,
+    license: attrLicense,
+    source: attrSource,
+  });
+
+  useEffect(() => {
+    if (!captureMainBaseline) return;
+    setMainBaseline(mainFormValue);
+    setCaptureMainBaseline(false);
+  }, [captureMainBaseline, mainFormValue]);
+
+  useEffect(() => {
+    setDirty(
+      "main",
+      !captureMainBaseline && mainBaseline !== null && mainFormValue !== mainBaseline
+    );
+  }, [captureMainBaseline, mainBaseline, mainFormValue, setDirty]);
+
+  useEffect(() => {
+    setDirty("attribution", attributionValue !== attributionBaseline);
+  }, [attributionBaseline, attributionValue, setDirty]);
 
   const focusGap = (gap: string) => {
     const el = document.getElementById(GAP_ANCHOR[gap] ?? "");
@@ -174,6 +231,13 @@ export default function AdminSpotForm() {
     setAttrCredit(img?.credit ?? "");
     setAttrLicense(img?.license ?? "");
     setAttrSource(img?.source ?? "");
+    setAttributionBaseline(
+      stableFormValue({
+        credit: img?.credit ?? "",
+        license: img?.license ?? "",
+        source: img?.source ?? "",
+      })
+    );
   };
 
   const saveAttribution = async () => {
@@ -211,13 +275,20 @@ export default function AdminSpotForm() {
     setRegionId(s.region_id ?? "");
     setDescription((s.editorial?.description as string) ?? "");
     seedImage((s.image as ImageRecord | null) ?? null);
+    setHeroFile(null);
+    setCredit("");
     if (s.location) {
       setLat(String(s.location.lat));
       setLon(String(s.location.lon));
+    } else {
+      setLat("");
+      setLon("");
     }
     const mv = s.editorial?.map_view;
     if (mv && Array.isArray(mv.center) && typeof mv.zoom === "number") {
       setMapView({ center: mv.center as [number, number], zoom: mv.zoom });
+    } else {
+      setMapView(null);
     }
     setSports(s.sports ?? []);
     setLevel(s.level ?? []);
@@ -227,18 +298,17 @@ export default function AdminSpotForm() {
     setWaterType(s.water_type ?? []);
     setBottomType(s.bottom_type ?? "");
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
-    if (s.facilities) {
-      setFacilities((prev) => {
-        const next = { ...prev };
-        for (const k of FACILITY_KINDS) {
-          const entry = s.facilities?.[k];
-          next[k] = entry
-            ? { state: entry.available ? "yes" : "no", note: entry.note ?? "" }
-            : { state: "unknown", note: "" };
-        }
-        return next;
-      });
-    }
+    setFacilities(() => {
+      const next = {} as Record<FacilityKind, { state: Availability; note: string }>;
+      for (const k of FACILITY_KINDS) {
+        const entry = s.facilities?.[k];
+        next[k] = entry
+          ? { state: entry.available ? "yes" : "no", note: entry.note ?? "" }
+          : { state: "unknown", note: "" };
+      }
+      return next;
+    });
+    setCaptureMainBaseline(true);
   };
 
   // Prefill in edit mode.
@@ -340,7 +410,7 @@ export default function AdminSpotForm() {
 
   // `force` skips the optimistic-locking token — used by the conflict dialog's
   // "Trotzdem überschreiben" after the operator has been warned.
-  const doSave = async (force: boolean) => {
+  const doSave = async (force: boolean, allowDuplicate = false) => {
     setError(null);
     setReadiness(null);
     setSubmitting(true);
@@ -360,6 +430,7 @@ export default function AdminSpotForm() {
         facing: facing !== "" ? Number(facing) : null,
         facilities: buildFacilities(),
         editorial: Object.keys(buildEditorial()).length ? buildEditorial() : null,
+        allow_duplicate: allowDuplicate,
       };
 
       let spot;
@@ -386,6 +457,7 @@ export default function AdminSpotForm() {
       setHeroFile(null);
       setCredit("");
       markClean("main");
+      setCaptureMainBaseline(true);
       if (!isEdit) {
         navigate(`/admin/spot/${spot.id}/edit`, {
           replace: true,
@@ -397,6 +469,11 @@ export default function AdminSpotForm() {
       }
     } catch (err) {
       if (err instanceof ApiError) {
+        const duplicate = parseDuplicateConflict(err);
+        if (duplicate) {
+          setDuplicateConflict(duplicate);
+          return;
+        }
         if (err.status === 409) {
           setConflictOpen(true);
           return;
@@ -1085,6 +1162,15 @@ export default function AdminSpotForm() {
           void doSave(true);
         }}
         onClose={() => setConflictOpen(false)}
+      />
+      <DuplicateWarningDialog
+        conflict={duplicateConflict}
+        busy={submitting}
+        onClose={() => setDuplicateConflict(null)}
+        onOverride={() => {
+          setDuplicateConflict(null);
+          void doSave(false, true);
+        }}
       />
       <UnsavedChangesDialog blocker={blocker} />
 

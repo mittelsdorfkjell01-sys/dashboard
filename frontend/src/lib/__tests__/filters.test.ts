@@ -102,7 +102,7 @@ describe("client-side filter", () => {
   const spots = [
     spot({ id: "1", level: ["beginner"], waterCharacter: ["flach"], style: ["freeride"] }),
     spot({ id: "2", level: ["pro"], waterCharacter: ["welle_gross"], style: ["wave_riding"] }),
-    spot({ id: "3", level: ["beginner"], waterCharacter: ["chop"], style: ["freeride", "big_air"] }),
+    spot({ id: "3", level: ["beginner"], waterCharacter: ["chop"], style: ["freeride", "big_air", "wavekite"] }),
   ];
 
   it("filters by level and water character", () => {
@@ -116,6 +116,9 @@ describe("client-side filter", () => {
   it("style filter is an overlap (any match)", () => {
     expect(
       filterSpots(spots, { styles: ["big_air", "freestyle"], sort: "name-asc" }).map((s) => s.id)
+    ).toEqual(["3"]);
+    expect(
+      filterSpots(spots, { styles: ["wavekite"], sort: "name-asc" }).map((s) => s.id)
     ).toEqual(["3"]);
   });
 });
