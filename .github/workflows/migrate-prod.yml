@@ -5,9 +5,9 @@
 # Without this, a deploy that adds a migration leaves prod on the old schema and
 # admin endpoints 500 (e.g. /admin/overview when a queried column is missing).
 #
-# This runs `alembic upgrade head` against prod on every push to the deploy
-# branch that touches migrations (and on manual dispatch), using the DIRECT
-# (non-pooled) Neon URL stored as the `DIRECT_DATABASE_URL` repo secret.
+# This runs only after Vercel reports a successful production deployment (and on
+# manual dispatch). A failed build therefore leaves the old application and its
+# compatible schema together instead of migrating the DB underneath old code.
 #
 # Setup (one-time): GitHub → repo → Settings → Secrets and variables → Actions →
 # New repository secret:
@@ -19,12 +19,7 @@
 name: Migrate production DB
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "alembic/**"
-      - "requirements.txt"
-      - ".github/workflows/migrate-prod.yml"
+  deployment_status:
   workflow_dispatch: {} # allow running it by hand from the Actions tab
 
 # Never let two migration runs overlap.
@@ -34,9 +29,15 @@ concurrency:
 
 jobs:
   migrate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
 
       - uses: actions/setup-python@v5
         with:

@@ -1,3 +1,4 @@
+import os
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
@@ -8,7 +9,7 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# On serverless (db_serverless=True) don't keep a client-side pool: each checkout
+# On serverless don't keep a client-side pool: each checkout
 # opens and closes its own connection, and a server-side pooler (e.g. Neon's
 # pooled endpoint) owns the real pooling. Otherwise use SQLAlchemy's normal pool.
 #
@@ -17,7 +18,8 @@ settings = get_settings()
 # `prepared statement "..." already exists`. Disable auto-preparation in serverless
 # mode (prepare_threshold=None) so every pooled endpoint works.
 _engine_kwargs: dict = {"pool_pre_ping": True, "future": True}
-if settings.db_serverless:
+_running_on_vercel = os.environ.get("VERCEL") == "1"
+if settings.db_serverless or _running_on_vercel:
     _engine_kwargs = {
         "poolclass": NullPool,
         "future": True,

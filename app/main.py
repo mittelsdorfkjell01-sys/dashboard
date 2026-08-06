@@ -21,6 +21,7 @@ from app.csrf import CSRFMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
+EXPECTED_DB_REVISION = "0024_catalog_axes"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -123,16 +124,22 @@ if settings.enable_admin_api:
     app.include_router(admin_moderation.router)
 
 
-def _check_db() -> bool:
-    """A real round-trip, not just 'the process is alive'."""
+def _check_db() -> tuple[bool, bool]:
+    """Check connectivity and that the deployed code matches the DB schema."""
     try:
         from app.db.session import engine
 
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        return True
+            try:
+                revision = conn.execute(
+                    text("SELECT version_num FROM alembic_version")
+                ).scalar()
+            except Exception:
+                return True, False
+            return True, revision == EXPECTED_DB_REVISION
     except Exception:
-        return False
+        return False, False
 
 
 def _check_redis() -> bool:
@@ -153,13 +160,14 @@ def health(response: Response) -> dict[str, str]:
 
     Redis is a non-critical cache: if it is down the API still serves (status
     ``degraded``, HTTP 200) so an uptime check / the proxy does not confuse a
-    broken cache with a broken server. A dead DB is fatal → HTTP 503.
+    broken cache with a broken server. A dead DB or mismatched schema is fatal
+    and returns HTTP 503.
     """
-    db_ok = _check_db()
+    db_ok, schema_ok = _check_db()
     redis_ok = _check_redis()
-    if db_ok and redis_ok:
+    if db_ok and schema_ok and redis_ok:
         status = "ok"
-    elif db_ok:
+    elif db_ok and schema_ok:
         status = "degraded"
     else:
         status = "error"
@@ -167,5 +175,6 @@ def health(response: Response) -> dict[str, str]:
     return {
         "status": status,
         "db": "ok" if db_ok else "down",
+        "schema": "ok" if schema_ok else "outdated",
         "redis": "ok" if redis_ok else "down",
     }

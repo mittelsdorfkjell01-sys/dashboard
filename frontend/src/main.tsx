@@ -41,31 +41,30 @@ function RouteFallback() {
 // The admin build (kjellmittelsdorf.de, VITE_INCLUDE_ADMIN=true) pulls it in and
 // opens the dashboard at "/". See lib/target.ts.
 async function bootstrap() {
-  const routes: RouteObject[] = [
-    {
-      path: "/",
-      element: ADMIN_DEPLOY ? <Navigate to="/admin" replace /> : <Landing />,
-    },
-    { path: "/map", element: <MapView /> },
-    { path: "/search", element: <SearchResults /> },
-    { path: "/spot/:id", element: <SpotDetail /> },
-    { path: "/spot/:id/daten", element: <SpotDetail /> },
-    { path: "/region/:slug", element: <RegionDetail /> },
-    { path: "/impressum", element: <Impressum /> },
-    { path: "/datenschutz", element: <Datenschutz /> },
-    { path: "/anmelden", element: <Auth /> },
-    {
-      path: "/konto",
-      element: <AccountLayout />,
-      children: [
-        { index: true, element: <Navigate to="/konto/profil" replace /> },
-        { path: "profil", element: <Profil /> },
-        { path: "favoriten", element: <Favoriten /> },
-        { path: "spots", element: <MeineSpots /> },
-        { path: "einstellungen", element: <Einstellungen /> },
-      ],
-    },
-  ];
+  const routes: RouteObject[] = ADMIN_DEPLOY
+    ? [{ path: "/", element: <Navigate to="/admin" replace /> }]
+    : [
+        { path: "/", element: <Landing /> },
+        { path: "/map", element: <MapView /> },
+        { path: "/search", element: <SearchResults /> },
+        { path: "/spot/:id", element: <SpotDetail /> },
+        { path: "/spot/:id/daten", element: <SpotDetail /> },
+        { path: "/region/:slug", element: <RegionDetail /> },
+        { path: "/impressum", element: <Impressum /> },
+        { path: "/datenschutz", element: <Datenschutz /> },
+        { path: "/anmelden", element: <Auth /> },
+        {
+          path: "/konto",
+          element: <AccountLayout />,
+          children: [
+            { index: true, element: <Navigate to="/konto/profil" replace /> },
+            { path: "profil", element: <Profil /> },
+            { path: "favoriten", element: <Favoriten /> },
+            { path: "spots", element: <MeineSpots /> },
+            { path: "einstellungen", element: <Einstellungen /> },
+          ],
+        },
+      ];
 
   if (__INCLUDE_ADMIN__) {
     routes.push(...(await import("./adminRoutes")).default);

@@ -23,6 +23,7 @@ def test_health(client):
     # Granular per-dependency status. DB must be up (the suite needs it); Redis
     # may be up or down depending on the environment, but must be reported.
     assert body["db"] == "ok"
+    assert body["schema"] == "ok"
     assert body["status"] in {"ok", "degraded"}
     assert body["redis"] in {"ok", "down"}
 

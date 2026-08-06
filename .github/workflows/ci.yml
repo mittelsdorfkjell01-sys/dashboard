@@ -80,7 +80,7 @@ jobs:
       - name: Admin build and budget
         env:
           VITE_INCLUDE_ADMIN: "true"
-        run: npm run build && npm run check:bundle
+        run: npm run build:release && npm run check:bundle
       - name: Dependency audit
         run: npm audit --audit-level=critical
       - run: npx playwright install --with-deps chromium

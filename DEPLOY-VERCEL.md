@@ -43,7 +43,8 @@ Because each SPA and its `/api` share one origin, the login cookie stays same-si
 - `vercel.json` — builds the SPA with `VITE_API_URL=/api`, routes `/api/*` to the function, SPA fallback for the rest.
 - `api/requirements.txt` — **slim** function deps (no `pyarrow`/`uvicorn`/`alembic`/`pytest`) to stay under Vercel's 250 MB limit. `rawfile.py` now imports `pyarrow` lazily, so the request path never loads it (verified).
 - `media_backend=blob` support (`app/media/storage.py`) — uploads to Vercel Blob and stores absolute URLs; the local disk path is unchanged for dev/VPS.
-- `db_serverless=true` → SQLAlchemy `NullPool` (pair with Neon's pooled endpoint).
+- Vercel is detected automatically and uses SQLAlchemy `NullPool` (the
+  `DB_SERVERLESS=true` flag remains available for other serverless hosts).
 - App start no longer creates a media dir / mounts StaticFiles in blob mode (won't crash on the read-only serverless FS).
 
 ---
@@ -118,6 +119,9 @@ Directory = repo root** (the included `vercel.json` drives the build).
 | `COOKIE_SECURE` | `true` |
 | `TAKEDOWN_CONTACT_EMAIL` | e.g. `abuse@kjellmittelsdorf.de` |
 
+The admin build intentionally contains only dashboard routes. Legal operator
+variables are required by `build:release` only for the separate public project.
+
 Production configuration is validated at process start; unsafe combinations do
 not boot.
 
@@ -147,6 +151,9 @@ with the bootstrap admin).
   the returned `url`, and adjust `_blob_put` to Vercel Blob's current REST shape.
 - **Cold starts** slow on first hit — expected for a serverless FastAPI; fine for
   an admin tool + cached live data (Upstash).
+- **`/health` reports `schema: outdated`** → code and Neon revision do not match.
+  Production migrations run automatically only after Vercel reports a successful
+  production deployment; the workflow can also be started manually.
 
 ## What still runs off-Vercel
 - The **ERA5 climatology batch** (`python -m app.era5.batch`) — long-running, needs
