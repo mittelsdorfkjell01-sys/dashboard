@@ -22,7 +22,7 @@ import numpy as np
 
 from app.config import get_settings
 from app.era5 import rawfile
-from app.era5.cds import last_full_years
+from app.era5.cds import last_available_years
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 MARINE_URL = "https://marine-api.open-meteo.com/v1/marine"
@@ -78,7 +78,11 @@ class OpenMeteoHistoryClient:
         """
         area = request["area"]
         lat, lon = float(area[0]), float(area[1])
-        years = [int(y) for y in request.get("year") or last_full_years(self._years, today=self._today)]
+        years = [
+            int(y)
+            for y in request.get("year")
+            or last_available_years(self._years, today=self._today)
+        ]
         return f"omh|{lat}|{lon}|{min(years)}|{max(years)}"
 
     def poll(self, request_id: str) -> str:
@@ -144,6 +148,13 @@ class OpenMeteoHistoryClient:
             wind_speed_unit="ms",
         )
         time = np.array(h["time"], dtype="datetime64[s]")
+        expected_start = np.datetime64(f"{y0}-01-01T00:00:00")
+        expected_end = np.datetime64(f"{y1}-12-31T23:00:00")
+        if len(time) == 0 or time[0] != expected_start or time[-1] != expected_end:
+            raise RuntimeError(
+                "Open-Meteo wind archive is not complete for "
+                f"{y0}-{y1}; keeping the previous climatology snapshot"
+            )
         speed = _arr(h["wind_speed_10m"])
         direction = np.radians(_arr(h["wind_direction_10m"]))
         # Meteorological "from" direction -> ERA5 u/v components (m/s).

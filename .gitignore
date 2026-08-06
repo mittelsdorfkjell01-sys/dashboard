@@ -43,3 +43,6 @@ scripts/.maptiler_key
 
 # local-only DB connection string (never commit)
 scripts/.db_url
+
+# local Vercel CLI project metadata
+.vercel

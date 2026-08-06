@@ -133,6 +133,20 @@ def test_multi_year_windows_use_one_request_per_source(tmp_path):
     ]
 
 
+def test_incomplete_wind_window_is_rejected(tmp_path):
+    class _IncompleteHttp(_FakeHttp):
+        def __call__(self, url: str, params: dict) -> dict:
+            payload = super().__call__(url, params)
+            if url == ARCHIVE_URL:
+                for values in payload["hourly"].values():
+                    values.pop()
+            return payload
+
+    c = _client(tmp_path, _IncompleteHttp(), wave_start_year=2022)
+    with pytest.raises(RuntimeError, match="not complete"):
+        c.fetch_series(c.submit("x", _request(2022, 2022)))
+
+
 def test_cache_prevents_refetch(tmp_path):
     http = _FakeHttp()
     c = _client(tmp_path, http, wave_start_year=2022)

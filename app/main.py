@@ -13,6 +13,7 @@ from app.api import (
     admin_users,
     auth,
     community,
+    cron,
     regions,
     search,
     spots,
@@ -71,21 +72,6 @@ def _start_featured_warmup() -> None:
         print(f"[warmup] skipped ({type(exc).__name__}: {exc})")
 
 
-@app.on_event("startup")
-def _drain_era5_queue() -> None:
-    """When ERA5 auto-processing is on, drain any pending climatology jobs in a
-    background thread — so leftover queued spots get computed with no manual
-    button (fully in the background)."""
-    try:
-        if get_settings().era5_autoprocess:
-            from app.admin.era5_worker import run_queue_in_background
-
-            run_queue_in_background()
-            print("[era5] background queue drain started")
-    except Exception as exc:
-        print(f"[era5] queue drain skipped ({type(exc).__name__}: {exc})")
-
-
 # Let the browser SPA (Vite dev server, and any configured origins) call the API.
 app.add_middleware(
     CORSMiddleware,
@@ -124,6 +110,7 @@ if settings.enable_admin_api:
     app.include_router(admin_tides.router)
     app.include_router(admin_users.router)
     app.include_router(admin_moderation.router)
+    app.include_router(cron.router)
 
 
 def _check_db() -> tuple[bool, bool]:

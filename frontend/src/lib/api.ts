@@ -934,6 +934,9 @@ export interface AdminOverview {
   team_notes: TeamNote[];
   era5_queued: number;
   climatology_missing: number;
+  climatology_stale: number;
+  climatology_current: number;
+  climatology_failed: number;
 }
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
@@ -1263,6 +1266,12 @@ export const bulkUnassignSpotRegion = (spotIds: string[], allowDuplicate = false
 export interface Era5Status {
   spot_id?: string;
   status?: string;
+  freshness_status?: string;
+  stale_reasons?: string[];
+  generated_at?: string | null;
+  window?: string | null;
+  attempt_count?: number;
+  reason?: string | null;
   error?: string | null;
   [k: string]: unknown;
 }
@@ -1296,21 +1305,6 @@ export const triggerEra5 = (id: string) =>
 
 export const getEra5Status = (id: string) =>
   request<Era5Status>(`/admin/spots/${id}/era5`);
-
-export interface Era5BatchResult {
-  processed: number;
-  succeeded: number;
-  failed: number;
-  remaining: number;
-  results: Array<{ spot_id: string; status: string; detail: string }>;
-}
-
-/** Compute a bounded serverless-safe batch of missing climatologies. */
-export const processEra5Queue = () =>
-  request<Era5BatchResult>(`/admin/era5/process-queue`, {
-    method: "POST",
-    timeoutMs: 55_000,
-  });
 
 // --- admin endpoints -------------------------------------------------------
 

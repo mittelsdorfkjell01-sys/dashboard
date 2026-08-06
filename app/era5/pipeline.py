@@ -19,6 +19,7 @@ from app.era5 import rawfile, seriesutil
 from app.era5.aggregate import aggregate_weekly_histogram, derive_display_stats
 from app.era5.bins import N_WEEKS
 from app.era5.grid import resolve_grid_cell
+from app.era5.freshness import CLIMATOLOGY_YEARS, finalize_record
 from app.era5.openmeteo import (
     ATTRIBUTION,
     LICENSE,
@@ -159,6 +160,7 @@ def build_climatology_record(spot_id, *, db: Session) -> dict:
             series, lat, lon, _window_from_job(job),
             smooth_window=get_settings().climatology_smooth_weeks,
         )
+        finalize_record(record, spot.era5_cell)
 
         spot.climatology = record
         job.status = "derived"
@@ -176,7 +178,14 @@ def build_climatology_record(spot_id, *, db: Session) -> dict:
         raise
 
 
-def derive_and_store(spot: Spot, *, db: Session, client, years: int = 20) -> dict:
+def derive_and_store(
+    spot: Spot,
+    *,
+    db: Session,
+    client,
+    years: int = CLIMATOLOGY_YEARS,
+    job_id=None,
+) -> dict:
     """Request-path climatology: fetch the hourly series *in memory* via the
     client seam and persist the derived 52-week record — with **no on-disk
     Parquet**.
@@ -191,7 +200,7 @@ def derive_and_store(spot: Spot, *, db: Session, client, years: int = 20) -> dic
     from app.era5.cds import (
         CDS_DATASET,
         build_cds_request,
-        last_full_years,
+        last_available_years,
         window_label,
     )
 
@@ -200,7 +209,7 @@ def derive_and_store(spot: Spot, *, db: Session, client, years: int = 20) -> dic
     if not spot.era5_cell:
         spot.era5_cell = cell
 
-    year_list = last_full_years(years)
+    year_list = last_available_years(years)
     request = build_cds_request(cell, year_list, list(VARS))
     request_id = client.submit(CDS_DATASET, request)
     state = client.poll(request_id)
@@ -215,12 +224,13 @@ def derive_and_store(spot: Spot, *, db: Session, client, years: int = 20) -> dic
         window_label(year_list),
         smooth_window=get_settings().climatology_smooth_weeks,
     )
+    finalize_record(record, cell)
     spot.climatology = record
 
     # Advance (or create) the spot's job to 'derived' so the overview/status
     # strip reflects completion.
     now = datetime.now(timezone.utc)
-    job = db.scalar(
+    job = db.get(Era5Job, job_id) if job_id is not None else db.scalar(
         select(Era5Job)
         .where(Era5Job.spot_id == spot.id)
         .order_by(Era5Job.created_at.desc())
@@ -260,6 +270,10 @@ def recompute_climatology(spot_id, *, db: Session) -> dict:
     lat, lon = _spot_lat_lon(spot)
     series = rawfile.read_raw(job.raw_path)
     record = derive_climatology(series, lat, lon, _window_from_job(job))
+    cell = spot.era5_cell or resolve_grid_cell(lat, lon)
+    if not spot.era5_cell:
+        spot.era5_cell = cell
+    finalize_record(record, cell)
 
     changed = not climatology_weeks_equal(spot.climatology, record)
     record["recompute"] = {

@@ -45,6 +45,19 @@ def last_full_years(n: int = 20, today: date | None = None) -> list[int]:
     return list(range(last_complete - n + 1, last_complete + 1))
 
 
+def last_available_years(n: int = 20, today: date | None = None) -> list[int]:
+    """Rolling window with a January grace period for provider ingestion.
+
+    The previous calendar year is complete on January 1, but archive providers
+    still need time to ingest and validate its final days.  We therefore roll
+    the climatology window on February 1 instead of generating predictable
+    failures at the turn of the year.
+    """
+    today = today or datetime.now(timezone.utc).date()
+    last_available = today.year - (2 if today.month == 1 else 1)
+    return list(range(last_available - n + 1, last_available + 1))
+
+
 def window_label(years: list[int]) -> str:
     """``"2006-2025"`` for a contiguous list of years."""
     return f"{years[0]}-{years[-1]}"
@@ -82,6 +95,8 @@ def request_era5_extract(
     years: int = 20,
     variables: list[str] | None = None,
     today: date | None = None,
+    force: bool = False,
+    job_metadata: dict | None = None,
 ) -> Era5Job:
     """Submit a CDS extract for ``spot_id`` and record a 'queued' Era5Job.
 
@@ -90,16 +105,17 @@ def request_era5_extract(
     """
     variables = list(variables) if variables is not None else list(VARS)
 
-    existing = db.scalar(
-        select(Era5Job)
-        .where(Era5Job.spot_id == spot_id)
-        .where(Era5Job.status != "failed")
-        .order_by(Era5Job.created_at.desc())
-    )
-    if existing is not None:
-        return existing
+    if not force:
+        existing = db.scalar(
+            select(Era5Job)
+            .where(Era5Job.spot_id == spot_id)
+            .where(Era5Job.status.not_in(("failed", "superseded")))
+            .order_by(Era5Job.created_at.desc())
+        )
+        if existing is not None:
+            return existing
 
-    year_list = last_full_years(years, today=today)
+    year_list = last_available_years(years, today=today)
     request = build_cds_request(cell, year_list, variables)
     request_id = client.submit(CDS_DATASET, request)
 
@@ -113,6 +129,7 @@ def request_era5_extract(
             "years": year_list,
             "window": window_label(year_list),
             "request": request,
+            **(job_metadata or {}),
         },
         status="queued",
         started_at=datetime.now(timezone.utc),

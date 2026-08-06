@@ -151,6 +151,10 @@ class Settings(BaseSettings):
     # Rolling window (weeks) used to smooth the 52-week climatology curve
     # (wrap-around). 1 disables smoothing. 3 = ±1 week.
     climatology_smooth_weeks: int = 3
+    # Vercel sends this value as ``Authorization: Bearer ...`` to the daily
+    # climatology maintenance endpoint. Missing means the endpoint fails closed.
+    cron_secret: str | None = None
+    climatology_cron_batch_size: int = 3
 
     # TTL (seconds) for cached Open-Meteo live/forecast responses (30-60 min band).
     live_cache_ttl: int = 1800
@@ -167,12 +171,6 @@ class Settings(BaseSettings):
     # cheap climatology instead — so the request stays bounded and never times out
     # behind a gateway / serverless limit. 0 disables the budget (fetch all).
     featured_compute_budget_seconds: float = 6.0
-
-    # When true, a queued ERA5 job is processed automatically in the background
-    # (on spot create and on the "ERA5 anstoßen" trigger) instead of waiting for
-    # the batch runner. Off by default so tests stay deterministic; enable it in
-    # a running deployment (ERA5_AUTOPROCESS=true).
-    era5_autoprocess: bool = False
 
     # FES data is licensed, multi-gigabyte input for the external tide worker.
     # It must never point into the public media store or the Vercel function.

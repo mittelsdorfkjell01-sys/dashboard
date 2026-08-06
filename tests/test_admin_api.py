@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
 from app.admin.deps import get_cds_client, get_stock_client
@@ -290,18 +290,18 @@ def test_curator_cannot_override_likely_duplicate(admin, curator_client):
     assert existing["id"]
 
 
-# --- create: draft + template + ERA5 job -----------------------------------
+# --- create: draft + template ----------------------------------------------
 
-def test_create_spot_inherits_defaults_and_triggers_era5(admin, region_id, db):
+def test_create_spot_waits_for_explicit_climatology_action(admin, region_id, db):
     spot = _create_spot(admin, region_id)
     assert spot["status"] == "draft"
     assert spot["model_pref"] == "icon_d2"        # inherited from region defaults
     assert spot["era5_cell"] is not None          # grid cell resolved
 
     status = admin.get(f"/admin/spots/{spot['id']}/era5").json()
-    assert status["status"] == "queued"           # ERA5 job submitted
+    assert status["status"] == "missing"
     job = db.scalar(select(Era5Job).where(Era5Job.spot_id == spot["id"]))
-    assert job is not None
+    assert job is None
 
 
 # --- readiness + go-live ---------------------------------------------------
@@ -353,7 +353,26 @@ def test_go_live_computes_climatology_inline(admin, region_id, db):
     assert row.climatology and row.climatology.get("weeks")
 
 
-def test_go_live_reports_climatology_failure_and_marks_job_failed(
+def test_go_live_repairs_missing_snapshot_when_a_derived_job_already_exists(
+    admin, region_id, db
+):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    assert admin.post(f"/admin/spots/{sid}/era5").status_code == 200
+    db.expire_all()
+    row = db.get(Spot, sid)
+    row.climatology = None
+    db.commit()
+
+    response = admin.post(f"/admin/spots/{sid}/live")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["climatology_job"]["status"] == "ok"
+    db.expire_all()
+    assert db.get(Spot, sid).climatology.get("weeks")
+
+
+def test_go_live_reports_climatology_failure_and_schedules_retry(
     admin, region_id, db
 ):
     class FailingClient:
@@ -383,7 +402,9 @@ def test_go_live_reports_climatology_failure_and_marks_job_failed(
         .where(Era5Job.spot_id == sid)
         .order_by(Era5Job.created_at.desc())
     )
-    assert job.status == "failed"
+    assert job.status == "queued"
+    assert job.params["attempt_count"] == 1
+    assert job.params["next_attempt_at"]
     assert "Open-Meteo unavailable" in job.error
 
 
@@ -403,16 +424,89 @@ def test_manual_climatology_failure_can_be_retried(admin, region_id, db):
     app.dependency_overrides[get_cds_client] = lambda: FailingClient()
     failed = admin.post(f"/admin/spots/{sid}/era5")
     assert failed.status_code == 502
-    assert admin.get(f"/admin/spots/{sid}/era5").json()["status"] == "failed"
+    failed_status = admin.get(f"/admin/spots/{sid}/era5").json()
+    assert failed_status["status"] == "queued"
+    assert failed_status["attempt_count"] == 1
 
     app.dependency_overrides[get_cds_client] = lambda: FakeCdsClient(
         make_synthetic_series()
     )
     retried = admin.post(f"/admin/spots/{sid}/era5")
     assert retried.status_code == 200, retried.text
-    assert retried.json()["status"] == "derived"
+    assert retried.json()["status"] == "current"
     db.expire_all()
     assert db.get(Spot, sid).climatology.get("weeks")
+
+
+def test_climatology_job_fails_permanently_after_three_attempts(
+    admin, region_id, db
+):
+    from app.admin import era5_worker
+    from app.admin.jobs import trigger_era5_job
+
+    class FailingClient:
+        def submit(self, dataset, request):
+            return "retry-request"
+
+        def poll(self, request_id):
+            return "completed"
+
+        def fetch_series(self, request_id):
+            raise RuntimeError("provider still unavailable")
+
+    spot = _create_spot(admin, region_id)
+    client = FailingClient()
+    job = trigger_era5_job(
+        spot["id"], db=db, client=client, force=True, reason="annual_refresh"
+    )
+
+    for attempt in range(1, 4):
+        outcome, _ = era5_worker.compute_now(
+            spot["id"], client=client, job_id=job.id
+        )
+        assert outcome == "fail"
+        db.expire_all()
+        job = db.get(Era5Job, job.id)
+        assert job.params["attempt_count"] == attempt
+        assert job.status == ("failed" if attempt == 3 else "queued")
+
+
+def test_grid_cell_change_keeps_old_snapshot_and_queues_refresh(
+    admin, region_id, db
+):
+    from app.era5.freshness import state
+
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    assert admin.post(f"/admin/spots/{sid}/era5").status_code == 200
+    db.expire_all()
+    before = db.get(Spot, sid)
+    generated_at = before.climatology["generated_at"]
+    assert before.climatology["weeks"]
+
+    moved = admin.patch(
+        f"/admin/spots/{sid}", json={"lat": 55.1, "lon": 12.1}
+    )
+    assert moved.status_code == 200, moved.text
+    db.expire_all()
+    row = db.get(Spot, sid)
+    assert row.climatology["generated_at"] == generated_at
+    assert row.climatology["weeks"]
+    assert state(row) == "stale"
+    latest = db.scalar(
+        select(Era5Job)
+        .where(Era5Job.spot_id == sid)
+        .order_by(Era5Job.created_at.desc())
+    )
+    assert latest.status == "queued"
+    assert latest.params["reason"] == "location_changed"
+
+    # Existing weekly values mean Go Live does not run a second inline compute.
+    live = admin.post(f"/admin/spots/{sid}/live")
+    assert live.status_code == 200
+    assert "climatology_job" not in live.json()
+    db.expire_all()
+    assert db.get(Era5Job, latest.id).params["attempt_count"] == 0
 
 
 def test_unpublish_and_archive(admin, region_id, db):
@@ -501,38 +595,76 @@ def test_overview_recent_has_last_change(admin, region_id):
     assert entry["last_change"]["action"] == "create"
 
 
-def test_era5_autoprocess_on_create(admin, region_id, db, tmp_path, monkeypatch):
-    """With ERA5_AUTOPROCESS on, creating a spot computes its climatology in the
-    background (via the fake extract client) — no manual batch run."""
-    from app.config import get_settings
-
-    monkeypatch.setattr(get_settings(), "era5_autoprocess", True)
-    monkeypatch.setattr(get_settings(), "era5_raw_dir", str(tmp_path))
-
+def test_create_never_autoprocesses_climatology(admin, region_id, db):
+    """Creating a draft waits for the explicit form button or Go Live."""
     spot = _create_spot(admin, region_id)
     db.expire_all()
     row = db.get(Spot, spot["id"])
-    assert row.climatology and row.climatology.get("weeks")
+    assert row.climatology is None
+    assert db.scalar(select(Era5Job).where(Era5Job.spot_id == row.id)) is None
 
 
 def test_era5_process_queue(admin, region_id, db, tmp_path, monkeypatch):
-    """The backlog endpoint computes missing climatology synchronously."""
+    """The maintenance path computes an already persisted queued job."""
+    from app.admin.jobs import trigger_era5_job
     from app.config import get_settings
 
     monkeypatch.setattr(get_settings(), "era5_raw_dir", str(tmp_path))
-    spot = _create_spot(admin, region_id)  # autoprocess off → stays queued
-
-    for _ in range(10):
-        resp = admin.post("/admin/era5/process-queue")
-        assert resp.status_code == 200, resp.text
-        assert resp.json()["processed"] >= 1
-        db.expire_all()
-        if db.get(Spot, spot["id"]).climatology:
-            break
+    spot = _create_spot(admin, region_id)
+    db.execute(
+        delete(Era5Job).where(
+            Era5Job.status.in_(("queued", "processing", "extracting"))
+        )
+    )
+    db.commit()
+    trigger_era5_job(
+        spot["id"],
+        db=db,
+        client=FakeCdsClient(make_synthetic_series()),
+        force=True,
+        reason="annual_refresh",
+    )
+    resp = admin.post("/admin/era5/process-queue", params={"limit": 1})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["processed"] == 1
 
     db.expire_all()
     row = db.get(Spot, spot["id"])
     assert row.climatology and row.climatology.get("weeks")
+
+
+def test_climatology_cron_is_secret_guarded_and_processes_a_batch(
+    admin, region_id, db, monkeypatch
+):
+    from app.admin.jobs import trigger_era5_job
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "cron_secret", "cron-test-secret")
+    monkeypatch.setattr(get_settings(), "climatology_cron_batch_size", 1)
+    spot = _create_spot(admin, region_id)
+    db.execute(
+        delete(Era5Job).where(
+            Era5Job.status.in_(("queued", "processing", "extracting"))
+        )
+    )
+    db.commit()
+    trigger_era5_job(
+        spot["id"],
+        db=db,
+        client=FakeCdsClient(make_synthetic_series()),
+        force=True,
+        reason="annual_refresh",
+    )
+
+    assert admin.get("/cron/climatology").status_code == 401
+    response = admin.get(
+        "/cron/climatology",
+        headers={"Authorization": "Bearer cron-test-secret"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["processed"] == 1
+    db.expire_all()
+    assert db.get(Spot, spot["id"]).climatology.get("weeks")
 
 
 def test_na_counts_as_fulfilled(admin, region_id, db):
@@ -581,8 +713,14 @@ def test_recompute_climatology_leaves_override(admin, region_id, db, tmp_path):
 
     # stand up a raw extract + job, build the climatology (Sprint 2 path)
     client = FakeCdsClient(make_synthetic_series())
+    job = cds.request_era5_extract(
+        sid,
+        db.get(Spot, sid).era5_cell,
+        db=db,
+        client=client,
+    )
     cds.poll_cds_job(
-        db.scalar(select(Era5Job).where(Era5Job.spot_id == sid)).params["cds_request_id"],
+        job.params["cds_request_id"],
         db=db, client=client, raw_dir=str(tmp_path),
     )
     pipeline.build_climatology_record(sid, db=db)

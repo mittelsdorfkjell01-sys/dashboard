@@ -375,7 +375,7 @@ def no_region_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:
 
 def overview(db: Session) -> dict[str, Any]:
     """Dashboard KPIs, including the moderation review-queue counts + team notes."""
-    from app.admin.era5_worker import count_missing, count_queued
+    from app.admin.era5_worker import climatology_summary, count_queued
     from app.admin.moderation import review_counts
     from app.admin.team import list_notes
 
@@ -388,6 +388,7 @@ def overview(db: Session) -> dict[str, Any]:
         key=lambda row: row["updated_at"],
         reverse=True,
     )[:100]
+    climate = climatology_summary(db)
     return {
         "spots": spots,
         "regions": regions_count,
@@ -402,5 +403,8 @@ def overview(db: Session) -> dict[str, Any]:
         "review": review_counts(db),
         "team_notes": list_notes(db, limit=12),
         "era5_queued": count_queued(db),
-        "climatology_missing": count_missing(db),
+        "climatology_missing": climate["missing"],
+        "climatology_stale": climate["stale"],
+        "climatology_current": climate["current"],
+        "climatology_failed": climate["failed"],
     }

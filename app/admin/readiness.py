@@ -76,10 +76,12 @@ def image_ready(image: Any) -> bool:
 
 
 def climatology_ready(spot: Any, job_status: str | None) -> bool:
+    del job_status
     clim = getattr(spot, "climatology", None)
-    if isinstance(clim, dict) and clim.get("weeks"):
-        return True
-    return job_status == "derived"
+    # The persisted snapshot is the source of truth. A historical "derived" job
+    # without stored weeks can occur after an interrupted/legacy write and must
+    # be repaired by Go Live instead of being treated as ready.
+    return isinstance(clim, dict) and bool(clim.get("weeks"))
 
 
 def build_checklist(

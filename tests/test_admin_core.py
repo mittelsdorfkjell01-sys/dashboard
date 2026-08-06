@@ -67,9 +67,9 @@ def test_image_ready_requires_all_rights():
     assert image_ready(None) is False
 
 
-def test_climatology_ready_via_weeks_or_job():
+def test_climatology_ready_requires_persisted_weeks():
     assert climatology_ready(_spot(climatology={"weeks": [1]}), None) is True
-    assert climatology_ready(_spot(), "derived") is True
+    assert climatology_ready(_spot(), "derived") is False
     assert climatology_ready(_spot(), "queued") is False
 
 

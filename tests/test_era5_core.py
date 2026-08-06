@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import math
+import datetime as dt
 
 import numpy as np
 import pytest
@@ -198,6 +198,15 @@ def test_last_full_years_and_window_label():
     assert years[0] == 2006 and years[-1] == 2025
     assert len(years) == 20
     assert cds.window_label(years) == "2006-2025"
+
+
+def test_last_available_years_uses_a_january_ingestion_grace_period():
+    assert cds.last_available_years(20, today=dt.date(2026, 1, 31)) == list(
+        range(2005, 2025)
+    )
+    assert cds.last_available_years(20, today=dt.date(2026, 2, 1)) == list(
+        range(2006, 2026)
+    )
 
 
 def test_build_cds_request_contents():

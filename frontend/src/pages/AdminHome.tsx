@@ -8,7 +8,6 @@ import { Link, useLocation } from "react-router-dom";
 import {
   ApiError,
   getAdminOverview,
-  processEra5Queue,
   type AdminOverview,
   type Rank,
   type RankedSpot,
@@ -60,51 +59,12 @@ export default function AdminHome() {
   const editorState = createAdminReturnState(location, "Übersicht");
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [climateBusy, setClimateBusy] = useState(false);
-  const [climateProgress, setClimateProgress] = useState<string | null>(null);
-  const [climateError, setClimateError] = useState<string | null>(null);
 
   useEffect(() => {
     getAdminOverview()
       .then(setData)
       .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen."));
   }, []);
-
-  const calculateMissingClimatologies = async () => {
-    if (!data || climateBusy) return;
-    setClimateBusy(true);
-    setClimateError(null);
-    let completed = 0;
-    let remaining = data.climatology_missing;
-    try {
-      while (remaining > 0) {
-        const result = await processEra5Queue();
-        completed += result.succeeded;
-        remaining = result.remaining;
-        setClimateProgress(
-          `${completed} berechnet, ${remaining} verbleibend.`
-        );
-        setData((current) =>
-          current ? { ...current, climatology_missing: remaining } : current
-        );
-        if (result.failed > 0 || result.processed === 0) {
-          const failed = result.results.find((item) => item.status !== "ok");
-          throw new Error(failed?.detail || "Die Verarbeitung konnte nicht fortgesetzt werden.");
-        }
-      }
-      setClimateProgress(`${completed} Klimatologie(n) berechnet.`);
-      setData(await getAdminOverview());
-    } catch (e) {
-      setClimateError(
-        e instanceof ApiError || e instanceof Error
-          ? e.message
-          : "Klimatologien konnten nicht vollständig berechnet werden."
-      );
-      setData(await getAdminOverview().catch(() => data));
-    } finally {
-      setClimateBusy(false);
-    }
-  };
 
   if (error)
     return (
@@ -175,26 +135,14 @@ export default function AdminHome() {
         </section>
       )}
 
-      {data.climatology_missing > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-line bg-teal/5 px-3 py-3 text-caption text-muted">
-          <div aria-live="polite">
-            <span className="font-medium text-ink">
-              {data.climatology_missing} Spot(s) ohne Klimatologie
-            </span>
-            {climateProgress && <span className="ml-2">{climateProgress}</span>}
-            {climateError && (
-              <p role="alert" className="mt-1 text-admin-danger">{climateError}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            disabled={climateBusy}
-            onClick={() => void calculateMissingClimatologies()}
-            className="rounded-md bg-admin-primary px-3 py-1.5 font-medium text-admin-primary-fg disabled:opacity-50"
-          >
-            {climateBusy ? "Wird berechnet …" : "Jetzt berechnen"}
-          </button>
-        </div>
+      {(data.climatology_missing > 0 ||
+        data.climatology_stale > 0 ||
+        data.climatology_failed > 0) && (
+        <p className="mt-4 border-y border-line px-3 py-3 text-caption text-muted">
+          Klimatologie: {data.climatology_missing} fehlend, {data.climatology_stale}{" "}
+          veraltet, {data.climatology_failed} fehlgeschlagen. Veraltete und bei
+          Live-Spots fehlende Daten werden automatisch aktualisiert.
+        </p>
       )}
 
       {/* Fertigstellen — spots still being reworked, split into two columns:

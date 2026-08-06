@@ -1,6 +1,6 @@
 // Operations panel for a saved spot: readiness + go-live / offline / archive, and
 // a read-only view of active overrides. Embedded in AdminSpotForm in edit mode.
-// ERA5/climatology is calculated inline for reliable serverless execution.
+// Explicit calculations run inline; durable refreshes use the maintenance queue.
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -28,7 +28,10 @@ const ERA5_LABEL: Record<string, string> = {
   queued: "in Warteschlange",
   processing: "wird berechnet",
   extracting: "wird verarbeitet",
-  derived: "fertig",
+  derived: "aktuell",
+  current: "aktuell",
+  stale: "veraltet",
+  missing: "nicht berechnet",
   failed: "fehlgeschlagen",
   none: "nicht berechnet",
 };
@@ -122,6 +125,7 @@ export default function SpotOpsPanel({
       await refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
+      await refresh();
     } finally {
       setBusy(false);
     }
@@ -132,6 +136,11 @@ export default function SpotOpsPanel({
 
   const overrideKeys = overrides ? Object.keys(overrides) : [];
   const era5Status = era5?.status ?? "none";
+  const generatedAt = era5?.generated_at
+    ? new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(
+        new Date(era5.generated_at)
+      )
+    : null;
   const rank = effectiveRank(readiness?.gaps ?? [], rankOverride);
 
   return (
@@ -220,7 +229,7 @@ export default function SpotOpsPanel({
         </div>
       )}
 
-      {/* Klimatologie (ERA5) — background job; status + manual re-trigger. */}
+      {/* Stored climatology snapshot, its freshness, and explicit recalculation. */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-admin-border pt-4">
         <span className="text-label text-admin-muted">
           Klimatologie:{" "}
@@ -234,9 +243,23 @@ export default function SpotOpsPanel({
           onClick={onTriggerEra5}
           className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
         >
-          Neu berechnen
+          Klimatologie berechnen
         </button>
       </div>
+      {(era5?.window || generatedAt) && (
+        <p className="mt-1 text-caption text-admin-faint">
+          {[era5?.window ? `Zeitraum ${era5.window}` : null,
+            generatedAt ? `berechnet am ${generatedAt}` : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
+      {era5?.freshness_status === "stale" &&
+        ["queued", "processing", "extracting"].includes(era5Status) && (
+          <p className="mt-1 text-caption text-admin-muted">
+            Die bisherigen Werte bleiben bis zur erfolgreichen Aktualisierung aktiv.
+          </p>
+        )}
       {era5?.error && (
         <p className="mt-2 break-words text-caption text-admin-danger">
           {era5.error}

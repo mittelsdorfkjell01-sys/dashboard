@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Depends,
     File,
     Form,
@@ -108,17 +107,6 @@ def _guard_version(db: Session, model, obj_id, expected: datetime | None) -> Non
                 ),
                 "current_updated_at": _as_utc(obj.updated_at).isoformat(),
             },
-        )
-
-
-def _maybe_autoprocess_era5(background: BackgroundTasks, spot_id, client) -> None:
-    """Schedule background climatology processing when ERA5_AUTOPROCESS is on."""
-    settings = get_settings()
-    if settings.era5_autoprocess:
-        from app.admin import era5_worker
-
-        background.add_task(
-            era5_worker.process_one, spot_id, client=client, raw_dir=settings.era5_raw_dir
         )
 
 
@@ -243,7 +231,6 @@ def get_region_record(region_id: uuid.UUID, db: Session = Depends(get_db)) -> Re
 @router.post("/spots", response_model=SpotRead, status_code=201)
 def create_spot(
     body: SpotCreate,
-    background: BackgroundTasks,
     db: Session = Depends(get_db),
     client=Depends(get_extract_client),
     actor: str = Depends(get_actor),
@@ -263,7 +250,6 @@ def create_spot(
         raise _duplicate_conflict(exc, principal)
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
-    _maybe_autoprocess_era5(background, spot.id, client)
     return SpotRead.from_orm_spot(spot)
 
 
@@ -272,6 +258,7 @@ def update_spot(
     spot_id: uuid.UUID,
     body: SpotUpdate,
     db: Session = Depends(get_db),
+    client=Depends(get_extract_client),
     actor: str = Depends(get_actor),
     principal: Principal = Depends(current_user),
 ):
@@ -284,6 +271,7 @@ def update_spot(
             spot_id,
             body.to_data(),
             db=db,
+            client=client,
             actor=actor,
             allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
         )
@@ -513,7 +501,9 @@ def go_live(
     # compute_now never raises and go-live already succeeded above.
     if "climatology" in (result.get("gaps") or []):
         try:
-            trigger_era5_job(spot_id, db=db, client=client)
+            trigger_era5_job(
+                spot_id, db=db, client=client, reason="go_live"
+            )
         except Exception:
             db.rollback()
         from app.admin import era5_worker
@@ -594,7 +584,13 @@ def trigger_era5(
     client=Depends(get_extract_client),
 ) -> dict:
     try:
-        trigger_era5_job(spot_id, db=db, client=client)
+        trigger_era5_job(
+            spot_id,
+            db=db,
+            client=client,
+            force=True,
+            reason="manual",
+        )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
     # Compute synchronously and in memory (serverless-safe); see go_live.
@@ -616,37 +612,9 @@ def process_era5_queue(
     client=Depends(get_extract_client),
     limit: int = Query(default=3, ge=1, le=5),
 ) -> dict:
-    """Compute a small, request-safe batch of missing climatologies.
-
-    The dashboard repeats this endpoint until the backlog is empty. Keeping each
-    batch bounded makes the work durable on serverless deployments where a
-    fire-and-forget background task may be terminated after the response.
-    """
+    """Manually process a bounded batch from the persistent queue."""
     from app.admin import era5_worker
-
-    results = []
-    for spot_id in era5_worker.missing_spot_ids(db, limit=limit):
-        try:
-            trigger_era5_job(spot_id, db=db, client=client)
-            outcome, detail = era5_worker.compute_now(spot_id, client=client)
-        except Exception as exc:
-            db.rollback()
-            outcome, detail = "fail", f"{type(exc).__name__}: {exc}"
-            era5_worker.mark_failed(db, spot_id, detail)
-        results.append(
-            {"spot_id": str(spot_id), "status": outcome, "detail": detail}
-        )
-        if outcome != "ok":
-            break
-
-    db.expire_all()
-    return {
-        "processed": len(results),
-        "succeeded": sum(item["status"] == "ok" for item in results),
-        "failed": sum(item["status"] != "ok" for item in results),
-        "remaining": era5_worker.count_missing(db),
-        "results": results,
-    }
+    return era5_worker.process_due_batch(db, client=client, limit=limit)
 
 
 @router.get("/spots/{spot_id}/era5")

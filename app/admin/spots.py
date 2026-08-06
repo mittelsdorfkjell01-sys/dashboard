@@ -61,7 +61,7 @@ def create_spot(
     commit: bool = True,
     allow_duplicate: bool = False,
 ) -> Any:
-    """Create a draft spot, inherit region defaults, and kick off the ERA5 job.
+    """Create a draft spot and inherit region defaults.
 
     ``data`` carries ``name``, ``region_id``, ``lat``, ``lon``, ``sports`` and the
     optional structural columns. Region ``defaults`` act as a template: ``model_pref``
@@ -126,14 +126,8 @@ def create_spot(
         db.commit()
         db.refresh(spot)
 
-    # Best-effort ERA5 trigger (idempotent); never blocks spot creation.
-    if commit and client is not None:
-        from app.admin.jobs import trigger_era5_job
-
-        try:
-            trigger_era5_job(spot.id, db=db, client=client)
-        except Exception:
-            db.rollback()
+    # Climatology is intentionally not started here. Editors choose the explicit
+    # button, while Go Live computes it automatically when it is still missing.
     return spot
 
 
@@ -142,6 +136,7 @@ def update_spot(
     data: dict,
     *,
     db: Session,
+    client=None,
     actor: str | None = "admin",
     allow_duplicate: bool = False,
 ) -> Any:
@@ -194,12 +189,22 @@ def update_spot(
     # cell so future climatology matches the corrected location. Without this the
     # PATCH silently dropped lat/lon and the pin snapped back on the next open.
     coordinates_changed = data.get("lat") is not None and data.get("lon") is not None
+    grid_cell_changed = False
     if coordinates_changed:
         from app.era5.grid import resolve_grid_cell
 
         lat, lon = float(data["lat"]), float(data["lon"])
+        old_cell = spot.era5_cell
+        new_cell = resolve_grid_cell(lat, lon)
         spot.location = _point(lat, lon)
-        spot.era5_cell = resolve_grid_cell(lat, lon)
+        spot.era5_cell = new_cell
+        grid_cell_changed = old_cell != new_cell
+        if grid_cell_changed:
+            from app.admin.jobs import supersede_active_jobs
+            from app.era5.freshness import mark_stale
+
+            supersede_active_jobs(spot.id, db=db, commit=False)
+            spot.climatology = mark_stale(spot.climatology, "grid_cell")
     if "sports" in data and data["sports"] is not None:
         spot.sports = list(data["sports"])
     if "bottom_type" in data:
@@ -236,6 +241,26 @@ def update_spot(
         invalidate_for_coordinates(spot.id, db=db, actor=actor)
     db.commit()
     db.refresh(spot)
+    if (
+        grid_cell_changed
+        and client is not None
+        and isinstance(spot.climatology, dict)
+        and spot.climatology.get("weeks")
+    ):
+        from app.admin.jobs import trigger_era5_job
+
+        try:
+            trigger_era5_job(
+                spot.id,
+                db=db,
+                client=client,
+                force=True,
+                reason="location_changed",
+            )
+        except Exception:
+            # The stale marker is already durable; the daily maintenance run can
+            # enqueue it later even if the provider is temporarily unavailable.
+            db.rollback()
     return spot
 
 

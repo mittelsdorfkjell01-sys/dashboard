@@ -32,6 +32,9 @@ test.beforeEach(async ({ page }) => {
         team_notes: [],
         era5_queued: 0,
         climatology_missing: 0,
+        climatology_stale: 0,
+        climatology_current: 0,
+        climatology_failed: 0,
       },
     })
   );
@@ -118,9 +121,7 @@ test("admin overview is accessible and protects a dirty task dialog", async ({ p
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("missing climatologies can be processed from the overview", async ({ page }) => {
-  let remaining = 2;
-  let processCalls = 0;
+test("overview reports climatology maintenance without a manual batch button", async ({ page }) => {
   await page.unroute("**/admin/overview");
   await page.route("**/admin/overview", (route) =>
     route.fulfill({
@@ -136,31 +137,20 @@ test("missing climatologies can be processed from the overview", async ({ page }
         recent: [],
         review: {},
         team_notes: [],
-        era5_queued: remaining,
-        climatology_missing: remaining,
+        era5_queued: 2,
+        climatology_missing: 2,
+        climatology_stale: 1,
+        climatology_current: 0,
+        climatology_failed: 1,
       },
     })
   );
-  await page.route("**/admin/era5/process-queue", (route) => {
-    processCalls += 1;
-    remaining = 0;
-    return route.fulfill({
-      json: {
-        processed: 2,
-        succeeded: 2,
-        failed: 0,
-        remaining,
-        results: [],
-      },
-    });
-  });
 
   await page.goto("/admin");
-  await expect(page.getByText("2 Spot(s) ohne Klimatologie")).toBeVisible();
-  await page.getByRole("button", { name: "Jetzt berechnen" }).click();
-
-  await expect.poll(() => processCalls).toBe(1);
-  await expect(page.getByText(/Spot\(s\) ohne Klimatologie/)).toHaveCount(0);
+  await expect(
+    page.getByText("Klimatologie: 2 fehlend, 1 veraltet, 1 fehlgeschlagen")
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Jetzt berechnen" })).toHaveCount(0);
 });
 
 test("spot filters preserve recent edits and recent searches", async ({ page }) => {
