@@ -16,6 +16,10 @@ import {
 import { sportLabel, statusLabel } from "../lib/labels";
 import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import {
+  getAdminSpotSearches,
+  rememberAdminSpotSearch,
+} from "../lib/adminSpotSearchHistory";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 // Status tabs. "" = Alle (everything except archived); "archived" is its own tab.
@@ -35,6 +39,7 @@ export default function AdminSpots() {
   const status = params.get("status") ?? "";
   const regionId = params.get("region_id") ?? "";
   const sport = params.get("sport") ?? "";
+  const sort = params.get("sort") ?? "name";
   const q = params.get("q") ?? "";
   const offset = Number(params.get("offset") ?? "0") || 0;
 
@@ -42,6 +47,7 @@ export default function AdminSpots() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState(q);
+  const [recentSearches, setRecentSearches] = useState(getAdminSpotSearches);
 
   const regionName = useMemo(() => {
     const m = new Map(regions.map((r) => [r.id, r.name]));
@@ -63,6 +69,7 @@ export default function AdminSpots() {
           region_id: regionId || undefined,
           sport: sport || undefined,
           q: q || undefined,
+          sort,
           limit: PAGE,
           offset,
         })
@@ -70,13 +77,17 @@ export default function AdminSpots() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.");
     }
-  }, [status, regionId, sport, q, offset]);
+  }, [status, regionId, sport, sort, q, offset]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   useEffect(() => setSearchText(q), [q]);
+
+  useEffect(() => {
+    if (q) setRecentSearches(rememberAdminSpotSearch(q));
+  }, [q]);
 
   useEffect(() => {
     if (searchText === q) return;
@@ -196,6 +207,33 @@ export default function AdminSpots() {
             {SPORTS.map((s) => (
               <option key={s} value={s}>
                 {sportLabel(s)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => setFilter("sort", e.target.value)}
+            className={`${selectCls} w-full min-w-0 sm:w-auto`}
+            aria-label="Sortierung"
+          >
+            <option value="name">Name A–Z</option>
+            <option value="-updated">Zuletzt bearbeitet</option>
+          </select>
+          <select
+            value=""
+            onChange={(e) => {
+              if (!e.target.value) return;
+              setSearchText(e.target.value);
+              setFilter("q", e.target.value);
+            }}
+            disabled={recentSearches.length === 0}
+            className={`${selectCls} w-full min-w-0 sm:w-auto disabled:opacity-50`}
+            aria-label="Zuletzt gesucht"
+          >
+            <option value="">Zuletzt gesucht</option>
+            {recentSearches.map((query) => (
+              <option key={query} value={query}>
+                {query}
               </option>
             ))}
           </select>

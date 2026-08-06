@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ImageUpload from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
@@ -446,6 +446,8 @@ export default function AdminSpotForm() {
         .sort((a, b) => a.name.localeCompare(b.name, "de")),
     [regions]
   );
+  const selectedRegionName =
+    regionOptions.find((region) => region.id === regionId)?.name ?? "Ohne Region";
 
   if (loadingExisting) {
     return (
@@ -972,6 +974,16 @@ export default function AdminSpotForm() {
             top clears the sticky app header; self-start + max-height keep the rail
             pinned and independently scrollable if it ever exceeds the viewport. */}
         <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[79px] xl:self-start xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
+          {isEdit && (
+            <div className="border-b border-admin-border px-1 pb-3">
+              <p className="truncate text-body font-semibold text-admin-fg">
+                {name.trim() || "Unbenannter Spot"}
+              </p>
+              <p className="mt-0.5 truncate text-label text-admin-muted">
+                {selectedRegionName}
+              </p>
+            </div>
+          )}
           {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
 
           {savedId && readiness && (
@@ -997,12 +1009,14 @@ export default function AdminSpotForm() {
                 </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  to={`/spot/${savedId}`}
+                <a
+                  href={`/spot/${savedId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
                 >
-                  Zur Spot-Seite
-                </Link>
+                  Ansehen ↗
+                </a>
               </div>
             </div>
           )}

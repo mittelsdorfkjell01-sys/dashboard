@@ -58,3 +58,21 @@ test("admin overview is accessible and protects a dirty task dialog", async ({ p
   await page.getByRole("button", { name: "Verwerfen" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+
+test("spot filters preserve recent edits and recent searches", async ({ page }) => {
+  const requestedUrls: string[] = [];
+  await page.route("**/admin/regions", (route) => route.fulfill({ json: [] }));
+  await page.route("**/admin/spots?**", (route) => {
+    requestedUrls.push(route.request().url());
+    return route.fulfill({ json: { items: [], total: 0, limit: 25, offset: 0 } });
+  });
+
+  await page.goto("/admin/spots");
+  await page.getByLabel("Sortierung").selectOption("-updated");
+  await expect.poll(() => requestedUrls.some((url) => url.includes("sort=-updated"))).toBe(true);
+
+  await page.getByLabel("Suche").fill("Laboe");
+  await expect.poll(() => requestedUrls.some((url) => url.includes("q=Laboe"))).toBe(true);
+  await expect(page.getByLabel("Zuletzt gesucht")).toBeEnabled();
+  await expect(page.getByLabel("Zuletzt gesucht").locator('option[value="Laboe"]')).toHaveCount(1);
+});

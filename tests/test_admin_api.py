@@ -213,6 +213,20 @@ def test_list_exclude_status_hides_archived(admin, region_id):
     assert archived not in ids
 
 
+def test_list_spots_can_sort_by_most_recently_edited(admin, region_id):
+    first = _create_spot(admin, region_id)
+    second = _create_spot(admin, region_id)
+    admin.patch(f"/admin/spots/{first['id']}", json={"name": "Recently edited"})
+
+    items = admin.get(
+        "/admin/spots",
+        params={"region_id": region_id, "sort": "-updated"},
+    ).json()["items"]
+
+    assert items[0]["id"] == first["id"]
+    assert any(item["id"] == second["id"] for item in items)
+
+
 def test_overview_recent_has_last_change(admin, region_id):
     """A freshly created spot surfaces in the dashboard 'recent' list with its
     latest audited change (here: the create)."""
