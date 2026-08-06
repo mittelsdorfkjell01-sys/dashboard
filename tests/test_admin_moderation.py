@@ -320,7 +320,7 @@ def test_tip_hide_removes_from_public_keeps_in_db(client, anon_client, spot_id, 
 def test_rating_hide_removes_from_public(client, anon_client, spot_id, db):
     sid, _ = spot_id
     rating_id = anon_client.post(f"/spots/{sid}/ratings", json={
-        "stars": 5, "skill_level": "pro", "sport": "kitesurf",
+        "stars": 5, "skill_level": "expert", "sport": "kitesurf",
         "conditions": "böig", "author_name": "Kai",
     }).json()["id"]
 
@@ -335,7 +335,7 @@ def test_review_queue_lists_published_tips_and_ratings(client, anon_client, spot
     sid, _ = spot_id
     anon_client.post(f"/spots/{sid}/tips", json={"body": "Guter Tipp", "author_name": "Max"})
     anon_client.post(f"/spots/{sid}/ratings", json={
-        "stars": 5, "skill_level": "pro", "sport": "kitesurf",
+        "stars": 5, "skill_level": "expert", "sport": "kitesurf",
         "conditions": "top", "author_name": "Max",
     })
     q = client.get("/admin/review/queue").json()

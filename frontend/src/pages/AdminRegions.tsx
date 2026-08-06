@@ -1,8 +1,8 @@
 // Admin regions (Sprint B): list with per-status spot counts, create a region,
 // edit the model_pref default, and fetch a credited stock image.
 
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   createRegion,
@@ -30,6 +30,9 @@ import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 export default function AdminRegions() {
   const { blocker, setDirty } = useUnsavedChangesGuard();
   const location = useLocation();
+  const [params, setParams] = useSearchParams();
+  const q = params.get("q") ?? "";
+  const [searchText, setSearchText] = useState(q);
   const editorState = createAdminReturnState(location, "Regionen");
   const [entries, setEntries] = useState<AdminRegionEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,21 +45,33 @@ export default function AdminRegions() {
 
   useEffect(() => setDirty("create-region", createDirty), [createDirty, setDirty]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setEntries(await getAdminRegions());
+      setEntries(await getAdminRegions(q || undefined));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [q]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
+
+  useEffect(() => setSearchText(q), [q]);
+  useEffect(() => {
+    if (searchText === q) return;
+    const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(params);
+      if (searchText.trim()) next.set("q", searchText.trim());
+      else next.delete("q");
+      setParams(next);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchText, q, params, setParams]);
 
   const flash = (msg: string) => {
     setNotice(msg);
@@ -87,6 +102,23 @@ export default function AdminRegions() {
           </Button>
         }
       />
+
+      <div className="mt-4 flex max-w-xl items-end gap-2">
+        <label className="min-w-0 flex-1 text-label font-medium text-admin-fg">
+          Region oder Land suchen
+          <Input
+            type="search"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            className="mt-1 w-full"
+          />
+        </label>
+        {searchText && (
+          <Button type="button" variant="ghost" onClick={() => setSearchText("")}>
+            Löschen
+          </Button>
+        )}
+      </div>
 
       {notice && (
         <div
@@ -144,7 +176,14 @@ export default function AdminRegions() {
         {loading ? (
           <div className="text-ui text-admin-muted">Lädt…</div>
         ) : entries.length === 0 ? (
-          <div className="text-ui text-admin-muted">Noch keine Regionen.</div>
+          <div className="rounded-lg border border-dashed border-admin-border bg-admin-surface p-6 text-center">
+            <p className="text-ui text-admin-muted">
+              {q ? `Keine Region für „${q}“ gefunden.` : "Noch keine Regionen vorhanden."}
+            </p>
+            <Button className="mt-4" onClick={() => setCreateOpen(true)}>
+              <PlusIcon className="text-[16px]" /> Region anlegen
+            </Button>
+          </div>
         ) : (
           entries.map((entry) => (
             <RegionCard

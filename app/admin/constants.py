@@ -25,7 +25,12 @@ STATUS_ARCHIVED = "archived"
 # --- controlled category vocabularies (single source of truth) -------------
 
 # Rider level (ordered — low → high; ``similarity.character`` relies on order).
-LEVELS: tuple[str, ...] = ("beginner", "intermediate", "advanced", "pro")
+LEVELS: tuple[str, ...] = ("beginner", "advanced", "expert")
+
+# Seabed / launch-ground composition. ``mixed`` is retained for historical
+# records that did not identify the concrete components; it is mutually
+# exclusive with concrete values when writing new data.
+BOTTOM_TYPES: tuple[str, ...] = ("sand", "rock", "reef", "mixed")
 
 # Water character ("Wasserart") — distinct from ``water_type`` (ocean/sea/lake).
 WATER_CHARACTERS: tuple[str, ...] = (
@@ -81,7 +86,7 @@ def validate_sport(value: str) -> str:
 
 
 def validate_skill_level(value: str) -> str:
-    """A single skill level (beginner..pro). Else ``ValueError``."""
+    """A single skill level (beginner, advanced or expert). Else ``ValueError``."""
     if value not in LEVELS:
         raise ValueError(f"invalid skill_level {value!r}; allowed: {list(LEVELS)}")
     return value
@@ -133,8 +138,16 @@ def validate_styles(values: Iterable[str] | None) -> list[str]:
 
 
 def validate_levels(values: Iterable[str] | None) -> list[str]:
-    """Normalise a ``level`` multi-select (beginner..pro, or ``n/a``)."""
+    """Normalise a ``level`` multi-select (three levels, or ``n/a``)."""
     return _validate_multi(values, LEVELS, "level")
+
+
+def validate_bottom_types(values: Iterable[str] | None) -> list[str]:
+    """Normalise the controlled ``bottom_type`` multi-select."""
+    cleaned = _validate_multi(values, BOTTOM_TYPES, "bottom_type")
+    if "mixed" in cleaned and len(cleaned) > 1:
+        raise ValueError("bottom_type 'mixed' cannot be combined with concrete values")
+    return cleaned
 
 
 def validate_water_characters(values: Iterable[str] | None) -> list[str]:

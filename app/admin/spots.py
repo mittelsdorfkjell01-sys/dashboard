@@ -11,6 +11,7 @@ from app.admin.constants import (
     STATUS_ARCHIVED,
     STATUS_DRAFT,
     STATUS_LIVE,
+    validate_bottom_types,
     validate_facilities,
     validate_levels,
     validate_styles,
@@ -93,6 +94,7 @@ def create_spot(
     level = validate_levels(data.get("level"))
     water_character = validate_water_characters(data.get("water_character"))
     water_type = validate_water_types(data.get("water_type"))
+    bottom_type = validate_bottom_types(data.get("bottom_type"))
     style = validate_styles(data.get("style"))
     facilities = validate_facilities(data.get("facilities"))
 
@@ -103,7 +105,7 @@ def create_spot(
         location=_point(lat, lon),
         sports=data.get("sports") or [],
         water_type=water_type,
-        bottom_type=data.get("bottom_type"),
+        bottom_type=bottom_type,
         level=level,
         water_character=water_character,
         style=style,
@@ -199,9 +201,10 @@ def update_spot(
         spot.era5_cell = resolve_grid_cell(lat, lon)
     if "sports" in data and data["sports"] is not None:
         spot.sports = list(data["sports"])
-    for col in ("bottom_type", "model_pref"):
-        if col in data:
-            setattr(spot, col, data[col])
+    if "bottom_type" in data:
+        spot.bottom_type = validate_bottom_types(data["bottom_type"])
+    if "model_pref" in data:
+        spot.model_pref = data["model_pref"]
     if "facing" in data:
         spot.facing = data["facing"]
     if "water_type" in data:
@@ -257,6 +260,12 @@ def override_auto_field(
     """Pin ``field`` to ``value`` in ``spots.overrides`` (auto value preserved)."""
     if field not in OVERRIDABLE_FIELDS:
         raise ValueError(f"field not overridable: {field!r}")
+    if field == "bottom_type":
+        value = validate_bottom_types(value)
+    elif field == "water_type":
+        value = validate_water_types(value)
+    elif field == "level":
+        value = validate_levels(value)
     spot = _load(db, spot_id)
     overrides = dict(spot.overrides or {})
     auto_value = getattr(spot, field, None)

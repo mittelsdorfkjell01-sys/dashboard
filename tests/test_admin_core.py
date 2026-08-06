@@ -48,6 +48,7 @@ def test_is_fulfilled_value_or_na():
     assert is_fulfilled(None) is False
     assert is_fulfilled("") is False
     assert is_fulfilled({}) is False
+    assert is_fulfilled([]) is False
     assert is_fulfilled({"min": 0}) is True
 
 

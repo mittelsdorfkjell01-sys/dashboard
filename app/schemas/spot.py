@@ -24,7 +24,7 @@ class SpotSummary(BaseModel):
     location: GeoPoint | None = None
     sports: list[str]
     water_type: list[str] = []
-    bottom_type: str | None = None
+    bottom_type: list[str] = []
     level: list[str] = []
     water_character: list[str] = []
     style: list[str] = []
@@ -44,7 +44,7 @@ class SpotSummary(BaseModel):
             location=GeoPoint.from_geo(spot.location),
             sports=list(spot.sports or []),
             water_type=list(spot.water_type or []),
-            bottom_type=spot.bottom_type,
+            bottom_type=list(spot.bottom_type or []),
             level=list(spot.level or []),
             water_character=list(spot.water_character or []),
             style=list(spot.style or []),
@@ -68,7 +68,7 @@ class SpotRead(BaseModel):
     model_pref: str | None = None
     sports: list[str]
     water_type: list[str] = []
-    bottom_type: str | None = None
+    bottom_type: list[str] = []
     level: list[str] = []
     water_character: list[str] = []
     style: list[str] = []
@@ -97,7 +97,7 @@ class SpotRead(BaseModel):
             model_pref=spot.model_pref,
             sports=list(spot.sports or []),
             water_type=list(spot.water_type or []),
-            bottom_type=spot.bottom_type,
+            bottom_type=list(spot.bottom_type or []),
             level=list(spot.level or []),
             water_character=list(spot.water_character or []),
             style=list(spot.style or []),

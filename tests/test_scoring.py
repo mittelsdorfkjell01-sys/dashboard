@@ -86,10 +86,10 @@ def test_smooth_wind_stays_good():
 def test_level_shifts_rating_beginner_vs_pro():
     # 18 kt: beginner ideal 14-20 -> good; pro ideal 20-33 -> moderate (too light)
     assert _kite(18, profile={"level": "beginner"})["rating"] == GOOD
-    assert _kite(18, profile={"level": "pro"})["rating"] == MOD
+    assert _kite(18, profile={"level": "expert"})["rating"] == MOD
     # 26 kt: beginner -> moderate (above 20); pro -> good
     assert _kite(26, profile={"level": "beginner"})["rating"] == MOD
-    assert _kite(26, profile={"level": "pro"})["rating"] == GOOD
+    assert _kite(26, profile={"level": "expert"})["rating"] == GOOD
 
 
 def test_profile_thresholds_offsets():
@@ -270,6 +270,6 @@ def test_seasonal_scorer_is_sport_aware():
 def test_search_service_threads_sport_into_profile():
     from app.search.service import _with_sport
 
-    assert _with_sport({"level": "pro"}, "surf") == {"level": "pro", "sport": "surf"}
+    assert _with_sport({"level": "expert"}, "surf") == {"level": "expert", "sport": "surf"}
     assert _with_sport(None, "kitesurf") == {"sport": "kitesurf"}
-    assert _with_sport({"level": "pro"}, None) == {"level": "pro"}  # unchanged
+    assert _with_sport({"level": "expert"}, None) == {"level": "expert"}  # unchanged

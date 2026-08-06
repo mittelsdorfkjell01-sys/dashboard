@@ -3,12 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 import { getAdminSpot, type ActivityItem, type SpotRead } from "../../lib/api";
 import {
   actionLabel,
+  bottomTypeLabel,
   facilityLabel,
   gapLabel,
   levelLabel,
   sportLabel,
   styleList,
   waterCharacterLabel,
+  waterTypeLabel,
 } from "../../lib/labels";
 import type { FacilityKind } from "../../lib/api";
 import Modal from "../ui/Modal";
@@ -54,8 +56,8 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "sports", label: "Sportarten", value: (s) => s.sports.map(sportLabel).join(", ") || "—" },
       { key: "level", label: "Level", value: (s) => (s.level ?? []).map(levelLabel).join(", ") || "—" },
-      { key: "water_type", label: "Gewässerart", value: (s) => (s.water_type ?? []).join(", ") || "—" },
-      { key: "bottom_type", label: "Untergrund", value: (s) => s.bottom_type ?? "—" },
+      { key: "water_type", label: "Gewässerart", value: (s) => (s.water_type ?? []).map(waterTypeLabel).join(", ") || "—" },
+      { key: "bottom_type", label: "Untergrund", value: (s) => (s.bottom_type ?? []).map(bottomTypeLabel).join(", ") || "—" },
       { key: "water_character", label: "Wasserart", value: (s) => (s.water_character ?? []).map(waterCharacterLabel).join(", ") || "—" },
       { key: "style", label: "Fahrstil", value: (s) => styleList(s.style) || "—" },
     ],

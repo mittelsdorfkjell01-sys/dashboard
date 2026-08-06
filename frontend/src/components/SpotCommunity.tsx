@@ -270,7 +270,7 @@ function Composer({
   const [stars, setStars] = useState(0);
   const [text, setText] = useState("");
   const [sport, setSport] = useState("kitesurf");
-  const [skill, setSkill] = useState("intermediate");
+  const [skill, setSkill] = useState("advanced");
   const [visitedAt, setVisitedAt] = useState("");
   const [author, setAuthor] = useState("");
   const [website, setWebsite] = useState(""); // honeypot

@@ -59,9 +59,9 @@ describe("spotFactsFrom", () => {
 
   it("renders German labels and a comma-joined style list", () => {
     const facts = spotFactsFrom(
-      baseSpot({ level: ["pro"], waterCharacter: ["welle_gross"], style: ["freeride", "wave_riding", "wavekite"] })
+      baseSpot({ level: ["expert"], waterCharacter: ["welle_gross"], style: ["freeride", "wave_riding", "wavekite"] })
     );
-    expect(facts.find((f) => f.label === "Level")?.value).toBe("Profi");
+    expect(facts.find((f) => f.label === "Level")?.value).toBe("Experte");
     expect(facts.find((f) => f.label === "Wasserart")?.value).toBe("Große Welle");
     expect(facts.find((f) => f.label === "Fahrstil")?.value).toBe("Freeride, Wellenreiten, Wavekite");
   });

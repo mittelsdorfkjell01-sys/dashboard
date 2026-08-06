@@ -10,6 +10,7 @@ from typing import Any, Literal
 from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
 
 from app.admin.constants import (
+    validate_bottom_types,
     validate_facilities,
     validate_levels,
     validate_styles,
@@ -36,7 +37,7 @@ class SpotCreate(AdminWriteModel):
     sports: list[str] = Field(default_factory=list, max_length=10)
     slug: str | None = Field(default=None, min_length=1, max_length=120, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     water_type: list[str] = Field(default_factory=list, max_length=8)
-    bottom_type: str | None = Field(default=None, max_length=30)
+    bottom_type: list[str] = Field(default_factory=list, max_length=8)
     level: list[str] = Field(default_factory=list, max_length=8)
     water_character: list[str] = Field(default_factory=list, max_length=8)
     style: list[str] = Field(default_factory=list, max_length=8)
@@ -47,6 +48,7 @@ class SpotCreate(AdminWriteModel):
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
+    _v_bottom = field_validator("bottom_type")(staticmethod(validate_bottom_types))
     _v_water = field_validator("water_character")(
         staticmethod(validate_water_characters)
     )
@@ -82,7 +84,7 @@ class SpotUpdate(AdminWriteModel):
     lon: float | None = Field(default=None, ge=-180, le=180)
     sports: list[str] | None = Field(default=None, max_length=10)
     water_type: list[str] | None = Field(default=None, max_length=8)
-    bottom_type: str | None = Field(default=None, max_length=30)
+    bottom_type: list[str] | None = Field(default=None, max_length=8)
     level: list[str] | None = Field(default=None, max_length=8)
     water_character: list[str] | None = Field(default=None, max_length=8)
     style: list[str] | None = Field(default=None, max_length=8)
@@ -97,6 +99,7 @@ class SpotUpdate(AdminWriteModel):
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
+    _v_bottom = field_validator("bottom_type")(staticmethod(validate_bottom_types))
     _v_water = field_validator("water_character")(
         staticmethod(validate_water_characters)
     )

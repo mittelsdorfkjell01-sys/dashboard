@@ -50,6 +50,7 @@ def test_spatial_indexes_exist(db):
         # water_type/level became arrays (0019) — the old composite btree was
         # replaced by per-column GIN indexes.
         "ix_spots_water_type",
+        "ix_spots_bottom_type",
         "ix_spots_level",
         "ix_regions_center",
     }:

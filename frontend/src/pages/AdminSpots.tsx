@@ -11,9 +11,9 @@ import {
   getAdminRegionsFlat,
   type AdminSpotsResponse,
   type Region,
-  type SpotSummary,
+  type AdminSpotSummary,
 } from "../lib/api";
-import { sportLabel, statusLabel } from "../lib/labels";
+import { gapAnchor, gapLabel, sportLabel, statusLabel } from "../lib/labels";
 import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import {
@@ -41,6 +41,7 @@ export default function AdminSpots() {
   const sport = params.get("sport") ?? "";
   const sort = params.get("sort") ?? "name";
   const q = params.get("q") ?? "";
+  const completeness = params.get("completeness") ?? "";
   const offset = Number(params.get("offset") ?? "0") || 0;
 
   const [data, setData] = useState<AdminSpotsResponse | null>(null);
@@ -70,6 +71,7 @@ export default function AdminSpots() {
           sport: sport || undefined,
           q: q || undefined,
           sort,
+          completeness: completeness === "complete" || completeness === "incomplete" ? completeness : undefined,
           limit: PAGE,
           offset,
         })
@@ -77,7 +79,7 @@ export default function AdminSpots() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.");
     }
-  }, [status, regionId, sport, sort, q, offset]);
+  }, [status, regionId, sport, sort, completeness, q, offset]);
 
   useEffect(() => {
     void load();
@@ -124,7 +126,7 @@ export default function AdminSpots() {
 
   // Per-row action — only „Bearbeiten". Lifecycle actions (go-live / offline /
   // archive / reactivate) live on the editor's „Betrieb & Veröffentlichung" panel.
-  const rowActions = (s: SpotSummary) => (
+  const rowActions = (s: AdminSpotSummary) => (
     <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
       <Link
         to={`/admin/spot/${s.id}/edit`}
@@ -211,6 +213,16 @@ export default function AdminSpots() {
             ))}
           </select>
           <select
+            value={completeness}
+            onChange={(e) => setFilter("completeness", e.target.value)}
+            className={`${selectCls} w-full min-w-0 sm:w-auto`}
+            aria-label="Vollständigkeit"
+          >
+            <option value="">Alle Vollständigkeiten</option>
+            <option value="complete">Vollständig</option>
+            <option value="incomplete">Unvollständig</option>
+          </select>
+          <select
             value={sort}
             onChange={(e) => setFilter("sort", e.target.value)}
             className={`${selectCls} w-full min-w-0 sm:w-auto`}
@@ -282,6 +294,9 @@ export default function AdminSpots() {
                   Conf. {s.confidence != null ? s.confidence.toFixed(2) : "—"}
                 </span>
               </div>
+              <div className="mt-3" onClick={(event) => event.stopPropagation()}>
+                <ReadinessStatus spot={s} editorState={editorState} />
+              </div>
               <div className="mt-3">{rowActions(s)}</div>
             </div>
           ))
@@ -297,6 +312,7 @@ export default function AdminSpots() {
               <th className="px-4 py-2.5 font-semibold">Region</th>
               <th className="px-4 py-2.5 font-semibold">Sportarten</th>
               <th className="px-4 py-2.5 font-semibold">Status</th>
+              <th className="px-4 py-2.5 font-semibold">Vollständigkeit</th>
               <th className="px-4 py-2.5 text-right font-semibold">Conf.</th>
               <th className="px-4 py-2.5 font-semibold">Aktionen</th>
             </tr>
@@ -304,13 +320,13 @@ export default function AdminSpots() {
           <tbody className="divide-y divide-admin-border-subtle">
             {!data ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-admin-muted">
+                <td colSpan={7} className="px-4 py-6 text-center text-admin-muted">
                   Lädt…
                 </td>
               </tr>
             ) : data.items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-admin-muted">
+                <td colSpan={7} className="px-4 py-10 text-center text-admin-muted">
                   Keine Spots gefunden. Filter anpassen.
                 </td>
               </tr>
@@ -335,6 +351,9 @@ export default function AdminSpots() {
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={s.status} />
+                  </td>
+                  <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
+                    <ReadinessStatus spot={s} editorState={editorState} />
                   </td>
                   <td className="admin-mono px-4 py-3 text-right text-admin-fg2">
                     {s.confidence != null ? s.confidence.toFixed(2) : "—"}
@@ -383,4 +402,38 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 
 function StatusBadge({ status }: { status: string }) {
   return <Badge tone={STATUS_TONE[status] ?? "neutral"}>{statusLabel(status)}</Badge>;
+}
+
+function ReadinessStatus({
+  spot,
+  editorState,
+}: {
+  spot: AdminSpotSummary;
+  editorState: ReturnType<typeof createAdminReturnState>;
+}) {
+  if (spot.readiness.ready) return <Badge tone="success">Vollständig</Badge>;
+  return (
+    <details className="group min-w-[160px]">
+      <summary className="cursor-pointer list-none">
+        <Badge tone="warning">
+          {spot.readiness.missing_count === 1
+            ? "1 Angabe fehlt"
+            : `${spot.readiness.missing_count} Angaben fehlen`}
+        </Badge>
+      </summary>
+      <ul className="mt-2 space-y-1 text-caption text-admin-fg2">
+        {spot.readiness.gaps.map((gap) => (
+          <li key={gap}>
+            <Link
+              to={`/admin/spot/${spot.id}/edit#${gapAnchor(gap)}`}
+              state={editorState}
+              className="text-admin-primary hover:underline"
+            >
+              {gapLabel(gap)}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
 }

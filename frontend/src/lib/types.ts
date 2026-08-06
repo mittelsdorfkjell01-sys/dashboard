@@ -37,6 +37,8 @@ export interface Spot {
   sports?: string[];
   description?: string;
   level?: string[];
+  waterTypes?: string[];
+  bottomType?: string[];
   waterCharacter?: string[];
   style?: string[];
   facilities?: FacilityMap | null;

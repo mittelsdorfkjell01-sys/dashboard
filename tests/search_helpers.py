@@ -23,7 +23,7 @@ def make_spot(
     confidence: float | None = None,
     climatology: dict | None = None,
     water_type: str | None = None,
-    bottom_type: str | None = None,
+    bottom_type: str | list[str] | None = None,
     level: str | None = None,
     facing: int | None = None,
     editorial: dict | None = None,
@@ -42,7 +42,7 @@ def make_spot(
         # water_type / level are multi-select array columns; callers still pass a
         # single scalar for brevity, so wrap into a one-element list.
         water_type=[water_type] if water_type else [],
-        bottom_type=bottom_type,
+        bottom_type=([bottom_type] if isinstance(bottom_type, str) else bottom_type) or [],
         level=[level] if level else [],
         facing=facing,
         editorial=editorial,

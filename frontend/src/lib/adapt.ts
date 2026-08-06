@@ -56,6 +56,8 @@ export function adaptSpot(
     windDir: s.facing ?? undefined,
     sports: s.sports,
     level: s.level,
+    waterTypes: s.water_type,
+    bottomType: s.bottom_type,
     waterCharacter: s.water_character,
     style: s.style,
     facilities: s.facilities,

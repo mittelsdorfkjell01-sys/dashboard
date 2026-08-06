@@ -68,7 +68,7 @@ export interface SpotSummary {
   location: GeoPoint | null;
   sports: string[];
   water_type: string[];
-  bottom_type: string | null;
+  bottom_type: string[];
   level: string[];
   water_character: string[];
   style: string[];
@@ -292,6 +292,7 @@ export interface SpotQuery {
   level?: string;
   water_character?: string;
   style?: string[];
+  bottom_type?: string[];
   limit?: number;
   offset?: number;
 }
@@ -950,10 +951,15 @@ export interface AdminSpotsQuery {
   offset?: number;
   /** Hide spots with this status (e.g. "archived" for the non-archived tabs). */
   exclude_status?: string;
+  completeness?: "complete" | "incomplete";
+}
+
+export interface AdminSpotSummary extends SpotSummary {
+  readiness: { ready: boolean; missing_count: number; gaps: string[] };
 }
 
 export interface AdminSpotsResponse {
-  items: SpotSummary[];
+  items: AdminSpotSummary[];
   total: number;
   limit: number;
   offset: number;
@@ -972,8 +978,8 @@ export interface AdminRegionEntry {
   spot_counts: StatusCounts;
 }
 
-export const getAdminRegions = () =>
-  request<AdminRegionEntry[]>(`/admin/regions`);
+export const getAdminRegions = (q?: string) =>
+  request<AdminRegionEntry[]>(`/admin/regions${qs({ q })}`);
 
 export const getAdminRegion = (id: string) =>
   request<Region>(`/admin/regions/${id}/record`);
@@ -1144,7 +1150,7 @@ export interface SpotCreateBody {
   sports?: string[];
   slug?: string;
   water_type?: string[];
-  bottom_type?: string | null;
+  bottom_type?: string[];
   level?: string[];
   water_character?: string[];
   style?: string[];

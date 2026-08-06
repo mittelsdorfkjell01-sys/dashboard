@@ -10,8 +10,8 @@ export type SortKey = "name-asc" | "name-desc" | "level-asc" | "level-desc";
 export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "name-asc", label: "Name A–Z" },
   { key: "name-desc", label: "Name Z–A" },
-  { key: "level-asc", label: "Level: Anfänger → Profi" },
-  { key: "level-desc", label: "Level: Profi → Anfänger" },
+  { key: "level-asc", label: "Level: Anfänger → Experte" },
+  { key: "level-desc", label: "Level: Experte → Anfänger" },
 ];
 
 export const DEFAULT_SORT: SortKey = "name-asc";
@@ -20,11 +20,12 @@ export interface FilterState {
   level?: string;
   waterCharacter?: string;
   styles: string[];
+  bottomTypes?: string[];
   sort: SortKey;
 }
 
 export function emptyFilters(): FilterState {
-  return { styles: [], sort: DEFAULT_SORT };
+  return { styles: [], bottomTypes: [], sort: DEFAULT_SORT };
 }
 
 export function parseFilters(sp: URLSearchParams): FilterState {
@@ -33,6 +34,7 @@ export function parseFilters(sp: URLSearchParams): FilterState {
     level: sp.get("level") || undefined,
     waterCharacter: sp.get("water") || undefined,
     styles: sp.getAll("style"),
+    bottomTypes: sp.getAll("bottom"),
     sort: SORT_OPTIONS.some((o) => o.key === sort) ? sort : DEFAULT_SORT,
   };
 }
@@ -43,6 +45,7 @@ export function filtersToSearchParams(f: FilterState): URLSearchParams {
   if (f.level) sp.set("level", f.level);
   if (f.waterCharacter) sp.set("water", f.waterCharacter);
   f.styles.forEach((s) => sp.append("style", s));
+  (f.bottomTypes ?? []).forEach((s) => sp.append("bottom", s));
   if (f.sort !== DEFAULT_SORT) sp.set("sort", f.sort);
   return sp;
 }
@@ -53,6 +56,7 @@ export function filtersToQuery(f: FilterState): SpotQuery {
     level: f.level,
     water_character: f.waterCharacter,
     style: f.styles.length ? f.styles : undefined,
+    bottom_type: f.bottomTypes?.length ? f.bottomTypes : undefined,
   };
 }
 
@@ -61,6 +65,7 @@ export function activeFilterCount(f: FilterState): number {
     (f.level ? 1 : 0) +
     (f.waterCharacter ? 1 : 0) +
     f.styles.length +
+    (f.bottomTypes?.length ?? 0) +
     (f.sort !== DEFAULT_SORT ? 1 : 0)
   );
 }
@@ -76,6 +81,10 @@ export function filterSpots(spots: Spot[], f: FilterState): Spot[] {
       return false;
     if (f.styles.length && !f.styles.some((x) => (s.style ?? []).includes(x)))
       return false;
+    if (
+      (f.bottomTypes?.length ?? 0) > 0 &&
+      !f.bottomTypes?.some((x) => (s.bottomType ?? []).includes(x))
+    ) return false;
     return true;
   });
 }
@@ -84,7 +93,7 @@ export function filterSpots(spots: Spot[], f: FilterState): Spot[] {
 export function sortSpots(spots: Spot[], sort: SortKey): Spot[] {
   const out = [...spots];
   // A spot can hold several levels; rank it by its *lowest* (most accessible)
-  // known level so "beginner → pro" sorting keeps mixed spots near beginners.
+  // known level so beginner-to-expert sorting keeps mixed spots near beginners.
   const levelRank = (s: Spot) => {
     const idxs = (s.level ?? [])
       .map((l) => LEVELS.indexOf(l as (typeof LEVELS)[number]))

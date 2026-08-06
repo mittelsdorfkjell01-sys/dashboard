@@ -83,12 +83,6 @@ def _orientation_distance(a: Any, b: Any) -> float | None:
     return orientation_l1(oa, ob)
 
 
-def _categorical(a: str | None, b: str | None) -> float | None:
-    if not a or not b:
-        return None
-    return 0.0 if a == b else 1.0
-
-
 def _categorical_multi(a: Any, b: Any) -> float | None:
     """Set-overlap distance for two multi-select lists: 0 if they share any
     value, 1 if disjoint, ``None`` when either side is empty."""
@@ -103,7 +97,7 @@ def character_distance(a: Any, b: Any, sport: str | None = None) -> float:
     """Weighted character distance in [0, 1] (0 = identical feel)."""
     components = {
         "water_type": _categorical_multi(getattr(a, "water_type", None), getattr(b, "water_type", None)),
-        "bottom_type": _categorical(getattr(a, "bottom_type", None), getattr(b, "bottom_type", None)),
+        "bottom_type": _categorical_multi(getattr(a, "bottom_type", None), getattr(b, "bottom_type", None)),
         "level": _level_distance(a, b),
         "wind_range": _wind_range_distance(a, b, sport),
         "orientation": _orientation_distance(a, b),

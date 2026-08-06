@@ -37,9 +37,8 @@ def _wind_params() -> dict:
         # rider-level offsets applied to the *ideal* band only
         "level_offsets": {
             "beginner": {"good_min_kt": -2.0, "good_max_kt": -8.0},
-            "intermediate": {"good_min_kt": 0.0, "good_max_kt": -3.0},
             "advanced": {"good_min_kt": 2.0, "good_max_kt": 3.0},
-            "pro": {"good_min_kt": 4.0, "good_max_kt": 5.0},
+            "expert": {"good_min_kt": 4.0, "good_max_kt": 5.0},
         },
         "week_good_threshold": WEEK_GOOD_THRESHOLD,
         "d0_km": DISTANCE_D0_KM,
@@ -69,9 +68,8 @@ SCORING_PARAMS_V1: dict[str, dict] = {
         "tide": {"dependence": False},
         "level_offsets": {
             "beginner": {"good_min_m": -0.4, "good_max_m": -1.0},
-            "intermediate": {"good_min_m": 0.0, "good_max_m": -0.5},
             "advanced": {"good_min_m": 0.3, "good_max_m": 0.5},
-            "pro": {"good_min_m": 0.5, "good_max_m": 1.0},
+            "expert": {"good_min_m": 0.5, "good_max_m": 1.0},
         },
         "week_good_threshold": WEEK_GOOD_THRESHOLD,
         "d0_km": DISTANCE_D0_KM,

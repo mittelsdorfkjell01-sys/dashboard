@@ -253,7 +253,7 @@ SPOTS: list[dict] = [
     {"slug": "fuerteventura-flag-beach", "name": "Flag Beach",
      "region_slug": "fuerteventura", "location": (-13.835, 28.715),
      "sports": ["kitesurf", "windsurf", "wing"],
-     "water_type": "ocean", "bottom_type": "mixed", "level": "intermediate",
+     "water_type": "ocean", "bottom_type": "mixed", "level": "advanced",
      "water_character": "chop", "style": ["freeride", "wave_riding"],
      "status": "draft",
      "editorial": {"description": "Meistfrequentierter Spot im Norden "
@@ -325,7 +325,7 @@ SPOTS: list[dict] = [
     {"slug": "tarifa-arte-vida", "name": "Arte Vida",
      "region_slug": "tarifa", "location": (-5.655, 36.035),
      "sports": ["kitesurf", "wavekite", "surf"],
-     "water_type": "sea", "bottom_type": "mixed", "level": "intermediate",
+     "water_type": "sea", "bottom_type": "mixed", "level": "advanced",
      "water_character": "welle_klein", "style": ["wave_riding", "freeride"],
      "status": "draft",
      "editorial": {"description": "Spot zwischen Los Lances und Valdevaqueros, "
@@ -353,7 +353,7 @@ SPOTS: list[dict] = [
     {"slug": "tenerife-el-medano", "name": "El Médano",
      "region_slug": "tenerife", "location": (-16.535, 28.045),
      "sports": ["windsurf", "kitesurf", "wing"],
-     "water_type": "ocean", "bottom_type": "mixed", "level": "intermediate",
+     "water_type": "ocean", "bottom_type": "mixed", "level": "advanced",
      "water_character": "chop", "style": ["freeride", "wave_riding", "big_air"],
      "status": "draft",
      "editorial": {"description": "Einer der windsichersten Spots Europas mit "
@@ -380,7 +380,7 @@ SPOTS: list[dict] = [
     {"slug": "rhodes-prasonisi", "name": "Prasonisi",
      "region_slug": "rhodes", "location": (27.760, 35.900),
      "sports": ["kitesurf", "windsurf"],
-     "water_type": "sea", "bottom_type": "sand", "level": "intermediate",
+     "water_type": "sea", "bottom_type": "sand", "level": "advanced",
      "water_character": "flach", "style": ["freestyle", "wave_riding"],
      "status": "draft",
      "editorial": {"description": "Bekanntester Meltemi-Spot der Ägäis an der "
@@ -410,7 +410,7 @@ SPOTS: list[dict] = [
     {"slug": "naxos-mikri-vigla", "name": "Mikri Vigla",
      "region_slug": "naxos", "location": (25.400, 37.000),
      "sports": ["kitesurf", "windsurf", "wing"],
-     "water_type": "sea", "bottom_type": "sand", "level": "intermediate",
+     "water_type": "sea", "bottom_type": "sand", "level": "advanced",
      "water_character": "chop", "style": ["freeride", "freestyle"],
      "status": "draft",
      "editorial": {"description": "Windzuverlässigster Spot der Kykladen an "
@@ -494,7 +494,7 @@ SPOTS: list[dict] = [
     {"slug": "zeeland-brouwersdam", "name": "Brouwersdam",
      "region_slug": "zeeland", "location": (3.820, 51.760),
      "sports": ["kitesurf", "windsurf", "wing"],
-     "water_type": "sea", "bottom_type": "sand", "level": "intermediate",
+     "water_type": "sea", "bottom_type": "sand", "level": "advanced",
      "water_character": "chop", "style": ["freestyle", "freeride"],
      "status": "draft",
      "editorial": {"description": "Der Damm trennt die Nordsee vom "
@@ -511,7 +511,7 @@ SPOTS: list[dict] = [
     {"slug": "ericeira-ribeira-dilhas", "name": "Ribeira d'Ilhas",
      "region_slug": "ericeira", "location": (-9.418, 38.983),
      "sports": ["surf"],
-     "water_type": "ocean", "bottom_type": "reef", "level": "intermediate",
+     "water_type": "ocean", "bottom_type": "reef", "level": "advanced",
      "water_character": "welle_gross", "style": ["wave_riding"],
      "status": "draft",
      "editorial": {"description": "Bekannteste Welle Ericeiras und WSL-"
@@ -597,7 +597,7 @@ SPOTS: list[dict] = [
     {"slug": "nazare-praia-do-norte", "name": "Praia do Norte",
      "region_slug": "nazare", "location": (-9.085, 39.605),
      "sports": ["surf"],
-     "water_type": "ocean", "bottom_type": "sand", "level": "pro",
+     "water_type": "ocean", "bottom_type": "sand", "level": "expert",
      "water_character": "welle_gross", "style": ["wave_riding"],
      "status": "draft",
      "editorial": {"description": "Das Big-Wave-Mekka der Welt: Der "
@@ -644,7 +644,7 @@ SPOTS: list[dict] = [
     {"slug": "sintra-praia-grande", "name": "Praia Grande",
      "region_slug": "sintra", "location": (-9.485, 38.815),
      "sports": ["surf"],
-     "water_type": "ocean", "bottom_type": "sand", "level": "intermediate",
+     "water_type": "ocean", "bottom_type": "sand", "level": "advanced",
      "water_character": "welle_gross", "style": ["wave_riding"],
      "status": "draft",
      "editorial": {"description": "Einer der konstantesten Beachbreaks der "
@@ -672,7 +672,7 @@ SPOTS: list[dict] = [
     {"slug": "basque-zarautz", "name": "Zarautz",
      "region_slug": "basque-country", "location": (-2.170, 43.285),
      "sports": ["surf"],
-     "water_type": "ocean", "bottom_type": "sand", "level": "intermediate",
+     "water_type": "ocean", "bottom_type": "sand", "level": "advanced",
      "water_character": "welle_klein", "style": ["wave_riding"],
      "status": "draft",
      "editorial": {"description": "Zugänglicher High-Performance-Beachbreak "

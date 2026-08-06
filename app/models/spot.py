@@ -42,11 +42,13 @@ class Spot(Base, TimestampMixin):
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
     # Multi-select category axes (validated against app.admin.constants). Empty
-    # array = unknown. water_type: ocean|sea|lake|lagoon; level: beginner..pro.
+    # array = unknown. water_type: ocean|sea|lake|lagoon; level has 3 tiers.
     water_type: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
-    bottom_type: Mapped[str | None] = mapped_column(String(30))  # sand | rock | reef | mixed
+    bottom_type: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
+    )  # sand | rock | reef | mixed
     level: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
@@ -106,6 +108,7 @@ class Spot(Base, TimestampMixin):
         # water_type + level are arrays now — GIN so membership filters
         # (``value = ANY(col)`` / ``@>``) stay indexed.
         Index("ix_spots_water_type", "water_type", postgresql_using="gin"),
+        Index("ix_spots_bottom_type", "bottom_type", postgresql_using="gin"),
         Index("ix_spots_level", "level", postgresql_using="gin"),
         Index(
             "uq_spots_region_normalized_name",

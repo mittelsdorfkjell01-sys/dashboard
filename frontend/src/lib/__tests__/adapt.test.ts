@@ -10,7 +10,7 @@ const summary = (over: Partial<SpotSummary> = {}): SpotSummary => ({
   location: { lat: 54.4, lon: 10.2 },
   sports: ["kitesurf"],
   water_type: ["sea"],
-  bottom_type: "sand",
+  bottom_type: ["sand"],
   level: ["beginner"],
   water_character: ["chop"],
   style: ["freeride"],

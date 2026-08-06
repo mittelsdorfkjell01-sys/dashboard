@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, defer
 
 from app.admin.readiness import build_checklist
 from app.models import Era5Job, Region, RequiredField, Spot, SpotAudit
+from app.names import normalize_name
 
 logger = logging.getLogger(__name__)
 
@@ -56,35 +57,32 @@ def list_spots(
     limit: int = 50,
     offset: int = 0,
     exclude_status: str | None = None,
-) -> tuple[list[Spot], int]:
-    """Filtered, sorted, paginated spot list + total matching count."""
+    completeness: str | None = None,
+) -> tuple[list[Spot], int, dict[uuid.UUID, dict]]:
+    """Filtered, sorted spot page plus readiness from the canonical rules."""
     base = _spot_filters(
         select(Spot), status=status, region_id=region_id, sport=sport, q=q,
         exclude_status=exclude_status,
     )
+    ordered = base.order_by(_SORTS.get(sort, Spot.name.asc()))
+
+    if completeness:
+        candidates = list(db.scalars(ordered).all())
+        readiness = readiness_for_spots(db, candidates)
+        expected = completeness == "complete"
+        candidates = [s for s in candidates if readiness[s.id]["ready"] is expected]
+        total = len(candidates)
+        rows = candidates[offset:offset + limit]
+        return rows, total, {s.id: readiness[s.id] for s in rows}
+
     total = db.scalar(
         _spot_filters(
-            select(func.count()).select_from(Spot),
-            status=status,
-            region_id=region_id,
-            sport=sport,
-            q=q,
-            exclude_status=exclude_status,
+            select(func.count()).select_from(Spot), status=status,
+            region_id=region_id, sport=sport, q=q, exclude_status=exclude_status,
         )
     )
-    stmt = (
-        base.options(
-            defer(Spot.climatology),
-            defer(Spot.editorial),
-            defer(Spot.overrides),
-            defer(Spot.era5_cell),
-        )
-        .order_by(_SORTS.get(sort, Spot.name.asc()))
-        .limit(limit)
-        .offset(offset)
-    )
-    rows = list(db.scalars(stmt).all())
-    return rows, int(total or 0)
+    rows = list(db.scalars(ordered.limit(limit).offset(offset)).all())
+    return rows, int(total or 0), readiness_for_spots(db, rows)
 
 
 def _status_counts(db: Session) -> dict[str, int]:
@@ -98,7 +96,7 @@ def _status_counts(db: Session) -> dict[str, int]:
     return counts
 
 
-def list_regions_with_counts(db: Session) -> list[dict[str, Any]]:
+def list_regions_with_counts(db: Session, *, q: str | None = None) -> list[dict[str, Any]]:
     """Regions ordered by name, each with per-status spot counts."""
     count_rows = db.execute(
         select(Spot.region_id, Spot.status, func.count())
@@ -112,7 +110,14 @@ def list_regions_with_counts(db: Session) -> list[dict[str, Any]]:
         bucket[status] = bucket.get(status, 0) + int(n)
         bucket["total"] += int(n)
 
-    regions = db.scalars(select(Region).order_by(Region.name)).all()
+    region_stmt = select(Region)
+    if q and q.strip():
+        normalized = normalize_name(q)
+        like = f"%{q.strip()}%"
+        region_stmt = region_stmt.where(
+            or_(Region.normalized_name.contains(normalized), Region.country.ilike(like))
+        )
+    regions = db.scalars(region_stmt.order_by(Region.name)).all()
     out: list[dict[str, Any]] = []
     for r in regions:
         out.append(
@@ -126,13 +131,19 @@ def list_regions_with_counts(db: Session) -> list[dict[str, Any]]:
     return out
 
 
-def _latest_job_status_map(db: Session) -> dict[uuid.UUID, str]:
+def _latest_job_status_map(
+    db: Session, spot_ids: list[uuid.UUID] | None = None
+) -> dict[uuid.UUID, str]:
     """spot_id → status of its most recent ERA5 job (Postgres DISTINCT ON)."""
     stmt = (
         select(Era5Job.spot_id, Era5Job.status)
         .order_by(Era5Job.spot_id, Era5Job.created_at.desc())
         .distinct(Era5Job.spot_id)
     )
+    if spot_ids is not None:
+        if not spot_ids:
+            return {}
+        stmt = stmt.where(Era5Job.spot_id.in_(spot_ids))
     return {sid: status for sid, status in db.execute(stmt).all()}
 
 
@@ -338,6 +349,16 @@ def map_spots(
         {"id": str(spot_id), "name": name, "status": status, "lat": lat, "lon": lon}
         for spot_id, name, status, lat, lon in rows
     ]
+
+
+def readiness_for_spots(db: Session, spots: list[Spot]) -> dict[uuid.UUID, dict]:
+    """Batch readiness without per-spot queries; always delegates to build_checklist."""
+    rules = _required_rules(db)
+    jobs = _latest_job_status_map(db, [spot.id for spot in spots])
+    return {
+        spot.id: build_checklist(spot, rules, job_status=jobs.get(spot.id))
+        for spot in spots
+    }
 
 
 def no_region_spots(db: Session, *, limit: int = 100) -> list[dict[str, Any]]:

@@ -60,6 +60,9 @@ def list_spots(
     style: list[str] | None = Query(
         default=None, description="Filter to spots offering any of these riding styles"
     ),
+    bottom_type: list[str] | None = Query(
+        default=None, description="Filter to spots matching any selected bottom type"
+    ),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> list[SpotSummary]:
@@ -85,6 +88,8 @@ def list_spots(
     if style:
         # Match spots offering ANY of the requested styles (array overlap).
         stmt = stmt.where(Spot.style.overlap(style))
+    if bottom_type:
+        stmt = stmt.where(Spot.bottom_type.overlap(bottom_type))
     stmt = stmt.limit(limit).offset(offset)
 
     rows = db.scalars(stmt).all()
@@ -257,7 +262,7 @@ def get_spot_forecast(
 def get_spot_badge(
     spot_id: uuid.UUID,
     sport: str | None = Query(default=None, description="Defaults to the spot's first sport"),
-    level: str | None = Query(default=None, description="Rider level (beginner..pro)"),
+    level: str | None = Query(default=None, description="Rider level (beginner, advanced, expert)"),
     db: Session = Depends(get_db),
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),

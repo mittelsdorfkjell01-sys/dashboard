@@ -18,7 +18,7 @@ import Footer from "../components/Footer";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner, EmptyState } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
-import { sportLabel } from "../lib/labels";
+import { bottomTypeLabel, levelLabel, sportLabel, waterTypeLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
@@ -207,6 +207,21 @@ export default function SpotDetail() {
                   <p className="mt-8 max-w-[62ch] text-body text-ink-soft">
                     {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                   </p>
+
+                  <dl className="mt-6 grid max-w-[62ch] gap-3 text-label sm:grid-cols-3">
+                    <div>
+                      <dt className="font-medium text-muted">Level</dt>
+                      <dd className="mt-1 text-ink">{(spot.level ?? []).map(levelLabel).join(", ") || "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted">Gewässer</dt>
+                      <dd className="mt-1 text-ink">{(spot.waterTypes ?? []).map(waterTypeLabel).join(", ") || "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-muted">Untergrund</dt>
+                      <dd className="mt-1 text-ink">{(spot.bottomType ?? []).map(bottomTypeLabel).join(", ") || "—"}</dd>
+                    </div>
+                  </dl>
 
                   <div className="mt-10">
                     <FavoriteButton spot={spot} />

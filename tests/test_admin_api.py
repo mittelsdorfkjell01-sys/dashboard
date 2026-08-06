@@ -81,7 +81,7 @@ def _create_spot(admin, region_id, **overrides):
     body = {
         "name": f"New Spot {suffix}", "slug": f"new-spot-{suffix}",
         "region_id": region_id, "lat": 54.41, "lon": 10.22,
-        "sports": ["kitesurf"], "water_type": ["sea"], "bottom_type": "sand",
+        "sports": ["kitesurf"], "water_type": ["sea"], "bottom_type": ["sand"],
         "level": ["beginner"], "water_character": ["chop"],
     }
     body.update(overrides)
@@ -508,14 +508,14 @@ def test_override_writes_provenance_and_audit_then_revert(admin, region_id, db):
 
 
 def test_recompute_climatology_leaves_override(admin, region_id, db, tmp_path):
-    from app.era5 import cds, pipeline, rawfile
+    from app.era5 import cds, pipeline
 
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
 
     # stand up a raw extract + job, build the climatology (Sprint 2 path)
     client = FakeCdsClient(make_synthetic_series())
-    job = cds.poll_cds_job(
+    cds.poll_cds_job(
         db.scalar(select(Era5Job).where(Era5Job.spot_id == sid)).params["cds_request_id"],
         db=db, client=client, raw_dir=str(tmp_path),
     )
@@ -605,7 +605,7 @@ def test_activity_groups_multiple_actions_into_one_slot_per_spot(admin, region_i
     # Three separate edits on the same spot → still ONE activity slot.
     admin.patch(f"/admin/spots/{sid}", json={"name": "Edit A"})
     admin.patch(f"/admin/spots/{sid}", json={"water_type": ["lake"]})
-    admin.patch(f"/admin/spots/{sid}", json={"bottom_type": "rock"})
+    admin.patch(f"/admin/spots/{sid}", json={"bottom_type": ["rock"]})
 
     acts = admin.get("/admin/activity").json()
     mine = [a for a in acts if a["kind"] == "spot" and a["target_id"] == sid]
@@ -680,6 +680,7 @@ def test_board_task_crud(admin):
     assert created.status_code == 201, created.text
     tid = created.json()["id"]
     assert created.json()["status"] == "open"
+    assert "@" not in created.json()["author"]
 
     assert any(t["id"] == tid for t in admin.get("/admin/board/tasks").json())
     assert admin.post("/admin/board/tasks", json={"title": "  "}).status_code == 422
@@ -687,8 +688,41 @@ def test_board_task_crud(admin):
     moved = admin.patch(f"/admin/board/tasks/{tid}", json={"status": "done"})
     assert moved.status_code == 200 and moved.json()["status"] == "done"
 
+    edited = admin.patch(
+        f"/admin/board/tasks/{tid}",
+        json={"title": "Laboe vollständig prüfen", "body": "- Hero\n- Details"},
+    )
+    assert edited.status_code == 200
+    assert edited.json()["title"] == "Laboe vollständig prüfen"
+    assert edited.json()["body"] == "- Hero\n- Details"
+
     assert admin.delete(f"/admin/board/tasks/{tid}").status_code == 204
     assert all(t["id"] != tid for t in admin.get("/admin/board/tasks").json())
+
+
+def test_admin_spot_list_includes_and_filters_canonical_readiness(admin, region_id):
+    spot = _create_spot(admin, region_id, name=f"Readiness {uuid.uuid4().hex[:8]}")
+    response = admin.get(
+        "/admin/spots", params={"q": spot["name"], "completeness": "incomplete"}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    assert body["items"][0]["readiness"]["ready"] is False
+    assert body["items"][0]["readiness"]["missing_count"] == len(
+        body["items"][0]["readiness"]["gaps"]
+    )
+
+
+def test_admin_region_searches_normalized_name_and_country(admin):
+    suffix = uuid.uuid4().hex[:8]
+    region = _create_region(
+        admin, name=f"Côte Test {suffix}", country="FR", lat=47.0, lon=2.0
+    )
+    by_name = admin.get("/admin/regions", params={"q": f"cote test {suffix}"})
+    assert [entry["region"]["id"] for entry in by_name.json()] == [region["id"]]
+    by_country = admin.get("/admin/regions", params={"q": "fr"})
+    assert region["id"] in {entry["region"]["id"] for entry in by_country.json()}
 
 
 def test_activity_shows_changed_fields(admin, region_id):
@@ -1030,7 +1064,7 @@ def test_admin_notifications_flow(admin, region_id, db):
         payload={
             "name": "Vorschlag X", "slug": f"vorschlag-{uuid.uuid4().hex[:8]}",
             "region_id": region_id, "lat": 54.4, "lon": 10.2,
-            "sports": ["kitesurf"], "water_type": ["sea"], "bottom_type": "sand",
+            "sports": ["kitesurf"], "water_type": ["sea"], "bottom_type": ["sand"],
             "level": ["beginner"], "water_character": ["chop"],
         },
         submitter_name="Gast",

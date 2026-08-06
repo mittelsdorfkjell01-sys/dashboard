@@ -14,7 +14,7 @@ import {
 const rating = (over: Partial<RatingItem>): RatingItem => ({
   id: "r1",
   stars: 4,
-  skill_level: "intermediate",
+  skill_level: "advanced",
   sport: "kitesurf",
   conditions: "Solide Bedingungen.",
   author_name: "Anna Muster",

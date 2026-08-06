@@ -2,7 +2,7 @@
 // standalone /admin/board page and embedded on the Übersicht. This component is
 // heading-less — the caller supplies whatever title/chrome fits its context.
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import {
   ApiError,
   createBoardTask,
@@ -13,7 +13,6 @@ import {
 } from "../../lib/api";
 import { Button, Input, Textarea } from "../ui";
 import Modal from "../ui/Modal";
-import PromptDialog from "../ui/PromptDialog";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
 import {
@@ -56,20 +55,6 @@ export default function BoardPanel() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Verschieben fehlgeschlagen.");
       void load();
-    }
-  };
-
-  const rename = async (title: string) => {
-    if (!editTarget) return;
-    setDialogBusy(true);
-    try {
-      await updateBoardTask(editTarget.id, { title: title.trim() });
-      setEditTarget(null);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Umbenennen fehlgeschlagen.");
-    } finally {
-      setDialogBusy(false);
     }
   };
 
@@ -154,22 +139,21 @@ export default function BoardPanel() {
         })}
       </div>
 
-      <NewTaskModal
+      <TaskDialog
         open={newOpen}
+        task={null}
         onClose={() => setNewOpen(false)}
-        onCreated={load}
+        onSaved={load}
         onError={setError}
         onDirtyChange={(dirty) => setDirty("new-task", dirty)}
       />
 
-      <PromptDialog
+      <TaskDialog
         open={editTarget !== null}
-        title="Aufgabe umbenennen"
-        confirmText="Speichern"
-        initialValue={editTarget?.title ?? ""}
-        busy={dialogBusy}
-        onConfirm={rename}
-        onCancel={() => setEditTarget(null)}
+        task={editTarget}
+        onClose={() => setEditTarget(null)}
+        onSaved={load}
+        onError={setError}
         onDirtyChange={(dirty) => setDirty("edit-task", dirty)}
       />
       <ConfirmDialog
@@ -203,7 +187,7 @@ function TaskCard({
       className="cursor-grab rounded-lg border border-line bg-white p-3 active:cursor-grabbing"
     >
       <p className="text-label font-medium text-ink">{task.title}</p>
-      {task.body && <p className="mt-1 whitespace-pre-wrap text-caption text-muted">{task.body}</p>}
+      {task.body && <TaskDetails body={task.body} />}
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-caption text-muted">{task.author ?? "—"}</span>
         <div className="flex items-center gap-2 text-caption">
@@ -228,48 +212,115 @@ function TaskCard({
   );
 }
 
-function NewTaskModal({
+function TaskDetails({ body }: { body: string }) {
+  const blocks: { type: "list" | "text"; lines: string[] }[] = [];
+  for (const line of body.split("\n")) {
+    const bullet = /^[-*]\s+(.*)$/.exec(line);
+    const type = bullet ? "list" : "text";
+    const value = bullet ? bullet[1] : line;
+    const last = blocks[blocks.length - 1];
+    if (last?.type === type) last.lines.push(value);
+    else blocks.push({ type, lines: [value] });
+  }
+  return (
+    <div className="mt-1 space-y-1 text-caption text-muted">
+      {blocks.map((block, index) =>
+        block.type === "list" ? (
+          <ul key={index} className="list-disc space-y-0.5 pl-5">
+            {block.lines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}
+          </ul>
+        ) : (
+          <p key={index} className="whitespace-pre-wrap">{block.lines.join("\n")}</p>
+        )
+      )}
+    </div>
+  );
+}
+
+function TaskDialog({
   open,
+  task,
   onClose,
-  onCreated,
+  onSaved,
   onError,
   onDirtyChange,
 }: {
   open: boolean;
+  task: BoardTask | null;
   onClose: () => void;
-  onCreated: () => void | Promise<void>;
+  onSaved: () => void | Promise<void>;
   onError: (msg: string) => void;
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
-  const dirty = useFormDirty({ title, body }, { title: "", body: "" }, open);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const initial = { title: task?.title ?? "", body: task?.body ?? "" };
+  const dirty = useFormDirty({ title, body }, initial, open);
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   // Reset the fields each time the mask opens.
   useEffect(() => {
     if (open) {
-      setTitle("");
-      setBody("");
+      setTitle(initial.title);
+      setBody(initial.body);
+      setTitleError(null);
+      setSaveError(null);
     }
-  }, [open]);
+  }, [open, initial.body, initial.title]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (busy || !title.trim()) return;
+    if (busy) return;
+    if (!title.trim()) {
+      setTitleError("Bitte einen Titel eingeben.");
+      return;
+    }
+    setTitleError(null);
+    setSaveError(null);
     setBusy(true);
     try {
-      await createBoardTask(title.trim(), body.trim() || undefined);
-      await onCreated();
+      if (task) {
+        await updateBoardTask(task.id, { title: title.trim(), body });
+      } else {
+        await createBoardTask(title.trim(), body || undefined);
+      }
+      onDirtyChange(false);
+      await onSaved();
       onClose();
     } catch (err) {
-      onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
+      const message = err instanceof ApiError ? err.message : "Speichern fehlgeschlagen.";
+      setSaveError(message);
+      onError(message);
     } finally {
       setBusy(false);
     }
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+    if (event.currentTarget === bodyRef.current && event.shiftKey) return;
+    event.preventDefault();
+    if (!busy) event.currentTarget.form?.requestSubmit();
+  };
+
+  const insertBullet = () => {
+    const textarea = bodyRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const lineStart = body.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    if (/^[-*]\s/.test(body.slice(lineStart))) return;
+    const next = `${body.slice(0, lineStart)}- ${body.slice(lineStart)}`;
+    setBody(next);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + 2, start + 2);
+    });
   };
 
   const close = () => {
@@ -280,10 +331,10 @@ function NewTaskModal({
 
   return (
     <>
-    <Modal open={open} onClose={close} labelledBy="new-task-title">
+    <Modal open={open} onClose={close} labelledBy="task-dialog-title">
       <form onSubmit={submit}>
-        <h2 id="new-task-title" className="text-ui font-semibold text-ink">
-          Neue Aufgabe
+        <h2 id="task-dialog-title" className="text-ui font-semibold text-ink">
+          {task ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
         </h2>
         <label htmlFor="new-task-title-input" className="mt-4 block text-label text-ink-soft">Titel</label>
         <Input
@@ -291,23 +342,35 @@ function NewTaskModal({
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={onKeyDown}
+          aria-invalid={Boolean(titleError)}
           placeholder="Titel"
           className="mt-1.5"
         />
+        {titleError && <p role="alert" className="mt-1 text-caption text-red-700">{titleError}</p>}
         <label htmlFor="new-task-body" className="mt-3 block text-label text-ink-soft">Details (optional)</label>
         <Textarea
+          ref={bodyRef}
           id="new-task-body"
           className="mt-1.5 min-h-[96px] resize-y"
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          onKeyDown={onKeyDown}
           placeholder="Details (optional)"
         />
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <button type="button" onClick={insertBullet} className="text-caption font-medium text-teal hover:underline">
+            Stichpunkt
+          </button>
+          <p className="text-caption text-muted">Enter zum Speichern · Shift+Enter für neue Zeile</p>
+        </div>
+        {saveError && <p role="alert" className="mt-2 text-caption text-red-700">{saveError}</p>}
         <div className="mt-5 flex items-center justify-end gap-2">
           <Button type="button" variant="ghost" onClick={close} disabled={busy}>
             Abbrechen
           </Button>
           <Button type="submit" disabled={busy || !title.trim()}>
-            {busy ? "…" : "Anlegen"}
+            {busy ? "…" : task ? "Speichern" : "Anlegen"}
           </Button>
         </div>
       </form>

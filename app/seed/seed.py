@@ -91,8 +91,11 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             location=_point(s["location"]),
             sports=s["sports"],
             water_type=_as_list(s.get("water_type")),
-            bottom_type=s["bottom_type"],
-            level=_as_list(s.get("level")),
+            bottom_type=_as_list(s.get("bottom_type")),
+            level=[
+                {"intermediate": "advanced", "pro": "expert"}.get(value, value)
+                for value in _as_list(s.get("level"))
+            ],
             water_character=_as_list(s.get("water_character")),
             style=s.get("style", []),
             facilities=s.get("facilities"),

@@ -189,14 +189,26 @@ def list_spots(
     exclude_status: str | None = Query(
         default=None, description="Hide spots with this status (e.g. 'archived')"
     ),
+    completeness: str | None = Query(default=None, pattern="^(complete|incomplete)$"),
 ) -> dict:
     """Filtered, paginated spot list for the admin table (with total count)."""
-    rows, total = admin_dashboard.list_spots(
+    rows, total, readiness = admin_dashboard.list_spots(
         db, status=status, region_id=region_id, sport=sport, q=q,
         sort=sort, limit=limit, offset=offset, exclude_status=exclude_status,
+        completeness=completeness,
     )
+    items = []
+    for spot in rows:
+        item = SpotSummary.from_orm_spot(spot).model_dump(mode="json")
+        state = readiness[spot.id]
+        item["readiness"] = {
+            "ready": state["ready"],
+            "missing_count": len(state["gaps"]),
+            "gaps": state["gaps"],
+        }
+        items.append(item)
     return {
-        "items": [SpotSummary.from_orm_spot(s).model_dump(mode="json") for s in rows],
+        "items": items,
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -204,14 +216,17 @@ def list_spots(
 
 
 @router.get("/regions")
-def list_regions(db: Session = Depends(get_db)) -> list[dict]:
+def list_regions(
+    db: Session = Depends(get_db),
+    q: str | None = Query(default=None, max_length=200),
+) -> list[dict]:
     """Regions with per-status spot counts for the admin regions view."""
     return [
         {
             "region": RegionRead.from_orm_region(entry["region"]).model_dump(mode="json"),
             "spot_counts": entry["spot_counts"],
         }
-        for entry in admin_dashboard.list_regions_with_counts(db)
+        for entry in admin_dashboard.list_regions_with_counts(db, q=q)
     ]
 
 
@@ -1067,25 +1082,33 @@ def list_board_tasks(db: Session = Depends(get_db)) -> list[dict]:
 
 @router.post("/board/tasks", status_code=201)
 def create_board_task(
-    body: TaskIn, db: Session = Depends(get_db), actor: str = Depends(get_actor)
+    body: TaskIn,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(current_user),
 ) -> dict:
     try:
-        task = admin_team.create_task(db, title=body.title, body=body.body, author=actor)
+        task = admin_team.create_task(
+            db, title=body.title, body=body.body, author=principal.email,
+            author_user_id=principal.user_id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    return admin_team._task_view(task)
+    return admin_team.task_view(db, task)
 
 
 @router.patch("/board/tasks/{task_id}")
 def update_board_task(
     task_id: uuid.UUID, body: TaskPatch, db: Session = Depends(get_db)
 ) -> dict:
-    task = admin_team.update_task(
-        db, task_id, status=body.status, title=body.title, body=body.body
-    )
+    try:
+        task = admin_team.update_task(
+            db, task_id, status=body.status, title=body.title, body=body.body
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     if task is None:
         raise HTTPException(status_code=404, detail="Aufgabe nicht gefunden.")
-    return admin_team._task_view(task)
+    return admin_team.task_view(db, task)
 
 
 @router.delete("/board/tasks/{task_id}", status_code=204)

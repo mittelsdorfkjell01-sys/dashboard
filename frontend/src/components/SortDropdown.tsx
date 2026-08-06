@@ -4,6 +4,8 @@ import {
   LEVELS,
   WATER_CHARACTERS,
   STYLES,
+  BOTTOM_TYPES,
+  bottomTypeLabel,
   levelLabel,
   waterCharacterLabel,
   styleLabel,
@@ -77,6 +79,13 @@ export default function SortDropdown({
       styles: value.styles.includes(s)
         ? value.styles.filter((x) => x !== s)
         : [...value.styles, s],
+    });
+  const toggleBottom = (bottom: string) =>
+    onChange({
+      ...value,
+      bottomTypes: (value.bottomTypes ?? []).includes(bottom)
+        ? (value.bottomTypes ?? []).filter((x) => x !== bottom)
+        : [...(value.bottomTypes ?? []), bottom],
     });
   const setSort = (sort: SortKey) => onChange({ ...value, sort });
 
@@ -177,6 +186,23 @@ export default function SortDropdown({
                   onClick={() => toggleStyle(s)}
                 >
                   {styleLabel(s)}
+                </Chip>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="mt-4">
+            <legend className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+              Untergrund
+            </legend>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {BOTTOM_TYPES.map((bottom) => (
+                <Chip
+                  key={bottom}
+                  active={(value.bottomTypes ?? []).includes(bottom)}
+                  onClick={() => toggleBottom(bottom)}
+                >
+                  {bottomTypeLabel(bottom)}
                 </Chip>
               ))}
             </div>

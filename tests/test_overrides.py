@@ -9,7 +9,7 @@ def _spot(**kwargs):
     base = dict(
         name="Los Lances",
         water_type="sea",
-        bottom_type="sand",
+        bottom_type=["sand"],
         level="beginner",
         facing=225,
         sports=["kitesurf"],

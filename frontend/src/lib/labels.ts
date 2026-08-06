@@ -4,7 +4,8 @@
 
 import type { FacilityKind } from "./api";
 
-export const LEVELS = ["beginner", "intermediate", "advanced", "pro"] as const;
+export const LEVELS = ["beginner", "advanced", "expert"] as const;
+export const BOTTOM_TYPES = ["sand", "rock", "reef", "mixed"] as const;
 export const WATER_CHARACTERS = [
   "flach",
   "chop",
@@ -30,9 +31,15 @@ export const FACILITY_KINDS: FacilityKind[] = [
 
 export const LEVEL_LABELS: Record<string, string> = {
   beginner: "Anfänger",
-  intermediate: "Fortgeschritten",
-  advanced: "Könner",
-  pro: "Profi",
+  advanced: "Fortgeschritten",
+  expert: "Experte",
+};
+
+export const BOTTOM_TYPE_LABELS: Record<string, string> = {
+  sand: "Sand",
+  rock: "Fels",
+  reef: "Riff",
+  mixed: "Gemischt (nicht näher bestimmt)",
 };
 
 export const WATER_CHARACTER_LABELS: Record<string, string> = {
@@ -44,8 +51,8 @@ export const WATER_CHARACTER_LABELS: Record<string, string> = {
 };
 
 export const WATER_TYPE_LABELS: Record<string, string> = {
-  ocean: "Ozean",
-  sea: "Meer",
+  ocean: "Offenes Meer",
+  sea: "Geschütztes Meer",
   lake: "See",
   lagoon: "Lagune",
 };
@@ -105,6 +112,16 @@ export const GAP_LABELS: Record<string, string> = {
   image: "Titelbild",
 };
 export const gapLabel = (k: string) => GAP_LABELS[k] ?? k;
+export const GAP_ANCHORS: Record<string, string> = {
+  water_type: "f-water_type",
+  bottom_type: "f-bottom_type",
+  level: "f-level",
+  water_character: "f-water_character",
+  "editorial.description": "f-description",
+  climatology: "f-operations",
+  image: "f-hero",
+};
+export const gapAnchor = (k: string) => GAP_ANCHORS[k] ?? "f-operations";
 
 // Audit action keys (spot_audit.action) → German verbs for the dashboard preview.
 export const ACTION_LABELS: Record<string, string> = {
@@ -179,6 +196,8 @@ export const waterCharacterLabel = (k?: string | null) =>
   k ? WATER_CHARACTER_LABELS[k] ?? k : "";
 export const waterTypeLabel = (k?: string | null) =>
   k ? WATER_TYPE_LABELS[k] ?? k : "";
+export const bottomTypeLabel = (k?: string | null) =>
+  k ? BOTTOM_TYPE_LABELS[k] ?? k : "";
 export const styleLabel = (k: string) => STYLE_LABELS[k] ?? k;
 export const facilityLabel = (k: FacilityKind) => FACILITY_LABELS[k] ?? k;
 export const sportLabel = (k: string) => SPORT_LABELS[k] ?? k;

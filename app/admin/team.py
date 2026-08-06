@@ -11,7 +11,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import BoardTask, ModerationAudit, Spot, SpotAudit, TeamNote
+from app.models import AdminUser, BoardTask, ModerationAudit, Spot, SpotAudit, TeamNote
 
 
 # --- team notes ------------------------------------------------------------
@@ -84,13 +84,13 @@ def delete_note(db: Session, note_id) -> bool:
 
 # --- board tasks (kanban) --------------------------------------------------
 
-def _task_view(t: BoardTask) -> dict:
+def _task_view(t: BoardTask, *, author_name: str | None = None) -> dict:
     return {
         "id": str(t.id),
         "title": t.title,
         "body": t.body,
         "status": t.status,
-        "author": t.author,
+        "author": author_name or "Unbekannter Benutzer",
         "created_at": t.created_at.isoformat(),
     }
 
@@ -99,10 +99,33 @@ def list_tasks(db: Session) -> list[dict]:
     rows = db.scalars(
         select(BoardTask).order_by(BoardTask.created_at.desc())
     ).all()
-    return [_task_view(t) for t in rows]
+    users = db.scalars(select(AdminUser)).all()
+    names_by_id = {user.id: user.display_name for user in users}
+    names_by_email = {user.email: user.display_name for user in users}
+    return [
+        _task_view(
+            task,
+            author_name=(
+                names_by_id.get(task.author_user_id)
+                or names_by_email.get(task.author or "")
+            ),
+        )
+        for task in rows
+    ]
 
 
-def create_task(db: Session, *, title: str, body: str | None, author: str | None) -> BoardTask:
+def task_view(db: Session, task: BoardTask) -> dict:
+    """Serialize one mutation response without exposing the historical email."""
+    user = db.get(AdminUser, task.author_user_id) if task.author_user_id else None
+    if user is None and task.author:
+        user = db.scalar(select(AdminUser).where(AdminUser.email == task.author))
+    return _task_view(task, author_name=user.display_name if user else None)
+
+
+def create_task(
+    db: Session, *, title: str, body: str | None, author: str | None,
+    author_user_id=None,
+) -> BoardTask:
     if not (title and title.strip()):
         raise ValueError("Titel darf nicht leer sein.")
     task = BoardTask(
@@ -110,6 +133,7 @@ def create_task(db: Session, *, title: str, body: str | None, author: str | None
         body=(body or "").strip() or None,
         status="open",
         author=author,
+        author_user_id=author_user_id,
     )
     db.add(task)
     db.commit()
@@ -126,7 +150,9 @@ def update_task(
         return None
     if status in ("open", "done"):
         task.status = status
-    if title is not None and title.strip():
+    if title is not None:
+        if not title.strip():
+            raise ValueError("Titel darf nicht leer sein.")
         task.title = title.strip()
     if body is not None:
         task.body = body.strip() or None

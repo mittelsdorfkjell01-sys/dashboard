@@ -13,6 +13,7 @@ from sqlalchemy import select
 
 from app.admin.constants import (
     validate_facilities,
+    validate_bottom_types,
     validate_level,
     validate_levels,
     validate_styles,
@@ -29,14 +30,14 @@ from tests.era5_helpers import FakeCdsClient, make_synthetic_series
 # --- pure enum validation --------------------------------------------------
 
 def test_validate_level_accepts_known_na_none():
-    assert validate_level("pro") == "pro"
+    assert validate_level("expert") == "expert"
     assert validate_level("n/a") == "n/a"
     assert validate_level(None) is None
 
 
 def test_validate_level_rejects_unknown():
     with pytest.raises(ValueError):
-        validate_level("expert")
+        validate_level("intermediate")
 
 
 def test_validate_water_character_rejects_unknown():
@@ -47,11 +48,11 @@ def test_validate_water_character_rejects_unknown():
 
 def test_validate_multi_axes_dedup_and_reject():
     # Multi-select level / water_character / water_type share the same rules.
-    assert validate_levels(["beginner", "beginner", "pro"]) == ["beginner", "pro"]
+    assert validate_levels(["beginner", "beginner", "expert"]) == ["beginner", "expert"]
     assert validate_levels(None) == []
     assert validate_levels(["n/a"]) == ["n/a"]
     with pytest.raises(ValueError):
-        validate_levels(["expert"])
+        validate_levels(["intermediate"])
     with pytest.raises(ValueError):
         validate_levels("beginner")  # a bare string is not a list
 
@@ -62,6 +63,12 @@ def test_validate_multi_axes_dedup_and_reject():
     assert validate_water_types(["sea", "lagoon"]) == ["sea", "lagoon"]
     with pytest.raises(ValueError):
         validate_water_types(["river"])
+
+    assert validate_bottom_types(["sand", "reef", "sand"]) == ["sand", "reef"]
+    with pytest.raises(ValueError):
+        validate_bottom_types(["mixed", "sand"])
+    with pytest.raises(ValueError):
+        validate_bottom_types(["mud"])
 
 
 def test_validate_styles_dedups_and_validates():
@@ -154,7 +161,9 @@ def _create(admin, region_id, **overrides):
 
 
 def test_create_rejects_invalid_enum_422(admin, region_id):
-    assert _create(admin, region_id, level=["expert"]).status_code == 422
+    assert _create(admin, region_id, level=["intermediate"]).status_code == 422
+    assert _create(admin, region_id, bottom_type=["mud"]).status_code == 422
+    assert _create(admin, region_id, bottom_type=["mixed", "sand"]).status_code == 422
     assert _create(admin, region_id, water_character=["kabbel"]).status_code == 422
     assert _create(admin, region_id, water_type=["river"]).status_code == 422
     assert _create(admin, region_id, style=["loopy"]).status_code == 422
@@ -163,26 +172,29 @@ def test_create_rejects_invalid_enum_422(admin, region_id):
 def test_create_stores_categories_and_facilities(admin, region_id):
     resp = _create(
         admin, region_id,
-        level=["intermediate", "advanced"], water_character=["welle_gross"],
+        level=["advanced", "expert"], water_character=["welle_gross"],
         water_type=["ocean", "sea"],
+        bottom_type=["sand", "reef"],
         style=["freeride", "big_air"],
         facilities={"parking": {"available": True}, "camping": {"available": False}},
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()
-    assert body["level"] == ["intermediate", "advanced"]
+    assert body["level"] == ["advanced", "expert"]
     assert body["water_character"] == ["welle_gross"]
     assert body["water_type"] == ["ocean", "sea"]
+    assert body["bottom_type"] == ["sand", "reef"]
     assert body["style"] == ["freeride", "big_air"]
     assert body["facilities"]["parking"] == {"available": True}
 
 
 def test_get_spots_filters_by_category(admin, region_id):
     # First spot carries two levels — a multi-value filter must match it on either.
-    _create(admin, region_id, level=["intermediate", "advanced"],
-            water_character=["welle_gross"], style=["wave_riding"])
+    _create(admin, region_id, level=["advanced", "expert"],
+            water_character=["welle_gross"], style=["wave_riding"],
+            bottom_type=["sand", "reef"])
     _create(admin, region_id, level=["beginner"], water_character=["flach"],
-            style=["freeride"])
+            style=["freeride"], bottom_type=["rock"])
 
     by_level = admin.get("/spots", params={"region_id": region_id, "level": "advanced"})
     assert by_level.status_code == 200
@@ -191,7 +203,7 @@ def test_get_spots_filters_by_category(admin, region_id):
 
     # The same multi-level spot is also reachable via its other level.
     by_level2 = admin.get(
-        "/spots", params={"region_id": region_id, "level": "intermediate"}
+        "/spots", params={"region_id": region_id, "level": "expert"}
     )
     assert len(by_level2.json()) == 1
 
@@ -206,6 +218,11 @@ def test_get_spots_filters_by_category(admin, region_id):
     )
     assert len(by_style.json()) == 1
     assert "wave_riding" in by_style.json()[0]["style"]
+
+    by_bottom = admin.get(
+        "/spots", params=[("region_id", region_id), ("bottom_type", "reef"), ("bottom_type", "rock")]
+    )
+    assert len(by_bottom.json()) == 2
 
 
 def test_summary_carries_new_fields(admin, region_id):

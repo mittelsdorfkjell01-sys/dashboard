@@ -26,6 +26,7 @@ describe("filters URL (de)serialisation", () => {
       level: "advanced",
       waterCharacter: "welle_gross",
       styles: ["freeride", "big_air"],
+      bottomTypes: [],
       sort: "name-desc" as const,
     };
     const sp = filtersToSearchParams(f);
@@ -43,8 +44,8 @@ describe("filters URL (de)serialisation", () => {
       water_character: undefined,
       style: undefined,
     });
-    expect(filtersToQuery({ level: "pro", styles: ["freeride"], sort: "name-asc" })).toEqual({
-      level: "pro",
+    expect(filtersToQuery({ level: "expert", styles: ["freeride"], sort: "name-asc" })).toEqual({
+      level: "expert",
       water_character: undefined,
       style: ["freeride"],
     });
@@ -53,7 +54,7 @@ describe("filters URL (de)serialisation", () => {
   it("counts active filters", () => {
     expect(activeFilterCount(emptyFilters())).toBe(0);
     expect(
-      activeFilterCount({ level: "pro", styles: ["a", "b"], sort: "name-desc" })
+      activeFilterCount({ level: "expert", styles: ["a", "b"], sort: "name-desc" })
     ).toBe(4);
   });
 });
@@ -61,8 +62,8 @@ describe("filters URL (de)serialisation", () => {
 describe("client-side sort", () => {
   const spots = [
     spot({ id: "1", name: "Zeta", level: ["beginner"] }),
-    spot({ id: "2", name: "Alpha", level: ["pro"] }),
-    spot({ id: "3", name: "Mango", level: ["intermediate"] }),
+    spot({ id: "2", name: "Alpha", level: ["expert"] }),
+    spot({ id: "3", name: "Mango", level: ["advanced"] }),
   ];
 
   it("sorts by name asc/desc", () => {
@@ -81,12 +82,12 @@ describe("client-side sort", () => {
   it("sorts by level order", () => {
     expect(sortSpots(spots, "level-asc").map((s) => s.level)).toEqual([
       ["beginner"],
-      ["intermediate"],
-      ["pro"],
+      ["advanced"],
+      ["expert"],
     ]);
     expect(sortSpots(spots, "level-desc").map((s) => s.level)).toEqual([
-      ["pro"],
-      ["intermediate"],
+      ["expert"],
+      ["advanced"],
       ["beginner"],
     ]);
   });
@@ -101,7 +102,7 @@ describe("client-side sort", () => {
 describe("client-side filter", () => {
   const spots = [
     spot({ id: "1", level: ["beginner"], waterCharacter: ["flach"], style: ["freeride"] }),
-    spot({ id: "2", level: ["pro"], waterCharacter: ["welle_gross"], style: ["wave_riding"] }),
+    spot({ id: "2", level: ["expert"], waterCharacter: ["welle_gross"], style: ["wave_riding"] }),
     spot({ id: "3", level: ["beginner"], waterCharacter: ["chop"], style: ["freeride", "big_air", "wavekite"] }),
   ];
 

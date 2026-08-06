@@ -32,12 +32,15 @@ import {
 } from "../lib/api";
 import {
   FACILITY_KINDS,
+  BOTTOM_TYPES,
   LEVELS,
   MODEL_PREF_OPTIONS,
   STYLES,
   WATER_CHARACTERS,
   WATER_TYPES,
   facilityLabel,
+  bottomTypeLabel,
+  gapAnchor,
   gapLabel,
   levelLabel,
   sportLabel,
@@ -63,17 +66,6 @@ import {
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
-
-// Readiness gap key → the id of the field/section to jump to when clicked.
-const GAP_ANCHOR: Record<string, string> = {
-  water_type: "f-water_type",
-  bottom_type: "f-bottom_type",
-  level: "f-level",
-  water_character: "f-water_character",
-  "editorial.description": "f-description",
-  image: "f-hero",
-  climatology: "f-hero",
-};
 
 const slugify = (s: string) =>
   s
@@ -113,7 +105,7 @@ export default function AdminSpotForm() {
   const [styles, setStyles] = useState<string[]>([]);
   const [facing, setFacing] = useState("");
   const [waterType, setWaterType] = useState<string[]>([]);
-  const [bottomType, setBottomType] = useState("");
+  const [bottomType, setBottomType] = useState<string[]>([]);
   const [tide, setTide] = useState("");
   const [facilities, setFacilities] = useState<
     Record<FacilityKind, { state: Availability; note: string }>
@@ -219,7 +211,7 @@ export default function AdminSpotForm() {
   }, [attributionBaseline, attributionValue, setDirty]);
 
   const focusGap = (gap: string) => {
-    const el = document.getElementById(GAP_ANCHOR[gap] ?? "");
+    const el = document.getElementById(gapAnchor(gap));
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     if (typeof el.focus === "function") el.focus({ preventScroll: true });
@@ -296,7 +288,7 @@ export default function AdminSpotForm() {
     setStyles(s.style ?? []);
     setFacing(s.facing != null ? String(s.facing) : "");
     setWaterType(s.water_type ?? []);
-    setBottomType(s.bottom_type ?? "");
+    setBottomType(s.bottom_type ?? []);
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
     setFacilities(() => {
       const next = {} as Record<FacilityKind, { state: Availability; note: string }>;
@@ -340,6 +332,12 @@ export default function AdminSpotForm() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (loadingExisting || !location.hash) return;
+    const target = document.getElementById(location.hash.slice(1));
+    if (target) window.setTimeout(() => target.scrollIntoView({ block: "start" }), 0);
+  }, [loadingExisting, location.hash]);
 
   const reloadGallery = () => {
     if (!id) return;
@@ -426,7 +424,7 @@ export default function AdminSpotForm() {
         water_character: waterCharacter,
         style: styles,
         water_type: waterType,
-        bottom_type: bottomType || null,
+        bottom_type: bottomType,
         facing: facing !== "" ? Number(facing) : null,
         facilities: buildFacilities(),
         editorial: Object.keys(buildEditorial()).length ? buildEditorial() : null,
@@ -757,17 +755,25 @@ export default function AdminSpotForm() {
                 ))}
               </div>
             </Field>
-            <Field label="Untergrund" hint="sand | rock | reef | mixed">
-              <input
-                id="f-bottom_type"
-                className={`${inputCls} scroll-mt-24`}
-                value={bottomType}
-                onChange={(e) => {
-                  markDirty("main");
-                  setBottomType(e.target.value);
-                }}
-                placeholder="sand"
-              />
+            <Field label="Untergrund (Mehrfachauswahl)">
+              <div id="f-bottom_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
+                {BOTTOM_TYPES.map((bottom) => (
+                  <Chip
+                    key={bottom}
+                    active={bottomType.includes(bottom)}
+                    onClick={() => {
+                      markDirty("main");
+                      if (bottom === "mixed") {
+                        setBottomType(bottomType.includes(bottom) ? [] : [bottom]);
+                      } else {
+                        setBottomType(toggle(bottomType.filter((v) => v !== "mixed"), bottom));
+                      }
+                    }}
+                  >
+                    {bottomTypeLabel(bottom)}
+                  </Chip>
+                ))}
+              </div>
             </Field>
           </section>
 
@@ -1061,7 +1067,11 @@ export default function AdminSpotForm() {
               </p>
             </div>
           )}
-          {isEdit && id && <SpotOpsPanel spotId={id} onGapClick={focusGap} />}
+          {isEdit && id && (
+            <div id="f-operations" className="scroll-mt-24">
+              <SpotOpsPanel spotId={id} onGapClick={focusGap} />
+            </div>
+          )}
 
           {savedId && readiness && (
             <div className="rounded-lg border border-admin-success-border bg-admin-success-bg p-4">
