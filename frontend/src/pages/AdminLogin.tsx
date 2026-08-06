@@ -15,7 +15,6 @@ export default function AdminLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -29,7 +28,7 @@ export default function AdminLogin() {
     setError(null);
     setBusy(true);
     try {
-      await login(email.trim(), password, otp.trim() || undefined);
+      await login(email.trim(), password);
       navigate(from, { replace: true });
     } catch (err) {
       setError(
@@ -79,22 +78,6 @@ export default function AdminLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-            />
-          </label>
-
-          <label className="mt-4 block">
-            <span className="text-label font-medium text-admin-fg">
-              Zwei-Faktor-Code <span className="font-normal text-admin-muted">(falls aktiviert)</span>
-            </span>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              pattern="[0-9]{6}"
-              className={`mt-1.5 ${inputCls}`}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
             />
           </label>
 

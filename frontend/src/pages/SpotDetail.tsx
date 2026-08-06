@@ -7,6 +7,7 @@ import LocatorMap from "../components/LocatorMap";
 import SpotFlowMap from "../components/SpotFlowMap";
 import SpotTabs from "../components/SpotTabs";
 import DatenSection from "../components/DatenSection";
+import TidePanel from "../components/TidePanel";
 import Forecast from "../components/Forecast";
 import WindMonths from "../components/WindMonths";
 import SpotGalleryTile from "../components/SpotGalleryTile";
@@ -313,6 +314,10 @@ export default function SpotDetail() {
                   </span>
                 </div>
               </div>
+            </DatenSection>
+
+            <DatenSection label="Gezeiten">
+              <TidePanel spotId={id!} />
             </DatenSection>
 
             {/* Die nächsten 7 Tage — Wochenüberblick + Stundentabelle */}

@@ -23,6 +23,13 @@ from app.models.moderation_audit import ModerationAudit
 from app.models.team_note import TeamNote
 from app.models.board_task import BoardTask
 from app.models.admin_notification import AdminNotification
+from app.models.tide import (
+    TideCalculationRun,
+    TideEvent,
+    TideEventOverride,
+    TideProfile,
+    TideProfileRevision,
+)
 
 __all__ = [
     "Base",
@@ -46,4 +53,9 @@ __all__ = [
     "TeamNote",
     "BoardTask",
     "AdminNotification",
+    "TideProfile",
+    "TideProfileRevision",
+    "TideEvent",
+    "TideEventOverride",
+    "TideCalculationRun",
 ]

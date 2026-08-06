@@ -4,9 +4,25 @@
 
 import { getAdminKey } from "./adminKey";
 
-export const API_BASE: string =
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+export function alignLoopbackApiHost(base: string, pageHostname?: string): string {
+  if (!pageHostname || !LOOPBACK_HOSTS.has(pageHostname) || !/^https?:\/\//i.test(base)) {
+    return base;
+  }
+  const url = new URL(base);
+  if (LOOPBACK_HOSTS.has(url.hostname)) url.hostname = pageHostname;
+  return url.toString().replace(/\/$/, "");
+}
+
+const configuredApiBase =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ||
   "http://localhost:8000";
+
+export const API_BASE: string = alignLoopbackApiHost(
+  configuredApiBase,
+  typeof window === "undefined" ? undefined : window.location.hostname,
+);
 
 export class ApiError extends Error {
   status: number;
@@ -88,6 +104,99 @@ export interface SpotRead extends SpotSummary {
   finish_rank: Rank | null;
   created_at: string;
   updated_at: string;
+}
+
+export type TideQuality =
+  | "unavailable"
+  | "model_only"
+  | "reviewed_anchor"
+  | "manual_calibrated"
+  | "gauge_calibrated";
+
+export interface TideEvent {
+  id: string;
+  event_type: "high" | "low";
+  raw_time: string | null;
+  time: string;
+  uncertainty_minutes: number;
+  profile_version: number;
+  overridden: boolean;
+}
+
+export interface PublicTideEvent {
+  id: string;
+  event_type: "high" | "low";
+  time: string;
+  uncertainty_minutes: number;
+}
+
+export interface PublicTides {
+  available: boolean;
+  message: string | null;
+  timezone: string | null;
+  phase: "rising" | "high" | "falling" | "low" | "unavailable";
+  cycle_position: number | null;
+  quality: TideQuality;
+  approximate: boolean;
+  last_calculated_at: string | null;
+  valid_until: string | null;
+  events: PublicTideEvent[];
+}
+
+export interface TideOverride {
+  id: string;
+  event_type: "high" | "low";
+  raw_time: string;
+  original_model_time: string;
+  manual_time: string;
+  difference_minutes: number;
+  scope: "single" | "high_profile" | "low_profile" | "calibration_input";
+  reason: string;
+  source: string | null;
+  actor: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TideProfile {
+  id: string;
+  spot_id: string;
+  enabled: boolean;
+  public_enabled: boolean;
+  timezone: string | null;
+  model_name: string;
+  model_version: string;
+  automatic_anchor: GeoPoint | null;
+  manual_anchor: GeoPoint | null;
+  effective_anchor: GeoPoint | null;
+  anchor_distance_m: number | null;
+  anchor_kind: string | null;
+  anchor_status: "needs_review" | "auto_selected" | "reviewed" | "invalid";
+  anchor_warnings: string[] | null;
+  global_offset_minutes: number;
+  high_offset_minutes: number;
+  low_offset_minutes: number;
+  manual_uncertainty_minutes: number | null;
+  estimated_uncertainty_minutes: number | null;
+  uncertainty_source: string | null;
+  quality_status: TideQuality;
+  note: string | null;
+  correction_reason: string | null;
+  correction_source: string | null;
+  version: number;
+  last_calculated_at: string | null;
+  calculation_status: "not_configured" | "queued" | "running" | "ready" | "failed" | "stale";
+  calculation_error: string | null;
+  updated_at: string;
+  events: TideEvent[];
+  overrides: TideOverride[];
+  latest_run: Record<string, unknown> | null;
+  limits: {
+    soft_offset_minutes: number;
+    hard_offset_minutes: number;
+    reason_required_minutes: number;
+  };
 }
 
 export interface Region {
@@ -307,6 +416,9 @@ export const getTopSpots = (limit = 5, sport?: string) =>
 
 export const getSpot = (id: string) => request<SpotRead>(`/spots/${id}`);
 
+export const getSpotTides = (id: string) =>
+  request<PublicTides>(`/spots/${id}/tides`);
+
 export const getSpotLive = (id: string) =>
   request<LiveConditionsRead>(`/spots/${id}/live`);
 
@@ -420,34 +532,17 @@ export interface AuthUser {
   email: string;
   display_name: string;
   role: AdminRole;
-  mfa_enabled: boolean;
 }
 
-export const login = (email: string, password: string, otp?: string) =>
+export const login = (email: string, password: string) =>
   request<AuthUser>(`/auth/login`, {
     method: "POST",
-    body: JSON.stringify({ email, password, otp: otp || undefined }),
+    body: JSON.stringify({ email, password }),
   });
 
 export const logout = () => request<void>(`/auth/logout`, { method: "POST" });
 
 export const getMe = () => request<AuthUser>(`/auth/me`);
-
-export const setupAdminMfa = (password: string) =>
-  request<{ secret: string; provisioning_uri: string }>(`/auth/mfa/setup`, {
-    method: "POST",
-    body: JSON.stringify({ password }),
-  });
-export const confirmAdminMfa = (code: string) =>
-  request<{ mfa_enabled: boolean }>(`/auth/mfa/confirm`, {
-    method: "POST",
-    body: JSON.stringify({ code }),
-  });
-export const disableAdminMfa = (password: string, code: string) =>
-  request<{ mfa_enabled: boolean }>(`/auth/mfa/disable`, {
-    method: "POST",
-    body: JSON.stringify({ password, code }),
-  });
 
 // --- admin user management (admin role only) -------------------------------
 
@@ -460,12 +555,9 @@ export interface AdminUserRecord {
   last_login_at: string | null;
   last_seen_at: string | null;
   created_at: string;
-  mfa_enabled: boolean;
 }
 
 export const getAdminUsers = () => request<AdminUserRecord[]>(`/admin/users`);
-export const resetAdminUserMfa = (id: string) =>
-  request<void>(`/admin/users/${id}/mfa`, { method: "DELETE" });
 
 export const createAdminUser = (body: {
   email: string;
@@ -972,6 +1064,73 @@ export const getAdminSpots = (params: AdminSpotsQuery = {}) =>
 
 export const getAdminSpot = (id: string) =>
   request<SpotRead>(`/admin/spots/${id}/record`);
+
+export const getTideProfile = (id: string) =>
+  request<TideProfile>(`/admin/spots/${id}/tide`);
+
+export const updateTideProfile = (
+  id: string,
+  body: Partial<Pick<TideProfile,
+    | "enabled" | "public_enabled" | "timezone"
+    | "global_offset_minutes" | "high_offset_minutes" | "low_offset_minutes"
+    | "manual_uncertainty_minutes" | "note" | "correction_reason"
+    | "correction_source"
+  >> & { review_anchor?: boolean },
+) => request<TideProfile>(`/admin/spots/${id}/tide`, {
+  method: "PATCH", body: JSON.stringify(body),
+});
+
+export const autoSelectTideAnchor = (id: string) =>
+  request<{ run_id: string; status: string }>(`/admin/spots/${id}/tide/anchor/auto`, { method: "POST" });
+
+export const setManualTideAnchor = (id: string, body: { lat: number; lon: number; reason: string }) =>
+  request<TideProfile>(`/admin/spots/${id}/tide/anchor`, { method: "PUT", body: JSON.stringify(body) });
+
+export const previewTides = (id: string, body: { global_offset_minutes: number; high_offset_minutes: number; low_offset_minutes: number }) =>
+  request<{ events: TideEvent[] }>(`/admin/spots/${id}/tide/preview`, { method: "POST", body: JSON.stringify(body) });
+
+export const recalculateTides = (id: string) =>
+  request<{ run_id: string; status: string }>(`/admin/spots/${id}/tide/recalculate`, { method: "POST" });
+
+export const createTideOverride = (id: string, body: {
+  event_id: string; manual_time: string;
+  scope: TideOverride["scope"]; reason: string; source?: string;
+}) => request<{ id: string; difference_minutes: number; scope: string }>(
+  `/admin/spots/${id}/tide/overrides`, { method: "POST", body: JSON.stringify(body) },
+);
+
+export const revokeTideOverride = (spotId: string, overrideId: string) =>
+  request<void>(`/admin/spots/${spotId}/tide/overrides/${overrideId}`, { method: "DELETE" });
+
+export interface TideSuggestionPart {
+  offset_minutes: number;
+  spread_minutes: number;
+  uncertainty_minutes: number;
+  count: number;
+}
+export interface TideSuggestion {
+  total: number;
+  high: TideSuggestionPart | null;
+  low: TideSuggestionPart | null;
+  from: string | null;
+  until: string | null;
+}
+export const getTideSuggestion = (id: string) =>
+  request<TideSuggestion>(`/admin/spots/${id}/tide/suggestion`);
+export const applyTideSuggestion = (id: string, body: { apply_high: boolean; apply_low: boolean; reason: string }) =>
+  request<TideProfile>(`/admin/spots/${id}/tide/suggestion/apply`, { method: "POST", body: JSON.stringify(body) });
+
+export interface TideProfileRevision {
+  version: number;
+  reason: string;
+  actor: string | null;
+  created_at: string;
+  snapshot: Record<string, unknown>;
+}
+export const getTideHistory = (id: string) =>
+  request<TideProfileRevision[]>(`/admin/spots/${id}/tide/history`);
+export const rollbackTideProfile = (id: string, version: number, reason: string) =>
+  request<TideProfile>(`/admin/spots/${id}/tide/rollback`, { method: "POST", body: JSON.stringify({ version, reason }) });
 
 export interface AdminRegionEntry {
   region: Region;

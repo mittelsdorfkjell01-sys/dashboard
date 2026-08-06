@@ -193,7 +193,8 @@ def update_spot(
     # Moving the pin: persist the new coordinates and re-resolve the ERA5 grid
     # cell so future climatology matches the corrected location. Without this the
     # PATCH silently dropped lat/lon and the pin snapped back on the next open.
-    if data.get("lat") is not None and data.get("lon") is not None:
+    coordinates_changed = data.get("lat") is not None and data.get("lon") is not None
+    if coordinates_changed:
         from app.era5.grid import resolve_grid_cell
 
         lat, lon = float(data["lat"]), float(data["lon"])
@@ -229,6 +230,10 @@ def update_spot(
     if duplicate_candidates:
         changes["duplicate_override"] = [item["id"] for item in duplicate_candidates]
     record_audit(db, spot.id, "update", changes, actor)
+    if coordinates_changed:
+        from app.tides.service import invalidate_for_coordinates
+
+        invalidate_for_coordinates(spot.id, db=db, actor=actor)
     db.commit()
     db.refresh(spot)
     return spot

@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     # Browser origins allowed to call the API (CORS). The Vite dev server runs on
     # 5173 by default. NoDecode keeps pydantic-settings from JSON-parsing the env
     # var so the validator below can accept a comma-separated list too.
-    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
     trusted_proxy_hops: int = 0
 
     # Where uploaded hero images are stored on disk, and the URL prefix they are
@@ -123,15 +126,6 @@ class Settings(BaseSettings):
                 errors.append("JWT_SECRET must be a unique secret of at least 32 bytes")
             if any(origin.startswith("http://") for origin in self.cors_origins):
                 errors.append("CORS_ORIGINS must use HTTPS in production")
-            if self.deployment_mode == "admin" and not self.mfa_encryption_key:
-                errors.append("MFA_ENCRYPTION_KEY must be set on admin deployments")
-            elif self.deployment_mode == "admin":
-                try:
-                    from cryptography.fernet import Fernet
-
-                    Fernet((self.mfa_encryption_key or "").encode("ascii"))
-                except (ValueError, TypeError):
-                    errors.append("MFA_ENCRYPTION_KEY must be a valid Fernet key")
             if not self.password_breach_check_enabled:
                 errors.append("PASSWORD_BREACH_CHECK_ENABLED must be true")
             if self.admin_key:
@@ -180,6 +174,21 @@ class Settings(BaseSettings):
     # a running deployment (ERA5_AUTOPROCESS=true).
     era5_autoprocess: bool = False
 
+    # FES data is licensed, multi-gigabyte input for the external tide worker.
+    # It must never point into the public media store or the Vercel function.
+    tide_model_dir: str | None = None
+    tide_pyfes_config: str | None = None
+    tide_mask_file: str | None = None
+    tide_land_geojson: str | None = None
+    tide_horizon_days: int = 60
+    tide_refresh_before_days: int = 14
+    tide_sample_minutes: int = 5
+    tide_batch_size: int = 25
+    tide_max_anchor_distance_km: float = 25.0
+    tide_offset_soft_limit_minutes: int = 90
+    tide_offset_hard_limit_minutes: int = 360
+    tide_reason_required_minutes: int = 30
+
     # Optional comma-separated override of the independent global models whose
     # disagreement forms the Sprint 18 consensus band (default: the DWD/NOAA/ECMWF
     # trio in app.live.models.CONSENSUS_GLOBAL_MODELS). None => use the default.
@@ -211,9 +220,6 @@ class Settings(BaseSettings):
     # admin is created from these. Never hard-code a password default.
     admin_bootstrap_email: str | None = None
     admin_bootstrap_password: str | None = None
-    # Fernet key used to encrypt TOTP seeds at rest. Keep it stable across
-    # deploys; rotating it requires re-enrolling every enabled account.
-    mfa_encryption_key: str | None = None
     password_breach_check_enabled: bool = False
 
     # --- Public accounts (visitor sign-up) ---------------------------------

@@ -50,10 +50,6 @@ class AdminUser(Base, TimestampMixin):
     # Presence heartbeat: refreshed (throttled) on every authenticated request
     # so the user table can show a real online/offline indicator.
     last_seen_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
-    totp_secret_encrypted: Mapped[str | None] = mapped_column(String(512))
-    totp_enabled_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
-    totp_last_step: Mapped[int | None] = mapped_column(Integer)
-
     __table_args__ = (
         CheckConstraint("role IN ('admin', 'curator')", name="ck_admin_users_role"),
     )

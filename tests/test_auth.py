@@ -7,9 +7,6 @@ the ``admin_users`` table.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
-
-import pyotp
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -45,6 +42,19 @@ def test_login_wrong_password_401(anon_client):
     assert not anon_client.cookies.get(COOKIE)
 
 
+def test_login_recovers_from_stale_session_without_csrf_cookie(anon_client):
+    anon_client.cookies.set(COOKIE, "stale-session")
+    anon_client.cookies.pop(get_settings().csrf_cookie_name, None)
+
+    resp = anon_client.post(
+        "/auth/login",
+        json={"email": TEST_ADMIN["email"], "password": TEST_ADMIN["password"]},
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert anon_client.cookies.get(get_settings().csrf_cookie_name)
+
+
 def test_me_requires_auth(anon_client):
     assert anon_client.get("/auth/me").status_code == 401
 
@@ -62,41 +72,8 @@ def test_logout_clears_session(client):
     assert client.get("/auth/me").status_code == 401
 
 
-def test_totp_mfa_is_required_after_enrollment(client, db):
-    from app.models import AdminUser
-    from app.auth import mfa
-
-    setup = client.post("/auth/mfa/setup", json={"password": TEST_ADMIN["password"]})
-    assert setup.status_code == 200, setup.text
-    secret = setup.json()["secret"]
-    current = pyotp.TOTP(secret).now()
-    confirm = client.post("/auth/mfa/confirm", json={"code": current})
-    assert confirm.status_code == 200, confirm.text
-    assert confirm.json()["mfa_enabled"] is True
-
-    try:
-        fresh = TestClient(app)
-        missing = fresh.post(
-            "/auth/login",
-            json={"email": TEST_ADMIN["email"], "password": TEST_ADMIN["password"]},
-        )
-        assert missing.status_code == 401
-        future_code = pyotp.TOTP(secret).at(datetime.now(timezone.utc) + timedelta(seconds=30))
-        accepted = fresh.post(
-            "/auth/login",
-            json={
-                "email": TEST_ADMIN["email"],
-                "password": TEST_ADMIN["password"],
-                "otp": future_code,
-            },
-        )
-        assert accepted.status_code == 200, accepted.text
-    finally:
-        user = db.execute(
-            select(AdminUser).where(AdminUser.email == TEST_ADMIN["email"])
-        ).scalar_one()
-        mfa.disable(user)
-        db.commit()
+def test_mfa_endpoints_are_removed(client):
+    assert client.post("/auth/mfa/setup", json={"password": "unused"}).status_code == 404
 
 
 # --- guards ----------------------------------------------------------------

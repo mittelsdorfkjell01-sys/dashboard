@@ -9,7 +9,6 @@ test.beforeEach(async ({ page }) => {
         email: "admin@example.com",
         display_name: "Admin",
         role: "admin",
-        mfa_enabled: false,
       },
     })
   );
@@ -35,6 +34,23 @@ test.beforeEach(async ({ page }) => {
       },
     })
   );
+});
+
+test("admin login only asks for email and password", async ({ page }) => {
+  let authRequestUrl = "";
+  await page.unroute("**/auth/me");
+  await page.route("**/auth/me", (route) => {
+    authRequestUrl = route.request().url();
+    return route.fulfill({ status: 401, json: { detail: "Nicht angemeldet." } });
+  });
+
+  await page.goto("/admin/login");
+
+  await expect.poll(() => authRequestUrl).not.toBe("");
+  expect(new URL(authRequestUrl).hostname).toBe("127.0.0.1");
+  await expect(page.getByLabel("E-Mail")).toBeVisible();
+  await expect(page.getByLabel("Passwort")).toBeVisible();
+  await expect(page.getByText(/Zwei-Faktor|2FA/i)).toHaveCount(0);
 });
 
 test("admin overview is accessible and protects a dirty task dialog", async ({ page }) => {

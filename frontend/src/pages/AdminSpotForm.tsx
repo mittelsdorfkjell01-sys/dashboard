@@ -8,6 +8,7 @@ import ConflictDialog from "../components/admin/ConflictDialog";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmToast from "../components/admin/ConfirmToast";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
+import TideAdminPanel from "../components/admin/TideAdminPanel";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useAdminRegions } from "../lib/hooks";
 import {
@@ -856,6 +857,10 @@ export default function AdminSpotForm() {
           </section>
 
           {/* Hero-Bild */}
+          {id && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)) && (
+            <TideAdminPanel spotId={id} spotLat={Number(lat)} spotLon={Number(lon)} />
+          )}
+
           <section id="f-hero" tabIndex={-1} className="scroll-mt-24 rounded-lg border border-admin-border bg-admin-surface p-5 outline-none sm:p-6">
             <h2 className="text-ui font-semibold text-admin-fg">Header-Bild</h2>
             {currentImage?.url && (

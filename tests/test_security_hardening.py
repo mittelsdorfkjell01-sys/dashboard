@@ -2,28 +2,12 @@
 
 from __future__ import annotations
 
-import pyotp
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth import mfa
 from app.config import Settings
 from app.main import app
-from app.models import AdminUser
 from app.password_policy import ensure_password_safe
-
-
-def test_totp_code_cannot_be_replayed() -> None:
-    user = AdminUser(
-        email="mfa@example.com",
-        password_hash="unused",
-        display_name="MFA",
-        role="admin",
-    )
-    secret, _ = mfa.begin_enrollment(user)
-    code = pyotp.TOTP(secret).now()
-    assert mfa.verify_code(user, code) is True
-    assert mfa.verify_code(user, code) is False
 
 
 def test_common_password_is_rejected_without_network() -> None:

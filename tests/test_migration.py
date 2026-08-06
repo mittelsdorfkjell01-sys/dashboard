@@ -9,6 +9,11 @@ EXPECTED_TABLES = {
     "scoring_params",
     "spot_audit",
     "required_fields",
+    "tide_profiles",
+    "tide_profile_revisions",
+    "tide_events",
+    "tide_event_overrides",
+    "tide_calculation_runs",
 }
 
 
@@ -28,13 +33,15 @@ def test_geography_columns_present(db):
         text(
             "SELECT f_table_name, f_geography_column "
             "FROM geography_columns "
-            "WHERE f_table_name IN ('spots', 'regions')"
+            "WHERE f_table_name IN ('spots', 'regions', 'tide_profiles')"
         )
     ).all()
     cols = {(t, c) for t, c in rows}
     assert ("spots", "location") in cols
     assert ("regions", "center") in cols
     assert ("regions", "bounds") in cols
+    assert ("tide_profiles", "automatic_anchor") in cols
+    assert ("tide_profiles", "manual_anchor") in cols
 
 
 def test_spatial_indexes_exist(db):
@@ -66,6 +73,18 @@ def test_category_columns_present(db):
         )
     ).scalars().all()
     assert {"water_character", "style", "facilities"} == set(cols)
+
+
+def test_admin_totp_columns_removed(db):
+    cols = db.execute(
+        text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'admin_users' "
+            "AND column_name IN "
+            "('totp_secret_encrypted', 'totp_enabled_at', 'totp_last_step')"
+        )
+    ).scalars().all()
+    assert cols == []
 
 
 def test_migration_0003_down_and_up(db):

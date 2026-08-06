@@ -1,0 +1,46 @@
+name: Tide worker
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: tide-worker
+  cancel-in-progress: false
+
+jobs:
+  calculate:
+    # Enable only after the licensed files and private worker volume exist.
+    if: vars.TIDE_WORKER_ENABLED == 'true'
+    runs-on: [self-hosted, tide-worker]
+    timeout-minutes: 180
+    env:
+      APP_ENV: production
+      DEPLOYMENT_MODE: admin
+      ENABLE_ADMIN_API: "true"
+      API_DEBUG: "false"
+      COOKIE_SECURE: "true"
+      PASSWORD_BREACH_CHECK_ENABLED: "true"
+      DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      TIDE_MODEL_DIR: ${{ vars.TIDE_MODEL_DIR }}
+      TIDE_PYFES_CONFIG: ${{ vars.TIDE_PYFES_CONFIG }}
+      TIDE_MASK_FILE: ${{ vars.TIDE_MASK_FILE }}
+      TIDE_LAND_GEOJSON: ${{ vars.TIDE_LAND_GEOJSON }}
+      JWT_SECRET: ${{ secrets.WORKER_JWT_SECRET }}
+      CORS_ORIGINS: https://surfwinddata.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-tide.txt
+      - name: Verify private model mount
+        shell: bash
+        run: |
+          test -n "$TIDE_PYFES_CONFIG" && test -f "$TIDE_PYFES_CONFIG"
+          test -n "$TIDE_MASK_FILE" && test -f "$TIDE_MASK_FILE"
+          test -n "$TIDE_LAND_GEOJSON" && test -f "$TIDE_LAND_GEOJSON"
+      - run: pip install -r requirements-tide.txt
+      - run: python -m app.tides.worker

@@ -23,10 +23,19 @@ from app.scoring import (
     score_live,
 )
 from app.similarity import service as similarity_service
+from app.tides import service as tide_service
+from app.tides.schemas import PublicTideRead
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/spots", tags=["spots"])
+
+
+@router.get("/{spot_id}/tides", response_model=PublicTideRead, tags=["tides"])
+def get_spot_tides(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> PublicTideRead:
+    if get_published_spot(db, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    return PublicTideRead.model_validate(tide_service.public_tides(spot_id, db=db))
 
 
 def _safe_summaries(rows: list[Spot]) -> list[SpotSummary]:

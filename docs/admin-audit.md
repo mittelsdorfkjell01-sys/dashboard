@@ -56,7 +56,6 @@
 | D1 | Onboarding / Invite | **Kein Invite-Flow**: Admin tippt Passwort manuell (`window.prompt`) und teilt es außerhalb mit; kein „User setzt eigenes Passwort", kein Force-Change beim ersten Login. | E-Mail-Invite mit Einmal-Link; Nutzer setzt eigenes Passwort; optional Force-Change. | P0 |
 | D2 | Rollen-Granularität | Nur `admin` / `curator`. **Curator darf fast alles** (Spots/Regionen anlegen/bearbeiten/veröffentlichen/löschen) — nur Benutzerverwaltung ist admin-only. „Moderator" ≠ nur moderieren. | Feinere Rechte definieren (z. B. „darf publishen", „darf Spots editieren", „nur Kommentare/Bilder") oder eine dritte Rolle „Moderator" (nur Review). | P1 |
 | D3 | Self-Service-Passwort | Kein Passwortwechsel für den eingeloggten Nutzer selbst. | „Passwort ändern" im Admin-Header/Profil. | P2 |
-| D4 | 2FA für Admins | Keine Zwei-Faktor-Absicherung. | TOTP-2FA für Admin-Rolle (bei „voller Kontrolle" empfohlen). | P2 |
 | D5 | Passwort-Reset-UX | `window.prompt` für neues Passwort. | Echter Dialog mit Feld + Stärke-Check. | P3 |
 
 ## E · Team-Zusammenarbeit

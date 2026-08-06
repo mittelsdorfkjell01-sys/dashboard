@@ -37,7 +37,6 @@ class AdminUserOut(BaseModel):
     last_login_at: str | None = None
     last_seen_at: str | None = None
     created_at: str
-    mfa_enabled: bool
 
     @classmethod
     def from_user(cls, u: AdminUser) -> "AdminUserOut":
@@ -50,7 +49,6 @@ class AdminUserOut(BaseModel):
             last_login_at=u.last_login_at.isoformat() if u.last_login_at else None,
             last_seen_at=u.last_seen_at.isoformat() if u.last_seen_at else None,
             created_at=u.created_at.isoformat(),
-            mfa_enabled=u.totp_enabled_at is not None,
         )
 
 
@@ -173,27 +171,6 @@ def set_user_password(
         service.set_password(db, user, body.password)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    db.commit()
-    return Response(status_code=204)
-
-
-@router.delete("/{user_id}/mfa", status_code=204)
-def reset_user_mfa(
-    user_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    principal: Principal = Depends(require_role("admin")),
-):
-    from app.auth import mfa
-
-    user = db.get(AdminUser, user_id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden.")
-    if principal.user_id == user.id:
-        raise HTTPException(
-            status_code=422,
-            detail="Die eigene 2FA muss mit Passwort und aktuellem Code deaktiviert werden.",
-        )
-    mfa.disable(user)
     db.commit()
     return Response(status_code=204)
 
