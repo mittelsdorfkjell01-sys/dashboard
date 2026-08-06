@@ -153,7 +153,9 @@ with the bootstrap admin).
   an admin tool + cached live data (Upstash).
 - **`/health` reports `schema: outdated`** → code and Neon revision do not match.
   Production migrations run automatically only after Vercel reports a successful
-  production deployment; the workflow can also be started manually.
+  production deployment; the workflow can also be started manually. It uses the
+  minimal `requirements-migrate.txt`, so large runtime/data packages do not delay
+  schema readiness.
 
 ## What still runs off-Vercel
 - The **ERA5 climatology batch** (`python -m app.era5.batch`) — long-running, needs

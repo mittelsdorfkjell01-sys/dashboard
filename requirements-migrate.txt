@@ -1,0 +1,7 @@
+# Minimal dependency set for the production Alembic workflow.
+alembic==1.14.0
+sqlalchemy==2.0.36
+geoalchemy2==0.16.0
+psycopg[binary]==3.2.3
+pydantic==2.10.4
+pydantic-settings==2.7.0
