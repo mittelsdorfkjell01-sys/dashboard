@@ -320,9 +320,7 @@ export default function AdminRegionForm() {
   return (
     <div className="w-full">
       <AdminBackButton onClick={back.goBack} label={back.label} />
-      <h1 className="mt-2 border-b border-admin-border pb-5 text-[22px] font-semibold leading-tight text-admin-fg">
-        Region bearbeiten — {region.name}
-      </h1>
+      <h1 className="sr-only">Region bearbeiten — {region.name}</h1>
 
       {notice && (
         <div className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success">

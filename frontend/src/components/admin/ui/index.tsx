@@ -7,7 +7,7 @@
 import type { ReactNode } from "react";
 
 /* ------------------------------------------------------------------------- */
-/* Page header — one compact title plus right-aligned actions.               */
+/* Page header — screen-reader title plus optional right-aligned actions.    */
 /* ------------------------------------------------------------------------- */
 export function PageHeader({
   title,
@@ -19,18 +19,14 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div
-      className={`mb-6 flex flex-col gap-3 border-b border-admin-border pb-5 sm:flex-row sm:items-start sm:justify-between ${className}`}
-    >
-      <div className="min-w-0">
-        <h1 className="text-[22px] font-semibold leading-tight text-admin-fg">
-          {title}
-        </h1>
-      </div>
+    <>
+      <h1 className="sr-only">{title}</h1>
       {actions && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        <div className={`mb-4 flex flex-wrap items-center justify-end gap-2 ${className}`}>
+          {actions}
+        </div>
       )}
-    </div>
+    </>
   );
 }
 /* ------------------------------------------------------------------------- */

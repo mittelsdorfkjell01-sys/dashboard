@@ -122,7 +122,7 @@ export default function AdminReview() {
       )}
 
       {/* Tabs */}
-      <div className="mt-5 flex flex-wrap gap-1 border-b border-admin-border">
+      <div className="flex flex-wrap gap-1 border-b border-admin-border">
         {TABS.map((t) => (
           <button
             key={t.key}

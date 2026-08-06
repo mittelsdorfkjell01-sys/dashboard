@@ -79,12 +79,10 @@ export default function AdminHome() {
 
   return (
     <div>
-      <h1 className="mb-6 border-b border-admin-border pb-5 text-[22px] font-semibold leading-tight text-admin-fg">
-        Übersicht
-      </h1>
+      <h1 className="sr-only">Übersicht</h1>
       {/* Region-less spots — most urgent, flagged red at the very top. */}
       {data.no_region.length > 0 && (
-        <section className="mt-6 rounded-2xl border-2 border-red-400 bg-red-50/50 p-4">
+        <section className="rounded-2xl border-2 border-red-400 bg-red-50/50 p-4">
           <p className="text-body font-semibold text-red-700">
             {data.no_region.length} Spot(s) ohne Region
           </p>
@@ -109,7 +107,7 @@ export default function AdminHome() {
 
       {/* Team board — directly under the region-less (red) block, above the
           "Fertigstellen" working list. Replaces the old Team-Notizen. */}
-      <section className="mt-6">
+      <section className={data.no_region.length > 0 ? "mt-6" : ""}>
         <h2 className="text-body font-semibold text-ink">Board</h2>
         <div className="mt-3">
           <BoardPanel />
