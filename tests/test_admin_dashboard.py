@@ -35,6 +35,7 @@ def test_overview_shape_and_counts(client):
     )
     assert body["regions"] >= 1
     assert isinstance(body["recent"], list)
+    assert isinstance(body["climatology_missing"], int)
 
 
 def test_list_spots_paginates_with_total(client):

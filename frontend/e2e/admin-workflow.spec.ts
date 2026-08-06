@@ -31,6 +31,7 @@ test.beforeEach(async ({ page }) => {
         review: {},
         team_notes: [],
         era5_queued: 0,
+        climatology_missing: 0,
       },
     })
   );
@@ -115,6 +116,51 @@ test("admin overview is accessible and protects a dirty task dialog", async ({ p
   await expect(page.getByRole("heading", { name: "Aufgabe verwerfen?" })).toBeVisible();
   await page.getByRole("button", { name: "Verwerfen" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("missing climatologies can be processed from the overview", async ({ page }) => {
+  let remaining = 2;
+  let processCalls = 0;
+  await page.unroute("**/admin/overview");
+  await page.route("**/admin/overview", (route) =>
+    route.fulfill({
+      json: {
+        spots: { draft: 0, published: 2, archived: 0, total: 2 },
+        regions: 1,
+        readiness_open: 0,
+        not_live: [],
+        finish: [],
+        finish_open: 0,
+        no_region: [],
+        drafts: [],
+        recent: [],
+        review: {},
+        team_notes: [],
+        era5_queued: remaining,
+        climatology_missing: remaining,
+      },
+    })
+  );
+  await page.route("**/admin/era5/process-queue", (route) => {
+    processCalls += 1;
+    remaining = 0;
+    return route.fulfill({
+      json: {
+        processed: 2,
+        succeeded: 2,
+        failed: 0,
+        remaining,
+        results: [],
+      },
+    });
+  });
+
+  await page.goto("/admin");
+  await expect(page.getByText("2 Spot(s) ohne Klimatologie")).toBeVisible();
+  await page.getByRole("button", { name: "Jetzt berechnen" }).click();
+
+  await expect.poll(() => processCalls).toBe(1);
+  await expect(page.getByText(/Spot\(s\) ohne Klimatologie/)).toHaveCount(0);
 });
 
 test("spot filters preserve recent edits and recent searches", async ({ page }) => {

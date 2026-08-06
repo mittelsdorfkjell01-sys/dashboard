@@ -518,7 +518,8 @@ def go_live(
             db.rollback()
         from app.admin import era5_worker
 
-        outcome, _ = era5_worker.compute_now(spot_id, client=client)
+        outcome, detail = era5_worker.compute_now(spot_id, client=client)
+        result["climatology_job"] = {"status": outcome, "detail": detail}
         if outcome == "ok":
             # Reflect the freshly derived climatology in the response (compute_now
             # committed it in its own session, so the request session is stale).
@@ -599,25 +600,53 @@ def trigger_era5(
     # Compute synchronously and in memory (serverless-safe); see go_live.
     from app.admin import era5_worker
 
-    era5_worker.compute_now(spot_id, client=client)
+    outcome, detail = era5_worker.compute_now(spot_id, client=client)
+    if outcome != "ok":
+        raise HTTPException(
+            status_code=502,
+            detail=f"Klimatologie konnte nicht berechnet werden: {detail}",
+        )
+    db.expire_all()
     return get_job_status(spot_id, db=db)
 
 
 @router.post("/era5/process-queue")
 def process_era5_queue(
-    background: BackgroundTasks,
     db: Session = Depends(get_db),
     client=Depends(get_extract_client),
+    limit: int = Query(default=3, ge=1, le=5),
 ) -> dict:
-    """Kick off background processing of all queued ERA5 jobs (button B). Returns
-    immediately with the number of queued spots scheduled."""
+    """Compute a small, request-safe batch of missing climatologies.
+
+    The dashboard repeats this endpoint until the backlog is empty. Keeping each
+    batch bounded makes the work durable on serverless deployments where a
+    fire-and-forget background task may be terminated after the response.
+    """
     from app.admin import era5_worker
 
-    n = era5_worker.count_queued(db)
-    background.add_task(
-        era5_worker.process_queue, client=client, raw_dir=get_settings().era5_raw_dir
-    )
-    return {"queued": n, "scheduled": True}
+    results = []
+    for spot_id in era5_worker.missing_spot_ids(db, limit=limit):
+        try:
+            trigger_era5_job(spot_id, db=db, client=client)
+            outcome, detail = era5_worker.compute_now(spot_id, client=client)
+        except Exception as exc:
+            db.rollback()
+            outcome, detail = "fail", f"{type(exc).__name__}: {exc}"
+            era5_worker.mark_failed(db, spot_id, detail)
+        results.append(
+            {"spot_id": str(spot_id), "status": outcome, "detail": detail}
+        )
+        if outcome != "ok":
+            break
+
+    db.expire_all()
+    return {
+        "processed": len(results),
+        "succeeded": sum(item["status"] == "ok" for item in results),
+        "failed": sum(item["status"] != "ok" for item in results),
+        "remaining": era5_worker.count_missing(db),
+        "results": results,
+    }
 
 
 @router.get("/spots/{spot_id}/era5")

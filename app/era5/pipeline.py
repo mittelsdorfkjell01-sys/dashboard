@@ -236,6 +236,7 @@ def derive_and_store(spot: Spot, *, db: Session, client, years: int = 20) -> dic
         db.add(job)
     else:
         job.status = "derived"
+    job.error = None
     job.completed_at = now
     db.commit()
     db.refresh(spot)

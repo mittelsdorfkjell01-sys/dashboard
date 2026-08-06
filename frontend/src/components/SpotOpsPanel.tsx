@@ -1,6 +1,6 @@
 // Operations panel for a saved spot: readiness + go-live / offline / archive, and
 // a read-only view of active overrides. Embedded in AdminSpotForm in edit mode.
-// ERA5/climatology runs fully in the background (no manual control here).
+// ERA5/climatology is calculated inline for reliable serverless execution.
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -27,9 +27,9 @@ import { Badge } from "./admin/ui";
 const ERA5_LABEL: Record<string, string> = {
   queued: "in Warteschlange",
   processing: "wird berechnet",
-  done: "fertig",
-  ready: "fertig",
-  error: "Fehler",
+  extracting: "wird verarbeitet",
+  derived: "fertig",
+  failed: "fehlgeschlagen",
   none: "nicht berechnet",
 };
 
@@ -89,6 +89,16 @@ export default function SpotOpsPanel({
       // Go-live is always allowed; the response carries any remaining gaps.
       const res = (await goLiveSpot(spotId)) as { ready?: boolean; gaps?: string[] };
       const gaps = res.gaps ?? [];
+      const climate = (res as {
+        climatology_job?: { status?: string; detail?: string };
+      }).climatology_job;
+      if (climate?.status === "fail") {
+        setError(
+          `Spot ist live, aber die Klimatologie konnte nicht berechnet werden: ${
+            climate.detail ?? "Unbekannter Fehler"
+          }`
+        );
+      }
       flash(
         res.ready === false && gaps.length > 0
           ? `Live gesetzt — es fehlen noch: ${gaps.map(gapLabel).join(", ")}`
@@ -97,6 +107,7 @@ export default function SpotOpsPanel({
       await refresh();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
+      await refresh();
     } finally {
       setBusy(false);
     }
@@ -117,7 +128,7 @@ export default function SpotOpsPanel({
   };
 
   const onTriggerEra5 = () =>
-    runStatus(() => triggerEra5(spotId), "Klimatologie neu angestoßen.");
+    runStatus(() => triggerEra5(spotId), "Klimatologie wurde berechnet.");
 
   const overrideKeys = overrides ? Object.keys(overrides) : [];
   const era5Status = era5?.status ?? "none";
@@ -219,13 +230,18 @@ export default function SpotOpsPanel({
         </span>
         <button
           type="button"
-          disabled={busy || era5Status === "queued" || era5Status === "processing"}
+          disabled={busy}
           onClick={onTriggerEra5}
           className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
         >
           Neu berechnen
         </button>
       </div>
+      {era5?.error && (
+        <p className="mt-2 break-words text-caption text-admin-danger">
+          {era5.error}
+        </p>
+      )}
 
       {/* Lifecycle actions — the single place a spot goes live / offline /
           archived / reactivated (the list only links here via „Bearbeiten"). */}

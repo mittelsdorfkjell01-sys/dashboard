@@ -48,17 +48,27 @@ class _FakeHttp:
     """Serves recorded archive/marine responses; counts calls (for cache tests)."""
 
     def __init__(self, waves: bool = True):
-        self.calls: list[tuple[str, int]] = []
+        self.calls: list[tuple[str, int, int]] = []
         self.waves = waves
 
     def __call__(self, url: str, params: dict) -> dict:
-        year = int(params["start_date"][:4])
-        self.calls.append((url, year))
+        y0 = int(params["start_date"][:4])
+        y1 = int(params["end_date"][:4])
+        self.calls.append((url, y0, y1))
         if url == ARCHIVE_URL:
-            return _archive(year)
+            rows = [_archive(year)["hourly"] for year in range(y0, y1 + 1)]
         if url == MARINE_URL:
-            return _marine(year) if self.waves else {"hourly": {"time": [], "wave_height": []}}
-        raise AssertionError(url)
+            if not self.waves:
+                return {"hourly": {"time": [], "wave_height": []}}
+            rows = [_marine(year)["hourly"] for year in range(y0, y1 + 1)]
+        if url not in (ARCHIVE_URL, MARINE_URL):
+            raise AssertionError(url)
+        return {
+            "hourly": {
+                key: [value for row in rows for value in row[key]]
+                for key in rows[0]
+            }
+        }
 
 
 def _request(y0: int, y1: int) -> dict:
@@ -111,6 +121,16 @@ def test_wave_history_shorter_than_wind(tmp_path):
     years = series["time"][finite].astype("datetime64[Y]").astype(int) + 1970
     assert years.min() == 2022 and years.max() == 2023
     assert not finite[:8760].any()  # 2020 has no wave data
+
+
+def test_multi_year_windows_use_one_request_per_source(tmp_path):
+    http = _FakeHttp()
+    c = _client(tmp_path, http, wave_start_year=2022)
+    c.fetch_series(c.submit("x", _request(2020, 2023)))
+    assert http.calls == [
+        (ARCHIVE_URL, 2020, 2023),
+        (MARINE_URL, 2022, 2023),
+    ]
 
 
 def test_cache_prevents_refetch(tmp_path):

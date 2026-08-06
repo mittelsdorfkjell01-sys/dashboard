@@ -19,9 +19,12 @@ def get_extract_client():
     (fetching happens lazily in ``fetch_series``). Tests override this dependency
     with a fake client that returns a canned series.
     """
+    from app.era5.batch import retrying_http
     from app.era5.openmeteo import OpenMeteoHistoryClient
 
-    return OpenMeteoHistoryClient()
+    # One bounded retry keeps the complete two-request calculation inside the
+    # 60-second Vercel function limit even when an upstream request times out.
+    return OpenMeteoHistoryClient(http=retrying_http(retries=1, timeout=12.0))
 
 
 # Backward-compatible alias: the seam used to be CDS-specific. Kept so existing

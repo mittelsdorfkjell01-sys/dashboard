@@ -134,62 +134,47 @@ class OpenMeteoHistoryClient:
         return series
 
     def _fetch_wind(self, lat, lon, y0, y1):
-        times: list[np.ndarray] = []
-        u_l: list[np.ndarray] = []
-        v_l: list[np.ndarray] = []
-        t_l: list[np.ndarray] = []
-        for year in range(y0, y1 + 1):
-            h = self._get(
-                ARCHIVE_URL,
-                lat,
-                lon,
-                year,
-                hourly="wind_speed_10m,wind_direction_10m,temperature_2m",
-                wind_speed_unit="ms",
-            )
-            t = np.array(h["time"], dtype="datetime64[s]")
-            speed = _arr(h["wind_speed_10m"])
-            direction = np.radians(_arr(h["wind_direction_10m"]))
-            # Meteorological "from" direction -> ERA5 u/v components (m/s).
-            # compute_wind_components() inverts this exactly (atan2(-u,-v)).
-            u_l.append(-speed * np.sin(direction))
-            v_l.append(-speed * np.cos(direction))
-            t_l.append(_arr(h["temperature_2m"]) + 273.15)  # °C -> Kelvin
-            times.append(t)
-        return (
-            np.concatenate(times),
-            np.concatenate(u_l),
-            np.concatenate(v_l),
-            np.concatenate(t_l),
+        h = self._get_range(
+            ARCHIVE_URL,
+            lat,
+            lon,
+            y0,
+            y1,
+            hourly="wind_speed_10m,wind_direction_10m,temperature_2m",
+            wind_speed_unit="ms",
         )
+        time = np.array(h["time"], dtype="datetime64[s]")
+        speed = _arr(h["wind_speed_10m"])
+        direction = np.radians(_arr(h["wind_direction_10m"]))
+        # Meteorological "from" direction -> ERA5 u/v components (m/s).
+        # compute_wind_components() inverts this exactly (atan2(-u,-v)).
+        u10 = -speed * np.sin(direction)
+        v10 = -speed * np.cos(direction)
+        t2m = _arr(h["temperature_2m"]) + 273.15  # °C -> Kelvin
+        return time, u10, v10, t2m
 
     def _fetch_wave(self, lat, lon, y0, y1):
-        times, swh_l, mwp_l, mwd_l = [], [], [], []
-        for year in range(y0, y1 + 1):
-            h = self._get(
-                MARINE_URL,
-                lat,
-                lon,
-                year,
-                hourly="wave_height,wave_period,wave_direction",
-            )
-            times.append(np.array(h["time"], dtype="datetime64[s]"))
-            swh_l.append(_arr(h["wave_height"]))
-            mwp_l.append(_arr(h["wave_period"]))
-            mwd_l.append(_arr(h["wave_direction"]))
+        h = self._get_range(
+            MARINE_URL,
+            lat,
+            lon,
+            y0,
+            y1,
+            hourly="wave_height,wave_period,wave_direction",
+        )
         return (
-            np.concatenate(times),
-            np.concatenate(swh_l),
-            np.concatenate(mwp_l),
-            np.concatenate(mwd_l),
+            np.array(h["time"], dtype="datetime64[s]"),
+            _arr(h["wave_height"]),
+            _arr(h["wave_period"]),
+            _arr(h["wave_direction"]),
         )
 
-    def _get(self, url, lat, lon, year, **extra) -> dict:
+    def _get_range(self, url, lat, lon, start_year, end_year, **extra) -> dict:
         params = {
             "latitude": lat,
             "longitude": lon,
-            "start_date": f"{year}-01-01",
-            "end_date": f"{year}-12-31",
+            "start_date": f"{start_year}-01-01",
+            "end_date": f"{end_year}-12-31",
             "timezone": "GMT",
             **extra,
         }
@@ -197,7 +182,8 @@ class OpenMeteoHistoryClient:
         hourly = payload.get("hourly")
         if not hourly or "time" not in hourly:
             raise RuntimeError(
-                f"Open-Meteo returned no hourly data for {url} {year}: "
+                f"Open-Meteo returned no hourly data for {url} "
+                f"{start_year}-{end_year}: "
                 f"{payload.get('reason') or payload}"
             )
         return hourly

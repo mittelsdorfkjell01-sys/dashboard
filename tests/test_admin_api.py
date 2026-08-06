@@ -353,6 +353,68 @@ def test_go_live_computes_climatology_inline(admin, region_id, db):
     assert row.climatology and row.climatology.get("weeks")
 
 
+def test_go_live_reports_climatology_failure_and_marks_job_failed(
+    admin, region_id, db
+):
+    class FailingClient:
+        def submit(self, dataset, request):
+            return "failing-request"
+
+        def poll(self, request_id):
+            return "completed"
+
+        def fetch_series(self, request_id):
+            raise RuntimeError("Open-Meteo unavailable")
+
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    app.dependency_overrides[get_cds_client] = lambda: FailingClient()
+
+    response = admin.post(f"/admin/spots/{sid}/live")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "published"
+    assert body["climatology_job"]["status"] == "fail"
+    assert "climatology" in body["gaps"]
+    db.expire_all()
+    job = db.scalar(
+        select(Era5Job)
+        .where(Era5Job.spot_id == sid)
+        .order_by(Era5Job.created_at.desc())
+    )
+    assert job.status == "failed"
+    assert "Open-Meteo unavailable" in job.error
+
+
+def test_manual_climatology_failure_can_be_retried(admin, region_id, db):
+    class FailingClient:
+        def submit(self, dataset, request):
+            return "failing-request"
+
+        def poll(self, request_id):
+            return "completed"
+
+        def fetch_series(self, request_id):
+            raise RuntimeError("temporary upstream failure")
+
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    app.dependency_overrides[get_cds_client] = lambda: FailingClient()
+    failed = admin.post(f"/admin/spots/{sid}/era5")
+    assert failed.status_code == 502
+    assert admin.get(f"/admin/spots/{sid}/era5").json()["status"] == "failed"
+
+    app.dependency_overrides[get_cds_client] = lambda: FakeCdsClient(
+        make_synthetic_series()
+    )
+    retried = admin.post(f"/admin/spots/{sid}/era5")
+    assert retried.status_code == 200, retried.text
+    assert retried.json()["status"] == "derived"
+    db.expire_all()
+    assert db.get(Spot, sid).climatology.get("weeks")
+
+
 def test_unpublish_and_archive(admin, region_id, db):
     """A spot can be taken offline (→ draft) and archived, each audited."""
     spot = _create_spot(admin, region_id)
@@ -454,15 +516,19 @@ def test_era5_autoprocess_on_create(admin, region_id, db, tmp_path, monkeypatch)
 
 
 def test_era5_process_queue(admin, region_id, db, tmp_path, monkeypatch):
-    """Button B: a queued spot's climatology is computed by the queue endpoint."""
+    """The backlog endpoint computes missing climatology synchronously."""
     from app.config import get_settings
 
     monkeypatch.setattr(get_settings(), "era5_raw_dir", str(tmp_path))
     spot = _create_spot(admin, region_id)  # autoprocess off → stays queued
 
-    resp = admin.post("/admin/era5/process-queue")
-    assert resp.status_code == 200, resp.text
-    assert resp.json()["queued"] >= 1
+    for _ in range(10):
+        resp = admin.post("/admin/era5/process-queue")
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["processed"] >= 1
+        db.expire_all()
+        if db.get(Spot, spot["id"]).climatology:
+            break
 
     db.expire_all()
     row = db.get(Spot, spot["id"])

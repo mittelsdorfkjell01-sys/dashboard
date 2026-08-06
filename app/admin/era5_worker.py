@@ -11,13 +11,32 @@ from __future__ import annotations
 
 import threading
 import time
+from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from app.config import get_settings
 from app.db.session import SessionLocal
 from app.era5 import batch
 from app.models import Era5Job, Spot
+
+
+def _latest_job(db, spot_id) -> Era5Job | None:
+    return db.scalar(
+        select(Era5Job)
+        .where(Era5Job.spot_id == spot_id)
+        .order_by(Era5Job.created_at.desc())
+    )
+
+
+def mark_failed(db, spot_id, detail: str) -> None:
+    job = _latest_job(db, spot_id)
+    if job is None:
+        return
+    job.status = "failed"
+    job.error = detail[:2000]
+    job.completed_at = datetime.now(timezone.utc)
+    db.commit()
 
 
 def count_queued(db) -> int:
@@ -32,6 +51,37 @@ def count_queued(db) -> int:
     )
 
 
+def _missing_climatology():
+    return func.coalesce(
+        func.jsonb_array_length(Spot.climatology["weeks"]), 0
+    ) == 0
+
+
+def count_missing(db) -> int:
+    """Non-archived spots whose stored climatology has no weekly curve."""
+    return int(
+        db.scalar(
+            select(func.count())
+            .select_from(Spot)
+            .where(Spot.status != "archived", _missing_climatology())
+        )
+        or 0
+    )
+
+
+def missing_spot_ids(db, *, limit: int = 3) -> list:
+    """Published spots first, then drafts; deterministic within each group."""
+    priority = case((Spot.status == "published", 0), else_=1)
+    return list(
+        db.scalars(
+            select(Spot.id)
+            .where(Spot.status != "archived", _missing_climatology())
+            .order_by(priority, Spot.updated_at.desc(), Spot.id)
+            .limit(limit)
+        )
+    )
+
+
 def process_one(spot_id, *, client, raw_dir: str | None = None) -> tuple[str, str]:
     """Process a single spot's climatology in its own session. Never raises."""
     db = SessionLocal()
@@ -40,12 +90,17 @@ def process_one(spot_id, *, client, raw_dir: str | None = None) -> tuple[str, st
         if spot is None:
             return "fail", "unknown spot"
         try:
-            return batch.process_spot(
+            outcome, detail = batch.process_spot(
                 db, spot, client=client, years=20, force=False, raw_dir=raw_dir
             )
+            if outcome == "fail":
+                mark_failed(db, spot_id, detail)
+            return outcome, detail
         except Exception as exc:  # keep background work from crashing the worker
             db.rollback()
-            return "fail", f"{type(exc).__name__}: {exc}"
+            detail = f"{type(exc).__name__}: {exc}"
+            mark_failed(db, spot_id, detail)
+            return "fail", detail
     finally:
         db.close()
 
@@ -62,11 +117,20 @@ def compute_now(spot_id, *, client) -> tuple[str, str]:
         spot = db.get(Spot, spot_id)
         if spot is None:
             return "fail", "unknown spot"
+        job = _latest_job(db, spot_id)
+        if job is not None:
+            job.status = "processing"
+            job.error = None
+            job.completed_at = None
+            job.started_at = datetime.now(timezone.utc)
+            db.commit()
         pipeline.derive_and_store(spot, db=db, client=client)
         return "ok", "derived"
     except Exception as exc:  # keep a compute failure from breaking the request
         db.rollback()
-        return "fail", f"{type(exc).__name__}: {exc}"
+        detail = f"{type(exc).__name__}: {exc}"
+        mark_failed(db, spot_id, detail)
+        return "fail", detail
     finally:
         db.close()
 

@@ -933,6 +933,7 @@ export interface AdminOverview {
   review: Record<string, number>;
   team_notes: TeamNote[];
   era5_queued: number;
+  climatology_missing: number;
 }
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
@@ -1262,11 +1263,15 @@ export const bulkUnassignSpotRegion = (spotIds: string[], allowDuplicate = false
 export interface Era5Status {
   spot_id?: string;
   status?: string;
+  error?: string | null;
   [k: string]: unknown;
 }
 
 export const goLiveSpot = (id: string) =>
-  request<Record<string, unknown>>(`/admin/spots/${id}/live`, { method: "POST" });
+  request<Record<string, unknown>>(`/admin/spots/${id}/live`, {
+    method: "POST",
+    timeoutMs: 55_000,
+  });
 
 export const unpublishSpot = (id: string) =>
   request<{ spot_id: string; status: string }>(`/admin/spots/${id}/unpublish`, {
@@ -1287,16 +1292,24 @@ export const deleteSpot = (id: string) =>
   request<void>(`/admin/spots/${id}`, { method: "DELETE" });
 
 export const triggerEra5 = (id: string) =>
-  request<Era5Status>(`/admin/spots/${id}/era5`, { method: "POST", timeoutMs: 60_000 });
+  request<Era5Status>(`/admin/spots/${id}/era5`, { method: "POST", timeoutMs: 55_000 });
 
 export const getEra5Status = (id: string) =>
   request<Era5Status>(`/admin/spots/${id}/era5`);
 
-/** Kick off background processing of all queued ERA5 jobs. */
+export interface Era5BatchResult {
+  processed: number;
+  succeeded: number;
+  failed: number;
+  remaining: number;
+  results: Array<{ spot_id: string; status: string; detail: string }>;
+}
+
+/** Compute a bounded serverless-safe batch of missing climatologies. */
 export const processEra5Queue = () =>
-  request<{ queued: number; scheduled: boolean }>(`/admin/era5/process-queue`, {
+  request<Era5BatchResult>(`/admin/era5/process-queue`, {
     method: "POST",
-    timeoutMs: 60_000,
+    timeoutMs: 55_000,
   });
 
 // --- admin endpoints -------------------------------------------------------
