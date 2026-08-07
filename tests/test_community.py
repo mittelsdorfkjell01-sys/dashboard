@@ -63,13 +63,21 @@ def _env(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _cleanup(db):
-    yield
-    from app.models import Region
+    """Spots first, before their region — see the identical teardown in
+    test_admin_moderation for the reasoning."""
+    from sqlalchemy import delete
 
-    for region in db.scalars(
+    yield
+    from app.models import Region, Spot
+
+    regions = db.scalars(
         select(Region).where(Region.slug.like("comm-region-%"))
-    ).all():
-        db.delete(region)
+    ).all()
+    if not regions:
+        return
+    ids = [region.id for region in regions]
+    db.execute(delete(Spot).where(Spot.region_id.in_(ids)))
+    db.execute(delete(Region).where(Region.id.in_(ids)))
     db.commit()
 
 
@@ -85,7 +93,11 @@ def spot_id(client):
         "name": f"Comm Spot {suffix}", "slug": f"comm-spot-{suffix}",
         "region_id": rid, "lat": 54.41, "lon": 10.22, "sports": ["kitesurf"],
     })
-    return s.json()["id"]
+    sid = s.json()["id"]
+    # Community routes reject non-public spots — publish so the tests can
+    # exercise them. Readiness is advisory since Sprint 6.
+    client.post(f"/admin/spots/{sid}/live")
+    return sid
 
 
 # --- ratings + aggregate ---------------------------------------------------
@@ -137,7 +149,7 @@ def test_rating_validation(anon_client, spot_id, patch):
 def test_rating_unknown_spot_404(anon_client):
     resp = anon_client.post(f"/spots/{uuid.uuid4()}/ratings", json={
         "stars": 4, "skill_level": "advanced", "sport": "kitesurf",
-        "conditions": "ok", "author_name": "Kai",
+        "conditions": "solid wind", "author_name": "Kai",
     })
     assert resp.status_code == 404
 
@@ -317,7 +329,7 @@ def test_rate_limit_kicks_in(anon_client, spot_id, monkeypatch):
     try:
         body = {
             "stars": 4, "skill_level": "advanced", "sport": "kitesurf",
-            "conditions": "ok", "author_name": "Kai",
+            "conditions": "solid wind", "author_name": "Kai",
         }
         codes = [
             anon_client.post(f"/spots/{spot_id}/ratings", json=body).status_code
@@ -332,7 +344,7 @@ def test_rate_limit_kicks_in(anon_client, spot_id, monkeypatch):
 def test_honeypot_rejects(anon_client, spot_id):
     resp = anon_client.post(f"/spots/{spot_id}/ratings", json={
         "stars": 4, "skill_level": "advanced", "sport": "kitesurf",
-        "conditions": "ok", "author_name": "Kai", "website": "http://spam",
+        "conditions": "solid wind", "author_name": "Kai", "website": "http://spam",
     })
     assert resp.status_code == 400
 

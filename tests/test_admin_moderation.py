@@ -63,13 +63,26 @@ def _env(tmp_path, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _cleanup(db):
-    yield
-    from app.models import Region
+    """Remove this module's fixture rows after each test.
 
-    for region in db.scalars(
+    Spots first, explicitly, before the region. Otherwise SQLAlchemy orphans
+    them (region_id → NULL, which 0014 allowed) and later tests in the shared
+    session find spots the seed did not create — same fix as in
+    test_admin_api._cleanup_test_rows.
+    """
+    from sqlalchemy import delete
+
+    yield
+    from app.models import Region, Spot
+
+    regions = db.scalars(
         select(Region).where(Region.slug.like("mod-region-%"))
-    ).all():
-        db.delete(region)
+    ).all()
+    if not regions:
+        return
+    ids = [region.id for region in regions]
+    db.execute(delete(Spot).where(Spot.region_id.in_(ids)))
+    db.execute(delete(Region).where(Region.id.in_(ids)))
     db.commit()
 
 
@@ -80,10 +93,15 @@ def spot_id(client):
         "name": f"Mod Region {suffix}", "slug": f"mod-region-{suffix}",
         "country": "DE", "lat": 54.4, "lon": 10.2,
     }).json()["id"]
-    return client.post("/admin/spots", json={
+    sid = client.post("/admin/spots", json={
         "name": f"Mod Spot {suffix}", "slug": f"mod-spot-{suffix}",
         "region_id": rid, "lat": 54.41, "lon": 10.22, "sports": ["kitesurf"],
-    }).json()["id"], rid
+    }).json()["id"]
+    # The community routes (ratings/tips/images) reject non-public spots, so
+    # every moderation test that goes through those needs the spot live.
+    # Readiness is advisory since Sprint 6 — go-live is unconditional.
+    client.post(f"/admin/spots/{sid}/live")
+    return sid, rid
 
 
 def _audit_count(db, target_type, action=None) -> int:

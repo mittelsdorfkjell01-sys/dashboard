@@ -255,6 +255,13 @@ def test_migration_0003_down_and_up(db):
             ).scalars().all()
         )
 
+    # 0014 (later) made spots.region_id nullable. Downgrading past it re-adds
+    # NOT NULL, which fails whenever earlier tests in the shared DB have left
+    # region-less spots behind. Wipe them first so the round-trip is really
+    # testing the migration, not incidental fixture state.
+    db.execute(text("DELETE FROM spots WHERE region_id IS NULL"))
+    db.commit()
+
     command.downgrade(cfg, "0002_era5_raw_path")
     db.commit()
     assert cols() == set()  # columns gone

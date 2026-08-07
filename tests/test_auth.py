@@ -94,7 +94,7 @@ def test_admin_can_manage_users(client):
     assert any(u["email"] == TEST_ADMIN["email"] for u in resp.json())
 
     # create a fresh curator
-    email = f"new-{uuid.uuid4().hex[:8]}@test.local"
+    email = f"new-{uuid.uuid4().hex[:8]}@test.example"
     created = client.post(
         "/admin/users",
         json={"email": email, "password": "pw-123456789", "role": "curator"},
@@ -155,7 +155,7 @@ def test_bootstrap_creates_exactly_one_admin_idempotent(monkeypatch):
     from app.models import AdminUser
 
     class _FakeSettings:
-        admin_bootstrap_email = "boot@test.local"
+        admin_bootstrap_email = "boot@test.example"
         admin_bootstrap_password = "boot-pw-123456"
 
     monkeypatch.setattr(service, "get_settings", lambda: _FakeSettings)
@@ -170,7 +170,7 @@ def test_bootstrap_creates_exactly_one_admin_idempotent(monkeypatch):
 
         assert first is not None
         assert first.role == "admin"
-        assert first.email == "boot@test.local"
+        assert first.email == "boot@test.example"
         assert second is None  # idempotent — users already exist
         assert service.count_users(db) == 1
     finally:
@@ -236,19 +236,22 @@ def test_audit_actor_is_logged_in_email(client, db):
         assert all(a.actor == TEST_ADMIN["email"] for a in audits)
     finally:
         app.dependency_overrides.pop(get_extract_client, None)
-        # cascade-clean the region we created
+        # Clean spots first, then the region. db.delete(region) alone makes the
+        # ORM orphan the spot (region_id → NULL, permitted since 0014), leaving
+        # a regionless spot that pollutes later modules' seed-based queries.
+        from sqlalchemy import delete
+
         from app.models import Region
 
-        r = db.get(Region, uuid.UUID(region_id))
-        if r is not None:
-            db.delete(r)
-            db.commit()
+        db.execute(delete(Spot).where(Spot.region_id == uuid.UUID(region_id)))
+        db.execute(delete(Region).where(Region.id == uuid.UUID(region_id)))
+        db.commit()
 
 
 # --- Sprint 3: user management (delete + guards + default role) -------------
 
 def test_create_user_defaults_to_admin(client):
-    email = f"defadm-{uuid.uuid4().hex[:8]}@test.local"
+    email = f"defadm-{uuid.uuid4().hex[:8]}@test.example"
     created = client.post("/admin/users", json={"email": email, "password": "pw-123456789"})
     assert created.status_code == 201, created.text
     # No role granularity: new accounts are admins.
@@ -256,7 +259,7 @@ def test_create_user_defaults_to_admin(client):
 
 
 def test_delete_admin_user(client):
-    email = f"deltarget-{uuid.uuid4().hex[:8]}@test.local"
+    email = f"deltarget-{uuid.uuid4().hex[:8]}@test.example"
     uid = client.post(
         "/admin/users", json={"email": email, "password": "pw-123456789"}
     ).json()["id"]
@@ -275,12 +278,12 @@ def test_cannot_delete_self(client):
 
 
 def test_update_user_email_and_name(client):
-    email = f"e-{uuid.uuid4().hex[:8]}@test.local"
+    email = f"e-{uuid.uuid4().hex[:8]}@test.example"
     uid = client.post(
         "/admin/users", json={"email": email, "password": "pw-123456789"}
     ).json()["id"]
 
-    new_email = f"e2-{uuid.uuid4().hex[:8]}@test.local"
+    new_email = f"e2-{uuid.uuid4().hex[:8]}@test.example"
     resp = client.patch(
         f"/admin/users/{uid}",
         json={"email": new_email, "display_name": "Neuer Name"},

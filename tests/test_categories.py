@@ -129,13 +129,21 @@ def admin(client):
 
 @pytest.fixture(autouse=True)
 def _cleanup(db):
-    yield
-    from app.models import Region
+    """Spots first, before their region — see the identical teardown in
+    test_admin_moderation for the reasoning."""
+    from sqlalchemy import delete
 
-    for region in db.scalars(
+    yield
+    from app.models import Region, Spot
+
+    regions = db.scalars(
         select(Region).where(Region.slug.like("cat-region-%"))
-    ).all():
-        db.delete(region)
+    ).all()
+    if not regions:
+        return
+    ids = [region.id for region in regions]
+    db.execute(delete(Spot).where(Spot.region_id.in_(ids)))
+    db.execute(delete(Region).where(Region.id.in_(ids)))
     db.commit()
 
 
@@ -150,14 +158,17 @@ def region_id(admin):
     return resp.json()["id"]
 
 
-def _create(admin, region_id, **overrides):
+def _create(admin, region_id, publish=False, **overrides):
     body = {
         "name": f"Cat Spot {uuid.uuid4().hex[:8]}",
         "slug": f"cat-spot-{uuid.uuid4().hex[:8]}",
         "region_id": region_id, "lat": 54.41, "lon": 10.22, "sports": ["kitesurf"],
     }
     body.update(overrides)
-    return admin.post("/admin/spots", json=body)
+    resp = admin.post("/admin/spots", json=body)
+    if publish and resp.status_code == 201:
+        admin.post(f"/admin/spots/{resp.json()['id']}/live")
+    return resp
 
 
 def test_create_rejects_invalid_enum_422(admin, region_id):
@@ -189,11 +200,12 @@ def test_create_stores_categories_and_facilities(admin, region_id):
 
 
 def test_get_spots_filters_by_category(admin, region_id):
-    # First spot carries two levels — a multi-value filter must match it on either.
-    _create(admin, region_id, level=["advanced", "expert"],
+    # These tests hit the *public* /spots list, which filters to published.
+    # Since Sprint A spots start as draft, so publish here.
+    _create(admin, region_id, publish=True, level=["advanced", "expert"],
             water_character=["welle_gross"], style=["wave_riding"],
             bottom_type=["sand", "reef"])
-    _create(admin, region_id, level=["beginner"], water_character=["flach"],
+    _create(admin, region_id, publish=True, level=["beginner"], water_character=["flach"],
             style=["freeride"], bottom_type=["rock"])
 
     by_level = admin.get("/spots", params={"region_id": region_id, "level": "advanced"})
@@ -226,7 +238,7 @@ def test_get_spots_filters_by_category(admin, region_id):
 
 
 def test_summary_carries_new_fields(admin, region_id):
-    _create(admin, region_id, water_character=["chop"], style=["freeride"])
+    _create(admin, region_id, publish=True, water_character=["chop"], style=["freeride"])
     row = admin.get("/spots", params={"region_id": region_id}).json()[0]
     assert {"water_character", "style", "facilities"} <= set(row)
 

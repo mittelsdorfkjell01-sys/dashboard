@@ -1034,8 +1034,9 @@ def test_spot_patch_moves_pin_and_reresolves_era5_cell(admin, region_id):
     # A large move must land in a different ERA5 grid cell.
     assert resp.json()["era5_cell"] != old_cell
 
-    # And the form's own load path (public GET) reflects it on the next open.
-    reloaded = admin.get(f"/spots/{sid}").json()
+    # And the form's own load path (admin record GET) reflects it on the next
+    # open. Public GET filters to published; new spots start as draft.
+    reloaded = admin.get(f"/admin/spots/{sid}/record").json()
     assert reloaded["location"]["lat"] == pytest.approx(28.09)
     assert reloaded["location"]["lon"] == pytest.approx(-14.35)
 
@@ -1070,12 +1071,12 @@ def test_authenticated_request_records_presence_heartbeat(admin):
     """Any authenticated admin request refreshes the acting user's last_seen_at,
     which powers the online/offline indicator in the user table."""
     users = admin.get("/admin/users").json()
-    me = next(u for u in users if u["email"] == "admin@test.local")
+    me = next(u for u in users if u["email"] == "admin@test.example")
     assert me["last_seen_at"] is not None
 
 
 def test_region_patch_stale_updated_at_conflicts(admin, region_id):
-    current = admin.get(f"/admin/regions/{region_id}").json()
+    current = admin.get(f"/admin/regions/{region_id}/record").json()
 
     stale = admin.patch(
         f"/admin/regions/{region_id}",
@@ -1108,6 +1109,8 @@ def _post_tip(admin, spot_id, body, parent_id=None):
 def test_spot_tips_lists_all_with_thread_and_hide_restore(admin, region_id):
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
+    # The community tips route rejects non-public spots — publish first.
+    admin.post(f"/admin/spots/{sid}/live")
 
     root = _post_tip(admin, sid, "top-level")
     reply = _post_tip(admin, sid, "a reply", parent_id=root["id"])
@@ -1267,7 +1270,7 @@ def test_bulk_assign_region_unknown_spot_rolls_back(admin, region_id):
     )
     assert resp.status_code == 404, resp.text
     # a must still be in its original region (nothing committed).
-    assert admin.get(f"/admin/spots/{a}").json()["region_id"] == region_id
+    assert admin.get(f"/admin/spots/{a}/record").json()["region_id"] == region_id
 
 
 # --- region delete + country (Sprint 7) ------------------------------------
@@ -1278,7 +1281,7 @@ def test_region_delete_blocked_when_spots_assigned(admin, region_id):
     assert resp.status_code == 409, resp.text
     assert "Spot" in resp.json()["detail"]
     # Still there.
-    assert admin.get(f"/admin/regions/{region_id}").status_code == 200
+    assert admin.get(f"/admin/regions/{region_id}/record").status_code == 200
 
 
 def test_region_delete_when_empty(admin):
@@ -1288,7 +1291,7 @@ def test_region_delete_when_empty(admin):
         "country": "DE", "lat": 54.4, "lon": 10.2,
     }).json()["id"]
     assert admin.delete(f"/admin/regions/{rid}").status_code == 204
-    assert admin.get(f"/admin/regions/{rid}").status_code == 404
+    assert admin.get(f"/admin/regions/{rid}/record").status_code == 404
 
 
 def test_region_country_editable(admin):
@@ -1341,7 +1344,7 @@ def test_unassign_region_makes_spot_region_less_and_overview_lists_it(admin, reg
     resp = admin.post("/admin/spots/bulk-unassign-region", json={"spot_ids": [sid]})
     assert resp.status_code == 200, resp.text
     assert resp.json()["changed"] == 1
-    assert admin.get(f"/admin/spots/{sid}").json()["region_id"] is None
+    assert admin.get(f"/admin/spots/{sid}/record").json()["region_id"] is None
 
     ov = admin.get("/admin/overview").json()
     assert any(s["id"] == sid for s in ov["no_region"])
@@ -1359,13 +1362,17 @@ def test_region_publish_status_and_public_filter(admin):
         "country": "DE", "lat": 54.4, "lon": 10.2,
     }).json()["id"]
 
-    # New regions start as draft.
-    assert admin.get(f"/regions/{rid}").json()["status"] == "draft"
-    # Public listing hides drafts; admin (status=all) shows them.
+    # New regions start as draft. The public GET /regions/{id} filters to
+    # published, so read the draft through the admin record endpoint.
+    assert admin.get(f"/admin/regions/{rid}/record").json()["status"] == "draft"
+    # Public listing hides drafts; the admin endpoint shows every status.
     assert all(r["id"] != rid for r in admin.get("/regions").json())
-    assert any(r["id"] == rid for r in admin.get("/regions?status=all").json())
-    # Draft is still reachable by slug (preview).
-    assert admin.get(f"/regions/by-slug/test-region-{suffix}").json()["id"] == rid
+    assert any(
+        entry["region"]["id"] == rid for entry in admin.get("/admin/regions").json()
+    )
+    # Drafts are not exposed on the public by-slug route (both by-id and
+    # by-slug filter to published); admin lookup uses id via /admin/regions.
+    assert admin.get(f"/regions/by-slug/test-region-{suffix}").status_code == 404
 
     # Publish → live + shows publicly.
     assert admin.post(f"/admin/regions/{rid}/publish").json()["status"] == "published"

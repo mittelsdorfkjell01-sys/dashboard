@@ -52,12 +52,21 @@ def spot_id(client):
 
 @pytest.fixture(autouse=True)
 def _cleanup(db):
+    """Spots first, before the region — see the identical fix in
+    test_admin_moderation for why."""
+    from sqlalchemy import delete
+
     yield
-    from app.models import Region
-    for region in db.scalars(
+    from app.models import Region, Spot
+
+    regions = db.scalars(
         select(Region).where(Region.slug.like("acct-region-%"))
-    ).all():
-        db.delete(region)
+    ).all()
+    if not regions:
+        return
+    ids = [region.id for region in regions]
+    db.execute(delete(Spot).where(Spot.region_id.in_(ids)))
+    db.execute(delete(Region).where(Region.id.in_(ids)))
     db.commit()
 
 
@@ -84,12 +93,17 @@ def test_register_duplicate_email_has_generic_response(anon_client):
     }
 
 
-def test_register_weak_password_400(anon_client):
+def test_register_weak_password_rejected(anon_client):
+    """Rejection moved from the app-layer 400 (policy message) to the schema
+    min_length=12 → 422. Either way the client sees the same red X, the code
+    just tells them why more precisely."""
     resp = anon_client.post("/account/register", json={
         "email": f"weak-{uuid.uuid4().hex[:8]}@example.com",
         "password": "123", "displayName": "X",
     })
-    assert resp.status_code == 400
+    assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    assert any(err["loc"][-1] == "password" for err in detail)
 
 
 def test_login_me_logout_flow(acct):

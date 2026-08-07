@@ -78,9 +78,9 @@ def _migrated_db():
 # Seed a known admin + curator once per session; the default `client` logs in as
 # the admin so pre-auth admin tests keep working. Tests that need a different
 # principal use `curator_client` / `anon_client` or build their own TestClient.
-TEST_ADMIN = {"email": "admin@test.local", "password": "admin-pw-123", "role": "admin"}
+TEST_ADMIN = {"email": "admin@test.example", "password": "admin-pw-123", "role": "admin"}
 TEST_CURATOR = {
-    "email": "curator@test.local",
+    "email": "curator@test.example",
     "password": "curator-pw-123",
     "role": "curator",
 }
