@@ -628,8 +628,10 @@ a spot only once it is complete. Pure API/logic, no UI. Code in
 | `readiness.validate_spot_readiness(id)`   | checklist + `ready` from `required_fields`   |
 | `spots.set_spot_live(id)`                 | publish — only if ready, else gap list (409) |
 | `regions.create_region` / `assign_spot_to_region` / `update_region_defaults` | region CRUD + template |
-| `regions.fetch_region_stock_image(name)`  | credited stock image (Unsplash seam)         |
 | `jobs.trigger_era5_job` / `get_job_status` | (re)submit / inspect the ERA5 job           |
+
+Bilder werden seit Sprint 6 durch den Media-Picker gesetzt (`app.media.adopt`,
+`app.api.admin_media`); die einmalige Unsplash-Stock-Seam ist zurückgebaut.
 
 ### Maintenance flow
 
@@ -788,6 +790,100 @@ preview + context + approve/reject/remove + note. The public spot page gains a
 "Melden" report dialog, ratings (aggregate + form), local tips (list + form), and a
 user image upload with the visible license checkbox (client-side hero-size gate,
 reusing `HERO_REQ`). No new env vars; migration `0006`.
+
+## Media picker (Sprint 8-media)
+
+The admin picks hero and gallery images through **`/admin/media`** — a
+serverside proxy over Unsplash, Pexels, Wikimedia Commons and Openverse plus a
+cross-provider coordinate search. Adopting a photo writes a complete, correct
+rights record without anybody typing it: the provider is re-queried on adopt so
+the client-supplied identity is verified, the size and licence gates run
+serverside a second time, and the resulting object is persisted through
+`app.media.image_object.build_image` — the same canonical shape every image on
+a spot or region has since migration `0027`.
+
+### The image object
+
+Written by `build_image`, validated by the same code, and read by both the
+admin and the public site through one component (`ImageCredit`):
+
+```jsonc
+{
+  "url":          "https://images.unsplash.com/…",
+  "source":       "Unsplash",           // display name shown in the credit
+  "license":      "Unsplash License",   // snapshot text as it read on adopt
+  "license_url":  "https://…", "credit": "Sam Rivera",
+  "credit_url":   "https://…",          // photographer profile / attribution link
+  "provider":     "unsplash",           // machine slug: unsplash|pexels|wikimedia|
+                                        // openverse|upload|community|manual|seed|unknown
+  "external_id":  "Qw3w0hVjJ2M",        // provider photo id → duplicate index
+  "source_page":  "https://…",          // the photo's detail page at the provider
+  "retrieved_at": "2026-08-06T…Z",
+  "delivery":     "hotlinked",          // hotlinked (provider CDN) | hosted (our storage)
+  "focal":        {"x": 50, "y": 50},   // object-position percent
+  "width": 6000, "height": 4000,
+  "geo_verified": false,                // only true where coordinate proximity was established
+  "role":         "hero",               // hero | gallery
+  "source_status": null, "source_checked_at": null   // populated by verify-sources
+}
+```
+
+**Licence snapshot, not licence reference.** Photos get deleted, accounts
+vanish, and provider terms change; a link alone would not survive that.
+
+### Provider proxy
+
+| Provider     | Delivery    | Key needed?              |
+|--------------|-------------|--------------------------|
+| Unsplash     | `hotlinked` | `UNSPLASH_ACCESS_KEY` — demo 50/h, production 5000/h |
+| Pexels       | `hosted`    | `PEXELS_API_KEY`         |
+| Wikimedia    | `hosted`    | user-agent only (`WIKIMEDIA_USER_AGENT`) |
+| Openverse    | `hosted`    | anonymous works; `OPENVERSE_CLIENT_ID` + `SECRET` raise the rate limit |
+| *nearby*     | mixed       | cross-provider, coordinate-verified from Commons |
+
+Provider API keys stay on the server. A missing key disables that one tab with
+a clear message — it never breaks the overlay. Provider outages, exhausted
+budgets and unavailable sources each isolate one tab: `status: "ok" | "disabled"
+| "budget_exhausted" | "error"` on every search response.
+
+### Budget & cache
+
+Live in Postgres (`media_search_cache`, `media_provider_budget`), not Redis —
+`app.live.cache` is deliberately fail-open, which is wrong for a request budget
+(a counter that fails open cannot hold Unsplash's 50/hour line). The counter is
+atomic (`INSERT … ON CONFLICT DO UPDATE`), search responses are cached for 24 h
+per normalised query so trivially-different spellings share a cache entry, and
+expired rows are swept alongside the existing climatology cron.
+
+Tune with `MEDIA_BUDGET_PER_HOUR`, `MEDIA_BUDGET_WARN_RATIO`,
+`MEDIA_SEARCH_CACHE_TTL`, `MEDIA_HTTP_TIMEOUT`.
+
+### Size and licence gates
+
+Hero-eligible: `w ≥ 3840 && h ≥ 1920` — the smallest source that survives a
+2:1 crop without upscaling, whatever the focal point. Gallery-eligible: long
+edge `≥ 1600`. Photos that fail a gate are marked, not hidden — a Wikimedia
+gallery would otherwise look empty. Photos whose licence forbids commercial
+use or modification are dropped, because an operator can never make them
+usable.
+
+### Adopt
+
+`POST /admin/media/adopt` carries an **identity** — provider, external id,
+role, target, focal — never a payload. Everything else is re-resolved. On
+success the outgoing hero is demoted to the gallery, its `media_usage` entry
+follows it, and the new hero replaces it. Duplicate hero photos are refused
+with HTTP 409 (`code: "duplicate_hero"`); duplicate gallery photos surface as
+a warning. `POST /admin/media/verify-sources` is operator-triggered and writes
+`source_status` back into the image object.
+
+### Deliberately absent
+
+- **Pixabay.** Its API serves ~1280 px to non-approved accounts (fails the
+  hero gate) and its terms forbid permanent hotlinking.
+- **Multi-width derivatives and blur placeholders.** The repo re-encodes at
+  one width; a proper responsive derivative set for adopted images is a
+  separate piece of work.
 
 ## Categories, facilities, media & frontend
 
@@ -1025,7 +1121,17 @@ pytest tests/test_search_core.py  # search logic only (text/geocode/rank/cluster
 pytest tests/test_open_axes.py    # time windows, coverage/intensity, region aggregate
 pytest tests/test_similarity.py   # orientation mirroring, character/season, modes
 pytest tests/test_admin_core.py   # readiness rules, n/a, provenance (no infra)
+pytest tests/test_media_image_object.py  # canonical image object (no infra)
+pytest tests/test_media_providers.py     # provider normalisation against frozen fixtures
+pytest tests/test_media_search.py        # cache, budget, per-tab degradation (DB)
+pytest tests/test_media_adopt.py         # both delivery paths, duplicates, demotion (DB)
+pytest tests/test_media_gallery.py       # gallery order/remove/promote + worklist (DB)
 ```
+
+Frontend logic is covered by vitest without a DOM (no jsdom, no
+testing-library — deliberately: everything worth asserting is a pure function
+in `src/lib/`). The one full click-through of the media picker lives in
+`frontend/e2e/media-picker.spec.ts` and stubs every backend call.
 
 The ERA5 tests use a mocked CDS client over a small synthetic hourly series and
 cover the component maths, the daylight filter, histogram aggregation, display

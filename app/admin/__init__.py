@@ -13,7 +13,6 @@ from app.admin.readiness import validate_spot_readiness
 from app.admin.regions import (
     assign_spot_to_region,
     create_region,
-    fetch_region_stock_image,
     update_region_defaults,
 )
 from app.admin.jobs import get_job_status, trigger_era5_job
@@ -44,7 +43,6 @@ __all__ = [
     "create_region",
     "assign_spot_to_region",
     "update_region_defaults",
-    "fetch_region_stock_image",
     "trigger_era5_job",
     "get_job_status",
 ]

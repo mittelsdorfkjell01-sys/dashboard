@@ -3,6 +3,13 @@
 // returns typed data or throws an ApiError the UI can surface.
 
 import { getAdminKey } from "./adminKey";
+import type {
+  MediaEntityType,
+  MediaItem,
+  MediaRole,
+  ProviderKey,
+  TabStatus,
+} from "./mediaPicker";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
@@ -62,13 +69,41 @@ export interface GeoPoint {
   lon: number;
 }
 
+/**
+ * The `image` object stored on spots and regions. Written server-side by
+ * `app/media/image_object.py` — a license *snapshot* (the terms as they read
+ * when the photo was fetched), not a reference, because photos get deleted and
+ * provider terms change.
+ */
 export interface ImageRecord {
   url: string;
+  /** Display name of the origin ("Unsplash", "upload", "wikimedia_commons"). */
   source?: string;
   license?: string;
+  license_url?: string | null;
   credit?: string;
+  /** Photographer profile link — attribution is mandatory for every provider. */
+  credit_url?: string | null;
+  /** Machine slug: unsplash | pexels | wikimedia | openverse | upload |
+   *  community | manual | seed | unknown. */
+  provider?: string;
+  external_id?: string | null;
+  /** The photo's detail page at the provider. */
+  source_page?: string | null;
+  retrieved_at?: string | null;
+  /** hotlinked = provider CDN (Unsplash requires it); hosted = our storage. */
+  delivery?: "hotlinked" | "hosted";
   /** Focal point as object-position percentages (0..100). */
   focal?: { x: number; y: number };
+  width?: number | null;
+  height?: number | null;
+  /** True only where coordinate proximity was actually established. */
+  geo_verified?: boolean;
+  role?: "hero" | "gallery";
+  /** Source health from the maintenance check: "ok" | "dead" | null (never
+   *  checked). Photos get deleted and accounts vanish. */
+  source_status?: "ok" | "dead" | null;
+  source_checked_at?: string | null;
 }
 
 export type FacilityKind = "parking" | "shower" | "food" | "camping" | "school";
@@ -1048,10 +1083,12 @@ export interface AdminSpotsQuery {
   /** Hide spots with this status (e.g. "archived" for the non-archived tabs). */
   exclude_status?: string;
   completeness?: "complete" | "incomplete";
+  media?: MediaFilterKey;
 }
 
 export interface AdminSpotSummary extends SpotSummary {
   readiness: { ready: boolean; missing_count: number; gaps: string[] };
+  media_flags: MediaFlags;
 }
 
 export interface AdminSpotsResponse {
@@ -1182,9 +1219,6 @@ export const updateRegionDefaults = (
     method: "PATCH",
     body: JSON.stringify({ defaults }),
   });
-
-export const setRegionStockImage = (id: string) =>
-  request<Region>(`/admin/regions/${id}/stock-image`, { method: "POST" });
 
 export const updateRegion = (
   id: string,
@@ -1385,3 +1419,167 @@ export async function uploadHeroImage(
     timeoutMs: 120_000,
   });
 }
+
+// --- admin media picker ----------------------------------------------------
+// Provider credentials live on the server; the browser only ever talks to our
+// own proxy. The deployment's CSP allows connect-src 'self' plus MapTiler, so a
+// direct provider call from here would be blocked regardless.
+
+
+export interface MediaSearchResponse {
+  provider: ProviderKey;
+  status: TabStatus;
+  items: MediaItem[];
+  total: number;
+  page: number;
+  meta: {
+    cached: boolean;
+    budget: {
+      used: number;
+      limit: number;
+      exhausted: boolean;
+      warning: boolean;
+    } | null;
+    message: string | null;
+  };
+}
+
+export interface MediaSearchQuery {
+  provider: ProviderKey;
+  q?: string;
+  role?: MediaRole;
+  page?: number;
+  lat?: number | null;
+  lon?: number | null;
+  radius_km?: number;
+}
+
+export const searchMedia = (query: MediaSearchQuery, signal?: AbortSignal) =>
+  request<MediaSearchResponse>(`/admin/media/search${qs({ ...query })}`, { signal });
+
+export interface MediaContext {
+  entity_type: MediaEntityType;
+  entity_id: string;
+  title: string;
+  subtitle: string;
+  lat: number | null;
+  lon: number | null;
+  suggestions: string[];
+  has_image: boolean;
+}
+
+export const getMediaContext = (entityType: MediaEntityType, entityId: string) =>
+  request<MediaContext>(`/admin/media/context/${entityType}/${entityId}`);
+
+export interface MediaProviderStatus {
+  provider: ProviderKey;
+  available: boolean;
+  budget: { used: number; limit: number; exhausted: boolean; warning: boolean };
+}
+
+export const getMediaProviders = () =>
+  request<{ providers: MediaProviderStatus[] }>(`/admin/media/providers`);
+
+export interface AdoptMediaBody {
+  entity_type: MediaEntityType;
+  entity_id: string;
+  role: MediaRole;
+  provider: string;
+  external_id: string;
+  focal?: { x: number; y: number };
+}
+
+export interface AdoptMediaResponse {
+  entity_type: MediaEntityType;
+  entity_id: string;
+  role: MediaRole;
+  image: ImageRecord | null;
+  gallery_image_id: string | null;
+  demoted_hero: boolean;
+  warnings: string[];
+}
+
+export const adoptMedia = (body: AdoptMediaBody) =>
+  request<AdoptMediaResponse>(`/admin/media/adopt`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    // Hosted providers are downloaded and re-encoded server-side on adopt.
+    timeoutMs: 120_000,
+  });
+
+export const verifyMediaSources = (limit = 100) =>
+  request<{
+    checked: number;
+    checked_at: string;
+    dead: {
+      entity_type: MediaEntityType;
+      entity_id: string;
+      name: string;
+      url: string;
+      status: number | null;
+    }[];
+  }>(`/admin/media/verify-sources${qs({ limit })}`, { method: "POST" });
+
+export interface GalleryImage {
+  id: string;
+  url: string;
+  kind: "gallery" | "hero_candidate";
+  status: string;
+  position: number | null;
+  width: number | null;
+  height: number | null;
+  source: string | null;
+  provider: string | null;
+  external_id: string | null;
+  delivery: "hotlinked" | "hosted" | null;
+  credit: string | null;
+  credit_url: string | null;
+  license_name: string | null;
+  license_url: string | null;
+  source_url: string | null;
+  geo_verified: boolean;
+  created_at: string;
+}
+
+export const getGallery = (entityType: MediaEntityType, entityId: string) =>
+  request<{ items: GalleryImage[] }>(`/admin/media/gallery/${entityType}/${entityId}`);
+
+export const reorderGallery = (
+  entityType: MediaEntityType,
+  entityId: string,
+  imageIds: string[]
+) =>
+  request<{ items: GalleryImage[] }>(`/admin/media/gallery/order`, {
+    method: "PATCH",
+    body: JSON.stringify({ entity_type: entityType, entity_id: entityId, image_ids: imageIds }),
+  });
+
+export const removeGalleryImage = (imageId: string) =>
+  request<void>(`/admin/media/gallery/${imageId}`, { method: "DELETE" });
+
+export const promoteGalleryImage = (imageId: string) =>
+  request<{ entity_type: MediaEntityType; entity_id: string; image: ImageRecord }>(
+    `/admin/media/gallery/${imageId}/promote`,
+    { method: "POST" }
+  );
+
+export type MediaFilterKey = "no_hero" | "unverified" | "duplicate" | "dead";
+
+export interface MediaFlags {
+  no_hero: boolean;
+  unverified: boolean;
+  duplicate: boolean;
+  dead: boolean;
+}
+
+export interface RegionWorklistEntry {
+  id: string;
+  name: string;
+  country: string | null;
+  flags: MediaFlags;
+}
+
+export const getMediaWorklist = (media?: MediaFilterKey) =>
+  request<{ summary: Record<MediaFilterKey, number>; regions: RegionWorklistEntry[] }>(
+    `/admin/media/worklist${qs({ media })}`
+  );

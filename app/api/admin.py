@@ -25,7 +25,7 @@ from app.admin import notifications as admin_notifications
 from app.admin import regions as admin_regions
 from app.admin import spots as admin_spots
 from app.admin import team as admin_team
-from app.admin.deps import get_commons_client, get_extract_client, get_stock_client
+from app.admin.deps import get_commons_client, get_extract_client
 from app.admin.jobs import get_job_status, trigger_era5_job
 from app.auth.deps import Principal, current_user, get_actor, require_role
 from app.admin.duplicates import (
@@ -178,13 +178,22 @@ def list_spots(
         default=None, description="Hide spots with this status (e.g. 'archived')"
     ),
     completeness: str | None = Query(default=None, pattern="^(complete|incomplete)$"),
+    media: str | None = Query(
+        default=None,
+        pattern="^(no_hero|unverified|duplicate|dead)$",
+        description="Image work list: missing hero, unverified location, "
+        "reused photo, or dead source.",
+    ),
 ) -> dict:
     """Filtered, paginated spot list for the admin table (with total count)."""
+    from app.media.worklist import duplicate_photo_keys, image_flags
+
     rows, total, readiness = admin_dashboard.list_spots(
         db, status=status, region_id=region_id, sport=sport, q=q,
         sort=sort, limit=limit, offset=offset, exclude_status=exclude_status,
-        completeness=completeness,
+        completeness=completeness, media=media,
     )
+    duplicates = duplicate_photo_keys(db)
     items = []
     for spot in rows:
         item = SpotSummary.from_orm_spot(spot).model_dump(mode="json")
@@ -194,6 +203,9 @@ def list_spots(
             "missing_count": len(state["gaps"]),
             "gaps": state["gaps"],
         }
+        # Shipped on every row, not only when filtering, so the table can mark
+        # the problems without a second request per spot.
+        item["media_flags"] = image_flags(spot.image, duplicates)
         items.append(item)
     return {
         "items": items,
@@ -406,7 +418,7 @@ async def upload_image(
         await run_in_threadpool(
             validate_hero_image, data, file.content_type, allow_below_min=True
         )
-        out, ext, _, _ = await run_in_threadpool(
+        out, ext, width, height = await run_in_threadpool(
             reencode_image, data, max_width=HERO_OUT_MAX_WIDTH
         )
     except HeroImageError as exc:
@@ -422,7 +434,19 @@ async def upload_image(
     try:
         spot = admin_spots.manage_spot_image(
             spot_id,
-            {"url": url, "source": "upload", "license": "own", "credit": credit.strip()},
+            {
+                "url": url,
+                "source": "upload",
+                "license": "own",
+                "credit": credit.strip(),
+                "provider": "upload",
+                "delivery": "hosted",
+                # Dimensions of the stored derivative, not of the original the
+                # operator picked — those are what the crop actually works with.
+                "width": width,
+                "height": height,
+                "role": "hero",
+            },
             db=db, actor=actor,
         )
     except Exception:
@@ -790,19 +814,6 @@ def update_defaults(
     return RegionRead.from_orm_region(region)
 
 
-@router.post("/regions/{region_id}/stock-image", response_model=RegionRead)
-def region_stock_image(
-    region_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    client=Depends(get_stock_client),
-):
-    try:
-        region = admin_regions.set_region_stock_image(region_id, db=db, client=client)
-    except LookupError:
-        raise HTTPException(status_code=404, detail="Region not found")
-    return RegionRead.from_orm_region(region)
-
-
 @router.post("/spots/{spot_id}/commons-images/fetch")
 def fetch_commons_images(
     spot_id: uuid.UUID,
@@ -934,7 +945,7 @@ async def upload_region_image(
     try:
         data = await read_upload_limited(file, HERO_MAX_BYTES)
         await run_in_threadpool(validate_hero_image, data, file.content_type)
-        out, ext, _, _ = await run_in_threadpool(
+        out, ext, width, height = await run_in_threadpool(
             reencode_image, data, max_width=HERO_OUT_MAX_WIDTH
         )
     except HeroImageError as exc:
@@ -952,7 +963,17 @@ async def upload_region_image(
     try:
         region = admin_regions.set_region_image(
             region_id,
-            {"url": url, "source": "upload", "license": "own", "credit": credit.strip()},
+            {
+                "url": url,
+                "source": "upload",
+                "license": "own",
+                "credit": credit.strip(),
+                "provider": "upload",
+                "delivery": "hosted",
+                "width": width,
+                "height": height,
+                "role": "hero",
+            },
             db=db,
         )
     except Exception:

@@ -1,4 +1,4 @@
-"""Pure admin tests: readiness rules, n/a handling, provenance, stock seam. No DB."""
+"""Pure admin tests: readiness rules, n/a handling, provenance. No DB."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from app.admin.readiness import (
     is_fulfilled,
     resolve_field,
 )
-from app.admin.regions import fetch_region_stock_image
 from app.services.overrides import apply_overrides_with_provenance
 
 _IMAGE = {"url": "u", "source": "unsplash", "license": "Unsplash License", "credit": "Jo"}
@@ -140,14 +139,7 @@ def test_auto_rank_traffic_light():
     assert effective_rank([], "bogus") == "green"
 
 
-# --- stock seam ------------------------------------------------------------
-
-def test_fetch_region_stock_image_uses_client():
-    class FakeStock:
-        def search(self, query):
-            return {"url": f"img/{query}", "source": "unsplash",
-                    "license": "Unsplash License", "credit": "Jo"}
-
-    img = fetch_region_stock_image("Tarifa", client=FakeStock())
-    assert img["url"] == "img/Tarifa"
-    assert img["license"] and img["credit"]
+# The one-shot Unsplash stock-image seam (fetch_region_stock_image / the old
+# app.admin.stock client) was retired in Sprint 6 — the media picker
+# (app/media/providers, app/media/adopt.py) replaces it. Its coverage lives in
+# tests/test_media_providers.py and tests/test_media_adopt.py.

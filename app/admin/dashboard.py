@@ -58,6 +58,7 @@ def list_spots(
     offset: int = 0,
     exclude_status: str | None = None,
     completeness: str | None = None,
+    media: str | None = None,
 ) -> tuple[list[Spot], int, dict[uuid.UUID, dict]]:
     """Filtered, sorted spot page plus readiness from the canonical rules."""
     base = _spot_filters(
@@ -65,6 +66,29 @@ def list_spots(
         exclude_status=exclude_status,
     )
     ordered = base.order_by(_SORTS.get(sort, Spot.name.asc()))
+
+    if media:
+        # Media state is derived from the JSONB image object plus the usage
+        # index, so it is filtered in Python like `completeness` above rather
+        # than pushed into SQL. The admin catalogue is small enough that this
+        # stays cheap, and the rules live in one place.
+        from app.media.worklist import duplicate_photo_keys, image_flags, matches
+
+        duplicates = duplicate_photo_keys(db)
+        candidates = [
+            spot
+            for spot in db.scalars(ordered).all()
+            if matches(image_flags(spot.image, duplicates), media)
+        ]
+        if completeness:
+            readiness_all = readiness_for_spots(db, candidates)
+            expected = completeness == "complete"
+            candidates = [
+                s for s in candidates if readiness_all[s.id]["ready"] is expected
+            ]
+        total = len(candidates)
+        rows = candidates[offset:offset + limit]
+        return rows, total, readiness_for_spots(db, rows)
 
     if completeness:
         candidates = list(db.scalars(ordered).all())

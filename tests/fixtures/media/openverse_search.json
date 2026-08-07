@@ -1,0 +1,39 @@
+{
+  "result_count": 412,
+  "page_count": 18,
+  "page_size": 24,
+  "page": 1,
+  "results": [
+    {
+      "id": "5f7c1b6a-0f2e-4c8a-9d1b-2a3c4d5e6f70",
+      "title": "Tarifa coastline",
+      "foreign_landing_url": "https://www.flickr.com/photos/example/123456789",
+      "url": "https://live.staticflickr.com/65535/123456789_o.jpg",
+      "creator": "Kai Weber",
+      "creator_url": "https://www.flickr.com/photos/example",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "width": 4288,
+      "height": 2848,
+      "thumbnail": "https://api.openverse.org/v1/images/5f7c1b6a-0f2e-4c8a-9d1b-2a3c4d5e6f70/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/5f7c1b6a-0f2e-4c8a-9d1b-2a3c4d5e6f70/"
+    },
+    {
+      "id": "9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c40",
+      "title": "Dunes",
+      "foreign_landing_url": "https://www.flickr.com/photos/example/987654321",
+      "url": "https://live.staticflickr.com/65535/987654321_o.jpg",
+      "creator": null,
+      "license": "cc0",
+      "license_version": "1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "flickr",
+      "width": 1200,
+      "height": 800,
+      "thumbnail": "https://api.openverse.org/v1/images/9a8b7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c40/thumb/"
+    }
+  ]
+}

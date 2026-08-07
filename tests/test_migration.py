@@ -14,6 +14,9 @@ EXPECTED_TABLES = {
     "tide_events",
     "tide_event_overrides",
     "tide_calculation_runs",
+    "media_usage",
+    "media_search_cache",
+    "media_provider_budget",
 }
 
 
@@ -85,6 +88,147 @@ def test_admin_totp_columns_removed(db):
         )
     ).scalars().all()
     assert cols == []
+
+
+def test_gallery_accepts_a_region_but_not_both_entities(db):
+    """0027 generalised ``spot_images`` to spot-or-region; the check constraint
+    is what keeps a row from belonging to both or to neither."""
+    import uuid
+
+    from sqlalchemy.exc import IntegrityError
+
+    region_id = db.execute(text("SELECT id FROM regions LIMIT 1")).scalar()
+    if region_id is None:
+        region_id = uuid.uuid4()
+        db.execute(
+            text(
+                "INSERT INTO regions (id, slug, name, normalized_name) "
+                "VALUES (:id, :slug, 'Media Test', 'media test')"
+            ),
+            {"id": region_id, "slug": f"media-test-{uuid.uuid4().hex[:8]}"},
+        )
+        db.commit()
+
+    insert = text(
+        "INSERT INTO spot_images (spot_id, region_id, url, kind, status) "
+        "VALUES (:spot_id, :region_id, 'https://img/x.jpg', 'gallery', 'approved')"
+    )
+    db.execute(insert, {"spot_id": None, "region_id": region_id})
+    db.commit()
+
+    spot_id = db.execute(text("SELECT id FROM spots LIMIT 1")).scalar()
+    if spot_id is not None:
+        try:
+            db.execute(insert, {"spot_id": spot_id, "region_id": region_id})
+            db.commit()
+            raise AssertionError("a gallery row must not carry both entities")
+        except IntegrityError:
+            db.rollback()
+
+    try:
+        db.execute(insert, {"spot_id": None, "region_id": None})
+        db.commit()
+        raise AssertionError("a gallery row must carry one entity")
+    except IntegrityError:
+        db.rollback()
+
+    db.execute(
+        text("DELETE FROM spot_images WHERE region_id = :rid"), {"rid": region_id}
+    )
+    db.commit()
+
+
+def test_migration_0027_down_and_up(db):
+    """The media-provenance migration reverses cleanly and re-applies."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    url = db.get_bind().engine.url.render_as_string(hide_password=False)
+    cfg.set_main_option("sqlalchemy.url", url)
+
+    def media_tables() -> set[str]:
+        return set(
+            db.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_name IN "
+                    "('media_usage','media_search_cache','media_provider_budget')"
+                )
+            ).scalars().all()
+        )
+
+    command.downgrade(cfg, "0026_remove_admin_totp")
+    db.commit()
+    assert media_tables() == set()
+    command.upgrade(cfg, "head")
+    db.commit()
+    assert len(media_tables()) == 3
+
+
+def test_migration_0027_upgrades_legacy_image_objects(db):
+    """A four-field image object is padded to the canonical shape, and the
+    values it already had are not touched."""
+    import json
+    import uuid
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    from app.media.image_object import CANONICAL_KEYS
+
+    slug = f"legacy-image-{uuid.uuid4().hex[:8]}"
+    region_id = db.execute(text("SELECT id FROM regions LIMIT 1")).scalar()
+    db.execute(
+        text(
+            "INSERT INTO spots (slug, name, normalized_name, region_id, location, "
+            "sports, image) VALUES (:slug, 'Legacy Image', :slug, :region_id, "
+            "ST_GeogFromText('POINT(10 54)'), '{}', CAST(:image AS jsonb))"
+        ),
+        {
+            "slug": slug,
+            "region_id": region_id,
+            "image": json.dumps(
+                {
+                    "url": "https://img/legacy.jpg",
+                    "source": "upload",
+                    "license": "own",
+                    "credit": "Jo",
+                    "focal": {"x": 20, "y": 80},
+                }
+            ),
+        },
+    )
+    db.commit()
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+    command.downgrade(cfg, "0026_remove_admin_totp")
+    db.commit()
+    command.upgrade(cfg, "head")
+    db.commit()
+
+    image = db.execute(
+        text("SELECT image FROM spots WHERE slug = :slug"), {"slug": slug}
+    ).scalar()
+    assert set(image) == set(CANONICAL_KEYS)
+    assert image["provider"] == "unknown"
+    assert image["delivery"] == "hosted"
+    assert image["credit"] == "Jo"          # existing values win
+    assert image["focal"] == {"x": 20, "y": 80}
+    assert image["license_url"] is None     # unknown stays unknown
+
+    db.execute(text("DELETE FROM spots WHERE slug = :slug"), {"slug": slug})
+    db.commit()
 
 
 def test_migration_0003_down_and_up(db):

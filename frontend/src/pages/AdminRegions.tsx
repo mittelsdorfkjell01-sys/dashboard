@@ -1,13 +1,13 @@
-// Admin regions (Sprint B): list with per-status spot counts, create a region,
-// edit the model_pref default, and fetch a credited stock image.
+// Admin regions (Sprint B): list with per-status spot counts and create a
+// region. Like the spot list, each card only links to the editor — clicking
+// anywhere on the card opens it, everything else lives in the editor itself.
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   createRegion,
   getAdminRegions,
-  setRegionStockImage,
   type AdminRegionEntry,
 } from "../lib/api";
 import { Button, Input } from "../components/ui";
@@ -30,6 +30,7 @@ import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 export default function AdminRegions() {
   const { blocker, setDirty } = useUnsavedChangesGuard();
   const location = useLocation();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const [searchText, setSearchText] = useState(q);
@@ -38,7 +39,6 @@ export default function AdminRegions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createDirty, setCreateDirty] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -76,20 +76,6 @@ export default function AdminRegions() {
   const flash = (msg: string) => {
     setNotice(msg);
     setTimeout(() => setNotice(null), 3000);
-  };
-
-  const onStockImage = async (id: string, name: string) => {
-    setBusyId(id);
-    setError(null);
-    try {
-      await setRegionStockImage(id);
-      flash(`Stock-Bild für „${name}" gesetzt.`);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Bild-Abruf fehlgeschlagen.");
-    } finally {
-      setBusyId(null);
-    }
   };
 
   return (
@@ -189,8 +175,9 @@ export default function AdminRegions() {
             <RegionCard
               key={entry.region.id}
               entry={entry}
-              busy={busyId === entry.region.id}
-              onStockImage={() => onStockImage(entry.region.id, entry.region.name)}
+              onOpen={() =>
+                navigate(`/admin/region/${entry.region.id}/edit`, { state: editorState })
+              }
               editorState={editorState}
             />
           ))
@@ -202,22 +189,23 @@ export default function AdminRegions() {
 
 function RegionCard({
   entry,
-  busy,
-  onStockImage,
+  onOpen,
   editorState,
 }: {
   entry: AdminRegionEntry;
-  busy: boolean;
-  onStockImage: () => void;
+  onOpen: () => void;
   editorState: ReturnType<typeof createAdminReturnState>;
 }) {
   const { region, spot_counts } = entry;
 
   return (
-    <div className="rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong sm:p-5">
+    <div
+      onClick={onOpen}
+      className="group cursor-pointer rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong sm:p-5"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-base font-semibold text-admin-fg">
+          <div className="text-base font-semibold text-admin-fg group-hover:text-admin-primary">
             {region.name}
             {region.country && (
               <span className="ml-2 text-label font-normal text-admin-muted">
@@ -240,26 +228,11 @@ function RegionCard({
           <Link
             to={`/admin/region/${region.id}/edit`}
             state={editorState}
-            className="rounded-md bg-admin-primary px-2.5 py-1 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
+            onClick={(event) => event.stopPropagation()}
+            className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
           >
             Bearbeiten
           </Link>
-          <a
-            href={`/region/${region.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-          >
-            Ansehen ↗
-          </a>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onStockImage}
-            className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-          >
-            Stock-Bild
-          </button>
         </div>
       </div>
     </div>

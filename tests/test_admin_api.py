@@ -12,17 +12,11 @@ import pytest
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
-from app.admin.deps import get_cds_client, get_stock_client
+from app.admin.deps import get_cds_client
 from app.main import app
 from app.models import Era5Job, Spot, SpotAudit
 from app.seed.seed import seed
 from tests.era5_helpers import FakeCdsClient, make_synthetic_series
-
-
-class _FakeStock:
-    def search(self, query):
-        return {"url": f"img/{query}", "source": "unsplash",
-                "license": "Unsplash License", "credit": "Jo"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -42,24 +36,34 @@ def _seeded(_migrated_db):
 def _cleanup_test_rows(db):
     """Delete this module's created regions after **each** test so accumulated
     spots/jobs don't collide (every fake job reuses cds_request_id 'fake-1') or
-    leak into later modules. Region delete cascades to spots + era5_jobs."""
-    yield
-    from app.models import Region
+    leak into later modules.
 
-    for region in db.scalars(
+    The spots go first, explicitly. ``db.delete(region)`` alone makes the ORM
+    orphan them — ``UPDATE spots SET region_id = NULL`` — and once more than one
+    orphan shares a normalized name, that update trips
+    ``uq_spots_unassigned_normalized_name`` and the teardown errors out. The
+    tests themselves still pass, so this surfaced only as a growing pile of
+    teardown errors that made the suite useless as a regression signal.
+    """
+    yield
+    from app.models import Region, Spot
+
+    regions = db.scalars(
         select(Region).where(Region.slug.like("test-region-%"))
-    ).all():
-        db.delete(region)
+    ).all()
+    if not regions:
+        return
+    ids = [region.id for region in regions]
+    db.execute(delete(Spot).where(Spot.region_id.in_(ids)))
+    db.execute(delete(Region).where(Region.id.in_(ids)))
     db.commit()
 
 
 @pytest.fixture
 def admin(client):
     app.dependency_overrides[get_cds_client] = lambda: FakeCdsClient(make_synthetic_series())
-    app.dependency_overrides[get_stock_client] = lambda: _FakeStock()
     yield client
     app.dependency_overrides.pop(get_cds_client, None)
-    app.dependency_overrides.pop(get_stock_client, None)
 
 
 @pytest.fixture
@@ -736,15 +740,6 @@ def test_recompute_climatology_leaves_override(admin, region_id, db, tmp_path):
     assert spot_row.climatology["weeks"]               # climatology refreshed
 
 
-# --- region stock image ----------------------------------------------------
-
-def test_region_stock_image(admin, region_id):
-    resp = admin.post(f"/admin/regions/{region_id}/stock-image")
-    assert resp.status_code == 200
-    img = resp.json()["image"]
-    assert img["license"] and img["credit"]
-
-
 # --- region edit (Sprint: admin UX) ----------------------------------------
 
 def test_region_update_and_manual_image(admin, region_id):
@@ -1172,6 +1167,57 @@ def test_image_attribution_requires_existing_image(admin, region_id):
         f"/admin/spots/{spot['id']}/image/attribution",
         json={"credit": "X", "license": "Y", "source": "Z"},
     )
+    assert resp.status_code == 422, resp.text
+
+
+# Attribution is mandatory for every image source — an API condition for
+# Unsplash/Pexels, a legal one for CC BY / BY-SA. It may be corrected (Wikimedia
+# author fields are unreliable) but never emptied, and that is enforced on the
+# server rather than only in the form.
+
+def test_a_credit_can_be_corrected_but_not_emptied(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    admin.post(f"/admin/spots/{sid}/image", json={
+        "url": "https://img/x.jpg", "source": "wikimedia_commons",
+        "license": "CC BY-SA 4.0", "credit": "<b>Ana  Ruiz</b>",
+    })
+
+    corrected = admin.post(
+        f"/admin/spots/{sid}/image/attribution",
+        json={"credit": "Ana Ruiz", "license": "CC BY-SA 4.0", "source": "wikimedia_commons"},
+    )
+    assert corrected.status_code == 200, corrected.text
+    assert corrected.json()["image"]["credit"] == "Ana Ruiz"
+
+    for blank in ("", "   "):
+        emptied = admin.post(
+            f"/admin/spots/{sid}/image/attribution",
+            json={"credit": blank, "license": "CC BY-SA 4.0", "source": "wikimedia_commons"},
+        )
+        assert emptied.status_code == 422, emptied.text
+
+    # The stored credit survived every rejected attempt. Read back through the
+    # list endpoint, which serves the SpotSummary shape including `image`
+    # (GET /admin/spots/{id} returns the override-provenance view instead).
+    listed = admin.get("/admin/spots", params={"q": spot["name"], "limit": 5}).json()
+    stored = next(item for item in listed["items"] if item["id"] == sid)
+    assert stored["image"]["credit"] == "Ana Ruiz"
+
+
+def test_a_spot_image_cannot_be_set_without_a_credit(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    resp = admin.post(f"/admin/spots/{spot['id']}/image", json={
+        "url": "https://img/x.jpg", "source": "unsplash",
+        "license": "Unsplash License", "credit": "  ",
+    })
+    assert resp.status_code == 422, resp.text
+
+
+def test_a_region_image_cannot_be_set_without_a_credit(admin, region_id):
+    resp = admin.post(f"/admin/regions/{region_id}/image", json={
+        "url": "https://img/r.jpg", "credit": "",
+    })
     assert resp.status_code == 422, resp.text
 
 

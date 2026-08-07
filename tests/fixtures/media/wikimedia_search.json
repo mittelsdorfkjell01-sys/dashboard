@@ -1,0 +1,79 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "pageid": 45219876,
+        "ns": 6,
+        "title": "File:Playa de Los Lances Tarifa.jpg",
+        "canonicalurl": "https://commons.wikimedia.org/wiki/File:Playa_de_Los_Lances_Tarifa.jpg",
+        "imageinfo": [
+          {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Playa_de_Los_Lances_Tarifa.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Playa_de_Los_Lances_Tarifa.jpg",
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Playa_de_Los_Lances_Tarifa.jpg/320px.jpg",
+            "width": 5184,
+            "height": 3456,
+            "extmetadata": {
+              "LicenseShortName": {"value": "CC BY-SA 4.0", "source": "commons-desc-page"},
+              "LicenseUrl": {"value": "https://creativecommons.org/licenses/by-sa/4.0", "source": "commons-desc-page"},
+              "Artist": {"value": "<a href=\"//commons.wikimedia.org/wiki/User:Fotograf\" title=\"User:Fotograf\">Ana  Ruiz</a>", "source": "commons-desc-page"},
+              "Credit": {"value": "<span>Own work</span>", "source": "commons-desc-page"}
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 45219877,
+        "ns": 6,
+        "title": "File:Tarifa NC photo.jpg",
+        "imageinfo": [
+          {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Tarifa_NC_photo.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Tarifa_NC_photo.jpg",
+            "width": 6000,
+            "height": 4000,
+            "extmetadata": {
+              "LicenseShortName": {"value": "CC BY-NC 3.0"},
+              "LicenseUrl": {"value": "https://creativecommons.org/licenses/by-nc/3.0"},
+              "Artist": {"value": "Restricted Shooter"}
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 45219878,
+        "ns": 6,
+        "title": "File:Unlicensed upload.jpg",
+        "imageinfo": [
+          {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Unlicensed_upload.jpg",
+            "width": 4200,
+            "height": 2400,
+            "extmetadata": {
+              "Artist": {"value": "Nobody"}
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 45219879,
+        "ns": 6,
+        "title": "File:Tarifa public domain.jpg",
+        "imageinfo": [
+          {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Tarifa_public_domain.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Tarifa_public_domain.jpg",
+            "width": 4000,
+            "height": 1900,
+            "extmetadata": {
+              "LicenseShortName": {"value": "CC0"},
+              "LicenseUrl": {"value": "https://creativecommons.org/publicdomain/zero/1.0/"},
+              "Artist": {"value": "<b>Hist.  Archive</b>"}
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

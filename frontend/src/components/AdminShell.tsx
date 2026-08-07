@@ -10,6 +10,7 @@ import { roleLabel } from "../lib/labels";
 import type { AdminRole } from "../lib/api";
 import { Wordmark } from "./ui";
 import NotificationBell from "./admin/NotificationBell";
+import MediaBudgetIndicator from "./admin/MediaBudgetIndicator";
 
 interface NavItem {
   to: string;
@@ -147,6 +148,7 @@ export default function AdminShell() {
             </Link>
             <div className="hidden lg:block" />
             <div className="flex items-center gap-2 sm:gap-3">
+              <MediaBudgetIndicator />
               <NotificationBell />
               {user && (
                 <>

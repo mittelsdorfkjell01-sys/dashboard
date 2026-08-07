@@ -156,14 +156,31 @@ class SpotSubmission(Base, TimestampMixin):
 
 
 class SpotImage(Base, TimestampMixin):
-    """A user-uploaded image — gallery photo or hero candidate. The versioned
-    license the uploader accepted is stored inline for provenance."""
+    """A gallery photo or hero candidate, attached to **either** a spot or a
+    region. The versioned license the uploader accepted is stored inline for
+    provenance.
+
+    The table name predates regions: it started as the community upload store
+    for spots, then took Wikimedia Commons results, and from Sprint 1 on it also
+    carries the media picker's stock images for both entity types. Renaming it
+    would cascade through moderation, reports, the account export and the
+    community API for no functional gain, so the name stays and this docstring
+    carries the correction.
+
+    Exactly one of ``spot_id`` / ``region_id`` is set (enforced by
+    ``ck_spot_images_entity``). Every pre-existing query filters on
+    ``spot_id == …``, so region rows are invisible to the community paths
+    without any change there.
+    """
 
     __tablename__ = "spot_images"
 
     id: Mapped[uuid.UUID] = _pk()
-    spot_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False
+    spot_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=True
+    )
+    region_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("regions.id", ondelete="CASCADE"), nullable=True
     )
     url: Mapped[str] = mapped_column(String(500), nullable=False)
     kind: Mapped[str] = mapped_column(String(20), nullable=False)  # gallery | hero_candidate
@@ -187,6 +204,24 @@ class SpotImage(Base, TimestampMixin):
     license_name: Mapped[str | None] = mapped_column(String(80))
     license_url: Mapped[str | None] = mapped_column(String(500))
     source_url: Mapped[str | None] = mapped_column(String(500))
+    # --- media-picker provenance (Sprint 1) --------------------------------
+    # ``source`` above is the free-form display origin ("user_upload",
+    # "wikimedia_commons"); ``provider`` is the machine slug that the picker and
+    # the duplicate index key on. See app.media.image_object.PROVIDERS.
+    provider: Mapped[str | None] = mapped_column(String(30))
+    external_id: Mapped[str | None] = mapped_column(String(200))
+    credit_url: Mapped[str | None] = mapped_column(String(500))
+    retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    delivery: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'hosted'")
+    )
+    geo_verified: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    # Manual gallery order (drag-to-sort). NULL sorts last, then by created_at —
+    # so existing rows keep their current newest-first behaviour until an
+    # operator arranges them.
+    position: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     report_count: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0")
@@ -205,7 +240,15 @@ class SpotImage(Base, TimestampMixin):
             name="ck_spot_images_status",
         ),
         CheckConstraint("report_count >= 0", name="ck_spot_images_report_count"),
+        CheckConstraint(
+            "(spot_id IS NOT NULL)::int + (region_id IS NOT NULL)::int = 1",
+            name="ck_spot_images_entity",
+        ),
+        CheckConstraint(
+            "delivery IN ('hotlinked', 'hosted')", name="ck_spot_images_delivery"
+        ),
         Index("ix_image_spot_status", "spot_id", "status"),
+        Index("ix_image_region_status", "region_id", "status"),
         Index("ix_image_app_user", "app_user_id"),
     )
 

@@ -146,8 +146,7 @@ export default function SpotDetail() {
           focal={spot.heroFocal}
           alt={spot.name}
           credit={spot.heroCredit}
-          license={spot.heroLicense}
-          sourceUrl={spot.heroSource}
+          delivery={spot.heroDelivery}
         />
 
         {tabs.length > 0 && <SpotTabs tabs={tabs} />}

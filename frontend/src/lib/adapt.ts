@@ -4,6 +4,7 @@
 
 import type { Spot } from "./types";
 import { resolveMediaUrl, type Region, type SpotRead, type SpotSummary } from "./api";
+import { fromImageRecord } from "./imageCredit";
 import { countryName } from "./flags";
 
 export function regionLabel(region?: Region): string {
@@ -49,9 +50,12 @@ export function adaptSpot(
     image: resolveMediaUrl(s.image?.url) ?? "",
     hero: resolveMediaUrl(s.image?.url),
     heroFocal: s.image?.focal ?? null,
-    heroCredit: s.image?.credit,
-    heroLicense: s.image?.license,
-    heroSource: s.image?.source,
+    // The whole image object travels, so attribution and delivery are derived
+    // from one source of truth instead of three loose strings. The old
+    // heroSource carried the provider *name* into a prop expecting a URL, so
+    // the "Quelle" link never rendered.
+    heroCredit: fromImageRecord(s.image),
+    heroDelivery: s.image?.delivery,
     coords,
     windDir: s.facing ?? undefined,
     sports: s.sports,

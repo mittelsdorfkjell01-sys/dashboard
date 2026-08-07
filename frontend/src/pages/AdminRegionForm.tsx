@@ -35,6 +35,9 @@ import AdminBackButton, {
   useAdminBackNavigation,
 } from "../components/admin/AdminBackButton";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import MediaPicker from "../components/admin/MediaPicker";
+import GalleryManager from "../components/admin/GalleryManager";
+import type { MediaRole } from "../lib/mediaPicker";
 import {
   stableFormValue,
   useUnsavedChangesGuard,
@@ -74,6 +77,7 @@ export default function AdminRegionForm() {
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<MediaRole | null>(null);
   const [busy, setBusy] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<{
@@ -259,6 +263,12 @@ export default function AdminRegionForm() {
 
   const saveImageUrl = async () => {
     if (!id || !imgUrl.trim()) return;
+    // Attribution is mandatory for every image source and enforced server-side
+    // since Sprint 1 — catch it here so the operator sees why, not a 422.
+    if (!imgCredit.trim()) {
+      setError("Für das Titelbild bitte einen Credit angeben.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -549,7 +559,16 @@ export default function AdminRegionForm() {
 
       {/* Hero image */}
       <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-        <h2 className="text-ui font-semibold text-admin-fg">Titelbild</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-ui font-semibold text-admin-fg">Titelbild</h2>
+          <button
+            type="button"
+            onClick={() => setPickerOpen("hero")}
+            className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
+          >
+            Bild suchen
+          </button>
+        </div>
         <div className="mt-3 flex flex-wrap items-start gap-4">
           {region.image?.url ? (
             <img
@@ -582,7 +601,7 @@ export default function AdminRegionForm() {
               />
               <button
                 type="button"
-                disabled={busy || !imgUrl.trim()}
+                disabled={busy || !imgUrl.trim() || !imgCredit.trim()}
                 onClick={saveImageUrl}
                 className="shrink-0 rounded-md border border-admin-border bg-admin-surface px-3 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
               >
@@ -621,6 +640,43 @@ export default function AdminRegionForm() {
           </div>
         )}
       </section>
+
+      {/* Gallery */}
+      <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-ui font-semibold text-admin-fg">Galerie</h2>
+          <button
+            type="button"
+            onClick={() => setPickerOpen("gallery")}
+            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+          >
+            Bild hinzufügen
+          </button>
+        </div>
+        <div className="mt-3">
+          {id && (
+            <GalleryManager
+              entityType="region"
+              entityId={id}
+              onHeroChanged={() => void loadRegion()}
+            />
+          )}
+        </div>
+      </section>
+
+      {id && pickerOpen && (
+        <MediaPicker
+          entityType="region"
+          entityId={id}
+          open
+          initialRole={pickerOpen}
+          onClose={() => setPickerOpen(null)}
+          onAdopted={() => {
+            void loadRegion();
+            flash("Bild übernommen.");
+          }}
+        />
+      )}
 
       {/* Spots — drag from the right pool into this region */}
       <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">

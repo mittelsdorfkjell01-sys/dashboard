@@ -35,9 +35,16 @@ def _box(lon: float, lat: float, d: float = 0.25):
     ]
 
 
-def _img(slug: str):
-    # Placeholder — a real hero image comes later via the admin upload.
-    return {"url": f"https://placeholder.local/{slug}.jpg", "credit": "seed"}
+def _img(slug: str, *, kind: str = "region"):
+    """Placeholder hero — a real image comes later via the admin picker/upload.
+
+    The unreachable ``*.local`` host is load-bearing: the frontend renders its
+    designed no-image state for it, and ``image_ready`` refuses to count it as a
+    finished image. Both would break with a plausible-looking URL.
+    """
+    from app.media.image_object import placeholder_image
+
+    return placeholder_image(slug, kind=kind)
 
 
 # --- compass → usable-direction windows ------------------------------------
@@ -822,3 +829,9 @@ for _s in SPOTS:
         _uwd = _ed.get("usable_wind_directions")
         if isinstance(_uwd, list) and _uwd and isinstance(_uwd[0], str):
             _ed["usable_wind_directions"] = _compass_to_windows(_uwd)
+
+# Every spot gets the same placeholder hero its region gets — derived from the
+# slug, so it is one line here instead of 40 copy-pasted dicts. Until Sprint 1
+# the seed wrote images for regions only and silently dropped them for spots.
+for _s in SPOTS:
+    _s.setdefault("image", _img(_s["slug"], kind="spot"))

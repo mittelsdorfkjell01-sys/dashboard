@@ -4,6 +4,20 @@ No climatology / score yet (out of scope for Sprint 1) — just identity,
 coordinates and sport metadata. Coordinates are (lon, lat) WGS84.
 """
 
+
+def _img(slug: str, *, kind: str = "region"):
+    """Placeholder hero for a fixture — see ``data_europe._img``.
+
+    The unreachable ``*.local`` host is deliberate: the frontend shows its
+    no-image state for it and ``image_ready`` does not count it as done. These
+    used to be ``example.com`` URLs, which are not recognised as placeholders
+    and therefore rendered as broken images.
+    """
+    from app.media.image_object import placeholder_image
+
+    return placeholder_image(slug, kind=kind)
+
+
 REGIONS: list[dict] = [
     {
         "slug": "tarifa",
@@ -22,7 +36,7 @@ REGIONS: list[dict] = [
         "famous for reliable Levante and Poniente winds.",
         "season": {"best_months": [4, 5, 6, 7, 8, 9]},
         "defaults": {"model_pref": "icon"},
-        "image": {"url": "https://example.com/img/tarifa.jpg", "credit": "seed"},
+        "image": _img("tarifa"),
     },
     {
         "slug": "sardinia",
@@ -40,7 +54,7 @@ REGIONS: list[dict] = [
         "strong Mistral wind on the west coast.",
         "season": {"best_months": [5, 6, 7, 8, 9]},
         "defaults": {"model_pref": "icon", "aliases": ["Sardegna"]},
-        "image": {"url": "https://example.com/img/sardinia.jpg", "credit": "seed"},
+        "image": _img("sardinia"),
     },
     {
         "slug": "kieler-bucht",
@@ -59,7 +73,7 @@ REGIONS: list[dict] = [
         "wave spots that fire on north-easterly winds.",
         "season": {"best_months": [4, 5, 6, 9, 10]},
         "defaults": {"model_pref": "icon_d2", "aliases": ["Kiel", "Kiel Bay"]},
-        "image": {"url": "https://example.com/img/kiel.jpg", "credit": "seed"},
+        "image": _img("kieler-bucht"),
     },
 ]
 
@@ -267,3 +281,10 @@ SPOTS: list[dict] = [
         },
     },
 ]
+
+# Spots get the same placeholder hero their regions get — derived from the slug.
+# Until Sprint 1 the seed wrote images for regions only and dropped them for
+# spots (the Spot(...) constructor had no image= at all), so a freshly seeded
+# spot always came up without one.
+for _s in SPOTS:
+    _s.setdefault("image", _img(_s["slug"], kind="spot"))

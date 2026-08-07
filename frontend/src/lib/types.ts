@@ -3,6 +3,7 @@
 // API now), the types stay.
 
 import type { FacilityMap } from "./api";
+import type { CreditSource } from "./imageCredit";
 
 // --- spot / region view models ---------------------------------------------
 
@@ -22,9 +23,11 @@ export interface Spot {
   image: string; // "" = no image → branded fallback
   hero?: string;
   heroFocal?: { x: number; y: number } | null; // object-position % for the crop
-  heroCredit?: string; // photographer name / Instagram tag, shown in the hero corner
-  heroLicense?: string; // license name for attribution (e.g. a Commons hero)
-  heroSource?: string; // source page URL — rendered as a "Quelle" link when it's a URL
+  // Full attribution (photographer, provider, licence + their links). One
+  // object rather than loose strings, so stock, Commons and community photos
+  // all render through the same credit line.
+  heroCredit?: CreditSource | null;
+  heroDelivery?: "hotlinked" | "hosted"; // hotlinked images resize via the provider CDN
   coords?: [number, number]; // [lat, lng]
   windDir?: number; // degrees the wind comes FROM
   waveDir?: number;

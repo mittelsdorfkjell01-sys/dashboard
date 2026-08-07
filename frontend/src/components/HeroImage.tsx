@@ -1,4 +1,5 @@
 import { heroManifest } from "../heroManifest";
+import { hotlinkSrcSet, objectPosition } from "../lib/heroSource";
 
 const MIME: Record<string, string> = {
   avif: "image/avif",
@@ -28,21 +29,45 @@ export default function HeroImage({
   alt,
   className,
   focal,
+  delivery,
+  provider,
 }: {
   src: string;
   fallbackSrc?: string;
   alt: string;
   className?: string;
   focal?: { x: number; y: number } | null;
+  /** How the bytes are served. `hotlinked` images stay on the provider's CDN
+   *  (an Unsplash API condition) and are resized with its own parameters. */
+  delivery?: "hotlinked" | "hosted";
+  /** Provider slug — decides which CDN parameter dialect applies. */
+  provider?: string | null;
 }) {
   const entry = src.startsWith("/") ? heroManifest[keyFromSrc(src)] : undefined;
-  const style = focal ? { objectPosition: `${focal.x}% ${focal.y}%` } : undefined;
+  const style = focal ? { objectPosition: objectPosition(focal) } : undefined;
 
   const onError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (fallbackSrc && e.currentTarget.src !== fallbackSrc) {
       e.currentTarget.src = fallbackSrc;
     }
   };
+
+  // Hotlinked: no local variants exist, but the provider's CDN resizes for us,
+  // so the browser still downloads a right-sized file instead of a 6000px original.
+  const cdnSrcSet = delivery === "hotlinked" ? hotlinkSrcSet(src, provider) : undefined;
+  if (cdnSrcSet) {
+    return (
+      <img
+        src={src}
+        srcSet={cdnSrcSet}
+        sizes="100vw"
+        alt={alt}
+        className={className}
+        style={style}
+        onError={onError}
+      />
+    );
+  }
 
   if (!entry) {
     return <img src={src} alt={alt} className={className} style={style} onError={onError} />;

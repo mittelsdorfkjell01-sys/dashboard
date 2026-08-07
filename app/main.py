@@ -8,6 +8,7 @@ from sqlalchemy import text
 from app.api import (
     account,
     admin,
+    admin_media,
     admin_tides,
     admin_moderation,
     admin_users,
@@ -23,7 +24,7 @@ from app.csrf import CSRFMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
-EXPECTED_DB_REVISION = "0026_remove_admin_totp"
+EXPECTED_DB_REVISION = "0027_media_provenance"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -107,6 +108,7 @@ app.include_router(account.router)
 if settings.enable_admin_api:
     app.include_router(auth.router)
     app.include_router(admin.router)
+    app.include_router(admin_media.router)
     app.include_router(admin_tides.router)
     app.include_router(admin_users.router)
     app.include_router(admin_moderation.router)

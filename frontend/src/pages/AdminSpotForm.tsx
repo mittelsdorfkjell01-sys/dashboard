@@ -17,15 +17,11 @@ import {
   fetchCommonsImages,
   getAdminSpot,
   getReadiness,
-  getSpotImages,
-  removeImage,
-  resolveMediaUrl,
   setHeroAttribution,
   setSpotImageFocal,
   updateSpot,
   uploadHeroImage,
   ApiError,
-  type CommunityImage,
   type FacilityKind,
   type ImageRecord,
   type Readiness,
@@ -55,6 +51,9 @@ import AdminBackButton, {
   useAdminBackNavigation,
 } from "../components/admin/AdminBackButton";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import MediaPicker from "../components/admin/MediaPicker";
+import GalleryManager from "../components/admin/GalleryManager";
+import type { MediaRole } from "../lib/mediaPicker";
 import { type AdminNavigationState } from "../lib/adminNavigation";
 import {
   stableFormValue,
@@ -126,12 +125,16 @@ export default function AdminSpotForm() {
   const [attrSource, setAttrSource] = useState("");
   const [attrBusy, setAttrBusy] = useState(false);
   const [attrMsg, setAttrMsg] = useState<string | null>(null);
-  const [galleryImages, setGalleryImages] = useState<CommunityImage[]>([]);
+  // Bumped after a Commons fetch to force GalleryManager to reload — it and
+  // the Commons-fetch button write to the same spot_images rows through
+  // different endpoints, so a fetch elsewhere must invalidate its cache.
+  const [galleryVersion, setGalleryVersion] = useState(0);
   const [commonsBusy, setCommonsBusy] = useState(false);
   const [commonsError, setCommonsError] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState<MediaRole | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -340,35 +343,17 @@ export default function AdminSpotForm() {
     if (target) window.setTimeout(() => target.scrollIntoView({ block: "start" }), 0);
   }, [loadingExisting, location.hash]);
 
-  const reloadGallery = () => {
-    if (!id) return;
-    getSpotImages(id)
-      .then((r) => setGalleryImages(r.items.filter((i) => i.kind === "gallery")))
-      .catch(() => {});
-  };
-
-  useEffect(reloadGallery, [id]);
-
   const runCommonsFetch = async () => {
     if (!id) return;
     setCommonsBusy(true);
     setCommonsError(null);
     try {
       await fetchCommonsImages(id);
-      reloadGallery();
+      setGalleryVersion((v) => v + 1);
     } catch (e) {
       setCommonsError(e instanceof ApiError ? e.message : "Abruf fehlgeschlagen.");
     } finally {
       setCommonsBusy(false);
-    }
-  };
-
-  const removeGalleryImage = async (imageId: string) => {
-    setGalleryImages((prev) => prev.filter((i) => i.id !== imageId)); // optimistic
-    try {
-      await removeImage(imageId);
-    } catch {
-      reloadGallery(); // roll back on failure
     }
   };
 
@@ -862,7 +847,18 @@ export default function AdminSpotForm() {
           )}
 
           <section id="f-hero" tabIndex={-1} className="scroll-mt-24 rounded-lg border border-admin-border bg-admin-surface p-5 outline-none sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Header-Bild</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-ui font-semibold text-admin-fg">Header-Bild</h2>
+              {isEdit && id && (
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen("hero")}
+                  className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
+                >
+                  Bild suchen
+                </button>
+              )}
+            </div>
             {currentImage?.url && (
               <div className="mt-3">
                 <p className="text-label font-medium text-ink">Ausschnitt wählen</p>
@@ -994,33 +990,33 @@ export default function AdminSpotForm() {
                 </p>
               )}
 
-              {galleryImages.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {galleryImages.map((img) => (
-                    <div key={img.id} className="group relative aspect-square overflow-hidden rounded-lg">
-                      <img
-                        src={resolveMediaUrl(img.url)}
-                        alt={img.credit ?? ""}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                      {img.source === "wikimedia_commons" && (
-                        <span className="absolute bottom-1.5 left-1.5 rounded-md bg-black/70 px-2 py-0.5 text-caption font-medium text-white backdrop-blur-sm">
-                          Commons
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeGalleryImage(img.id)}
-                        className="absolute right-1.5 top-1.5 rounded-md bg-black/70 px-2.5 py-1 text-caption font-medium text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-admin-danger-strong group-hover:opacity-100"
-                      >
-                        Entfernen
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="mt-4">
+                <GalleryManager
+                  key={galleryVersion}
+                  entityType="spot"
+                  entityId={id}
+                  onHeroChanged={async () => {
+                    const spot = await getAdminSpot(id);
+                    seedImage((spot.image as ImageRecord | null) ?? null);
+                  }}
+                />
+              </div>
             </section>
+          )}
+
+          {isEdit && id && pickerOpen && (
+            <MediaPicker
+              entityType="spot"
+              entityId={id}
+              open
+              initialRole={pickerOpen}
+              onClose={() => setPickerOpen(null)}
+              onAdopted={async () => {
+                const spot = await getAdminSpot(id);
+                seedImage((spot.image as ImageRecord | null) ?? null);
+                setGalleryVersion((v) => v + 1);
+              }}
+            />
           )}
 
           {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}

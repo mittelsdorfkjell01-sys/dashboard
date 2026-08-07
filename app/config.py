@@ -236,6 +236,33 @@ class Settings(BaseSettings):
     # Contact address surfaced by the take-down / image-report flow (Sprint C).
     takedown_contact_email: str | None = None
 
+    # --- media picker (admin only) -----------------------------------------
+    # Provider credentials for /admin/media/search. A missing key disables that
+    # one tab with a clear message — it never breaks the overlay. Wikimedia and
+    # Openverse work without credentials; Openverse only rate-limits harder.
+    unsplash_access_key: str | None = None
+    pexels_api_key: str | None = None
+    openverse_client_id: str | None = None
+    openverse_client_secret: str | None = None
+    # Wikimedia's API policy requires a descriptive UA with a contact address;
+    # a generic one gets throttled or blocked.
+    wikimedia_user_agent: str = (
+        "surfwinddata/1.0 (https://surfwinddata.com; admin@surfwinddata.com)"
+    )
+    # Upstream requests allowed per provider per clock hour. Unsplash's demo
+    # tier is 50/h — the cache below is what makes that workable, not an
+    # optimisation. Production access (after their review) is 5000/h.
+    media_budget_per_hour: dict[str, int] = {
+        "unsplash": 50,
+        "pexels": 200,
+        "wikimedia": 500,
+        "openverse": 100,
+    }
+    # Warn in the response meta once a provider passes this share of its budget.
+    media_budget_warn_ratio: float = 0.8
+    media_search_cache_ttl: int = 86_400  # 24 h
+    media_http_timeout: float = 10.0
+
     # Comma-separated extra terms that flag a tip/rating for review (on top of the
     # built-in spam/URL indicators). Content still publishes; it just shows up
     # flagged in the review panel. Case-insensitive substring match.

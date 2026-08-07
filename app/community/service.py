@@ -252,6 +252,10 @@ def create_image_record(
         width=width,
         height=height,
         source="user_upload",
+        # A visitor's photo: our own storage, no external provider id — so it
+        # never takes part in cross-spot duplicate detection.
+        provider="community",
+        delivery="hosted",
         credit=(credit or "").strip() or None,
         submitter_email=_clean_email(submitter_email),
         license_version=license_version,
@@ -296,6 +300,9 @@ def create_commons_image_records(db: Session, spot_id, results: list[dict]) -> l
             width=r.get("width"),
             height=r.get("height"),
             source="wikimedia_commons",
+            provider="wikimedia",
+            # Commons files are served from their CDN, not copied into our store.
+            delivery="hotlinked",
             credit=r.get("credit"),
             license_name=r.get("license_name"),
             license_url=r.get("license_url"),

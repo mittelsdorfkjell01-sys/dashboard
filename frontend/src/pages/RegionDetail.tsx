@@ -10,6 +10,7 @@ import SimilarRegions from "../components/SimilarRegions";
 import SortDropdown from "../components/SortDropdown";
 import Footer from "../components/Footer";
 import { EditorialHero, SectionBand, Lede } from "../components/editorial";
+import { fromImageRecord } from "../lib/imageCredit";
 import { EmptyState, ErrorBanner, SpotGridSkeleton } from "../components/AsyncStates";
 import { ChevronDownIcon } from "../lib/icons";
 import type { RegionInfo } from "../lib/types";
@@ -140,11 +141,24 @@ export default function RegionDetail() {
   const bestWeeks = (bestWeeksRaw?.weeks ?? []).slice(0, 8);
 
   // Hero source, in order: the region's own image → the first spot's image →
-  // EditorialHero's designed fallback. The focal point only travels with the
-  // region image.
+  // EditorialHero's designed fallback. The focal point and the attribution only
+  // travel with the region image — a borrowed spot photo must not be credited
+  // as if it were the region's own.
   const regionImage = usableMediaUrl(backendRegion.image?.url);
   const heroImage = regionImage ?? usableMediaUrl(region.spots[0]?.image);
   const heroFocal = regionImage ? backendRegion.image?.focal ?? null : null;
+  // Until now region heroes rendered with no attribution at all, while the
+  // stock-image route had been setting Unsplash photos on them for months —
+  // which breaches Unsplash's attribution condition. When the hero falls back
+  // to a spot photo, that spot's credit is used, because that is whose photo
+  // is on screen.
+  const fallbackSpot = regionImage ? undefined : region.spots[0];
+  const heroCredit = regionImage
+    ? fromImageRecord(backendRegion.image)
+    : fallbackSpot?.heroCredit ?? null;
+  const heroDelivery = regionImage
+    ? backendRegion.image?.delivery
+    : fallbackSpot?.heroDelivery;
 
   const withCoords = region.spots.filter((s) => s.coords);
   const gridSpots = sortSpots(filterSpots(region.spots, filters), filters.sort);
@@ -164,6 +178,8 @@ export default function RegionDetail() {
           kicker={region.country || undefined}
           title={region.name}
           meta={spotCount}
+          credit={heroCredit}
+          delivery={heroDelivery}
         >
           <button
             type="button"

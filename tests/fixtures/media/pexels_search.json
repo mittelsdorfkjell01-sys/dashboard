@@ -1,0 +1,40 @@
+{
+  "total_results": 8000,
+  "page": 1,
+  "per_page": 24,
+  "photos": [
+    {
+      "id": 3560168,
+      "width": 5472,
+      "height": 3648,
+      "url": "https://www.pexels.com/photo/kitesurfing-at-sunset-3560168/",
+      "photographer": "Marta Kowalska",
+      "photographer_url": "https://www.pexels.com/@marta-kowalska",
+      "photographer_id": 992311,
+      "avg_color": "#25516E",
+      "src": {
+        "original": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg",
+        "large2x": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg?auto=compress&w=1880",
+        "large": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg?auto=compress&w=940",
+        "medium": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg?auto=compress&h=350",
+        "small": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg?auto=compress&h=130",
+        "tiny": "https://images.pexels.com/photos/3560168/pexels-photo-3560168.jpeg?auto=compress&w=280&h=200"
+      },
+      "alt": "Kitesurfing at sunset"
+    },
+    {
+      "id": 1174732,
+      "width": 1920,
+      "height": 1280,
+      "url": "https://www.pexels.com/photo/beach-1174732/",
+      "photographer": "Jonas Berg",
+      "photographer_url": "https://www.pexels.com/@jonas-berg",
+      "src": {
+        "original": "https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg",
+        "large": "https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&w=940",
+        "tiny": "https://images.pexels.com/photos/1174732/pexels-photo-1174732.jpeg?auto=compress&w=280"
+      },
+      "alt": "Empty beach"
+    }
+  ]
+}

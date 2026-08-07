@@ -19,6 +19,7 @@ from app.models.ugc import (
     SpotImage,
     ImageReport,
 )
+from app.models.media import MediaProviderBudget, MediaSearchCache, MediaUsage
 from app.models.moderation_audit import ModerationAudit
 from app.models.team_note import TeamNote
 from app.models.board_task import BoardTask
@@ -49,6 +50,9 @@ __all__ = [
     "SpotSubmission",
     "SpotImage",
     "ImageReport",
+    "MediaUsage",
+    "MediaSearchCache",
+    "MediaProviderBudget",
     "ModerationAudit",
     "TeamNote",
     "BoardTask",

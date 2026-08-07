@@ -1,4 +1,4 @@
-"""Region write workflow + region stock images."""
+"""Region write workflow."""
 
 from __future__ import annotations
 
@@ -7,11 +7,16 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.admin.stock import StockImageClient
 from app.admin.duplicates import (
     enforce_duplicates,
     find_region_duplicates,
     find_spot_duplicates,
+)
+from app.media.image_object import (
+    CANONICAL_KEYS,
+    build_image,
+    normalize_focal,
+    with_fields,
 )
 from app.names import available_slug, clean_display_name
 
@@ -331,7 +336,13 @@ def delete_region(region_id, *, db: Session) -> None:
 
 
 def set_region_image(region_id, image: dict, *, db: Session) -> Any:
-    """Set the region hero image (url required; source/license/credit tracked)."""
+    """Replace the region hero image.
+
+    Normalised through the shared image builder, so a region image carries the
+    same provenance as a spot image — one schema, one write path. Regions keep
+    their lenient defaults for source/license (an operator pasting a URL owns
+    the rights claim), unlike the spot route which demands all four upfront.
+    """
     from app.models import Region
 
     if not (isinstance(image.get("url"), str) and image["url"].strip()):
@@ -339,12 +350,11 @@ def set_region_image(region_id, image: dict, *, db: Session) -> Any:
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
-    region.image = {
-        "url": image["url"].strip(),
-        "source": (image.get("source") or "manual").strip() or "manual",
-        "license": (image.get("license") or "own").strip() or "own",
-        "credit": (image.get("credit") or "").strip(),
-    }
+    payload = {key: image.get(key) for key in CANONICAL_KEYS}
+    payload["source"] = payload.get("source") or "manual"
+    payload["license"] = payload.get("license") or "own"
+    payload["provider"] = payload.get("provider") or "manual"
+    region.image = build_image(**payload)
     db.commit()
     db.refresh(region)
     return region
@@ -359,30 +369,7 @@ def set_region_image_focal(region_id, x: float, y: float, *, db: Session) -> Any
         raise LookupError(f"unknown region {region_id}")
     if not (isinstance(region.image, dict) and region.image.get("url")):
         raise ValueError("Kein Bild zum Positionieren.")
-    focal = {"x": max(0.0, min(100.0, float(x))), "y": max(0.0, min(100.0, float(y)))}
-    region.image = {**region.image, "focal": focal}
+    region.image = with_fields(region.image, focal=normalize_focal(x, y))
     db.commit()
     db.refresh(region)
-    return region
-
-
-def fetch_region_stock_image(region_name: str, *, client: StockImageClient) -> dict | None:
-    """Look up a credited stock image for a region (license + credit included)."""
-    return client.search(region_name)
-
-
-def set_region_stock_image(
-    region_id, *, db: Session, client: StockImageClient
-) -> Any:
-    """Fetch and store a stock image for a region by its name."""
-    from app.models import Region
-
-    region = db.get(Region, region_id)
-    if region is None:
-        raise LookupError(f"unknown region {region_id}")
-    image = fetch_region_stock_image(region.name, client=client)
-    if image is not None:
-        region.image = image
-        db.commit()
-        db.refresh(region)
     return region

@@ -10,6 +10,7 @@ import {
   getAdminSpots,
   getAdminRegionsFlat,
   type AdminSpotsResponse,
+  type MediaFilterKey,
   type Region,
   type AdminSpotSummary,
 } from "../lib/api";
@@ -22,6 +23,12 @@ import {
 } from "../lib/adminSpotSearchHistory";
 
 const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
+const MEDIA_FILTER_LABEL: Record<MediaFilterKey, string> = {
+  no_hero: "Kein Hero",
+  unverified: "Ortsbezug ungeprüft",
+  duplicate: "Bild mehrfach genutzt",
+  dead: "Quelle tot",
+};
 // Status tabs. "" = Alle (everything except archived); "archived" is its own tab.
 const STATUS_TABS: { key: string; label: string }[] = [
   { key: "", label: "Alle" },
@@ -42,6 +49,7 @@ export default function AdminSpots() {
   const sort = params.get("sort") ?? "name";
   const q = params.get("q") ?? "";
   const completeness = params.get("completeness") ?? "";
+  const media = (params.get("media") ?? "") as MediaFilterKey | "";
   const offset = Number(params.get("offset") ?? "0") || 0;
 
   const [data, setData] = useState<AdminSpotsResponse | null>(null);
@@ -72,6 +80,7 @@ export default function AdminSpots() {
           q: q || undefined,
           sort,
           completeness: completeness === "complete" || completeness === "incomplete" ? completeness : undefined,
+          media: media || undefined,
           limit: PAGE,
           offset,
         })
@@ -79,7 +88,7 @@ export default function AdminSpots() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.");
     }
-  }, [status, regionId, sport, sort, completeness, q, offset]);
+  }, [status, regionId, sport, sort, completeness, media, q, offset]);
 
   useEffect(() => {
     void load();
@@ -223,6 +232,21 @@ export default function AdminSpots() {
             <option value="incomplete">Unvollständig</option>
           </select>
           <select
+            value={media}
+            onChange={(e) => setFilter("media", e.target.value)}
+            className={`${selectCls} w-full min-w-0 sm:w-auto`}
+            aria-label="Bildstatus"
+          >
+            <option value="">Alle Bildstatus</option>
+            {(Object.entries(MEDIA_FILTER_LABEL) as [MediaFilterKey, string][]).map(
+              ([key, filterLabel]) => (
+                <option key={key} value={key}>
+                  {filterLabel}
+                </option>
+              )
+            )}
+          </select>
+          <select
             value={sort}
             onChange={(e) => setFilter("sort", e.target.value)}
             className={`${selectCls} w-full min-w-0 sm:w-auto`}
@@ -297,6 +321,7 @@ export default function AdminSpots() {
               <div className="mt-3" onClick={(event) => event.stopPropagation()}>
                 <ReadinessStatus spot={s} editorState={editorState} />
               </div>
+              <MediaFlagBadges spot={s} />
               <div className="mt-3">{rowActions(s)}</div>
             </div>
           ))
@@ -354,6 +379,7 @@ export default function AdminSpots() {
                   </td>
                   <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
                     <ReadinessStatus spot={s} editorState={editorState} />
+                    <MediaFlagBadges spot={s} />
                   </td>
                   <td className="admin-mono px-4 py-3 text-right text-admin-fg2">
                     {s.confidence != null ? s.confidence.toFixed(2) : "—"}
@@ -402,6 +428,31 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 
 function StatusBadge({ status }: { status: string }) {
   return <Badge tone={STATUS_TONE[status] ?? "neutral"}>{statusLabel(status)}</Badge>;
+}
+
+const MEDIA_FLAG_TONE: Record<MediaFilterKey, BadgeTone> = {
+  no_hero: "warning",
+  unverified: "info",
+  duplicate: "warning",
+  dead: "danger",
+};
+
+/** Media problems as small badges — the same four states the filter offers,
+ *  so a row is never flagged for a reason nobody can look up. */
+function MediaFlagBadges({ spot }: { spot: AdminSpotSummary }) {
+  const active = (Object.keys(MEDIA_FLAG_TONE) as MediaFilterKey[]).filter(
+    (key) => spot.media_flags?.[key]
+  );
+  if (active.length === 0) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {active.map((key) => (
+        <Badge key={key} tone={MEDIA_FLAG_TONE[key]}>
+          {MEDIA_FILTER_LABEL[key]}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
 function ReadinessStatus({

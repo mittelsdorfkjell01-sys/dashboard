@@ -34,6 +34,18 @@ def _as_list(value) -> list[str]:
     return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
+def _image(value) -> dict | None:
+    """Normalise a fixture image into the canonical object (or ``None``).
+
+    Regions and spots go through the same call — that symmetry is the point:
+    the writer used to pass ``image=`` for regions and silently omit it for
+    spots, so seeded spots never got one.
+    """
+    from app.media.image_object import upgrade_legacy
+
+    return upgrade_legacy(value)
+
+
 def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
     """Seed regions, spots, scoring_params and required_fields. Counts of new rows.
 
@@ -69,7 +81,7 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             description=r["description"],
             season=r["season"],
             defaults=r["defaults"],
-            image=r["image"],
+            image=_image(r["image"]),
         )
         db.add(region)
         region_by_slug[r["slug"]] = region
@@ -103,6 +115,7 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             facing=s.get("facing"),
             confidence=s.get("confidence"),
             editorial=s.get("editorial"),
+            image=_image(s.get("image")),
             model_pref=region.defaults.get("model_pref") if region.defaults else None,
         )
         db.add(spot)

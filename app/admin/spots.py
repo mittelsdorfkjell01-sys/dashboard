@@ -18,6 +18,12 @@ from app.admin.constants import (
     validate_water_characters,
     validate_water_types,
 )
+from app.media.image_object import (
+    CANONICAL_KEYS,
+    build_image,
+    normalize_focal,
+    with_fields,
+)
 from app.names import available_slug, clean_display_name
 from app.admin.readiness import validate_spot_readiness
 from app.admin.duplicates import enforce_duplicates, find_spot_duplicates
@@ -330,14 +336,17 @@ def revert_override(
 def manage_spot_image(
     spot_id, image: dict, *, db: Session, actor: str | None = "admin"
 ) -> Any:
-    """Set the spot image; the rights fields url/source/license/credit are mandatory."""
-    missing = [k for k in ("url", "source", "license", "credit")
-               if not (isinstance(image.get(k), str) and image[k].strip())]
-    if missing:
-        raise ValueError(f"image missing rights fields: {missing}")
+    """Replace the spot's hero image.
+
+    ``image`` is a raw payload (from the URL form, the upload route, the
+    community hero promotion or the media picker); it is normalised into the
+    canonical object here, so provenance and focal point survive instead of
+    being cut back to four fields. The rights fields url/source/license/credit
+    remain mandatory.
+    """
     spot = _load(db, spot_id)
-    spot.image = {k: image[k] for k in ("url", "source", "license", "credit")}
-    record_audit(db, spot.id, "image", {"url": image["url"]}, actor)
+    spot.image = build_image(**{k: image.get(k) for k in CANONICAL_KEYS})
+    record_audit(db, spot.id, "image", {"url": spot.image["url"]}, actor)
     db.commit()
     db.refresh(spot)
     return spot
@@ -347,16 +356,14 @@ def update_image_attribution(
     spot_id, *, credit: str, license: str, source: str, db: Session, actor="admin"
 ) -> Any:
     """Edit the current hero's rights fields (credit/license/source) in place,
-    preserving the url and the chosen focal point (unlike manage_spot_image,
-    which resets the image). Used by the spot form's attribution editor."""
+    preserving the url, the focal point and the provenance (unlike
+    manage_spot_image, which replaces the image). Used by the spot form's
+    attribution editor — Wikimedia author fields in particular are unreliable
+    and need correcting, but they can never be emptied."""
     spot = _load(db, spot_id)
-    if not (spot.image and isinstance(spot.image.get("url"), str)):
-        raise ValueError("no image set")
-    fields = {"credit": credit, "license": license, "source": source}
-    for k, v in fields.items():
-        if not (isinstance(v, str) and v.strip()):
-            raise ValueError(f"attribution field required: {k}")
-    spot.image = {**spot.image, **{k: v.strip() for k, v in fields.items()}}
+    spot.image = with_fields(
+        spot.image, credit=credit, license=license, source=source
+    )
     record_audit(db, spot.id, "image", {"attribution": True}, actor)
     db.commit()
     db.refresh(spot)
@@ -403,8 +410,8 @@ def set_image_focal(
     spot = _load(db, spot_id)
     if not (isinstance(spot.image, dict) and spot.image.get("url")):
         raise ValueError("Kein Bild zum Positionieren.")
-    focal = {"x": max(0.0, min(100.0, float(x))), "y": max(0.0, min(100.0, float(y)))}
-    spot.image = {**spot.image, "focal": focal}
+    focal = normalize_focal(x, y)
+    spot.image = with_fields(spot.image, focal=focal)
     record_audit(db, spot.id, "image", {"focal": focal}, actor)
     db.commit()
     db.refresh(spot)

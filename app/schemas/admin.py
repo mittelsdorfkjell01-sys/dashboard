@@ -170,9 +170,30 @@ class ImageRequest(AdminWriteModel):
     source: str = Field(min_length=1, max_length=120)
     license: str = Field(min_length=1, max_length=120)
     credit: str = Field(min_length=1, max_length=200)
+    license_url: AnyHttpUrl | None = None
+    credit_url: AnyHttpUrl | None = None
+    source_page: AnyHttpUrl | None = None
 
     def to_image(self) -> dict:
-        return {**self.model_dump(), "url": str(self.url)}
+        """Payload for ``app.media.image_object.build_image``.
+
+        An operator pasting a URL is provenance ``manual``: whatever they typed
+        into source/license is the claim of record — the picker (Sprint 3)
+        writes machine-verified provenance through its own route instead.
+        The URL is absolute by definition here, so the bytes are served from
+        someone else's host: ``delivery="hotlinked"``.
+        """
+        data = self.model_dump()
+        return {
+            **data,
+            "url": str(self.url),
+            "license_url": str(self.license_url) if self.license_url else None,
+            "credit_url": str(self.credit_url) if self.credit_url else None,
+            "source_page": str(self.source_page) if self.source_page else None,
+            "provider": "manual",
+            "delivery": "hotlinked",
+            "role": "hero",
+        }
 
 
 class ImageAttributionRequest(AdminWriteModel):
@@ -264,10 +285,24 @@ class RegionImageRequest(AdminWriteModel):
     url: AnyHttpUrl
     source: str = Field(default="manual", min_length=1, max_length=120)
     license: str = Field(default="own", min_length=1, max_length=120)
-    credit: str = Field(max_length=200)
+    # Non-empty since Sprint 1: attribution is mandatory for every image source,
+    # and the server is where that is enforced — not only the form.
+    credit: str = Field(min_length=1, max_length=200)
+    license_url: AnyHttpUrl | None = None
+    credit_url: AnyHttpUrl | None = None
+    source_page: AnyHttpUrl | None = None
 
     def to_image(self) -> dict:
-        return {**self.model_dump(), "url": str(self.url)}
+        return {
+            **self.model_dump(),
+            "url": str(self.url),
+            "license_url": str(self.license_url) if self.license_url else None,
+            "credit_url": str(self.credit_url) if self.credit_url else None,
+            "source_page": str(self.source_page) if self.source_page else None,
+            "provider": "manual",
+            "delivery": "hotlinked",
+            "role": "hero",
+        }
 
 
 class AssignRegionRequest(AdminWriteModel):

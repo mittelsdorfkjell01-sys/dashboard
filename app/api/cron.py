@@ -28,11 +28,23 @@ def maintain_climatology(
     db: Session = Depends(get_db),
     client=Depends(get_extract_client),
 ) -> dict:
-    """Queue stale snapshots and process a bounded daily batch."""
-    from app.admin.era5_worker import process_due_batch
+    """Queue stale snapshots and process a bounded daily batch.
 
-    return process_due_batch(
+    Also sweeps expired media-search cache entries and old budget buckets — a
+    cheap DELETE that rides along on the existing schedule, so the media picker
+    needs no cron of its own.
+    """
+    from app.admin.era5_worker import process_due_batch
+    from app.media.budget import sweep_expired
+
+    result = process_due_batch(
         db,
         client=client,
         limit=min(max(get_settings().climatology_cron_batch_size, 1), 5),
     )
+    try:
+        result["media"] = sweep_expired(db)
+    except Exception as exc:  # never let housekeeping fail the climatology run
+        db.rollback()
+        result["media"] = {"error": f"{type(exc).__name__}: {exc}"}
+    return result

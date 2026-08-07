@@ -1,6 +1,8 @@
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import type { ReactNode } from "react";
 import HeroImage from "../HeroImage";
+import ImageCredit from "../ImageCredit";
+import { hasCredit, type CreditSource } from "../../lib/imageCredit";
 
 /**
  * Full-bleed editorial hero. Two states, both deliberately designed:
@@ -21,9 +23,11 @@ export default function EditorialHero({
   title,
   meta,
   credit,
-  license,
-  sourceUrl,
+  delivery,
   children,
+  parallax = true,
+  frameClassName = "hero-h",
+  onImageClick,
 }: {
   image?: string | null;
   focal?: { x: number; y: number } | null;
@@ -31,18 +35,30 @@ export default function EditorialHero({
   kicker?: ReactNode;
   title?: string;
   meta?: ReactNode;
-  /** Photographer name / Instagram tag, shown small in the hero's bottom
-   *  corner. */
-  credit?: string;
-  /** License name shown next to the credit (attribution for e.g. a Commons
-   *  hero). */
-  license?: string;
-  /** Source page URL — rendered as a "Quelle" link when it's an http(s) URL. */
-  sourceUrl?: string;
+  /** Attribution source — a spot/region `image` object, a gallery row or a
+   *  hand-built shape. Stock heroes, Commons imports and community photos with
+   *  an Instagram tag all render through the same line; there is no per-source
+   *  special case. */
+  credit?: CreditSource | null;
+  /** Passed through to HeroImage so a hotlinked photo is resized by its own
+   *  provider CDN instead of downloading a 6000px original. */
+  delivery?: "hotlinked" | "hosted";
   children?: ReactNode;
+  /** Scroll parallax. Off inside the admin media picker, where the hero is a
+   *  preview in a fixed frame and page scroll is locked — the drift would be
+   *  meaningless there. */
+  parallax?: boolean;
+  /** Height of the hero frame. The page hero keeps `hero-h` (72dvh); the
+   *  picker passes fixed desktop/mobile crop ratios so an operator sees the
+   *  real proportions before adopting. */
+  frameClassName?: string;
+  /** Picking a focal point in the admin preview. Absent on the public site,
+   *  where the hero is not interactive. */
+  onImageClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
 }) {
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
+  const still = reduce || !parallax;
 
   // Image parallax: the wrapper is pre-inflated by the max travel distance
   // (60px top + 60px bottom = the 120px range the spec calls for) so the
@@ -53,16 +69,19 @@ export default function EditorialHero({
   const titleY = useTransform(scrollY, [0, 400], [0, -40]);
 
   return (
-    <section className="hero-h relative w-full overflow-hidden bg-ink">
+    <section className={`${frameClassName} relative w-full overflow-hidden bg-ink`}>
       {image ? (
         <motion.div
-          className="absolute inset-x-0"
-          style={{ top: -60, bottom: -60, y: reduce ? 0 : imageY }}
+          className={`absolute inset-x-0 ${onImageClick ? "cursor-crosshair" : ""}`}
+          style={{ top: still ? 0 : -60, bottom: still ? 0 : -60, y: still ? 0 : imageY }}
+          onClick={onImageClick}
         >
           <HeroImage
             src={image}
             alt={alt}
             focal={focal}
+            delivery={delivery}
+            provider={credit?.provider}
             className="h-full w-full object-cover"
           />
         </motion.div>
@@ -115,28 +134,17 @@ export default function EditorialHero({
               {kicker}
             </div>
           )}
-          <motion.div style={{ y: reduce ? 0 : titleY }}>
+          <motion.div style={{ y: still ? 0 : titleY }}>
             {title && <h1 className="text-display-1 font-bold text-white text-balance">{title}</h1>}
             {meta && <div className="mt-3 text-body font-medium text-white/90">{meta}</div>}
           </motion.div>
         </div>
       </div>
 
-      {/* credit + attribution (author · license · source link) */}
-      {(credit || license || sourceUrl) && (
+      {/* Attribution — same corner, same style, whatever the photo's origin. */}
+      {hasCredit(credit ?? null) && (
         <div className="pointer-events-none absolute bottom-4 right-4 z-10 text-caption tracking-wide text-white/55 sm:bottom-6 sm:right-8">
-          <span className="pointer-events-auto">
-            {credit && <span>Foto: {credit}</span>}
-            {license && <span>{credit ? " · " : ""}{license}</span>}
-            {sourceUrl && /^https?:\/\//i.test(sourceUrl) && (
-              <span>
-                {" · "}
-                <a href={sourceUrl} target="_blank" rel="noreferrer noopener" className="underline hover:text-white/80">
-                  Quelle
-                </a>
-              </span>
-            )}
-          </span>
+          <ImageCredit source={credit ?? null} className="pointer-events-auto" />
         </div>
       )}
     </section>

@@ -66,13 +66,24 @@ def is_fulfilled(value: Any) -> bool:
 
 
 def image_ready(image: Any) -> bool:
-    """An image needs all of url + source + license + credit."""
+    """An image needs all of url + source + license + credit — and must be a
+    real photo.
+
+    Seeded fixtures carry a deliberately unreachable placeholder so the UI shows
+    its designed no-image state. Counting those as done would make both the
+    "Fertigstellen" traffic light and the "Spots ohne Hero" work list report
+    finished work that nobody has done.
+    """
+    from app.media.image_object import is_placeholder
+
     if not isinstance(image, dict):
         return False
-    return all(
+    if not all(
         isinstance(image.get(k), str) and image[k].strip()
         for k in ("url", "source", "license", "credit")
-    )
+    ):
+        return False
+    return not is_placeholder(image)
 
 
 def climatology_ready(spot: Any, job_status: str | None) -> bool:

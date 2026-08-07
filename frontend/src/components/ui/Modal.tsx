@@ -13,6 +13,7 @@ export default function Modal({
   labelledBy,
   describedBy,
   children,
+  cardClassName = "max-w-md rounded-lg bg-white p-6",
 }: {
   open: boolean;
   onClose: () => void;
@@ -21,6 +22,11 @@ export default function Modal({
   /** id of optional explanatory content inside the dialog. */
   describedBy?: string;
   children: ReactNode;
+  /** Size and surface of the card. Confirm/prompt dialogs keep the default
+   *  narrow white box; the media picker needs a near-full-screen working
+   *  surface in the admin theme. Everything else — focus trap, Esc, inert
+   *  background, scroll lock — is shared. */
+  cardClassName?: string;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -97,7 +103,7 @@ export default function Modal({
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         data-lenis-prevent
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-float outline-none"
+        className={`w-full shadow-float outline-none ${cardClassName}`}
       >
         {children}
       </div>

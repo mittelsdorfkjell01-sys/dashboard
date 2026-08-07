@@ -1,4 +1,4 @@
-"""Admin FastAPI dependencies: climatology-extract client and stock client.
+"""Admin FastAPI dependencies: climatology-extract client and Commons client.
 
 Auth moved to :mod:`app.auth.deps` in Sprint A (cookie session + roles). The old
 ``require_admin`` shared-key gate was removed from here; the optional break-glass
@@ -8,7 +8,6 @@ Auth moved to :mod:`app.auth.deps` in Sprint A (cookie session + roles). The old
 from __future__ import annotations
 
 from app.admin.commons import CommonsClient, default_commons_client
-from app.admin.stock import StockImageClient, default_stock_client
 
 
 def get_extract_client():
@@ -31,10 +30,6 @@ def get_extract_client():
 # dependency overrides (tests) keep working. The optional CDS adapter lives in
 # app.era5.cds.real_cds_client() and is no longer on the default path.
 get_cds_client = get_extract_client
-
-
-def get_stock_client() -> StockImageClient:
-    return default_stock_client()
 
 
 def get_commons_client() -> CommonsClient:

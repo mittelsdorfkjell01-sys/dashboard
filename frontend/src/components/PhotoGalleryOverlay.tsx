@@ -9,6 +9,8 @@ import { useAuth } from "../context/AuthContext";
 import { GalleryUploadForm } from "./SpotCommunity";
 import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
 import OverlayPanel from "./OverlayPanel";
+import ImageCredit from "./ImageCredit";
+import { fromGalleryPhoto } from "../lib/imageCredit";
 
 /**
  * Fotogalerie overlay (Figma Frame_10) — title left, subtitle right, and the
@@ -309,31 +311,13 @@ function Lightbox({
             transition={{ duration: reduce ? 0 : 0.18 }}
           />
 
-          {(photo.credit || photo.license_name || photo.source_url) && (
-            <p className="absolute bottom-4 left-0 right-0 px-4 text-center text-caption text-white/70">
-              {photo.credit && <span>Foto: {photo.credit}</span>}
-              {photo.license_name && (
-                <span>
-                  {photo.credit ? " · " : ""}
-                  {photo.license_url ? (
-                    <a href={photo.license_url} target="_blank" rel="noreferrer noopener" className="underline hover:text-white">
-                      {photo.license_name}
-                    </a>
-                  ) : (
-                    photo.license_name
-                  )}
-                </span>
-              )}
-              {photo.source_url && (
-                <span>
-                  {" · "}
-                  <a href={photo.source_url} target="_blank" rel="noreferrer noopener" className="underline hover:text-white">
-                    Quelle
-                  </a>
-                </span>
-              )}
-            </p>
-          )}
+          {/* Same attribution component as the hero — a gallery photo and a
+              hero photo are credited identically, because the obligation is
+              identical. */}
+          <ImageCredit
+            source={fromGalleryPhoto(photo)}
+            className="absolute bottom-4 left-0 right-0 px-4 text-center text-caption text-white/70"
+          />
         </motion.div>
       )}
     </AnimatePresence>,

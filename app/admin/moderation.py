@@ -343,6 +343,13 @@ def approve_hero_image(db: Session, image_id, *, actor: str) -> SpotImage:
             "source": "user_upload",
             "license": img.license_version or IMAGE_LICENSE_VERSION,
             "credit": (img.credit or "Community").strip() or "Community",
+            # The uploader's photo lives in our own storage; provenance is the
+            # consent record on this row, not an external provider.
+            "provider": "community",
+            "delivery": "hosted",
+            "width": img.width,
+            "height": img.height,
+            "role": "hero",
         },
         db=db, actor=actor,
     )
