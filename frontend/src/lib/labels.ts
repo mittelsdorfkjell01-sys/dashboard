@@ -4,7 +4,7 @@
 
 import type { FacilityKind } from "./api";
 
-export const LEVELS = ["beginner", "advanced", "expert"] as const;
+export const LEVELS = ["beginner", "advanced", "expert", "competition"] as const;
 export const BOTTOM_TYPES = ["sand", "rock", "reef", "mixed"] as const;
 export const WATER_CHARACTERS = [
   "flach",
@@ -33,6 +33,7 @@ export const LEVEL_LABELS: Record<string, string> = {
   beginner: "Anfänger",
   advanced: "Fortgeschritten",
   expert: "Experte",
+  competition: "Wettkampf-Spot",
 };
 
 export const BOTTOM_TYPE_LABELS: Record<string, string> = {

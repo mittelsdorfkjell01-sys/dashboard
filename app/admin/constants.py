@@ -25,7 +25,7 @@ STATUS_ARCHIVED = "archived"
 # --- controlled category vocabularies (single source of truth) -------------
 
 # Rider level (ordered — low → high; ``similarity.character`` relies on order).
-LEVELS: tuple[str, ...] = ("beginner", "advanced", "expert")
+LEVELS: tuple[str, ...] = ("beginner", "advanced", "expert", "competition")
 
 # Seabed / launch-ground composition. ``mixed`` is retained for historical
 # records that did not identify the concrete components; it is mutually
