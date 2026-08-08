@@ -33,10 +33,12 @@ UPLOAD_CHUNK_BYTES = 1024 * 1024
 # --- output re-encoding -----------------------------------------------------
 HERO_OUT_MAX_WIDTH = 3840     # 4K wide is plenty; downscale beyond this
 GALLERY_OUT_MAX_WIDTH = 2560
-# AVIF/WebP quality (0-100). The hero is a full-bleed showcase image, so it gets
-# a high quality (≈ JPEG 90 in size); gallery thumbnails can be lighter.
-HERO_OUT_QUALITY = 82
-GALLERY_OUT_QUALITY = 68
+# AVIF/WebP quality (0-100). The hero is a full-bleed showcase image, so it
+# gets near-visually-lossless quality — AVIF Q90 on a 3840 px source is
+# ~1–2 MB and holds detail on Retina/4K displays, where a picked stock
+# photo previously read as soft after Q82 AVIF compression.
+HERO_OUT_QUALITY = 90
+GALLERY_OUT_QUALITY = 78
 
 # Accepted *input* content types -> canonical extension (output is avif/webp).
 _CONTENT_TYPE_EXT = {

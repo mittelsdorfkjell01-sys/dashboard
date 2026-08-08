@@ -134,7 +134,14 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   }, [active]);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl">
+    // data-lenis-prevent stops the wheel from also scrolling the surrounding
+    // page while MapLibre is consuming it to zoom the map. Without this,
+    // activating the map and rolling the wheel scrolls the article too.
+    <div
+      data-lenis-prevent
+      className="relative overflow-hidden rounded-3xl"
+      onWheelCapture={active ? (e) => e.stopPropagation() : undefined}
+    >
       <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
 
       {/* Locked: transparent click-catcher (no text, no hover styling). */}
