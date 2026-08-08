@@ -1,6 +1,57 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
+// Nested modals used to leave their background inert. Each modal snapshotted
+// body.children on open and restored to that snapshot on close, so when a
+// dialog opened on top of another the outer modal recorded (correctly)
+// "no inert", the inner recorded "outer already inert" and — because the
+// order of React's effect cleanups on simultaneous unmount is not the
+// unmount order the fix relies on — the root ended up permanently inert.
+//
+// Fix: a module-level counter and a WeakMap of original inert values. The
+// first modal opening captures + inerts, subsequent modals only bump the
+// counter, and only the last modal closing restores. `body` overflow uses
+// the same shape so nested modals never fight over it either.
+let modalStackDepth = 0;
+const inertOriginals = new WeakMap<HTMLElement, boolean>();
+let bodyOverflowOriginal = "";
+
+function pushModalLock(overlay: HTMLElement | null): void {
+  if (modalStackDepth === 0) {
+    const body = document.body;
+    bodyOverflowOriginal = body.style.overflow;
+    body.style.overflow = "hidden";
+    for (const child of Array.from(body.children)) {
+      const el = child as HTMLElement;
+      if (el === overlay) continue;
+      inertOriginals.set(el, el.inert);
+      el.inert = true;
+    }
+  }
+  modalStackDepth += 1;
+}
+
+function popModalLock(): void {
+  modalStackDepth -= 1;
+  if (modalStackDepth <= 0) {
+    modalStackDepth = 0;
+    const body = document.body;
+    body.style.overflow = bodyOverflowOriginal;
+    for (const child of Array.from(body.children)) {
+      const el = child as HTMLElement;
+      const original = inertOriginals.get(el);
+      if (original !== undefined) {
+        el.inert = original;
+        inertOriginals.delete(el);
+      } else {
+        // A body child that appeared after the first modal opened — never
+        // captured, so it should not carry lingering inert either.
+        el.inert = false;
+      }
+    }
+  }
+}
+
 /**
  * Minimal centered modal chassis for admin dialogs (conflict / confirm /
  * prompt). Scrim + a white card; closes on Esc or a scrim click; traps focus
@@ -41,9 +92,7 @@ export default function Modal({
   useEffect(() => {
     if (!open) return;
     restoreRef.current = document.activeElement as HTMLElement | null;
-    const { body } = document;
-    const prevOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
+    pushModalLock(overlayRef.current);
     const focusable = () =>
       Array.from(
         cardRef.current?.querySelectorAll<HTMLElement>(
@@ -52,11 +101,6 @@ export default function Modal({
       ).filter((element) => !element.hasAttribute("hidden"));
     (focusable()[0] ?? cardRef.current)?.focus();
 
-    const inerted = Array.from(body.children).filter(
-      (element) => element !== overlayRef.current
-    ) as HTMLElement[];
-    const previousInert = inerted.map((element) => element.inert);
-    inerted.forEach((element) => { element.inert = true; });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCloseRef.current();
       if (e.key === "Tab") {
@@ -80,8 +124,7 @@ export default function Modal({
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      body.style.overflow = prevOverflow;
-      inerted.forEach((element, index) => { element.inert = previousInert[index]; });
+      popModalLock();
       restoreRef.current?.focus();
     };
   }, [open]);

@@ -319,6 +319,8 @@ function CreateRegionForm({
         />
         <p className="mt-1 text-caption text-admin-muted">
           Mittelpunkt und Fläche werden anhand von Name und Land ermittelt.
+          Bei mehrdeutigen Namen (z. B. „Fehmarn") hilft der Landcode
+          weiter — sonst zeigt der Fehler „Keine Koordinaten gefunden".
         </p>
       </div>
       <div className="flex justify-end gap-2">

@@ -798,14 +798,26 @@ def create_region(
         from app.search.geocode import classify_geocode
 
         query = ", ".join(x for x in [body.name, body.country] if x)
+        # Distinguish "geocoder reported no match" from "network/timeout" so
+        # the operator sees an actionable message instead of assuming the
+        # place doesn't exist. The catch-all fallback used to swallow both.
         try:
             hit = classify_geocode(query, geocoder=geocoder)
-        except Exception:
-            hit = None
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    f"Geocoder ist nicht erreichbar ({type(exc).__name__}: {exc}). "
+                    "Bitte gleich nochmal versuchen oder Koordinaten manuell setzen."
+                ),
+            )
         if hit is None:
             raise HTTPException(
                 status_code=422,
-                detail=f'Keine Koordinaten für „{body.name}" gefunden — bitte den Namen präzisieren.',
+                detail=(
+                    f'Keine Koordinaten für „{body.name}" gefunden — Namen präzisieren '
+                    "(z. B. Landcode angeben) oder Koordinaten manuell setzen."
+                ),
             )
         data["lat"] = hit["point"]["lat"]
         data["lon"] = hit["point"]["lon"]
