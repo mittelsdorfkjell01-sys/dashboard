@@ -257,6 +257,16 @@ def _gallery_row(
     status: str = "approved",
 ) -> SpotImage:
     """Store an image object as a gallery row for either entity type."""
+    # SpotImage.source is VARCHAR(30) — the free-form display origin, but pre-
+    # media-picker rows sometimes carried a full URL there. Guard both sides:
+    # prefer the machine provider slug (always short and canonical) and, if the
+    # legacy `source` was actually a URL, don't lose it — carry it into
+    # `source_url` if that's still empty.
+    raw_source = image.get("source") or ""
+    is_url_source = raw_source.startswith(("http://", "https://"))
+    source_slug = (image.get("provider") or ("unknown" if is_url_source else raw_source) or "unknown")[:30]
+    source_url = image.get("source_page") or (raw_source if is_url_source else None)
+
     row = SpotImage(
         spot_id=entity_id if entity_type == "spot" else None,
         region_id=entity_id if entity_type == "region" else None,
@@ -264,7 +274,7 @@ def _gallery_row(
         kind="gallery",
         width=image.get("width"),
         height=image.get("height"),
-        source=image.get("source") or "unknown",
+        source=source_slug,
         provider=image.get("provider"),
         external_id=image.get("external_id"),
         delivery=image.get("delivery") or "hosted",
@@ -272,7 +282,7 @@ def _gallery_row(
         credit_url=image.get("credit_url"),
         license_name=image.get("license"),
         license_url=image.get("license_url"),
-        source_url=image.get("source_page"),
+        source_url=source_url,
         geo_verified=bool(image.get("geo_verified")),
         position=_next_position(db, entity_type, entity_id),
         status=status,
