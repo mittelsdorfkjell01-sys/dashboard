@@ -22,6 +22,7 @@ import {
   setHeroAttribution,
   setSpotImageFocal,
   setSpotImageFocalMobile,
+  setSpotImageGeoVerified,
   updateSpot,
   uploadHeroImage,
   ApiError,
@@ -903,6 +904,27 @@ export default function AdminSpotForm() {
                     </div>
                   </div>
                 </div>
+
+                {/* Ortsbezug — nur sichtbar, solange das Bild nicht als
+                    verifiziert markiert ist. Klick auf den Button setzt das
+                    Flag serverseitig und der Hinweis verschwindet. */}
+                {currentImage.geo_verified === false && id && (
+                  <div className="flex flex-wrap items-center gap-3 rounded-md border border-admin-warning-border bg-admin-warning-bg px-3 py-2">
+                    <span className="text-label font-medium text-admin-warning">
+                      Ortsbezug ungeprüft
+                    </span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const spot = await setSpotImageGeoVerified(id, true);
+                        seedImage((spot.image as ImageRecord | null) ?? null);
+                      }}
+                      className="ml-auto rounded-md border border-admin-border bg-admin-surface px-3 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+                    >
+                      Ortsbezug geprüft
+                    </button>
+                  </div>
+                )}
 
                 {/* Bildnachweis — flach, kein Nested-Card. Drei Eingaben eine
                     Zeile, Aktion und Meldung rechts. */}

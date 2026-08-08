@@ -116,26 +116,31 @@ def _resolve(db: Session, provider: str, external_id: str) -> MediaResult:
     return results[0]
 
 
-def _check_gate(result: MediaResult, role: str) -> None:
-    """Re-run the size and license gates server-side.
+def _check_gate(result: MediaResult, role: str) -> list[str]:
+    """Re-run the licence gate; size becomes a warning, not a hard reject.
 
-    The search response already carried these flags, but a client can send
-    anything, and the size that matters is the one the provider reports now.
+    The licence must always hold (we run a commercial site and crop every
+    hero), but the operator sees the resolution on the tile and can decide
+    to use a smaller image knowingly — the size check now returns a warning
+    instead of refusing the adoption.
     """
     if not adoptable(result):
         raise AdoptError(
             f"Lizenz „{result.license.name}“ erlaubt keine kommerzielle Nutzung "
             "oder Bearbeitung."
         )
+    warnings: list[str] = []
     size = f"{result.width or '?'}×{result.height or '?'} px"
     if role == "hero" and not hero_eligible(result.width, result.height):
-        raise AdoptError(
-            f"Für ein Header-Bild zu klein ({size}) — mindestens 3840×1920 px nötig."
+        warnings.append(
+            f"Bild ist unter der Hero-Empfehlung ({size} < 3840×1920 px) — "
+            "kann auf großen Bildschirmen unscharf wirken."
         )
     if role == "gallery" and not gallery_eligible(result.width, result.height):
-        raise AdoptError(
-            f"Für die Galerie zu klein ({size}) — lange Kante mindestens 1600 px."
+        warnings.append(
+            f"Bild ist unter der Galerie-Empfehlung ({size}, lange Kante < 1600 px)."
         )
+    return warnings
 
 
 def _existing_usages(db: Session, provider: str, external_id: str) -> list[MediaUsage]:
@@ -338,10 +343,10 @@ def adopt(
 
     entity = _load_entity(db, entity_type, entity_id)
     result = _resolve(db, provider, external_id)
-    _check_gate(result, role)
-    warnings = _check_duplicates(
+    warnings = _check_gate(result, role)
+    warnings.extend(_check_duplicates(
         db, provider=provider, external_id=external_id, role=role, entity_id=entity.id
-    )
+    ))
 
     if not result.geo_verified:
         # Never a block — a photo of the right place found by name is normal,

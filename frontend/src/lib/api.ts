@@ -1402,6 +1402,13 @@ export const setSpotImageFocalMobile = (
     body: JSON.stringify(point ?? { x: null, y: null }),
   });
 
+/** Mark the hero image's location as operator-verified. */
+export const setSpotImageGeoVerified = (id: string, value: boolean) =>
+  request<SpotRead>(`/admin/spots/${id}/image/geo-verified`, {
+    method: "POST",
+    body: JSON.stringify({ value }),
+  });
+
 /** Edit the current hero's rights fields in place (url + focal preserved). */
 export const setHeroAttribution = (
   id: string,

@@ -66,10 +66,10 @@ describe("tab order", () => {
 });
 
 describe("eligibility", () => {
-  it("follows the active mode", () => {
-    const galleryOnly = item({ hero_eligible: false, gallery_eligible: true });
-    expect(isUsable(galleryOnly, "hero")).toBe(false);
-    expect(isUsable(galleryOnly, "gallery")).toBe(true);
+  it("lets the admin pick any tile — size becomes an advisory, not a gate", () => {
+    const small = item({ hero_eligible: false, gallery_eligible: true });
+    expect(isUsable(small, "hero")).toBe(true);
+    expect(isUsable(small, "gallery")).toBe(true);
   });
 });
 

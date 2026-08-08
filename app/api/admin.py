@@ -504,6 +504,28 @@ def set_spot_image_focal_mobile(
     return SpotRead.from_orm_spot(spot)
 
 
+class GeoVerifiedRequest(BaseModel):
+    value: bool = True
+
+
+@router.post("/spots/{spot_id}/image/geo-verified", response_model=SpotRead)
+def set_spot_image_geo_verified(
+    spot_id: uuid.UUID,
+    body: GeoVerifiedRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+):
+    try:
+        spot = admin_spots.set_image_geo_verified(
+            spot_id, body.value, db=db, actor=actor
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return SpotRead.from_orm_spot(spot)
+
+
 @router.get("/spots/{spot_id}")
 def effective_view(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
     try:

@@ -418,6 +418,26 @@ def set_image_focal(
     return spot
 
 
+def set_image_geo_verified(
+    spot_id, value: bool, *, db: Session, actor: str | None = "admin"
+) -> Any:
+    """Mark the hero image's location as operator-verified (or unset it).
+
+    The picker only sets `geo_verified` when the source actually carries
+    coordinates near the spot; a name-match photo of the right place comes
+    in as `false` and shows the "Ortsbezug ungeprüft" badge. An operator
+    who has visually confirmed the location can flip that flag here.
+    """
+    spot = _load(db, spot_id)
+    if not (isinstance(spot.image, dict) and spot.image.get("url")):
+        raise ValueError("Kein Bild vorhanden.")
+    spot.image = with_fields(spot.image, geo_verified=value)
+    record_audit(db, spot.id, "image", {"geo_verified": value}, actor)
+    db.commit()
+    db.refresh(spot)
+    return spot
+
+
 def set_image_focal_mobile(
     spot_id, x: float | None, y: float | None, *, db: Session, actor: str | None = "admin"
 ) -> Any:

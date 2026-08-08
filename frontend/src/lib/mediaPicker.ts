@@ -87,9 +87,15 @@ export function tabOrder(entityType: MediaEntityType): ProviderKey[] {
     : ["nearby", "unsplash", "pexels", "wikimedia", "openverse"];
 }
 
-/** Whether this result can be adopted in the currently active mode. */
-export function isUsable(item: MediaItem, role: MediaRole): boolean {
-  return role === "hero" ? item.hero_eligible : item.gallery_eligible;
+/** Whether this result can be adopted in the currently active mode.
+ *
+ * Historically enforced the size gate here too, but the admin sees the
+ * dimensions on the tile and takes responsibility for choosing an image
+ * that is smaller than the hero recommendation. Now returns true for any
+ * result the server has already licence-cleared; size becomes an
+ * advisory badge on the tile and a warning on the adopt response. */
+export function isUsable(_item: MediaItem, _role: MediaRole): boolean {
+  return true;
 }
 
 export type TileBadgeTone = "neutral" | "warning" | "info";
