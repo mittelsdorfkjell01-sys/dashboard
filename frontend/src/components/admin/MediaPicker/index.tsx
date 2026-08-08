@@ -55,24 +55,36 @@ export default function MediaPicker({
   entityType: MediaEntityType;
   entityId: string;
   open: boolean;
+  /** Role is fixed by the caller (Header-Bild vs Galerie) — the operator
+   *  never toggles inside the picker. In gallery mode multiple tiles can
+   *  be picked at once and all get adopted in a single confirm. */
   initialRole?: MediaRole;
   onClose: () => void;
   /** Fired after a successful adoption so the form can reload its record. */
   onAdopted: (result: { role: MediaRole; warnings: string[] }) => void;
 }) {
   const providers = useMemo(() => tabOrder(entityType), [entityType]);
+  // The parent decides which role — hero is single-select, gallery is
+  // multi-select. No in-picker toggle.
+  const role: MediaRole = initialRole;
 
   const [context, setContext] = useState<MediaContext | null>(null);
-  const [role, setRole] = useState<MediaRole>(initialRole);
   const [query, setQuery] = useState("");
   const [freeText, setFreeText] = useState("");
   const [activeTab, setActiveTab] = useState<ProviderKey>(providers[0]);
   const [tabs, setTabs] = useState<Record<string, TabState>>({});
-  const [selected, setSelected] = useState<MediaItem | null>(null);
+  // Selection is always an array; hero limits it to one, gallery allows many.
+  // Order matters for the adopt loop (first pick becomes the preview subject).
+  const [selection, setSelection] = useState<MediaItem[]>([]);
   const [focal, setFocal] = useState({ x: 50, y: 50 });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const primary = selection[0] ?? null;
+  const itemKey = (item: MediaItem) => `${item.provider}:${item.external_id}`;
+  const isPicked = (item: MediaItem) =>
+    selection.some((it) => itemKey(it) === itemKey(item));
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -181,7 +193,7 @@ export default function MediaPicker({
   // mid-flow with a stale selection.
   useEffect(() => {
     if (open) return;
-    setSelected(null);
+    setSelection([]);
     setFocal({ x: 50, y: 50 });
     setError(null);
     setNotice(null);
@@ -194,11 +206,8 @@ export default function MediaPicker({
   const items = useMemo(() => current?.items ?? [], [current]);
   const columns = useMemo(() => masonryColumns(items, COLUMN_COUNT), [items]);
 
-  const selectedIndex = selected
-    ? items.findIndex(
-        (item) =>
-          item.provider === selected.provider && item.external_id === selected.external_id
-      )
+  const selectedIndex = primary
+    ? items.findIndex((item) => itemKey(item) === itemKey(primary))
     : -1;
 
   const onGridKey = (event: React.KeyboardEvent) => {
@@ -206,7 +215,7 @@ export default function MediaPicker({
       onClose();
       return;
     }
-    if (event.key === "Enter" && selected) {
+    if (event.key === "Enter" && selection.length > 0) {
       void adopt();
       return;
     }
@@ -219,37 +228,65 @@ export default function MediaPicker({
   };
 
   const select = (item: MediaItem) => {
-    setSelected(item);
+    if (role === "hero") {
+      // Hero is single-select — pick replaces.
+      setSelection([item]);
+    } else {
+      // Gallery is multi-select — click toggles membership. Keeping the
+      // first-picked as `primary` means the preview does not jump around
+      // when the operator ticks additional images.
+      setSelection((prev) =>
+        prev.some((it) => itemKey(it) === itemKey(item))
+          ? prev.filter((it) => itemKey(it) !== itemKey(item))
+          : [...prev, item],
+      );
+    }
     setFocal({ x: 50, y: 50 });
     setError(null);
   };
 
   const adopt = async () => {
-    if (!selected) return;
+    if (selection.length === 0) return;
     setBusy(true);
     setError(null);
+    const collectedWarnings: string[] = [];
     try {
-      const result = await adoptMedia({
-        entity_type: entityType,
-        entity_id: entityId,
-        role,
-        provider: selected.provider,
-        external_id: selected.external_id,
-        focal,
-      });
-      onAdopted({ role, warnings: result.warnings });
+      // Sequential, not parallel: keeps ordering stable (position column) and
+      // avoids the provider fetch fanning out into a rate-limit spike.
+      for (let index = 0; index < selection.length; index++) {
+        const item = selection[index];
+        try {
+          const result = await adoptMedia({
+            entity_type: entityType,
+            entity_id: entityId,
+            role,
+            provider: item.provider,
+            external_id: item.external_id,
+            // Focal only applies to hero (first + only item); gallery rows
+            // ignore it server-side.
+            focal: role === "hero" ? focal : undefined,
+          });
+          for (const w of result.warnings) collectedWarnings.push(w);
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 409) {
+            const outer = err.detail as { detail?: { message?: string } } | undefined;
+            const msg = outer?.detail?.message ?? err.message;
+            if (role === "gallery") {
+              // A duplicate-hero warning is expected for gallery adds — just
+              // skip that item and keep going. Hero picks stop on 409.
+              collectedWarnings.push(`${item.credit.name}: ${msg}`);
+              continue;
+            }
+            setError(msg);
+            return;
+          }
+          throw err;
+        }
+      }
+      onAdopted({ role, warnings: collectedWarnings });
       onClose();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        // FastAPI wraps our detail payload under `.detail` on the response body,
-        // and ApiError.detail carries the *whole* body. The message we want is
-        // one level deeper — without unwrapping we would hide the server's
-        // reason ("bereits Hero bei Los Lances") behind a generic fallback.
-        const outer = err.detail as { detail?: { message?: string } } | undefined;
-        setError(outer?.detail?.message ?? err.message);
-      } else {
-        setError(err instanceof ApiError ? err.message : "Übernahme fehlgeschlagen.");
-      }
+      setError(err instanceof ApiError ? err.message : "Übernahme fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
@@ -267,33 +304,16 @@ export default function MediaPicker({
       cardClassName="max-w-[1400px] h-[92vh] rounded-lg bg-admin-surface"
     >
       <div className="flex h-full flex-col">
-        {/* head: context, mode switch, free text */}
+        {/* head: context + free text. No role toggle — the caller decides. */}
         <header className="flex flex-wrap items-center gap-3 border-b border-admin-border px-4 py-3">
           <div className="min-w-0 flex-1">
             <h2 id="media-picker-title" className="truncate text-ui font-semibold text-admin-fg">
-              {role === "hero" ? "Hero-Bild" : "Galeriebild"}
+              {role === "hero" ? "Hero-Bild" : "Galerie"}
               {context ? ` — ${context.title}` : ""}
               {context?.subtitle ? (
                 <span className="font-normal text-admin-muted">, {context.subtitle}</span>
               ) : null}
             </h2>
-          </div>
-
-          <div className="flex rounded-md border border-admin-border p-0.5">
-            {(["hero", "gallery"] as MediaRole[]).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setRole(value)}
-                className={`rounded px-3 py-1 text-label font-medium transition-colors ${
-                  role === value
-                    ? "bg-admin-primary text-admin-primary-fg"
-                    : "text-admin-fg2 hover:bg-admin-hover"
-                }`}
-              >
-                {value === "hero" ? "Hero" : "Galerie"}
-              </button>
-            ))}
           </div>
 
           <form
@@ -428,13 +448,10 @@ export default function MediaPicker({
                   <div key={index} className="flex min-w-0 flex-1 flex-col gap-3">
                     {column.map((item) => (
                       <MediaTile
-                        key={`${item.provider}:${item.external_id}`}
+                        key={itemKey(item)}
                         item={item}
                         role={role}
-                        selected={
-                          selected?.provider === item.provider &&
-                          selected?.external_id === item.external_id
-                        }
+                        selected={isPicked(item)}
                         onSelect={() => select(item)}
                       />
                     ))}
@@ -445,31 +462,42 @@ export default function MediaPicker({
           </div>
 
           <aside className="w-full shrink-0 lg:flex lg:w-[380px] lg:min-h-0 lg:flex-col">
-            {selected ? (
+            {primary ? (
               <>
                 <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
                   <PreviewPanel
-                    item={selected}
+                    item={primary}
                     title={context?.title ?? ""}
                     focal={focal}
                     onFocalChange={setFocal}
                   />
-                  <LicenseCard item={selected} />
+                  {role === "gallery" && selection.length > 1 && (
+                    <p className="text-caption text-admin-muted">
+                      Vorschau zeigt das erste ausgewählte Bild.
+                      Insgesamt {selection.length} Bilder werden zur Galerie hinzugefügt.
+                    </p>
+                  )}
+                  <LicenseCard item={primary} />
                 </div>
                 <button
                   type="button"
-                  disabled={busy || !isUsable(selected, role)}
+                  disabled={busy || selection.length === 0}
                   onClick={() => void adopt()}
                   className="mt-3 w-full shrink-0 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
                 >
-                  {busy ? "Übernehme…" : adoptLabel(role)}
+                  {busy
+                    ? "Übernehme…"
+                    : role === "gallery"
+                      ? `Zur Galerie hinzufügen (${selection.length})`
+                      : adoptLabel(role)}
                 </button>
               </>
             ) : (
               <div className="rounded-lg border border-dashed border-admin-border p-6 text-center">
                 <p className="text-ui text-admin-muted">
-                  Bild auswählen — die Vorschau zeigt es dann mit Verlauf,
-                  Typografie und Bildnachweis, so wie es später erscheint.
+                  {role === "gallery"
+                    ? "Ein oder mehrere Bilder auswählen — Klick fügt zum Stapel hinzu, erneuter Klick entfernt."
+                    : "Bild auswählen — die Vorschau zeigt es dann mit Verlauf, Typografie und Bildnachweis, so wie es später erscheint."}
                 </p>
               </div>
             )}

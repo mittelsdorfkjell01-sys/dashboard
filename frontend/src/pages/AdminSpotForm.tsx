@@ -16,7 +16,6 @@ import { useAdminRegions } from "../lib/hooks";
 import {
   createSpot,
   deleteSpot,
-  fetchCommonsImages,
   getAdminSpot,
   getReadiness,
   setHeroAttribution,
@@ -135,8 +134,6 @@ export default function AdminSpotForm() {
   // the Commons-fetch button write to the same spot_images rows through
   // different endpoints, so a fetch elsewhere must invalidate its cache.
   const [galleryVersion, setGalleryVersion] = useState(0);
-  const [commonsBusy, setCommonsBusy] = useState(false);
-  const [commonsError, setCommonsError] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -348,20 +345,6 @@ export default function AdminSpotForm() {
     const target = document.getElementById(location.hash.slice(1));
     if (target) window.setTimeout(() => target.scrollIntoView({ block: "start" }), 0);
   }, [loadingExisting, location.hash]);
-
-  const runCommonsFetch = async () => {
-    if (!id) return;
-    setCommonsBusy(true);
-    setCommonsError(null);
-    try {
-      await fetchCommonsImages(id);
-      setGalleryVersion((v) => v + 1);
-    } catch (e) {
-      setCommonsError(e instanceof ApiError ? e.message : "Abruf fehlgeschlagen.");
-    } finally {
-      setCommonsBusy(false);
-    }
-  };
 
   const toggle = (list: string[], v: string) =>
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
@@ -1050,7 +1033,8 @@ export default function AdminSpotForm() {
             </div>
           </CollapsibleSection>
 
-          {/* Galerie: community photos + Wikimedia Commons */}
+          {/* Galerie: Bilder aus dem Media-Picker (Multi-Select). Aktionen aus
+              der Community-Moderation weiter unten im GalleryManager. */}
           {isEdit && id && (
             <CollapsibleSection
               id="f-galerie"
@@ -1058,25 +1042,18 @@ export default function AdminSpotForm() {
               aside={
                 <button
                   type="button"
-                  onClick={runCommonsFetch}
-                  disabled={commonsBusy}
-                  className="rounded-md border border-admin-border bg-admin-surface px-3.5 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+                  onClick={() => setPickerOpen("gallery")}
+                  className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
                 >
-                  {commonsBusy ? "Abrufen…" : "Wikimedia-Bilder abrufen"}
+                  Bild suchen
                 </button>
               }
             >
               <p className="-mt-3 text-caption text-muted">
-                Sucht georeferenzierte Fotos in der Nähe des Spots auf Wikimedia Commons und
-                übernimmt nur Treffer mit erkennbarer Lizenz. Die Geo-Suche liefert auch
-                Parkplätze oder Ortsschilder — einzelne Treffer unten entfernen.
+                „Bild suchen" öffnet den Picker im Galerie-Modus: mehrere Treffer
+                markieren, alle werden gemeinsam adoptiert. Einzelne Bilder unten
+                entfernen.
               </p>
-              {commonsError && (
-                <p role="alert" className="mt-2 text-label text-red-600">
-                  {commonsError}
-                </p>
-              )}
-
               <div className="mt-4">
                 <GalleryManager
                   key={galleryVersion}
