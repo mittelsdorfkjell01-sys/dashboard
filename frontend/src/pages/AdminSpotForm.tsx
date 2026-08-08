@@ -1092,12 +1092,6 @@ export default function AdminSpotForm() {
               </p>
             </div>
           )}
-          {isEdit && id && (
-            <div id="f-operations" className="scroll-mt-24">
-              <SpotOpsPanel spotId={id} onGapClick={focusGap} />
-            </div>
-          )}
-
           {savedId && readiness && (
             <div className="rounded-lg border border-admin-success-border bg-admin-success-bg p-4">
               <p className="text-ui font-semibold text-admin-success">
@@ -1120,53 +1114,50 @@ export default function AdminSpotForm() {
                   ))}
                 </div>
               )}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  href={`/spot/${savedId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
-                >
-                  Ansehen ↗
-                </a>
-              </div>
             </div>
           )}
 
           {error && <ErrorBanner message={error} />}
 
-          <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-md bg-admin-primary px-5 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-            >
-              {submitting
-                ? "Speichern …"
-                : isEdit
-                ? "Änderungen speichern"
-                : "Spot anlegen"}
-            </button>
-            <div className="mt-3 flex items-center justify-between text-label">
-              <AdminBackButton
-                onClick={back.goBack}
-                label={back.label}
-                text="Abbrechen"
-                showIcon={false}
+          {isEdit && id ? (
+            <div id="f-operations" className="scroll-mt-24">
+              <SpotOpsPanel
+                spotId={id}
+                onGapClick={focusGap}
+                submitting={submitting}
+                saveLabel="Änderungen speichern"
+                previewHref={`/spot/${id}`}
+                cancelSlot={
+                  <AdminBackButton
+                    onClick={back.goBack}
+                    label={back.label}
+                    text="Abbrechen"
+                    showIcon={false}
+                  />
+                }
               />
-              {isEdit && id && (
-                <a
-                  href={`/spot/${id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-admin-primary hover:underline"
-                  title="Öffnet die öffentliche Spot-Seite — funktioniert auch für Entwürfe."
-                >
-                  Öffentliche Vorschau ↗
-                </a>
-              )}
             </div>
-          </div>
+          ) : (
+            // New spot: no ops panel yet (no id to fetch readiness for), so
+            // a minimal card holds the primary action until the first save.
+            <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-md bg-admin-primary px-5 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+              >
+                {submitting ? "Speichern …" : "Spot anlegen"}
+              </button>
+              <div className="mt-3 text-label">
+                <AdminBackButton
+                  onClick={back.goBack}
+                  label={back.label}
+                  text="Abbrechen"
+                  showIcon={false}
+                />
+              </div>
+            </div>
+          )}
         </aside>
       </form>
 

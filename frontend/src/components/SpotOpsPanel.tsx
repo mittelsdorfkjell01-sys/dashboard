@@ -1,8 +1,8 @@
-// Operations panel for a saved spot: readiness + go-live / offline / archive, and
-// a read-only view of active overrides. Embedded in AdminSpotForm in edit mode.
-// Explicit calculations run inline; durable refreshes use the maintenance queue.
+// Operations panel for a saved spot: status, calibration, save + go-live /
+// offline / archive. Embedded in AdminSpotForm in edit mode. Explicit
+// calculations run inline; durable refreshes use the maintenance queue.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ApiError,
   archiveSpot,
@@ -18,11 +18,10 @@ import {
   type Rank,
   type Readiness,
 } from "../lib/api";
-import { gapLabel, statusLabel } from "../lib/labels";
+import { gapLabel } from "../lib/labels";
 import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
 import RankControl from "./admin/RankControl";
 import ConfirmToast from "./admin/ConfirmToast";
-import { Badge } from "./admin/ui";
 
 const ERA5_LABEL: Record<string, string> = {
   queued: "in Warteschlange",
@@ -39,10 +38,21 @@ const ERA5_LABEL: Record<string, string> = {
 export default function SpotOpsPanel({
   spotId,
   onGapClick,
+  submitting,
+  saveLabel = "Änderungen speichern",
+  cancelSlot,
+  previewHref,
 }: {
   spotId: string;
   /** Click a readiness gap to jump to its field in the form. */
   onGapClick?: (gap: string) => void;
+  /** Wired to the outer form's submit state — the button lives here now. */
+  submitting?: boolean;
+  saveLabel?: string;
+  /** The form's cancel control (AdminBackButton); rendered inline as a link. */
+  cancelSlot?: ReactNode;
+  /** When present, shows the "Öffentliche Vorschau" link. */
+  previewHref?: string;
 }) {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [overrides, setOverrides] = useState<Record<string, unknown> | null>(null);
@@ -143,15 +153,35 @@ export default function SpotOpsPanel({
     : null;
   const rank = effectiveRank(readiness?.gaps ?? [], rankOverride);
 
+  const status = readiness?.status ?? "draft";
+  const statusInfo: Record<string, { label: string; dot: string }> = {
+    draft: { label: "Entwurf", dot: "bg-admin-muted" },
+    published: { label: "Veröffentlicht", dot: "bg-admin-success" },
+    archived: { label: "Archiviert", dot: "bg-admin-faint" },
+  };
+  const s = statusInfo[status] ?? statusInfo.draft;
+
   return (
     <div className="rounded-lg border border-admin-border bg-admin-surface p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-ui font-semibold text-admin-fg">Betrieb &amp; Veröffentlichung</h2>
-        {readiness && (
-          <Badge tone={readiness.ready ? "success" : "neutral"}>
-            {readiness.ready ? "Bereit" : "Angaben offen"} · {statusLabel(readiness.status)}
-          </Badge>
-        )}
+      {/* 1) Status + Rang — one line, no nested cards. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-ui font-semibold text-admin-fg">Betrieb &amp; Veröffentlichung</h2>
+          <p className="mt-1 inline-flex items-center gap-2 text-label text-admin-fg2">
+            <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+            {s.label}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-caption uppercase tracking-wide text-admin-muted">Rang</p>
+          <p className="mt-0.5 inline-flex items-center gap-1.5 text-label font-medium text-admin-fg">
+            <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
+            {RANK_LABEL[rank]}
+            {rankOverride === null && (
+              <span className="text-caption font-normal text-admin-faint">auto</span>
+            )}
+          </p>
+        </div>
       </div>
 
       <ConfirmToast
@@ -165,137 +195,150 @@ export default function SpotOpsPanel({
         onCancel={() => setPendingArchive(false)}
       />
 
-      {/* Fertigstellen-Rang — „Auto" folgt den offenen Punkten; eine Farbe pinnt
-          den Rang manuell (dieselbe Steuerung wie in der Übersichtsliste). */}
-      <div className="mt-4 rounded-md border border-admin-border bg-admin-bg px-3 py-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-2 text-label text-admin-muted">
-            <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
-            Fertigstellen-Rang
-          </span>
-          <span className="text-label font-medium text-admin-fg">
-            {RANK_LABEL[rank]}
-            {rankOverride === null && (
-              <span className="ml-1 text-caption font-normal text-admin-faint">(auto)</span>
+      {readiness && !readiness.ready && readiness.gaps.length > 0 && (
+        <div className="mt-3 text-label text-admin-muted">
+          <span>Fehlt noch: </span>
+          <span className="inline-flex flex-wrap gap-1.5">
+            {readiness.gaps.map((g) =>
+              onGapClick ? (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => onGapClick(g)}
+                  className="rounded-md bg-admin-warning-bg px-2 py-0.5 text-caption font-medium text-admin-warning transition-colors hover:brightness-110"
+                >
+                  {gapLabel(g)}
+                </button>
+              ) : (
+                <span key={g}>{gapLabel(g)}</span>
+              )
             )}
           </span>
         </div>
-        <div className="mt-2.5">
-          <RankControl value={rankOverride} effective={rank} onChange={onRankChange} busy={busy} />
-        </div>
-      </div>
+      )}
 
       {notice && (
-        <div className="mt-3 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success">
-          {notice}
-        </div>
+        <p className="mt-3 text-label font-medium text-admin-success">{notice}</p>
       )}
       {error && (
-        <div
-          role="alert"
-          className="mt-3 rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger"
-        >
+        <p role="alert" className="mt-3 text-label font-medium text-admin-danger">
           {error}
-        </div>
+        </p>
       )}
 
-      {readiness && !readiness.ready && (
-        <div className="mt-3 text-label text-admin-muted">
-          <span className="align-middle">Fehlt noch: </span>
-          {readiness.gaps.length === 0 ? (
-            "—"
-          ) : (
-            <span className="inline-flex flex-wrap gap-1.5 align-middle">
-              {readiness.gaps.map((g) =>
-                onGapClick ? (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => onGapClick(g)}
-                    className="rounded-md border border-admin-warning-bg bg-admin-warning-bg px-2 py-0.5 text-caption font-medium text-admin-warning transition-colors hover:brightness-110"
-                  >
-                    {gapLabel(g)}
-                  </button>
-                ) : (
-                  <span key={g}>{gapLabel(g)}</span>
-                )
+      {/* 2) Klimatologie + Fertigstellen-Rang. Flat rows, no inner borders. */}
+      <div className="mt-5 space-y-4">
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-label font-medium text-admin-fg">Klimatologie</span>
+            <span className="text-label text-admin-fg2">
+              {ERA5_LABEL[era5Status] ?? era5Status}
+            </span>
+          </div>
+          {(era5?.window || generatedAt) && (
+            <p className="mt-1 text-caption text-admin-faint">
+              {[era5?.window ? `Zeitraum ${era5.window}` : null,
+                generatedAt ? `berechnet am ${generatedAt}` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+          {era5?.freshness_status === "stale" &&
+            ["queued", "processing", "extracting"].includes(era5Status) && (
+              <p className="mt-1 text-caption text-admin-muted">
+                Die bisherigen Werte bleiben bis zur erfolgreichen Aktualisierung aktiv.
+              </p>
+            )}
+          {era5?.error && (
+            <p className="mt-1 break-words text-caption text-admin-danger">{era5.error}</p>
+          )}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onTriggerEra5}
+            className="mt-2 rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+          >
+            Neu berechnen
+          </button>
+        </div>
+
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-label font-medium text-admin-fg">Fertigstellen-Rang</span>
+            <span className="text-label text-admin-fg2">
+              {RANK_LABEL[rank]}
+              {rankOverride === null && (
+                <span className="ml-1 text-caption text-admin-faint">auto</span>
               )}
             </span>
-          )}
-          <p className="mt-1.5 text-caption text-admin-faint">
-            Veröffentlichen ist trotzdem möglich — die fehlenden Angaben sind nur
-            ein Hinweis.
-          </p>
+          </div>
+          <div className="mt-2">
+            <RankControl value={rankOverride} effective={rank} onChange={onRankChange} busy={busy} />
+          </div>
         </div>
-      )}
-
-      {/* Stored climatology snapshot, its freshness, and explicit recalculation. */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-admin-border pt-4">
-        <span className="text-label text-admin-muted">
-          Klimatologie:{" "}
-          <span className="font-medium text-admin-fg2">
-            {ERA5_LABEL[era5Status] ?? era5Status}
-          </span>
-        </span>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onTriggerEra5}
-          className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-        >
-          Klimatologie berechnen
-        </button>
       </div>
-      {(era5?.window || generatedAt) && (
-        <p className="mt-1 text-caption text-admin-faint">
-          {[era5?.window ? `Zeitraum ${era5.window}` : null,
-            generatedAt ? `berechnet am ${generatedAt}` : null]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
-      )}
-      {era5?.freshness_status === "stale" &&
-        ["queued", "processing", "extracting"].includes(era5Status) && (
-          <p className="mt-1 text-caption text-admin-muted">
-            Die bisherigen Werte bleiben bis zur erfolgreichen Aktualisierung aktiv.
-          </p>
-        )}
-      {era5?.error && (
-        <p className="mt-2 break-words text-caption text-admin-danger">
-          {era5.error}
-        </p>
-      )}
 
-      {/* Lifecycle actions — the single place a spot goes live / offline /
-          archived / reactivated (the list only links here via „Bearbeiten"). */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-admin-border pt-4">
-        {readiness?.status === "archived" ? (
+      {/* 3) Save + secondary actions. Sits inside the panel so the primary
+             action is not visually detached from the state it changes. */}
+      <div className="mt-5 border-t border-admin-border pt-5">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-md bg-admin-primary px-5 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+        >
+          {submitting ? "Speichern …" : saveLabel}
+        </button>
+        {(cancelSlot || previewHref) && (
+          <div className="mt-3 flex items-center justify-between text-label">
+            {cancelSlot ?? <span />}
+            {previewHref && (
+              <a
+                href={previewHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-admin-primary hover:underline"
+                title="Öffnet die öffentliche Spot-Seite — funktioniert auch für Entwürfe."
+              >
+                Öffentliche Vorschau ↗
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4) Lifecycle. Ghost buttons — these are situational, not the
+             daily-driver actions above. Reactivate on archived, otherwise
+             Offline (only when live) + Archivieren + first-time Go-Live. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-admin-border pt-5">
+        {status === "archived" ? (
           <button
             type="button"
             disabled={busy}
             onClick={() =>
               runStatus(() => reactivateSpot(spotId), "Spot ist wieder ein Entwurf.")
             }
-            className="rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
           >
             Reaktivieren
           </button>
         ) : (
           <>
-            <button
-              type="button"
-              disabled={busy || readiness?.status === "published"}
-              onClick={onGoLive}
-              className="rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-            >
-              {readiness?.status === "published" ? "Live" : "Go-Live"}
-            </button>
-            {readiness?.status === "published" && (
+            {status !== "published" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onGoLive}
+                className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+              >
+                Go-Live
+              </button>
+            )}
+            {status === "published" && (
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => runStatus(() => unpublishSpot(spotId), "Spot ist offline.")}
-                className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+                className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
               >
                 Offline nehmen
               </button>
@@ -304,7 +347,7 @@ export default function SpotOpsPanel({
               type="button"
               disabled={busy || pendingArchive}
               onClick={() => setPendingArchive(true)}
-              className="rounded-md border border-admin-border bg-admin-surface px-4 py-2 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
+              className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
             >
               Archivieren
             </button>
@@ -313,16 +356,13 @@ export default function SpotOpsPanel({
       </div>
 
       {overrideKeys.length > 0 && (
-        <div className="mt-4 border-t border-admin-border pt-4">
-          <p className="text-label font-semibold text-admin-fg">
-            Überschriebene Felder
-          </p>
+        <div className="mt-5 border-t border-admin-border pt-5">
+          <p className="text-label font-semibold text-admin-fg">Überschriebene Felder</p>
           <ul className="mt-2 space-y-1.5">
             {overrideKeys.map((k) => (
               <li key={k} className="flex items-center gap-2 text-label text-admin-fg2">
                 <span className="admin-mono font-medium">{k}</span>
                 <span className="admin-mono text-admin-muted">= {JSON.stringify(overrides?.[k])}</span>
-                <Badge tone="neutral" dot={false}>überschrieben</Badge>
               </li>
             ))}
           </ul>
