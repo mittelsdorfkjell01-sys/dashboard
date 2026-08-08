@@ -534,7 +534,7 @@ export default function AdminSpotForm() {
       <form
         id="admin-spot-form"
         onSubmit={onSubmit}
-        className="pb-20 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8 xl:pb-0"
+        className="pb-20 xl:pb-0 xl:pr-[352px]"
       >
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">
@@ -1078,10 +1078,10 @@ export default function AdminSpotForm() {
 
         </div>
 
-        {/* Right column: sticky actions — stay visible while the form scrolls.
-            top clears the sticky app header; self-start + max-height keep the rail
-            pinned and independently scrollable if it ever exceeds the viewport. */}
-        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[79px] xl:self-start xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
+        {/* Right column: fixed on wide viewports so the actions do not shift
+            with the form's initial scroll. Below xl it stacks below the form
+            as before. The form uses xl:pr-[352px] to reserve the space. */}
+        <aside className="mt-8 space-y-4 xl:mt-0 xl:fixed xl:right-8 xl:top-[79px] xl:w-[320px] xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
           {isEdit && (
             <div className="border-b border-admin-border px-1 pb-3">
               <p className="truncate text-body font-semibold text-admin-fg">
