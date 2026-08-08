@@ -2,7 +2,7 @@
 // point / crop). The frame uses object-fit: cover; dragging pans the image by
 // adjusting object-position, then persists it as focal { x, y } percentages.
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { resolveMediaUrl } from "../lib/api";
 
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
@@ -19,6 +19,17 @@ export default function ImageFocalEditor({
   aspect?: string;
 }) {
   const [pos, setPos] = useState({ x: focal?.x ?? 50, y: focal?.y ?? 50 });
+
+  // Sync local pos back to the incoming focal whenever the parent re-loads
+  // the spot (e.g. after a save from a sibling editor) so the two crops stay
+  // consistent. Skipped while the operator is actively dragging so their
+  // input is never overwritten mid-gesture.
+  const px = focal?.x ?? null;
+  const py = focal?.y ?? null;
+  useEffect(() => {
+    if (px == null || py == null) return;
+    setPos((current) => (current.x === px && current.y === py ? current : { x: px, y: py }));
+  }, [px, py]);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);

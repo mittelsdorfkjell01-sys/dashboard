@@ -15,8 +15,12 @@ and the /admin* write endpoints never set this.
 
 from fastapi import Response
 
-# 60s fresh at the edge, then served stale for up to 5 min while it revalidates.
-PUBLIC_CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300"
+# 10s fresh at the edge, then served stale for up to 5 min while it revalidates
+# in the background. Short enough that an admin editing a spot (focal point,
+# attribution, gallery, publish) sees the change on the public site within
+# ~10s, long enough to still absorb bursty landing-page reads without
+# hammering the origin.
+PUBLIC_CACHE_CONTROL = "public, s-maxage=10, stale-while-revalidate=300"
 
 
 def set_public_cache(response: Response) -> None:
