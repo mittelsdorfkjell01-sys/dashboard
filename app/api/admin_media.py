@@ -130,6 +130,14 @@ def adopt_media(
         )
     except media_adopt.AdoptError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except RuntimeError as exc:
+        # Storage/config problems (missing BLOB_READ_WRITE_TOKEN, read-only
+        # filesystem on serverless) are operator-fixable — surface them as
+        # a plain message instead of a 500 with no clue.
+        raise HTTPException(
+            status_code=422,
+            detail=f"Bildspeicher ist nicht konfiguriert: {exc}",
+        )
 
     return {
         "entity_type": outcome.entity_type,

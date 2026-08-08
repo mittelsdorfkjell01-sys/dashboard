@@ -175,9 +175,6 @@ export default function RegionDetail() {
           image={heroImage}
           focal={heroFocal}
           alt={region.name}
-          kicker={region.country || undefined}
-          title={region.name}
-          meta={spotCount}
           credit={heroCredit}
           delivery={heroDelivery}
         >
@@ -192,7 +189,7 @@ export default function RegionDetail() {
           </button>
         </EditorialHero>
 
-        {/* Breadcrumb */}
+        {/* Breadcrumb + region identity (moved off the hero) */}
         <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-8">
           <nav className="text-[13px] font-medium text-muted">
             <Link to="/" className="hover:underline">
@@ -207,6 +204,12 @@ export default function RegionDetail() {
             <span className="mx-1.5 text-muted">›</span>
             <span className="text-teal">{region.name}</span>
           </nav>
+          <h1 className="mt-2 text-editorial-4 font-semibold text-balance text-ink">
+            {region.name}
+          </h1>
+          {spotCount && (
+            <p className="mt-1 text-body font-medium text-ink-soft">{spotCount}</p>
+          )}
         </div>
 
         {/* Lede */}

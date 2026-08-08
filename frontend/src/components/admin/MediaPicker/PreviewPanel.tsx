@@ -13,13 +13,12 @@ import type { CreditSource } from "../../../lib/imageCredit";
 export default function PreviewPanel({
   item,
   title,
-  kicker,
   focal,
   onFocalChange,
 }: {
   item: MediaItem;
+  /** Used only as the image alt text; not rendered on top of the photo. */
   title: string;
-  kicker?: string;
   focal: { x: number; y: number };
   onFocalChange: (focal: { x: number; y: number }) => void;
 }) {
@@ -57,8 +56,6 @@ export default function PreviewPanel({
             image={item.preview_url}
             focal={focal}
             alt={title}
-            kicker={kicker}
-            title={title}
             credit={credit}
             delivery={item.delivery}
             parallax={false}
@@ -78,8 +75,6 @@ export default function PreviewPanel({
             image={item.preview_url}
             focal={focal}
             alt={title}
-            kicker={kicker}
-            title={title}
             credit={credit}
             delivery={item.delivery}
             parallax={false}

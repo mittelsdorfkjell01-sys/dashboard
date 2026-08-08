@@ -394,10 +394,13 @@ export default function MediaPicker({
           </div>
         )}
 
-        {/* body: grid ⅔ / preview ⅓ — stacks on narrow viewports */}
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 lg:flex-row">
+        {/* body: grid ⅔ / preview ⅓ — stacks on narrow viewports.
+            On wide viewports only the grid scrolls; the preview + adopt
+            action stays in view (so the operator does not have to scroll
+            back up to hit "Als Hero übernehmen"). */}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 lg:flex-row lg:overflow-hidden">
           <div
-            className="min-w-0 flex-1 outline-none"
+            className="min-w-0 flex-1 outline-none lg:min-h-0 lg:overflow-y-auto"
             tabIndex={0}
             role="listbox"
             aria-label="Suchergebnisse"
@@ -441,22 +444,23 @@ export default function MediaPicker({
             )}
           </div>
 
-          <aside className="w-full shrink-0 space-y-3 lg:w-[380px]">
+          <aside className="w-full shrink-0 lg:flex lg:w-[380px] lg:min-h-0 lg:flex-col">
             {selected ? (
               <>
-                <PreviewPanel
-                  item={selected}
-                  title={context?.title ?? ""}
-                  kicker={context?.subtitle || undefined}
-                  focal={focal}
-                  onFocalChange={setFocal}
-                />
-                <LicenseCard item={selected} />
+                <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+                  <PreviewPanel
+                    item={selected}
+                    title={context?.title ?? ""}
+                    focal={focal}
+                    onFocalChange={setFocal}
+                  />
+                  <LicenseCard item={selected} />
+                </div>
                 <button
                   type="button"
                   disabled={busy || !isUsable(selected, role)}
                   onClick={() => void adopt()}
-                  className="w-full rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+                  className="mt-3 w-full shrink-0 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
                 >
                   {busy ? "Übernehme…" : adoptLabel(role)}
                 </button>
