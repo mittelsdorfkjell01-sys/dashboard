@@ -174,6 +174,7 @@ export default function RegionDetail() {
         <EditorialHero
           image={heroImage}
           focal={heroFocal}
+          focalMobile={regionImage ? backendRegion.image?.focal_mobile ?? null : null}
           alt={region.name}
           credit={heroCredit}
           delivery={heroDelivery}

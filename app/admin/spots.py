@@ -418,6 +418,26 @@ def set_image_focal(
     return spot
 
 
+def set_image_focal_mobile(
+    spot_id, x: float | None, y: float | None, *, db: Session, actor: str | None = "admin"
+) -> Any:
+    """Store the hero's mobile focal point, or clear it when x/y are None.
+
+    Kept separate from :func:`set_image_focal` so an admin can nudge one crop
+    without disturbing the other — a landscape photo often needs a different
+    area to survive the 16:9 mobile crop than the 21:9 desktop one.
+    """
+    spot = _load(db, spot_id)
+    if not (isinstance(spot.image, dict) and spot.image.get("url")):
+        raise ValueError("Kein Bild zum Positionieren.")
+    focal_mobile = normalize_focal(x, y) if x is not None and y is not None else None
+    spot.image = with_fields(spot.image, focal_mobile=focal_mobile)
+    record_audit(db, spot.id, "image", {"focal_mobile": focal_mobile}, actor)
+    db.commit()
+    db.refresh(spot)
+    return spot
+
+
 def set_spot_status(
     spot_id, status: str, *, db: Session, actor: str | None = "admin"
 ) -> dict:

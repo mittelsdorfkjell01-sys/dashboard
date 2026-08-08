@@ -50,6 +50,7 @@ export function adaptSpot(
     image: resolveMediaUrl(s.image?.url) ?? "",
     hero: resolveMediaUrl(s.image?.url),
     heroFocal: s.image?.focal ?? null,
+    heroFocalMobile: s.image?.focal_mobile ?? null,
     // The whole image object travels, so attribution and delivery are derived
     // from one source of truth instead of three loose strings. The old
     // heroSource carried the provider *name* into a prop expecting a URL, so

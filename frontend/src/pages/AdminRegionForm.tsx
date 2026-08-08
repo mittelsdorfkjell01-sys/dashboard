@@ -18,6 +18,7 @@ import {
   unpublishRegion,
   resolveMediaUrl,
   setRegionImageFocal,
+  setRegionImageFocalMobile,
   setRegionImageManual,
   updateRegion,
   uploadRegionImage,
@@ -622,20 +623,41 @@ export default function AdminRegionForm() {
           </div>
         </div>
 
-        {/* Focal-point / crop editor */}
+        {/* Focal-point / crop editor — desktop 21:9, optional mobile 16:9. */}
         {region.image?.url && (
-          <div className="mt-4 max-w-[560px]">
-            <p className={label}>Ausschnitt wählen</p>
-            <div className="mt-1.5">
-              <ImageFocalEditor
-                url={region.image.url}
-                focal={region.image.focal}
-                onSave={async (x, y) => {
-                  if (!id) return;
-                  const r = await setRegionImageFocal(id, x, y);
-                  setRegion(r);
-                }}
-              />
+          <div className="mt-4">
+            <div className="max-w-[560px]">
+              <p className={label}>Ausschnitt Desktop (21:9)</p>
+              <div className="mt-1.5">
+                <ImageFocalEditor
+                  url={region.image.url}
+                  focal={region.image.focal}
+                  aspect="21 / 9"
+                  onSave={async (x, y) => {
+                    if (!id) return;
+                    const r = await setRegionImageFocal(id, x, y);
+                    setRegion(r);
+                  }}
+                />
+              </div>
+            </div>
+            <div className="mt-5 max-w-[320px]">
+              <p className={label}>Ausschnitt Mobile (16:9)</p>
+              <p className="mt-0.5 text-caption text-muted">
+                Optional. Wenn leer, gilt der Desktop-Ausschnitt auch auf dem Handy.
+              </p>
+              <div className="mt-1.5">
+                <ImageFocalEditor
+                  url={region.image.url}
+                  focal={region.image.focal_mobile ?? region.image.focal}
+                  aspect="16 / 9"
+                  onSave={async (x, y) => {
+                    if (!id) return;
+                    const r = await setRegionImageFocalMobile(id, { x, y });
+                    setRegion(r);
+                  }}
+                />
+              </div>
             </div>
           </div>
         )}

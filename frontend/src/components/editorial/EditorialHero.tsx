@@ -18,6 +18,7 @@ import { hasCredit, type CreditSource } from "../../lib/imageCredit";
 export default function EditorialHero({
   image,
   focal,
+  focalMobile,
   alt,
   kicker,
   title,
@@ -31,6 +32,7 @@ export default function EditorialHero({
 }: {
   image?: string | null;
   focal?: { x: number; y: number } | null;
+  focalMobile?: { x: number; y: number } | null;
   alt: string;
   kicker?: ReactNode;
   title?: string;
@@ -80,6 +82,7 @@ export default function EditorialHero({
             src={image}
             alt={alt}
             focal={focal}
+            focalMobile={focalMobile}
             delivery={delivery}
             provider={credit?.provider}
             className="h-full w-full object-cover"

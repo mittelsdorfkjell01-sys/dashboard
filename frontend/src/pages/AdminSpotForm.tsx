@@ -19,6 +19,7 @@ import {
   getReadiness,
   setHeroAttribution,
   setSpotImageFocal,
+  setSpotImageFocalMobile,
   updateSpot,
   uploadHeroImage,
   ApiError,
@@ -861,7 +862,7 @@ export default function AdminSpotForm() {
             </div>
             {currentImage?.url && (
               <div className="mt-3">
-                <p className="text-label font-medium text-ink">Ausschnitt wählen</p>
+                <p className="text-label font-medium text-ink">Ausschnitt Desktop (21:9)</p>
                 <div className="mt-1.5 max-w-[560px]">
                   <ImageFocalEditor
                     url={currentImage.url}
@@ -870,6 +871,22 @@ export default function AdminSpotForm() {
                     onSave={async (x, y) => {
                       if (!id) return;
                       const spot = await setSpotImageFocal(id, x, y);
+                      seedImage((spot.image as ImageRecord | null) ?? null);
+                    }}
+                  />
+                </div>
+                <p className="mt-5 text-label font-medium text-ink">Ausschnitt Mobile (16:9)</p>
+                <p className="mt-0.5 text-caption text-muted">
+                  Optional. Wenn leer, gilt der Desktop-Ausschnitt auch auf dem Handy.
+                </p>
+                <div className="mt-1.5 max-w-[320px]">
+                  <ImageFocalEditor
+                    url={currentImage.url}
+                    focal={currentImage.focal_mobile ?? currentImage.focal}
+                    aspect="16 / 9"
+                    onSave={async (x, y) => {
+                      if (!id) return;
+                      const spot = await setSpotImageFocalMobile(id, { x, y });
                       seedImage((spot.image as ImageRecord | null) ?? null);
                     }}
                   />

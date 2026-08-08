@@ -71,6 +71,7 @@ CANONICAL_KEYS = (
     "retrieved_at",
     "delivery",
     "focal",
+    "focal_mobile",
     "width",
     "height",
     "geo_verified",
@@ -156,6 +157,7 @@ def build_image(
     retrieved_at: str | None = None,
     delivery: str = "hosted",
     focal: Any = None,
+    focal_mobile: Any = None,
     width: Any = None,
     height: Any = None,
     geo_verified: bool = False,
@@ -208,6 +210,11 @@ def build_image(
         "retrieved_at": _clean(retrieved_at),
         "delivery": delivery,
         "focal": _coerce_focal(focal),
+        # None means "no mobile-specific focal set" — the renderer falls back
+        # to `focal`. Stored as a dict once an operator picks one; different
+        # from `focal` because a landscape hero cropped to 16:9 mobile often
+        # needs a different area than the desktop 21:9.
+        "focal_mobile": _coerce_focal(focal_mobile) if focal_mobile else None,
         "width": _positive_int(width),
         "height": _positive_int(height),
         "geo_verified": bool(geo_verified),
@@ -247,6 +254,11 @@ def upgrade_legacy(image: Any) -> dict | None:
         "retrieved_at": _clean(image.get("retrieved_at")),
         "delivery": delivery if delivery in DELIVERIES else "hosted",
         "focal": _coerce_focal(image.get("focal")),
+        "focal_mobile": (
+            _coerce_focal(image.get("focal_mobile"))
+            if image.get("focal_mobile")
+            else None
+        ),
         "width": _positive_int(image.get("width")),
         "height": _positive_int(image.get("height")),
         "geo_verified": bool(image.get("geo_verified")),

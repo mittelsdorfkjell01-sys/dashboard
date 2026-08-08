@@ -463,6 +463,13 @@ class FocalRequest(BaseModel):
     y: float
 
 
+class FocalMobileRequest(BaseModel):
+    """Mobile focal point — `x`/`y` both None clears the mobile override."""
+
+    x: float | None = None
+    y: float | None = None
+
+
 @router.post("/spots/{spot_id}/image/focal", response_model=SpotRead)
 def set_spot_image_focal(
     spot_id: uuid.UUID,
@@ -472,6 +479,24 @@ def set_spot_image_focal(
 ):
     try:
         spot = admin_spots.set_image_focal(spot_id, body.x, body.y, db=db, actor=actor)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return SpotRead.from_orm_spot(spot)
+
+
+@router.post("/spots/{spot_id}/image/focal/mobile", response_model=SpotRead)
+def set_spot_image_focal_mobile(
+    spot_id: uuid.UUID,
+    body: FocalMobileRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+):
+    try:
+        spot = admin_spots.set_image_focal_mobile(
+            spot_id, body.x, body.y, db=db, actor=actor
+        )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
@@ -919,6 +944,21 @@ def set_region_image_focal(
 ):
     try:
         region = admin_regions.set_region_image_focal(region_id, body.x, body.y, db=db)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Region not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return RegionRead.from_orm_region(region)
+
+
+@router.post("/regions/{region_id}/image/focal/mobile", response_model=RegionRead)
+def set_region_image_focal_mobile(
+    region_id: uuid.UUID, body: FocalMobileRequest, db: Session = Depends(get_db)
+):
+    try:
+        region = admin_regions.set_region_image_focal_mobile(
+            region_id, body.x, body.y, db=db
+        )
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
     except ValueError as exc:

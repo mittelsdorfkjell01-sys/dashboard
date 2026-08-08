@@ -23,6 +23,7 @@ export interface Spot {
   image: string; // "" = no image → branded fallback
   hero?: string;
   heroFocal?: { x: number; y: number } | null; // object-position % for the crop
+  heroFocalMobile?: { x: number; y: number } | null; // mobile override, optional
   // Full attribution (photographer, provider, licence + their links). One
   // object rather than loose strings, so stock, Commons and community photos
   // all render through the same credit line.

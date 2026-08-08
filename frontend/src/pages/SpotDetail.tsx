@@ -144,6 +144,7 @@ export default function SpotDetail() {
         <EditorialHero
           image={spot.hero}
           focal={spot.heroFocal}
+          focalMobile={spot.heroFocalMobile}
           alt={spot.name}
           credit={spot.heroCredit}
           delivery={spot.heroDelivery}

@@ -95,6 +95,9 @@ export interface ImageRecord {
   delivery?: "hotlinked" | "hosted";
   /** Focal point as object-position percentages (0..100). */
   focal?: { x: number; y: number };
+  /** Mobile-specific focal point (used under ≈640px). Optional — when absent,
+   *  the mobile crop falls back to `focal`. */
+  focal_mobile?: { x: number; y: number } | null;
   width?: number | null;
   height?: number | null;
   /** True only where coordinate proximity was actually established. */
@@ -1389,6 +1392,16 @@ export const setSpotImageFocal = (id: string, x: number, y: number) =>
     body: JSON.stringify({ x, y }),
   });
 
+/** Mobile focal — pass null to clear the mobile override (falls back to focal). */
+export const setSpotImageFocalMobile = (
+  id: string,
+  point: { x: number; y: number } | null,
+) =>
+  request<SpotRead>(`/admin/spots/${id}/image/focal/mobile`, {
+    method: "POST",
+    body: JSON.stringify(point ?? { x: null, y: null }),
+  });
+
 /** Edit the current hero's rights fields in place (url + focal preserved). */
 export const setHeroAttribution = (
   id: string,
@@ -1403,6 +1416,15 @@ export const setRegionImageFocal = (id: string, x: number, y: number) =>
   request<Region>(`/admin/regions/${id}/image/focal`, {
     method: "POST",
     body: JSON.stringify({ x, y }),
+  });
+
+export const setRegionImageFocalMobile = (
+  id: string,
+  point: { x: number; y: number } | null,
+) =>
+  request<Region>(`/admin/regions/${id}/image/focal/mobile`, {
+    method: "POST",
+    body: JSON.stringify(point ?? { x: null, y: null }),
   });
 
 export async function uploadHeroImage(

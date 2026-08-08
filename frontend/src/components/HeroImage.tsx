@@ -1,5 +1,27 @@
+import { useEffect, useState } from "react";
 import { heroManifest } from "../heroManifest";
 import { hotlinkSrcSet, objectPosition } from "../lib/heroSource";
+
+/** Below this breakpoint the mobile focal (if set) applies. Matches Tailwind's
+ *  `sm` — the same break at which the region hero switches to a portrait crop
+ *  and the spot page collapses its columns. Kept in one place so the CSS
+ *  breakpoint and the JS media query can't drift. */
+const MOBILE_QUERY = "(max-width: 639.98px)";
+
+function useMobileViewport(): boolean {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(MOBILE_QUERY).matches : false,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const listener = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    mql.addEventListener("change", listener);
+    setIsMobile(mql.matches);
+    return () => mql.removeEventListener("change", listener);
+  }, []);
+  return isMobile;
+}
 
 const MIME: Record<string, string> = {
   avif: "image/avif",
@@ -29,6 +51,7 @@ export default function HeroImage({
   alt,
   className,
   focal,
+  focalMobile,
   delivery,
   provider,
 }: {
@@ -37,14 +60,20 @@ export default function HeroImage({
   alt: string;
   className?: string;
   focal?: { x: number; y: number } | null;
+  /** Applied only under the mobile breakpoint; when absent the desktop focal
+   *  is used instead. A landscape photo often needs a different focal at 16:9
+   *  mobile than at 21:9 desktop, hence the separate override. */
+  focalMobile?: { x: number; y: number } | null;
   /** How the bytes are served. `hotlinked` images stay on the provider's CDN
    *  (an Unsplash API condition) and are resized with its own parameters. */
   delivery?: "hotlinked" | "hosted";
   /** Provider slug — decides which CDN parameter dialect applies. */
   provider?: string | null;
 }) {
+  const isMobile = useMobileViewport();
+  const activeFocal = isMobile && focalMobile ? focalMobile : focal;
   const entry = src.startsWith("/") ? heroManifest[keyFromSrc(src)] : undefined;
-  const style = focal ? { objectPosition: objectPosition(focal) } : undefined;
+  const style = activeFocal ? { objectPosition: objectPosition(activeFocal) } : undefined;
 
   const onError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (fallbackSrc && e.currentTarget.src !== fallbackSrc) {

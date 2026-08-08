@@ -373,3 +373,21 @@ def set_region_image_focal(region_id, x: float, y: float, *, db: Session) -> Any
     db.commit()
     db.refresh(region)
     return region
+
+
+def set_region_image_focal_mobile(
+    region_id, x: float | None, y: float | None, *, db: Session
+) -> Any:
+    """Store the region image's mobile focal point, or clear it when x/y are None."""
+    from app.models import Region
+
+    region = db.get(Region, region_id)
+    if region is None:
+        raise LookupError(f"unknown region {region_id}")
+    if not (isinstance(region.image, dict) and region.image.get("url")):
+        raise ValueError("Kein Bild zum Positionieren.")
+    focal_mobile = normalize_focal(x, y) if x is not None and y is not None else None
+    region.image = with_fields(region.image, focal_mobile=focal_mobile)
+    db.commit()
+    db.refresh(region)
+    return region
