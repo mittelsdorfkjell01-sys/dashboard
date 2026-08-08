@@ -673,98 +673,98 @@ export default function AdminSpotForm() {
             </div>
           </CollapsibleSection>
 
-          {/* Kategorien */}
-          <CollapsibleSection id="f-kategorien" title="Kategorien" bodyClassName="space-y-4">
-            <Field label="Level (Mehrfachauswahl)">
-              <div id="f-level" className="flex flex-wrap gap-1.5 scroll-mt-24">
-                {LEVELS.map((l) => (
-                  <Chip
-                    key={l}
-                    active={level.includes(l)}
-                    onClick={() => {
-                      markDirty("main");
-                      setLevel(toggle(level, l));
-                    }}
-                  >
-                    {levelLabel(l)}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
-            <Field
-              label="Wasserart (Mehrfachauswahl)"
-              hint="Pflichtfeld für die Veröffentlichung."
-            >
-              <div
-                id="f-water_character"
-                className="flex flex-wrap gap-1.5 scroll-mt-24"
-              >
-                {WATER_CHARACTERS.map((w) => (
-                  <Chip
-                    key={w}
-                    active={waterCharacter.includes(w)}
-                    onClick={() => {
-                      markDirty("main");
-                      setWaterCharacter(toggle(waterCharacter, w));
-                    }}
-                  >
-                    {waterCharacterLabel(w)}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
-            <Field label="Wassertyp (Mehrfachauswahl)">
-              <div id="f-water_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
-                {WATER_TYPES.map((w) => (
-                  <Chip
-                    key={w}
-                    active={waterType.includes(w)}
-                    onClick={() => {
-                      markDirty("main");
-                      setWaterType(toggle(waterType, w));
-                    }}
-                  >
-                    {waterTypeLabel(w)}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
-            <Field label="Fahrstil (Mehrfachauswahl)">
-              <div className="flex flex-wrap gap-1.5">
-                {STYLES.map((s) => (
-                  <Chip
-                    key={s}
-                    active={styles.includes(s)}
-                    onClick={() => {
-                      markDirty("main");
-                      setStyles(toggle(styles, s));
-                    }}
-                  >
-                    {styleLabel(s)}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
-            <Field label="Untergrund (Mehrfachauswahl)">
-              <div id="f-bottom_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
-                {BOTTOM_TYPES.map((bottom) => (
-                  <Chip
-                    key={bottom}
-                    active={bottomType.includes(bottom)}
-                    onClick={() => {
-                      markDirty("main");
-                      if (bottom === "mixed") {
-                        setBottomType(bottomType.includes(bottom) ? [] : [bottom]);
-                      } else {
-                        setBottomType(toggle(bottomType.filter((v) => v !== "mixed"), bottom));
-                      }
-                    }}
-                  >
-                    {bottomTypeLabel(bottom)}
-                  </Chip>
-                ))}
-              </div>
-            </Field>
+          {/* Kategorien — five axes as chip-groups. Two-column grid from xl so
+              the axes pair up instead of running down half the viewport. */}
+          <CollapsibleSection id="f-kategorien" title="Kategorien">
+            <p className="-mt-1 mb-4 text-caption text-muted">
+              Alle Felder: Mehrfachauswahl.
+            </p>
+            <div className="grid gap-x-6 gap-y-5 xl:grid-cols-2">
+              <Field label="Level">
+                <div id="f-level" className="flex flex-wrap gap-1.5 scroll-mt-24">
+                  {LEVELS.map((l) => (
+                    <Chip
+                      key={l}
+                      active={level.includes(l)}
+                      onClick={() => {
+                        markDirty("main");
+                        setLevel(toggle(level, l));
+                      }}
+                    >
+                      {levelLabel(l)}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Wasserart" required>
+                <div id="f-water_character" className="flex flex-wrap gap-1.5 scroll-mt-24">
+                  {WATER_CHARACTERS.map((w) => (
+                    <Chip
+                      key={w}
+                      active={waterCharacter.includes(w)}
+                      onClick={() => {
+                        markDirty("main");
+                        setWaterCharacter(toggle(waterCharacter, w));
+                      }}
+                    >
+                      {waterCharacterLabel(w)}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Wassertyp">
+                <div id="f-water_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
+                  {WATER_TYPES.map((w) => (
+                    <Chip
+                      key={w}
+                      active={waterType.includes(w)}
+                      onClick={() => {
+                        markDirty("main");
+                        setWaterType(toggle(waterType, w));
+                      }}
+                    >
+                      {waterTypeLabel(w)}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Fahrstil">
+                <div className="flex flex-wrap gap-1.5">
+                  {STYLES.map((s) => (
+                    <Chip
+                      key={s}
+                      active={styles.includes(s)}
+                      onClick={() => {
+                        markDirty("main");
+                        setStyles(toggle(styles, s));
+                      }}
+                    >
+                      {styleLabel(s)}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Untergrund">
+                <div id="f-bottom_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
+                  {BOTTOM_TYPES.map((bottom) => (
+                    <Chip
+                      key={bottom}
+                      active={bottomType.includes(bottom)}
+                      onClick={() => {
+                        markDirty("main");
+                        if (bottom === "mixed") {
+                          setBottomType(bottomType.includes(bottom) ? [] : [bottom]);
+                        } else {
+                          setBottomType(toggle(bottomType.filter((v) => v !== "mixed"), bottom));
+                        }
+                      }}
+                    >
+                      {bottomTypeLabel(bottom)}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+            </div>
           </CollapsibleSection>
 
           {/* Ausrichtung */}
@@ -859,41 +859,55 @@ export default function AdminSpotForm() {
             }
           >
             {currentImage?.url && (
-              <div className="mt-3">
-                <p className="text-label font-medium text-ink">Ausschnitt Desktop (21:9)</p>
-                <div className="mt-1.5 max-w-[560px]">
-                  <ImageFocalEditor
-                    url={currentImage.url}
-                    focal={currentImage.focal}
-                    aspect="21 / 9"
-                    onSave={async (x, y) => {
-                      if (!id) return;
-                      const spot = await setSpotImageFocal(id, x, y);
-                      seedImage((spot.image as ImageRecord | null) ?? null);
-                    }}
-                  />
-                </div>
-                <p className="mt-5 text-label font-medium text-ink">Ausschnitt Mobile (16:9)</p>
-                <p className="mt-0.5 text-caption text-muted">
-                  Optional. Wenn leer, gilt der Desktop-Ausschnitt auch auf dem Handy.
-                </p>
-                <div className="mt-1.5 max-w-[320px]">
-                  <ImageFocalEditor
-                    url={currentImage.url}
-                    focal={currentImage.focal_mobile ?? currentImage.focal}
-                    aspect="16 / 9"
-                    onSave={async (x, y) => {
-                      if (!id) return;
-                      const spot = await setSpotImageFocalMobile(id, { x, y });
-                      seedImage((spot.image as ImageRecord | null) ?? null);
-                    }}
-                  />
-                </div>
-                <div className="mt-4 rounded-lg border border-admin-border bg-admin-bg p-4">
-                  <p className="text-label font-semibold text-admin-fg">Bildnachweis</p>
+              <div className="space-y-6">
+                {/* Ausschnitte — Desktop und Mobile nebeneinander ab md+.
+                    Beides sind Landscape-Crops derselben Datei; das vertikale
+                    Stapeln lohnt nur auf schmalen Viewports. */}
+                <div>
+                  <p className="text-label font-medium text-admin-fg">Ausschnitte</p>
                   <p className="mt-0.5 text-caption text-muted">
-                    Urheber, Lizenz und Quelle des aktuellen Bilds — ohne neu
-                    hochzuladen.
+                    Desktop: 21:9. Mobile: 16:9 (optional — leer heißt Desktop-Ausschnitt gilt auch mobil).
+                  </p>
+                  <div className="mt-3 grid gap-6 md:grid-cols-2">
+                    <div>
+                      <p className="text-caption uppercase tracking-wide text-muted">Desktop · 21:9</p>
+                      <div className="mt-1.5">
+                        <ImageFocalEditor
+                          url={currentImage.url}
+                          focal={currentImage.focal}
+                          aspect="21 / 9"
+                          onSave={async (x, y) => {
+                            if (!id) return;
+                            const spot = await setSpotImageFocal(id, x, y);
+                            seedImage((spot.image as ImageRecord | null) ?? null);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-caption uppercase tracking-wide text-muted">Mobile · 16:9</p>
+                      <div className="mt-1.5">
+                        <ImageFocalEditor
+                          url={currentImage.url}
+                          focal={currentImage.focal_mobile ?? currentImage.focal}
+                          aspect="16 / 9"
+                          onSave={async (x, y) => {
+                            if (!id) return;
+                            const spot = await setSpotImageFocalMobile(id, { x, y });
+                            seedImage((spot.image as ImageRecord | null) ?? null);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bildnachweis — flach, kein Nested-Card. Drei Eingaben eine
+                    Zeile, Aktion und Meldung rechts. */}
+                <div>
+                  <p className="text-label font-medium text-admin-fg">Bildnachweis</p>
+                  <p className="mt-0.5 text-caption text-muted">
+                    Urheber, Lizenz und Quelle des aktuellen Bilds — ohne neu hochzuladen.
                   </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-3">
                     <Field label="Urheber / Credit">
@@ -949,35 +963,40 @@ export default function AdminSpotForm() {
                     )}
                   </div>
                 </div>
-                <p className="mt-3 text-caption text-muted">
-                  Neues Bild ersetzt das aktuelle:
-                </p>
               </div>
             )}
-            <div className="mt-3">
-              <ImageUpload
-                onAccept={(file) => {
-                  markDirty("main");
-                  setHeroFile(file);
-                }}
-                allowBelowMin
-              />
-            </div>
-            {heroFile && (
+
+            {/* Bild ersetzen — separater Block, damit "Bild suchen" oben und
+                "Neues Bild hochladen" nicht miteinander konkurrieren. */}
+            <div className={currentImage?.url ? "mt-6 border-t border-admin-border pt-6" : ""}>
+              <p className="text-label font-medium text-admin-fg">
+                {currentImage?.url ? "Bild ersetzen" : "Bild hochladen"}
+              </p>
               <div className="mt-3">
-                <Field label="Bild-Credit / Urheber" error={fieldErrors.credit}>
-                  <input
-                    className={inputCls}
-                    value={credit}
-                    onChange={(e) => {
-                      markDirty("main");
-                      setCredit(e.target.value);
-                    }}
-                    placeholder="Fotograf:in / Quelle"
-                  />
-                </Field>
+                <ImageUpload
+                  onAccept={(file) => {
+                    markDirty("main");
+                    setHeroFile(file);
+                  }}
+                  allowBelowMin
+                />
               </div>
-            )}
+              {heroFile && (
+                <div className="mt-3 max-w-md">
+                  <Field label="Bild-Credit / Urheber" error={fieldErrors.credit}>
+                    <input
+                      className={inputCls}
+                      value={credit}
+                      onChange={(e) => {
+                        markDirty("main");
+                        setCredit(e.target.value);
+                      }}
+                      placeholder="Fotograf:in / Quelle"
+                    />
+                  </Field>
+                </div>
+              )}
+            </div>
           </CollapsibleSection>
 
           {/* Galerie: community photos + Wikimedia Commons */}
