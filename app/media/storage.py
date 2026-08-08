@@ -106,20 +106,31 @@ def _blob_put(key: str, data: bytes, ext: str) -> str:
     token = get_settings().blob_read_write_token
     if not token:
         raise RuntimeError("BLOB_READ_WRITE_TOKEN is not set (media_backend=blob)")
-    resp = httpx.put(
-        f"{_BLOB_API}/{key}",
-        headers={
-            "authorization": f"Bearer {token}",
-            "x-content-type": _CONTENT_TYPE.get(ext, "application/octet-stream"),
-            # Deterministic path (overwrite the same key) instead of a random
-            # suffix, so a spot's hero has a stable URL across re-uploads.
-            "x-add-random-suffix": "0",
-            "x-allow-overwrite": "1",
-        },
-        content=data,
-        timeout=30.0,
-    )
-    resp.raise_for_status()
+    try:
+        resp = httpx.put(
+            f"{_BLOB_API}/{key}",
+            headers={
+                "authorization": f"Bearer {token}",
+                "x-content-type": _CONTENT_TYPE.get(ext, "application/octet-stream"),
+                # Deterministic path (overwrite the same key) instead of a random
+                # suffix, so a spot's hero has a stable URL across re-uploads.
+                "x-add-random-suffix": "0",
+                "x-allow-overwrite": "1",
+            },
+            content=data,
+            timeout=30.0,
+        )
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        # Surface as RuntimeError so the adopt endpoint's 422 branch can
+        # convert it into an operator-facing message with the actual reason
+        # (wrong token, wrong store, wrong region) instead of a bare 500.
+        body_snippet = (exc.response.text or "")[:200]
+        raise RuntimeError(
+            f"Vercel Blob PUT {exc.response.status_code}: {body_snippet}"
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise RuntimeError(f"Vercel Blob PUT failed: {type(exc).__name__}: {exc}") from exc
     return resp.json()["url"]
 
 

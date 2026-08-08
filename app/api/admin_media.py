@@ -12,11 +12,14 @@ of the back office and is absent entirely from the public deployment
 
 from __future__ import annotations
 
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.auth.deps import require_role
 from app.db.session import get_db
@@ -137,6 +140,16 @@ def adopt_media(
         raise HTTPException(
             status_code=422,
             detail=f"Bildspeicher ist nicht konfiguriert: {exc}",
+        )
+    except Exception as exc:
+        # Anything else (httpx.HTTPStatusError from Blob PUT, a schema
+        # mismatch in build_image, DB flush failures) still needs to reach
+        # the operator with a real message instead of a bare 500. Logged in
+        # full so Vercel keeps the traceback; the client sees the type + msg.
+        logger.exception("adopt failed for %s:%s", body.provider, body.external_id)
+        raise HTTPException(
+            status_code=422,
+            detail=f"Übernahme fehlgeschlagen ({type(exc).__name__}): {exc}",
         )
 
     return {
