@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import ImageUpload from "../components/ImageUpload";
+import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
@@ -120,6 +120,8 @@ export default function AdminSpotForm() {
   );
   const [modelPref, setModelPref] = useState("");
   const [heroFile, setHeroFile] = useState<File | null>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
+  const [heroUploadError, setHeroUploadError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<ImageRecord | null>(null);
   const [credit, setCredit] = useState("");
   // Attribution of the *current* hero (edited in place, url + focal preserved).
@@ -966,21 +968,48 @@ export default function AdminSpotForm() {
               </div>
             )}
 
-            {/* Bild ersetzen — separater Block, damit "Bild suchen" oben und
-                "Neues Bild hochladen" nicht miteinander konkurrieren. */}
-            <div className={currentImage?.url ? "mt-6 border-t border-admin-border pt-6" : ""}>
-              <p className="text-label font-medium text-admin-fg">
-                {currentImage?.url ? "Bild ersetzen" : "Bild hochladen"}
-              </p>
-              <div className="mt-3">
-                <ImageUpload
-                  onAccept={(file) => {
+            {/* Bild hochladen — schlanker Trigger, keine Dropzone/Info-Kachel.
+                Validierung läuft weiterhin über validateHeroFile; Fehlgründe
+                erscheinen inline unter dem Button. */}
+            <div className={currentImage?.url ? "mt-6 border-t border-admin-border pt-6" : "mt-4"}>
+              <input
+                ref={heroInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  // Reset the value so re-selecting the same file re-triggers change.
+                  e.target.value = "";
+                  setHeroUploadError(null);
+                  if (!file) return;
+                  const res = await validateHeroFile(file);
+                  // Admin accepts below-minimum images (warn later on read).
+                  if (res.ok || (!res.ok && res.belowMin)) {
                     markDirty("main");
                     setHeroFile(file);
-                  }}
-                  allowBelowMin
-                />
-              </div>
+                  } else {
+                    setHeroUploadError(res.reason);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => heroInputRef.current?.click()}
+                className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+              >
+                Bild hochladen
+              </button>
+              {heroFile && (
+                <p className="mt-2 text-caption text-admin-muted">
+                  Übernommen: <span className="font-medium text-admin-fg">{heroFile.name}</span>
+                </p>
+              )}
+              {heroUploadError && (
+                <p role="alert" className="mt-2 text-caption font-medium text-admin-danger">
+                  {heroUploadError}
+                </p>
+              )}
               {heroFile && (
                 <div className="mt-3 max-w-md">
                   <Field label="Bild-Credit / Urheber" error={fieldErrors.credit}>
