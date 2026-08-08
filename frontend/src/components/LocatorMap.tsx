@@ -135,12 +135,12 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
 
   return (
     // data-lenis-prevent stops the wheel from also scrolling the surrounding
-    // page while MapLibre is consuming it to zoom the map. Without this,
-    // activating the map and rolling the wheel scrolls the article too.
+    // page while MapLibre is consuming it to zoom the map. Do NOT stop wheel
+    // in the capture phase — that would kill MapLibre's own wheel-to-zoom
+    // handler before it fires.
     <div
       data-lenis-prevent
       className="relative overflow-hidden rounded-3xl"
-      onWheelCapture={active ? (e) => e.stopPropagation() : undefined}
     >
       <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
 

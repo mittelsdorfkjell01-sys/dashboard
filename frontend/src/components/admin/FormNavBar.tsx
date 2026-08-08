@@ -22,7 +22,7 @@ const SECTIONS: { id: string; label: string }[] = [
   { id: "f-facilities", label: "Facilities" },
   { id: "f-hero", label: "Header-Bild" },
   { id: "f-galerie", label: "Galerie" },
-  { id: "f-gezeiten", label: "Gezeiten" },
+  { id: "f-gezeiten", label: "Gezeiten-Korrektur" },
   { id: "f-loeschen", label: "Spot löschen" },
 ];
 

@@ -92,7 +92,7 @@ export default function AdminSpotForm() {
     fallbackLabel: "Spots",
   });
   const { blocker, markDirty, markClean, setDirty } = useUnsavedChangesGuard();
-  const { data: regions } = useAdminRegions();
+  const { data: regions, loading: regionsLoading } = useAdminRegions();
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -543,12 +543,17 @@ export default function AdminSpotForm() {
               <select
                 className={inputCls}
                 value={regionId}
+                disabled={regionsLoading && regionOptions.length === 0}
                 onChange={(e) => {
                   markDirty("main");
                   setRegionId(e.target.value);
                 }}
               >
-                <option value="">— Region wählen —</option>
+                <option value="">
+                  {regionsLoading && regionOptions.length === 0
+                    ? "Regionen werden geladen…"
+                    : "— Region wählen —"}
+                </option>
                 {regionOptions.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
@@ -1099,7 +1104,7 @@ export default function AdminSpotForm() {
               tägliche Redigierarbeit oben bleibt und die Kalibrier-Kachel nicht
               beim Speichern durch das halbe Formular scrollt. */}
           {id && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)) && (
-            <CollapsibleSection id="f-gezeiten" title="Gezeiten">
+            <CollapsibleSection id="f-gezeiten" title="Gezeiten-Korrektur">
               <TideAdminPanel spotId={id} spotLat={Number(lat)} spotLon={Number(lon)} />
             </CollapsibleSection>
           )}
