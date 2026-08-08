@@ -9,6 +9,8 @@ import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmToast from "../components/admin/ConfirmToast";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import TideAdminPanel from "../components/admin/TideAdminPanel";
+import CollapsibleSection from "../components/admin/CollapsibleSection";
+import FormNavBar from "../components/admin/FormNavBar";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useAdminRegions } from "../lib/hooks";
 import {
@@ -485,7 +487,11 @@ export default function AdminSpotForm() {
     e.preventDefault();
     setError(null);
     if (!validateLocal()) return;
-    void doSave(false);
+    // Operator opt-in: always force. The conflict dialog was routinely
+    // waved through, so we skip it — a stale write wins silently. If a
+    // second editor becomes a real risk, restore the optimistic-locking
+    // token here and reopen the dialog on 409.
+    void doSave(true);
   };
 
   // Conflict dialog: discard local edits and reload the server's version.
@@ -533,8 +539,7 @@ export default function AdminSpotForm() {
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">
           {/* Basisdaten */}
-          <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Basisdaten</h2>
+          <CollapsibleSection id="f-basisdaten" title="Basisdaten" bodyClassName="space-y-4">
             <Field label="Name" error={fieldErrors.name}>
               <input
                 className={inputCls}
@@ -648,12 +653,11 @@ export default function AdminSpotForm() {
                 placeholder="Charakter des Spots, Bedingungen, Besonderheiten …"
               />
             </Field>
-          </section>
+          </CollapsibleSection>
 
           {/* Sportarten */}
-          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Sportarten</h2>
-            <div className="mt-3 flex flex-wrap gap-1.5">
+          <CollapsibleSection id="f-sportarten" title="Sportarten">
+            <div className="flex flex-wrap gap-1.5">
               {SPORTS.map((s) => (
                 <Chip
                   key={s}
@@ -667,11 +671,10 @@ export default function AdminSpotForm() {
                 </Chip>
               ))}
             </div>
-          </section>
+          </CollapsibleSection>
 
           {/* Kategorien */}
-          <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Kategorien</h2>
+          <CollapsibleSection id="f-kategorien" title="Kategorien" bodyClassName="space-y-4">
             <Field label="Level (Mehrfachauswahl)">
               <div id="f-level" className="flex flex-wrap gap-1.5 scroll-mt-24">
                 {LEVELS.map((l) => (
@@ -762,11 +765,10 @@ export default function AdminSpotForm() {
                 ))}
               </div>
             </Field>
-          </section>
+          </CollapsibleSection>
 
           {/* Ausrichtung */}
-          <section className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Ausrichtung</h2>
+          <CollapsibleSection id="f-ausrichtung" title="Ausrichtung" bodyClassName="space-y-4">
             <Field label="Strandausrichtung (facing, 0–359)">
               <input
                 className={inputCls}
@@ -781,12 +783,11 @@ export default function AdminSpotForm() {
             </Field>
             {/* Gezeiten (Tide) ausgeblendet — wird später überarbeitet. Wert
                 bleibt erhalten und wird weiterhin gespeichert. */}
-          </section>
+          </CollapsibleSection>
 
           {/* Facilities */}
-          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Facilities</h2>
-            <p className="mt-1 text-caption text-muted">
+          <CollapsibleSection id="f-facilities" title="Facilities">
+            <p className="-mt-3 text-caption text-muted">
               „Unbekannt" zeigt auf der Spot-Seite einen eigenen, gedämpften Zustand — nicht
               „nicht vorhanden".
             </p>
@@ -840,17 +841,13 @@ export default function AdminSpotForm() {
                 </div>
               ))}
             </div>
-          </section>
+          </CollapsibleSection>
 
-          {/* Hero-Bild */}
-          {id && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)) && (
-            <TideAdminPanel spotId={id} spotLat={Number(lat)} spotLon={Number(lon)} />
-          )}
-
-          <section id="f-hero" tabIndex={-1} className="scroll-mt-24 rounded-lg border border-admin-border bg-admin-surface p-5 outline-none sm:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-ui font-semibold text-admin-fg">Header-Bild</h2>
-              {isEdit && id && (
+          <CollapsibleSection
+            id="f-hero"
+            title="Header-Bild"
+            aside={
+              isEdit && id ? (
                 <button
                   type="button"
                   onClick={() => setPickerOpen("hero")}
@@ -858,8 +855,9 @@ export default function AdminSpotForm() {
                 >
                   Bild suchen
                 </button>
-              )}
-            </div>
+              ) : null
+            }
+          >
             {currentImage?.url && (
               <div className="mt-3">
                 <p className="text-label font-medium text-ink">Ausschnitt Desktop (21:9)</p>
@@ -980,13 +978,14 @@ export default function AdminSpotForm() {
                 </Field>
               </div>
             )}
-          </section>
+          </CollapsibleSection>
 
           {/* Galerie: community photos + Wikimedia Commons */}
           {isEdit && id && (
-            <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-ui font-semibold text-admin-fg">Galerie</h2>
+            <CollapsibleSection
+              id="f-galerie"
+              title="Galerie"
+              aside={
                 <button
                   type="button"
                   onClick={runCommonsFetch}
@@ -995,8 +994,9 @@ export default function AdminSpotForm() {
                 >
                   {commonsBusy ? "Abrufen…" : "Wikimedia-Bilder abrufen"}
                 </button>
-              </div>
-              <p className="mt-1 text-caption text-muted">
+              }
+            >
+              <p className="-mt-3 text-caption text-muted">
                 Sucht georeferenzierte Fotos in der Nähe des Spots auf Wikimedia Commons und
                 übernimmt nur Treffer mit erkennbarer Lizenz. Die Geo-Suche liefert auch
                 Parkplätze oder Ortsschilder — einzelne Treffer unten entfernen.
@@ -1018,7 +1018,7 @@ export default function AdminSpotForm() {
                   }}
                 />
               </div>
-            </section>
+            </CollapsibleSection>
           )}
 
           {isEdit && id && pickerOpen && (
@@ -1038,22 +1038,29 @@ export default function AdminSpotForm() {
 
           {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}
           {isEdit && id && (
-            <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-              <h2 className="text-ui font-semibold text-admin-fg">Kommentare</h2>
-              <p className="mb-4 mt-1 text-caption text-muted">
+            <CollapsibleSection id="f-kommentare" title="Kommentare">
+              <p className="-mt-3 mb-4 text-caption text-muted">
                 Alle Kommentare zu diesem Spot — Antworten stehen unter ihrem
                 Ausgangskommentar. Verborgene bleiben hier sichtbar und lassen
                 sich wiederherstellen.
               </p>
               <SpotCommentsPanel spotId={id} />
-            </section>
+            </CollapsibleSection>
+          )}
+
+          {/* Gezeiten — sitzt zwischen Kommentaren und dem Löschen-Block, damit
+              tägliche Redigierarbeit oben bleibt und die Kalibrier-Kachel nicht
+              beim Speichern durch das halbe Formular scrollt. */}
+          {id && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)) && (
+            <CollapsibleSection id="f-gezeiten" title="Gezeiten">
+              <TideAdminPanel spotId={id} spotLat={Number(lat)} spotLon={Number(lon)} />
+            </CollapsibleSection>
           )}
 
           {/* Danger zone: permanently delete the spot (edit mode only). */}
           {isEdit && id && (
-            <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-5 sm:p-6">
-              <h2 className="text-ui font-semibold text-admin-danger">Spot löschen</h2>
-              <p className="mt-1 text-label text-admin-fg2">
+            <CollapsibleSection id="f-loeschen" title="Spot löschen" tone="danger">
+              <p className="-mt-3 text-label text-admin-fg2">
                 Löscht diesen Spot endgültig samt aller Bewertungen, Tipps, Bilder
                 und Klimatologie. Das lässt sich nicht rückgängig machen — zum
                 Ausblenden lieber „Archivieren" verwenden.
@@ -1066,7 +1073,7 @@ export default function AdminSpotForm() {
               >
                 Spot löschen
               </button>
-            </section>
+            </CollapsibleSection>
           )}
 
         </div>
@@ -1162,6 +1169,8 @@ export default function AdminSpotForm() {
           </div>
         </aside>
       </form>
+
+      <FormNavBar />
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">
         <AdminBackButton
