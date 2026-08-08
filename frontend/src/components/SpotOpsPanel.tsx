@@ -177,9 +177,15 @@ export default function SpotOpsPanel({
           <p className="mt-0.5 inline-flex items-center gap-1.5 text-label font-medium text-admin-fg">
             <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
             {RANK_LABEL[rank]}
-            {rankOverride === null && (
-              <span className="text-caption font-normal text-admin-faint">auto</span>
-            )}
+            {/* Always in DOM so switching auto → color does not shift the row's
+                width; hidden with visibility so the reserved slot stays put. */}
+            <span
+              className={`text-caption font-normal text-admin-faint ${
+                rankOverride === null ? "" : "invisible"
+              }`}
+            >
+              auto
+            </span>
           </p>
         </div>
       </div>
@@ -267,9 +273,13 @@ export default function SpotOpsPanel({
             <span className="text-label font-medium text-admin-fg">Fertigstellen-Rang</span>
             <span className="text-label text-admin-fg2">
               {RANK_LABEL[rank]}
-              {rankOverride === null && (
-                <span className="ml-1 text-caption text-admin-faint">auto</span>
-              )}
+              <span
+                className={`ml-1 text-caption text-admin-faint ${
+                  rankOverride === null ? "" : "invisible"
+                }`}
+              >
+                auto
+              </span>
             </span>
           </div>
           <div className="mt-2">
