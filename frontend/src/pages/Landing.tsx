@@ -32,7 +32,7 @@ export default function Landing() {
           No `isolate` here — an isolated stacking context would trap the search
           bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
           hit the scrim and close instead of switching the panel. */}
-      <section className="relative flex h-[72svh] min-h-[540px] max-h-[680px] flex-col overflow-hidden">
+      <section className="relative flex min-h-[100svh] flex-col overflow-hidden">
         <div className="absolute inset-0 z-0" aria-hidden>
           <HeroImage
             src="/hero-surfwind.jpg"
