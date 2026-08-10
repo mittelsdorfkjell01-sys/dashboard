@@ -36,12 +36,14 @@ export default function SpotCommentBox({
   onOpenMore,
   onPosted,
   moreButtonRef,
+  variant = "card",
 }: {
   spotId?: string;
   comment: FeedPost | null;
   onOpenMore: () => void;
   onPosted?: () => void;
   moreButtonRef?: RefObject<HTMLButtonElement>;
+  variant?: "card" | "plain";
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -76,7 +78,13 @@ export default function SpotCommentBox({
   };
 
   return (
-    <div className="flex flex-1 flex-col rounded-3xl bg-white p-6 shadow-card">
+    <div
+      className={
+        variant === "plain"
+          ? "flex h-full min-h-0 flex-col py-1"
+          : "flex flex-1 flex-col rounded-3xl bg-white p-6 shadow-card"
+      }
+    >
       <div className="flex items-center justify-between gap-3">
         <p className="text-label text-muted">Kommentare oder Tips</p>
         {comment && (
@@ -106,7 +114,7 @@ export default function SpotCommentBox({
             </div>
             <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
           </div>
-          <div className="mt-4 flex items-center gap-5 text-label font-medium text-teal">
+          <div className={`mt-auto flex items-center text-label font-medium text-teal ${variant === "plain" ? "justify-between gap-3 border-t border-line pt-4" : "gap-5 pt-4"}`}>
             <button
               type="button"
               onClick={() =>
@@ -119,7 +127,7 @@ export default function SpotCommentBox({
               className="inline-flex items-center gap-1.5 transition-colors hover:text-teal-hover"
             >
               <CommentIcon />
-              Antworte
+              <span className={variant === "plain" ? "sr-only" : ""}>Antworte</span>
             </button>
             <button
               type="button"
@@ -127,22 +135,22 @@ export default function SpotCommentBox({
               className="inline-flex items-center gap-1.5 transition-colors hover:text-teal-hover"
             >
               <CommentIcon />
-              Verfasse Kommentar / Tipp
+              <span className={variant === "plain" ? "sr-only" : ""}>Verfasse Kommentar / Tipp</span>
             </button>
           </div>
         </>
       ) : (
-        <div className="mt-4 flex min-h-0 flex-1 flex-col items-center justify-center text-center">
+        <div className={`mt-4 flex min-h-0 flex-1 flex-col ${variant === "plain" ? "items-start justify-between text-left" : "items-center justify-center text-center"}`}>
           <p className="max-w-[26ch] text-body text-ink-soft">
             Schreibe einen Kommentar und einen Tipp für den Spot
           </p>
           <button
             type="button"
             onClick={() => startCompose({})}
-            className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+            className={variant === "plain" ? "mt-auto grid h-10 w-10 place-items-center self-end rounded-full bg-teal text-white transition-colors hover:bg-teal-hover" : "mt-4 inline-flex items-center gap-2 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"}
           >
             <CommentIcon />
-            Kommentar verfassen
+            <span className={variant === "plain" ? "sr-only" : ""}>Kommentar verfassen</span>
           </button>
         </div>
       )}

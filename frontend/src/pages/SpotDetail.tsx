@@ -213,8 +213,6 @@ export default function SpotDetail() {
                     {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                   </p>
 
-                  <div className="mt-6"><SpotMetaGrid spot={spot} /></div>
-
                   <div className="mt-7">
                     <FavoriteButton spot={spot} />
                   </div>
@@ -229,9 +227,22 @@ export default function SpotDetail() {
                 </div>
 
                 <div className="flex min-w-0 flex-col gap-5">
+                  <SpotMetaGrid spot={spot} />
                   <h2 className="text-label font-semibold uppercase tracking-[0.08em] text-muted">Ausstattung</h2>
                   <Facilities items={facilities} variant="list" />
+                </div>
+              </div>
+
+              {/* Lage + Kommentare: Karte 2/3, offene Kommentarspalte 1/3. */}
+              <div className={`mt-10 grid min-w-0 gap-8 ${spot.coords ? "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]" : "lg:grid-cols-[2fr_1fr]"}`}>
+                {spot.coords ? (
+                  <div className="spot-locator-compact min-w-0"><LocatorMap coords={spot.coords} /></div>
+                ) : (
+                  <div aria-hidden />
+                )}
+                <div className="min-h-[320px] lg:min-h-[400px]">
                   <SpotCommentBox
+                    variant="plain"
                     spotId={id}
                     comment={featuredPost}
                     onOpenMore={() => setCommentsOpen(true)}
@@ -240,13 +251,6 @@ export default function SpotDetail() {
                   />
                 </div>
               </div>
-
-              {/* Lage: sits directly under the columns */}
-              {spot.coords && (
-                <div className="mt-10">
-                  <div className="spot-locator-compact"><LocatorMap coords={spot.coords} /></div>
-                </div>
-              )}
 
               {id && (
                 <div className="mt-14">
