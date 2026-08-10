@@ -154,6 +154,12 @@ export default function SpotDetail() {
           />
         )}
 
+        {/* Body content runs at 85% zoom (more L/R margin, smaller type/
+            components) while section-to-section gaps below are inflated by
+            1/0.85 so their on-screen size stays unchanged — see the "zoom
+            compensation" comments at each inflated value. The hero above is
+            deliberately outside this wrapper (full-bleed, not "body"). */}
+        <div className="[zoom:0.85]">
         {tabs.length > 0 && <SpotTabs tabs={tabs} />}
 
         <AnimatePresence initial={false} custom={tabDirection}>
@@ -169,7 +175,8 @@ export default function SpotDetail() {
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="content">
-              <div className="grid min-w-0 gap-x-8 gap-y-8 lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]">
+              {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
+              <div className="grid min-w-0 gap-x-[37.65px] gap-y-[37.65px] lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]">
                 <div className="min-w-0">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
@@ -233,8 +240,9 @@ export default function SpotDetail() {
                 </div>
               </div>
 
-              {/* Lage + Kommentare: Karte 2/3, offene Kommentarspalte 1/3. */}
-              <div className={`mt-10 grid min-w-0 gap-8 ${spot.coords ? "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]" : "lg:grid-cols-[2fr_1fr]"}`}>
+              {/* Lage + Kommentare: Karte 2/3, offene Kommentarspalte 1/3.
+                  mt-10/gap-8 (40px/32px) inflated by 1/0.85 to offset the zoom above. */}
+              <div className={`mt-[47.06px] grid min-w-0 gap-[37.65px] ${spot.coords ? "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]" : "lg:grid-cols-[2fr_1fr]"}`}>
                 {spot.coords ? (
                   <div className="spot-locator-compact min-w-0"><LocatorMap coords={spot.coords} /></div>
                 ) : (
@@ -252,7 +260,8 @@ export default function SpotDetail() {
               </div>
 
               {id && (
-                <div className="mt-14">
+                // mt-14 (56px) inflated by 1/0.85 to offset the zoom above.
+                <div className="mt-[65.88px]">
                   <SimilarSpots spotId={id} sport={spot.sports?.[0]} />
                 </div>
               )}
@@ -347,6 +356,7 @@ export default function SpotDetail() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </main>
 
       <Footer />

@@ -18,7 +18,8 @@ export default function DatenSection({
   children: ReactNode;
 }) {
   return (
-    <section className={`min-w-0 max-w-full overflow-hidden border-t border-line px-4 py-3 sm:px-8 ${className}`}>
+    // py-3 (12px) inflated by 1/0.85 to offset the spot page's 85% zoom wrapper.
+    <section className={`min-w-0 max-w-full overflow-hidden border-t border-line px-4 py-[14.12px] sm:px-8 ${className}`}>
       {label && <p className="mb-3 text-data-label uppercase text-muted">{label}</p>}
       <div className="min-w-0 max-w-full">{children}</div>
     </section>
