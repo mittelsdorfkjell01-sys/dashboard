@@ -80,7 +80,7 @@ export default function LandingHeader({
             <Wordmark size={solid ? "md" : "xl"} />
           </Link>
 
-          <div className="col-start-3 flex min-w-0 items-center justify-end gap-2 sm:gap-5">
+          <div className="col-start-3 flex min-w-0 items-center justify-end gap-1 sm:gap-5">
             {INCLUDE_ADMIN && (
               <Link
                 to="/admin/spot/new"
