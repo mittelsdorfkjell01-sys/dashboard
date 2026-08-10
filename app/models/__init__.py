@@ -31,6 +31,8 @@ from app.models.tide import (
     TideProfile,
     TideProfileRevision,
 )
+from app.models.weather_profile import SpotWeatherProfile, SpotWeatherSector
+from app.models.weather_verification import WeatherForecastSample, WeatherModelCalibration, WeatherObservation, WeatherStation
 
 __all__ = [
     "Base",
@@ -62,4 +64,10 @@ __all__ = [
     "TideEvent",
     "TideEventOverride",
     "TideCalculationRun",
+    "SpotWeatherProfile",
+    "SpotWeatherSector",
+    "WeatherStation",
+    "WeatherObservation",
+    "WeatherForecastSample",
+    "WeatherModelCalibration",
 ]

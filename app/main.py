@@ -12,6 +12,7 @@ from app.api import (
     admin_tides,
     admin_moderation,
     admin_users,
+    admin_weather,
     auth,
     community,
     cron,
@@ -24,7 +25,7 @@ from app.csrf import CSRFMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
-EXPECTED_DB_REVISION = "0027_media_provenance"
+EXPECTED_DB_REVISION = "0030_weather_verification"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -112,6 +113,7 @@ if settings.enable_admin_api:
     app.include_router(admin_tides.router)
     app.include_router(admin_users.router)
     app.include_router(admin_moderation.router)
+    app.include_router(admin_weather.router)
     app.include_router(cron.router)
 
 

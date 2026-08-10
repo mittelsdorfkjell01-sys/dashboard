@@ -22,6 +22,8 @@ const AdminMap = React.lazy(() => import("./pages/AdminMap"));
 const AdminActivity = React.lazy(() => import("./pages/AdminActivity"));
 const AdminSpotForm = React.lazy(() => import("./pages/AdminSpotForm"));
 const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
+const AdminWeatherProfiles = React.lazy(() => import("./pages/AdminWeatherProfiles"));
+const AdminWeatherProfile = React.lazy(() => import("./pages/AdminWeatherProfile"));
 
 const adminRoutes: RouteObject[] = [
   {
@@ -46,6 +48,8 @@ const adminRoutes: RouteObject[] = [
         children: [
           { index: true, element: <AdminHome /> },
           { path: "spots", element: <AdminSpots /> },
+          { path: "weather", element: <AdminWeatherProfiles /> },
+          { path: "weather/:spotId", element: <AdminWeatherProfile /> },
           { path: "regions", element: <AdminRegions /> },
           { path: "region/:id/edit", element: <AdminRegionForm /> },
           { path: "review", element: <AdminReview /> },

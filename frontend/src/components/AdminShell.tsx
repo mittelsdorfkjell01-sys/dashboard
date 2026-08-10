@@ -70,6 +70,7 @@ const I = {
 const NAV: NavItem[] = [
   { to: "/admin", label: "Übersicht", end: true, icon: I.overview },
   { to: "/admin/spots", label: "Spots", icon: I.spots },
+  { to: "/admin/weather", label: "Wetterprofile", icon: I.activity },
   { to: "/admin/regions", label: "Regionen", icon: I.regions },
   { to: "/admin/review", label: "Review", icon: I.review },
   { to: "/admin/map", label: "Karte", icon: I.map },

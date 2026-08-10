@@ -1,0 +1,22 @@
+[
+  {"name":"Sankt Peter-Ording – Ording","country":"DE","group":"core","spot_id":null},
+  {"name":"Fehmarn – Gold","country":"DE","group":"core","spot_id":null},
+  {"name":"Steinhuder Meer – Mardorf","country":"DE","group":"core","spot_id":null},
+  {"name":"Walchensee – Urfeld","country":"DE","group":"core","spot_id":null},
+  {"name":"Sylt – Westerland","country":"DE","group":"extension","spot_id":null},
+  {"name":"Kiel – Schilksee","country":"DE","group":"extension","spot_id":null},
+  {"name":"Warnemünde – Surfzone","country":"DE","group":"extension","spot_id":null},
+  {"name":"IJmuiden – Noordpier","country":"NL","group":"core","spot_id":null},
+  {"name":"Texel – Paal 17","country":"NL","group":"core","spot_id":null},
+  {"name":"Brouwersdam – Nordseeseite","country":"NL","group":"core","spot_id":null},
+  {"name":"Workum – IJsselmeer","country":"NL","group":"core","spot_id":null},
+  {"name":"Scheveningen – Nordstrand","country":"NL","group":"extension","spot_id":null},
+  {"name":"Strand Horst – Veluwemeer","country":"NL","group":"extension","spot_id":null},
+  {"name":"Maasvlakte 2","country":"NL","group":"extension","spot_id":null},
+  {"name":"Klitmøller","country":"DK","group":"core","spot_id":null},
+  {"name":"Hvide Sande – Ringkøbing-Fjord-Seite","country":"DK","group":"core","spot_id":null},
+  {"name":"Lynæs","country":"DK","group":"core","spot_id":null},
+  {"name":"Amager Strandpark","country":"DK","group":"core","spot_id":null},
+  {"name":"Rømø – Sønderstrand","country":"DK","group":"extension","spot_id":null},
+  {"name":"Kerteminde Nord","country":"DK","group":"extension","spot_id":null}
+]

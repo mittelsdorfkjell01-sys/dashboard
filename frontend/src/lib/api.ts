@@ -501,6 +501,22 @@ export const unpublishRegion = (id: string) =>
 export const getSpotForecast = (id: string, days?: number) =>
   request<ForecastSeries>(`/spots/${id}/forecast${qs({ days })}`);
 
+export interface WeatherReferencePoint { latitude: number; longitude: number; source?: string | null; reason?: string | null }
+export interface WeatherSector { id?: string; start_deg: number; end_deg: number; speed_factor: number; direction_offset_deg: number; version: number; enabled: boolean; note?: string | null }
+export interface WeatherProfile {
+  id: string; spot_id: string; timezone: string | null; elevation_m: number | null;
+  coastal_normal_deg: number | null; exposure: "sheltered" | "neutral" | "exposed" | null;
+  roughness_length_m: number | null; land_reference: WeatherReferencePoint | null;
+  water_reference: WeatherReferencePoint | null; quality_tier: "coordinates" | "coastal" | "extended" | "advanced";
+  physics_version: string; reviewed_at: string | null; updated_at: string; active: boolean; sectors: WeatherSector[];
+}
+export type WeatherProfileInput = Omit<WeatherProfile, "id" | "spot_id" | "reviewed_at" | "updated_at"> & { reviewed: boolean; expected_updated_at?: string | null };
+export interface WeatherProfileListItem { spot_id: string; spot_name: string; region: string | null; country: string | null; quality_tier: WeatherProfile["quality_tier"] | null; profile_state: string; missing: string[]; active: boolean; reviewed_at: string | null; updated_at: string | null }
+export const getAdminWeatherProfiles = (filters: { country?: string; state?: string } = {}) => request<{items: WeatherProfileListItem[]; total: number}>(`/admin/weather/profiles${qs(filters)}`);
+export const getAdminWeatherProfile = (spotId: string) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`);
+export const putAdminWeatherProfile = (spotId: string, body: WeatherProfileInput) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`, { method: "PUT", body: JSON.stringify(body) });
+export const getAdminWeatherDiagnostics = (spotId: string) => request<Record<string, unknown>>(`/admin/weather/spots/${spotId}/diagnostics`);
+
 /** Stage-2 season curve: pct_usable[52] + flagged good weeks. */
 export const getSpotSeason = (id: string, sport?: string) =>
   request<SpotSeason>(`/spots/${id}/season${qs({ stage: 2, sport })}`);

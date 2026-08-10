@@ -1,0 +1,1 @@
+"""Official observation provider adapters."""
