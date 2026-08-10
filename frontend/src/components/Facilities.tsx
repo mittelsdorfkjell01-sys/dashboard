@@ -65,14 +65,14 @@ export default function Facilities({
           const unknown = f.available === null;
           const Icon = facilityIcon[f.kind];
           return (
-            <div key={f.kind} className="flex items-center justify-between gap-4 border-b border-line py-3">
+            <div key={f.kind} className="flex min-h-10 items-center justify-between gap-4 border-b border-line py-2">
               <dt className={`flex items-center gap-2.5 text-ui ${absent ? "text-muted line-through" : "text-ink"}`}>
                 {/* Fine-line category icon (black/white) before the label */}
                 <Icon width={18} height={18} className={`shrink-0 ${absent || unknown ? "opacity-40" : ""}`} />
                 {f.title}
               </dt>
-              <dd className={`text-caption ${absent ? "text-muted line-through" : unknown ? "text-muted" : "text-ink-soft"}`}>
-                {f.note}
+              <dd className={`text-caption ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
+                {absent ? "Nein" : f.note}
               </dd>
             </div>
           );

@@ -21,7 +21,7 @@ import SpotMetaGrid from "../components/SpotMetaGrid";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner, EmptyState } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
-import { bottomTypeLabel, levelLabel, sportLabel, waterTypeLabel } from "../lib/labels";
+import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
@@ -140,7 +140,7 @@ export default function SpotDetail() {
         }
       />
 
-      <main className="min-w-0 max-w-full">
+      <main className={`min-w-0 max-w-full ${activeTab === "daten" ? "pt-24 sm:pt-28" : ""}`}>
         {/* Clean hero image — the spot identity (name/region/score) now lives in
             the Info column below, not in an overlay on the photo (Figma Frame_9). */}
         {activeTab === "info" && (
@@ -167,9 +167,9 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            {/* Text / Galerie-Kachel / Meta+Kommentar — drei Spalten */}
-            <SectionBand tone="page" pad="md" maxWidth="narrow">
-              <div className="grid min-w-0 gap-x-8 gap-y-10 lg:grid-cols-[5fr_6fr_5fr]">
+            {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
+            <SectionBand tone="page" pad="md" width="content">
+              <div className="grid min-w-0 gap-x-6 gap-y-8 lg:grid-cols-[minmax(260px,300px)_minmax(360px,1fr)_minmax(260px,300px)]">
                 <div className="min-w-0">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
@@ -189,12 +189,12 @@ export default function SpotDetail() {
                       )}
                     </p>
                   )}
-                  <h1 className="mt-1 text-editorial-4 font-semibold text-balance text-ink">{spot.name}</h1>
+                  <h1 className="mt-1 text-[28px] font-semibold leading-[1.12] text-balance text-ink sm:text-[30px]">{spot.name}</h1>
 
                   {/* Sports are plain label + teal check (Figma Frame_9), not
                       filled pills — datengetrieben aus spot.sports. */}
                   {spot.sports && spot.sports.length > 0 && (
-                    <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
                       {spot.sports.map((s) => (
                         <span
                           key={s}
@@ -207,38 +207,20 @@ export default function SpotDetail() {
                     </div>
                   )}
 
-                  {/* Facilities as a compact icon row in the identity block */}
-                  <div className="mt-6">
-                    <Facilities items={facilities} variant="icons" />
-                  </div>
-
                   {/* The real spot description (editorial.description from the DB);
                       falls back to a gentle note when a spot has none yet. */}
-                  <p className="mt-8 max-w-[62ch] text-lede text-ink-soft">
+                  <p className="mt-6 max-w-[55ch] text-body leading-relaxed text-ink-soft">
                     {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                   </p>
 
-                  <dl className="mt-6 grid max-w-[62ch] gap-3 text-label sm:grid-cols-3">
-                    <div>
-                      <dt className="font-medium text-muted">Level</dt>
-                      <dd className="mt-1 text-ink">{(spot.level ?? []).map(levelLabel).join(", ") || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-muted">Gewässer</dt>
-                      <dd className="mt-1 text-ink">{(spot.waterTypes ?? []).map(waterTypeLabel).join(", ") || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-muted">Untergrund</dt>
-                      <dd className="mt-1 text-ink">{(spot.bottomType ?? []).map(bottomTypeLabel).join(", ") || "—"}</dd>
-                    </div>
-                  </dl>
+                  <div className="mt-6"><SpotMetaGrid spot={spot} /></div>
 
-                  <div className="mt-10">
+                  <div className="mt-7">
                     <FavoriteButton spot={spot} />
                   </div>
                 </div>
 
-                <div className="min-w-0">
+                <div className="spot-gallery-compact min-w-0">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -246,8 +228,9 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-6">
-                  <SpotMetaGrid spot={spot} />
+                <div className="flex min-w-0 flex-col gap-5">
+                  <h2 className="text-label font-semibold uppercase tracking-[0.08em] text-muted">Ausstattung</h2>
+                  <Facilities items={facilities} variant="list" />
                   <SpotCommentBox
                     spotId={id}
                     comment={featuredPost}
@@ -260,15 +243,16 @@ export default function SpotDetail() {
 
               {/* Lage: sits directly under the columns */}
               {spot.coords && (
-                <div className="mt-12">
-                  <LocatorMap coords={spot.coords} />
+                <div className="mt-10">
+                  <div className="spot-locator-compact"><LocatorMap coords={spot.coords} /></div>
                 </div>
               )}
 
-              {/* Similar spots — reactive to region + wind profile */}
-              <div className="mt-16">
-                <SimilarSpots spot={spot} />
-              </div>
+              {id && (
+                <div className="mt-14">
+                  <SimilarSpots spotId={id} sport={spot.sports?.[0]} />
+                </div>
+              )}
             </SectionBand>
 
             <PhotoGalleryOverlay

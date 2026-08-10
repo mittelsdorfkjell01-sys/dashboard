@@ -1,43 +1,55 @@
-import SpotCard from "./SpotCard";
-import type { Spot } from "../lib/types";
-import { useSpots } from "../lib/hooks";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { API_BASE } from "../lib/api";
+import { sportLabel } from "../lib/labels";
 
-/**
- * "Ähnliche Spots" — spots that resemble the current one, drawn from the live
- * catalogue (no mock data / picsum). Placeholder ranking: same region first,
- * then closest wind strength; the real similarity ranking comes from the backend
- * similarity endpoints in a later step. Reuses the landing SpotCard. Headless:
- * the section heading lives in the caller's `SectionBand`.
- *
- * Three entries, not four — and the first is visually bigger (spans a 2x2
- * grid area, the other two stack beside it). Equal-size tiles would claim
- * there's no ranking; there is one, even if it's a placeholder for now.
- */
-export default function SimilarSpots({ spot, limit = 3 }: { spot: Spot; limit?: number }) {
-  const { data: all } = useSpots();
-  const others = (all ?? []).filter((s) => s.id !== spot.id);
-  const sameRegion = spot.region.split(",")[0].trim();
+interface SimilarSpot {
+  id: string;
+  name: string;
+  sports?: string[];
+}
 
-  const ranked = others
-    .map((s) => ({
-      s,
-      score:
-        (s.region.split(",")[0].trim() === sameRegion ? 0 : 100) +
-        Math.abs(s.wind - spot.wind),
-    }))
-    .sort((a, b) => a.score - b.score)
-    .slice(0, limit)
-    .map((x) => x.s);
+export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?: string }) {
+  const [spots, setSpots] = useState<SimilarSpot[]>([]);
 
-  if (ranked.length === 0) return null;
+  useEffect(() => {
+    const controller = new AbortController();
+    const query = new URLSearchParams({ mode: "charakter", limit: "3" });
+    if (sport) query.set("sport", sport);
+    fetch(`${API_BASE}/spots/${encodeURIComponent(spotId)}/similar?${query}`, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("similar spots unavailable"))))
+      .then((body: { results?: SimilarSpot[] }) => setSpots(body.results ?? []))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) setSpots([]);
+      });
+    return () => controller.abort();
+  }, [spotId, sport]);
+
+  if (!spots.length) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-x-7 gap-y-8 sm:grid-cols-3 sm:grid-rows-2">
-      {ranked.map((s, i) => (
-        <div key={s.id} className={i === 0 ? "sm:col-span-2 sm:row-span-2" : ""}>
-          <SpotCard spot={s} variant="editorial" />
+    <section aria-labelledby="similar-spots-heading">
+      <div className="flex items-end justify-between gap-4 border-b border-line pb-3">
+        <div>
+          <h2 id="similar-spots-heading" className="text-title font-semibold text-ink">Ähnliche Spots</h2>
+          <p className="mt-1 text-caption text-muted">Spots mit vergleichbarem Charakter</p>
         </div>
-      ))}
-    </div>
+      </div>
+      <div className="no-scrollbar mt-5 flex snap-x-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+        {spots.map((item, index) => (
+          <Link key={item.id} to={`/spot/${item.id}`} className="group min-w-[220px] snap-start sm:min-w-0">
+            <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-band">
+              <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_top_left,var(--sw-teal),transparent_70%)] text-caption font-medium text-ink-soft">
+                {String(index + 1).padStart(2, "0")}
+              </div>
+            </div>
+            <h3 className="mt-3 truncate text-ui font-semibold text-ink transition-colors group-hover:text-teal">{item.name}</h3>
+            {item.sports?.length ? (
+              <p className="mt-1 truncate text-caption text-muted">{item.sports.slice(0, 2).map(sportLabel).join(" · ")}</p>
+            ) : null}
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

@@ -27,7 +27,7 @@ export default function EditorialHero({
   delivery,
   children,
   parallax = true,
-  frameClassName = "aspect-video sm:aspect-[21/9]",
+  frameClassName = "h-[min(56.25vw,400px)] sm:h-[min(42.857vw,520px)]",
   onImageClick,
 }: {
   image?: string | null;
@@ -50,8 +50,8 @@ export default function EditorialHero({
    *  preview in a fixed frame and page scroll is locked — the drift would be
    *  meaningless there. */
   parallax?: boolean;
-  /** Height of the hero frame. The page hero keeps the aspect-ratio default
-   *  (21:9 desktop / 16:9 mobile); the picker passes fixed desktop/mobile
+  /** Height of the hero frame. The page hero keeps the compact 16:9/21:9 crop
+   *  capped at 400/520px; the picker passes fixed desktop/mobile
    *  crop ratios so an operator sees the real proportions before adopting. */
   frameClassName?: string;
   /** Picking a focal point in the admin preview. Absent on the public site,

@@ -1,4 +1,4 @@
-import { levelLabel, waterCharacterLabel } from "../lib/labels";
+import { bottomTypeLabel, levelLabel, waterTypeLabel } from "../lib/labels";
 import type { Spot } from "../lib/types";
 
 type Item = { label: string; value: string };
@@ -6,21 +6,20 @@ type Item = { label: string; value: string };
 export default function SpotMetaGrid({ spot }: { spot: Spot }) {
   const items: Item[] = [
     { label: "Level", value: (spot.level ?? []).map(levelLabel).join(", ") },
-    { label: "Gewässer", value: (spot.waterCharacter ?? []).map(waterCharacterLabel).join(", ") },
-    // TODO(redesign): add Untergrund (spot.bottomType) and Wind-Typ (spot.editorial?.windType)
-    // once water_type / bottom_type / editorial.wind_type are mapped in adapt.ts → Spot
+    { label: "Gewässer", value: (spot.waterTypes ?? []).map(waterTypeLabel).join(", ") },
+    { label: "Untergrund", value: (spot.bottomType ?? []).map(bottomTypeLabel).join(", ") },
   ].filter((i) => Boolean(i.value));
 
   if (items.length === 0) return null;
 
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+    <dl className="grid grid-cols-2 gap-x-5 gap-y-4 border-y border-line py-4 sm:grid-cols-3">
       {items.map((item) => (
-        <div key={item.label}>
-          <dt className="text-caption text-muted tracking-wider uppercase mb-1">
+        <div key={item.label} className="min-w-0">
+          <dt className="text-caption font-medium uppercase tracking-[0.08em] text-muted">
             {item.label}
           </dt>
-          <dd className="text-ui text-ink">{item.value}</dd>
+          <dd className="mt-1 text-ui leading-snug text-ink">{item.value}</dd>
         </div>
       ))}
     </dl>

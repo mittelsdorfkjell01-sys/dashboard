@@ -124,6 +124,25 @@ html[data-theme="dark"] { color-scheme: dark; }
 }
 
 @layer utilities {
+  .spot-gallery-compact > div {
+    aspect-ratio: 4 / 3;
+    max-height: 500px;
+  }
+
+  .spot-locator-compact > div > div:first-child {
+    height: 320px;
+  }
+
+  @media (min-width: 1024px) {
+    .spot-gallery-compact > div {
+      aspect-ratio: 4 / 5;
+    }
+
+    .spot-locator-compact > div > div:first-child {
+      height: 400px;
+    }
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
