@@ -5,7 +5,6 @@ import maplibregl, {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { mapLinkProps } from "../lib/mapLinks";
-import { MinusIcon, PlusIcon } from "../lib/icons";
 
 const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
@@ -140,7 +139,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     // handler before it fires.
     <div
       data-lenis-prevent
-      className="relative overflow-hidden rounded-3xl"
+      className="relative overflow-hidden rounded-3xl border border-line bg-band"
     >
       <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
 
@@ -155,23 +154,23 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       )}
 
       <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
-        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
+        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-teal shadow-card">
           <button
             type="button"
             aria-label="Vergrößern"
             onClick={() => mapRef.current?.zoomIn()}
-            className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
+            className="grid h-11 w-11 place-items-center text-white transition-colors hover:bg-teal-hover"
           >
-            <PlusIcon className="text-[20px]" />
+            <ControlGlyph plus />
           </button>
-          <span className="mx-2 h-px bg-line" />
+          <span className="mx-2 h-px bg-white/25" />
           <button
             type="button"
             aria-label="Verkleinern"
             onClick={() => mapRef.current?.zoomOut()}
-            className="grid h-11 w-11 place-items-center text-teal transition-colors hover:bg-line/40"
+            className="grid h-11 w-11 place-items-center text-white transition-colors hover:bg-teal-hover"
           >
-            <MinusIcon className="text-[20px]" />
+            <ControlGlyph />
           </button>
         </div>
 
@@ -179,11 +178,20 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           href={link.href}
           target={link.target}
           rel={link.rel}
-          className="pointer-events-auto rounded-2xl border border-line bg-white px-4 py-2 text-label font-medium text-ink transition-colors hover:bg-line/40"
+          className="pointer-events-auto rounded-2xl bg-teal px-4 py-2 text-label font-medium text-white shadow-card transition-colors hover:bg-teal-hover"
         >
           Maps
         </a>
       </div>
     </div>
+  );
+}
+
+function ControlGlyph({ plus = false }: { plus?: boolean }) {
+  return (
+    <span aria-hidden className="relative block h-4 w-4">
+      <span className="absolute left-0 top-[7px] h-0.5 w-4 rounded-full bg-white" />
+      {plus && <span className="absolute left-[7px] top-0 h-4 w-0.5 rounded-full bg-white" />}
+    </span>
   );
 }

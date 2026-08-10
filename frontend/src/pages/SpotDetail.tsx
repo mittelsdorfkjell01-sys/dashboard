@@ -169,7 +169,7 @@ export default function SpotDetail() {
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="content">
-              <div className="grid min-w-0 gap-x-6 gap-y-8 lg:grid-cols-[minmax(260px,300px)_minmax(360px,1fr)_minmax(260px,300px)]">
+              <div className="grid min-w-0 gap-x-8 gap-y-8 lg:grid-cols-[minmax(320px,380px)_minmax(420px,1fr)_minmax(320px,380px)]">
                 <div className="min-w-0">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
@@ -209,7 +209,7 @@ export default function SpotDetail() {
 
                   {/* The real spot description (editorial.description from the DB);
                       falls back to a gentle note when a spot has none yet. */}
-                  <p className="mt-6 max-w-[55ch] text-body leading-relaxed text-ink-soft">
+                  <p className="mt-6 max-w-[65ch] text-body leading-relaxed text-ink-soft">
                     {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                   </p>
 

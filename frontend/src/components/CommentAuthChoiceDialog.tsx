@@ -41,7 +41,7 @@ export default function CommentAuthChoiceDialog({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[1200] grid place-items-center bg-black/10 p-4 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[1200] grid place-items-center bg-ink/25 p-4 backdrop-blur-[3px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -52,17 +52,17 @@ export default function CommentAuthChoiceDialog({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="w-full max-w-[560px] rounded-3xl bg-white/95 p-7 shadow-card backdrop-blur-md sm:p-9"
+            className="w-full max-w-[520px] rounded-3xl border border-line bg-surface p-6 shadow-float sm:p-7"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: reduce ? 0 : 0.22, ease: "easeOut" }}
           >
-            <h2 className="text-center text-title font-semibold text-teal">{title}</h2>
-            <p className="mt-1.5 text-center text-body text-muted">wie möchtest du fortfahren?</p>
+            <h2 className="text-title font-semibold text-ink">{title}</h2>
+            <p className="mt-1 text-body text-muted">Wie möchtest du fortfahren?</p>
 
-            <div className="mt-7 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3">
               <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym">
                 {anonymousText}
               </ChoiceCard>
@@ -71,11 +71,11 @@ export default function CommentAuthChoiceDialog({
               </ChoiceCard>
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-4 flex justify-end">
               <button
                 type="button"
                 onClick={onCancel}
-                className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 abbrechen
@@ -104,12 +104,14 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col items-center rounded-3xl border border-line px-6 py-8 text-center transition-colors hover:border-teal/50 hover:bg-teal/[0.03]"
+      className="group grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-line bg-page px-4 py-3 text-left transition-colors hover:border-teal/40 hover:bg-band"
     >
-      <span>{icon}</span>
-      <span className="mt-4 text-body font-semibold text-ink">{title}</span>
-      <span className="mt-2 max-w-[24ch] text-caption leading-relaxed text-muted">{children}</span>
-      <span aria-hidden="true" className="mt-6 text-teal transition-transform group-hover:translate-x-1">
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-teal">{icon}</span>
+      <span className="min-w-0">
+        <span className="block text-body font-semibold text-ink">{title}</span>
+        <span className="mt-0.5 block text-caption leading-relaxed text-muted">{children}</span>
+      </span>
+      <span aria-hidden="true" className="text-teal transition-transform group-hover:translate-x-1">
         <ArrowIcon />
       </span>
     </button>
