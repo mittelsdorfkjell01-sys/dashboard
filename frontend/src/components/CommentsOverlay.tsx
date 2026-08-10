@@ -8,7 +8,7 @@ import OverlayPanel from "./OverlayPanel";
  * Kommentare overlay (Figma Frame_11) — the spot's comments as single-level
  * threads: each top-level comment with its replies nested underneath. "Antworte"
  * opens an inline reply mask on that comment; the round "+" FAB opens a
- * new-comment mask. Triggered only by the teaser's "mehr" link.
+ * new-comment mask. Triggered by clicking a comment tile in `SpotCommentBox`.
  */
 export default function CommentsOverlay({
   open,
