@@ -27,9 +27,35 @@ export default function Facilities({
   variant = "grid",
 }: {
   items: Facility[];
-  variant?: "grid" | "rail" | "list";
+  variant?: "grid" | "rail" | "list" | "icons";
 }) {
   if (items.length === 0) return null;
+
+  if (variant === "icons") {
+    return (
+      <div className="flex flex-wrap items-start gap-x-5 gap-y-3">
+        {items.map((f) => {
+          const Icon = facilityIcon[f.kind];
+          const absent = f.available === false;
+          const unknown = f.available === null;
+          return (
+            <div key={f.kind} className="flex flex-col items-center gap-1.5">
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-lg bg-band ${
+                  absent ? "opacity-40" : unknown ? "opacity-30" : ""
+                }`}
+              >
+                <Icon width={16} height={16} className="text-ink-soft" />
+              </div>
+              <span className={`text-caption tracking-wide ${absent ? "text-muted line-through" : "text-muted"}`}>
+                {f.title}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   if (variant === "list") {
     return (

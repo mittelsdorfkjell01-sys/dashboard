@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --sw-page: #F7F7F7;
+  --sw-band: #F5F3F0;
+  --sw-surface: #FFFFFF;
+  --sw-ink: #241C17;
+  --sw-ink-soft: #3D332C;
+  --sw-muted: #6B625B;
+  --sw-line: #E6E1DA;
+  --sw-line-soft: #F0EDE7;
+  --sw-teal: #1E6E7E;
+  --sw-teal-hover: #195C6A;
+  --sw-orange: #B45309;
+  --sw-green: #4A8159;
+}
+
+html[data-theme="dark"] {
+  --sw-page: #0E1114;
+  --sw-band: #14181C;
+  --sw-surface: #1A1F24;
+  --sw-ink: #F1EDE7;
+  --sw-ink-soft: #C7BFB6;
+  --sw-muted: #9B928A;
+  --sw-line: #2A2F34;
+  --sw-line-soft: #22262A;
+  --sw-teal: #3DA5B8;
+  --sw-teal-hover: #5FBED0;
+  --sw-orange: #E7883A;
+  --sw-green: #6BA97A;
+}
+
+html { color-scheme: light dark; transition: background-color 200ms ease-out, color 200ms ease-out; }
+html[data-theme="dark"] { color-scheme: dark; }
+
 /* Wordmark display face ("surfwind data"). Local .otf, served from /public. */
 @font-face {
   font-family: "MADE Mountain";

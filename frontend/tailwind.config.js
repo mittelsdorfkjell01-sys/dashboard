@@ -1,37 +1,40 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: ['selector', 'html[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
         // Text scale. `ink` = headings/primary text, `ink-soft` = running body
-        // copy, `muted` = secondary text/captions. On dark surfaces text stays
-        // white — these three are for light surfaces only.
-        ink: "#241C17",
-        "ink-soft": "#3D332C",
-        muted: "#6B625B",
+        // copy, `muted` = secondary text/captions.
+        ink: {
+          DEFAULT: "var(--sw-ink)",
+          soft: "var(--sw-ink-soft)",
+        },
+        muted: "var(--sw-muted)",
         // Hairline borders/dividers.
-        line: "#E6E1DA",
-        // Surfaces: white is the default surface, `band` is the alternating
+        line: {
+          DEFAULT: "var(--sw-line)",
+          soft: "var(--sw-line-soft)",
+        },
+        // Surfaces: surface is the default card surface, `band` is the alternating
         // section background (was `cream`).
-        surface: "#FFFFFF",
-        band: "#F5F3F0",
-        // Page/body background — cards sit on this as white surfaces.
-        page: "#F7F7F7",
+        surface: "var(--sw-surface)",
+        band: "var(--sw-band)",
+        // Page/body background — cards sit on this as surface.
+        page: "var(--sw-page)",
         // Interaction color — every button, link, hover, focus ring, active
         // tab indicator. Never used for large text blocks the way `ink` is,
         // but passes AA as both text-on-white and white-on-fill (5.9:1).
         teal: {
-          DEFAULT: "#1E6E7E",
-          hover: "#195C6A",
+          DEFAULT: "var(--sw-teal)",
+          hover: "var(--sw-teal-hover)",
         },
         // Attention color — wordmark, map markers, the live-status pulse, the
-        // best-season highlight. Never a button, never a link, never body
-        // text (2.8:1 on white — fails AA as text).
-        orange: "#B45309",
-        // Data accent, shared with the wind-speed scale. Passes AA as text
-        // (4.6:1).
-        green: "#4A8159",
+        // best-season highlight. Never a button, never a link, never body text.
+        orange: "var(--sw-orange)",
+        // Data accent, shared with the wind-speed scale.
+        green: "var(--sw-green)",
 
         // --- Admin back-office palette (independent design system) ---------
         // CSS-var-backed semantic tokens for the admin dashboard ONLY. The

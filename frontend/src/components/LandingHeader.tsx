@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { Wordmark } from "./ui";
 import AccountMenu from "./AccountMenu";
+import ThemeToggle from "./ThemeToggle";
 
 /**
  * Top bar for the hero pages. By default it's transparent and absolute over the
@@ -89,6 +90,7 @@ export default function LandingHeader({
               </Link>
             )}
 
+            <ThemeToggle />
             <AccountMenu />
           </div>
         </div>

@@ -4,12 +4,19 @@ import { motion, useReducedMotion } from "framer-motion";
 type Tone = "white" | "band" | "page";
 type Width = "narrow" | "content" | "wide" | "bleed";
 type Pad = "sm" | "md" | "lg";
+type MaxWidth = "narrow" | "default" | "wide";
 
 const WIDTH_MAX: Record<Width, string> = {
   narrow: "max-w-[720px]",
   content: "max-w-[1180px]",
   wide: "max-w-[1440px]",
   bleed: "max-w-none",
+};
+
+const MAX_WIDTH_CLASS: Record<MaxWidth, string> = {
+  narrow: "max-w-[960px]",
+  default: "max-w-[1180px]",
+  wide: "max-w-[1440px]",
 };
 
 const PAD_Y: Record<Pad, string> = {
@@ -46,6 +53,7 @@ export default function SectionBand({
   align = "left",
   heading,
   className = "",
+  maxWidth,
   children,
 }: {
   /** Anchor id for the sticky subnav's jump links. `scroll-mt-24` is applied
@@ -57,6 +65,9 @@ export default function SectionBand({
   align?: "left" | "center";
   heading?: string;
   className?: string;
+  /** Override the inner max-width independently of `width`. narrow=960px,
+   *  default=1180px, wide=1440px. Falls back to WIDTH_MAX[width] when omitted. */
+  maxWidth?: MaxWidth;
   /** Optional — omit for a header-only band (heading with no body), e.g. a
    *  centered heading that precedes a separate full-bleed section. */
   children?: ReactNode;
@@ -64,6 +75,7 @@ export default function SectionBand({
   const isBleed = width === "bleed";
   const hasHeader = Boolean(heading);
   const reduce = useReducedMotion();
+  const innerMaxWidth = maxWidth ? MAX_WIDTH_CLASS[maxWidth] : WIDTH_MAX[width];
 
   return (
     <motion.section
@@ -75,7 +87,7 @@ export default function SectionBand({
       className={`${id ? "scroll-mt-24" : ""} ${TONE_BG[tone]}`}
     >
       <div
-        className={`mx-auto min-w-0 max-w-full ${WIDTH_MAX[width]} ${
+        className={`mx-auto min-w-0 max-w-full ${innerMaxWidth} ${
           isBleed ? "px-0" : "px-4 sm:px-8"
         } ${PAD_Y[pad]} ${className}`}
       >
