@@ -150,6 +150,7 @@ export default function SpotDetail() {
             alt={spot.name}
             credit={spot.heroCredit}
             delivery={spot.heroDelivery}
+            frameClassName="aspect-[21/9] h-auto"
           />
         )}
 
@@ -168,7 +169,7 @@ export default function SpotDetail() {
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="content">
-              <div className="grid min-w-0 gap-x-8 gap-y-8 lg:grid-cols-[minmax(320px,380px)_minmax(420px,1fr)_minmax(320px,380px)]">
+              <div className="grid min-w-0 gap-x-8 gap-y-8 lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]">
                 <div className="min-w-0">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
@@ -217,7 +218,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div className="spot-gallery-compact min-w-0">
+                <div className="spot-gallery-compact w-full min-w-0 justify-self-center">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}

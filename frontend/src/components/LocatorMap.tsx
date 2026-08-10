@@ -139,7 +139,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     // handler before it fires.
     <div
       data-lenis-prevent
-      className="relative overflow-hidden rounded-3xl border border-line bg-band"
+      className="spot-media-frame relative overflow-hidden border border-line bg-band"
     >
       <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
 
