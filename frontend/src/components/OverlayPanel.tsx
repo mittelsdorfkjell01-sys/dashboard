@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CloseIcon } from "../lib/icons";
+import { getLenis } from "../lib/lenis";
 
 /**
  * Shared bottom-sheet chassis for the Fotogalerie/Kommentare overlays (Figma
@@ -34,19 +35,32 @@ export default function OverlayPanel({
   const reduce = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Lock the page while an overlay is open so the background can't be scrolled
-  // or interacted with. Compensate the scrollbar width to avoid a layout jump.
+  // Lock both native scrolling and Lenis while the portalled sheet is open.
+  // Locking only `body` leaves Lenis' `<html>` scroller active and makes the
+  // gallery/comments sheet jump or move with the page behind it.
   useEffect(() => {
     if (!open) return;
-    const { body } = document;
+    const { body, documentElement } = document;
+    const appRoot = document.getElementById("root");
+    const lenis = getLenis();
     const prevOverflow = body.style.overflow;
+    const prevHtmlOverflow = documentElement.style.overflow;
     const prevPaddingRight = body.style.paddingRight;
+    const rootWasInert = appRoot?.inert ?? false;
     const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+
+    lenis?.stop();
+    if (appRoot) appRoot.inert = true;
     body.style.overflow = "hidden";
+    documentElement.style.overflow = "hidden";
     if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
+
     return () => {
       body.style.overflow = prevOverflow;
+      documentElement.style.overflow = prevHtmlOverflow;
       body.style.paddingRight = prevPaddingRight;
+      if (appRoot) appRoot.inert = rootWasInert;
+      lenis?.start();
     };
   }, [open]);
 
