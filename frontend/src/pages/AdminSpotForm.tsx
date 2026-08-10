@@ -4,7 +4,6 @@ import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
-import ConflictDialog from "../components/admin/ConflictDialog";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmToast from "../components/admin/ConfirmToast";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
@@ -29,6 +28,8 @@ import {
   type ImageRecord,
   type Readiness,
   type SpotCreateBody,
+  type SpotUpdateBody,
+  type SpotRead,
 } from "../lib/api";
 import {
   FACILITY_KINDS,
@@ -142,10 +143,8 @@ export default function AdminSpotForm() {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(isEdit);
-  // Optimistic locking: the `updated_at` the form loaded, sent back on save so
-  // the server can reject a stale overwrite (409). Refreshed on every save.
-  const [loadedUpdatedAt, setLoadedUpdatedAt] = useState<string | null>(null);
-  const [conflictOpen, setConflictOpen] = useState(false);
+  // Full server baseline used to build a changed-fields-only PATCH.
+  const loadedSpotRef = useRef<SpotRead | null>(null);
   const [duplicateConflict, setDuplicateConflict] = useState<DuplicateConflict | null>(null);
   const [pendingDelete, setPendingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -266,7 +265,7 @@ export default function AdminSpotForm() {
   // `updated_at` used as the optimistic-locking token on save. Reused by the
   // edit-mode prefill and by the conflict dialog's "Neu laden".
   const applySpot = (s: Awaited<ReturnType<typeof getAdminSpot>>) => {
-    setLoadedUpdatedAt(s.updated_at);
+    loadedSpotRef.current = s;
     setModelPref(s.model_pref ?? "");
     setName(s.name);
     setSlug(s.slug);
@@ -381,9 +380,63 @@ export default function AdminSpotForm() {
     return Object.keys(errs).length === 0;
   };
 
-  // `force` skips the optimistic-locking token — used by the conflict dialog's
-  // "Trotzdem überschreiben" after the operator has been warned.
-  const doSave = async (force: boolean, allowDuplicate = false) => {
+  const sameValue = (a: unknown, b: unknown) =>
+    stableFormValue(a) === stableFormValue(b);
+
+  const buildSpotPatch = (): SpotUpdateBody => {
+    const loaded = loadedSpotRef.current;
+    if (!loaded) return {};
+    const patch: SpotUpdateBody = {};
+    const expected: Record<string, unknown> = {};
+    const add = (field: keyof SpotUpdateBody, value: unknown, oldValue: unknown) => {
+      if (sameValue(value, oldValue)) return;
+      (patch as Record<string, unknown>)[field] = value;
+      expected[field] = oldValue;
+    };
+    add("name", name.trim(), loaded.name);
+    add("slug", effectiveSlug, loaded.slug);
+    add("region_id", regionId, loaded.region_id);
+    const nextLat = Number(lat);
+    const nextLon = Number(lon);
+    if (!sameValue(nextLat, loaded.location?.lat) || !sameValue(nextLon, loaded.location?.lon)) {
+      patch.lat = nextLat;
+      patch.lon = nextLon;
+      expected.lat = loaded.location?.lat ?? null;
+      expected.lon = loaded.location?.lon ?? null;
+    }
+    add("sports", sports, loaded.sports ?? []);
+    add("level", level, loaded.level ?? []);
+    add("water_character", waterCharacter, loaded.water_character ?? []);
+    add("style", styles, loaded.style ?? []);
+    add("water_type", waterType, loaded.water_type ?? []);
+    add("bottom_type", bottomType, loaded.bottom_type ?? []);
+    add("facing", facing !== "" ? Number(facing) : null, loaded.facing ?? null);
+    add("facilities", buildFacilities(), loaded.facilities ?? null);
+    add("model_pref", modelPref || null, loaded.model_pref ?? null);
+
+    const editorial: Record<string, unknown> = {};
+    const expectedEditorial: Record<string, unknown> = {};
+    const nextEditorial = {
+      description: description.trim() || null,
+      tide: isSurf ? tide.trim() || null : null,
+      map_view: mapView,
+    };
+    for (const [key, value] of Object.entries(nextEditorial)) {
+      const oldValue = loaded.editorial?.[key] ?? null;
+      if (!sameValue(value, oldValue)) {
+        editorial[key] = value;
+        expectedEditorial[key] = oldValue;
+      }
+    }
+    if (Object.keys(editorial).length) {
+      patch.editorial = editorial;
+      expected.editorial = expectedEditorial;
+    }
+    patch.expected_values = expected;
+    return patch;
+  };
+
+  const doSave = async (allowDuplicate = false) => {
     setError(null);
     setReadiness(null);
     setSubmitting(true);
@@ -408,21 +461,21 @@ export default function AdminSpotForm() {
 
       let spot;
       if (isEdit && id) {
-        spot = await updateSpot(id, {
-          ...body,
-          model_pref: modelPref || null,
-          expected_updated_at: force ? undefined : loadedUpdatedAt ?? undefined,
-        });
-        // Adopt the new version so a second save in the same session isn't
-        // rejected as stale against its own successful write.
-        setLoadedUpdatedAt(spot.updated_at);
+        const patch = buildSpotPatch();
+        const hasChanges = Object.keys(patch).some((key) => key !== "expected_values");
+        spot = hasChanges
+          ? await updateSpot(id, { ...patch, allow_duplicate: allowDuplicate })
+          : loadedSpotRef.current!;
       } else {
         spot = await createSpot(body);
       }
 
       if (heroFile) {
         await uploadHeroImage(spot.id, heroFile, credit.trim());
+        spot = await getAdminSpot(spot.id);
       }
+
+      applySpot(spot);
 
       const r = await getReadiness(spot.id);
       setReadiness(r);
@@ -448,7 +501,7 @@ export default function AdminSpotForm() {
           return;
         }
         if (err.status === 409) {
-          setConflictOpen(true);
+          setError(err.message);
           return;
         }
         setError(err.message);
@@ -473,24 +526,7 @@ export default function AdminSpotForm() {
     e.preventDefault();
     setError(null);
     if (!validateLocal()) return;
-    // Operator opt-in: always force. The conflict dialog was routinely
-    // waved through, so we skip it — a stale write wins silently. If a
-    // second editor becomes a real risk, restore the optimistic-locking
-    // token here and reopen the dialog on 409.
-    void doSave(true);
-  };
-
-  // Conflict dialog: discard local edits and reload the server's version.
-  const reloadFromServer = () => {
-    setConflictOpen(false);
-    if (!id) return;
-    setLoadingExisting(true);
-    getAdminSpot(id)
-      .then(applySpot)
-      .catch((e) =>
-        setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
-      )
-      .finally(() => setLoadingExisting(false));
+    void doSave();
   };
 
   const regionOptions = useMemo(
@@ -1233,23 +1269,13 @@ export default function AdminSpotForm() {
         </button>
       </div>
 
-      <ConflictDialog
-        open={conflictOpen}
-        busy={submitting}
-        onReload={reloadFromServer}
-        onOverwrite={() => {
-          setConflictOpen(false);
-          void doSave(true);
-        }}
-        onClose={() => setConflictOpen(false)}
-      />
       <DuplicateWarningDialog
         conflict={duplicateConflict}
         busy={submitting}
         onClose={() => setDuplicateConflict(null)}
         onOverride={() => {
           setDuplicateConflict(null);
-          void doSave(false, true);
+          void doSave(true);
         }}
       />
       <UnsavedChangesDialog blocker={blocker} />

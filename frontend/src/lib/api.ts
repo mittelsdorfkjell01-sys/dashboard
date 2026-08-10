@@ -408,7 +408,9 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
       (detail && typeof detail === "object" && "detail" in detail
         ? typeof (detail as any).detail === "string"
           ? (detail as any).detail
-          : JSON.stringify((detail as any).detail)
+          : typeof (detail as any).detail?.message === "string"
+            ? (detail as any).detail.message
+            : JSON.stringify((detail as any).detail)
         : null) || `Anfrage fehlgeschlagen (${resp.status}).`;
     throw new ApiError(msg, resp.status, detail);
   }
@@ -1235,6 +1237,7 @@ export const updateRegion = (
     season?: Record<string, unknown> | null;
     /** Optimistic-locking token; omit to force an overwrite after a 409. */
     expected_updated_at?: string;
+    expected_values?: Record<string, unknown>;
     allow_duplicate?: boolean;
   }
 ) =>
@@ -1371,6 +1374,8 @@ export type SpotUpdateBody = Partial<SpotCreateBody> & {
   /** Optimistic-locking token: the `updated_at` the form loaded. Omit to force
    *  an overwrite after a 409 conflict. */
   expected_updated_at?: string;
+  /** Baseline values for exactly the fields in this PATCH. */
+  expected_values?: Record<string, unknown>;
 };
 
 export const createSpot = (body: SpotCreateBody) =>

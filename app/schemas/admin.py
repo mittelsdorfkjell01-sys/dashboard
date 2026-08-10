@@ -96,6 +96,7 @@ class SpotUpdate(AdminWriteModel):
     # the route rejects the write (409) if the row changed meanwhile. Never a
     # data column — excluded from ``to_data()``.
     expected_updated_at: datetime | None = None
+    expected_values: dict[str, Any] | None = None
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
@@ -125,7 +126,7 @@ class SpotUpdate(AdminWriteModel):
             raise ValueError("Name darf nicht leer sein")
         return value
 
-    @field_validator("facilities", "editorial")
+    @field_validator("facilities", "editorial", "expected_values")
     @classmethod
     def _limit_json(cls, value: Any, info) -> Any:
         return _bounded_json(value, label=info.field_name)
@@ -135,7 +136,7 @@ class SpotUpdate(AdminWriteModel):
         The locking token is stripped — it is not a persisted field."""
         return self.model_dump(
             exclude_unset=True,
-            exclude={"expected_updated_at", "allow_duplicate"},
+            exclude={"expected_updated_at", "expected_values", "allow_duplicate"},
         )
 
 
@@ -257,6 +258,7 @@ class RegionUpdate(AdminWriteModel):
     season: dict[str, Any] | None = None
     # See SpotUpdate.expected_updated_at.
     expected_updated_at: datetime | None = None
+    expected_values: dict[str, Any] | None = None
     allow_duplicate: bool = False
 
     @field_validator("name")
@@ -269,7 +271,7 @@ class RegionUpdate(AdminWriteModel):
     def _upper_country(cls, value: str | None) -> str | None:
         return value.upper() if value else value
 
-    @field_validator("defaults", "season")
+    @field_validator("defaults", "season", "expected_values")
     @classmethod
     def _limit_json(cls, value: Any, info) -> Any:
         return _bounded_json(value, label=info.field_name)
@@ -277,7 +279,7 @@ class RegionUpdate(AdminWriteModel):
     def to_data(self) -> dict:
         return self.model_dump(
             exclude_unset=True,
-            exclude={"expected_updated_at", "allow_duplicate"},
+            exclude={"expected_updated_at", "expected_values", "allow_duplicate"},
         )
 
 

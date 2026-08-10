@@ -110,6 +110,66 @@ def _guard_version(db: Session, model, obj_id, expected: datetime | None) -> Non
         )
 
 
+def _json_value(value):
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    return value
+
+
+def _guard_fields(db: Session, model, obj_id, expected_values: dict | None) -> None:
+    """Compare only fields the editor is about to patch.
+
+    This permits unrelated concurrent writes while preventing loss when two
+    operators edit the same field. Editorial expectations are nested and are
+    compared key-by-key because editorial itself is merged by the write service.
+    """
+    if expected_values is None:
+        return
+    obj = db.get(model, obj_id)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    conflicts: list[str] = []
+    for field, expected in expected_values.items():
+        if field in ("lat", "lon"):
+            from geoalchemy2.shape import to_shape
+            point = to_shape(obj.location)
+            current = float(point.y if field == "lat" else point.x)
+        elif field == "editorial" and isinstance(expected, dict):
+            current_editorial = obj.editorial or {}
+            for key, old_value in expected.items():
+                if current_editorial.get(key) != old_value:
+                    conflicts.append(f"editorial.{key}")
+            continue
+        else:
+            if not hasattr(obj, field):
+                continue
+            current = _json_value(getattr(obj, field))
+        if current != expected:
+            conflicts.append(field)
+    if conflicts:
+        labels = ", ".join(conflicts)
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "field_conflict",
+                "message": f"Zwischenzeitlich ebenfalls geändert: {labels}.",
+                "fields": conflicts,
+            },
+        )
+
+
+def _validate_field_expectations(data: dict, expected_values: dict | None) -> None:
+    if expected_values is None:
+        return
+    unexpected = set(expected_values) - set(data)
+    if unexpected:
+        raise HTTPException(status_code=422, detail="Konfliktbasis enthält unveränderte Felder.")
+    if isinstance(expected_values.get("editorial"), dict):
+        editorial = data.get("editorial") or {}
+        if set(expected_values["editorial"]) != set(editorial):
+            raise HTTPException(status_code=422, detail="Konfliktbasis für Editorial-Felder ist ungültig.")
+
+
 def _catalog_conflict(db: Session, exc: IntegrityError) -> HTTPException:
     db.rollback()
     return HTTPException(
@@ -277,11 +337,16 @@ def update_spot(
     """Patch a spot: editorial (merged) + structural/category columns. Only the
     fields present in the request are applied. Invalid enum values → 422.
     Optimistic lock: send ``expected_updated_at`` → 409 on a stale write."""
-    _guard_version(db, Spot, spot_id, body.expected_updated_at)
+    data = body.to_data()
+    _validate_field_expectations(data, body.expected_values)
+    if body.expected_values is not None:
+        _guard_fields(db, Spot, spot_id, body.expected_values)
+    else:
+        _guard_version(db, Spot, spot_id, body.expected_updated_at)
     try:
         spot = admin_spots.update_spot(
             spot_id,
-            body.to_data(),
+            data,
             db=db,
             client=client,
             actor=actor,
@@ -899,11 +964,16 @@ def update_region(
 ):
     """Edit a region: description, season (Windmonate), defaults, name.
     Optimistic lock: send ``expected_updated_at`` → 409 on a stale write."""
-    _guard_version(db, Region, region_id, body.expected_updated_at)
+    data = body.to_data()
+    _validate_field_expectations(data, body.expected_values)
+    if body.expected_values is not None:
+        _guard_fields(db, Region, region_id, body.expected_values)
+    else:
+        _guard_version(db, Region, region_id, body.expected_updated_at)
     try:
         region = admin_regions.update_region(
             region_id,
-            body.to_data(),
+            data,
             db=db,
             allow_duplicate=_allow_duplicate(body.allow_duplicate, principal),
             actor=actor,

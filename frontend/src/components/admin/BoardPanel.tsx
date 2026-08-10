@@ -11,7 +11,7 @@ import {
   updateBoardTask,
   type BoardTask,
 } from "../../lib/api";
-import { Button, Input, Textarea } from "../ui";
+import { Button, Field, Input, Select, Textarea } from "../ui";
 import Modal from "../ui/Modal";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
@@ -32,9 +32,10 @@ export default function BoardPanel() {
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<Status | null>(null);
   const [editTarget, setEditTarget] = useState<BoardTask | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<BoardTask | null>(null);
-  const [dialogBusy, setDialogBusy] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
 
   const load = () =>
     getBoardTasks()
@@ -44,6 +45,19 @@ export default function BoardPanel() {
       );
   useEffect(() => {
     void load();
+  }, []);
+
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "n") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
+      if (!boardRef.current) return;
+      event.preventDefault();
+      setNewOpen(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const move = async (task: BoardTask, status: Status) => {
@@ -58,27 +72,40 @@ export default function BoardPanel() {
     }
   };
 
-  const remove = async () => {
-    if (!deleteTarget) return;
-    setDialogBusy(true);
+  const remove = async (ids: string[]) => {
+    if (!ids.length || deleting) return;
+    setDeleting(true);
+    setError(null);
     try {
-      await deleteBoardTask(deleteTarget.id);
-      setDeleteTarget(null);
-      await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Löschen fehlgeschlagen.");
+      const results = await Promise.allSettled(ids.map(deleteBoardTask));
+      const failed = results.filter((result) => result.status === "rejected").length;
+      const deleted = ids.filter((_, index) => results[index].status === "fulfilled");
+      setTasks((current) => current.filter((task) => !deleted.includes(task.id)));
+      setSelected((current) => new Set([...current].filter((id) => !deleted.includes(id))));
+      if (failed) setError(`${deleted.length} gelöscht, ${failed} konnten nicht gelöscht werden.`);
     } finally {
-      setDialogBusy(false);
+      setDeleting(false);
     }
   };
 
   return (
-    <div>
+    <div ref={boardRef}>
       {error && (
         <div role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
           {error}
         </div>
       )}
+
+      <div className="mb-3 flex min-h-9 flex-wrap items-center justify-between gap-2">
+        <Button type="button" onClick={() => setNewOpen(true)}>
+          Neue Aufgabe <span className="ml-2 text-caption opacity-70">Strg/Cmd + N</span>
+        </Button>
+        {selected.size > 0 && (
+          <Button type="button" variant="danger" disabled={deleting} onClick={() => void remove([...selected])}>
+            {deleting ? "Löschen …" : `${selected.size} ausgewählte löschen`}
+          </Button>
+        )}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {COLUMNS.map((col) => {
@@ -129,7 +156,13 @@ export default function BoardPanel() {
                       task={t}
                       onMove={(s) => move(t, s)}
                       onEdit={() => setEditTarget(t)}
-                      onDelete={() => setDeleteTarget(t)}
+                      selected={selected.has(t.id)}
+                      onSelect={() => setSelected((current) => {
+                        const next = new Set(current);
+                        if (next.has(t.id)) next.delete(t.id); else next.add(t.id);
+                        return next;
+                      })}
+                      onDelete={() => void remove([t.id])}
                     />
                   ))
                 )}
@@ -156,14 +189,6 @@ export default function BoardPanel() {
         onError={setError}
         onDirtyChange={(dirty) => setDirty("edit-task", dirty)}
       />
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Aufgabe löschen"
-        message={deleteTarget ? `„${deleteTarget.title}" wird gelöscht.` : undefined}
-        busy={dialogBusy}
-        onConfirm={remove}
-        onCancel={() => setDeleteTarget(null)}
-      />
       <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
@@ -173,20 +198,27 @@ function TaskCard({
   task,
   onMove,
   onEdit,
+  selected,
+  onSelect,
   onDelete,
 }: {
   task: BoardTask;
   onMove: (status: Status) => void;
   onEdit: () => void;
+  selected: boolean;
+  onSelect: () => void;
   onDelete: () => void;
 }) {
   return (
     <div
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", task.id)}
-      className="cursor-grab rounded-lg border border-line bg-white p-3 active:cursor-grabbing"
+      className={`cursor-grab rounded-lg border bg-white p-3 active:cursor-grabbing ${selected ? "border-teal ring-1 ring-teal/30" : "border-line"}`}
     >
-      <p className="text-label font-medium text-ink">{task.title}</p>
+      <div className="flex items-start gap-2">
+        <input type="checkbox" checked={selected} onChange={onSelect} aria-label={`Aufgabe ${task.title} auswählen`} className="mt-0.5 h-4 w-4 rounded border-line accent-[var(--a-primary)]" />
+        <p className="min-w-0 flex-1 text-label font-medium text-ink">{task.title}</p>
+      </div>
       {task.body && <TaskDetails body={task.body} />}
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-caption text-muted">{task.author ?? "—"}</span>
@@ -213,11 +245,12 @@ function TaskCard({
 }
 
 function TaskDetails({ body }: { body: string }) {
-  const blocks: { type: "list" | "text"; lines: string[] }[] = [];
+  const blocks: { type: "bullet" | "number" | "text"; lines: string[] }[] = [];
   for (const line of body.split("\n")) {
     const bullet = /^[-*]\s+(.*)$/.exec(line);
-    const type = bullet ? "list" : "text";
-    const value = bullet ? bullet[1] : line;
+    const numbered = /^\d+\.\s+(.*)$/.exec(line);
+    const type = bullet ? "bullet" : numbered ? "number" : "text";
+    const value = bullet?.[1] ?? numbered?.[1] ?? line;
     const last = blocks[blocks.length - 1];
     if (last?.type === type) last.lines.push(value);
     else blocks.push({ type, lines: [value] });
@@ -225,10 +258,14 @@ function TaskDetails({ body }: { body: string }) {
   return (
     <div className="mt-1 space-y-1 text-caption text-muted">
       {blocks.map((block, index) =>
-        block.type === "list" ? (
+        block.type === "bullet" ? (
           <ul key={index} className="list-disc space-y-0.5 pl-5">
             {block.lines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}
           </ul>
+        ) : block.type === "number" ? (
+          <ol key={index} className="list-decimal space-y-0.5 pl-5">
+            {block.lines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}
+          </ol>
         ) : (
           <p key={index} className="whitespace-pre-wrap">{block.lines.join("\n")}</p>
         )
@@ -254,13 +291,14 @@ function TaskDialog({
 }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [status, setStatus] = useState<Status>("open");
   const [busy, setBusy] = useState(false);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const initial = { title: task?.title ?? "", body: task?.body ?? "" };
-  const dirty = useFormDirty({ title, body }, initial, open);
+  const initial = { title: task?.title ?? "", body: task?.body ?? "", status: task?.status ?? "open" as Status };
+  const dirty = useFormDirty({ title, body, status }, initial, open);
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
@@ -269,10 +307,11 @@ function TaskDialog({
     if (open) {
       setTitle(initial.title);
       setBody(initial.body);
+      setStatus(initial.status);
       setTitleError(null);
       setSaveError(null);
     }
-  }, [open, initial.body, initial.title]);
+  }, [open, initial.body, initial.status, initial.title]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -286,7 +325,7 @@ function TaskDialog({
     setBusy(true);
     try {
       if (task) {
-        await updateBoardTask(task.id, { title: title.trim(), body });
+        await updateBoardTask(task.id, { title: title.trim(), body, status });
       } else {
         await createBoardTask(title.trim(), body || undefined);
       }
@@ -302,11 +341,52 @@ function TaskDialog({
     }
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
-    if (event.currentTarget === bodyRef.current && event.shiftKey) return;
-    event.preventDefault();
-    if (!busy) event.currentTarget.form?.requestSubmit();
+  const onTitleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      bodyRef.current?.focus();
+    }
+  };
+
+  const onBodyChange = (value: string) => {
+    // `/s` at a line start is a quick command and never remains in the value.
+    setBody(value.replace(/(^|\n)\/s(?:\s)?$/g, "$1- "));
+  };
+
+  const onBodyKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Enter" && event.key !== "Backspace") return;
+    const textarea = event.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start !== end) return;
+    const lineStart = body.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const lineEndIndex = body.indexOf("\n", start);
+    const lineEnd = lineEndIndex === -1 ? body.length : lineEndIndex;
+    const line = body.slice(lineStart, lineEnd);
+    const marker = /^(\s*)([-*]|(\d+)\.)\s(.*)$/.exec(line);
+    if (!marker) return;
+    const prefixLength = marker[1].length + marker[2].length + 1;
+    if (event.key === "Backspace" && marker[4] === "" && start === lineStart + prefixLength) {
+      event.preventDefault();
+      const next = body.slice(0, lineStart) + body.slice(lineStart + prefixLength);
+      setBody(next);
+      requestAnimationFrame(() => textarea.setSelectionRange(lineStart, lineStart));
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const nextPrefix = marker[3] ? `${Number(marker[3]) + 1}. ` : "- ";
+      if (marker[4] === "") {
+        const next = body.slice(0, lineStart) + body.slice(lineEnd);
+        setBody(next);
+        requestAnimationFrame(() => textarea.setSelectionRange(lineStart, lineStart));
+      } else {
+        const insertion = `\n${marker[1]}${nextPrefix}`;
+        const next = body.slice(0, start) + insertion + body.slice(start);
+        setBody(next);
+        requestAnimationFrame(() => textarea.setSelectionRange(start + insertion.length, start + insertion.length));
+      }
+    }
   };
 
   const insertBullet = () => {
@@ -331,41 +411,47 @@ function TaskDialog({
 
   return (
     <>
-    <Modal open={open} onClose={close} labelledBy="task-dialog-title">
-      <form onSubmit={submit}>
+    <Modal open={open} onClose={close} labelledBy="task-dialog-title" cardClassName="max-w-2xl rounded-xl bg-white p-0">
+      <form onSubmit={submit} className="overflow-hidden">
+        <div className="border-b border-line px-5 py-4">
         <h2 id="task-dialog-title" className="text-ui font-semibold text-ink">
           {task ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
         </h2>
-        <label htmlFor="new-task-title-input" className="mt-4 block text-label text-ink-soft">Titel</label>
+        <p className="mt-1 text-caption text-muted">Titel, Beschreibung und Workflow-Status</p>
+        </div>
+        <div className="space-y-4 px-5 py-5">
+        <Field label="Titel" required error={titleError ?? undefined}>
         <Input
           id="new-task-title-input"
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={onKeyDown}
+          onKeyDown={onTitleKeyDown}
           aria-invalid={Boolean(titleError)}
           placeholder="Titel"
-          className="mt-1.5"
         />
-        {titleError && <p role="alert" className="mt-1 text-caption text-red-700">{titleError}</p>}
-        <label htmlFor="new-task-body" className="mt-3 block text-label text-ink-soft">Details (optional)</label>
+        </Field>
+        {task && <Field label="Status"><Select value={status} onChange={(event) => setStatus(event.target.value as Status)}><option value="open">Offen</option><option value="done">Erledigt</option></Select></Field>}
+        <Field label="Beschreibung" hint="Markdown-Listen bleiben beim Neuladen erhalten. /s startet eine Stichpunktliste.">
         <Textarea
           ref={bodyRef}
           id="new-task-body"
-          className="mt-1.5 min-h-[96px] resize-y"
+          className="min-h-[180px] resize-y font-mono text-[13px] leading-6"
           value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Details (optional)"
+          onChange={(e) => onBodyChange(e.target.value)}
+          onKeyDown={onBodyKeyDown}
+          placeholder="Beschreibung hinzufügen …"
         />
+        </Field>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <button type="button" onClick={insertBullet} className="text-caption font-medium text-teal hover:underline">
             Stichpunkt
           </button>
-          <p className="text-caption text-muted">Enter zum Speichern · Shift+Enter für neue Zeile</p>
+          <p className="text-caption text-muted">1. + Leerzeichen für nummerierte Liste · /s für Stichpunkte</p>
         </div>
         {saveError && <p role="alert" className="mt-2 text-caption text-red-700">{saveError}</p>}
-        <div className="mt-5 flex items-center justify-end gap-2">
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-line bg-band/40 px-5 py-3">
           <Button type="button" variant="ghost" onClick={close} disabled={busy}>
             Abbrechen
           </Button>

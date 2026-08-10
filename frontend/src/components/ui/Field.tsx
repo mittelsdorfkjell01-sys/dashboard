@@ -38,7 +38,7 @@ export default function Field({
       : children;
 
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="text-[13px] font-medium text-ink">
         {label}
         {required && (
@@ -47,7 +47,7 @@ export default function Field({
           </span>
         )}
       </span>
-      <div className="mt-1.5">{control}</div>
+      <div className="mt-1.5 min-h-10">{control}</div>
       {hint && !error && (
         <p id={hintId} className="mt-1 text-[12px] text-muted">
           {hint}

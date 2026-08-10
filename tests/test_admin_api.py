@@ -1019,6 +1019,45 @@ def test_spot_patch_current_and_forced_updated_at_succeed(admin, region_id):
     assert forced.json()["name"] == "Forced"
 
 
+def test_spot_patch_merges_unrelated_concurrent_fields(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    assert admin.patch(f"/admin/spots/{sid}", json={"level": ["advanced"]}).status_code == 200
+    response = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"name": "Field merge", "expected_values": {"name": spot["name"]}},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["name"] == "Field merge"
+    assert admin.get(f"/admin/spots/{sid}/record").json()["level"] == ["advanced"]
+
+
+def test_spot_patch_same_field_conflict_is_specific(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    admin.patch(f"/admin/spots/{sid}", json={"name": "Concurrent"})
+    response = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"name": "Mine", "expected_values": {"name": spot["name"]}},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "field_conflict"
+    assert response.json()["detail"]["fields"] == ["name"]
+    assert admin.get(f"/admin/spots/{sid}/record").json()["name"] == "Concurrent"
+
+
+def test_spot_patch_can_clear_optional_editorial_field(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    admin.patch(f"/admin/spots/{sid}", json={"editorial": {"description": "Text"}})
+    response = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"editorial": {"description": None}, "expected_values": {"editorial": {"description": "Text"}}},
+    )
+    assert response.status_code == 200, response.text
+    assert admin.get(f"/admin/spots/{sid}/record").json()["editorial"]["description"] is None
+
+
 def test_spot_patch_moves_pin_and_reresolves_era5_cell(admin, region_id):
     """Correcting the pin (lat/lon) must persist — regression: SpotUpdate used to
     drop lat/lon, so the marker snapped back on the next open."""

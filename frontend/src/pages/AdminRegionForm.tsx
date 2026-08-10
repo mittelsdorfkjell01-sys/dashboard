@@ -27,7 +27,6 @@ import {
 } from "../lib/api";
 import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
-import ConflictDialog from "../components/admin/ConflictDialog";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { Button, Input, Textarea } from "../components/ui";
@@ -80,7 +79,6 @@ export default function AdminRegionForm() {
   const [notice, setNotice] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState<MediaRole | null>(null);
   const [busy, setBusy] = useState(false);
-  const [conflictOpen, setConflictOpen] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<{
     conflict: DuplicateConflict;
     retry: () => void;
@@ -192,8 +190,7 @@ export default function AdminRegionForm() {
   const regionName = (rid: string) =>
     regions.find((r) => r.id === rid)?.name ?? "—";
 
-  // `force` skips the optimistic-locking token (conflict dialog → overwrite).
-  const doSaveFields = async (force: boolean, allowDuplicate = false) => {
+  const doSaveFields = async (allowDuplicate = false) => {
     if (!id) return;
     setBusy(true);
     setError(null);
@@ -207,14 +204,21 @@ export default function AdminRegionForm() {
       season.best_months = [...bestMonths].sort((a, b) => a - b);
     }
     try {
-      const updated = await updateRegion(id, {
-        name: name.trim() || undefined,
-        country: country.trim() ? country.trim() : null,
-        description: description.trim() ? description.trim() : null,
-        season,
-        expected_updated_at: force ? undefined : region?.updated_at,
-        allow_duplicate: allowDuplicate,
-      });
+      const patch: Parameters<typeof updateRegion>[1] = { expected_values: {} };
+      const expected = patch.expected_values!;
+      const add = (field: "name" | "country" | "description" | "season", value: unknown, oldValue: unknown) => {
+        if (stableFormValue(value) === stableFormValue(oldValue)) return;
+        (patch as Record<string, unknown>)[field] = value;
+        expected[field] = oldValue;
+      };
+      add("name", name.trim(), region?.name);
+      add("country", country.trim() || null, region?.country ?? null);
+      add("description", description.trim() || null, region?.description ?? null);
+      add("season", season, region?.season ?? null);
+      patch.allow_duplicate = allowDuplicate;
+      const updated = Object.keys(expected).length
+        ? await updateRegion(id, patch)
+        : region!;
       setRegion(updated);
       const updatedMonths = Array.isArray(updated.season?.best_months)
         ? (updated.season!.best_months as number[])
@@ -243,14 +247,11 @@ export default function AdminRegionForm() {
       if (duplicate) {
         setDuplicateWarning({
           conflict: duplicate,
-          retry: () => void doSaveFields(force, true),
+          retry: () => void doSaveFields(true),
         });
         return;
       }
-      if (err instanceof ApiError && err.status === 409) {
-        setConflictOpen(true);
-        return;
-      }
+      if (err instanceof ApiError && err.status === 409) setError(err.message);
       setError(err instanceof ApiError ? err.message : "Speichern fehlgeschlagen.");
     } finally {
       setBusy(false);
@@ -259,7 +260,7 @@ export default function AdminRegionForm() {
 
   const saveFields = (e: FormEvent) => {
     e.preventDefault();
-    void doSaveFields(false);
+    void doSaveFields();
   };
 
   const saveImageUrl = async () => {
@@ -915,7 +916,7 @@ export default function AdminRegionForm() {
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void doSaveFields(false)}
+                onClick={() => void doSaveFields()}
                 className="rounded-md bg-admin-primary px-3 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
               >
                 Änderungen speichern
@@ -934,21 +935,6 @@ export default function AdminRegionForm() {
         onCancel={() => setDeleteOpen(false)}
       />
 
-      <ConflictDialog
-        open={conflictOpen}
-        busy={busy}
-        onReload={() => {
-          setConflictOpen(false);
-          loadRegion().catch((e) =>
-            setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")
-          );
-        }}
-        onOverwrite={() => {
-          setConflictOpen(false);
-          void doSaveFields(true);
-        }}
-        onClose={() => setConflictOpen(false)}
-      />
       <DuplicateWarningDialog
         conflict={duplicateWarning?.conflict ?? null}
         busy={busy}

@@ -146,6 +146,12 @@ def find_region_duplicates(
             and proposed_bounds.intersects(to_shape(candidate.bounds))
         )
         same_country = bool(country and candidate.country and candidate.country.upper() == country)
+        # A shared stem plus an additional qualifier commonly denotes a real
+        # sub-region ("Fehmarn" / "Fehmarn Ost"), not a typo.
+        stem_extension = (
+            candidate.normalized_name.startswith(f"{normalized} ")
+            or normalized.startswith(f"{candidate.normalized_name} ")
+        )
         item = {
             "id": str(candidate.id),
             "name": candidate.name,
@@ -158,9 +164,15 @@ def find_region_duplicates(
         # stricter than name+country and remains authoritative.
         if candidate.normalized_name == normalized:
             exact.append(item)
-        elif (same_country and score >= 0.82) or (
-            distance is not None and distance <= 150_000 and score >= 0.68
-        ) or (overlaps and score >= 0.60):
+        # Region names often legitimately share a geographic stem (for
+        # example "Fehmarn" and "Fehmarn Ost"). A country match alone is weak
+        # evidence; only very close names, or close/overlapping geometry plus a
+        # strong name match, should interrupt creation.
+        elif not stem_extension and (
+            (same_country and score >= 0.82)
+            or (distance is not None and distance <= 150_000 and score >= 0.68)
+            or (overlaps and score >= 0.60)
+        ):
             likely.append(item)
     return DuplicateResult(exact=exact, likely=likely)
 
