@@ -106,9 +106,9 @@ export default function SearchResults() {
     : `Suche: „${q}“`;
 
   return (
-    <div className="min-h-screen bg-page">
+    <div className="min-h-screen bg-white">
       <Header />
-      <main className="mx-auto max-w-[1180px] px-4 pb-20 pt-7 sm:px-8">
+      <main className="mx-auto max-w-[1000px] px-4 pb-24 pt-12 sm:px-8">
         <nav className="mb-4 text-[13px] font-medium text-muted">
           <Link to="/" className="hover:underline">
             Übersicht
@@ -117,7 +117,7 @@ export default function SearchResults() {
           <span className="text-ink">Suche</span>
         </nav>
 
-        <h1 className="text-[28px] font-semibold leading-tight text-ink sm:text-[30px]">{heading}</h1>
+        <h1 className="text-[26px] font-semibold text-ink">{heading}</h1>
         {sport && (
           <p className="mt-1 text-[14px] text-muted">
             Sportart: {sportLabel(sport)}
@@ -125,7 +125,7 @@ export default function SearchResults() {
           </p>
         )}
 
-        <div className="mt-6">
+        <div className="mt-8">
           {loading && <ResultSkeleton />}
           {error && !loading && (
             <ErrorBanner message={error} onRetry={() => setRetry((n) => n + 1)} />
@@ -162,7 +162,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
               <li key={r.id}>
                 <Link
                   to={`/region/${r.slug}`}
-                  className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3 transition-colors hover:bg-band/60"
+                  className="flex items-center justify-between rounded-xl bg-[#F1F5FA] px-4 py-3 hover:bg-teal/[0.06]"
                 >
                   <span className="font-medium text-ink">{r.name}</span>
                   <span className="text-[13px] text-muted">Region ›</span>
@@ -184,7 +184,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
               <li key={s.id}>
                 <Link
                   to={`/spot/${s.id}`}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-3 transition-colors hover:bg-band/60"
+                  className="flex items-center justify-between gap-4 rounded-xl bg-[#F1F5FA] px-4 py-3 hover:bg-teal/[0.06]"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-ink">{s.name}</span>
@@ -284,7 +284,7 @@ function BestWeeksList({
         {weeks.map((w) => (
           <li
             key={w.week}
-            className="flex items-center gap-4 rounded-2xl border border-line bg-surface px-4 py-3"
+            className="flex items-center gap-4 rounded-xl bg-[#F1F5FA] px-4 py-3"
           >
             <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
             <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink/10">

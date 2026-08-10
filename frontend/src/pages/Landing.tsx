@@ -24,7 +24,7 @@ export default function Landing() {
   const spots = allSpots ?? [];
 
   return (
-    <div className="relative bg-page">
+    <div className="relative bg-white">
       <LandingHeader sticky />
 
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
@@ -32,7 +32,7 @@ export default function Landing() {
           No `isolate` here — an isolated stacking context would trap the search
           bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
           hit the scrim and close instead of switching the panel. */}
-      <section className="relative flex h-[72svh] min-h-[540px] max-h-[680px] flex-col overflow-hidden">
+      <section className="relative flex min-h-screen flex-col overflow-hidden">
         <div className="absolute inset-0 z-0" aria-hidden>
           <HeroImage
             src="/hero-surfwind.jpg"
@@ -50,7 +50,7 @@ export default function Landing() {
 
         {/* Search — sits high in the hero so the (compact) dropdown always fits
             above the fold and never reaches into the white spots section. */}
-        <div className="flex justify-center px-4 pb-44 sm:px-6 sm:pb-56">
+        <div className="flex justify-center px-4 pb-72 sm:px-6 sm:pb-80">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
             <SearchBar />
           </div>
@@ -60,9 +60,9 @@ export default function Landing() {
       {/* 2 — Extended white section: aktuelle Top Spots (moved here onto the
           white background) + all spots as Airbnb-style cards. The rounded sheet
           rises over the hero for a seamless transition. */}
-      <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
+      <section className="relative z-10 -mt-8 rounded-t-[2rem] bg-white">
         {/* aktuelle Top Spots — title left, map button right, now on white. */}
-        <div className="mx-auto w-full max-w-[1180px] pt-10">
+        <div className="mx-auto w-full max-w-[1300px] pt-14">
           <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
             <h2 className="text-[22px] font-semibold text-ink">aktuelle Top Spots</h2>
             <Link
@@ -78,14 +78,14 @@ export default function Landing() {
           <TopSpotsRow />
         </div>
 
-        <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-12 sm:px-8">
+        <div className="mx-auto max-w-[1300px] px-4 pb-20 pt-14 sm:px-10">
           <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
           <p className="mt-1 text-[15px] text-muted">
             Stöbere durch die ganze Sammlung — Region, Wind- und Wellenspots.
           </p>
 
           {spots.length > 0 && (
-            <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="mt-8 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {spots.map((spot) => (
                 <SpotTile key={spot.id} spot={spot} />
               ))}

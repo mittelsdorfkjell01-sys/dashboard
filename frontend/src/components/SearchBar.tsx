@@ -156,7 +156,7 @@ export default function SearchBar() {
   return (
     <>
       <div ref={barRef} className="relative">
-        <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-surface p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-2xl">
+        <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-white p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-2xl">
           {/* Wohin? — the Tippleiste. A <label> so a click anywhere in the field
               (not just on the text) focuses the input; no active tint/box, the
               bar stays white and the input has no border. */}
@@ -250,7 +250,7 @@ export default function SearchBar() {
                   zIndex: 1150,
                   maxWidth: "calc(100vw - 16px)",
                 }}
-                className="overflow-hidden rounded-3xl border border-line bg-surface"
+                className="overflow-hidden rounded-3xl border border-line bg-white"
               >
                 <div data-lenis-prevent className="p-5">
                   {/* Airbnb-style switch: the panel stays open and only its

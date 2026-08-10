@@ -90,7 +90,7 @@ export default function RegionDetail() {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen bg-page">
+      <div className="relative min-h-screen bg-white">
         <LandingHeader />
         <div className="hero-h w-full animate-pulse bg-ink-soft" />
         <div className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-8">
@@ -103,7 +103,7 @@ export default function RegionDetail() {
 
   if (error) {
     return (
-      <div className="relative min-h-screen bg-page">
+      <div className="relative min-h-screen bg-white">
         <LandingHeader />
         <div className="mx-auto max-w-[1180px] px-4 pt-32 sm:px-8">
           <ErrorBanner
@@ -120,7 +120,7 @@ export default function RegionDetail() {
 
   if (!region || !backendRegion) {
     return (
-      <div className="relative min-h-screen bg-page">
+      <div className="relative min-h-screen bg-white">
         <LandingHeader />
         <div className="grid min-h-screen place-items-center px-6 text-center">
           <div>
@@ -167,7 +167,7 @@ export default function RegionDetail() {
   } in der Region`;
 
   return (
-    <div className="relative min-h-screen bg-page">
+    <div className="relative min-h-screen bg-white">
       <LandingHeader />
 
       <main>
@@ -183,7 +183,7 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal transition-colors hover:bg-band"
+            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl border border-line bg-white py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal transition-colors hover:bg-band"
           >
             <ChevronDownIcon className="rotate-90 text-[18px]" />
             Zurück
@@ -205,7 +205,7 @@ export default function RegionDetail() {
             <span className="mx-1.5 text-muted">›</span>
             <span className="text-teal">{region.name}</span>
           </nav>
-          <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">
+          <h1 className="mt-2 text-editorial-4 font-semibold text-balance text-ink">
             {region.name}
           </h1>
           {spotCount && (
@@ -214,12 +214,12 @@ export default function RegionDetail() {
         </div>
 
         {/* Lede */}
-        <SectionBand tone="page" pad="md">
+        <SectionBand tone="white">
           <Lede>{description}</Lede>
         </SectionBand>
 
         {/* Reisezeit — best weeks and the season curve read as one answer */}
-        <SectionBand tone="band" heading="Wann hinfahren" pad="md">
+        <SectionBand tone="band" heading="Wann hinfahren">
           {seasonView ? (
             <RegionSeason season={seasonView.season} bestMonths={seasonView.bestMonths} />
           ) : (
@@ -251,9 +251,9 @@ export default function RegionDetail() {
         </SectionBand>
 
         {/* Die Spots */}
-        <SectionBand tone="page" pad="md">
+        <SectionBand tone="white">
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line/70 pb-5">
-            <h2 className="text-[28px] font-semibold leading-tight text-ink text-balance sm:text-[32px]">
+            <h2 className="text-display-2 font-semibold text-ink text-balance">
               Die Spots
             </h2>
             <SortDropdown value={filters} onChange={setFilters} />
@@ -263,7 +263,7 @@ export default function RegionDetail() {
               <EmptyState message="Keine Spots für diese Auswahl." />
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {gridSpots.map((spot) => (
                 <SpotCard key={spot.id} spot={spot} variant="editorial" />
               ))}

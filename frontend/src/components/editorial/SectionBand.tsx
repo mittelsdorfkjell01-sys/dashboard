@@ -20,7 +20,7 @@ const MAX_WIDTH_CLASS: Record<MaxWidth, string> = {
 };
 
 const PAD_Y: Record<Pad, string> = {
-  lg: "py-[clamp(3rem,6vw,5rem)]",
+  lg: "py-[clamp(4rem,9vw,8rem)]",
   md: "py-[clamp(2.5rem,5vw,4rem)]",
   sm: "py-[clamp(1rem,2.5vw,1.5rem)]",
 };
@@ -93,7 +93,7 @@ export default function SectionBand({
       >
         {hasHeader && (
           <div className={align === "center" ? "text-center" : ""}>
-            <h2 className="text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h2>
+            <h2 className="text-editorial-2 font-semibold text-balance text-ink">{heading}</h2>
           </div>
         )}
         {hasHeader && children != null ? <div className="mt-8">{children}</div> : children}
