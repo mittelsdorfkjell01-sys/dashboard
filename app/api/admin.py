@@ -884,12 +884,14 @@ def create_region(
     if data.get("lat") is None or data.get("lon") is None:
         from app.search.geocode import classify_geocode
 
-        query = ", ".join(x for x in [body.name, body.country] if x)
+        # Open-Meteo returns no result for several valid "name, CC" queries
+        # (including "Fehmarn, DE"). Filter returned hits by country instead.
+        query = body.name
         # Distinguish "geocoder reported no match" from "network/timeout" so
         # the operator sees an actionable message instead of assuming the
         # place doesn't exist. The catch-all fallback used to swallow both.
         try:
-            hit = classify_geocode(query, geocoder=geocoder)
+            hit = classify_geocode(query, geocoder=geocoder, country=body.country)
         except Exception as exc:
             raise HTTPException(
                 status_code=502,

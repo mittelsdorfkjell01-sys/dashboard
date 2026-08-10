@@ -99,7 +99,9 @@ def _derive_bounds(result: GeocodeResult) -> dict:
     }
 
 
-def classify_geocode(query: str, *, geocoder: Geocoder) -> dict | None:
+def classify_geocode(
+    query: str, *, geocoder: Geocoder, country: str | None = None,
+) -> dict | None:
     """Classify the top geocoding hit as a point or an area.
 
     Returns ``{"type": "point"|"area", "point": {lat, lon}, "bounds": {...}|None,
@@ -109,7 +111,13 @@ def classify_geocode(query: str, *, geocoder: Geocoder) -> dict | None:
     results = geocoder.geocode(query)
     if not results:
         return None
-    r = results[0]
+    if country:
+        matching = [r for r in results if (r.country or "").upper() == country.upper()]
+        if matching:
+            results = matching
+        r = next((candidate for candidate in results if _is_area(candidate)), results[0])
+    else:
+        r = results[0]
     point = {"lat": r.lat, "lon": r.lon}
     if _is_area(r):
         return {"type": "area", "point": point, "bounds": _derive_bounds(r), "name": r.name}

@@ -10,7 +10,7 @@ import {
   getAdminRegions,
   type AdminRegionEntry,
 } from "../lib/api";
-import { Button, Input } from "../components/ui";
+import { Button, Field, Input } from "../components/ui";
 import Modal from "../components/ui/Modal";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { PageHeader, Badge } from "../components/admin/ui";
@@ -252,23 +252,44 @@ function CreateRegionForm({
 }) {
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
+  const [lat, setLat] = useState("");
+  const [lon, setLon] = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [duplicateConflict, setDuplicateConflict] = useState<DuplicateConflict | null>(null);
-  const dirty = useFormDirty({ name, country }, { name: "", country: "" });
+  const dirty = useFormDirty({ name, country, lat, lon }, { name: "", country: "", lat: "", lon: "" });
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   const save = async (allowDuplicate = false) => {
+    const hasLat = lat.trim() !== "";
+    const hasLon = lon.trim() !== "";
+    if (hasLat !== hasLon) {
+      setFieldError("Breiten- und Längengrad bitte gemeinsam angeben.");
+      return;
+    }
+    const latitude = hasLat ? Number(lat.replace(",", ".")) : undefined;
+    const longitude = hasLon ? Number(lon.replace(",", ".")) : undefined;
+    if ((latitude !== undefined && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+        (longitude !== undefined && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+      setFieldError("Bitte gültige Koordinaten eingeben.");
+      return;
+    }
+    setFieldError(null);
     setBusy(true);
     try {
       // No coordinates: the backend geocodes the name → centre + bounds.
       await createRegion({
         name: name.trim(),
         country: country.trim() || undefined,
+        lat: latitude,
+        lon: longitude,
         allow_duplicate: allowDuplicate,
       });
       setName("");
       setCountry("");
+      setLat("");
+      setLon("");
       onDirtyChange(false);
       await onCreated(name.trim());
     } catch (err) {
@@ -317,12 +338,17 @@ function CreateRegionForm({
           value={country}
           onChange={(e) => setCountry(e.target.value.toUpperCase())}
         />
-        <p className="mt-1 text-caption text-admin-muted">
-          Mittelpunkt und Fläche werden anhand von Name und Land ermittelt.
-          Bei mehrdeutigen Namen (z. B. „Fehmarn") hilft der Landcode
-          weiter — sonst zeigt der Fehler „Keine Koordinaten gefunden".
-        </p>
+        <p className="mt-1 text-caption text-admin-muted">Mittelpunkt und Fläche werden zunächst automatisch ermittelt.</p>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Breitengrad" hint="Optionaler manueller Fallback">
+          <Input id="create-region-lat" inputMode="decimal" placeholder="54,47" value={lat} onChange={(e) => setLat(e.target.value)} aria-invalid={Boolean(fieldError)} />
+        </Field>
+        <Field label="Längengrad">
+          <Input id="create-region-lon" inputMode="decimal" placeholder="11,14" value={lon} onChange={(e) => setLon(e.target.value)} aria-invalid={Boolean(fieldError)} />
+        </Field>
+      </div>
+      {fieldError && <p role="alert" className="text-caption font-medium text-red-700">{fieldError}</p>}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
           Abbrechen

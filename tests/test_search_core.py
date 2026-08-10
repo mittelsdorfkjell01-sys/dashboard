@@ -95,6 +95,18 @@ def test_classify_geocode_no_results():
     assert classify_geocode("nowhere", geocoder=FakeGeocoder()) is None
 
 
+def test_classify_geocode_country_prefers_area_for_region_creation():
+    geo = FakeGeocoder({
+        "fehmarn": [
+            GeocodeResult("Fehmarn", 54.44, 11.19, feature_code="PPL", country="DE"),
+            GeocodeResult("Fehmarn", 54.47, 11.14, feature_code="ISL", country="DE"),
+        ]
+    })
+    out = classify_geocode("Fehmarn", geocoder=geo, country="de")
+    assert out["type"] == "area"
+    assert out["point"] == {"lat": 54.47, "lon": 11.14}
+
+
 # --- ranking: score x distance damping -------------------------------------
 
 def test_rank_nearby_orders_by_score_times_decay():
