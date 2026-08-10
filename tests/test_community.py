@@ -169,9 +169,10 @@ def test_term_filter_flags_link_content(anon_client, spot_id, db):
 
 def test_tip_create_and_only_published_visible(anon_client, spot_id, db):
     resp = anon_client.post(f"/spots/{spot_id}/tips", json={
-        "body": "Bei Ostwind früh da sein.", "author_name": "Local",
+        "body": "Bei Ostwind früh da sein.", "title": "Ostwind", "author_name": "Local",
     })
     assert resp.status_code == 201
+    assert resp.json()["title"] == "Ostwind"
 
     # a hidden tip must not appear in the public list
     hidden = LocalTip(
@@ -182,6 +183,7 @@ def test_tip_create_and_only_published_visible(anon_client, spot_id, db):
 
     listed = anon_client.get(f"/spots/{spot_id}/tips").json()["items"]
     bodies = {t["body"] for t in listed}
+    assert next(t for t in listed if t["body"] == "Bei Ostwind früh da sein.")["title"] == "Ostwind"
     assert "Bei Ostwind früh da sein." in bodies
     assert "versteckt" not in bodies
 

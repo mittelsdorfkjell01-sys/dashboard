@@ -129,14 +129,14 @@ export default function OverlayPanel({
             exit={{ y: reduce ? 0 : "100%" }}
             transition={{ duration: reduce ? 0 : 0.32, ease: "easeOut" }}
           >
-            <div className="sticky top-0 z-10 flex justify-center border-b border-line/70 bg-page/95 px-5 py-3 backdrop-blur sm:px-8">
+            <div className="sticky top-0 z-10 flex justify-center bg-page/95 px-5 py-3 backdrop-blur sm:px-8">
               <button
                 type="button"
                 onClick={onClose}
                 className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
-                abbrechen
+                Schließen
               </button>
             </div>
             <div className="px-5 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-6">{children}</div>

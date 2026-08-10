@@ -25,6 +25,7 @@ const rating = (over: Partial<RatingItem>): RatingItem => ({
 const tip = (over: Partial<TipItem>): TipItem => ({
   id: "t1",
   body: "Parkt lieber am Nordende.",
+  title: null,
   author_name: "Ben",
   created_at: "2026-07-18T09:00:00Z",
   parent_id: null,

@@ -134,7 +134,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
 
   .spot-locator-compact > div > div:first-child {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 3 / 2;
     height: auto;
   }
 
@@ -145,7 +145,7 @@ html[data-theme="dark"] { color-scheme: dark; }
     }
 
     .spot-locator-compact > div > div:first-child {
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 3 / 2;
       height: auto;
     }
   }

@@ -35,6 +35,7 @@ export default function InlineTipComposer({
   const { user } = useAuth();
   const navigate = useNavigate();
   const [text, setText] = useState("");
+  const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -44,8 +45,9 @@ export default function InlineTipComposer({
     setBusy(true);
     setError(null);
     try {
-      await postTip(spotId, { body: text.trim(), author_name: authorName, parent_id: parentId });
+      await postTip(spotId, { body: text.trim(), title: title.trim() || undefined, author_name: authorName, parent_id: parentId });
       setText("");
+      setTitle("");
       onPosted?.();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Senden fehlgeschlagen.");
@@ -66,12 +68,19 @@ export default function InlineTipComposer({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {replyToName && <p className="mb-2 text-caption text-muted">Antwort an {replyToName}</p>}
+      {!parentId && (
+        <div className="mb-3">
+          <label htmlFor="inline-comment-title" className="text-label font-medium text-ink">Überschrift <span className="text-muted">(optional)</span></label>
+          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-2xl border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10" />
+          <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
+        </div>
+      )}
       <textarea
         autoFocus={autoFocus}
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
-        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-2xl border-[0.5px] border-line bg-white p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-0"
+        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
       />
       {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
       <div className="mt-3 flex items-center justify-between">
@@ -82,7 +91,7 @@ export default function InlineTipComposer({
             className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
           >
             <CloseIcon width={15} height={15} />
-            abbrechen
+            Schließen
           </button>
         ) : (
           <span />

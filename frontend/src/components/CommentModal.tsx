@@ -29,6 +29,7 @@ export default function CommentModal({
 }) {
   const reduce = useReducedMotion();
   const [text, setText] = useState("");
+  const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +37,7 @@ export default function CommentModal({
   useEffect(() => {
     if (open) {
       setText("");
+      setTitle("");
       setError(null);
     }
   }, [open]);
@@ -52,7 +54,7 @@ export default function CommentModal({
     setBusy(true);
     setError(null);
     try {
-      await postTip(spotId, { body: text.trim(), author_name: authorName, parent_id: parentId });
+      await postTip(spotId, { body: text.trim(), title: title.trim() || undefined, author_name: authorName, parent_id: parentId });
       onPosted?.();
       onClose();
     } catch (e) {
@@ -93,12 +95,28 @@ export default function CommentModal({
               </p>
             )}
 
+            {!parentId && (
+              <div className="mt-5">
+                <label htmlFor="comment-title" className="text-label font-medium text-ink">
+                  Überschrift <span className="text-muted">(optional)</span>
+                </label>
+                <input
+                  id="comment-title"
+                  value={title}
+                  maxLength={120}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Worum geht es?"
+                  className="mt-2 min-h-11 w-full rounded-2xl border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+                />
+                <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
+              </div>
+            )}
             <textarea
               autoFocus
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="verfasse einen Kommentar…"
-              className="comment-field mt-5 min-h-[150px] w-full resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10`}
             />
             {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
 
@@ -109,7 +127,7 @@ export default function CommentModal({
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
-                abbrechen
+                Schließen
               </button>
               <button
                 type="button"

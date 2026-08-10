@@ -161,7 +161,7 @@ def _image_view(i: SpotImage) -> dict:
 def _tip_view(t: LocalTip) -> dict:
     return {
         "id": str(t.id), "spot_id": str(t.spot_id), "body": t.body,
-        "author_name": t.author_name, "status": t.status, "flagged": t.flagged,
+        "author_name": t.author_name, "title": t.title, "status": t.status, "flagged": t.flagged,
         "parent_id": str(t.parent_id) if t.parent_id else None,
         "created_at": t.created_at.isoformat(),
     }

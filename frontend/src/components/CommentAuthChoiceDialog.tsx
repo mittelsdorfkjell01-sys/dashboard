@@ -62,7 +62,7 @@ export default function CommentAuthChoiceDialog({
             <h2 className="text-title font-semibold text-ink">{title}</h2>
             <p className="mt-1 text-body text-muted">Wie möchtest du fortfahren?</p>
 
-            <div className="mt-5 grid gap-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym">
                 {anonymousText}
               </ChoiceCard>
@@ -78,7 +78,7 @@ export default function CommentAuthChoiceDialog({
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
-                abbrechen
+                Schließen
               </button>
             </div>
           </motion.div>
@@ -104,15 +104,12 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className="group grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-line bg-page px-4 py-3 text-left transition-colors hover:border-teal/40 hover:bg-band"
+      className="group flex h-full min-h-[150px] flex-col items-start rounded-2xl border border-line bg-page p-4 text-left transition-colors hover:border-teal/40 hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
       <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-teal">{icon}</span>
-      <span className="min-w-0">
+      <span className="mt-3 min-w-0">
         <span className="block text-body font-semibold text-ink">{title}</span>
         <span className="mt-0.5 block text-caption leading-relaxed text-muted">{children}</span>
-      </span>
-      <span aria-hidden="true" className="text-teal transition-transform group-hover:translate-x-1">
-        <ArrowIcon />
       </span>
     </button>
   );
@@ -123,15 +120,6 @@ function ThinProfileIcon() {
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" className="text-ink">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4.2 3.6-6.5 8-6.5s8 2.3 8 6.5" />
-    </svg>
-  );
-}
-
-function ArrowIcon() {
-  return (
-    <svg width="42" height="12" viewBox="0 0 42 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="1" y1="6" x2="39" y2="6" />
-      <path d="M33 1 39 6l-6 5" />
     </svg>
   );
 }

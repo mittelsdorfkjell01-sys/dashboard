@@ -114,7 +114,6 @@ export default function SpotDetail() {
   const sortedPosts = sortFeed(posts, "newest", {});
   // The teaser shows the newest post that actually has text — a photo-only
   // post isn't a "comment", and its absence triggers the write-first prompt.
-  const featuredPost = sortedPosts.find((p) => p.text) ?? null;
 
   const tabs = id
     ? [
@@ -240,11 +239,10 @@ export default function SpotDetail() {
                 ) : (
                   <div aria-hidden />
                 )}
-                <div className="min-h-[320px] lg:min-h-[400px]">
+                <div className="min-w-0">
                   <SpotCommentBox
-                    variant="plain"
                     spotId={id}
-                    comment={featuredPost}
+                    posts={sortedPosts}
                     onOpenMore={() => setCommentsOpen(true)}
                     onPosted={reloadFeed}
                     moreButtonRef={commentsTriggerRef}

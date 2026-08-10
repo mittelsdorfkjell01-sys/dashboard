@@ -143,7 +143,7 @@ def export_account_data(db: Session, user: AppUser) -> dict:
             {
                 **stamp(row), "spot_id": str(row.spot_id),
                 "parent_id": str(row.parent_id) if row.parent_id else None,
-                "body": row.body, "status": row.status,
+                "body": row.body, "title": row.title, "status": row.status,
             }
             for row in tips
         ],

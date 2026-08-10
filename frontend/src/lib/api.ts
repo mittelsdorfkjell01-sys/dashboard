@@ -666,6 +666,7 @@ export const postRating = (
 export interface TipItem {
   id: string;
   body: string;
+  title: string | null;
   author_name: string;
   created_at: string;
   /** Set when this tip is a reply to another (single-level threads). */
@@ -677,6 +678,7 @@ export const postTip = (
   spotId: string,
   body: {
     body: string;
+    title?: string;
     author_name?: string;
     author_email?: string;
     parent_id?: string;

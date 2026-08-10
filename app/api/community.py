@@ -85,6 +85,7 @@ class RatingOut(BaseModel):
 class TipOut(BaseModel):
     id: str
     body: str
+    title: str | None = None
     author_name: str
     created_at: str
     parent_id: str | None = None
@@ -92,7 +93,7 @@ class TipOut(BaseModel):
     @classmethod
     def of(cls, t: LocalTip) -> "TipOut":
         return cls(
-            id=str(t.id), body=t.body, author_name=t.author_name,
+            id=str(t.id), body=t.body, title=t.title, author_name=t.author_name,
             created_at=t.created_at.isoformat(),
             parent_id=str(t.parent_id) if t.parent_id else None,
         )
@@ -137,6 +138,7 @@ class RatingIn(BaseModel):
 
 class TipIn(BaseModel):
     body: str = Field(min_length=1, max_length=4_000)
+    title: str | None = Field(default=None, max_length=120)
     author_name: str | None = Field(default=None, max_length=120)
     author_email: EmailStr | None = None
     parent_id: uuid.UUID | None = None  # set when this is a reply
@@ -220,7 +222,7 @@ def post_tip(
     enforce(limiter, request, "tip", limit=LIMITS["tip"][0], window=LIMITS["tip"][1])
     try:
         tip = service.create_tip(
-            db, spot_id, body=body.body, author_name=body.author_name,
+            db, spot_id, body=body.body, title=body.title, author_name=body.author_name,
             author_email=body.author_email, parent_id=body.parent_id,
             ip_hash=ip_hash(request),
         )

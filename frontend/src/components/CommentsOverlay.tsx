@@ -42,7 +42,7 @@ export default function CommentsOverlay({
       </div>
 
       {composeNew && spotId && (
-        <div className="mt-6 rounded-3xl border border-line bg-surface p-5">
+        <div className="mt-6 rounded-3xl bg-band p-5">
           <InlineTipComposer
             spotId={spotId}
             onPosted={() => {
@@ -92,12 +92,13 @@ function ThreadCard({
   const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
   return (
-    <div className="flex flex-col rounded-3xl border border-line bg-surface p-5">
+    <div className="flex flex-col rounded-3xl bg-band p-5">
       <CommentHead post={comment} />
+      {comment.title && <h3 className="mt-3 text-body font-semibold text-ink">{comment.title}</h3>}
       <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
 
       {replies.length > 0 && (
-        <div className="mt-4 space-y-3 border-l border-line pl-4">
+        <div className="mt-4 space-y-3 pl-4">
           {replies.map((reply) => (
             <div key={reply.id}>
               <CommentHead post={reply} small />
@@ -124,9 +125,11 @@ function ThreadCard({
         <button
           type="button"
           onClick={() => setReplying(true)}
-          className="mt-4 self-start text-label font-medium text-teal transition-colors hover:text-teal-hover"
+          aria-label="Kommentar schreiben"
+          title="Kommentieren"
+          className="mt-4 grid h-10 w-10 place-items-center self-start rounded-full text-teal transition-colors hover:bg-surface hover:text-teal-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
         >
-          Antworte
+          <CommentBubbleIcon />
         </button>
       )}
     </div>
@@ -144,7 +147,18 @@ function CommentHead({ post, small = false }: { post: FeedPost; small?: boolean 
       >
         {initials(post.authorName)}
       </span>
-      <span className={`font-medium text-ink ${small ? "text-label" : "text-ui"}`}>{post.authorName}</span>
+      <span className="min-w-0">
+        <span className={`block font-medium text-ink ${small ? "text-label" : "text-ui"}`}>{post.authorName}</span>
+        <time className="block text-caption text-muted" dateTime={post.createdAt}>{new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(post.createdAt))}</time>
+      </span>
     </div>
+  );
+}
+
+function CommentBubbleIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-4.3-1L3 20l1.1-4.2A8.4 8.4 0 1 1 21 11.5Z" />
+    </svg>
   );
 }

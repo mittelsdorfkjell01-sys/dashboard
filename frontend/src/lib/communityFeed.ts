@@ -29,6 +29,7 @@ export interface FeedPost {
   skillLevel: string | null;
   sport: string | null;
   text: string | null;
+  title: string | null;
   photo: CommunityImage | null;
   /** For a reply, the `id` of the FeedPost it answers (`tip:<parent>`); null
    *  for top-level posts. Only tips can be replies. */
@@ -130,6 +131,7 @@ export function mergeFeed({
       skillLevel: r.skill_level,
       sport: r.sport,
       text: text || null,
+      title: null,
       photo,
       parentId: null,
       reportImageId: photo?.id ?? null,
@@ -149,6 +151,7 @@ export function mergeFeed({
       skillLevel: null,
       sport: null,
       text: text || null,
+      title: t.title ?? null,
       photo,
       parentId: t.parent_id ? `tip:${t.parent_id}` : null,
       reportImageId: photo?.id ?? null,
@@ -165,6 +168,7 @@ export function mergeFeed({
     skillLevel: null,
     sport: null,
     text: null,
+    title: null,
     photo: img,
     parentId: null,
     reportImageId: img.id,

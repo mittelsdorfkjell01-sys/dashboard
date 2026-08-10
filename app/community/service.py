@@ -147,6 +147,7 @@ def create_tip(
     spot_id,
     *,
     body: str,
+    title: str | None = None,
     author_name: str | None,
     author_email: str | None = None,
     parent_id=None,
@@ -168,6 +169,7 @@ def create_tip(
     tip = LocalTip(
         spot_id=spot_id,
         body=body.strip(),
+        title=title.strip() if title and title.strip() else None,
         author_name=_clean_name(author_name),
         author_email=_clean_email(author_email),
         parent_id=parent_id,

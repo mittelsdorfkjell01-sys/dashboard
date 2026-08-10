@@ -84,6 +84,7 @@ class LocalTip(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str | None] = mapped_column(String(120), nullable=True)
     author_name: Mapped[str] = mapped_column(String(120), nullable=False)
     author_email: Mapped[str | None] = mapped_column(String(255))
     app_user_id: Mapped[uuid.UUID | None] = mapped_column(
