@@ -5,8 +5,8 @@ type Item = { label: string; value: string };
 
 export default function SpotMetaGrid({ spot }: { spot: Spot }) {
   const items: Item[] = [
-    { label: "Level", value: levelLabel(spot.level) },
-    { label: "Gewässer", value: waterCharacterLabel(spot.waterCharacter) },
+    { label: "Level", value: (spot.level ?? []).map(levelLabel).join(", ") },
+    { label: "Gewässer", value: (spot.waterCharacter ?? []).map(waterCharacterLabel).join(", ") },
     // TODO(redesign): add Untergrund (spot.bottomType) and Wind-Typ (spot.editorial?.windType)
     // once water_type / bottom_type / editorial.wind_type are mapped in adapt.ts → Spot
   ].filter((i) => Boolean(i.value));
