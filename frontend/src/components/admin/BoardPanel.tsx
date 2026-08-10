@@ -49,7 +49,7 @@ export default function BoardPanel() {
 
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "n") return;
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "x") return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
       if (!boardRef.current) return;
@@ -96,15 +96,27 @@ export default function BoardPanel() {
         </div>
       )}
 
-      <div className="mb-3 flex min-h-9 flex-wrap items-center justify-between gap-2">
-        <Button type="button" onClick={() => setNewOpen(true)}>
-          Neue Aufgabe <span className="ml-2 text-caption opacity-70">Strg/Cmd + N</span>
-        </Button>
+      <div className="mb-3 flex min-h-9 flex-wrap items-center gap-3">
+        {tasks.length > 0 && (
+          <label className="flex min-h-9 cursor-pointer items-center gap-2 text-caption text-muted">
+            <input
+              type="checkbox"
+              checked={selected.size === tasks.length}
+              onChange={() => setSelected(selected.size === tasks.length ? new Set() : new Set(tasks.map((task) => task.id)))}
+              aria-label="Alle Aufgaben auswählen"
+              className="h-4 w-4 rounded border-line accent-[var(--a-primary)]"
+            />
+            Alle auswählen
+          </label>
+        )}
         {selected.size > 0 && (
           <Button type="button" variant="danger" disabled={deleting} onClick={() => void remove([...selected])}>
             {deleting ? "Löschen …" : `${selected.size} ausgewählte löschen`}
           </Button>
         )}
+        <Button type="button" onClick={() => setNewOpen(true)} className="ml-auto">
+          Neue Aufgabe
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -130,20 +142,7 @@ export default function BoardPanel() {
               }`}
             >
               <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-label font-semibold text-ink">{col.label}</p>
-                  {col.key === "open" && (
-                    <button
-                      type="button"
-                      onClick={() => setNewOpen(true)}
-                      aria-label="Neue Aufgabe"
-                      title="Neue Aufgabe"
-                      className="grid h-6 w-6 place-items-center rounded-full border border-line bg-white text-ink transition-colors hover:border-teal hover:text-teal"
-                    >
-                      <span aria-hidden className="text-[16px] leading-none">+</span>
-                    </button>
-                  )}
-                </div>
+                <p className="text-label font-semibold text-ink">{col.label}</p>
                 <span className="text-caption text-muted">{items.length}</span>
               </div>
               <div className="mt-2 space-y-2">
@@ -344,13 +343,8 @@ function TaskDialog({
   const onTitleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !event.nativeEvent.isComposing) {
       event.preventDefault();
-      bodyRef.current?.focus();
+      if (!busy) event.currentTarget.form?.requestSubmit();
     }
-  };
-
-  const onBodyChange = (value: string) => {
-    // `/s` at a line start is a quick command and never remains in the value.
-    setBody(value.replace(/(^|\n)\/s(?:\s)?$/g, "$1- "));
   };
 
   const onBodyKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -364,6 +358,11 @@ function TaskDialog({
     const lineEnd = lineEndIndex === -1 ? body.length : lineEndIndex;
     const line = body.slice(lineStart, lineEnd);
     const marker = /^(\s*)([-*]|(\d+)\.)\s(.*)$/.exec(line);
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (!busy) textarea.form?.requestSubmit();
+      return;
+    }
     if (!marker) return;
     const prefixLength = marker[1].length + marker[2].length + 1;
     if (event.key === "Backspace" && marker[4] === "" && start === lineStart + prefixLength) {
@@ -373,7 +372,7 @@ function TaskDialog({
       requestAnimationFrame(() => textarea.setSelectionRange(lineStart, lineStart));
       return;
     }
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && event.shiftKey) {
       event.preventDefault();
       const nextPrefix = marker[3] ? `${Number(marker[3]) + 1}. ` : "- ";
       if (marker[4] === "") {
@@ -387,20 +386,6 @@ function TaskDialog({
         requestAnimationFrame(() => textarea.setSelectionRange(start + insertion.length, start + insertion.length));
       }
     }
-  };
-
-  const insertBullet = () => {
-    const textarea = bodyRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const lineStart = body.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
-    if (/^[-*]\s/.test(body.slice(lineStart))) return;
-    const next = `${body.slice(0, lineStart)}- ${body.slice(lineStart)}`;
-    setBody(next);
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + 2, start + 2);
-    });
   };
 
   const close = () => {
@@ -417,7 +402,6 @@ function TaskDialog({
         <h2 id="task-dialog-title" className="text-ui font-semibold text-ink">
           {task ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
         </h2>
-        <p className="mt-1 text-caption text-muted">Titel, Beschreibung und Workflow-Status</p>
         </div>
         <div className="space-y-4 px-5 py-5">
         <Field label="Titel" required error={titleError ?? undefined}>
@@ -432,23 +416,17 @@ function TaskDialog({
         />
         </Field>
         {task && <Field label="Status"><Select value={status} onChange={(event) => setStatus(event.target.value as Status)}><option value="open">Offen</option><option value="done">Erledigt</option></Select></Field>}
-        <Field label="Beschreibung" hint="Markdown-Listen bleiben beim Neuladen erhalten. /s startet eine Stichpunktliste.">
+        <Field label="Beschreibung">
         <Textarea
           ref={bodyRef}
           id="new-task-body"
           className="min-h-[180px] resize-y font-mono text-[13px] leading-6"
           value={body}
-          onChange={(e) => onBodyChange(e.target.value)}
+          onChange={(e) => setBody(e.target.value)}
           onKeyDown={onBodyKeyDown}
           placeholder="Beschreibung hinzufügen …"
         />
         </Field>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <button type="button" onClick={insertBullet} className="text-caption font-medium text-teal hover:underline">
-            Stichpunkt
-          </button>
-          <p className="text-caption text-muted">1. + Leerzeichen für nummerierte Liste · /s für Stichpunkte</p>
-        </div>
         {saveError && <p role="alert" className="mt-2 text-caption text-red-700">{saveError}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-line bg-band/40 px-5 py-3">
