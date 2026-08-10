@@ -66,8 +66,8 @@ export default function PhotoGalleryOverlay({
     <>
       <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef}>
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-editorial-2 font-semibold text-ink">Fotogalerie</h2>
-          <p className="text-body text-muted">Die besten Momente vom Spot</p>
+          <h2 className="text-[28px] font-semibold leading-tight text-ink sm:text-[32px]">Fotogalerie</h2>
+          <p className="text-ui text-muted">Die besten Momente vom Spot</p>
         </div>
 
         {uploadOpen && spotId && (
@@ -94,7 +94,7 @@ export default function PhotoGalleryOverlay({
             type="button"
             onClick={onAdd}
             aria-label="Foto hinzufügen"
-            className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-2xl bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
+            className="fixed bottom-5 right-5 z-[1102] grid h-12 w-12 place-items-center rounded-2xl border border-white/15 bg-teal text-white transition-colors hover:bg-teal-hover sm:bottom-6 sm:right-6"
           >
             <PlusIcon className="text-[26px]" />
           </button>
@@ -183,8 +183,8 @@ function JustifiedGallery({
 
 function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="mt-10 grid place-items-center rounded-3xl border border-dashed border-line bg-band/40 px-6 py-16 text-center">
-      <span aria-hidden="true" className="grid h-16 w-16 place-items-center rounded-2xl bg-white text-teal shadow-sm">
+    <div className="mt-8 grid place-items-center rounded-3xl border border-dashed border-line bg-band/40 px-5 py-12 text-center sm:py-14">
+      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl border border-line bg-surface text-teal">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2.5" />
           <circle cx="8.5" cy="10" r="1.6" />
@@ -192,7 +192,7 @@ function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
           <path d="m14 15 1.8-1.8a2 2 0 0 1 2.8 0L21 15" />
         </svg>
       </span>
-      <p className="mt-5 text-title font-semibold text-ink">Noch keine Fotos von diesem Spot</p>
+      <p className="mt-4 text-title font-semibold text-ink">Noch keine Fotos von diesem Spot</p>
       <p className="mt-2 max-w-[42ch] text-body text-muted">
         Teile deine schönsten Momente — deine Bilder erscheinen hier in der
         Community-Galerie.
@@ -263,7 +263,7 @@ function Lightbox({
           role="dialog"
           aria-modal="true"
           aria-label="Foto-Ansicht"
-          className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/85 p-4 sm:p-10"
+          className="fixed inset-0 z-[1200] flex items-center justify-center bg-[var(--sw-overlay-strong)] p-4 sm:p-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

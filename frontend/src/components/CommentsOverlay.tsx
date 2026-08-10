@@ -37,12 +37,12 @@ export default function CommentsOverlay({
   return (
     <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef}>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-editorial-2 font-semibold text-ink">Kommentare</h2>
-        <p className="text-body text-muted">Kommentare und Tipps aus der Community</p>
+        <h2 className="text-[28px] font-semibold leading-tight text-ink sm:text-[32px]">Kommentare</h2>
+        <p className="text-ui text-muted">Kommentare und Tipps aus der Community</p>
       </div>
 
       {composeNew && spotId && (
-        <div className="mt-6 rounded-3xl bg-white p-5">
+        <div className="mt-6 rounded-3xl border border-line bg-surface p-5">
           <InlineTipComposer
             spotId={spotId}
             onPosted={() => {
@@ -57,7 +57,7 @@ export default function CommentsOverlay({
       {threads.length === 0 ? (
         <p className="mt-8 text-body text-muted">Noch keine Kommentare oder Tipps — sei die/der Erste.</p>
       ) : (
-        <div className="mt-8 grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid items-start gap-x-6 gap-y-4 md:grid-cols-2">
           {threads.map((thread) => (
             <ThreadCard key={thread.comment.id} thread={thread} spotId={spotId} onReload={onReload} />
           ))}
@@ -69,7 +69,7 @@ export default function CommentsOverlay({
           type="button"
           onClick={() => setComposeNew(true)}
           aria-label="Kommentar verfassen"
-          className="fixed bottom-6 right-6 z-[1102] grid h-14 w-14 place-items-center rounded-2xl bg-teal text-white shadow-lg transition-colors hover:bg-teal-hover sm:bottom-8 sm:right-8"
+          className="fixed bottom-5 right-5 z-[1102] grid h-12 w-12 place-items-center rounded-2xl border border-white/15 bg-teal text-white transition-colors hover:bg-teal-hover sm:bottom-6 sm:right-6"
         >
           <PlusIcon className="text-[26px]" />
         </button>
@@ -92,7 +92,7 @@ function ThreadCard({
   const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
   return (
-    <div className="flex flex-col rounded-3xl bg-white p-6">
+    <div className="flex flex-col rounded-3xl border border-line bg-surface p-5">
       <CommentHead post={comment} />
       <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
 

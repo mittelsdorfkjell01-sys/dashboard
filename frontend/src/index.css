@@ -15,6 +15,8 @@
   --sw-teal-hover: #195C6A;
   --sw-orange: #B45309;
   --sw-green: #4A8159;
+  --sw-overlay-soft: rgba(14, 17, 20, 0.16);
+  --sw-overlay-strong: rgba(14, 17, 20, 0.88);
 }
 
 html[data-theme="dark"] {
@@ -30,6 +32,8 @@ html[data-theme="dark"] {
   --sw-teal-hover: #5FBED0;
   --sw-orange: #E7883A;
   --sw-green: #6BA97A;
+  --sw-overlay-soft: rgba(0, 0, 0, 0.42);
+  --sw-overlay-strong: rgba(0, 0, 0, 0.92);
 }
 
 html { color-scheme: light dark; transition: background-color 200ms ease-out, color 200ms ease-out; }

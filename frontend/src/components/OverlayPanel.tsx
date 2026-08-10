@@ -109,7 +109,7 @@ export default function OverlayPanel({
           <motion.div
             key="blur"
             aria-hidden="true"
-            className="fixed inset-0 z-[1100] hidden bg-black/10 backdrop-blur-[2px] sm:block"
+            className="fixed inset-0 z-[1100] hidden bg-[var(--sw-overlay-soft)] backdrop-blur-[2px] sm:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -123,13 +123,13 @@ export default function OverlayPanel({
             aria-modal="true"
             tabIndex={-1}
             data-lenis-prevent
-            className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-0 sm:top-auto sm:bottom-0 sm:min-h-[50vh] sm:max-h-[90vh] sm:rounded-t-3xl"
+            className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-4 sm:bottom-0 sm:top-auto sm:mx-auto sm:min-h-[50vh] sm:max-h-[88vh] sm:max-w-[1180px] sm:rounded-t-3xl sm:border-x sm:border-t sm:border-line"
             initial={{ y: reduce ? 0 : "100%" }}
             animate={{ y: 0 }}
             exit={{ y: reduce ? 0 : "100%" }}
             transition={{ duration: reduce ? 0 : 0.32, ease: "easeOut" }}
           >
-            <div className="sticky top-0 z-10 flex justify-center bg-page pb-2 pt-4">
+            <div className="sticky top-0 z-10 flex justify-center border-b border-line/70 bg-page/95 px-5 py-3 backdrop-blur sm:px-8">
               <button
                 type="button"
                 onClick={onClose}
@@ -139,7 +139,7 @@ export default function OverlayPanel({
                 abbrechen
               </button>
             </div>
-            <div className="px-6 pb-10 sm:px-10">{children}</div>
+            <div className="px-5 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-6">{children}</div>
           </motion.div>
         </>
       )}
