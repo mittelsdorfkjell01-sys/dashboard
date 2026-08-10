@@ -124,14 +124,14 @@ export default function EditorialHero({
       {/* top slot (back pill etc.) */}
       {children && (
         <div className="pointer-events-none absolute inset-x-0 top-[88px] z-20 sm:top-[120px]">
-          <div className="mx-auto flex max-w-[1180px] px-4 sm:px-8">{children}</div>
+          <div className="mx-auto flex max-w-[1570px] px-4 sm:px-8">{children}</div>
         </div>
       )}
 
       {/* headline block — the kicker (region name) stays put; only the title/
           meta get the parallax nudge, so the region name never drifts */}
       <div className="absolute inset-x-0 bottom-0 z-10">
-        <div className="mx-auto max-w-[1180px] px-4 pb-10 sm:px-8 sm:pb-14">
+        <div className="mx-auto max-w-[1570px] px-4 pb-10 sm:px-8 sm:pb-14">
           {kicker && (
             <div className="mb-3 text-label font-semibold uppercase tracking-[0.16em] text-white/85">
               {kicker}

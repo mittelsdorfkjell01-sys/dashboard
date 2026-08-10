@@ -41,7 +41,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
       <div
         role="tablist"
         aria-label="Spot-Ansicht"
-        className="mx-auto flex max-w-[1180px] justify-center px-4 sm:px-8"
+        className="mx-auto flex max-w-[1570px] justify-center px-4 sm:px-8"
       >
         {tabs.map((tab, i) => {
           const active = i === activeIndex;

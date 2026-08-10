@@ -62,7 +62,7 @@ export default function Landing() {
           rises over the hero for a seamless transition. */}
       <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
         {/* aktuelle Top Spots — title left, map button right, now on white. */}
-        <div className="mx-auto w-full max-w-[1180px] pt-10">
+        <div className="mx-auto w-full max-w-[1570px] pt-10">
           <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
             <h2 className="text-[22px] font-semibold text-ink">aktuelle Top Spots</h2>
             <Link
@@ -78,7 +78,7 @@ export default function Landing() {
           <TopSpotsRow />
         </div>
 
-        <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-12 sm:px-8">
+        <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">
           <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
           <p className="mt-1 text-[15px] text-muted">
             Stöbere durch die ganze Sammlung — Region, Wind- und Wellenspots.

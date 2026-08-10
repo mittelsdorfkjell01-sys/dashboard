@@ -44,7 +44,7 @@ export default function LandingHeader({
     };
   }, [sticky]);
 
-  const innerWidth = width === "body" ? "max-w-[1180px] sm:px-8" : "max-w-[1500px] sm:px-10";
+  const innerWidth = width === "body" ? "max-w-[1570px] sm:px-8" : "max-w-[1570px] sm:px-10";
 
   return (
     <header

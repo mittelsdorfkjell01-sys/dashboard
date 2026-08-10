@@ -108,7 +108,7 @@ export default function SearchResults() {
   return (
     <div className="min-h-screen bg-page">
       <Header />
-      <main className="mx-auto max-w-[1180px] px-4 pb-20 pt-7 sm:px-8">
+      <main className="mx-auto max-w-[1570px] px-4 pb-20 pt-7 sm:px-8">
         <nav className="mb-4 text-[13px] font-medium text-muted">
           <Link to="/" className="hover:underline">
             Übersicht

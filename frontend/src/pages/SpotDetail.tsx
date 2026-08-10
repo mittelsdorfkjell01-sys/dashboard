@@ -72,7 +72,7 @@ export default function SpotDetail() {
       <div className="relative min-h-screen bg-page">
         <LandingHeader />
         <div className="hero-h w-full animate-pulse bg-ink-soft" />
-        <div className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-8">
+        <div className="mx-auto max-w-[1570px] px-4 pt-16 sm:px-8">
           <div className="h-8 w-2/3 animate-pulse rounded bg-line" />
           <div className="mt-4 h-4 w-full animate-pulse rounded bg-line" />
         </div>

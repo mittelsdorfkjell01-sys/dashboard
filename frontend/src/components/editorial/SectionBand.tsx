@@ -8,14 +8,14 @@ type MaxWidth = "narrow" | "default" | "wide";
 
 const WIDTH_MAX: Record<Width, string> = {
   narrow: "max-w-[720px]",
-  content: "max-w-[1180px]",
+  content: "max-w-[1570px]",
   wide: "max-w-[1440px]",
   bleed: "max-w-none",
 };
 
 const MAX_WIDTH_CLASS: Record<MaxWidth, string> = {
   narrow: "max-w-[960px]",
-  default: "max-w-[1180px]",
+  default: "max-w-[1570px]",
   wide: "max-w-[1440px]",
 };
 

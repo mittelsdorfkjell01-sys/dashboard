@@ -93,7 +93,7 @@ export default function RegionDetail() {
       <div className="relative min-h-screen bg-page">
         <LandingHeader />
         <div className="hero-h w-full animate-pulse bg-ink-soft" />
-        <div className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-8">
+        <div className="mx-auto max-w-[1570px] px-4 pt-16 sm:px-8">
           <div className="mb-10 h-8 w-64 animate-pulse rounded bg-line" />
           <SpotGridSkeleton />
         </div>
@@ -105,7 +105,7 @@ export default function RegionDetail() {
     return (
       <div className="relative min-h-screen bg-page">
         <LandingHeader />
-        <div className="mx-auto max-w-[1180px] px-4 pt-32 sm:px-8">
+        <div className="mx-auto max-w-[1570px] px-4 pt-32 sm:px-8">
           <ErrorBanner
             message={error}
             onRetry={() => {
@@ -191,7 +191,7 @@ export default function RegionDetail() {
         </EditorialHero>
 
         {/* Breadcrumb + region identity (moved off the hero) */}
-        <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-8">
+        <div className="mx-auto max-w-[1570px] px-4 pt-6 sm:px-8">
           <nav className="text-[13px] font-medium text-muted">
             <Link to="/" className="hover:underline">
               Übersicht

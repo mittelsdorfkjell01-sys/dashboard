@@ -123,7 +123,7 @@ export default function OverlayPanel({
             aria-modal="true"
             tabIndex={-1}
             data-lenis-prevent
-            className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-4 sm:bottom-0 sm:top-auto sm:mx-auto sm:min-h-[50vh] sm:max-h-[88vh] sm:max-w-[1180px] sm:rounded-t-3xl sm:border-x sm:border-t sm:border-line"
+            className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-4 sm:bottom-0 sm:top-auto sm:mx-auto sm:min-h-[50vh] sm:max-h-[88vh] sm:max-w-[1570px] sm:rounded-t-3xl sm:border-x sm:border-t sm:border-line"
             initial={{ y: reduce ? 0 : "100%" }}
             animate={{ y: 0 }}
             exit={{ y: reduce ? 0 : "100%" }}
