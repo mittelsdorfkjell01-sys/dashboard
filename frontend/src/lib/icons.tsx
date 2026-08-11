@@ -119,46 +119,46 @@ export const InfoIcon = (p: IconProps) => (
   </svg>
 );
 
-/** Facility: paid parking — a rounded "P" tile. */
+/** Facility: parking — compact front view, no enclosing icon tile. */
 export const ParkingIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <rect x="4" y="4" width="16" height="16" rx="4" />
-    <path d="M9.5 16.5V8h3a2.5 2.5 0 0 1 0 5h-3" />
+    <path d="m6.5 10 1.3-4h8.4l1.3 4" />
+    <path d="M5 10h14a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1Z" />
+    <path d="M7 18.5V21M17 18.5V21M7.5 14h.01M16.5 14h.01M9.5 17h5" />
   </svg>
 );
 
-/** Facility: surf/water school — graduation cap. */
+/** Facility: surf school / rental — a symmetrical upright board. */
 export const SchoolIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M12 4 2.5 9 12 14l9.5-5L12 4Z" />
-    <path d="M6.5 11v4.2c0 1 2.5 2.3 5.5 2.3s5.5-1.3 5.5-2.3V11" />
-    <path d="M21.5 9v4.5" />
+    <path d="M12 2.5c3 3.1 4.5 6.3 4.5 9.5S15 18.4 12 21.5C9 18.4 7.5 15.2 7.5 12S9 5.6 12 2.5Z" />
+    <path d="M12 2.5v19M7.8 13.8c2.7-1.7 5.7-1.7 8.4 0" />
   </svg>
 );
 
-/** Facility: restrooms & showers — a shower head with drops. */
+/** Facility: shower — wall arm, head and evenly spaced water drops. */
 export const ShowerIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M4 20V8a4 4 0 0 1 4-4c1.7 0 2.6.9 3.3 1.9" />
-    <path d="M10 8.5 15.5 6" />
-    <path d="M9.5 7 17 11" />
-    <path d="M8 14v.01M11 16v.01M14 14v.01M11 20v.01" />
+    <path d="M4 21V8a4 4 0 0 1 7.6-1.7" />
+    <path d="m11 8 4.5-3 3 4.5-5 2.2L11 8Z" />
+    <path d="M11.5 14.5v1M15 14v1M18.5 13.5v1M13 18v1M17 17.5v1" />
   </svg>
 );
 
-/** Facility: beach bar — food & drink. */
+/** Facility: gastronomy — a simple café cup with steam. */
 export const FoodIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M5 3v7a2 2 0 0 0 2 2h0v9M9 3v9M7 3v4" />
-    <path d="M17 3c-1.7 0-3 2.2-3 5s1.3 4 3 4v9" />
+    <path d="M5 9h11v4.5a5.5 5.5 0 0 1-11 0V9Z" />
+    <path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16M4 21h15" />
+    <path d="M8 6c-1-1 .8-1.8 0-3M12 6c-1-1 .8-1.8 0-3" />
   </svg>
 );
 
-/** Facility: camping — a simple tent. */
+/** Facility: camping — pitched tent, entrance and ground line. */
 export const CampingIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M12 4 3 20h18L12 4Z" />
-    <path d="M12 4v16" />
+    <path d="M12 3.5 3.5 19h17L12 3.5Z" />
+    <path d="M12 3.5V19M8.5 19l3.5-6 3.5 6M2.5 21h19" />
   </svg>
 );
 

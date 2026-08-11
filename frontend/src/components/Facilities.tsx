@@ -65,11 +65,11 @@ export default function Facilities({
           const unknown = f.available === null;
           const Icon = facilityIcon[f.kind];
           return (
-            <div key={f.kind} className="grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-x-3">
+            <div key={f.kind} className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3">
               <Icon
-                width={20}
-                height={20}
-                className={`mt-0.5 shrink-0 text-ink-soft ${absent ? "opacity-40" : unknown ? "opacity-30" : ""}`}
+                width={22}
+                height={22}
+                className={`mt-0.5 shrink-0 ${absent ? "text-muted opacity-40" : unknown ? "text-muted opacity-30" : "text-teal"}`}
               />
               <div className="min-w-0">
                 <dt className={`text-ui font-medium leading-snug ${absent ? "text-muted line-through" : "text-ink"}`}>
