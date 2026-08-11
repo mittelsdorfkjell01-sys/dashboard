@@ -2,20 +2,21 @@ import type { RefObject } from "react";
 import { avatarColor, commentThreads, initials, relativeTime, type FeedPost } from "../lib/communityFeed";
 import InlineTipComposer from "./InlineTipComposer";
 import UpvoteButton from "./UpvoteButton";
+import type { TipItem } from "../lib/api";
 
-export default function SpotCommentBox({ spotId, posts, onOpenMore, onPosted, overlayTriggerRef, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onOpenMore: () => void; onPosted?: () => void; overlayTriggerRef?: RefObject<HTMLButtonElement>; loading?: boolean; error?: string | null }) {
+export default function SpotCommentBox({ spotId, posts, onOpenMore, onPosted, overlayTriggerRef, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onOpenMore: () => void; onPosted?: (tip?: TipItem) => void; overlayTriggerRef?: RefObject<HTMLButtonElement>; loading?: boolean; error?: string | null }) {
   const threads = commentThreads(posts);
-  return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full lg:border-l lg:border-line/70 lg:pl-7">
+  return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full">
     <h2 id="spot-comments-title" className="sr-only">Kommentare</h2>
     <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
-      {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={onPosted} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <p className="py-8 text-body leading-relaxed text-muted">Noch keine Kommentare. Teile deine Erfahrung mit diesem Spot.</p> : <div className="space-y-7">
+      {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <p className="py-8 text-body leading-relaxed text-muted">Noch keine Kommentare. Teile deine Erfahrung mit diesem Spot.</p> : <div className="space-y-7">
         {threads.map((thread, index) => <article key={thread.comment.id} className="min-w-0">
           <CommentRow post={thread.comment} onOpen={onOpenMore} triggerRef={index === 0 ? overlayTriggerRef : undefined} />
           {thread.replies.length > 0 && <div className="ml-11 mt-4 space-y-4 border-l border-line/60 pl-4">{thread.replies.map(reply => <CommentRow key={reply.id} post={reply} onOpen={onOpenMore} compact />)}</div>}
         </article>)}
       </div>}
     </div>
-    <div className="mt-7 shrink-0 lg:mt-5"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
+    <div className="mx-auto mt-7 w-full max-w-[420px] shrink-0 lg:mt-5"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
   </section>;
 }
 

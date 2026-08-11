@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ApiError, postTip } from "../lib/api";
+import { ApiError, postTip, type TipItem } from "../lib/api";
 import { CloseIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
@@ -29,7 +29,7 @@ export default function InlineTipComposer({
   parentId?: string;
   /** Shown as "Antwort an …" above the field. */
   replyToName?: string;
-  onPosted?: () => void;
+  onPosted?: (tip: TipItem) => void;
   /** When provided, a "✕ abbrechen" control is shown. */
   onCancel?: () => void;
   autoFocus?: boolean;
@@ -56,10 +56,10 @@ export default function InlineTipComposer({
     setBusy(true);
     setError(null);
     try {
-      await postTip(spotId, { body: text.trim(), title: title.trim() || undefined, author_name: authorName, parent_id: parentId });
+      const created = await postTip(spotId, { body: text.trim(), title: title.trim() || undefined, author_name: authorName, parent_id: parentId });
       setText("");
       setTitle("");
-      onPosted?.();
+      onPosted?.(created);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Senden fehlgeschlagen.");
     } finally {

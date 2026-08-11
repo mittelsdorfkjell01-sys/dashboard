@@ -9,6 +9,7 @@ import type { Spot } from "./types";
 import * as api from "./api";
 import { adaptSpot, adaptSpots } from "./adapt";
 import { useSwr, type SwrState } from "./swr";
+import { mutate } from "./swr";
 import { mergeFeed, type FeedPost } from "./communityFeed";
 
 // Kept as names for backward-compatible imports; identical shape to SwrState.
@@ -142,6 +143,7 @@ export interface CommunityFeedState {
   loading: boolean;
   error: string | null;
   reload: () => void;
+  addTip: (tip: api.TipItem) => void;
 }
 
 /** Ratings + tips + images for a spot, merged into one chronological feed
@@ -181,6 +183,12 @@ export function useCommunityFeed(spotId?: string): CommunityFeedState {
       ratings.reload();
       tips.reload();
       images.reload();
+    },
+    addTip: (tip) => {
+      if (!spotId) return;
+      mutate<{ items: api.TipItem[] }>(`tips:${spotId}`, (current) => ({
+        items: [tip, ...(current?.items ?? [])],
+      }));
     },
   };
 }

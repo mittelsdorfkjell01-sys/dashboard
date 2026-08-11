@@ -9,7 +9,7 @@ import { LinkIcon } from "../lib/icons";
 
 const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
-// Prefer MapTiler's hybrid aerial style when a deployment key is configured.
+// A bright daytime style keeps water unmistakably blue in every site theme.
 // filtered POIs), which needs VITE_MAPTILER_KEY. When that key isn't set (e.g.
 // the env var isn't configured on the deploy), fall back to keyless CARTO raster
 // tiles so the map still works — just without the terrain/POI styling — instead
@@ -65,7 +65,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: KEY
-        ? `https://api.maptiler.com/maps/hybrid/style.json?key=${KEY}`
+        ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${KEY}`
         : RASTER_STYLE,
       center: [lng, lat],
       zoom: 12.5,

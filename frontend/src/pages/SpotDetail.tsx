@@ -63,7 +63,7 @@ export default function SpotDetail() {
   const { data: live } = useSpotLive(id);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(id);
-  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed } = useCommunityFeed(id);
+  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } = useCommunityFeed(id);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -262,7 +262,10 @@ export default function SpotDetail() {
                     spotId={id}
                     posts={sortedPosts}
                     onOpenMore={() => setCommentsOpen(true)}
-                    onPosted={reloadFeed}
+                    onPosted={(tip) => {
+                      if (tip) addTip(tip);
+                      reloadFeed();
+                    }}
                     overlayTriggerRef={commentsTriggerRef}
                     loading={commentsLoading}
                     error={commentsError}

@@ -21,6 +21,7 @@ const store = new Map<string, Entry<unknown>>();
 const subscribers = new Map<string, Set<() => void>>();
 const MAX_ENTRIES = 200;
 const MAX_AGE_MS = 5 * 60 * 1000;
+const versions = new Map<string, number>();
 
 function storeEntry(key: string, entry: Entry<unknown>) {
   store.delete(key);
@@ -44,10 +45,15 @@ export function revalidate<T>(
 ): Promise<void> {
   const existing = store.get(key) as Entry<T> | undefined;
   if (existing?.inflight) return existing.inflight;
+  const version = versions.get(key) ?? 0;
 
   const inflight = fetcher()
     .then((data) => {
-      storeEntry(key, { data, ts: Date.now() });
+      // A local mutation made while this request was in flight is newer than
+      // its response. Never let that stale response erase the new item.
+      if ((versions.get(key) ?? 0) === version) {
+        storeEntry(key, { data, ts: Date.now() });
+      }
     })
     .catch((err) => {
       const cur = store.get(key) as Entry<T> | undefined;
@@ -74,6 +80,15 @@ export function peek<T>(key: string): Entry<T> | undefined {
 export function __resetCache() {
   store.clear();
   subscribers.clear();
+  versions.clear();
+}
+
+/** Update cached data immediately and detach any older in-flight response. */
+export function mutate<T>(key: string, update: (current: T | undefined) => T) {
+  const existing = store.get(key) as Entry<T> | undefined;
+  versions.set(key, (versions.get(key) ?? 0) + 1);
+  storeEntry(key, { data: update(existing?.data), ts: Date.now() });
+  notify(key);
 }
 
 export interface SwrState<T> {
