@@ -33,6 +33,8 @@ import { facilitiesFromMap } from "../lib/spotView";
 import { waterTypeFromCharacter } from "../lib/seasonView";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
 
+const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
+
 export default function SpotDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -178,7 +180,7 @@ export default function SpotDetail() {
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
-              <div className="grid min-w-0 gap-x-[37.65px] gap-y-[37.65px] lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]">
+              <div className={`grid min-w-0 gap-x-[37.65px] gap-y-[37.65px] ${SPOT_INFO_GRID}`}>
                 <div className="flex min-w-0 flex-col self-stretch">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
@@ -248,14 +250,15 @@ export default function SpotDetail() {
                 </aside>
               </div>
 
-              {/* Lage + Kommentare: Karte 2/3, offene Kommentarspalte 1/3.
-                  mt-10/gap-8 (40px/32px) inflated by 1/0.85 to offset the zoom above. */}
-              <section aria-labelledby="location-comments-title" className={`mt-[58px] grid min-w-0 gap-10 lg:h-[540px] lg:gap-8 ${spot.coords ? "lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]" : "lg:grid-cols-[3fr_2fr]"}`}>
+              {/* Lage + Kommentare reuse the exact column tracks above: the map
+                  spans the text and gallery columns, so its right edge aligns
+                  with the gallery while comments align with the profile column. */}
+              <section aria-labelledby="location-comments-title" className={`mt-[58px] grid min-w-0 gap-10 lg:h-[540px] lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}>
                 <h2 id="location-comments-title" className="sr-only">Lage und Kommentare</h2>
                 {spot.coords ? (
-                  <div className="spot-locator-compact min-w-0"><LocatorMap coords={spot.coords} /></div>
+                  <div className="spot-locator-compact min-w-0 lg:col-span-2"><LocatorMap coords={spot.coords} /></div>
                 ) : (
-                  <div aria-hidden />
+                  <div aria-hidden className="lg:col-span-2" />
                 )}
                 <div className="min-w-0">
                   <SpotCommentBox
