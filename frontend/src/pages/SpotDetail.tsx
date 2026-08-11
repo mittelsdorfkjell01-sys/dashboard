@@ -71,13 +71,18 @@ export default function SpotDetail() {
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
   const galleryFrameRef = useRef<HTMLDivElement>(null);
   const [galleryHeight, setGalleryHeight] = useState<number>();
+  const [galleryRightInset, setGalleryRightInset] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const commentsTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const frame = galleryFrameRef.current;
     if (!frame) return;
-    const measure = () => setGalleryHeight(frame.offsetHeight);
+    const measure = () => {
+      const tile = frame.firstElementChild as HTMLElement | null;
+      setGalleryHeight(tile?.offsetHeight ?? frame.offsetHeight);
+      setGalleryRightInset(Math.max(0, frame.offsetWidth - (tile?.offsetWidth ?? frame.offsetWidth)));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
@@ -266,10 +271,13 @@ export default function SpotDetail() {
                   spans the text and gallery columns, so its right edge aligns
                   with the gallery while comments align with the profile column. */}
               <section aria-labelledby="location-comments-title" className="mt-[58px] min-w-0">
-                <h2 id="location-comments-title" className="text-title font-semibold text-ink">Lage &amp; Kommentare</h2>
+                <h2 id="location-comments-title" className="sr-only">Lage und Kommentare</h2>
                 <div
-                  className={`spot-location-grid mt-5 grid min-w-0 gap-10 lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}
-                  style={{ "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined } as CSSProperties}
+                  className={`spot-location-grid grid min-w-0 gap-10 lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}
+                  style={{
+                    "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined,
+                    "--spot-gallery-right-inset": `${galleryRightInset}px`,
+                  } as CSSProperties}
                 >
                   {spot.coords ? (
                     <div className="spot-locator-compact min-w-0 lg:col-span-2"><LocatorMap coords={spot.coords} /></div>

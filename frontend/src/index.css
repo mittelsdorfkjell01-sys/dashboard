@@ -149,6 +149,10 @@ html[data-theme="dark"] { color-scheme: dark; }
     .spot-location-grid {
       height: var(--spot-gallery-height, 540px);
     }
+
+    .spot-location-grid .spot-locator-compact {
+      margin-right: var(--spot-gallery-right-inset, 0px);
+    }
   }
 
   /* Spot-page fields use one neutral border as their complete focus state.
