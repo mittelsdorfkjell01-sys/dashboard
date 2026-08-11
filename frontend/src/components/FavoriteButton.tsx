@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { isFavorite, toggleFavorite, FAVORITES_EVENT } from "../lib/account";
 import type { Spot } from "../lib/types";
 
-/** Ghost "zu Favoriten hinzufügen" toggle. Logged out → same sign-in prompt
+/** Primary "zu Favoriten hinzufügen" toggle. Logged out → same sign-in prompt
  *  as the landing tiles' heart icon (`SpotTile`); logged in → the real
  *  favorites endpoint (`/account/favorites/:id`), which already exists. */
 export default function FavoriteButton({ spot }: { spot: Spot }) {
@@ -32,7 +32,7 @@ export default function FavoriteButton({ spot }: { spot: Spot }) {
       type="button"
       onClick={onClick}
       aria-pressed={fav}
-      className="rounded-2xl bg-teal/80 px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal"
+      className="rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
     >
       {fav ? "in Favoriten" : "zu Favoriten hinzufügen"}
     </button>

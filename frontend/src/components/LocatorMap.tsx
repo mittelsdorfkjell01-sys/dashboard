@@ -5,6 +5,7 @@ import maplibregl, {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { mapLinkProps } from "../lib/mapLinks";
+import { LinkIcon } from "../lib/icons";
 
 const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
@@ -139,7 +140,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     // handler before it fires.
     <div
       data-lenis-prevent
-      className="spot-media-frame relative overflow-hidden border border-line bg-band"
+      className="relative overflow-hidden rounded-none border border-line bg-band"
     >
       <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
 
@@ -178,9 +179,11 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           href={link.href}
           target={link.target}
           rel={link.rel}
-          className="pointer-events-auto rounded-2xl bg-teal px-4 py-2 text-label font-medium text-white shadow-card transition-colors hover:bg-teal-hover"
+          aria-label="In externer Karte öffnen"
+          title="In externer Karte öffnen"
+          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-2xl bg-teal text-white shadow-card transition-colors hover:bg-teal-hover"
         >
-          Maps
+          <LinkIcon width={18} height={18} />
         </a>
       </div>
     </div>

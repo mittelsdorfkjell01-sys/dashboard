@@ -179,7 +179,7 @@ export default function SpotDetail() {
             <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
               <div className="grid min-w-0 gap-x-[37.65px] gap-y-[37.65px] lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]">
-                <div className="min-w-0">
+                <div className="flex min-w-0 flex-col self-stretch">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
@@ -198,12 +198,12 @@ export default function SpotDetail() {
                       )}
                     </p>
                   )}
-                  <h1 className="mt-1 text-[28px] font-semibold leading-[1.12] text-balance text-ink sm:text-[30px]">{spot.name}</h1>
+                  <h1 className="mt-3 text-[28px] font-semibold leading-[1.12] text-balance text-ink sm:text-[30px]">{spot.name}</h1>
 
                   {/* Sports are plain label + teal check (Figma Frame_9), not
                       filled pills — datengetrieben aus spot.sports. */}
                   {spot.sports && spot.sports.length > 0 && (
-                    <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
                       {spot.sports.map((s) => (
                         <span
                           key={s}
@@ -218,11 +218,11 @@ export default function SpotDetail() {
 
                   {/* The real spot description (editorial.description from the DB);
                       falls back to a gentle note when a spot has none yet. */}
-                  <p className="mt-6 max-w-[65ch] text-body leading-relaxed text-ink-soft">
+                  <p className="mt-8 max-w-[65ch] text-body leading-relaxed text-ink-soft">
                     {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                   </p>
 
-                  <div className="mt-7">
+                  <div className="mt-auto pt-10">
                     <FavoriteButton spot={spot} />
                   </div>
                 </div>
@@ -235,16 +235,22 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-5">
+                <aside aria-label="Spotprofil und Ausstattung" className="flex min-w-0 flex-col">
                   <SpotMetaGrid spot={spot} />
-                  <h2 className="text-label font-semibold uppercase tracking-[0.08em] text-muted">Ausstattung</h2>
-                  <Facilities items={facilities} variant="list" />
-                </div>
+                  {facilities.length > 0 && (
+                    <div className="mt-12">
+                      <h2 className="text-ui font-semibold text-ink">Ausstattung</h2>
+                      <div className="mt-6">
+                        <Facilities items={facilities} variant="list" />
+                      </div>
+                    </div>
+                  )}
+                </aside>
               </div>
 
               {/* Lage + Kommentare: Karte 2/3, offene Kommentarspalte 1/3.
                   mt-10/gap-8 (40px/32px) inflated by 1/0.85 to offset the zoom above. */}
-              <div className={`mt-[47.06px] grid min-w-0 gap-[37.65px] ${spot.coords ? "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]" : "lg:grid-cols-[2fr_1fr]"}`}>
+              <div className={`mt-[47.06px] grid min-w-0 gap-[18.82px] ${spot.coords ? "lg:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]" : "lg:grid-cols-[2fr_1fr]"}`}>
                 {spot.coords ? (
                   <div className="spot-locator-compact min-w-0"><LocatorMap coords={spot.coords} /></div>
                 ) : (

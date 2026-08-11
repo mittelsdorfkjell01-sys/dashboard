@@ -56,6 +56,14 @@ export const MapIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Open an external/link destination. */
+export const LinkIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M10 14a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" />
+    <path d="M14 10a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 19.1l1.1-1.1" />
+  </svg>
+);
+
 export const SortIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <path d="M4 8h11" />

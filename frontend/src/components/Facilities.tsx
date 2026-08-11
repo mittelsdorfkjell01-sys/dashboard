@@ -20,7 +20,7 @@ const facilityIcon: Record<FacilityKind, (p: { width?: number; height?: number; 
  *
  *  `variant="grid"` (default) is the icon-tile grid; `variant="rail"` is the
  *  hairline-table look for the sticky spec rail next to the lede; `variant="list"`
- *  is the plain label/status row (no icon) for the Figma info-page layout.
+ *  is the calm, divider-free facts list for the Info page's narrow side column.
  */
 export default function Facilities({
   items,
@@ -59,21 +59,26 @@ export default function Facilities({
 
   if (variant === "list") {
     return (
-      <dl>
+      <dl className="grid gap-5">
         {items.map((f) => {
           const absent = f.available === false;
           const unknown = f.available === null;
           const Icon = facilityIcon[f.kind];
           return (
-            <div key={f.kind} className="flex min-h-10 items-center justify-between gap-4 border-b border-line py-2">
-              <dt className={`flex items-center gap-2.5 text-ui ${absent ? "text-muted line-through" : "text-ink"}`}>
-                {/* Fine-line category icon (black/white) before the label */}
-                <Icon width={18} height={18} className={`shrink-0 ${absent || unknown ? "opacity-40" : ""}`} />
-                {f.title}
-              </dt>
-              <dd className={`text-caption ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
-                {absent ? "Nein" : f.note}
-              </dd>
+            <div key={f.kind} className="grid min-w-0 grid-cols-[20px_minmax(0,1fr)] items-start gap-x-3">
+              <Icon
+                width={20}
+                height={20}
+                className={`mt-0.5 shrink-0 text-ink-soft ${absent ? "opacity-40" : unknown ? "opacity-30" : ""}`}
+              />
+              <div className="min-w-0">
+                <dt className={`text-ui font-medium leading-snug ${absent ? "text-muted line-through" : "text-ink"}`}>
+                  {f.title}
+                </dt>
+                <dd className={`mt-1 text-caption leading-snug ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
+                  {absent ? "Nicht vorhanden" : f.note}
+                </dd>
+              </div>
             </div>
           );
         })}
