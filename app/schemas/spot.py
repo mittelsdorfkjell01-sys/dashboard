@@ -87,6 +87,11 @@ class SpotRead(BaseModel):
     @classmethod
     def from_orm_spot(cls, spot: Any) -> "SpotRead":
         """Build a read schema from an ORM spot, converting the geography column."""
+        public_climatology = dict(spot.climatology or {}) if spot.climatology else None
+        if public_climatology:
+            # The compressed historical archive is backend calculation input,
+            # not a public page payload (and can be several hundred kilobytes).
+            public_climatology.pop("hourly_calendar", None)
         return cls(
             id=spot.id,
             slug=spot.slug,
@@ -106,7 +111,7 @@ class SpotRead(BaseModel):
             confidence=spot.confidence,
             facing=spot.facing,
             editorial=spot.editorial,
-            climatology=spot.climatology,
+            climatology=public_climatology,
             overrides=spot.overrides,
             image=spot.image,
             finish_rank=getattr(spot, "finish_rank", None),

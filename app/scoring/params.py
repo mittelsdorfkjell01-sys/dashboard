@@ -47,11 +47,21 @@ def _wind_params() -> dict:
 
 SCORING_PARAMS_V1: dict[str, dict] = {
     "kitesurf": _wind_params(),
-    # Wave-kiting is wind-powered like kitesurf; scored on wind for now (the
-    # wave overlay is a later refinement, mirroring the surf profile).
-    "wavekite": _wind_params(),
-    "windsurf": _wind_params(),
-    "wing": _wind_params(),
+    "wavekite": {
+        **_wind_params(),
+        # Evaluated against the same historical timestamp as wind.  No product
+        # of independent wind/wave probabilities is used.
+        "wind": {"min_kt": 14.0, "max_kt": 35.0, "good_min_kt": 18.0, "good_max_kt": 30.0},
+        "wavekite_wave": {"min_m": 0.8, "max_m": 4.0, "period_min_s": 7.0},
+    },
+    "windsurf": {
+        **_wind_params(),
+        "wind": {"min_kt": 14.0, "max_kt": 40.0, "good_min_kt": 18.0, "good_max_kt": 32.0},
+    },
+    "wing": {
+        **_wind_params(),
+        "wind": {"min_kt": 10.0, "max_kt": 32.0, "good_min_kt": 14.0, "good_max_kt": 25.0},
+    },
     "surf": {
         "sport_type": "wave",
         "daylight_required": True,

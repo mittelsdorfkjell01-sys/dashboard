@@ -29,6 +29,7 @@ from app.era5.openmeteo import (
 from app.era5.smoothing import smooth_weeks
 from app.era5.solar import filter_daylight
 from app.models import Era5Job, Spot
+from app.climatology.core import encode_hourly_samples
 
 
 def _wave_window(series: dict) -> str | None:
@@ -49,7 +50,8 @@ def _wave_window(series: dict) -> str | None:
 # --- pure core -------------------------------------------------------------
 
 def derive_climatology(
-    series: dict, lat: float, lon: float, window: str, *, smooth_window: int = 3
+    series: dict, lat: float, lon: float, window: str, *, smooth_window: int = 3,
+    timezone_name: str | None = None,
 ) -> dict:
     """Turn an hourly ``series`` into a 52-week climatology record.
 
@@ -91,6 +93,10 @@ def derive_climatology(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "weeks": smoothed,
         "weeks_raw": week_records,
+        # Compact daylight-hour archive for calendar-month thresholds, sessions
+        # and per-year travel windows.  The public endpoint recomputes from this
+        # payload; it never approximates those metrics from 52 pooled weeks.
+        "hourly_calendar": encode_hourly_samples(series, lat, lon, timezone_name),
     }
 
     wave_window = _wave_window(series)
@@ -159,6 +165,7 @@ def build_climatology_record(spot_id, *, db: Session) -> dict:
         record = derive_climatology(
             series, lat, lon, _window_from_job(job),
             smooth_window=get_settings().climatology_smooth_weeks,
+            timezone_name=getattr(getattr(spot, "weather_profile", None), "timezone", None),
         )
         finalize_record(record, spot.era5_cell)
 
@@ -223,6 +230,7 @@ def derive_and_store(
         lon,
         window_label(year_list),
         smooth_window=get_settings().climatology_smooth_weeks,
+        timezone_name=getattr(getattr(spot, "weather_profile", None), "timezone", None),
     )
     finalize_record(record, cell)
     spot.climatology = record
@@ -269,7 +277,10 @@ def recompute_climatology(spot_id, *, db: Session) -> dict:
 
     lat, lon = _spot_lat_lon(spot)
     series = rawfile.read_raw(job.raw_path)
-    record = derive_climatology(series, lat, lon, _window_from_job(job))
+    record = derive_climatology(
+        series, lat, lon, _window_from_job(job),
+        timezone_name=getattr(getattr(spot, "weather_profile", None), "timezone", None),
+    )
     cell = spot.era5_cell or resolve_grid_cell(lat, lon)
     if not spot.era5_cell:
         spot.era5_cell = cell

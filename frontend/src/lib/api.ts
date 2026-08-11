@@ -386,6 +386,9 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const signal = fetchInit.signal
+    ? AbortSignal.any([controller.signal, fetchInit.signal])
+    : controller.signal;
   let resp: Response;
   try {
     resp = await fetch(`${API_BASE}${path}`, {
@@ -393,7 +396,7 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
       headers,
       // Send/receive the httpOnly session cookie (Sprint A auth) on every call.
       credentials: "include",
-      signal: controller.signal,
+      signal,
     });
   } catch (e) {
     const aborted = e instanceof DOMException && e.name === "AbortError";
@@ -465,6 +468,31 @@ export const getTopSpots = (limit = 5, sport?: string) =>
   request<SpotSummary[]>(`/spots/top${qs({ limit, sport })}`);
 
 export const getSpot = (id: string) => request<SpotRead>(`/spots/${id}`);
+
+export interface ClimatologyMonth {
+  month: number; hours_per_week: number | null; p25: number | null;
+  median: number | null; p75: number | null; years: number; coverage: number; reliable: boolean;
+}
+export interface ClimatologyResponse {
+  calculation_version: number; scoring_version: number;
+  selection: { month: number; threshold_kt: number; view: "wind" | "result"; sport: string; level: string; material: string };
+  months: ClimatologyMonth[];
+  details: {
+    hours_per_week: number | null; hours_p25: number | null; hours_p75: number | null;
+    median_good_days: number | null; median_sessions: number | null;
+    chance_one_session: number | null; chance_three_good_days: number | null; chance_five_good_days: number | null;
+    speed_distribution: { from: number; to: number | null; hours: number }[];
+    direction_distribution: number[]; time_of_day: Record<string, number>;
+    within_month: { start_day: number; hours: number }[]; years: number; windows: number; coverage: number;
+  };
+  filters: { session_rule: string; rejections: Record<string, number> };
+  confidence: { level: string; coverage: number; limitations: string[]; [key: string]: unknown };
+}
+export const getSpotClimatology = (
+  id: string,
+  params: { month: number; threshold_kt: number; view: string; sport: string; level: string; material: string },
+  signal?: AbortSignal,
+) => request<ClimatologyResponse>(`/spots/${id}/climatology${qs(params)}`, { signal });
 
 export const getSpotTides = (id: string) =>
   request<PublicTides>(`/spots/${id}/tides`);

@@ -324,6 +324,46 @@ def get_spot_season(
     return {"stage": 2, "spot_id": spot.id, **result}
 
 
+@router.get("/{spot_id}/climatology", tags=["score"])
+def get_spot_climatology(
+    spot_id: uuid.UUID,
+    month: int = Query(ge=1, le=12),
+    threshold_kt: float = Query(default=14, ge=6, le=35),
+    view: str = Query(default="wind", pattern="^(wind|result)$"),
+    sport: str | None = Query(default=None),
+    level: str = Query(default="advanced", pattern="^(beginner|advanced|expert)$"),
+    material: str = Query(default="standard", pattern="^(standard|lightwind|highwind)$"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Calendar-month climatology based on the stored historical hourly archive."""
+    from app.climatology.core import calculate
+    from app.scoring.context import spot_editorial
+
+    spot = get_published_spot(db, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    payload = (spot.climatology or {}).get("hourly_calendar")
+    if not payload:
+        raise HTTPException(
+            status_code=409,
+            detail="Klimatologie muss aus den historischen Rohdaten neu abgeleitet werden.",
+        )
+    resolved_sport = sport or (spot.sports[0] if spot.sports else "kitesurf")
+    try:
+        return calculate(
+            payload, month=month, threshold=threshold_kt, view=view,
+            sport=resolved_sport, level=level, material=material,
+            editorial=spot_editorial(spot),
+            confidence_meta={
+                "grid": spot.era5_cell,
+                "spatial_resolution": "ERA5 wind approximately 0.25 degrees",
+                "station_calibration": False,
+            },
+        )
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
 @router.get("/{spot_id}/similar", tags=["similarity"])
 def get_spot_similar(
     spot_id: uuid.UUID,
