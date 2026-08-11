@@ -48,6 +48,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-migrate.txt
 
+      - name: Back up catalogue media state
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+        run: python -m scripts.export_catalog_backup "catalog-before-${GITHUB_RUN_ID}.json.gz"
+
+      - name: Upload catalogue backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-before-${{ github.run_id }}
+          path: catalog-before-${{ github.run_id }}.json.gz
+          retention-days: 90
+          if-no-files-found: error
+
       - name: alembic upgrade head
         env:
           DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
@@ -59,3 +72,9 @@ jobs:
           python -m alembic upgrade head
           echo "Current revision after upgrade:"
           python -m alembic current
+
+      - name: Verify Blob and database media links
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: python -m scripts.verify_media_integrity
