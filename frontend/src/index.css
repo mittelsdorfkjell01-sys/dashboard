@@ -139,8 +139,26 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
 
   .spot-locator-compact > div > div:first-child {
-    aspect-ratio: 5 / 3;
-    height: auto;
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  /* The locator and the open comments column follow the measured gallery
+     height on desktop. Mobile keeps LocatorMap's native responsive heights. */
+  @media (min-width: 1024px) {
+    .spot-location-grid {
+      height: var(--spot-gallery-height, 540px);
+    }
+  }
+
+  /* Spot-page fields use one neutral border as their complete focus state.
+     This overrides the old border + ring + global outline combination without
+     removing the visible keyboard affordance. */
+  .spot-detail-page :where(input, select, textarea):focus,
+  .spot-detail-page :where(input, select, textarea):focus-visible {
+    border-color: var(--sw-ink-soft) !important;
+    box-shadow: none !important;
+    outline: none !important;
   }
 
   @media (min-width: 1024px) {
@@ -150,8 +168,8 @@ html[data-theme="dark"] { color-scheme: dark; }
     }
 
     .spot-locator-compact > div > div:first-child {
-      aspect-ratio: 5 / 3;
-      height: auto;
+      aspect-ratio: auto;
+      height: 100%;
     }
   }
 

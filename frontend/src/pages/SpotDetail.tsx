@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
@@ -69,8 +69,20 @@ export default function SpotDetail() {
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
+  const galleryFrameRef = useRef<HTMLDivElement>(null);
+  const [galleryHeight, setGalleryHeight] = useState<number>();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const commentsTriggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const frame = galleryFrameRef.current;
+    if (!frame) return;
+    const measure = () => setGalleryHeight(frame.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, [activeTab, loading, photos.length]);
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
 
@@ -129,7 +141,7 @@ export default function SpotDetail() {
     : [];
 
   return (
-    <div className="relative min-h-screen min-w-0 max-w-full overflow-x-clip bg-page">
+    <div className="spot-detail-page relative min-h-screen min-w-0 max-w-full overflow-x-clip bg-page">
       <LandingHeader
         width="body"
         left={
@@ -229,7 +241,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div className="spot-gallery-compact w-full min-w-0 justify-self-center">
+                <div ref={galleryFrameRef} className="spot-gallery-compact w-full min-w-0 justify-self-center">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -253,32 +265,37 @@ export default function SpotDetail() {
               {/* Lage + Kommentare reuse the exact column tracks above: the map
                   spans the text and gallery columns, so its right edge aligns
                   with the gallery while comments align with the profile column. */}
-              <section aria-labelledby="location-comments-title" className={`mt-[58px] grid min-w-0 gap-10 lg:h-[540px] lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}>
-                <h2 id="location-comments-title" className="sr-only">Lage und Kommentare</h2>
-                {spot.coords ? (
-                  <div className="spot-locator-compact min-w-0 lg:col-span-2"><LocatorMap coords={spot.coords} /></div>
-                ) : (
-                  <div aria-hidden className="lg:col-span-2" />
-                )}
-                <div className="min-w-0">
-                  <SpotCommentBox
-                    spotId={id}
-                    posts={sortedPosts}
-                    onOpenMore={() => setCommentsOpen(true)}
-                    onPosted={(tip) => {
-                      if (tip) addTip(tip);
-                      reloadFeed();
-                    }}
-                    overlayTriggerRef={commentsTriggerRef}
-                    loading={commentsLoading}
-                    error={commentsError}
-                  />
+              <section aria-labelledby="location-comments-title" className="mt-[58px] min-w-0">
+                <h2 id="location-comments-title" className="text-title font-semibold text-ink">Lage &amp; Kommentare</h2>
+                <div
+                  className={`spot-location-grid mt-5 grid min-w-0 gap-10 lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}
+                  style={{ "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined } as CSSProperties}
+                >
+                  {spot.coords ? (
+                    <div className="spot-locator-compact min-w-0 lg:col-span-2"><LocatorMap coords={spot.coords} /></div>
+                  ) : (
+                    <div aria-hidden className="lg:col-span-2" />
+                  )}
+                  <div className="min-w-0">
+                    <SpotCommentBox
+                      spotId={id}
+                      posts={sortedPosts}
+                      onOpenMore={() => setCommentsOpen(true)}
+                      onPosted={(tip) => {
+                        if (tip) addTip(tip);
+                        reloadFeed();
+                      }}
+                      overlayTriggerRef={commentsTriggerRef}
+                      loading={commentsLoading}
+                      error={commentsError}
+                    />
+                  </div>
                 </div>
               </section>
 
               {id && (
-                // mt-14 (56px) inflated by 1/0.85 to offset the zoom above.
-                <div className="mt-[65.88px]">
+                // 96px visible separation after the location/community group.
+                <div className="mt-[112.94px]">
                   <SimilarSpots spotId={id} sport={spot.sports?.[0]} />
                 </div>
               )}
