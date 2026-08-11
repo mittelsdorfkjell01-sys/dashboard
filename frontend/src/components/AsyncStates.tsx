@@ -3,7 +3,7 @@
 /** A grid of shimmering placeholder cards while spots load. */
 export function SpotGridSkeleton({ count = 10 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-x-6 gap-y-9 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="animate-pulse">
           <div className="aspect-video rounded-2xl bg-line" />

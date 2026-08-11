@@ -262,7 +262,7 @@ export default function RegionDetail() {
               <EmptyState message="Keine Spots für diese Auswahl." />
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
               {gridSpots.map((spot) => (
                 <SpotCard key={spot.id} spot={spot} />
               ))}
