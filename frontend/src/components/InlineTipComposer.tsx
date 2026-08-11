@@ -76,6 +76,61 @@ export default function InlineTipComposer({
     void post(user.displayName);
   };
 
+  if (compact) {
+    return (
+      <div className="w-full">
+        <div className="relative">
+          <input
+            autoFocus={autoFocus}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey && text.trim() && !busy) {
+                event.preventDefault();
+                onSend();
+              }
+            }}
+            maxLength={4000}
+            placeholder="Kommentar hinzufügen …"
+            aria-label="Kommentar hinzufügen"
+            className="h-11 w-full rounded-xl border border-line bg-page py-2 pl-4 pr-12 text-label text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+          />
+          {text.trim() && (
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={busy}
+              aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
+              className="absolute right-1 top-1 grid h-9 w-9 place-items-center rounded-lg text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40"
+            >
+              {busy ? (
+                <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-teal/25 border-t-teal" />
+              ) : (
+                <svg aria-hidden width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path d="M3 10 16.5 3.5 12 16.5l-2.2-5.1L3 10Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                  <path d="m9.8 11.4 3.2-3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
+        {error && <p role="alert" className="mt-2 text-caption text-red-600">{error}</p>}
+        <CommentAuthChoiceDialog
+          open={authOpen}
+          onAnonymous={() => {
+            setAuthOpen(false);
+            void post("Anonym");
+          }}
+          onSignIn={() => navigate(`/anmelden?mode=login&redirect=${encodeURIComponent(location.pathname + location.search)}`)}
+          onCancel={() => setAuthOpen(false)}
+          title="Wie möchtest du kommentieren?"
+          anonymousText="Dein Entwurf bleibt erhalten. Der Kommentar erscheint als Anonym."
+          signInText="Dein Entwurf bleibt erhalten und erscheint unter deinem Namen."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {replyToName && <p className="mb-2 text-caption text-muted">Antwort an {replyToName}</p>}
@@ -92,7 +147,7 @@ export default function InlineTipComposer({
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
         maxLength={4000}
-        className={`comment-field w-full flex-1 resize-none rounded-2xl border border-line bg-page text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 ${compact ? "min-h-[48px] px-4 py-3" : "min-h-[110px] p-4"}`}
+        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
       />
       {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
       <div className="mt-2 flex items-center justify-between gap-3">

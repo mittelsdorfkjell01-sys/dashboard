@@ -9,7 +9,9 @@ import { LinkIcon } from "../lib/icons";
 
 const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
-// A bright daytime style keeps water unmistakably blue in every site theme.
+// Aerial imagery mirrors the reference: daylight coastline and naturally blue
+// water. Esri World Imagery is the keyless fallback, so production never drops
+// back to a street map when a MapTiler key is unavailable.
 // filtered POIs), which needs VITE_MAPTILER_KEY. When that key isn't set (e.g.
 // the env var isn't configured on the deploy), fall back to keyless CARTO raster
 // tiles so the map still works — just without the terrain/POI styling — instead
@@ -20,13 +22,11 @@ const RASTER_STYLE: StyleSpecification = {
     basemap: {
       type: "raster",
       tiles: [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
       attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+        'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
     },
   },
   layers: [{ id: "basemap", type: "raster", source: "basemap" }],
@@ -65,7 +65,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: KEY
-        ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${KEY}`
+        ? `https://api.maptiler.com/maps/satellite/style.json?key=${KEY}`
         : RASTER_STYLE,
       center: [lng, lat],
       zoom: 12.5,

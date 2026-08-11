@@ -16,20 +16,28 @@ export default function SpotCommentBox({ spotId, posts, onOpenMore, onPosted, ov
         </article>)}
       </div>}
     </div>
-    <div className="mx-auto mt-7 w-full max-w-[420px] shrink-0 lg:mt-5"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
+    <div className="mx-auto mt-7 w-full max-w-[360px] shrink-0 lg:mt-5"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
   </section>;
 }
 
 function CommentRow({ post, onOpen, triggerRef, compact = false }: { post: FeedPost; onOpen: () => void; triggerRef?: RefObject<HTMLButtonElement>; compact?: boolean }) {
   const anonymous = !post.authorName || post.authorName === "Anonym";
   const rawId = post.id.replace(/^(tip|rating):/, "");
-  return <div className="flex min-w-0 gap-3">
+  return <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3">
     <span aria-hidden className={`grid shrink-0 place-items-center rounded-full text-caption font-semibold ${compact ? "h-7 w-7" : "h-9 w-9"} ${anonymous ? "bg-band text-muted" : "text-white"}`} style={anonymous ? undefined : { backgroundColor: avatarColor(post.authorName) }}>{anonymous ? "?" : initials(post.authorName)}</span>
-    <div className="min-w-0 flex-1">
+    <div className={`flex min-w-0 items-center ${compact ? "min-h-7" : "min-h-9"}`}>
+      <strong className={`${compact ? "text-label" : "text-ui"} truncate font-semibold text-ink`}>{post.authorName || "Anonym"}</strong>
+    </div>
+    <div aria-hidden />
+    <div className="min-w-0 pt-2">
       <button ref={triggerRef} type="button" onClick={onOpen} className="block w-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal">
-        <p className={`${compact ? "text-label" : "text-ui"} leading-relaxed text-ink-soft`}><strong className="mr-2 font-semibold text-ink">{post.authorName || "Anonym"}</strong>{post.title && <span className="mr-2 font-semibold text-ink">{post.title}</span>}{post.text}</p>
+        {post.title && <span className="mb-1 block text-label font-semibold text-ink">{post.title}</span>}
+        <p className={`${compact ? "text-label" : "text-ui"} whitespace-pre-line leading-relaxed text-ink-soft`}>{post.text}</p>
       </button>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-caption text-muted"><time dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time>{post.kind !== "photo" && <UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} />}<button type="button" onClick={onOpen} className="min-h-10 px-1 font-medium hover:text-ink">Antworten</button></div>
+      <div className="mt-1 flex min-h-10 items-center justify-between gap-3 text-caption text-muted">
+        <span className="flex items-center gap-3"><button type="button" onClick={onOpen} className="min-h-10 font-medium hover:text-ink">Antworten</button><time dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time></span>
+        {post.kind !== "photo" && <UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} />}
+      </div>
     </div>
   </div>;
 }

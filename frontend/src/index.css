@@ -359,7 +359,7 @@ html[data-theme="dark"] { color-scheme: dark; }
    The filter targets only MapLibre's canvas; marker, controls and attribution
    remain crisp and retain their accessible contrast. */
 .swd-locator-map .maplibregl-canvas {
-  filter: saturate(.92) brightness(1.03) contrast(.96);
+  filter: saturate(.9) brightness(1.04) contrast(.94);
 }
 
 /* Scale bar on LocatorMap — the default Leaflet control, restyled to sit
