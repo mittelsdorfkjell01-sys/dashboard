@@ -1,0 +1,32 @@
+# Local caches and development-only artifacts must never enter the Python
+# serverless bundle. The UI is installed and built by Vercel from frontend/.
+.git
+.github
+.claude
+.vercel
+.npm-ui-skills-cache
+.pytest_cache
+**/__pycache__
+**/*.pyc
+.venv*
+
+# Offline datasets, tests, documentation, and local tooling are not used by
+# api/index.py at request time.
+/data
+/tests
+/docs
+/scripts
+/alembic
+/Entwickler (soll von claude ignoriert werden)
+/frontend/hero-src
+
+# Local/runtime configuration and non-Vercel deployment files.
+.env*
+!.env.example
+/backups
+/docker-compose*.yml
+/Dockerfile
+/Caddyfile
+/PLAN.md
+/DEPLOY-VERCEL.md
+/requirements*.txt
