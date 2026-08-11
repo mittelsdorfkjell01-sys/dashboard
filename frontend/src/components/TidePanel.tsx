@@ -53,13 +53,13 @@ export default function TidePanel({ spotId }: { spotId: string }) {
     low: data?.events.find((item) => item.event_type === "low"),
   }), [data]);
 
-  if (loading) return <div className="h-28 animate-pulse bg-line" aria-label="Gezeiten werden geladen" />;
-  if (!data?.available || !data.timezone) {
-    return <p className="py-5 text-body text-ink-soft">{data?.message ?? "Für diesen Spot sind derzeit keine verlässlichen Gezeitenangaben verfügbar."}</p>;
-  }
+  if (loading) return <div className="min-h-48 animate-pulse rounded-lg border border-line bg-band" aria-label="Gezeiten werden geladen" />;
+  if (!data?.available || !data.timezone) return null;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(15rem,1fr)_minmax(18rem,1.4fr)]">
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <p className="mb-4 text-caption font-medium uppercase tracking-wider text-muted">Gezeiten · 24 h</p>
+      <div className="grid gap-5">
       <div className="min-w-0">
         <div className="flex items-center justify-between gap-4 border-b border-line pb-3">
           <div>
@@ -101,6 +101,7 @@ export default function TidePanel({ spotId }: { spotId: string }) {
           </p>
         )}
         {data.message && <p className="mt-2 text-caption text-amber-700">{data.message}</p>}
+      </div>
       </div>
     </div>
   );

@@ -6,10 +6,14 @@ import Facilities from "../components/Facilities";
 import LocatorMap from "../components/LocatorMap";
 import SpotFlowMap from "../components/SpotFlowMap";
 import SpotTabs from "../components/SpotTabs";
-import DatenSection from "../components/DatenSection";
 import TidePanel from "../components/TidePanel";
-import Forecast from "../components/Forecast";
-import WindMonths from "../components/WindMonths";
+import WindRose from "../components/WindRose";
+import SpotDataHeader from "../components/data/SpotDataHeader";
+import LiveRow from "../components/data/LiveRow";
+import Meteogram from "../components/data/Meteogram";
+import TimeScrubber from "../components/data/TimeScrubber";
+import WeatherDetailsTable from "../components/data/WeatherDetailsTable";
+import Climatology from "../components/data/Climatology";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
@@ -26,7 +30,8 @@ import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
-import { climatologyToMonths, waterTypeFromCharacter } from "../lib/seasonView";
+import { waterTypeFromCharacter } from "../lib/seasonView";
+import { SpotDataScopeProvider } from "../state/SpotDataScope";
 
 export default function SpotDetail() {
   const { id } = useParams();
@@ -100,7 +105,6 @@ export default function SpotDetail() {
 
   // All from the backend record — no synthetic data.
   const facilities = facilitiesFromMap(spot.facilities);
-  const months = climatologyToMonths(spot.climatology);
   // waterCharacter is multi-select; the flow-map animation takes one cue — use
   // the first (primary) character.
   const waterType = waterTypeFromCharacter(spot.waterCharacter?.[0]);
@@ -295,10 +299,23 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            {/* Wind & Wellen: the flow map (legend on the map itself covers
-                what the lines mean, no explanatory sentence above it) */}
-            <DatenSection label="Wind & Wellen">
-              <div className="relative">
+            <SpotDataScopeProvider>
+              <div className="mx-auto max-w-[1180px] px-4 py-4 sm:px-8">
+                <SpotDataHeader spot={spot} />
+
+                <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                  <LiveRow spot={spot} forecast={forecast} live={live} />
+                </div>
+
+                <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                  <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Meteogramm · 10 Tage</p></div>
+                  {forecastLoading && <div className="h-[280px] animate-pulse bg-band" />}
+                  {!forecastLoading && forecast && forecast.days.length > 0 && <Meteogram forecast={forecast} />}
+                  {!forecastLoading && (!forecast || forecast.days.length === 0) && <EmptyState message={forecastError ? "Vorhersage momentan nicht verfügbar." : "Keine Vorhersage-Daten."} />}
+                </div>
+
+                <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                  <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wind + Welle · Karte</p></div>
                 <SpotFlowMap
                   coords={mapCoords}
                   windDir={windDir}
@@ -310,49 +327,36 @@ export default function SpotDetail() {
                   zoom={spot.mapView?.zoom}
                   mapCenter={spot.mapView?.center}
                   live={live}
+                  forecast={forecast}
+                  showLayerSwitcher
+                  rounded={false}
                 />
-                <div className="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-4 rounded-2xl border border-line bg-white px-4 py-2 text-caption text-ink">
-                  <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-0.5 w-4 rounded-full bg-ink/60" />
-                    Wind
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-0.5 w-4 rounded-full bg-[#2F6FB0]" />
-                    Welle
-                  </span>
+                  <TimeScrubber />
                 </div>
+
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-line bg-surface p-4">
+                    <p className="text-caption font-medium uppercase tracking-wider text-muted">Windrichtung · 52 W</p>
+                    <WindRose windDir={windDir} waveDir={spot.waveDir ?? live?.current.swell_dir ?? undefined} className="mx-auto mt-2 h-52 max-w-full" />
+                  </div>
+                  <TidePanel spotId={id!} />
+                </div>
+
+                {forecast && forecast.days.length > 0 && (
+                  <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                    <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 7 Tage</p></div>
+                    <WeatherDetailsTable forecast={forecast} />
+                  </div>
+                )}
+
+                {spot.climatology && (
+                  <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                    <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Klimatologie · Wann hierher</p></div>
+                    <Climatology spot={spot} />
+                  </div>
+                )}
               </div>
-            </DatenSection>
-
-            <DatenSection label="Gezeiten">
-              <TidePanel spotId={id!} />
-            </DatenSection>
-
-            {/* Die nächsten 7 Tage — Wochenüberblick + Stundentabelle */}
-            {(forecastLoading || forecast?.days.length) && (
-              <DatenSection label="Die nächsten 7 Tage">
-                {forecastLoading && <div className="h-56 animate-pulse bg-line" />}
-                {!forecastLoading && forecast && forecast.days.length > 0 && (
-                  <Forecast forecast={forecast} coords={spot.coords} />
-                )}
-                {!forecastLoading && (!forecast || forecast.days.length === 0) && (
-                  <EmptyState
-                    message={
-                      forecastError
-                        ? "7-Tage-Vorhersage momentan nicht verfügbar."
-                        : "Keine Vorhersage-Daten."
-                    }
-                  />
-                )}
-              </DatenSection>
-            )}
-
-            {/* Saison */}
-            {months && (
-              <DatenSection label="Wann hierher?">
-                <WindMonths climatology={spot.climatology} />
-              </DatenSection>
-            )}
+            </SpotDataScopeProvider>
             </motion.div>
           )}
         </AnimatePresence>
