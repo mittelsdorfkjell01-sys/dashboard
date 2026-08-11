@@ -13,13 +13,13 @@ export default function SpotMetaGrid({ spot }: { spot: Spot }) {
   if (items.length === 0) return null;
 
   return (
-    <dl className="grid gap-7">
+    <dl className="grid grid-cols-3 gap-x-4 border-y border-line py-5 lg:grid-cols-1 lg:gap-7 lg:border-0 lg:py-0">
       {items.map((item) => (
         <div key={item.label} className="min-w-0">
           <dt className="text-caption font-medium uppercase tracking-[0.08em] text-muted">
             {item.label}
           </dt>
-          <dd className="mt-2 text-body font-medium leading-snug text-ink">{item.value}</dd>
+          <dd className="mt-1.5 text-ui font-medium leading-snug text-ink lg:mt-2 lg:text-body">{item.value}</dd>
         </div>
       ))}
     </dl>

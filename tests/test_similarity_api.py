@@ -61,6 +61,7 @@ def test_similar_character_endpoint(client, laboe_id):
     # the other flatwater beginner spots are the closest in character
     assert slugs[0] in {"stein", "schilksee"}
     assert all(r["character"] is not None for r in body["results"])
+    assert all("image" in r and "region" in r and "wind" in r for r in body["results"])
 
 
 def test_similar_season_endpoint(client, laboe_id):

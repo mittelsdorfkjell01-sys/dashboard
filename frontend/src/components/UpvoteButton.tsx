@@ -38,7 +38,7 @@ export default function UpvoteButton({ kind, id, count, active }: { kind: "ratin
   };
 
   return <span className="inline-flex items-center gap-1.5">
-    <button type="button" aria-pressed={pressed} disabled={busy} onClick={toggle} className={`inline-flex min-h-10 items-center gap-1.5 rounded-xl px-2 text-caption font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${pressed ? "text-teal" : "text-muted hover:text-ink"}`}>
+    <button type="button" aria-pressed={pressed} disabled={busy} onClick={toggle} className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2 text-caption font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${pressed ? "text-teal" : "text-muted hover:text-ink"}`}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="m5 9 5-5 5 5M10 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
       <span>{value}</span><span className="sr-only">Upvotes</span>
     </button>

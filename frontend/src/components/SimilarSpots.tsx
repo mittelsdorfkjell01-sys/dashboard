@@ -1,27 +1,28 @@
 import { useEffect, useState } from "react";
-import { API_BASE } from "../lib/api";
+import { API_BASE, resolveMediaUrl } from "../lib/api";
 import SpotCard from "./SpotCard";
 import type { Spot } from "../lib/types";
 
-// The `/similar` endpoint only returns id/slug/name/location/sports (see
-// app/search/pins.py::spot_brief) — no image, region, wind or description.
-// SpotCard renders those as its existing empty states (image fallback, no
-// region line, "—" wind) rather than inventing values that aren't there.
 interface SimilarSpotApi {
   id: string;
   name: string;
   sports?: string[];
+  region?: string | null;
+  image?: { url?: string | null } | null;
+  wind?: number | null;
+  description?: string | null;
 }
 
 function toCardSpot(item: SimilarSpotApi): Spot {
   return {
     id: item.id,
     name: item.name,
-    region: "",
-    wind: 0,
+    region: item.region ?? "",
+    wind: item.wind ?? 0,
     tags: [],
-    image: "",
+    image: resolveMediaUrl(item.image?.url) ?? "",
     sports: item.sports,
+    description: item.description ?? undefined,
   };
 }
 
@@ -53,7 +54,7 @@ export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?
       </div>
       <div className="no-scrollbar mt-5 flex snap-x-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
         {spots.map((item) => (
-          <div key={item.id} className="min-w-[220px] snap-start sm:min-w-0">
+          <div key={item.id} className="min-w-[clamp(196px,78vw,232px)] snap-start sm:min-w-0">
             <SpotCard spot={toCardSpot(item)} />
           </div>
         ))}

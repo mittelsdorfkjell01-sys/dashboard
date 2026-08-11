@@ -32,7 +32,7 @@ export default function FavoriteButton({ spot }: { spot: Spot }) {
       type="button"
       onClick={onClick}
       aria-pressed={fav}
-      className="rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+      className="min-h-11 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
     >
       {fav ? "in Favoriten" : "zu Favoriten hinzufügen"}
     </button>

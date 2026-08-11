@@ -41,7 +41,7 @@ export default function SpotGalleryTile({
         ref={galleryTriggerRef}
         type="button"
         onClick={onOpenGallery}
-        className="absolute left-1/2 top-4 z-10 -translate-x-1/2 rounded-2xl bg-teal/80 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal"
+        className="absolute left-4 top-4 z-10 inline-flex min-h-11 items-center rounded-2xl bg-teal/80 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal sm:left-1/2 sm:min-h-0 sm:-translate-x-1/2"
       >
         Fotogalerie
       </button>
@@ -52,7 +52,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(-1)}
             aria-label="Vorheriges Bild"
-            className="grid h-9 w-9 place-items-center rounded-2xl bg-teal/80 text-white transition-colors hover:bg-teal"
+            className="grid h-11 w-11 place-items-center rounded-2xl bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
           >
             <ChevronLeftIcon width={18} height={18} />
           </button>
@@ -60,7 +60,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(1)}
             aria-label="Nächstes Bild"
-            className="grid h-9 w-9 place-items-center rounded-2xl bg-teal/80 text-white transition-colors hover:bg-teal"
+            className="grid h-11 w-11 place-items-center rounded-2xl bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
           >
             <ChevronRightIcon width={18} height={18} />
           </button>
@@ -68,8 +68,8 @@ export default function SpotGalleryTile({
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-5 text-white">
-        <p className="text-title font-semibold text-balance">Community Galerie</p>
-        <p className="mt-1 text-body text-white/85">Feel free to add your Images</p>
+        <p className="text-title font-semibold text-balance">Community-Galerie</p>
+        <p className="mt-1 text-body text-white/85">Füge deine Bilder hinzu</p>
       </div>
     </div>
   );

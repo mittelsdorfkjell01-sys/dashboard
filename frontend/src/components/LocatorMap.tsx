@@ -93,6 +93,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       map.resize();
       const el = document.createElement("div");
       el.innerHTML = PIN_SVG;
+      el.setAttribute("role", "img");
       new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
       setReady(true);
     });

@@ -59,30 +59,30 @@ export default function Facilities({
 
   if (variant === "list") {
     return (
-      <dl className="grid gap-5">
+      <ul className="grid grid-cols-2 gap-x-5 gap-y-6 lg:grid-cols-1 lg:gap-5">
         {items.map((f) => {
           const absent = f.available === false;
           const unknown = f.available === null;
           const Icon = facilityIcon[f.kind];
           return (
-            <div key={f.kind} className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3">
+            <li key={f.kind} className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3">
               <Icon
                 width={22}
                 height={22}
                 className={`mt-0.5 shrink-0 ${absent ? "text-muted opacity-40" : unknown ? "text-muted opacity-30" : "text-teal"}`}
               />
               <div className="min-w-0">
-                <dt className={`text-ui font-medium leading-snug ${absent ? "text-muted line-through" : "text-ink"}`}>
+                <p className={`text-ui font-medium leading-snug ${absent ? "text-muted line-through" : "text-ink"}`}>
                   {f.title}
-                </dt>
-                <dd className={`mt-1 text-caption leading-snug ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
+                </p>
+                <p className={`mt-1 text-caption leading-snug ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
                   {absent ? "Nicht vorhanden" : f.note}
-                </dd>
+                </p>
               </div>
-            </div>
+            </li>
           );
         })}
-      </dl>
+      </ul>
     );
   }
 

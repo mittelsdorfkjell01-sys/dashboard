@@ -26,7 +26,7 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-2xl text-teal transition-colors hover:bg-band/70"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl text-teal transition-colors hover:bg-band/70 sm:h-9 sm:w-9"
     >
       {theme === "light" ? (
         <MoonIcon width={18} height={18} />

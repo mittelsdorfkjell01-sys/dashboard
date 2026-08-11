@@ -109,8 +109,24 @@ def find_alternatives_core(
 # --- serialisation ---------------------------------------------------------
 
 def _similar_brief(r: dict) -> dict:
+    spot = r["spot"]
+    editorial = getattr(spot, "editorial", None)
+    editorial = editorial if isinstance(editorial, dict) else {}
+    wind_range = editorial.get("wind_range")
+    typical_wind = None
+    if (
+        isinstance(wind_range, (list, tuple))
+        and len(wind_range) == 2
+        and all(isinstance(value, (int, float)) for value in wind_range)
+    ):
+        typical_wind = round((float(wind_range[0]) + float(wind_range[1])) / 2)
+    region = getattr(spot, "region", None)
     return {
-        **spot_brief(r["spot"]),
+        **spot_brief(spot),
+        "region": getattr(region, "name", None),
+        "image": getattr(spot, "image", None),
+        "wind": typical_wind,
+        "description": editorial.get("description"),
         "distance": r["distance"],
         "character": r["character"],
         "season": r["season"],

@@ -93,7 +93,7 @@ export default function InlineTipComposer({
             maxLength={4000}
             placeholder="Kommentar hinzufügen …"
             aria-label="Kommentar hinzufügen"
-            className="h-11 w-full rounded-xl border border-line bg-page py-2 pl-4 pr-12 text-label text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+            className="h-11 w-full rounded-xl border border-line bg-page py-2 pl-4 pr-12 text-[16px] text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 sm:text-label"
           />
           {text.trim() && (
             <button
@@ -101,7 +101,7 @@ export default function InlineTipComposer({
               onClick={onSend}
               disabled={busy}
               aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
-              className="absolute right-1 top-1 grid h-9 w-9 place-items-center rounded-lg text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40"
+              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-lg text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40"
             >
               {busy ? (
                 <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-teal/25 border-t-teal" />

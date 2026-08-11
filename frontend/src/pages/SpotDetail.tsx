@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
 import Facilities from "../components/Facilities";
-import LocatorMap from "../components/LocatorMap";
 import SpotFlowMap from "../components/SpotFlowMap";
 import SpotTabs from "../components/SpotTabs";
 import TidePanel from "../components/TidePanel";
@@ -34,6 +33,7 @@ import { waterTypeFromCharacter } from "../lib/seasonView";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
+const LocatorMap = lazy(() => import("../components/LocatorMap"));
 
 export default function SpotDetail() {
   const { id } = useParams();
@@ -74,6 +74,8 @@ export default function SpotDetail() {
   const [galleryRightInset, setGalleryRightInset] = useState(0);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const commentsTriggerRef = useRef<HTMLButtonElement>(null);
+  const mapSlotRef = useRef<HTMLDivElement>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     const frame = galleryFrameRef.current;
@@ -88,6 +90,22 @@ export default function SpotDetail() {
     observer.observe(frame);
     return () => observer.disconnect();
   }, [activeTab, loading, photos.length]);
+
+  useEffect(() => {
+    if (activeTab !== "info" || loading || mapReady) return;
+    const slot = mapSlotRef.current;
+    if (!slot) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setMapReady(true);
+        observer.disconnect();
+      },
+      { rootMargin: "500px 0px" },
+    );
+    observer.observe(slot);
+    return () => observer.disconnect();
+  }, [activeTab, loading, mapReady]);
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
 
@@ -172,15 +190,13 @@ export default function SpotDetail() {
           alt={spot.name}
           credit={spot.heroCredit}
           delivery={spot.heroDelivery}
-          frameClassName="aspect-[21/9] h-auto"
+          frameClassName="h-[clamp(220px,62vw,260px)] sm:aspect-[21/9] sm:h-auto"
         />
 
-        {/* Body content runs at 85% zoom (more L/R margin, smaller type/
-            components) while section-to-section gaps below are inflated by
-            1/0.85 so their on-screen size stays unchanged — see the "zoom
-            compensation" comments at each inflated value. The hero above is
-            deliberately outside this wrapper (full-bleed, not "body"). */}
-        <div className="[zoom:0.85]">
+        {/* Mobile remains at native scale for readable type and reliable 44px
+            touch targets. The established compact desktop composition starts
+            at lg; the full-bleed hero remains outside this wrapper. */}
+        <div className="[zoom:1] lg:[zoom:0.85]">
         {tabs.length > 0 && <SpotTabs tabs={tabs} />}
 
         <AnimatePresence initial={false} custom={tabDirection}>
@@ -197,8 +213,8 @@ export default function SpotDetail() {
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
-              <div className={`grid min-w-0 gap-x-[37.65px] gap-y-[37.65px] ${SPOT_INFO_GRID}`}>
-                <div className="flex min-w-0 flex-col self-stretch">
+              <div className={`grid min-w-0 gap-x-8 gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[37.65px] ${SPOT_INFO_GRID}`}>
+                <div className="order-1 flex min-w-0 flex-col self-stretch">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
@@ -246,7 +262,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div ref={galleryFrameRef} className="spot-gallery-compact w-full min-w-0 justify-self-center">
+                <div ref={galleryFrameRef} className="spot-gallery-compact order-3 w-full min-w-0 justify-self-center lg:order-2">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -254,10 +270,11 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <aside aria-label="Spotprofil und Ausstattung" className="flex min-w-0 flex-col">
+                <aside aria-label="Spotprofil und Ausstattung" className="order-2 flex min-w-0 flex-col lg:order-3">
+                  <h2 className="mb-5 text-title font-semibold text-ink lg:sr-only">Spotprofil</h2>
                   <SpotMetaGrid spot={spot} />
                   {facilities.length > 0 && (
-                    <div className="mt-12">
+                    <div className="mt-10 lg:mt-12">
                       <h2 className="text-ui font-semibold text-ink">Ausstattung</h2>
                       <div className="mt-6">
                         <Facilities items={facilities} variant="list" />
@@ -270,7 +287,7 @@ export default function SpotDetail() {
               {/* Lage + Kommentare reuse the exact column tracks above: the map
                   spans the text and gallery columns, so its right edge aligns
                   with the gallery while comments align with the profile column. */}
-              <section aria-labelledby="location-comments-title" className="mt-[58px] min-w-0">
+              <section aria-labelledby="location-comments-title" className="mt-12 min-w-0 lg:mt-[58px]">
                 <h2 id="location-comments-title" className="sr-only">Lage und Kommentare</h2>
                 <div
                   className={`spot-location-grid grid min-w-0 gap-10 lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}
@@ -280,7 +297,15 @@ export default function SpotDetail() {
                   } as CSSProperties}
                 >
                   {spot.coords ? (
-                    <div className="spot-locator-compact min-w-0 lg:col-span-2"><LocatorMap coords={spot.coords} /></div>
+                    <div ref={mapSlotRef} className="spot-locator-compact min-w-0 lg:col-span-2">
+                      {mapReady ? (
+                        <Suspense fallback={<MapPlaceholder />}>
+                          <LocatorMap coords={spot.coords} />
+                        </Suspense>
+                      ) : (
+                        <MapPlaceholder />
+                      )}
+                    </div>
                   ) : (
                     <div aria-hidden className="lg:col-span-2" />
                   )}
@@ -303,7 +328,7 @@ export default function SpotDetail() {
 
               {id && (
                 // 96px visible separation after the location/community group.
-                <div className="mt-[112.94px]">
+                <div className="mt-24 lg:mt-[112.94px]">
                   <SimilarSpots spotId={id} sport={spot.sports?.[0]} />
                 </div>
               )}
@@ -404,4 +429,8 @@ export default function SpotDetail() {
       <Footer />
     </div>
   );
+}
+
+function MapPlaceholder() {
+  return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse bg-band sm:h-[440px] lg:h-full" />;
 }

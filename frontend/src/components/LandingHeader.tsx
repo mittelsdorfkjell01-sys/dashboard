@@ -75,7 +75,7 @@ export default function LandingHeader({
           <Link
             to="/"
             aria-label="surfwind data — Startseite"
-            className="col-start-2 min-w-0 select-none justify-self-center leading-none"
+            className="col-start-2 flex min-h-11 min-w-0 select-none items-center justify-self-center leading-none"
           >
             <Wordmark size={solid ? "md" : "xl"} />
           </Link>
