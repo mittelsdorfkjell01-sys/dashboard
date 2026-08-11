@@ -143,20 +143,18 @@ export default function SpotDetail() {
         }
       />
 
-      <main className={`min-w-0 max-w-full ${activeTab === "daten" ? "pt-24 sm:pt-28" : ""}`}>
+      <main className="min-w-0 max-w-full">
         {/* Clean hero image — the spot identity (name/region/score) now lives in
             the Info column below, not in an overlay on the photo (Figma Frame_9). */}
-        {activeTab === "info" && (
-          <EditorialHero
-            image={spot.hero}
-            focal={spot.heroFocal}
-            focalMobile={spot.heroFocalMobile}
-            alt={spot.name}
-            credit={spot.heroCredit}
-            delivery={spot.heroDelivery}
-            frameClassName="aspect-[21/9] h-auto"
-          />
-        )}
+        <EditorialHero
+          image={spot.hero}
+          focal={spot.heroFocal}
+          focalMobile={spot.heroFocalMobile}
+          alt={spot.name}
+          credit={spot.heroCredit}
+          delivery={spot.heroDelivery}
+          frameClassName="aspect-[21/9] h-auto"
+        />
 
         {/* Body content runs at 85% zoom (more L/R margin, smaller type/
             components) while section-to-section gaps below are inflated by
@@ -178,7 +176,7 @@ export default function SpotDetail() {
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
-            <SectionBand tone="page" pad="md" width="content">
+            <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
               <div className="grid min-w-0 gap-x-[37.65px] gap-y-[37.65px] lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]">
                 <div className="min-w-0">
@@ -300,7 +298,7 @@ export default function SpotDetail() {
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             <SpotDataScopeProvider>
-              <div className="mx-auto max-w-[1180px] px-4 py-4 sm:px-8">
+              <div className="mx-auto max-w-[1298px] px-4 py-4 sm:px-8">
                 <SpotDataHeader spot={spot} />
 
                 <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">

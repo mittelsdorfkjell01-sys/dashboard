@@ -2,13 +2,16 @@ import type { ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 type Tone = "white" | "band" | "page";
-type Width = "narrow" | "content" | "wide" | "bleed";
+type Width = "narrow" | "content" | "spotBody" | "wide" | "bleed";
 type Pad = "sm" | "md" | "lg";
 type MaxWidth = "narrow" | "default" | "wide";
 
 const WIDTH_MAX: Record<Width, string> = {
   narrow: "max-w-[720px]",
   content: "max-w-[1570px]",
+  // Spot-detail body only: 10% wider than the regular 1570px content frame.
+  // Typography, padding and component gaps remain untouched.
+  spotBody: "max-w-[1727px]",
   wide: "max-w-[1440px]",
   bleed: "max-w-none",
 };
