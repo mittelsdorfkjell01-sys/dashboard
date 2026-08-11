@@ -54,6 +54,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               to={tab.href}
+              state={{ preserveScroll: true }}
               onKeyDown={(e) => onKeyDown(e, i)}
               className="relative flex h-12 min-w-[140px] items-center justify-center px-4 text-label"
             >

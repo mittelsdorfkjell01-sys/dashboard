@@ -11,7 +11,7 @@ import { getLenis } from "../lib/lenis";
 const scrollPositions = new Map<string, number>();
 
 export default function ScrollManager() {
-  const { pathname, hash, key } = useLocation();
+  const { pathname, hash, key, state } = useLocation();
   const navigationType = useNavigationType();
 
   useLayoutEffect(() => {
@@ -22,6 +22,11 @@ export default function ScrollManager() {
 
   useLayoutEffect(() => {
     const lenis = getLenis();
+
+    // Spot-detail tabs are two real routes, but visually they are one page.
+    // Their links opt out of the normal route reset so the viewport remains
+    // at exactly the height from which the visitor switched tabs.
+    if (navigationType !== "POP" && state?.preserveScroll) return;
 
     if (hash) {
       const el = document.querySelector(hash);
@@ -35,7 +40,7 @@ export default function ScrollManager() {
     const target = navigationType === "POP" ? scrollPositions.get(key) ?? 0 : 0;
     if (lenis) lenis.scrollTo(target, { immediate: true });
     else window.scrollTo(0, target);
-  }, [pathname, hash, key, navigationType]);
+  }, [pathname, hash, key, navigationType, state]);
 
   return null;
 }

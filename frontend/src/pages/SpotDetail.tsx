@@ -298,21 +298,21 @@ export default function SpotDetail() {
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             <SpotDataScopeProvider>
-              <div className="mx-auto max-w-[1298px] px-4 py-4 sm:px-8">
+              <div className="mx-auto max-w-[1298px] px-4 pb-8 pt-10 sm:px-8">
                 <SpotDataHeader spot={spot} />
 
-                <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <LiveRow spot={spot} forecast={forecast} live={live} />
                 </div>
 
-                <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Meteogramm · 10 Tage</p></div>
                   {forecastLoading && <div className="h-[280px] animate-pulse bg-band" />}
                   {!forecastLoading && forecast && forecast.days.length > 0 && <Meteogram forecast={forecast} />}
                   {!forecastLoading && (!forecast || forecast.days.length === 0) && <EmptyState message={forecastError ? "Vorhersage momentan nicht verfügbar." : "Keine Vorhersage-Daten."} />}
                 </div>
 
-                <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wind + Welle · Karte</p></div>
                 <SpotFlowMap
                   coords={mapCoords}
@@ -332,7 +332,7 @@ export default function SpotDetail() {
                   <TimeScrubber />
                 </div>
 
-                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="rounded-lg border border-line bg-surface p-4">
                     <p className="text-caption font-medium uppercase tracking-wider text-muted">Windrichtung · 52 W</p>
                     <WindRose windDir={windDir} waveDir={spot.waveDir ?? live?.current.swell_dir ?? undefined} className="mx-auto mt-2 h-52 max-w-full" />
@@ -341,14 +341,14 @@ export default function SpotDetail() {
                 </div>
 
                 {forecast && forecast.days.length > 0 && (
-                  <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                  <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                     <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 7 Tage</p></div>
                     <WeatherDetailsTable forecast={forecast} />
                   </div>
                 )}
 
                 {spot.climatology && (
-                  <div className="mt-3 overflow-hidden rounded-lg border border-line bg-surface">
+                  <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                     <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Klimatologie · Wann hierher</p></div>
                     <Climatology spot={spot} />
                   </div>
