@@ -254,6 +254,8 @@ export interface Region {
 export interface CurrentConditions {
   wind: number | null;
   gust: number | null;
+  wind_ms?: number | null;
+  gust_ms?: number | null;
   dir: number | null;
   air: number | null;
   sst: number | null;
@@ -266,6 +268,11 @@ export interface LiveConditionsRead {
   spot_id: string;
   model: string;
   time: string | null;
+  calculated?: boolean;
+  resolution?: "15min" | "hourly";
+  trend?: "steigend" | "stabil" | "fallend" | null;
+  quality_tier?: "coordinates" | "coastal" | "extended" | "advanced";
+  coastal_classification?: "onshore" | "crossshore" | "offshore" | null;
   current: CurrentConditions;
 }
 
@@ -281,6 +288,8 @@ export interface ForecastHour {
   time: string;
   wind: number | null;
   gust: number | null;
+  wind_ms?: number | null;
+  gust_ms?: number | null;
   dir: number | null;
   air: number | null;
   swell: number | null;
@@ -294,6 +303,7 @@ export interface ForecastDay {
   confidence: string;
   summary: ForecastDaySummary;
   hours: ForecastHour[];
+  detail?: "hourly" | "trend";
 }
 export interface ForecastSeries {
   spot_id: string;

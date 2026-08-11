@@ -10,17 +10,21 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
+import time
 from typing import Any, Protocol
 
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TTL_SECONDS = 1800  # 30 min
+DEFAULT_TTL_SECONDS = 900  # 15 min
 
 
 def cache_key(model: str, lat: float, lon: float, var: str) -> str:
-    return f"om:{model}:{round(lat, 2)}:{round(lon, 2)}:{var}"
+    # Four decimals (~11 m latitude) prevent an edited spot from inheriting a
+    # neighbouring coordinate's forecast while still normalising float noise.
+    return f"om:{model}:{round(lat, 4)}:{round(lon, 4)}:{var}"
 
 
 class Cache(Protocol):
@@ -64,16 +68,29 @@ class RedisCache:
 
 
 class InMemoryCache:
-    """Process-local cache (local dev / tests). TTL is accepted but not expired."""
+    """Thread-safe process-local TTL cache, lost completely on restart."""
 
-    def __init__(self) -> None:
-        self._store: dict[str, Any] = {}
+    def __init__(self, clock=time.monotonic) -> None:
+        self._store: dict[str, tuple[float, Any]] = {}
+        self._clock = clock
+        self._lock = threading.Lock()
 
     def get(self, key: str) -> Any | None:
-        return self._store.get(key)
+        with self._lock:
+            item = self._store.get(key)
+            if item is None:
+                return None
+            expires_at, value = item
+            if expires_at <= self._clock():
+                self._store.pop(key, None)
+                return None
+            return value
 
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
-        self._store[key] = value
+        if ttl <= 0:
+            return
+        with self._lock:
+            self._store[key] = (self._clock() + ttl, value)
 
 
 _default_cache: Cache | None = None
@@ -82,7 +99,9 @@ _default_cache: Cache | None = None
 def default_cache() -> Cache:
     global _default_cache
     if _default_cache is None:
-        _default_cache = RedisCache()
+        # Product requirement: live weather must never survive a backend
+        # restart. Redis remains available for unrelated application features.
+        _default_cache = InMemoryCache()
     return _default_cache
 
 

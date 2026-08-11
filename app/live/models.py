@@ -20,7 +20,9 @@ BEST_MATCH = "best_match"             # Open-Meteo global blend
 # disagreement is the honest structural spread used for the Sprint 18 consensus
 # band. ``best_match`` is deliberately excluded from the set: it is itself a
 # blend, not an independent member.
-CONSENSUS_GLOBAL_MODELS = ["icon_seamless", "gfs_seamless", "ecmwf_ifs025"]
+CONSENSUS_GLOBAL_MODELS = [
+    "ecmwf_ifs", "ncep_gfs_global", "ecmwf_aifs025_single", "icon_global"
+]
 
 # Legacy / invalid ``model_pref`` values → the valid Open-Meteo id. Open-Meteo
 # has no bare ``icon`` model (it 400s the whole request); ``icon_seamless`` is
@@ -83,11 +85,14 @@ def consensus_models(
 
     Deduplicated, stable order (primary first).
     """
+    from app.weather.catalog import forecast_models
+
     primary = select_model(lat, lon, pref)
     members: list[str] = []
-    if primary != BEST_MATCH:
+    if pref and primary != BEST_MATCH:
         members.append(primary)
-    for m in (globals_ or CONSENSUS_GLOBAL_MODELS):
+    selected = globals_ or [spec.id for spec in forecast_models(lat, lon)]
+    for m in selected:
         if m and m not in members:
             members.append(m)
     return members

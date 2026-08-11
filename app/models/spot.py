@@ -84,6 +84,9 @@ class Spot(Base, TimestampMixin):
     region: Mapped["Region"] = relationship(  # noqa: F821
         back_populates="spots"
     )
+    weather_profile: Mapped["SpotWeatherProfile | None"] = relationship(  # noqa: F821
+        backref="spot", uselist=False, lazy="selectin", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         CheckConstraint(

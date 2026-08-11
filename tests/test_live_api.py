@@ -24,7 +24,7 @@ def seeded_spot_id(db):
 
 @pytest.fixture
 def fake_live(client):
-    fake = FakeOpenMeteoClient()
+    fake = FakeOpenMeteoClient(data_days=11)
     cache = InMemoryCache()
     app.dependency_overrides[get_om_client] = lambda: fake
     app.dependency_overrides[get_cache] = lambda: cache
@@ -41,12 +41,12 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     assert len(body["models"]) >= 3            # consensus set exposed
     assert set(body["current"]) == {
         "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
-        "wind_spread", "gust_spread",
+        "wind_spread", "gust_spread", "wind_ms", "gust_ms",
     }
     assert body["current"]["wind_spread"]["n"] == len(body["models"])
 
 
-def test_forecast_endpoint_caps_at_7(client, seeded_spot_id, fake_live):
+def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):
     resp = client.get(f"/spots/{seeded_spot_id}/forecast")
     assert resp.status_code == 200
     days = resp.json()["days"]
@@ -56,8 +56,7 @@ def test_forecast_endpoint_caps_at_7(client, seeded_spot_id, fake_live):
 
 
 def test_forecast_endpoint_rejects_over_horizon(client, seeded_spot_id, fake_live):
-    # query validation caps days at 7
-    resp = client.get(f"/spots/{seeded_spot_id}/forecast?days=10")
+    resp = client.get(f"/spots/{seeded_spot_id}/forecast?days=11")
     assert resp.status_code == 422
 
 

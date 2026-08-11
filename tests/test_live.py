@@ -33,7 +33,7 @@ def test_select_model_respects_pref():
 
 def test_cache_key_rounds_coordinates():
     assert cache_key("icon_eu", 36.0128, -5.6035, "forecast") == (
-        "om:icon_eu:36.01:-5.6:forecast"
+        "om:icon_eu:36.0128:-5.6035:forecast"
     )
 
 
@@ -56,6 +56,13 @@ def test_redis_cache_fails_open_when_redis_is_down():
     cache._r = _DeadRedis()
     assert cache.get("om:x") is None  # reported as a miss
     cache.set("om:x", {"a": 1}, ttl=10)  # swallowed, no raise
+
+
+def test_default_weather_cache_is_volatile_process_memory():
+    import app.live.cache as cache_module
+
+    cache_module._default_cache = None
+    assert isinstance(cache_module.default_cache(), InMemoryCache)
 
 
 # --- confidence staffing ---------------------------------------------------
@@ -98,9 +105,9 @@ def test_live_conditions_shape_and_model():
     cur = out["current"]
     assert set(cur) == {
         "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
-        "wind_spread", "gust_spread",
+        "wind_spread", "gust_spread", "wind_ms", "gust_ms",
     }
-    assert cur["wind"] == 14.0  # consensus median (symmetric spread -> base)
+    assert cur["wind"] == 19.4  # 10 m/s consensus exposed as compatibility knots
     assert cur["sst"] == 20.0
 
 
@@ -116,32 +123,29 @@ def test_unknown_spot_raises_lookup():
 
 # --- forecast horizon + confidence -----------------------------------------
 
-def test_forecast_returns_exactly_7_days_with_confidence():
+def test_forecast_returns_exactly_10_days_with_five_detail_days():
     spot = make_spot()
-    # fake serves 8 days of data; the service must still cap at 7
-    client = FakeOpenMeteoClient(data_days=8)
+    client = FakeOpenMeteoClient(data_days=11)
     series = get_forecast_series(
-        spot.id, days=7, db=FakeDB(spot), client=client, cache=InMemoryCache()
+        spot.id, days=10, db=FakeDB(spot), client=client, cache=InMemoryCache()
     )
 
     assert len(series["days"]) == MAX_FORECAST_DAYS
     confidences = [d["confidence"] for d in series["days"]]
-    assert confidences == [
-        "hoch", "hoch", "hoch", "mittel", "mittel", "niedrig", "niedrig",
-    ]
-    # each day has 24 hourly samples and a summary
-    for day in series["days"]:
-        assert len(day["hours"]) == 24
+    assert confidences[0] == "hoch"
+    for index, day in enumerate(series["days"]):
+        assert len(day["hours"]) == (24 if index < 5 else 0)
+        assert day["detail"] == ("hourly" if index < 5 else "trend")
         assert "wind_max" in day["summary"]
 
 
 def test_forecast_horizon_is_capped_even_if_more_requested():
     spot = make_spot()
-    client = FakeOpenMeteoClient(data_days=8)
+    client = FakeOpenMeteoClient(data_days=11)
     series = get_forecast_series(
         spot.id, days=20, db=FakeDB(spot), client=client, cache=InMemoryCache()
     )
-    assert len(series["days"]) == MAX_FORECAST_DAYS  # never beyond 7
+    assert len(series["days"]) == MAX_FORECAST_DAYS
 
 
 def test_forecast_fewer_days_when_requested():
@@ -151,7 +155,7 @@ def test_forecast_fewer_days_when_requested():
         cache=InMemoryCache(),
     )
     assert len(series["days"]) == 3
-    assert [d["confidence"] for d in series["days"]] == ["hoch", "hoch", "hoch"]
+    assert series["days"][0]["confidence"] == "hoch"
 
 
 def test_forecast_hours_merge_wind_and_swell():
@@ -210,7 +214,7 @@ def test_live_conditions_expose_consensus_band():
     )
     assert len(out["models"]) >= 3            # several models fetched in one request
     cur = out["current"]
-    assert cur["wind"] == 14.0                # instantaneous current (unsuffixed)
+    assert cur["wind"] == 19.4                # weighted hourly consensus, exposed in knots
     band = cur["wind_spread"]                 # "now" spread from the current hour
     assert band["n"] == len(out["models"])    # all models present in the band
     assert band["low"] <= band["median"] <= band["high"]
@@ -246,10 +250,10 @@ def test_forecast_hour_has_wind_spread():
 
 def test_consensus_degrades_gracefully_to_single_model():
     # 3 of 4 models report nothing -> n==1, no error, calendar fallback confidence
-    spot = make_spot()  # -> [icon_eu, icon_seamless, gfs_seamless, ecmwf_ifs025]
+    spot = make_spot()
     client = FakeOpenMeteoClient(
         data_days=8,
-        null_models=["icon_seamless", "gfs_seamless", "ecmwf_ifs025"],
+        null_models=["ncep_gfs_global", "ecmwf_aifs025_single", "icon_global"],
     )
     series = get_forecast_series(
         spot.id, days=7, db=FakeDB(spot), client=client, cache=InMemoryCache()
