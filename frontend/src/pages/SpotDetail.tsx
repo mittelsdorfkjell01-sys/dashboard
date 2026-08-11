@@ -63,7 +63,7 @@ export default function SpotDetail() {
   const { data: live } = useSpotLive(id);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(id);
-  const { posts, photos, reload: reloadFeed } = useCommunityFeed(id);
+  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed } = useCommunityFeed(id);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -250,7 +250,8 @@ export default function SpotDetail() {
 
               {/* Lage + Kommentare: Karte 2/3, offene Kommentarspalte 1/3.
                   mt-10/gap-8 (40px/32px) inflated by 1/0.85 to offset the zoom above. */}
-              <div className={`mt-[47.06px] grid min-w-0 gap-[18.82px] ${spot.coords ? "lg:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]" : "lg:grid-cols-[2fr_1fr]"}`}>
+              <section aria-labelledby="location-comments-title" className={`mt-[58px] grid min-w-0 gap-10 lg:h-[540px] lg:gap-8 ${spot.coords ? "lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]" : "lg:grid-cols-[3fr_2fr]"}`}>
+                <h2 id="location-comments-title" className="sr-only">Lage und Kommentare</h2>
                 {spot.coords ? (
                   <div className="spot-locator-compact min-w-0"><LocatorMap coords={spot.coords} /></div>
                 ) : (
@@ -262,10 +263,12 @@ export default function SpotDetail() {
                     posts={sortedPosts}
                     onOpenMore={() => setCommentsOpen(true)}
                     onPosted={reloadFeed}
-                    moreButtonRef={commentsTriggerRef}
+                    overlayTriggerRef={commentsTriggerRef}
+                    loading={commentsLoading}
+                    error={commentsError}
                   />
                 </div>
-              </div>
+              </section>
 
               {id && (
                 // mt-14 (56px) inflated by 1/0.85 to offset the zoom above.

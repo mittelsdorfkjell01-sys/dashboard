@@ -15,7 +15,7 @@ export default function CommentAuthChoiceDialog({
   onAnonymous,
   onSignIn,
   onCancel,
-  title = "Kommentar verfassen",
+  title = "Wie möchtest du kommentieren?",
   anonymousText = "dein Kommentar wird ohne Namen veröffentlicht",
   signInText = "melde dich an, um mit deinem Namen zu kommentieren",
 }: {
@@ -60,14 +60,14 @@ export default function CommentAuthChoiceDialog({
             transition={{ duration: reduce ? 0 : 0.22, ease: "easeOut" }}
           >
             <h2 className="text-title font-semibold text-ink">{title}</h2>
-            <p className="mt-1 text-body text-muted">Wie möchtest du fortfahren?</p>
+            <p className="mt-1 text-body text-muted">Dein Entwurf bleibt bei beiden Optionen erhalten.</p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym">
-                {anonymousText}
-              </ChoiceCard>
-              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Login">
+              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Anmelden" primary>
                 {signInText}
+              </ChoiceCard>
+              <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym weitermachen">
+                {anonymousText}
               </ChoiceCard>
             </div>
 
@@ -94,17 +94,19 @@ function ChoiceCard({
   icon,
   title,
   children,
+  primary = false,
 }: {
   onClick: () => void;
   icon: ReactNode;
   title: string;
   children: ReactNode;
+  primary?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex h-full min-h-[150px] flex-col items-start rounded-2xl border border-line bg-page p-4 text-left transition-colors hover:border-teal/40 hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+      className={`group flex h-full min-h-[150px] flex-col items-start rounded-2xl border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${primary ? "border-teal/40 bg-teal/5 hover:bg-teal/10" : "border-line bg-page hover:border-teal/40 hover:bg-band"}`}
     >
       <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-teal">{icon}</span>
       <span className="mt-3 min-w-0">

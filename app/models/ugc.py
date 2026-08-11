@@ -115,6 +115,44 @@ class LocalTip(Base, TimestampMixin):
     )
 
 
+class CommunityUpvote(Base, TimestampMixin):
+    """One authenticated account's idempotent upvote on a public comment.
+
+    Comments are backed by either ``local_tips`` or ``spot_ratings``. Exactly
+    one target is present; partial unique indexes enforce one active vote per
+    account and target without inventing an IP-based anonymous identity.
+    """
+
+    __tablename__ = "community_upvotes"
+
+    id: Mapped[uuid.UUID] = _pk()
+    tip_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("local_tips.id", ondelete="CASCADE")
+    )
+    rating_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("spot_ratings.id", ondelete="CASCADE")
+    )
+    app_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(tip_id IS NOT NULL)::int + (rating_id IS NOT NULL)::int = 1",
+            name="ck_community_upvote_one_target",
+        ),
+        Index(
+            "uq_community_upvote_tip_user", "tip_id", "app_user_id", unique=True,
+            postgresql_where=text("tip_id IS NOT NULL"),
+        ),
+        Index(
+            "uq_community_upvote_rating_user", "rating_id", "app_user_id", unique=True,
+            postgresql_where=text("rating_id IS NOT NULL"),
+        ),
+        Index("ix_community_upvote_user", "app_user_id"),
+    )
+
+
 class SpotSubmission(Base, TimestampMixin):
     """A user's proposal for a new spot. Stored as ``pending`` — never creates a
     spot until an admin approves it (Sprint D)."""

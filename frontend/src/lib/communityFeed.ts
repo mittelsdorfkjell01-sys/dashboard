@@ -37,6 +37,8 @@ export interface FeedPost {
   /** Image id to route "melden" to — only photo-bearing posts have anything
    *  reportable (there's no report endpoint for ratings/tips). */
   reportImageId: string | null;
+  upvotes: number;
+  viewerUpvoted: boolean;
 }
 
 /** A top-level comment together with its replies (oldest first). */
@@ -135,6 +137,8 @@ export function mergeFeed({
       photo,
       parentId: null,
       reportImageId: photo?.id ?? null,
+      upvotes: r.upvotes ?? 0,
+      viewerUpvoted: r.viewer_upvoted ?? false,
     };
   });
 
@@ -155,6 +159,8 @@ export function mergeFeed({
       photo,
       parentId: t.parent_id ? `tip:${t.parent_id}` : null,
       reportImageId: photo?.id ?? null,
+      upvotes: t.upvotes ?? 0,
+      viewerUpvoted: t.viewer_upvoted ?? false,
     };
   });
 
@@ -172,6 +178,8 @@ export function mergeFeed({
     photo: img,
     parentId: null,
     reportImageId: img.id,
+    upvotes: 0,
+    viewerUpvoted: false,
   }));
 
   return [...fromRatings, ...fromTips, ...fromPhotos];

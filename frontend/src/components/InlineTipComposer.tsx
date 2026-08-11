@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ApiError, postTip } from "../lib/api";
 import { CloseIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
@@ -21,6 +21,8 @@ export default function InlineTipComposer({
   onPosted,
   onCancel,
   autoFocus = true,
+  compact = false,
+  draftKey,
 }: {
   spotId?: string;
   /** Raw parent tip id — set to post this as a reply. */
@@ -31,14 +33,23 @@ export default function InlineTipComposer({
   /** When provided, a "✕ abbrechen" control is shown. */
   onCancel?: () => void;
   autoFocus?: boolean;
+  compact?: boolean;
+  draftKey?: string;
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [text, setText] = useState("");
+  const location = useLocation();
+  const [text, setText] = useState(() => draftKey ? sessionStorage.getItem(draftKey) ?? "" : "");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    if (text) sessionStorage.setItem(draftKey, text);
+    else sessionStorage.removeItem(draftKey);
+  }, [draftKey, text]);
 
   const post = async (authorName: string) => {
     if (!spotId || !text.trim()) return;
@@ -68,7 +79,7 @@ export default function InlineTipComposer({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {replyToName && <p className="mb-2 text-caption text-muted">Antwort an {replyToName}</p>}
-      {!parentId && (
+      {!parentId && !compact && (
         <div className="mb-3">
           <label htmlFor="inline-comment-title" className="text-label font-medium text-ink">Überschrift <span className="text-muted">(optional)</span></label>
           <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-2xl border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10" />
@@ -80,10 +91,11 @@ export default function InlineTipComposer({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
-        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+        maxLength={4000}
+        className={`comment-field w-full flex-1 resize-none rounded-2xl border border-line bg-page text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 ${compact ? "min-h-[48px] px-4 py-3" : "min-h-[110px] p-4"}`}
       />
       {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-2 flex items-center justify-between gap-3">
         {onCancel ? (
           <button
             type="button"
@@ -94,13 +106,13 @@ export default function InlineTipComposer({
             Schließen
           </button>
         ) : (
-          <span />
+          <span className="text-caption text-muted">{text.length}/4000</span>
         )}
         <button
           type="button"
           onClick={onSend}
           disabled={busy || !text.trim()}
-          className="rounded-2xl bg-teal/80 px-5 py-2 text-label font-medium text-white transition-colors hover:bg-teal disabled:opacity-40"
+          className="min-h-10 rounded-2xl bg-teal px-5 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-40"
         >
           {busy ? "Senden…" : "absenden"}
         </button>
@@ -112,8 +124,11 @@ export default function InlineTipComposer({
           setAuthOpen(false);
           void post("Anonym");
         }}
-        onSignIn={() => navigate("/anmelden?mode=login")}
+        onSignIn={() => navigate(`/anmelden?mode=login&redirect=${encodeURIComponent(location.pathname + location.search)}`)}
         onCancel={() => setAuthOpen(false)}
+        title="Wie möchtest du kommentieren?"
+        anonymousText="Dein Entwurf bleibt erhalten. Der Kommentar erscheint als Anonym."
+        signInText="Dein Entwurf bleibt erhalten und erscheint unter deinem Namen."
       />
     </div>
   );

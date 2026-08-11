@@ -15,6 +15,7 @@ from app.models.favorite import Favorite
 from app.models.ugc import (
     SpotRating,
     LocalTip,
+    CommunityUpvote,
     SpotSubmission,
     SpotImage,
     ImageReport,
@@ -49,6 +50,7 @@ __all__ = [
     "Favorite",
     "SpotRating",
     "LocalTip",
+    "CommunityUpvote",
     "SpotSubmission",
     "SpotImage",
     "ImageReport",

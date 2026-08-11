@@ -1,94 +1,36 @@
-import { useState, type RefObject } from "react";
-import { useNavigate } from "react-router-dom";
-import { avatarColor, commentThreads, initials, type FeedPost } from "../lib/communityFeed";
-import { useAuth } from "../context/AuthContext";
-import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
-import CommentModal from "./CommentModal";
+import type { RefObject } from "react";
+import { avatarColor, commentThreads, initials, relativeTime, type FeedPost } from "../lib/communityFeed";
+import InlineTipComposer from "./InlineTipComposer";
+import UpvoteButton from "./UpvoteButton";
 
-export default function SpotCommentBox({
-  spotId,
-  posts,
-  onOpenMore,
-  onPosted,
-  moreButtonRef,
-}: {
-  spotId?: string;
-  posts: FeedPost[];
-  onOpenMore: () => void;
-  onPosted?: () => void;
-  moreButtonRef?: RefObject<HTMLButtonElement>;
-}) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [step, setStep] = useState<"choose" | "compose" | null>(null);
-  const [author, setAuthor] = useState("Anonym");
+export default function SpotCommentBox({ spotId, posts, onOpenMore, onPosted, overlayTriggerRef, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onOpenMore: () => void; onPosted?: () => void; overlayTriggerRef?: RefObject<HTMLButtonElement>; loading?: boolean; error?: string | null }) {
   const threads = commentThreads(posts);
-
-  const startCompose = () => {
-    if (user) {
-      setAuthor(user.displayName);
-      setStep("compose");
-    } else {
-      setStep("choose");
-    }
-  };
-
-  const close = () => setStep(null);
-  const posted = () => {
-    onPosted?.();
-    close();
-  };
-
-  return (
-    <section aria-labelledby="spot-comments-title" className="min-w-0">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="spot-comments-title" className="text-label font-semibold uppercase tracking-[0.08em] text-muted">Kommentare</h2>
-        {threads.length > 0 && (
-          <button ref={moreButtonRef} type="button" onClick={startCompose} className="text-label font-medium text-teal transition-colors hover:text-teal-hover">
-            Kommentar schreiben
-          </button>
-        )}
-      </div>
-
-      {threads.length > 0 ? (
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-2">
-          {threads.map(({ comment }) => (
-            <button
-              key={comment.id}
-              type="button"
-              onClick={onOpenMore}
-              aria-label={`Kommentar von ${comment.authorName} vollständig öffnen`}
-              className="flex aspect-[3/2] min-w-0 flex-col overflow-hidden rounded-2xl bg-page p-4 text-left text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span
-                  aria-hidden
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-caption font-semibold text-white"
-                  style={{ backgroundColor: avatarColor(comment.authorName || "Anonym") }}
-                >
-                  {initials(comment.authorName || "Anonym")}
-                </span>
-                <span className="truncate text-ui font-medium text-ink">{comment.authorName || "Anonym"}</span>
-              </div>
-              {comment.title && <h3 className="mt-3 truncate text-ui font-semibold text-ink">{comment.title}</h3>}
-              <p className="mt-2 line-clamp-3 whitespace-pre-line text-caption leading-relaxed text-ink">{comment.text}</p>
-              <time className="mt-auto pt-2 text-caption text-muted" dateTime={comment.createdAt}>
-                {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(new Date(comment.createdAt))}
-              </time>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="mt-4 rounded-2xl bg-page px-5 py-8 text-center">
-          <p className="mx-auto max-w-[34ch] text-body text-ink-soft">Teile deine Erfahrung mit diesem Spot und hilf anderen auf dem Wasser.</p>
-          <button type="button" onClick={startCompose} className="mt-5 min-h-11 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover">
-            Ersten Kommentar schreiben
-          </button>
-        </div>
-      )}
-
-      <CommentAuthChoiceDialog open={step === "choose"} onAnonymous={() => { setAuthor("Anonym"); setStep("compose"); }} onSignIn={() => navigate("/anmelden?mode=login")} onCancel={close} />
-      <CommentModal open={step === "compose"} spotId={spotId} authorName={author} onPosted={posted} onClose={close} />
-    </section>
-  );
+  return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full lg:border-l lg:border-line/70 lg:pl-7">
+    <h2 id="spot-comments-title" className="sr-only">Kommentare</h2>
+    <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
+      {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={onPosted} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <p className="py-8 text-body leading-relaxed text-muted">Noch keine Kommentare. Teile deine Erfahrung mit diesem Spot.</p> : <div className="space-y-7">
+        {threads.map((thread, index) => <article key={thread.comment.id} className="min-w-0">
+          <CommentRow post={thread.comment} onOpen={onOpenMore} triggerRef={index === 0 ? overlayTriggerRef : undefined} />
+          {thread.replies.length > 0 && <div className="ml-11 mt-4 space-y-4 border-l border-line/60 pl-4">{thread.replies.map(reply => <CommentRow key={reply.id} post={reply} onOpen={onOpenMore} compact />)}</div>}
+        </article>)}
+      </div>}
+    </div>
+    <div className="mt-7 shrink-0 lg:mt-5"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
+  </section>;
 }
+
+function CommentRow({ post, onOpen, triggerRef, compact = false }: { post: FeedPost; onOpen: () => void; triggerRef?: RefObject<HTMLButtonElement>; compact?: boolean }) {
+  const anonymous = !post.authorName || post.authorName === "Anonym";
+  const rawId = post.id.replace(/^(tip|rating):/, "");
+  return <div className="flex min-w-0 gap-3">
+    <span aria-hidden className={`grid shrink-0 place-items-center rounded-full text-caption font-semibold ${compact ? "h-7 w-7" : "h-9 w-9"} ${anonymous ? "bg-band text-muted" : "text-white"}`} style={anonymous ? undefined : { backgroundColor: avatarColor(post.authorName) }}>{anonymous ? "?" : initials(post.authorName)}</span>
+    <div className="min-w-0 flex-1">
+      <button ref={triggerRef} type="button" onClick={onOpen} className="block w-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal">
+        <p className={`${compact ? "text-label" : "text-ui"} leading-relaxed text-ink-soft`}><strong className="mr-2 font-semibold text-ink">{post.authorName || "Anonym"}</strong>{post.title && <span className="mr-2 font-semibold text-ink">{post.title}</span>}{post.text}</p>
+      </button>
+      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-caption text-muted"><time dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time>{post.kind !== "photo" && <UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} />}<button type="button" onClick={onOpen} className="min-h-10 px-1 font-medium hover:text-ink">Antworten</button></div>
+    </div>
+  </div>;
+}
+
+function CommentSkeleton() { return <div aria-label="Kommentare werden geladen" className="space-y-7 py-2"><div className="h-16 animate-pulse rounded-2xl bg-band"/><div className="h-16 animate-pulse rounded-2xl bg-band"/><div className="h-16 animate-pulse rounded-2xl bg-band"/></div>; }

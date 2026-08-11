@@ -9,7 +9,7 @@ import { LinkIcon } from "../lib/icons";
 
 const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
 
-// The designed look is the MapTiler "outdoor-v2" vector style (terrain relief +
+// Prefer MapTiler's hybrid aerial style when a deployment key is configured.
 // filtered POIs), which needs VITE_MAPTILER_KEY. When that key isn't set (e.g.
 // the env var isn't configured on the deploy), fall back to keyless CARTO raster
 // tiles so the map still works — just without the terrain/POI styling — instead
@@ -65,7 +65,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: KEY
-        ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${KEY}`
+        ? `https://api.maptiler.com/maps/hybrid/style.json?key=${KEY}`
         : RASTER_STYLE,
       center: [lng, lat],
       zoom: 12.5,
@@ -78,28 +78,6 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
     map.on("load", () => {
-      // Vector-style only: keep the built-in 2D relief, keep place names +
-      // Food/Transport/Tourism POIs, hide other symbols + trail lines, then
-      // narrow Transport→parking, Tourism→campsite. The raster fallback has no
-      // such layers, so this is skipped there.
-      if (KEY) {
-        for (const layer of map.getStyle().layers ?? []) {
-          const src = (layer as { "source-layer"?: string })["source-layer"];
-          if (layer.type === "symbol") {
-            const keep = src === "place" || ["Food", "Transport", "Tourism"].includes(layer.id);
-            map.setLayoutProperty(layer.id, "visibility", keep ? "visible" : "none");
-          } else if (src === "trail") {
-            map.setLayoutProperty(layer.id, "visibility", "none");
-          }
-        }
-        if (map.getLayer("Transport")) {
-          map.setFilter("Transport", ["all", ["==", "$type", "Point"], ["in", "class", "parking", "parking_garage", "parking_paid"]]);
-        }
-        if (map.getLayer("Tourism")) {
-          map.setFilter("Tourism", ["all", ["==", "$type", "Point"], ["==", "class", "campsite"]]);
-        }
-      }
-
       const el = document.createElement("div");
       el.innerHTML = PIN_SVG;
       new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
@@ -140,9 +118,9 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     // handler before it fires.
     <div
       data-lenis-prevent
-      className="relative overflow-hidden rounded-none border border-line bg-band"
+      className="swd-locator-map relative h-[360px] overflow-hidden bg-band sm:h-[440px] lg:h-full"
     >
-      <div ref={containerRef} className="h-[440px] w-full sm:h-[540px]" />
+      <div ref={containerRef} className="h-full w-full" />
 
       {/* Locked: transparent click-catcher (no text, no hover styling). */}
       {!active && (
@@ -155,7 +133,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       )}
 
       <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
-        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-2xl bg-teal shadow-card">
+        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-xl bg-teal">
           <button
             type="button"
             aria-label="Vergrößern"
@@ -181,7 +159,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           rel={link.rel}
           aria-label="In externer Karte öffnen"
           title="In externer Karte öffnen"
-          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-2xl bg-teal text-white shadow-card transition-colors hover:bg-teal-hover"
+          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
         >
           <LinkIcon width={18} height={18} />
         </a>

@@ -121,6 +121,42 @@ def test_rating_create_and_aggregate(anon_client, spot_id):
     assert all("author_email" not in it for it in body["items"])
 
 
+def test_anonymous_author_identity_is_server_controlled(anon_client, spot_id, db):
+    response = anon_client.post(f"/spots/{spot_id}/tips", json={
+        "body": "Sicherer anonymer Hinweis", "author_name": "Gefälschter Name",
+        "author_email": "spoof@example.com",
+    })
+    assert response.status_code == 201, response.text
+    row = db.get(LocalTip, uuid.UUID(response.json()["id"]))
+    assert row.author_name == "Anonym"
+    assert row.author_email is None
+    assert row.app_user_id is None
+
+
+def test_authenticated_upvote_is_idempotent_and_reversible(anon_client, spot_id, db):
+    tip = anon_client.post(f"/spots/{spot_id}/tips", json={"body": "Hilfreicher Hinweis"})
+    assert tip.status_code == 201, tip.text
+    tip_id = tip.json()["id"]
+    assert anon_client.put(f"/community/comments/tip/{tip_id}/upvote").status_code == 401
+
+    email = f"voter-{uuid.uuid4().hex[:8]}@example.com"
+    password = "pw-123456789"
+    registered = anon_client.post("/account/register", json={
+        "email": email, "password": password, "displayName": "Wind Voter",
+    })
+    assert registered.status_code == 202, registered.text
+    login = anon_client.post("/account/login", json={"email": email, "password": password})
+    assert login.status_code == 200, login.text
+    anon_client.headers["X-CSRF-Token"] = anon_client.cookies.get(get_settings().csrf_cookie_name)
+
+    first = anon_client.put(f"/community/comments/tip/{tip_id}/upvote")
+    second = anon_client.put(f"/community/comments/tip/{tip_id}/upvote")
+    assert first.json() == {"count": 1, "viewer_upvoted": True}
+    assert second.json() == {"count": 1, "viewer_upvoted": True}
+    removed = anon_client.delete(f"/community/comments/tip/{tip_id}/upvote")
+    assert removed.json() == {"count": 0, "viewer_upvoted": False}
+
+
 def test_bayesian_score_math():
     assert bayesian_score(0, 0, 3.5) == 3.5  # prior with no votes
     assert bayesian_score(1, 5, 3.5, c=5) == pytest.approx((5 * 3.5 + 5) / 6)

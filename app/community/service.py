@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.admin.constants import (
@@ -21,6 +22,7 @@ from app.admin.constants import (
 from app.community.aggregate import rating_aggregate
 from app.models import (
     ImageReport,
+    CommunityUpvote,
     LocalTip,
     Spot,
     SpotImage,
@@ -100,6 +102,7 @@ def create_rating(
     conditions: str,
     author_name: str | None,
     author_email: str | None = None,
+    app_user_id=None,
     ip_hash: str | None = None,
 ) -> SpotRating:
     _require_public_spot(db, spot_id)
@@ -119,6 +122,7 @@ def create_rating(
         conditions=conditions.strip(),
         author_name=_clean_name(author_name),
         author_email=_clean_email(author_email),
+        app_user_id=app_user_id,
         flagged=is_flagged(conditions, author_name),
         ip_hash=ip_hash,
     )
@@ -151,6 +155,7 @@ def create_tip(
     author_name: str | None,
     author_email: str | None = None,
     parent_id=None,
+    app_user_id=None,
     ip_hash: str | None = None,
 ) -> LocalTip:
     _require_public_spot(db, spot_id)
@@ -173,6 +178,7 @@ def create_tip(
         author_name=_clean_name(author_name),
         author_email=_clean_email(author_email),
         parent_id=parent_id,
+        app_user_id=app_user_id,
         flagged=is_flagged(body, author_name),
         ip_hash=ip_hash,
     )
@@ -193,6 +199,75 @@ def list_tips(db: Session, spot_id) -> list[LocalTip]:
             .order_by(LocalTip.created_at.desc())
         ).all()
     )
+
+
+# --- authenticated comment upvotes ---------------------------------------
+
+def _upvote_target(db: Session, kind: str, target_id):
+    model = LocalTip if kind == "tip" else SpotRating if kind == "rating" else None
+    if model is None:
+        raise ValueError("Unbekannter Kommentartyp.")
+    target = db.get(model, target_id)
+    if target is None or target.status != "published":
+        raise LookupError("comment not found")
+    return target
+
+
+def upvote_state(db: Session, kind: str, target_id, user_id=None) -> dict:
+    _upvote_target(db, kind, target_id)
+    column = CommunityUpvote.tip_id if kind == "tip" else CommunityUpvote.rating_id
+    count = int(db.scalar(select(func.count()).select_from(CommunityUpvote).where(column == target_id)) or 0)
+    viewer = bool(
+        user_id
+        and db.scalar(
+            select(CommunityUpvote.id).where(
+                column == target_id, CommunityUpvote.app_user_id == user_id
+            )
+        )
+    )
+    return {"count": count, "viewer_upvoted": viewer}
+
+
+def set_upvote(db: Session, kind: str, target_id, user_id, active: bool) -> dict:
+    _upvote_target(db, kind, target_id)
+    column = CommunityUpvote.tip_id if kind == "tip" else CommunityUpvote.rating_id
+    existing = db.scalar(
+        select(CommunityUpvote).where(column == target_id, CommunityUpvote.app_user_id == user_id)
+    )
+    if active and existing is None:
+        values = {"app_user_id": user_id, f"{kind}_id": target_id}
+        db.add(CommunityUpvote(**values))
+        try:
+            db.commit()
+        except IntegrityError:
+            # A concurrent duplicate resolves to the same idempotent active state.
+            db.rollback()
+    elif not active and existing is not None:
+        db.execute(delete(CommunityUpvote).where(CommunityUpvote.id == existing.id))
+        db.commit()
+    return upvote_state(db, kind, target_id, user_id)
+
+
+def upvote_states(db: Session, kind: str, target_ids: list, user_id=None) -> dict:
+    if not target_ids:
+        return {}
+    column = CommunityUpvote.tip_id if kind == "tip" else CommunityUpvote.rating_id
+    counts = dict(
+        db.execute(
+            select(column, func.count()).where(column.in_(target_ids)).group_by(column)
+        ).all()
+    )
+    mine = set()
+    if user_id:
+        mine = set(
+            db.scalars(
+                select(column).where(column.in_(target_ids), CommunityUpvote.app_user_id == user_id)
+            ).all()
+        )
+    return {
+        target_id: {"count": int(counts.get(target_id, 0)), "viewer_upvoted": target_id in mine}
+        for target_id in target_ids
+    }
 
 
 # --- submissions -----------------------------------------------------------

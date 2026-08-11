@@ -355,10 +355,16 @@ html[data-theme="dark"] { color-scheme: dark; }
   filter: hue-rotate(22deg) saturate(1.35);
 }
 
-/* LocatorMap's satellite imagery is real aerial photography, not the tinted
-   vector basemap the wash above is tuned for — leave it unfiltered. */
-.swd-locator-map .leaflet-tile {
-  filter: none;
+/* Keep aerial detail, but pull it into the sand/petrol/olive UI palette.
+   The filter targets only MapLibre's canvas; marker, controls and attribution
+   remain crisp and retain their accessible contrast. */
+.swd-locator-map .maplibregl-canvas {
+  filter: saturate(.72) sepia(.08) hue-rotate(348deg) brightness(.96) contrast(.94);
+}
+
+:root[data-theme="dark"] .swd-locator-map .maplibregl-canvas,
+.dark .swd-locator-map .maplibregl-canvas {
+  filter: saturate(.58) sepia(.08) hue-rotate(348deg) brightness(.62) contrast(1.08);
 }
 
 /* Scale bar on LocatorMap — the default Leaflet control, restyled to sit

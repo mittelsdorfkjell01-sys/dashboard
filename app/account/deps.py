@@ -18,16 +18,14 @@ from app.db.session import get_db
 from app.models import AppUser
 
 
-def current_account(
-    request: Request, db: Session = Depends(get_db)
-) -> AppUser:
+def _account_from_request(request: Request, db: Session) -> AppUser | None:
     token = request.cookies.get(get_settings().app_auth_cookie_name)
     if not token:
-        raise HTTPException(status_code=401, detail="Nicht angemeldet.")
+        return None
     try:
         payload = decode_app_session_token(token)
     except Exception:  # jwt.PyJWTError, wrong typ, malformed
-        raise HTTPException(status_code=401, detail="Sitzung ungültig oder abgelaufen.")
+        return None
 
     sub = payload.get("sub")
     user: AppUser | None = None
@@ -37,9 +35,18 @@ def current_account(
         except (ValueError, TypeError):
             user = None
     if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=401, detail="Konto nicht gefunden oder deaktiviert."
-        )
+        return None
     if payload.get("ver") != user.session_version:
-        raise HTTPException(status_code=401, detail="Sitzung wurde widerrufen.")
+        return None
+    return user
+
+
+def optional_account(request: Request, db: Session = Depends(get_db)) -> AppUser | None:
+    return _account_from_request(request, db)
+
+
+def current_account(request: Request, db: Session = Depends(get_db)) -> AppUser:
+    user = _account_from_request(request, db)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Nicht angemeldet oder Sitzung abgelaufen.")
     return user

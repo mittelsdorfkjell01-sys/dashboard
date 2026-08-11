@@ -3,6 +3,7 @@ import { avatarColor, commentThreads, initials, type CommentThread, type FeedPos
 import { PlusIcon } from "../lib/icons";
 import InlineTipComposer from "./InlineTipComposer";
 import OverlayPanel from "./OverlayPanel";
+import UpvoteButton from "./UpvoteButton";
 
 /**
  * Kommentare overlay (Figma Frame_11) — the spot's comments as single-level
@@ -96,6 +97,7 @@ function ThreadCard({
       <CommentHead post={comment} />
       {comment.title && <h3 className="mt-3 text-body font-semibold text-ink">{comment.title}</h3>}
       <p className="mt-3 whitespace-pre-line text-body text-ink-soft">{comment.text}</p>
+      {comment.kind !== "photo" && <div className="mt-1"><UpvoteButton kind={comment.kind} id={comment.id.replace(/^(tip|rating):/, "")} count={comment.upvotes} active={comment.viewerUpvoted} /></div>}
 
       {replies.length > 0 && (
         <div className="mt-4 space-y-3 pl-4">
@@ -103,6 +105,7 @@ function ThreadCard({
             <div key={reply.id}>
               <CommentHead post={reply} small />
               <p className="mt-1 whitespace-pre-line text-caption text-ink-soft">{reply.text}</p>
+              {reply.kind !== "photo" && <UpvoteButton kind={reply.kind} id={reply.id.replace(/^(tip|rating):/, "")} count={reply.upvotes} active={reply.viewerUpvoted} />}
             </div>
           ))}
         </div>

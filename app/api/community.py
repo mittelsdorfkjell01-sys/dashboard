@@ -28,6 +28,8 @@ from app.community.ratelimit import RateLimiter, enforce, get_rate_limiter
 from app.community.security import check_honeypot, ip_hash
 from app.config import get_settings
 from app.db.session import get_db
+from app.account.deps import current_account, optional_account
+from app.models import AppUser
 from app.media import (
     GALLERY_MAX_BYTES,
     GALLERY_OUT_MAX_WIDTH,
@@ -59,6 +61,7 @@ LIMITS: dict[str, tuple[int, int]] = {
     "submission": (5, 3600),
     "image": (10, 3600),
     "report": (30, 3600),
+    "upvote": (60, 3600),
 }
 
 
@@ -72,13 +75,17 @@ class RatingOut(BaseModel):
     conditions: str
     author_name: str
     created_at: str
+    upvotes: int = 0
+    viewer_upvoted: bool = False
 
     @classmethod
-    def of(cls, r: SpotRating) -> "RatingOut":
+    def of(cls, r: SpotRating, vote: dict | None = None) -> "RatingOut":
+        vote = vote or {}
         return cls(
             id=str(r.id), stars=r.stars, skill_level=r.skill_level, sport=r.sport,
             conditions=r.conditions, author_name=r.author_name,
             created_at=r.created_at.isoformat(),
+            upvotes=vote.get("count", 0), viewer_upvoted=vote.get("viewer_upvoted", False),
         )
 
 
@@ -89,13 +96,17 @@ class TipOut(BaseModel):
     author_name: str
     created_at: str
     parent_id: str | None = None
+    upvotes: int = 0
+    viewer_upvoted: bool = False
 
     @classmethod
-    def of(cls, t: LocalTip) -> "TipOut":
+    def of(cls, t: LocalTip, vote: dict | None = None) -> "TipOut":
+        vote = vote or {}
         return cls(
             id=str(t.id), body=t.body, title=t.title, author_name=t.author_name,
             created_at=t.created_at.isoformat(),
             parent_id=str(t.parent_id) if t.parent_id else None,
+            upvotes=vote.get("count", 0), viewer_upvoted=vote.get("viewer_upvoted", False),
         )
 
 
@@ -182,6 +193,7 @@ def post_rating(
     request: Request,
     db: Session = Depends(get_db),
     limiter: RateLimiter = Depends(get_rate_limiter),
+    account: AppUser | None = Depends(optional_account),
 ) -> RatingOut:
     check_honeypot(body.website)
     enforce(limiter, request, "rating", limit=LIMITS["rating"][0], window=LIMITS["rating"][1])
@@ -189,8 +201,10 @@ def post_rating(
         rating = service.create_rating(
             db, spot_id,
             stars=body.stars, skill_level=body.skill_level, sport=body.sport,
-            conditions=body.conditions, author_name=body.author_name,
-            author_email=body.author_email, ip_hash=ip_hash(request),
+            conditions=body.conditions,
+            author_name=account.display_name if account else "Anonym",
+            author_email=account.email if account else None,
+            app_user_id=account.id if account else None, ip_hash=ip_hash(request),
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
@@ -200,12 +214,13 @@ def post_rating(
 
 
 @router.get("/spots/{spot_id}/ratings")
-def get_ratings(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+def get_ratings(spot_id: uuid.UUID, db: Session = Depends(get_db), account: AppUser | None = Depends(optional_account)) -> dict:
     try:
         rows, aggregate = service.list_ratings(db, spot_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
-    return {"items": [RatingOut.of(r) for r in rows], "aggregate": aggregate}
+    votes = service.upvote_states(db, "rating", [r.id for r in rows], account.id if account else None)
+    return {"items": [RatingOut.of(r, votes.get(r.id)) for r in rows], "aggregate": aggregate}
 
 
 # --- tips ------------------------------------------------------------------
@@ -217,13 +232,16 @@ def post_tip(
     request: Request,
     db: Session = Depends(get_db),
     limiter: RateLimiter = Depends(get_rate_limiter),
+    account: AppUser | None = Depends(optional_account),
 ) -> TipOut:
     check_honeypot(body.website)
     enforce(limiter, request, "tip", limit=LIMITS["tip"][0], window=LIMITS["tip"][1])
     try:
         tip = service.create_tip(
-            db, spot_id, body=body.body, title=body.title, author_name=body.author_name,
-            author_email=body.author_email, parent_id=body.parent_id,
+            db, spot_id, body=body.body, title=body.title,
+            author_name=account.display_name if account else "Anonym",
+            author_email=account.email if account else None, parent_id=body.parent_id,
+            app_user_id=account.id if account else None,
             ip_hash=ip_hash(request),
         )
     except LookupError:
@@ -234,12 +252,35 @@ def post_tip(
 
 
 @router.get("/spots/{spot_id}/tips")
-def get_tips(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+def get_tips(spot_id: uuid.UUID, db: Session = Depends(get_db), account: AppUser | None = Depends(optional_account)) -> dict:
     try:
         rows = service.list_tips(db, spot_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
-    return {"items": [TipOut.of(t) for t in rows]}
+    votes = service.upvote_states(db, "tip", [t.id for t in rows], account.id if account else None)
+    return {"items": [TipOut.of(t, votes.get(t.id)) for t in rows]}
+
+
+@router.put("/community/comments/{kind}/{comment_id}/upvote")
+def put_upvote(kind: str, comment_id: uuid.UUID, request: Request, db: Session = Depends(get_db), limiter: RateLimiter = Depends(get_rate_limiter), account: AppUser = Depends(current_account)) -> dict:
+    if kind not in {"tip", "rating"}:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+    enforce(limiter, request, "upvote", limit=LIMITS["upvote"][0], window=LIMITS["upvote"][1])
+    try:
+        return service.set_upvote(db, kind, comment_id, account.id, True)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+
+
+@router.delete("/community/comments/{kind}/{comment_id}/upvote")
+def delete_upvote(kind: str, comment_id: uuid.UUID, request: Request, db: Session = Depends(get_db), limiter: RateLimiter = Depends(get_rate_limiter), account: AppUser = Depends(current_account)) -> dict:
+    if kind not in {"tip", "rating"}:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+    enforce(limiter, request, "upvote", limit=LIMITS["upvote"][0], window=LIMITS["upvote"][1])
+    try:
+        return service.set_upvote(db, kind, comment_id, account.id, False)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
 
 
 # --- submissions -----------------------------------------------------------

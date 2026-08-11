@@ -664,6 +664,8 @@ export interface RatingItem {
   conditions: string;
   author_name: string;
   created_at: string;
+  upvotes?: number;
+  viewer_upvoted?: boolean;
 }
 export interface RatingAggregate {
   count: number;
@@ -699,6 +701,8 @@ export interface TipItem {
   created_at: string;
   /** Set when this tip is a reply to another (single-level threads). */
   parent_id: string | null;
+  upvotes?: number;
+  viewer_upvoted?: boolean;
 }
 export const getTips = (spotId: string) =>
   request<{ items: TipItem[] }>(`/spots/${spotId}/tips`);
@@ -716,6 +720,11 @@ export const postTip = (
   request<TipItem>(`/spots/${spotId}/tips`, {
     method: "POST",
     body: JSON.stringify(body),
+  });
+
+export const setCommentUpvote = (kind: "rating" | "tip", id: string, active: boolean) =>
+  request<{ count: number; viewer_upvoted: boolean }>(`/community/comments/${kind}/${id}/upvote`, {
+    method: active ? "PUT" : "DELETE",
   });
 
 export interface CommunityImage {
