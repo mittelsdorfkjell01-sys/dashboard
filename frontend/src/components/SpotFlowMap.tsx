@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import { animate as animateValue, motion, useInView, useReducedMotion } from "framer-motion";
+import { useInView, useReducedMotion } from "framer-motion";
 import L from "leaflet";
-import type { LiveConditionsRead } from "../lib/api";
+import type { ForecastSeries, LiveConditionsRead } from "../lib/api";
 import type { WaterType } from "../lib/types";
-import { windColor } from "../lib/windScale";
-import { degToCompass } from "./WindRose";
-import WindArrow from "./WindArrow";
+import { useOptionalSpotDataScope, type MapLayer } from "../state/SpotDataScope";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 const MAP_ZOOM = 14.5;
@@ -69,39 +67,6 @@ function InteractionControl({ enabled }: { enabled: boolean }) {
   return null;
 }
 
-/** A live numeric reading, honestly "—" (never 0) when missing. */
-function Metric({ value }: { value: string | null }) {
-  if (value === null) {
-    return (
-      <span className="text-line" title="keine Daten" aria-label="keine Daten">
-        —
-      </span>
-    );
-  }
-  return <span className="tabular-nums">{value}</span>;
-}
-
-/** Counts up from 0 to `target` once `trigger` flips true (600ms, one-shot).
- *  Reduced motion / no trigger yet just shows the target directly. */
-function useCountUp(target: number | null, trigger: boolean, reduce: boolean | null): number | null {
-  const [display, setDisplay] = useState<number | null>(reduce ? target : null);
-  useEffect(() => {
-    if (target == null) return;
-    if (reduce || !trigger) {
-      setDisplay(target);
-      return;
-    }
-    setDisplay(0);
-    const controls = animateValue(0, target, {
-      duration: 0.6,
-      ease: "easeOut",
-      onUpdate: (v) => setDisplay(Math.round(v)),
-    });
-    return () => controls.stop();
-  }, [target, trigger, reduce]);
-  return display;
-}
-
 /**
  * Spot map: the label-free CARTO Voyager basemap (same look as the big map),
  * tightly framed on the spot. A canvas overlay animates the live conditions:
@@ -133,7 +98,9 @@ export default function SpotFlowMap({
   mapCenter,
   aspect = "sm:aspect-[21/9]",
   rounded = true,
-  live = null,
+  live: _live = null,
+  forecast = null,
+  showLayerSwitcher = false,
 }: {
   coords: [number, number];
   windDir: number; // degrees wind comes FROM
@@ -155,7 +122,20 @@ export default function SpotFlowMap({
   /** Live reading for the top-left conditions overlay. Omitted/null → no
    *  overlay at all (never an empty card). */
   live?: LiveConditionsRead | null;
+  forecast?: ForecastSeries | null;
+  showLayerSwitcher?: boolean;
 }) {
+  const dataScope = useOptionalSpotDataScope();
+  const mapLayer = dataScope?.mapLayer ?? "both";
+  const showWind = mapLayer !== "wave";
+  const showWaves = mapLayer !== "wind";
+  const selectedForecast = forecast?.days[0]?.hours.find(
+    (hour) => Number(hour.time.slice(11, 13)) === dataScope?.selectedHour,
+  );
+  const shownWindDir = selectedForecast?.dir ?? windDir;
+  const shownWindKts = selectedForecast?.wind ?? windKts;
+  const shownWaveDir = selectedForecast?.swell_dir ?? waveDir;
+  const shownPeriod = selectedForecast?.period ?? period;
   // Effective framing: admin's saved view wins, else default (spot-centred).
   const effZoom = zoom ?? MAP_ZOOM;
   const effLat = mapCenter?.[0] ?? coords[0];
@@ -166,10 +146,8 @@ export default function SpotFlowMap({
   const reduce = useReducedMotion();
   const inView = useInView(wrapRef, { once: true, amount: 0.3 });
 
-  const [interactive, setInteractive] = useState(false);
   const [streaksVisible, setStreaksVisible] = useState(false);
   const [markerVisible, setMarkerVisible] = useState(false);
-  const [overlayVisible, setOverlayVisible] = useState(false);
 
   // Staggered entrance once the map scrolls into view: EntranceFlyTo handles
   // the zoom itself; this drives what comes after — streaks at 1100ms (when
@@ -181,16 +159,13 @@ export default function SpotFlowMap({
     if (reduce) {
       setStreaksVisible(true);
       setMarkerVisible(true);
-      setOverlayVisible(true);
       return;
     }
     const tStreaks = setTimeout(() => setStreaksVisible(true), 1100);
     const tMarker = setTimeout(() => setMarkerVisible(true), 1100 + 400);
-    const tOverlay = setTimeout(() => setOverlayVisible(true), 300);
     return () => {
       clearTimeout(tStreaks);
       clearTimeout(tMarker);
-      clearTimeout(tOverlay);
     };
   }, [inView, reduce]);
 
@@ -232,12 +207,12 @@ export default function SpotFlowMap({
     sizeCanvas();
 
     // ---- Wind: parallel particles toward windTo ----
-    const windTo = (windDir + 180) % 360;
+    const windTo = (shownWindDir + 180) % 360;
     const wv = { x: Math.sin(rad(windTo)), y: -Math.cos(rad(windTo)) };
-    const windSpeed = 6 + windKts * 2.7; // px/sec — scales with wind (20 kts ≈ old 30)
+    const windSpeed = 6 + shownWindKts * 2.7; // px/sec — scales with wind (20 kts ≈ old 30)
     const vx = wv.x * windSpeed;
     const vy = wv.y * windSpeed;
-    const trailMax = Math.round(22 + windKts * 2.4);
+    const trailMax = Math.round(22 + shownWindKts * 2.4);
     const perp = { x: -wv.y, y: wv.x }; // for the arrowheads
     // Cap raised from the original 170 for the Sprint 3 full-bleed variant —
     // at ~21:9 on a wide viewport the canvas area is several times the old
@@ -268,7 +243,7 @@ export default function SpotFlowMap({
     //      coast. The angle between the two makes the break peel down the beach.
     const diag = Math.hypot(w, h);
     const half = diag / 2;
-    const swellTravel = (waveDir + 180) % 360; // bearing the waves move toward
+    const swellTravel = (shownWaveDir + 180) % 360; // bearing the waves move toward
     const travelRad = rad(swellTravel);
     const cosT = Math.cos(travelRad);
     const sinT = Math.sin(travelRad); // to map rotated crest points → screen px
@@ -278,7 +253,7 @@ export default function SpotFlowMap({
     dphi = Math.max(-70, Math.min(70, dphi));
     const sinP = Math.sin(rad(dphi));
     const cosP = Math.cos(rad(dphi));
-    const crestSpeed = 9 * period; // px/sec along travel; spacing = 9·T²
+    const crestSpeed = 9 * shownPeriod; // px/sec along travel; spacing = 9·T²
     const Dbreak = -0.13 * half; // starts breaking offshore, before the beach
     const Dshore = 0.05 * half; // the beach edge — waves stop here (no overrun)
     const sSpawn = -(half + 40) / cosP; // spawn offshore
@@ -286,7 +261,7 @@ export default function SpotFlowMap({
     const beyondShore = (s: number) => s * cosP - half * Math.abs(sinP) > Dshore;
     let crests: number[] = [];
     {
-      const stepS = Math.max(24, crestSpeed * period);
+      const stepS = Math.max(24, crestSpeed * shownPeriod);
       for (let s = sSpawn, n = 0; !beyondShore(s) && n < 60; s += stepS, n++) crests.push(s);
     }
     let acc = 0;
@@ -392,10 +367,10 @@ export default function SpotFlowMap({
 
       // Swell — crests roll along the swell direction; each point breaks when it
       // reaches the shore (onshore distance d), so an oblique crest peels.
-      if (waterType === "swell") {
+      if (showWaves && waterType === "swell") {
         acc += dt;
-        while (acc >= period) {
-          acc -= period;
+        while (acc >= shownPeriod) {
+          acc -= shownPeriod;
           crests.push(sSpawn);
         }
         crests = crests.map((s) => s + crestSpeed * dt).filter((s) => !beyondShore(s));
@@ -447,7 +422,7 @@ export default function SpotFlowMap({
           }
         }
         ctx.restore();
-      } else if (waterType === "chop") {
+      } else if (showWaves && waterType === "chop") {
         // Chop / Kabbelwasser — a rippled surface: whitecaps twinkle in place,
         // no travel and no period, just an agitated sea. A soft dark shadow
         // keeps the white caps readable on the light basemap.
@@ -471,9 +446,10 @@ export default function SpotFlowMap({
       // flat: no wave animation
 
       // Wind (screen space, parallel)
-      ctx.lineCap = "round";
-      ctx.lineWidth = 1.5;
-      for (const p of particles) {
+      if (showWind) {
+       ctx.lineCap = "round";
+       ctx.lineWidth = 1.5;
+       for (const p of particles) {
         p.x += vx * dt;
         p.y += vy * dt;
         p.life += dt * 60;
@@ -502,6 +478,7 @@ export default function SpotFlowMap({
         ctx.lineTo(p.x + perp.x * ah * 0.6 - wv.x * ah * 0.35, p.y + perp.y * ah * 0.6 - wv.y * ah * 0.35);
         ctx.closePath();
         ctx.fill();
+       }
       }
 
       raf = requestAnimationFrame(draw);
@@ -525,15 +502,12 @@ export default function SpotFlowMap({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [effCenter, effZoom, windDir, windKts, waveDir, coast, period, waterType]);
-
-  const c = live?.current;
-  const windValue = useCountUp(typeof c?.wind === "number" ? Math.round(c.wind) : null, overlayVisible, reduce);
+  }, [effCenter, effZoom, shownWindDir, shownWindKts, shownWaveDir, coast, shownPeriod, waterType, showWind, showWaves]);
 
   return (
     <div
       ref={wrapRef}
-      className={`relative aspect-[4/5] w-full overflow-hidden ${aspect} ${rounded ? "rounded-3xl" : ""}`}
+      className={`relative w-full overflow-hidden ${showLayerSwitcher ? "aspect-video" : `aspect-[4/5] ${aspect}`} ${rounded ? "rounded-3xl" : ""}`}
     >
       <MapContainer
         center={effCenter}
@@ -551,7 +525,7 @@ export default function SpotFlowMap({
         <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png" subdomains="abcd" />
         <InvalidateSize />
         <EntranceFlyTo center={effCenter} zoom={effZoom} active={inView} reduce={reduce} />
-        <InteractionControl enabled={interactive} />
+        <InteractionControl enabled />
         {markerVisible && <Marker position={coords} icon={dropIcon} />}
       </MapContainer>
 
@@ -562,54 +536,12 @@ export default function SpotFlowMap({
         }`}
       />
 
-      {live && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={overlayVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="pointer-events-none absolute left-4 top-4 z-[520] rounded-2xl border border-line bg-white px-4 py-3 text-ink"
-        >
-          <div className="flex items-baseline gap-2">
-            <span className="text-title font-semibold tabular-nums" style={{ color: windColor(windValue) }}>
-              {windValue ?? "—"}
-            </span>
-            <span className="text-caption text-muted">kts</span>
-            {typeof c?.dir === "number" && (
-              <span className="flex items-center gap-1">
-                <WindArrow dir={c.dir} size={16} animate className="text-ink-soft" />
-                <span className="text-caption font-medium text-ink-soft">{degToCompass(c.dir)}</span>
-              </span>
-            )}
-          </div>
-          <div className="mt-1 text-caption text-muted">
-            Böen <Metric value={typeof c?.gust === "number" ? String(Math.round(c.gust)) : null} /> kts
-          </div>
-          <div className="mt-1 flex items-center gap-2 text-caption text-muted">
-            <span>
-              <Metric value={typeof c?.swell === "number" ? c.swell.toFixed(1) : null} /> m
-            </span>
-            <span>
-              <Metric value={typeof c?.period === "number" ? String(Math.round(c.period)) : null} /> s
-            </span>
-            <span>
-              <Metric value={typeof c?.sst === "number" ? String(Math.round(c.sst)) : null} />° /{" "}
-              <Metric value={typeof c?.air === "number" ? String(Math.round(c.air)) : null} />°
-            </span>
-          </div>
-        </motion.div>
-      )}
-
-      {!interactive && (
-        <button
-          type="button"
-          onClick={() => setInteractive(true)}
-          aria-label="Karte zum Verschieben und Zoomen aktivieren"
-          className="absolute inset-0 z-[540] flex items-end justify-center pb-4 sm:items-center sm:pb-0"
-        >
-          <span className="rounded-2xl border border-line bg-ink px-4 py-2 text-caption font-medium text-white">
-            Antippen zum Verschieben &amp; Zoomen
-          </span>
-        </button>
+      {showLayerSwitcher && dataScope && (
+        <div className="absolute left-2.5 top-2.5 z-[540] inline-flex rounded-md border border-line bg-surface/90 p-0.5 shadow-sm backdrop-blur">
+          {([{ id: "wind", label: "Wind" }, { id: "both", label: "Wind + Welle" }, { id: "wave", label: "Welle" }] as Array<{ id: MapLayer; label: string }>).map((layer) => (
+            <button key={layer.id} type="button" aria-pressed={mapLayer === layer.id} onClick={() => dataScope.setMapLayer(layer.id)} className={`rounded px-2.5 py-1 text-caption font-medium tracking-wide transition-colors ${mapLayer === layer.id ? "bg-ink text-white" : "text-muted hover:text-ink"}`}>{layer.label}</button>
+          ))}
+        </div>
       )}
     </div>
   );
