@@ -30,7 +30,7 @@ export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?
 
   useEffect(() => {
     const controller = new AbortController();
-    const query = new URLSearchParams({ mode: "charakter", limit: "3" });
+    const query = new URLSearchParams({ mode: "charakter", limit: "5" });
     if (sport) query.set("sport", sport);
     fetch(`${API_BASE}/spots/${encodeURIComponent(spotId)}/similar?${query}`, { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error("similar spots unavailable"))))
@@ -51,7 +51,7 @@ export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?
           <p className="mt-1 text-caption text-muted">Spots mit vergleichbarem Charakter</p>
         </div>
       </div>
-      <div className="no-scrollbar mt-5 flex snap-x-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+      <div className="no-scrollbar mt-5 flex snap-x-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
         {spots.map((item) => (
           <div key={item.id} className="min-w-[220px] snap-start sm:min-w-0">
             <SpotCard spot={toCardSpot(item)} />
