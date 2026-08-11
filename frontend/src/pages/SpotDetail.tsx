@@ -298,7 +298,7 @@ export default function SpotDetail() {
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
             <SpotDataScopeProvider>
-              <div className="mx-auto max-w-[1298px] px-4 pb-8 pt-10 sm:px-8">
+              <div className="mx-auto max-w-[1727px] px-4 pb-8 pt-10 sm:px-8">
                 <SpotDataHeader spot={spot} />
 
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
