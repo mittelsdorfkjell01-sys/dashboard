@@ -62,8 +62,9 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const container = containerRef.current;
     const map = new maplibregl.Map({
-      container: containerRef.current,
+      container,
       style: KEY
         ? `https://api.maptiler.com/maps/satellite/style.json?key=${KEY}`
         : RASTER_STYLE,
@@ -77,7 +78,19 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     map.touchPitch.disable();
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
+    // The page matches this map's height to the responsive gallery after the
+    // first render. MapLibre does not reliably redraw for a parent-only resize,
+    // which can leave its old canvas height as a grey strip at the bottom.
+    // Resize the renderer only; this does not change the map's layout box.
+    let resizeFrame = 0;
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => map.resize());
+    });
+    resizeObserver.observe(container);
+
     map.on("load", () => {
+      map.resize();
       const el = document.createElement("div");
       el.innerHTML = PIN_SVG;
       new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
@@ -85,6 +98,8 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     });
 
     return () => {
+      resizeObserver.disconnect();
+      cancelAnimationFrame(resizeFrame);
       map.remove();
       mapRef.current = null;
     };
