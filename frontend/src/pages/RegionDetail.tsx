@@ -4,7 +4,6 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import LandingHeader from "../components/LandingHeader";
 import SpotCard from "../components/SpotCard";
-import MapSpotCard from "../components/MapSpotCard";
 import RegionSeason from "../components/RegionSeason";
 import SimilarRegions from "../components/SimilarRegions";
 import SortDropdown from "../components/SortDropdown";
@@ -265,7 +264,7 @@ export default function RegionDetail() {
           ) : (
             <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
               {gridSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} variant="editorial" />
+                <SpotCard key={spot.id} spot={spot} />
               ))}
             </div>
           )}
@@ -290,7 +289,9 @@ export default function RegionDetail() {
                 {withCoords.map((spot) => (
                   <Marker key={spot.id} position={spot.coords!} icon={pinIcon}>
                     <Popup className="spot-popup" closeButton={false}>
-                      <MapSpotCard spot={spot} className="w-[200px]" />
+                      <div className="w-[200px]">
+                        <SpotCard spot={spot} compact />
+                      </div>
                     </Popup>
                   </Marker>
                 ))}

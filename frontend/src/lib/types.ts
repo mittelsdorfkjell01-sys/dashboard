@@ -17,7 +17,7 @@ export interface Spot {
   id: string;
   name: string;
   region: string;
-  wind: number; // kts (typical / current)
+  wind: number; // kts, typical/editorial value — never a live reading (see adapt.ts)
   favorite?: boolean;
   tags: Tag[];
   image: string; // "" = no image → branded fallback

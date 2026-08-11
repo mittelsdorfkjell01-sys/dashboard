@@ -190,7 +190,7 @@ export function isFavorite(spotId: string): boolean {
 
 /** Toggle a spot's favourite state. Returns the new state synchronously
  *  (optimistic); the server call runs in the background and rolls back on
- *  failure. Callers guard on auth before invoking (see SpotTile). */
+ *  failure. Callers guard on auth before invoking (see FavoriteButton). */
 export function toggleFavorite(spot: {
   id: string;
   name: string;

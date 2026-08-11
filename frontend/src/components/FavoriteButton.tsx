@@ -4,9 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { isFavorite, toggleFavorite, FAVORITES_EVENT } from "../lib/account";
 import type { Spot } from "../lib/types";
 
-/** Primary "zu Favoriten hinzufügen" toggle. Logged out → same sign-in prompt
- *  as the landing tiles' heart icon (`SpotTile`); logged in → the real
- *  favorites endpoint (`/account/favorites/:id`), which already exists. */
+/** Primary "zu Favoriten hinzufügen" toggle. Logged out → sign-in prompt;
+ *  logged in → the real favorites endpoint (`/account/favorites/:id`),
+ *  which already exists. */
 export default function FavoriteButton({ spot }: { spot: Spot }) {
   const id = spot.uuid ?? spot.id;
   const { user } = useAuth();

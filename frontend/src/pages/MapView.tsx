@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L, { type Map as LeafletMap } from "leaflet";
 import Header from "../components/Header";
-import MapSpotCard from "../components/MapSpotCard";
+import SpotCard from "../components/SpotCard";
 import { CloseIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { useSpots } from "../lib/hooks";
 
@@ -60,7 +60,9 @@ export default function MapView() {
         {withCoords.map((spot) => (
           <Marker key={spot.id} position={spot.coords!} icon={pinIcon}>
             <Popup className="spot-popup" autoClose={false} closeOnClick={false}>
-              <MapSpotCard spot={spot} className="w-[200px]" />
+              <div className="w-[200px]">
+                <SpotCard spot={spot} compact />
+              </div>
             </Popup>
           </Marker>
         ))}
@@ -102,11 +104,9 @@ export default function MapView() {
       <div className="absolute inset-x-0 bottom-0 z-[600] pb-5 pt-10">
         <div className="mx-auto flex max-w-[1400px] gap-x-6 overflow-x-auto no-scrollbar px-4 sm:overflow-visible sm:px-8">
           {withCoords.slice(0, 5).map((spot) => (
-            <MapSpotCard
-              key={spot.id}
-              spot={spot}
-              className="w-[160px] shrink-0 sm:w-auto sm:min-w-0 sm:flex-1"
-            />
+            <div key={spot.id} className="w-[160px] shrink-0 sm:w-auto sm:min-w-0 sm:flex-1">
+              <SpotCard spot={spot} compact />
+            </div>
           ))}
         </div>
       </div>

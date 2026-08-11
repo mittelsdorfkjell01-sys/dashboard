@@ -12,7 +12,7 @@ const MONTH_INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "
  * 12-month **wind-months** strip (region.season.best_months) so you can read the
  * best time at a glance — any pattern, including non-contiguous months.
  *
- * Mirrors SpotTile so the search board reads as "the same site". Unreachable
+ * Mirrors SpotCard so the search board reads as "the same site". Unreachable
  * seed image hosts (the `*.local` sentinel) are treated as "no image" so the
  * branded SpotImage fallback field renders instead.
  */

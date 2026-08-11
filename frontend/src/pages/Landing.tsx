@@ -3,7 +3,7 @@ import LandingHeader from "../components/LandingHeader";
 import HeroImage from "../components/HeroImage";
 import SearchBar from "../components/SearchBar";
 import TopSpotsRow from "../components/TopSpotsRow";
-import SpotTile from "../components/SpotTile";
+import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
 import { useSpots } from "../lib/hooks";
 import { MapIcon } from "../lib/icons";
@@ -87,7 +87,7 @@ export default function Landing() {
           {spots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {spots.map((spot) => (
-                <SpotTile key={spot.id} spot={spot} />
+                <SpotCard key={spot.id} spot={spot} />
               ))}
             </div>
           )}

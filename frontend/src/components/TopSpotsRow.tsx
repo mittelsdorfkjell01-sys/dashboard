@@ -1,5 +1,5 @@
 import { useTopSpots } from "../lib/hooks";
-import SpotTile from "./SpotTile";
+import SpotCard from "./SpotCard";
 import { ErrorBanner } from "./AsyncStates";
 
 // One full-width row on desktop; tiles wrap on smaller screens.
@@ -13,7 +13,7 @@ function RowSkeleton() {
       {Array.from({ length: MAX_TILES }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-3xl border border-line bg-surface"
+          className="overflow-hidden rounded-2xl border border-line bg-surface"
         >
           <div className="aspect-video animate-pulse bg-line" />
           <div className="space-y-2 p-3.5">
@@ -54,7 +54,7 @@ export default function TopSpotsRow() {
           className="animate-fade-up"
           style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
         >
-          <SpotTile spot={spot} />
+          <SpotCard spot={spot} />
         </div>
       ))}
     </div>
