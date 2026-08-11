@@ -154,6 +154,24 @@ Geography columns are serialized as `{"lon": .., "lat": ..}` (points) and
 
 ## ERA5 climatology pipeline (Sprint 2)
 
+### Kalender- und Reiseklimatologie
+
+Neben den kompatiblen 52 Wochen enthält jeder neu abgeleitete Datensatz
+`hourly_calendar`: einen versionierten, zlib-komprimierten Strom der gültigen
+Tageslichtstunden (Zeit, Windstärke/-richtung und, soweit zeitgleich vorhanden,
+Welle). `GET /spots/{id}/climatology` berechnet daraus zwölf echte
+Kalendermonate für eine frei gewählte Windschwelle sowie den selektierten Monat
+pro historischem Jahr. Sessions brauchen mindestens zwei lückenlos
+aufeinanderfolgende Stunden; Urlaubskennzahlen verwenden rollierende echte
+Sieben-Tage-Fenster, deren Startdatum im ausgewählten Monat liegt.
+
+`view=wind` prüft ausschließlich die Windschwelle. `view=result` wendet das
+versionierte Sport-/Materialprofil und gepflegte Spotrichtungen an; Wavekite
+fordert Wind und Welle am selben historischen Zeitpunkt. Fehlende Böen-, Tide-
+oder Stationsreihen werden nicht simuliert, sondern als Konfidenzgrenze
+ausgegeben. Bestehende Klimatologien müssen einmal aus dem Roh-Cache neu
+abgeleitet werden, damit `hourly_calendar` vorhanden ist.
+
 An **offline batch** that turns a 20-year ERA5 hourly reanalysis into a
 pre-computed, per-week seasonal climatology stored in `spots.climatology`.
 Nothing here runs at request time. The code lives in [`app/era5/`](app/era5/):
