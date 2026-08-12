@@ -9,6 +9,8 @@ pydantic==2.10.4
 pydantic-settings==2.7.0
 redis==5.2.1
 shapely==2.0.6
+rasterio==1.4.3
+pyproj==3.7.1
 httpx==0.28.1            # Open-Meteo client (Sprint 3 live path) + test client
 python-multipart==0.0.32  # multipart/form-data parsing for the hero-image upload
 pillow==12.3.0            # server-side hero-image dimension/format validation

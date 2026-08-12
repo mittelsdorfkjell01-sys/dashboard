@@ -1,0 +1,250 @@
+{
+  "generated_at": "2026-08-12T19:13:25.977298+00:00",
+  "phase": 0,
+  "spot_count": 5,
+  "limits": {
+    "parallel_downloads": 1,
+    "max_spots": 5,
+    "max_download_bytes": 1000000,
+    "max_asset_bytes": 131072
+  },
+  "metrics": {
+    "requests": 5,
+    "bytes": 327680,
+    "retries": 0,
+    "range_requests": [
+      {
+        "range": "bytes=0-65535",
+        "bytes": 65536,
+        "content_length": 65536
+      },
+      {
+        "range": "bytes=0-65535",
+        "bytes": 65536,
+        "content_length": 65536
+      },
+      {
+        "range": "bytes=0-65535",
+        "bytes": 65536,
+        "content_length": 65536
+      },
+      {
+        "range": "bytes=0-65535",
+        "bytes": 65536,
+        "content_length": 65536
+      },
+      {
+        "range": "bytes=0-65535",
+        "bytes": 65536,
+        "content_length": 65536
+      }
+    ],
+    "cache_hits": 0,
+    "cache_misses": 5,
+    "peak_temporary_bytes": 65536,
+    "persistent_cache_bytes_after_run": 327680,
+    "persistent_cache_bytes_after_cleanup": 0
+  },
+  "spots": [
+    {
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "name": "Baleal",
+      "coordinates": [
+        39.37353,
+        -9.33843
+      ],
+      "case": "open_atlantic",
+      "reason": "Open Atlantic coast and peninsula",
+      "analysis_crs": "EPSG:32629",
+      "assets": {
+        "worldcover": "N39W012",
+        "cop_dem": "N39W010"
+      },
+      "worldcover": {
+        "cache_hit": false,
+        "bytes": 65536,
+        "checksum": "bf229e8d452de3d8159c7809812bd21b0f7d2bf5809d9eec7ce53bb017c86e7a",
+        "range": "bytes=0-65535",
+        "content_length": 65536,
+        "status": 206,
+        "resolution_m": 10,
+        "crs": "EPSG:4326",
+        "nodata": 0,
+        "coverage": "global land to 82.75°N",
+        "source": "ESA WorldCover 2021 v200",
+        "full_file_downloaded": false,
+        "error": null
+      },
+      "copernicus_dem": {
+        "status": "blocked_credentials",
+        "source": "COP-DEM_GLO-30-DGED 2024_1",
+        "resolution_m": 30,
+        "crs": "EPSG:4326",
+        "vertical_datum": "EPSG:3855 EGM2008",
+        "tile": "N39W010",
+        "error": "CDSE CCM account/licence credentials not configured"
+      },
+      "duration_ms": 145.1
+    },
+    {
+      "spot_id": "ac782223-0fc3-46ca-af19-4faecf4cebc9",
+      "name": "Brouwersdam",
+      "coordinates": [
+        51.76591,
+        3.85178
+      ],
+      "case": "barrier_islands",
+      "reason": "North Sea delta with offshore islands and dams",
+      "analysis_crs": "EPSG:32631",
+      "assets": {
+        "worldcover": "N51E003",
+        "cop_dem": "N51E003"
+      },
+      "worldcover": {
+        "cache_hit": false,
+        "bytes": 65536,
+        "checksum": "11e38c678e172d1b134531e26af3762f9bd36ff7e6a418916a243004307b341c",
+        "range": "bytes=0-65535",
+        "content_length": 65536,
+        "status": 206,
+        "resolution_m": 10,
+        "crs": "EPSG:4326",
+        "nodata": 0,
+        "coverage": "global land to 82.75°N",
+        "source": "ESA WorldCover 2021 v200",
+        "full_file_downloaded": false,
+        "error": null
+      },
+      "copernicus_dem": {
+        "status": "blocked_credentials",
+        "source": "COP-DEM_GLO-30-DGED 2024_1",
+        "resolution_m": 30,
+        "crs": "EPSG:4326",
+        "vertical_datum": "EPSG:3855 EGM2008",
+        "tile": "N51E003",
+        "error": "CDSE CCM account/licence credentials not configured"
+      },
+      "duration_ms": 68.8
+    },
+    {
+      "spot_id": "163ec991-b1b9-4cc7-bfeb-379b1903714a",
+      "name": "Mundaka",
+      "coordinates": [
+        43.407,
+        -2.7
+      ],
+      "case": "curved_estuary",
+      "reason": "Strongly curved estuary/bay",
+      "analysis_crs": "EPSG:32630",
+      "assets": {
+        "worldcover": "N42W003",
+        "cop_dem": "N43W003"
+      },
+      "worldcover": {
+        "cache_hit": false,
+        "bytes": 65536,
+        "checksum": "b9407b0e4d309aa37dde8ab01709a9038c81b8031e284c53ee1c6a0bac1a212d",
+        "range": "bytes=0-65535",
+        "content_length": 65536,
+        "status": 206,
+        "resolution_m": 10,
+        "crs": "EPSG:4326",
+        "nodata": 0,
+        "coverage": "global land to 82.75°N",
+        "source": "ESA WorldCover 2021 v200",
+        "full_file_downloaded": false,
+        "error": null
+      },
+      "copernicus_dem": {
+        "status": "blocked_credentials",
+        "source": "COP-DEM_GLO-30-DGED 2024_1",
+        "resolution_m": 30,
+        "crs": "EPSG:4326",
+        "vertical_datum": "EPSG:3855 EGM2008",
+        "tile": "N43W003",
+        "error": "CDSE CCM account/licence credentials not configured"
+      },
+      "duration_ms": 53.5
+    },
+    {
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "name": "Lo Stagnone",
+      "coordinates": [
+        37.87,
+        12.47
+      ],
+      "case": "inland_lagoon",
+      "reason": "Shallow enclosed lagoon; closest available inland-water case",
+      "analysis_crs": "EPSG:32633",
+      "assets": {
+        "worldcover": "N36E012",
+        "cop_dem": "N37E012"
+      },
+      "worldcover": {
+        "cache_hit": false,
+        "bytes": 65536,
+        "checksum": "c1f3c06911b709d69072d3525a848569da79681868aba40f15743486054436ad",
+        "range": "bytes=0-65535",
+        "content_length": 65536,
+        "status": 206,
+        "resolution_m": 10,
+        "crs": "EPSG:4326",
+        "nodata": 0,
+        "coverage": "global land to 82.75°N",
+        "source": "ESA WorldCover 2021 v200",
+        "full_file_downloaded": false,
+        "error": null
+      },
+      "copernicus_dem": {
+        "status": "blocked_credentials",
+        "source": "COP-DEM_GLO-30-DGED 2024_1",
+        "resolution_m": 30,
+        "crs": "EPSG:4326",
+        "vertical_datum": "EPSG:3855 EGM2008",
+        "tile": "N37E012",
+        "error": "CDSE CCM account/licence credentials not configured"
+      },
+      "duration_ms": 42.7
+    },
+    {
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "name": "Pozo Izquierdo",
+      "coordinates": [
+        27.81,
+        -15.4
+      ],
+      "case": "mountain_coast",
+      "reason": "Volcanic island coast with strong nearby relief",
+      "analysis_crs": "EPSG:32628",
+      "assets": {
+        "worldcover": "N27W018",
+        "cop_dem": "N27W016"
+      },
+      "worldcover": {
+        "cache_hit": false,
+        "bytes": 65536,
+        "checksum": "5a940f49fc8a75e7c3959f5197a18dfa79185982b650aa1338877bf190dcb396",
+        "range": "bytes=0-65535",
+        "content_length": 65536,
+        "status": 206,
+        "resolution_m": 10,
+        "crs": "EPSG:4326",
+        "nodata": 0,
+        "coverage": "global land to 82.75°N",
+        "source": "ESA WorldCover 2021 v200",
+        "full_file_downloaded": false,
+        "error": null
+      },
+      "copernicus_dem": {
+        "status": "blocked_credentials",
+        "source": "COP-DEM_GLO-30-DGED 2024_1",
+        "resolution_m": 30,
+        "crs": "EPSG:4326",
+        "vertical_datum": "EPSG:3855 EGM2008",
+        "tile": "N27W016",
+        "error": "CDSE CCM account/licence credentials not configured"
+      },
+      "duration_ms": 50.0
+    }
+  ]
+}

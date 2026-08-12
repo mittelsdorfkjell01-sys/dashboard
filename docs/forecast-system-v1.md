@@ -38,6 +38,10 @@ werden keine inoffiziellen Scraper oder Zugriffsumgehungen eingesetzt.
 
 ## Geoprofil und Physik
 
+Die Phase-0/1-Rastergrundlagen, Lizenzen, Cache- und Preflight-Grenzen sind in
+`docs/geodata-phase1.md` dokumentiert. Neue Rastermerkmale bleiben
+Shadow-Diagnostik und verändern den öffentlichen Forecast nicht.
+
 Jeder Spot erhält idempotent mindestens ein Koordinatenprofil. Optional
 bereitgestellte lokale NASA-SRTM-HGT-Kacheln ergänzen Höhe und 16 gerichtete
 Geländesektoren. Fehlende Raster erzeugen eine Warnung und neutrale Korrektur.

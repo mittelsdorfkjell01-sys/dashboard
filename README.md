@@ -28,6 +28,13 @@ the **admin / data-maintenance** write workflow (see [Admin](#admin-sprint-8)).
 Python 3.12 (tested on 3.11) · FastAPI · SQLAlchemy 2.x · Alembic ·
 PostgreSQL + PostGIS · Redis · pytest.
 
+Automatic phase-0/1 geoprofiles use a versioned source catalogue,
+windowed ESA WorldCover COG access and an atomic raster cache. Official
+Copernicus DEM GLO-30-F is registered as the primary DEM/WBM source and needs a
+local CDSE/CCM account with accepted licence. See
+[`docs/geodata-phase1.md`](docs/geodata-phase1.md). These raster attributes are
+diagnostic and do not alter the public forecast yet.
+
 ## Project layout
 
 ```

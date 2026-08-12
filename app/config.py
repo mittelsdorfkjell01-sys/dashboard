@@ -65,6 +65,22 @@ class Settings(BaseSettings):
     media_dir: str = "data/media"
     media_url_prefix: str = "/media"
 
+    # Versioned geodata cache. HTTP request handlers enqueue work only; they
+    # never download a raster inline.
+    geodata_cache_dir: str = "data/geodata-cache"
+    geodata_max_parallel_downloads: int = 2
+    geodata_max_parallel_profiles: int = 2
+    geodata_max_run_bytes: int = 10_000_000
+    geodata_max_daily_bytes: int = 50_000_000
+    geodata_max_asset_bytes: int = 8_000_000
+    geodata_max_temp_bytes: int = 20_000_000
+    geodata_cache_max_bytes: int = 1_000_000_000
+    geodata_download_timeout_seconds: float = 20
+    geodata_analysis_timeout_seconds: float = 90
+    geodata_coastal_tolerance_m: float = 250
+    copernicus_cdse_client_id: str | None = None
+    copernicus_cdse_client_secret: str | None = None
+
     # Where uploaded images live: "local" writes to media_dir on disk (dev / VPS
     # with a persistent volume); "blob" uploads to Vercel Blob and stores the
     # returned public https URL (serverless hosts whose filesystem is ephemeral).

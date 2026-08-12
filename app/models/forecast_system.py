@@ -46,6 +46,98 @@ class ForecastProvider(Base, TimestampMixin):
     )
 
 
+class GeodataDataset(Base, TimestampMixin):
+    __tablename__ = "geodata_datasets"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    key: Mapped[str] = mapped_column(String(80), nullable=False)
+    version: Mapped[str] = mapped_column(String(40), nullable=False)
+    provider: Mapped[str] = mapped_column(String(120), nullable=False)
+    product_instance: Mapped[str] = mapped_column(String(120), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    specification: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    licence: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    fallback_key: Mapped[str | None] = mapped_column(String(80))
+    legal_checked_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("true")
+    )
+    __table_args__ = (
+        UniqueConstraint("key", "version", name="uq_geodata_dataset_version"),
+    )
+
+
+class GeodataAsset(Base, TimestampMixin):
+    __tablename__ = "geodata_assets"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    dataset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("geodata_datasets.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    asset_key: Mapped[str] = mapped_column(String(240), nullable=False)
+    tile_id: Mapped[str | None] = mapped_column(String(40))
+    bbox: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    file_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    crs: Mapped[str] = mapped_column(String(40), nullable=False)
+    byte_range: Mapped[str | None] = mapped_column(String(80))
+    size_bytes: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    checksum: Mapped[str] = mapped_column(String(128), nullable=False)
+    storage_path: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    last_accessed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    asset_metadata: Mapped[dict] = mapped_column(
+        "metadata", JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "dataset_id", "asset_key", "byte_range", name="uq_geodata_asset_window"
+        ),
+        CheckConstraint(
+            "status IN ('downloading','ready','invalid','evicted')",
+            name="ck_geodata_asset_status",
+        ),
+        Index("ix_geodata_asset_lru", "status", "last_accessed_at"),
+    )
+
+
+class SpotGeoProfileInput(Base, TimestampMixin):
+    __tablename__ = "spot_geo_profile_inputs"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("spot_geo_profile_versions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    asset_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("geodata_assets.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    role: Mapped[str] = mapped_column(String(40), nullable=False)
+    quality: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "profile_id", "asset_id", "role", name="uq_geo_profile_asset_role"
+        ),
+    )
+
+
 class ForecastModelRun(Base, TimestampMixin):
     __tablename__ = "forecast_model_runs"
     id: Mapped[uuid.UUID] = mapped_column(

@@ -195,7 +195,7 @@ def diagnostics(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
         snapshot = db.scalar(select(ForecastSnapshot).where(ForecastSnapshot.spot_id == spot_id, ForecastSnapshot.active.is_(True)))
         latest_job = db.scalar(select(ForecastProcessingJob).where(ForecastProcessingJob.spot_id == spot_id).order_by(ForecastProcessingJob.created_at.desc()))
         data["publisher"] = {
-            "geo_profile": None if profile is None else {"status": profile.status, "version": profile.version, "algorithm_version": profile.algorithm_version, "quality": profile.quality, "sources": profile.sources, "warnings": profile.warnings},
+            "geo_profile": None if profile is None else {"status": profile.status, "version": profile.version, "algorithm_version": profile.algorithm_version, "quality": profile.quality, "sources": profile.sources, "warnings": profile.warnings, "profile": profile.profile, "last_successful_at": profile.updated_at.isoformat()},
             "snapshot": None if snapshot is None else {"id": str(snapshot.id), "generated_at": snapshot.generated_at.isoformat(), "valid_until": snapshot.valid_until.isoformat(), "quality_level": snapshot.quality_level, "fallback_status": snapshot.fallback_status, "internal": snapshot.internal},
             "job": None if latest_job is None else _job_view(latest_job),
         }
@@ -227,17 +227,20 @@ def job_status(job_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
     return _job_view(job)
 
 @router.get("/batch/preview")
-def batch_preview(stale_only: bool=True, limit: int=Query(25,ge=1,le=100), db: Session=Depends(get_db)) -> dict:
+def batch_preview(stale_only: bool=True, limit: int=Query(10,ge=1,le=100), db: Session=Depends(get_db)) -> dict:
+    from app.forecast.geodata import CopernicusDemAdapter, WorldCoverAdapter
+    from geoalchemy2.shape import to_shape
     spots=db.scalars(select(Spot).order_by(Spot.name).limit(limit)).all()
     items=[]
     for spot in spots:
         profile=db.scalar(select(SpotGeoProfileVersion).where(SpotGeoProfileVersion.spot_id==spot.id,SpotGeoProfileVersion.active.is_(True)))
         if stale_only and profile is not None and profile.status=="ready": continue
-        items.append({"spot_id":str(spot.id),"spot_name":spot.name,"profile_status":profile.status if profile else "missing"})
+        point=to_shape(spot.location)
+        items.append({"spot_id":str(spot.id),"spot_name":spot.name,"profile_status":profile.status if profile else "missing","profile_class":profile.quality if profile else None,"required_sources":["cop-dem-glo30","worldcover-2021"],"tiles":{"dem":CopernicusDemAdapter.tile(point.y,point.x),"worldcover":WorldCoverAdapter.tile(point.y,point.x)},"access_obstacles":["CDSE CCM credentials/licence required"]})
     return {"items":items,"total":len(items),"limit":limit}
 
 @router.post("/batch/recalculate")
-def batch_recalculate(background: BackgroundTasks, limit: int=Query(10,ge=1,le=25), db: Session=Depends(get_db), actor=Depends(require_role("admin"))) -> dict:
+def batch_recalculate(background: BackgroundTasks, limit: int=Query(10,ge=1,le=10), db: Session=Depends(get_db), actor=Depends(require_role("admin"))) -> dict:
     from app.forecast.publisher import enqueue
     spots=db.scalars(select(Spot).order_by(Spot.updated_at).limit(limit)).all(); jobs=[]
     for spot in spots:
