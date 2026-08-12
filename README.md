@@ -40,6 +40,11 @@ shore geometry, land-cover roughness descriptors and terrain horizon) are
 documented in [`docs/geodata-phase2.md`](docs/geodata-phase2.md). They live in
 separate Shadow tables and cannot affect the public publisher.
 
+Phase 3 adds a prerequisite-gated, immutable and tile-centred dry-run backfill
+plan. It is documented in [`docs/geodata-phase3.md`](docs/geodata-phase3.md);
+execution remains disabled until the real five-spot CDSE cold/cache-only pilot
+passes.
+
 ## Project layout
 
 ```

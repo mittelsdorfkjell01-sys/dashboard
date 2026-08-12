@@ -18,7 +18,7 @@ def _normalize_pg_driver(url: str) -> str:
     """
     for scheme in ("postgresql://", "postgres://"):
         if url.startswith(scheme):
-            return "postgresql+psycopg://" + url[len(scheme):]
+            return "postgresql+psycopg://" + url[len(scheme) :]
     return url
 
 
@@ -78,8 +78,11 @@ class Settings(BaseSettings):
     geodata_download_timeout_seconds: float = 20
     geodata_analysis_timeout_seconds: float = 90
     geodata_coastal_tolerance_m: float = 250
-    copernicus_cdse_client_id: str | None = None
-    copernicus_cdse_client_secret: str | None = None
+    # Official CDSE S3 generated credentials. These are not OAuth client
+    # credentials and must never be logged or persisted.
+    cdse_s3_access_key: str | None = None
+    cdse_s3_secret_key: str | None = None
+    cdse_s3_endpoint: str = "https://eodata.dataspace.copernicus.eu"
     geodata_phase2_max_asset_bytes: int = 268_435_456
     geodata_phase2_max_run_bytes: int = 1_073_741_824
     geodata_phase2_max_daily_bytes: int = 2_147_483_648
@@ -159,11 +162,15 @@ class Settings(BaseSettings):
                     if expiry <= datetime.now(timezone.utc):
                         errors.append("BREAK_GLASS_EXPIRES_AT must be in the future")
                 except ValueError:
-                    errors.append("BREAK_GLASS_EXPIRES_AT must be a timezone-aware ISO timestamp")
+                    errors.append(
+                        "BREAK_GLASS_EXPIRES_AT must be a timezone-aware ISO timestamp"
+                    )
                 if not self.break_glass_allowed_ips:
                     errors.append("BREAK_GLASS_ALLOWED_IPS must restrict ADMIN_KEY use")
             if errors:
-                raise ValueError("Unsafe production configuration: " + "; ".join(errors))
+                raise ValueError(
+                    "Unsafe production configuration: " + "; ".join(errors)
+                )
         return self
 
     # Directory where ERA5 raw extracts (Parquet) are stored by the pipeline.

@@ -20,8 +20,8 @@ def preflight_gate(
 ) -> GateResult:
     settings = get_settings()
     credentials = credentials or (
-        settings.copernicus_cdse_client_id,
-        settings.copernicus_cdse_client_secret,
+        settings.cdse_s3_access_key,
+        settings.cdse_s3_secret_key,
     )
     if not all(credentials):
         return GateResult(
