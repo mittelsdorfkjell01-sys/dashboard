@@ -131,6 +131,11 @@ def create_spot(
     if commit:
         db.commit()
         db.refresh(spot)
+        try:
+            from app.forecast.publisher import enqueue
+            enqueue(db, spot.id, requested_by=actor, rebuild_profile=True, reason="spot_created")
+        except Exception:
+            db.rollback()
 
     # Climatology is intentionally not started here. Editors choose the explicit
     # button, while Go Live computes it automatically when it is still missing.
@@ -247,6 +252,12 @@ def update_spot(
         invalidate_for_coordinates(spot.id, db=db, actor=actor)
     db.commit()
     db.refresh(spot)
+    if coordinates_changed:
+        try:
+            from app.forecast.publisher import enqueue
+            enqueue(db, spot.id, requested_by=actor, rebuild_profile=True, reason="location_changed")
+        except Exception:
+            db.rollback()
     if (
         grid_cell_changed
         and client is not None

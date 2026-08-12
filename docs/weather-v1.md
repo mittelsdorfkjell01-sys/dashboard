@@ -2,7 +2,8 @@
 
 ## Product contract
 
-- Coverage: Germany, the Netherlands and Denmark.
+- Coverage: every spot with valid coordinates. Direct-source routing is global
+  by default and adds European regional models where their domains apply.
 - Current values are labelled **Aktuell (berechnet)**. They are model results,
   never presented as measurements.
 - Horizon: ten days. Days 1–5 contain hourly detail; days 6–10 contain only a
@@ -23,8 +24,8 @@
    counted as independent models.
 2. Open-Meteo is requested server-side in UTC and m/s. Requests use bounded
    timeout, retry/backoff and an in-process quota guard.
-3. Responses live for at most 15 minutes in a process-local TTL cache. A restart
-   removes all cached weather.
+3. Provider responses use bounded caches; validated product snapshots are
+   versioned in PostgreSQL and atomically activated.
 4. Provider values are validated and local corrections are applied to each
    model before consensus.
 5. Mean wind is combined in `u/v` vector space using lead-time family weights.
@@ -75,10 +76,9 @@ unvalidated physical multiplier. Advanced sector factors and direction changes
 remain inactive even when legacy records contain them. Defensive caps remain
 in code but are not an activation mechanism.
 
-Every canonical spot with valid coordinates receives a non-persistent
-`coordinates` configuration dynamically. No profile row, pilot entry, review,
-manual UUID assignment or warm-up is required. A complete profile can add
-conservative coastal classification; an incomplete profile safely falls back.
+Every canonical spot with valid coordinates receives a versioned automatic
+geoprofile. Missing raster packages produce an honest coordinates-only profile
+and neutral correction; they never block the global baseline forecast.
 
 Roughness/fetch transfer, terrain shelter, nozzle/orographic effects, vertical
 shear and thermal enhancement remain disabled until their formulas and

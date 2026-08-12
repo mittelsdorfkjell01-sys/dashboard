@@ -6,6 +6,7 @@ import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from app.admin.deps import get_extract_client
 from app.config import get_settings
@@ -47,4 +48,12 @@ def maintain_climatology(
     except Exception as exc:  # never let housekeeping fail the climatology run
         db.rollback()
         result["media"] = {"error": f"{type(exc).__name__}: {exc}"}
+    try:
+        from app.forecast.publisher import run_job
+        from app.models import ForecastProcessingJob
+        jobs = db.scalars(select(ForecastProcessingJob).where(ForecastProcessingJob.status == "queued").order_by(ForecastProcessingJob.created_at).limit(get_settings().forecast_job_batch_size)).all()
+        result["forecast"] = [{"id": str(job.id), "status": run_job(db, job.id).status} for job in jobs]
+    except Exception as exc:
+        db.rollback()
+        result["forecast"] = {"error": f"{type(exc).__name__}: {exc}"}
     return result

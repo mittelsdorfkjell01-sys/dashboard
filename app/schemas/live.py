@@ -79,3 +79,8 @@ class ForecastSeriesRead(BaseModel):
     models: list[str] = []
     generated_at: str
     days: list[ForecastDay]
+    product: str = "Surfwinddata Forecast"
+    updated_at: str | None = None
+    confidence_note: str | None = None
+    attributions: list[dict] = []
+    stale: bool = False

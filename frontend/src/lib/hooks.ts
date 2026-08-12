@@ -102,7 +102,7 @@ export function useSpotsLive(
   return { data, loading: state.loading, error: state.error, reload: state.reload };
 }
 
-/** 7-day forecast for a spot (best-effort; failure is non-fatal). */
+/** 10-day forecast for a spot (days 1–5 hourly, days 6–10 trend). */
 export function useSpotForecast(id?: string): AsyncStateReloadable<api.ForecastSeries> {
   return useSwr(id ? `forecast:${id}` : null, () => api.getSpotForecast(id!));
 }

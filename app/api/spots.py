@@ -209,7 +209,10 @@ def get_spots_live_batch(
         }
         for future in as_completed(futures):
             try:
-                results[futures[future]] = LiveConditionsRead.model_validate(future.result())
+                data = dict(future.result())
+                data["model"] = "surfwinddata"
+                data["models"] = []
+                results[futures[future]] = LiveConditionsRead.model_validate(data)
             except Exception:
                 logger.exception("live batch failed for spot %s", futures[future])
     return [results[spot.id] for spot in ordered if spot.id in results]
@@ -242,6 +245,9 @@ def get_spot_live(
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+    data = dict(data)
+    data["model"] = "surfwinddata"
+    data["models"] = []
     return LiveConditionsRead.model_validate(data)
 
 
@@ -255,15 +261,25 @@ def get_spot_forecast(
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),
 ) -> ForecastSeriesRead:
-    """7-day forecast with a confidence tier per day. Horizon hard-capped at 7."""
+    """Surfwinddata 10-day forecast: days 1–5 hourly, days 6–10 trend."""
     if get_published_spot(db, spot_id) is None:
         raise HTTPException(status_code=404, detail="Spot not found")
+    from app.forecast.publisher import active_snapshot, public_payload
+    snapshot = active_snapshot(db, spot_id)
+    if snapshot is not None:
+        return ForecastSeriesRead.model_validate(public_payload(snapshot))
     try:
         data = live_service.get_forecast_series(
             spot_id, days, db=db, client=client, cache=cache
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+    # Transitional cold path: a spot always retains the working global
+    # baseline even before its first persisted publisher job completes.
+    data["model"] = "surfwinddata"
+    data["models"] = []
+    data["product"] = "Surfwinddata Forecast"
+    data["attributions"] = [{"provider":"Open-Meteo","text":"Weather data by Open-Meteo.com","url":"https://open-meteo.com/","licence":"CC BY 4.0"}]
     return ForecastSeriesRead.model_validate(data)
 
 

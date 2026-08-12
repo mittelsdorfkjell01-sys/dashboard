@@ -158,6 +158,13 @@ class Settings(BaseSettings):
 
     # TTL (seconds) for cached Open-Meteo live/forecast responses (30-60 min band).
     live_cache_ttl: int = 1800
+    # Strict no-budget limits for direct-source shadow processing.
+    forecast_job_batch_size: int = 3
+    forecast_provider_daily_bytes: int = 250_000_000
+    forecast_provider_run_bytes: int = 50_000_000
+    forecast_provider_parallelism: int = 2
+    forecast_raw_retention_hours: int = 18
+    forecast_srtm_dir: str | None = None
 
     # Keep the featured "aktuelle Top Spots" cache warm from inside the app process
     # (a daemon thread), so the first visitor after the daily entry expires never

@@ -357,6 +357,11 @@ export default function SpotDetail() {
               <div className="mx-auto max-w-[1727px] px-4 pb-8 pt-10 sm:px-8">
                 <SpotDataHeader spot={spot} />
 
+                <section aria-label="Forecast-Information" className="mt-3 flex flex-wrap items-center justify-between gap-3 border-y border-line py-3 text-label text-muted">
+                  <div><strong className="font-semibold text-ink">{forecast?.product ?? "Surfwinddata Forecast"}</strong>{forecast?.updated_at && <span> · Aktualisiert {new Date(forecast.updated_at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}</span>}{forecast?.stale && <span> · Letzter verfügbarer Stand</span>}</div>
+                  {forecast?.attributions && forecast.attributions.length > 0 && <details className="relative"><summary className="cursor-pointer font-medium text-teal">Quellen</summary><div className="mt-2 max-w-prose space-y-1 sm:absolute sm:right-0 sm:z-10 sm:w-80 sm:rounded-lg sm:border sm:border-line sm:bg-surface sm:p-3">{forecast.attributions.map((source) => <p key={source.provider}><a className="underline" href={source.url} target="_blank" rel="noreferrer">{source.text}</a> · {source.licence}</p>)}</div></details>}
+                </section>
+
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <LiveRow spot={spot} forecast={forecast} live={live} />
                 </div>
@@ -398,7 +403,7 @@ export default function SpotDetail() {
 
                 {forecast && forecast.days.length > 0 && (
                   <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
-                    <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 7 Tage</p></div>
+                    <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 10 Tage</p></div>
                     <WeatherDetailsTable forecast={forecast} />
                   </div>
                 )}

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.auth.deps import require_role
 from app.db.session import get_db
 from app.live import service as live_service
-from app.models import Region, Spot, SpotWeatherProfile, SpotWeatherSector, WeatherModelCalibration, WeatherStation
+from app.models import ForecastProcessingJob, ForecastSnapshot, Region, Spot, SpotGeoProfileVersion, SpotWeatherProfile, SpotWeatherSector, WeatherModelCalibration, WeatherStation
 
 router = APIRouter(prefix="/admin/weather", tags=["admin-weather"], dependencies=[Depends(require_role("admin", "curator"))])
 
@@ -190,9 +190,61 @@ def put_profile(spot_id: uuid.UUID, body: WeatherProfileIn, db: Session = Depend
 @router.get("/spots/{spot_id}/diagnostics")
 def diagnostics(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
     try:
-        return live_service.get_forecast_series(spot_id, 10, db=db)
+        data = live_service.get_forecast_series(spot_id, 10, db=db)
+        profile = db.scalar(select(SpotGeoProfileVersion).where(SpotGeoProfileVersion.spot_id == spot_id, SpotGeoProfileVersion.active.is_(True)))
+        snapshot = db.scalar(select(ForecastSnapshot).where(ForecastSnapshot.spot_id == spot_id, ForecastSnapshot.active.is_(True)))
+        latest_job = db.scalar(select(ForecastProcessingJob).where(ForecastProcessingJob.spot_id == spot_id).order_by(ForecastProcessingJob.created_at.desc()))
+        data["publisher"] = {
+            "geo_profile": None if profile is None else {"status": profile.status, "version": profile.version, "algorithm_version": profile.algorithm_version, "quality": profile.quality, "sources": profile.sources, "warnings": profile.warnings},
+            "snapshot": None if snapshot is None else {"id": str(snapshot.id), "generated_at": snapshot.generated_at.isoformat(), "valid_until": snapshot.valid_until.isoformat(), "quality_level": snapshot.quality_level, "fallback_status": snapshot.fallback_status, "internal": snapshot.internal},
+            "job": None if latest_job is None else _job_view(latest_job),
+        }
+        return data
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+
+def _job_view(job: ForecastProcessingJob) -> dict:
+    return {"id": str(job.id), "spot_id": str(job.spot_id) if job.spot_id else None, "kind": job.kind, "status": job.status, "progress": job.progress, "error": job.error, "options": job.options, "diagnostics": job.diagnostics, "created_at": job.created_at.isoformat(), "started_at": job.started_at.isoformat() if job.started_at else None, "finished_at": job.finished_at.isoformat() if job.finished_at else None}
+
+def _run_job_in_new_session(job_id: uuid.UUID) -> None:
+    from app.db.session import SessionLocal
+    from app.forecast.publisher import run_job
+    with SessionLocal() as session:
+        run_job(session, job_id)
+
+@router.post("/spots/{spot_id}/recalculate")
+def recalculate(spot_id: uuid.UUID, background: BackgroundTasks, rebuild_profile: bool = False, db: Session = Depends(get_db), actor=Depends(require_role("admin", "curator"))) -> dict:
+    if db.get(Spot, spot_id) is None: raise HTTPException(status_code=404, detail="Spot not found")
+    from app.forecast.publisher import enqueue
+    job = enqueue(db, spot_id, requested_by=getattr(actor, "email", None) or str(actor), rebuild_profile=rebuild_profile, reason="manual")
+    if job.status == "queued": background.add_task(_run_job_in_new_session, job.id)
+    return _job_view(job)
+
+@router.get("/jobs/{job_id}")
+def job_status(job_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    job=db.get(ForecastProcessingJob,job_id)
+    if job is None: raise HTTPException(status_code=404,detail="Forecast job not found")
+    return _job_view(job)
+
+@router.get("/batch/preview")
+def batch_preview(stale_only: bool=True, limit: int=Query(25,ge=1,le=100), db: Session=Depends(get_db)) -> dict:
+    spots=db.scalars(select(Spot).order_by(Spot.name).limit(limit)).all()
+    items=[]
+    for spot in spots:
+        profile=db.scalar(select(SpotGeoProfileVersion).where(SpotGeoProfileVersion.spot_id==spot.id,SpotGeoProfileVersion.active.is_(True)))
+        if stale_only and profile is not None and profile.status=="ready": continue
+        items.append({"spot_id":str(spot.id),"spot_name":spot.name,"profile_status":profile.status if profile else "missing"})
+    return {"items":items,"total":len(items),"limit":limit}
+
+@router.post("/batch/recalculate")
+def batch_recalculate(background: BackgroundTasks, limit: int=Query(10,ge=1,le=25), db: Session=Depends(get_db), actor=Depends(require_role("admin"))) -> dict:
+    from app.forecast.publisher import enqueue
+    spots=db.scalars(select(Spot).order_by(Spot.updated_at).limit(limit)).all(); jobs=[]
+    for spot in spots:
+        job=enqueue(db,spot.id,requested_by=getattr(actor,"email",None) or str(actor),rebuild_profile=True,reason="batch")
+        jobs.append(_job_view(job))
+        if job.status=="queued": background.add_task(_run_job_in_new_session,job.id)
+    return {"jobs":jobs,"count":len(jobs),"rate_limit":limit}
 
 
 @router.put("/spots/{spot_id}/station")

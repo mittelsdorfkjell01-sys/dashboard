@@ -21,7 +21,7 @@ the **admin / data-maintenance** write workflow (see [Admin](#admin-sprint-8)).
 > are run **manually** (CLI/function); admin spot-creation triggers an ERA5 job but
 > climatology still derives offline. The live path returns **raw values only** —
 > the score engine layers on top of it and the climatology, but the two data paths
-> are never blended across the 7-day forecast horizon.
+> are never blended across the 10-day forecast horizon.
 
 ## Stack
 
@@ -127,7 +127,7 @@ Read-only endpoints (interactive docs at `/docs`):
 | `GET /spots`              | List spots; filters: `region_id`, `status`, `sport`, `level`, `water_character`, `style` (multi) |
 | `GET /spots/{id}`         | Single spot (404 if unknown)                            |
 | `GET /spots/{id}/live`    | Current conditions (Open-Meteo, cached) — Sprint 3      |
-| `GET /spots/{id}/forecast`| 7-day forecast + per-day confidence; `days` 1–7 — Sprint 3 |
+| `GET /spots/{id}/forecast`| Surfwinddata 10-day forecast; days 1–5 hourly, days 6–10 trend |
 | `GET /spots/{id}/badge`   | Now-badge: gut/mäßig/nein for current conditions — Sprint 4 |
 | `GET /spots/{id}/season`  | Seasonal curve; `stage=1` descriptive, `stage=2` scored — Sprint 4 |
 | `GET /spots/{id}/similar` | Similar spots; `mode=charakter\|saison\|beides` — Sprint 7 |
@@ -310,10 +310,10 @@ overlay editor-pinned values on top of the freshly derived climatology.
 
 ## Live + forecast (Sprint 3)
 
-The **runtime** path: current conditions and a 7-day forecast from
+The **runtime** path: current conditions and a 10-day forecast from
 [Open-Meteo](https://open-meteo.com/), cached in Redis. It is **strictly
 separate** from the ERA5 climatology — nothing is merged across the two and
-nothing beyond the 7-day horizon is ever returned. **Live data is never
+nothing beyond the 10-day horizon is ever returned. **Live data is never
 persisted to Postgres** (cache only). Code lives in [`app/live/`](app/live/):
 
 | Function (`app.live.*`)                  | Responsibility                                   |
@@ -324,7 +324,7 @@ persisted to Postgres** (cache only). Code lives in [`app/live/`](app/live/):
 | `client.HttpOpenMeteoClient`             | `fetch_forecast` (multi-model) / `fetch_marine` (httpx) |
 | `cache.cache_get/cache_set`              | Redis JSON cache, keyed + TTL'd                  |
 | `service.get_live_conditions(spot_id)`   | current consensus `{wind,gust,…}` + `wind_spread`/`gust_spread` |
-| `service.get_forecast_series(spot_id)`   | 7 days, hourly + daily summary + spread-based confidence |
+| `service.get_forecast_series(spot_id)`   | 10 days; days 1–5 hourly, days 6–10 trend + confidence |
 
 ### Model selection
 
@@ -345,7 +345,7 @@ Keys are `om:{model}:{lat_r}:{lon_r}:{var}` with coordinates rounded to 2 decima
 model with `var=forecast`; the marine payload is model-independent and uses
 `om:marine:{lat_r}:{lon_r}:marine`. Values are JSON; TTL is `LIVE_CACHE_TTL`
 (default **1800 s / 30 min**, within the 30–60 min band). The cached fetch always
-pulls the full 7-day horizon once, so `/live` and `/forecast` share one entry per
+pulls the full 10-day horizon once, so `/live` and `/forecast` share one entry per
 (model, location) — a second call within the TTL makes **no** HTTP request.
 
 ### Confidence staffing
@@ -355,7 +355,7 @@ Each forecast day carries a confidence tier derived from **model disagreement**
 Because model spread naturally widens with the horizon this trends downward on its
 own; the old calendar rule (days 1–3 `hoch` / 4–5 `mittel` / 6–7 `niedrig`) remains
 only as a graceful fallback for days with fewer than two models reporting. The
-horizon is hard-capped at 7 days even if more were requested or returned.
+horizon is hard-capped at 10 days even if more were requested or returned.
 
 ### Model consensus & uncertainty band (Sprint 18, Phase 1)
 
@@ -965,7 +965,7 @@ and [`lib/filters.ts`](frontend/src/lib/filters.ts) (URL-synced filter/sort stat
 
 Every page reads the **live API** — there is no mock data (`frontend/src/data/*`
 was removed). Spots/regions come from the DB; the hero search hits `/search`; the
-7-day forecast comes from `/spots/{id}/forecast`; category/facility/season panels
+10-day forecast comes from `/spots/{id}/forecast`; category/facility/season panels
 render real data and **hide** (or show an empty state) when the backend has none.
 
 ### The one config point: `VITE_API_URL`
@@ -1138,7 +1138,7 @@ cover the component maths, the daylight filter, histogram aggregation, display
 stats, raw-file round-trip, the 52-week climatology, and recompute determinism.
 The live tests use a mocked Open-Meteo client and cover model selection, cache
 hit/miss (no second HTTP call within the TTL), confidence staffing, and the
-7-day horizon cap. The score-engine tests run over synthetic values/histograms and
+10-day horizon cap. The score-engine tests run over synthetic values/histograms and
 cover the kite + surf gates, gustiness downgrade, level offsets, the climatology
 week/curve (with live↔climatology consistency), `describe_week` and confidence.
 The search tests split into pure-logic tests (text matching,

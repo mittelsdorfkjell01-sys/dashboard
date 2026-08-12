@@ -267,6 +267,12 @@ def approve_submission(
     )
     db.commit()
     db.refresh(spot)
+    try:
+        from app.forecast.publisher import enqueue
+
+        enqueue(db, spot.id, reason="submission_approved", rebuild_profile=True)
+    except Exception:
+        db.rollback()
     if client is not None:
         from app.admin.jobs import trigger_era5_job
 

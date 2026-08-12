@@ -310,6 +310,11 @@ export interface ForecastSeries {
   model: string;
   generated_at: string;
   days: ForecastDay[];
+  product?: string;
+  updated_at?: string | null;
+  confidence_note?: string | null;
+  stale?: boolean;
+  attributions?: Array<{ provider: string; text: string; url: string; licence: string }>;
 }
 
 export interface SpotSeason {
@@ -526,6 +531,9 @@ export const getAdminWeatherProfiles = (filters: { country?: string; state?: str
 export const getAdminWeatherProfile = (spotId: string) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`);
 export const putAdminWeatherProfile = (spotId: string, body: WeatherProfileInput) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`, { method: "PUT", body: JSON.stringify(body) });
 export const getAdminWeatherDiagnostics = (spotId: string) => request<Record<string, unknown>>(`/admin/weather/spots/${spotId}/diagnostics`);
+export interface ForecastJob { id: string; spot_id: string | null; status: "queued"|"processing"|"succeeded"|"failed"|"superseded"|"paused"; progress: number; error: string | null; diagnostics: Record<string, unknown>; }
+export const recalculateAdminForecast = (spotId: string, rebuildProfile = false) => request<ForecastJob>(`/admin/weather/spots/${spotId}/recalculate${qs({ rebuild_profile: rebuildProfile })}`, { method: "POST" });
+export const getAdminForecastJob = (jobId: string) => request<ForecastJob>(`/admin/weather/jobs/${jobId}`);
 
 /** Stage-2 season curve: pct_usable[52] + flagged good weeks. */
 export const getSpotSeason = (id: string, sport?: string) =>

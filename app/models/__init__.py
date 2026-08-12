@@ -34,6 +34,7 @@ from app.models.tide import (
 )
 from app.models.weather_profile import SpotWeatherProfile, SpotWeatherSector
 from app.models.weather_verification import WeatherForecastSample, WeatherModelCalibration, WeatherObservation, WeatherStation
+from app.models.forecast_system import ForecastModelRun, ForecastProcessingJob, ForecastProvider, ForecastSnapshot, SpotGeoProfileVersion
 
 __all__ = [
     "Base",
@@ -72,4 +73,9 @@ __all__ = [
     "WeatherObservation",
     "WeatherForecastSample",
     "WeatherModelCalibration",
+    "ForecastProvider",
+    "ForecastModelRun",
+    "SpotGeoProfileVersion",
+    "ForecastSnapshot",
+    "ForecastProcessingJob",
 ]
