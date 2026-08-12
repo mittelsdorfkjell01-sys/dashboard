@@ -10,6 +10,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Float,
     Index,
     Integer,
     String,
@@ -135,6 +136,71 @@ class SpotGeoProfileInput(Base, TimestampMixin):
         UniqueConstraint(
             "profile_id", "asset_id", "role", name="uq_geo_profile_asset_role"
         ),
+    )
+
+
+class SpotGeoShadowProfile(Base, TimestampMixin):
+    __tablename__ = "spot_geo_shadow_profiles"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    spot_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False
+    )
+    input_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    algorithm_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    profile_class: Mapped[str] = mapped_column(String(1), nullable=False)
+    active_shadow: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    analysis: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    metrics: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    warnings: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    __table_args__ = (
+        UniqueConstraint("spot_id", "input_hash", name="uq_spot_geo_shadow_input"),
+        CheckConstraint(
+            "profile_class IN ('A','B','C','D')", name="ck_geo_shadow_class"
+        ),
+        CheckConstraint(
+            "status IN ('ready','blocked_credentials','blocked_license','blocked_quota','blocked_budget','failed')",
+            name="ck_geo_shadow_status",
+        ),
+        Index("ix_geo_shadow_active", "spot_id", "active_shadow"),
+    )
+
+
+class SpotGeoShadowSector(Base, TimestampMixin):
+    __tablename__ = "spot_geo_shadow_sectors"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    shadow_profile_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("spot_geo_shadow_profiles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    sector_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    center_deg: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    features: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    quality: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    __table_args__ = (
+        UniqueConstraint(
+            "shadow_profile_id", "sector_index", name="uq_geo_shadow_sector"
+        ),
+        CheckConstraint(
+            "sector_index >= 0 AND sector_index < 16", name="ck_geo_shadow_sector_index"
+        ),
+        CheckConstraint(
+            "status IN ('valid','degraded','unavailable','conflicted','not_applicable')",
+            name="ck_geo_shadow_sector_status",
+        ),
+        Index("ix_geo_shadow_sector_profile", "shadow_profile_id", "sector_index"),
     )
 
 

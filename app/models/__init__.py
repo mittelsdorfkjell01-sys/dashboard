@@ -33,8 +33,24 @@ from app.models.tide import (
     TideProfileRevision,
 )
 from app.models.weather_profile import SpotWeatherProfile, SpotWeatherSector
-from app.models.weather_verification import WeatherForecastSample, WeatherModelCalibration, WeatherObservation, WeatherStation
-from app.models.forecast_system import ForecastModelRun, ForecastProcessingJob, ForecastProvider, ForecastSnapshot, GeodataAsset, GeodataDataset, SpotGeoProfileInput, SpotGeoProfileVersion
+from app.models.weather_verification import (
+    WeatherForecastSample,
+    WeatherModelCalibration,
+    WeatherObservation,
+    WeatherStation,
+)
+from app.models.forecast_system import (
+    ForecastModelRun,
+    ForecastProcessingJob,
+    ForecastProvider,
+    ForecastSnapshot,
+    GeodataAsset,
+    GeodataDataset,
+    SpotGeoProfileInput,
+    SpotGeoProfileVersion,
+    SpotGeoShadowProfile,
+    SpotGeoShadowSector,
+)
 
 __all__ = [
     "Base",
@@ -81,4 +97,6 @@ __all__ = [
     "GeodataDataset",
     "GeodataAsset",
     "SpotGeoProfileInput",
+    "SpotGeoShadowProfile",
+    "SpotGeoShadowSector",
 ]

@@ -80,6 +80,11 @@ class Settings(BaseSettings):
     geodata_coastal_tolerance_m: float = 250
     copernicus_cdse_client_id: str | None = None
     copernicus_cdse_client_secret: str | None = None
+    geodata_phase2_max_asset_bytes: int = 268_435_456
+    geodata_phase2_max_run_bytes: int = 1_073_741_824
+    geodata_phase2_max_daily_bytes: int = 2_147_483_648
+    geodata_phase2_cache_max_bytes: int = 10_737_418_240
+    geodata_phase2_max_requests: int = 200
 
     # Where uploaded images live: "local" writes to media_dir on disk (dev / VPS
     # with a persistent volume); "blob" uploads to Vercel Blob and stores the

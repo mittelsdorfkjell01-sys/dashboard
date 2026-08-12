@@ -1,0 +1,139 @@
+{
+  "generated_at": "2026-08-12T19:40:33.324475+00:00",
+  "algorithm": "swd-shadow-v2-sectors16-rays9",
+  "limits": {
+    "spots": 5,
+    "parallel_downloads": 2,
+    "parallel_profiles": 2,
+    "requests": 200,
+    "asset_bytes": 268435456,
+    "run_bytes": 1073741824,
+    "daily_bytes": 2147483648,
+    "cache_bytes": 10737418240
+  },
+  "spots": [
+    {
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "name": "Baleal",
+      "coordinates": [
+        39.37353,
+        -9.33843
+      ],
+      "analysis_crs": "EPSG:32629",
+      "assets": {
+        "cop_dem_tile": "N39W010",
+        "worldcover_tile": "N39W012"
+      },
+      "status": "blocked_credentials",
+      "reason": "CDSE CCM credentials are not configured",
+      "sectors": null,
+      "profile_class": "D",
+      "components": {
+        "dem": "unavailable",
+        "wbm": "unavailable",
+        "quality_layers": "unavailable",
+        "worldcover": "cached_phase1_only"
+      }
+    },
+    {
+      "spot_id": "ac782223-0fc3-46ca-af19-4faecf4cebc9",
+      "name": "Brouwersdam",
+      "coordinates": [
+        51.76591,
+        3.85178
+      ],
+      "analysis_crs": "EPSG:32631",
+      "assets": {
+        "cop_dem_tile": "N51E003",
+        "worldcover_tile": "N51E003"
+      },
+      "status": "blocked_credentials",
+      "reason": "CDSE CCM credentials are not configured",
+      "sectors": null,
+      "profile_class": "D",
+      "components": {
+        "dem": "unavailable",
+        "wbm": "unavailable",
+        "quality_layers": "unavailable",
+        "worldcover": "cached_phase1_only"
+      }
+    },
+    {
+      "spot_id": "163ec991-b1b9-4cc7-bfeb-379b1903714a",
+      "name": "Mundaka",
+      "coordinates": [
+        43.407,
+        -2.7
+      ],
+      "analysis_crs": "EPSG:32630",
+      "assets": {
+        "cop_dem_tile": "N43W003",
+        "worldcover_tile": "N42W003"
+      },
+      "status": "blocked_credentials",
+      "reason": "CDSE CCM credentials are not configured",
+      "sectors": null,
+      "profile_class": "D",
+      "components": {
+        "dem": "unavailable",
+        "wbm": "unavailable",
+        "quality_layers": "unavailable",
+        "worldcover": "cached_phase1_only"
+      }
+    },
+    {
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "name": "Lo Stagnone",
+      "coordinates": [
+        37.87,
+        12.47
+      ],
+      "analysis_crs": "EPSG:32633",
+      "assets": {
+        "cop_dem_tile": "N37E012",
+        "worldcover_tile": "N36E012"
+      },
+      "status": "blocked_credentials",
+      "reason": "CDSE CCM credentials are not configured",
+      "sectors": null,
+      "profile_class": "D",
+      "components": {
+        "dem": "unavailable",
+        "wbm": "unavailable",
+        "quality_layers": "unavailable",
+        "worldcover": "cached_phase1_only"
+      }
+    },
+    {
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "name": "Pozo Izquierdo",
+      "coordinates": [
+        27.81,
+        -15.4
+      ],
+      "analysis_crs": "EPSG:32628",
+      "assets": {
+        "cop_dem_tile": "N27W016",
+        "worldcover_tile": "N27W018"
+      },
+      "status": "blocked_credentials",
+      "reason": "CDSE CCM credentials are not configured",
+      "sectors": null,
+      "profile_class": "D",
+      "components": {
+        "dem": "unavailable",
+        "wbm": "unavailable",
+        "quality_layers": "unavailable",
+        "worldcover": "cached_phase1_only"
+      }
+    }
+  ],
+  "metrics": {
+    "requests": 0,
+    "bytes": 0,
+    "retries": 0,
+    "cache_hits": 0,
+    "peak_temporary_bytes": 0
+  },
+  "status": "blocked_credentials"
+}

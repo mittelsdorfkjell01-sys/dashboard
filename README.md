@@ -35,6 +35,11 @@ local CDSE/CCM account with accepted licence. See
 [`docs/geodata-phase1.md`](docs/geodata-phase1.md). These raster attributes are
 diagnostic and do not alter the public forecast yet.
 
+Directional phase-2 Shadow features (16 sectors × 9 rays, censored wind-fetch,
+shore geometry, land-cover roughness descriptors and terrain horizon) are
+documented in [`docs/geodata-phase2.md`](docs/geodata-phase2.md). They live in
+separate Shadow tables and cannot affect the public publisher.
+
 ## Project layout
 
 ```
