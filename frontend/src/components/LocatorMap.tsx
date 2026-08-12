@@ -91,6 +91,20 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
 
     map.on("load", () => {
       map.resize();
+      // MapLibre's official compact attribution sometimes opens itself when
+      // its text fits. Mobile deliberately starts collapsed behind the
+      // library-provided info control; the complete legal copy remains one
+      // tap away and the native <details> keeps touch + keyboard behaviour.
+      if (window.matchMedia("(max-width: 639px)").matches) {
+        const attribution = container.querySelector<HTMLDetailsElement>(".maplibregl-ctrl-attrib");
+        const toggle = attribution?.querySelector<HTMLElement>(".maplibregl-ctrl-attrib-button");
+        attribution?.removeAttribute("open");
+        attribution?.classList.remove("maplibregl-compact-show");
+        if (toggle) {
+          toggle.setAttribute("aria-label", "Kartenhinweise anzeigen");
+          toggle.setAttribute("title", "Kartenhinweise anzeigen");
+        }
+      }
       const el = document.createElement("div");
       el.innerHTML = PIN_SVG;
       el.setAttribute("role", "img");

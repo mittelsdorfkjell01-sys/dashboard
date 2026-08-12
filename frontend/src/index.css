@@ -134,7 +134,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
 
   .spot-gallery-compact > div {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 4;
     max-height: 660px;
   }
 
@@ -146,11 +146,11 @@ html[data-theme="dark"] { color-scheme: dark; }
   /* The locator and the open comments column follow the measured gallery
      height on desktop. Mobile keeps LocatorMap's native responsive heights. */
   @media (min-width: 1024px) {
-    .spot-location-grid {
-      height: var(--spot-gallery-height, 540px);
+    .spot-detail-content-grid {
+      grid-template-rows: auto var(--spot-gallery-height, 540px);
     }
 
-    .spot-location-grid .spot-locator-compact {
+    .spot-detail-content-grid .spot-locator-compact {
       margin-right: var(--spot-gallery-right-inset, 0px);
     }
   }
@@ -391,6 +391,12 @@ html[data-theme="dark"] { color-scheme: dark; }
    remain crisp and retain their accessible contrast. */
 .swd-locator-map .maplibregl-canvas {
   filter: saturate(.9) brightness(1.04) contrast(.94);
+}
+
+@media (max-width: 639px) {
+  .swd-locator-map .maplibregl-ctrl-bottom-right {
+    bottom: max(0px, env(safe-area-inset-bottom));
+  }
 }
 
 /* Scale bar on LocatorMap — the default Leaflet control, restyled to sit

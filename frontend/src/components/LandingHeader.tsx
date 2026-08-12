@@ -16,12 +16,15 @@ export default function LandingHeader({
   left,
   width = "wide",
   sticky = false,
+  mobileSpotControls = false,
 }: {
   left?: ReactNode;
   /** `"body"` snaps the bar to the 1180px content column (spot page). */
   width?: "wide" | "body";
   /** Fixed bar that solidifies + shrinks on scroll (landing). */
   sticky?: boolean;
+  /** Reduce the mobile spot hero chrome to back + menu only. */
+  mobileSpotControls?: boolean;
 }) {
   const [solid, setSolid] = useState(false);
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function LandingHeader({
           <Link
             to="/"
             aria-label="surfwind data — Startseite"
-            className="col-start-2 flex min-h-11 min-w-0 select-none items-center justify-self-center leading-none"
+            className={`col-start-2 min-h-11 min-w-0 select-none items-center justify-self-center leading-none ${mobileSpotControls ? "hidden sm:flex" : "flex"}`}
           >
             <Wordmark size={solid ? "md" : "xl"} />
           </Link>
@@ -90,8 +93,8 @@ export default function LandingHeader({
               </Link>
             )}
 
-            <ThemeToggle />
-            <AccountMenu />
+            <span className={mobileSpotControls ? "hidden sm:block" : undefined}><ThemeToggle /></span>
+            <AccountMenu bareOnMobile={mobileSpotControls} />
           </div>
         </div>
       </div>

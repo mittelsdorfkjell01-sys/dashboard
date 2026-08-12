@@ -64,7 +64,7 @@ export default function PhotoGalleryOverlay({
 
   return (
     <>
-      <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef}>
+      <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef} mobileDragToClose>
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="text-[28px] font-semibold leading-tight text-ink sm:text-[32px]">Fotogalerie</h2>
           <p className="text-ui text-muted">Die besten Momente vom Spot</p>

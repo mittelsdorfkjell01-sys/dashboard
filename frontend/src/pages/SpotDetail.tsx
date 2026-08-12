@@ -107,7 +107,7 @@ export default function SpotDetail() {
     return () => observer.disconnect();
   }, [activeTab, loading, mapReady]);
 
-  const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/map"));
+  const goBack = () => (location.key !== "default" ? navigate(-1) : navigate("/map"));
 
   if (loading) {
     return (
@@ -167,12 +167,13 @@ export default function SpotDetail() {
     <div className="spot-detail-page relative min-h-screen min-w-0 max-w-full overflow-x-clip bg-page">
       <LandingHeader
         width="body"
+        mobileSpotControls
         left={
           <button
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-2xl bg-teal p-2 text-ui font-medium text-white transition-colors hover:bg-teal-hover sm:min-h-0 sm:min-w-0 sm:justify-start sm:py-2 sm:pl-2.5 sm:pr-4"
+            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center gap-1.5 bg-transparent p-0 text-ui font-medium text-white transition-colors hover:text-white/80 sm:h-auto sm:w-auto sm:justify-start sm:rounded-2xl sm:bg-teal sm:py-2 sm:pl-2.5 sm:pr-4 sm:hover:bg-teal-hover sm:hover:text-white"
           >
             <ChevronDownIcon width={18} height={18} className="rotate-90" />
             <span className="hidden sm:inline">Zurück</span>
@@ -213,7 +214,13 @@ export default function SpotDetail() {
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
-              <div className={`grid min-w-0 gap-x-8 gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[37.65px] ${SPOT_INFO_GRID}`}>
+              <div
+                className={`spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[58px] ${SPOT_INFO_GRID}`}
+                style={{
+                  "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined,
+                  "--spot-gallery-right-inset": `${galleryRightInset}px`,
+                } as CSSProperties}
+              >
                 <div className="order-1 flex min-w-0 flex-col self-stretch">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
@@ -262,7 +269,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div ref={galleryFrameRef} className="spot-gallery-compact order-3 w-full min-w-0 justify-self-center lg:order-2">
+                <div ref={galleryFrameRef} className="spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -271,7 +278,6 @@ export default function SpotDetail() {
                 </div>
 
                 <aside aria-label="Spotprofil und Ausstattung" className="order-2 flex min-w-0 flex-col lg:order-3">
-                  <h2 className="mb-5 text-title font-semibold text-ink lg:sr-only">Spotprofil</h2>
                   <SpotMetaGrid spot={spot} />
                   {facilities.length > 0 && (
                     <div className="mt-10 lg:mt-12">
@@ -282,22 +288,8 @@ export default function SpotDetail() {
                     </div>
                   )}
                 </aside>
-              </div>
-
-              {/* Lage + Kommentare reuse the exact column tracks above: the map
-                  spans the text and gallery columns, so its right edge aligns
-                  with the gallery while comments align with the profile column. */}
-              <section aria-labelledby="location-comments-title" className="mt-12 min-w-0 lg:mt-[58px]">
-                <h2 id="location-comments-title" className="sr-only">Lage und Kommentare</h2>
-                <div
-                  className={`spot-location-grid grid min-w-0 gap-10 lg:gap-x-[37.65px] ${SPOT_INFO_GRID}`}
-                  style={{
-                    "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined,
-                    "--spot-gallery-right-inset": `${galleryRightInset}px`,
-                  } as CSSProperties}
-                >
                   {spot.coords ? (
-                    <div ref={mapSlotRef} className="spot-locator-compact min-w-0 lg:col-span-2">
+                    <section ref={mapSlotRef} aria-label="Lage" className="spot-locator-compact order-3 min-w-0 lg:order-4 lg:col-span-2">
                       {mapReady ? (
                         <Suspense fallback={<MapPlaceholder />}>
                           <LocatorMap coords={spot.coords} />
@@ -305,11 +297,11 @@ export default function SpotDetail() {
                       ) : (
                         <MapPlaceholder />
                       )}
-                    </div>
+                    </section>
                   ) : (
-                    <div aria-hidden className="lg:col-span-2" />
+                    <div aria-hidden className="order-3 lg:order-4 lg:col-span-2" />
                   )}
-                  <div className="min-w-0">
+                  <div className="order-5 min-w-0">
                     <SpotCommentBox
                       spotId={id}
                       posts={sortedPosts}
@@ -323,8 +315,7 @@ export default function SpotDetail() {
                       error={commentsError}
                     />
                   </div>
-                </div>
-              </section>
+              </div>
 
               {id && (
                 // 96px visible separation after the location/community group.

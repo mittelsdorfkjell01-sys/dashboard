@@ -24,7 +24,7 @@ export default function SpotGalleryTile({
   const go = (delta: number) => setIndex((i) => (i + delta + photos.length) % photos.length);
 
   return (
-    <div className="spot-media-frame relative aspect-[2/3] overflow-hidden bg-band">
+    <div className="spot-media-frame relative aspect-[3/4] overflow-hidden bg-band sm:aspect-[4/3] lg:aspect-auto">
       {photo && (
         <img
           key={photo.id}
@@ -41,10 +41,13 @@ export default function SpotGalleryTile({
         ref={galleryTriggerRef}
         type="button"
         onClick={onOpenGallery}
+        aria-label="Fotogalerie öffnen"
         className="absolute left-4 top-4 z-10 inline-flex min-h-11 items-center rounded-2xl bg-teal/80 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal sm:left-1/2 sm:min-h-0 sm:-translate-x-1/2"
       >
         Fotogalerie
       </button>
+
+      <button type="button" onClick={onOpenGallery} aria-label="Fotogalerie öffnen" className="absolute inset-0 z-[5] cursor-zoom-in [-webkit-tap-highlight-color:transparent]" />
 
       {photos.length > 1 && (
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2">

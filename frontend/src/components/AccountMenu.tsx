@@ -16,7 +16,7 @@ const UTILITY: { label: string; to: string }[] = [
 ];
 
 /** Account pill + dropdown, shared by the landing and map/search headers. */
-export default function AccountMenu() {
+export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: boolean }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -54,7 +54,7 @@ export default function AccountMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Konto-Menü"
-        className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal p-0 text-white transition-colors hover:bg-teal-hover sm:h-auto sm:w-auto sm:gap-2.5 sm:px-3.5 sm:py-2"
+        className={`flex h-11 w-11 items-center justify-center p-0 text-white transition-colors sm:h-auto sm:w-auto sm:gap-2.5 sm:rounded-2xl sm:bg-teal sm:px-3.5 sm:py-2 sm:hover:bg-teal-hover ${bareOnMobile ? "bg-transparent hover:text-white/80" : "rounded-2xl bg-teal hover:bg-teal-hover"}`}
       >
         <MenuIcon className="text-[20px]" />
         <span className="hidden h-7 w-7 place-items-center rounded-full bg-white/20 sm:grid">

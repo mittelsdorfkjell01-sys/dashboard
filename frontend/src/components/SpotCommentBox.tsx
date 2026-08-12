@@ -8,15 +8,15 @@ export default function SpotCommentBox({ spotId, posts, onOpenMore, onPosted, ov
   const threads = commentThreads(posts);
   return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full">
     <h2 id="spot-comments-title" className="sr-only">Kommentare</h2>
-    <div className="order-2 mt-8 lg:order-1 lg:mt-0 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
-      {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <p className="py-8 text-body leading-relaxed text-muted">Noch keine Kommentare. Teile deine Erfahrung mit diesem Spot.</p> : <div className="space-y-7">
+    <div className="min-h-0 flex-1 lg:overflow-y-auto lg:pr-2">
+      {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <div className="py-8"><p className="text-body font-semibold text-ink">Teile deine Erfahrung mit diesem Spot</p><p className="mt-2 text-label leading-relaxed text-muted">Hilfreich sind Bedingungen, Einstieg, Gefahren oder Tipps zu ähnlichen Spots.</p></div> : <div className="space-y-7">
         {threads.map((thread, index) => <article key={thread.comment.id} className="min-w-0">
           <CommentRow post={thread.comment} onOpen={onOpenMore} triggerRef={index === 0 ? overlayTriggerRef : undefined} />
           {thread.replies.length > 0 && <div className="ml-8 mt-4 space-y-4 border-l border-line/60 pl-3 lg:ml-11 lg:pl-4">{thread.replies.map(reply => <CommentRow key={reply.id} post={reply} onOpen={onOpenMore} compact />)}</div>}
         </article>)}
       </div>}
     </div>
-    <div className="order-1 mx-auto w-full max-w-[360px] shrink-0 lg:order-2 lg:mt-5"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
+    <div className="mx-auto mt-5 w-full max-w-[360px] shrink-0"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
   </section>;
 }
 
@@ -30,7 +30,7 @@ function CommentRow({ post, onOpen, triggerRef, compact = false }: { post: FeedP
     </div>
     <div aria-hidden />
     <div className="min-w-0 pt-2">
-      <button ref={triggerRef} type="button" onClick={onOpen} className="flex min-h-11 w-full flex-col justify-center rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-soft">
+      <button ref={triggerRef} type="button" onClick={onOpen} className="comment-entry flex min-h-11 w-full flex-col justify-center border-l border-line bg-transparent pl-3 text-left [-webkit-tap-highlight-color:transparent] focus-visible:border-teal focus-visible:outline-none">
         {post.title && <span className="mb-1 block text-label font-semibold text-ink">{post.title}</span>}
         <p className={`${compact ? "text-label" : "text-ui"} whitespace-pre-line leading-relaxed text-ink-soft`}>{post.text}</p>
       </button>

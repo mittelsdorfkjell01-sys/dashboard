@@ -1,6 +1,6 @@
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { CloseIcon } from "../lib/icons";
 import { getLenis } from "../lib/lenis";
 
@@ -26,14 +26,41 @@ export default function OverlayPanel({
   onClose,
   triggerRef,
   children,
+  mobileDragToClose = false,
 }: {
   open: boolean;
   onClose: () => void;
   triggerRef: RefObject<HTMLElement>;
   children: ReactNode;
+  mobileDragToClose?: boolean;
 }) {
   const reduce = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
+  const historyToken = useRef<string | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!open) return;
+    const token = `overlay-${Date.now()}`;
+    historyToken.current = token;
+    window.history.pushState({ ...window.history.state, surfwindOverlay: token }, "");
+    const onPopState = () => {
+      historyToken.current = null;
+      onCloseRef.current();
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [open]);
+
+  const requestClose = useCallback(() => {
+    if (historyToken.current && window.history.state?.surfwindOverlay === historyToken.current) {
+      window.history.back();
+      return;
+    }
+    onCloseRef.current();
+  }, []);
 
   // Lock both native scrolling and Lenis while the portalled sheet is open.
   // Locking only `body` leaves Lenis' `<html>` scroller active and makes the
@@ -77,7 +104,7 @@ export default function OverlayPanel({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        requestClose();
         return;
       }
       if (e.key === "Tab") {
@@ -100,7 +127,7 @@ export default function OverlayPanel({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, requestClose]);
 
   return createPortal(
     <AnimatePresence>
@@ -114,7 +141,7 @@ export default function OverlayPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduce ? 0 : 0.2 }}
-            onClick={onClose}
+            onClick={requestClose}
           />
           <motion.div
             key="panel"
@@ -128,15 +155,24 @@ export default function OverlayPanel({
             animate={{ y: 0 }}
             exit={{ y: reduce ? 0 : "100%" }}
             transition={{ duration: reduce ? 0 : 0.32, ease: "easeOut" }}
+            drag={mobileDragToClose ? "y" : false}
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.72 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120 || info.velocity.y > 850) requestClose();
+            }}
           >
             <div className="sticky top-0 z-10 flex justify-center bg-page/95 px-5 py-3 backdrop-blur sm:px-8">
               <button
                 type="button"
-                onClick={onClose}
-                className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
+                onClick={requestClose}
+                onPointerDown={(event) => mobileDragToClose && dragControls.start(event)}
+                aria-label={mobileDragToClose ? "Galerie schließen oder zum Herunterziehen halten" : undefined}
+                className={`min-h-11 min-w-11 items-center justify-center text-label font-medium text-muted transition-colors hover:text-ink ${mobileDragToClose ? "flex touch-none sm:inline-flex" : "inline-flex gap-1.5"}`}
               >
-                <CloseIcon width={15} height={15} />
-                Schließen
+                {mobileDragToClose ? <><span aria-hidden className="h-1 w-10 rounded-full bg-ink sm:hidden" /><span className="hidden items-center gap-1.5 sm:inline-flex"><CloseIcon width={15} height={15} />Schließen</span></> : <><CloseIcon width={15} height={15} />Schließen</>}
               </button>
             </div>
             <div className="px-5 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-6">{children}</div>
