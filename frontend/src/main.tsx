@@ -36,6 +36,20 @@ function RouteFallback() {
   return <div role="status" className="grid min-h-[40vh] place-items-center text-[14px] text-muted">Lädt…</div>;
 }
 
+// A deploy replaces every hashed chunk file; a tab left open across that
+// deploy still references the old filenames. The next lazy import (a route,
+// or LocatorMap loading as it scrolls into view) 404s, Vite's import()
+// wrapper dispatches this event, and — left unhandled — the rejected import
+// surfaces as an uncaught render error that trips the top-level ErrorBoundary
+// over what a reload fixes in place. The sessionStorage guard stops a reload
+// loop if the asset is actually missing for good.
+window.addEventListener("vite:preloadError", () => {
+  const key = "swd-preload-reload";
+  if (sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key, "1");
+  window.location.reload();
+});
+
 // The admin back office is code-split behind a build flag: the public build
 // (surfwinddata.com) never imports ./adminRoutes, so none of the admin UI ships.
 // The admin build (kjellmittelsdorf.de, VITE_INCLUDE_ADMIN=true) pulls it in and
