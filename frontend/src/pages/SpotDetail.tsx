@@ -16,7 +16,6 @@ import Climatology from "../components/data/Climatology";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
-import CommentsOverlay from "../components/CommentsOverlay";
 import FavoriteButton from "../components/FavoriteButton";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
@@ -72,8 +71,6 @@ export default function SpotDetail() {
   const galleryFrameRef = useRef<HTMLDivElement>(null);
   const [galleryHeight, setGalleryHeight] = useState<number>();
   const [galleryRightInset, setGalleryRightInset] = useState(0);
-  const [commentsOpen, setCommentsOpen] = useState(false);
-  const commentsTriggerRef = useRef<HTMLButtonElement>(null);
   const mapSlotRef = useRef<HTMLDivElement>(null);
   const [mapReady, setMapReady] = useState(false);
 
@@ -305,12 +302,10 @@ export default function SpotDetail() {
                     <SpotCommentBox
                       spotId={id}
                       posts={sortedPosts}
-                      onOpenMore={() => setCommentsOpen(true)}
                       onPosted={(tip) => {
                         if (tip) addTip(tip);
                         reloadFeed();
                       }}
-                      overlayTriggerRef={commentsTriggerRef}
                       loading={commentsLoading}
                       error={commentsError}
                     />
@@ -331,14 +326,6 @@ export default function SpotDetail() {
               triggerRef={galleryTriggerRef}
               photos={photos}
               spotId={id}
-            />
-            <CommentsOverlay
-              open={commentsOpen}
-              onClose={() => setCommentsOpen(false)}
-              triggerRef={commentsTriggerRef}
-              posts={sortedPosts}
-              spotId={id}
-              onReload={reloadFeed}
             />
             </motion.div>
           )}

@@ -1,26 +1,53 @@
-import type { RefObject } from "react";
-import { avatarColor, commentThreads, initials, relativeTime, type FeedPost } from "../lib/communityFeed";
+import { useState } from "react";
+import { avatarColor, commentThreads, initials, relativeTime, type CommentThread, type FeedPost } from "../lib/communityFeed";
 import InlineTipComposer from "./InlineTipComposer";
 import UpvoteButton from "./UpvoteButton";
 import type { TipItem } from "../lib/api";
 
-export default function SpotCommentBox({ spotId, posts, onOpenMore, onPosted, overlayTriggerRef, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onOpenMore: () => void; onPosted?: (tip?: TipItem) => void; overlayTriggerRef?: RefObject<HTMLButtonElement>; loading?: boolean; error?: string | null }) {
+const INITIAL_VISIBLE = 6;
+const PAGE_SIZE = 6;
+
+/**
+ * Kommentare als redaktionelle Zeilenliste — keine separate Overlay-Ansicht
+ * mehr: das war eine zweite Implementierung derselben Daten (Card-Grid statt
+ * Zeilen) für exakt dieselbe Liste, die hier schon vollständig sichtbar ist.
+ * Antworten passiert inline pro Thread; ab `INITIAL_VISIBLE` Threads blendet
+ * ein "weitere laden"-Link den Rest lokal ein (Daten sind bereits geladen).
+ */
+export default function SpotCommentBox({ spotId, posts, onPosted, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onPosted?: (tip?: TipItem) => void; loading?: boolean; error?: string | null }) {
   const threads = commentThreads(posts);
+  const [visible, setVisible] = useState(INITIAL_VISIBLE);
+  const shown = threads.slice(0, visible);
+
   return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full">
-    <h2 id="spot-comments-title" className="sr-only">Kommentare</h2>
-    <div className="min-h-0 flex-1 lg:overflow-y-auto lg:pr-2">
-      {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <div className="py-8"><p className="text-body font-semibold text-ink">Teile deine Erfahrung mit diesem Spot</p><p className="mt-2 text-label leading-relaxed text-muted">Hilfreich sind Bedingungen, Einstieg, Gefahren oder Tipps zu ähnlichen Spots.</p></div> : <div className="space-y-7">
-        {threads.map((thread, index) => <article key={thread.comment.id} className="min-w-0">
-          <CommentRow post={thread.comment} onOpen={onOpenMore} triggerRef={index === 0 ? overlayTriggerRef : undefined} />
-          {thread.replies.length > 0 && <div className="ml-8 mt-4 space-y-4 border-l border-line/60 pl-3 lg:ml-11 lg:pl-4">{thread.replies.map(reply => <CommentRow key={reply.id} post={reply} onOpen={onOpenMore} compact />)}</div>}
-        </article>)}
-      </div>}
+    <h2 id="spot-comments-title" className="text-ui font-semibold text-ink">Kommentare</h2>
+    <div className="mx-auto mt-6 w-full max-w-[420px] shrink-0"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
+    <div className="min-h-0 flex-1 lg:mt-2 lg:overflow-y-auto lg:pr-2">
+      <div className="mt-7 lg:mt-2">
+        {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <div className="py-8"><p className="text-body font-semibold text-ink">Teile deine Erfahrung mit diesem Spot</p><p className="mt-2 text-label leading-relaxed text-muted">Hilfreich sind Bedingungen, Einstieg, Gefahren oder Tipps zu ähnlichen Spots.</p></div> : <div className="space-y-7">
+          {shown.map(thread => <ThreadRow key={thread.comment.id} thread={thread} spotId={spotId} onPosted={onPosted} />)}
+        </div>}
+      </div>
+      {visible < threads.length && <button type="button" onClick={() => setVisible(v => v + PAGE_SIZE)} className="mt-6 min-h-11 self-start text-label font-medium text-teal transition-colors hover:text-teal-hover">Weitere Kommentare laden ({threads.length - visible})</button>}
     </div>
-    <div className="mx-auto mt-5 w-full max-w-[360px] shrink-0"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
   </section>;
 }
 
-function CommentRow({ post, onOpen, triggerRef, compact = false }: { post: FeedPost; onOpen: () => void; triggerRef?: RefObject<HTMLButtonElement>; compact?: boolean }) {
+function ThreadRow({ thread, spotId, onPosted }: { thread: CommentThread; spotId?: string; onPosted?: (tip?: TipItem) => void }) {
+  const [replying, setReplying] = useState(false);
+  const { comment, replies } = thread;
+  const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
+
+  return <article className="min-w-0">
+    <CommentRow post={comment} />
+    {replies.length > 0 && <div className="ml-8 mt-4 space-y-4 border-l border-line/60 pl-3 lg:ml-11 lg:pl-4">{replies.map(reply => <CommentRow key={reply.id} post={reply} compact />)}</div>}
+    <div className="ml-8 mt-2 lg:ml-11">
+      {replying ? <div className="mt-2 max-w-[420px]"><InlineTipComposer spotId={spotId} parentId={parentTipId} replyToName={comment.authorName} onPosted={(tip) => { onPosted?.(tip); setReplying(false); }} onCancel={() => setReplying(false)} /></div> : <button type="button" onClick={() => setReplying(true)} className="min-h-11 text-caption font-medium text-muted transition-colors hover:text-ink">Antworten</button>}
+    </div>
+  </article>;
+}
+
+function CommentRow({ post, compact = false }: { post: FeedPost; compact?: boolean }) {
   const anonymous = !post.authorName || post.authorName === "Anonym";
   const rawId = post.id.replace(/^(tip|rating):/, "");
   return <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3">
@@ -30,12 +57,10 @@ function CommentRow({ post, onOpen, triggerRef, compact = false }: { post: FeedP
     </div>
     <div aria-hidden />
     <div className="min-w-0 pt-2">
-      <button ref={triggerRef} type="button" onClick={onOpen} className="comment-entry flex min-h-11 w-full flex-col justify-center border-l border-line bg-transparent pl-3 text-left [-webkit-tap-highlight-color:transparent] focus-visible:border-teal focus-visible:outline-none">
-        {post.title && <span className="mb-1 block text-label font-semibold text-ink">{post.title}</span>}
-        <p className={`${compact ? "text-label" : "text-ui"} whitespace-pre-line leading-relaxed text-ink-soft`}>{post.text}</p>
-      </button>
-      <div className="mt-1 flex min-h-10 items-center justify-between gap-3 text-caption text-muted">
-        <span className="flex items-center gap-3"><button type="button" onClick={onOpen} className="min-h-11 font-medium hover:text-ink">Antworten</button><time dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time></span>
+      {post.title && <span className="mb-1 block text-label font-semibold text-ink">{post.title}</span>}
+      <p className={`${compact ? "text-label" : "text-ui"} whitespace-pre-line leading-relaxed text-ink-soft`}>{post.text}</p>
+      <div className="mt-1 flex min-h-10 items-center gap-3 text-caption text-muted">
+        <time dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time>
         {post.kind !== "photo" && <UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} />}
       </div>
     </div>
