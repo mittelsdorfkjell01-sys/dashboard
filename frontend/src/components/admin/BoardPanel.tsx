@@ -114,7 +114,11 @@ export default function BoardPanel() {
             {deleting ? "Löschen …" : `${selected.size} ausgewählte löschen`}
           </Button>
         )}
-        <Button type="button" onClick={() => setNewOpen(true)} className="ml-auto">
+        <Button
+          type="button"
+          onClick={() => setNewOpen(true)}
+          className="ml-auto !bg-admin-primary !text-admin-primary-fg hover:!bg-admin-primary-hover"
+        >
           Neue Aufgabe
         </Button>
       </div>

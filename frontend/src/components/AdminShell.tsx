@@ -106,7 +106,7 @@ export default function AdminShell() {
   };
 
   return (
-    <div className="min-h-screen bg-admin-bg text-admin-fg">
+    <div className="min-h-screen overflow-x-hidden bg-admin-bg text-admin-fg">
       <div className="flex">
         {/* Sidebar (desktop) */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-5 lg:flex">

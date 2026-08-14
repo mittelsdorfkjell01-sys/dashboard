@@ -44,7 +44,7 @@ async function mockApi(page: Page) {
 test("public tide panel is readable and accessible", async ({ page }) => {
   await mockApi(page);
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("Gezeiten", { exact: true })).toBeVisible();
+  await expect(page.getByText("Gezeiten · 24 h", { exact: true })).toBeVisible();
   await expect(page.getByText("Steigend", { exact: true })).toBeVisible();
   await expect(page.getByText("ca. 14:20", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("ca. 20:10–20:50", { exact: true }).first()).toBeVisible();
