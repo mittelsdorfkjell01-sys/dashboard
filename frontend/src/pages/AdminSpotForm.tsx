@@ -873,7 +873,7 @@ export default function AdminSpotForm() {
 
           <CollapsibleSection
             id="f-hero"
-            title="Header-Bild"
+            title="Headerbild ausrichten"
             aside={
               isEdit && id ? (
                 <button
@@ -892,9 +892,9 @@ export default function AdminSpotForm() {
                     Beides sind Landscape-Crops derselben Datei; das vertikale
                     Stapeln lohnt nur auf schmalen Viewports. */}
                 <div>
-                  <p className="text-label font-medium text-admin-fg">Ausschnitte</p>
+                  <p className="text-label font-medium text-admin-fg">Bildposition und Drehung</p>
                   <p className="mt-0.5 text-caption text-muted">
-                    Desktop: 21:9. Mobile: 16:9 (optional — leer heißt Desktop-Ausschnitt gilt auch mobil).
+                    Oben den Horizont gerade drehen, darunter das Bild für Desktop und Mobile verschieben.
                   </p>
                   <div className="mt-3 grid gap-6 md:grid-cols-2">
                     <div>

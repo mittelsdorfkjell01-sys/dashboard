@@ -98,6 +98,54 @@ export default function ImageFocalEditor({
 
   return (
     <div>
+      {showRotationControl && onRotationSave && (
+        <div id="hero-rotation" className="mb-4 rounded-lg bg-admin-bg p-4">
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="hero-rotation-range" className="text-ui font-semibold text-admin-fg">
+              Bild gerade drehen
+            </label>
+            <output htmlFor="hero-rotation-range" className="min-w-12 text-right text-label tabular-nums text-admin-fg2">
+              {angle > 0 ? "+" : ""}{angle.toFixed(1)}°
+            </output>
+          </div>
+          <p id="hero-rotation-help" className="mt-1 text-caption text-muted">
+            Regler bewegen, bis der Horizont gerade ist. Gilt für Desktop und Mobile.
+          </p>
+          <input
+            id="hero-rotation-range"
+            type="range"
+            min={-5}
+            max={5}
+            step={0.1}
+            value={angle}
+            onChange={(event) => {
+              setAngle(Number(event.target.value));
+              setRotationSaved(false);
+            }}
+            className="mt-2 h-11 w-full cursor-ew-resize accent-admin-primary"
+            aria-describedby="hero-rotation-help"
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setAngle(0)}
+              disabled={angle === 0 || rotationBusy}
+              className="min-h-11 text-label font-medium text-admin-fg2 underline-offset-4 hover:underline disabled:opacity-45"
+            >
+              Auf 0° zurücksetzen
+            </button>
+            <button
+              type="button"
+              onClick={saveRotation}
+              disabled={angle === savedAngle || rotationBusy}
+              className="min-h-11 rounded-md bg-admin-primary px-4 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+            >
+              {rotationBusy ? "Speichern…" : "Drehung speichern"}
+            </button>
+            {rotationSaved && <span className="text-caption text-admin-success">Gespeichert</span>}
+          </div>
+        </div>
+      )}
       <div
         ref={frameRef}
         onPointerDown={onDown}
@@ -128,54 +176,6 @@ export default function ImageFocalEditor({
         Bild ziehen, um den sichtbaren Ausschnitt zu wählen.{" "}
         {busy ? "Speichern…" : saved ? "✓ Gespeichert" : ""}
       </p>
-      {showRotationControl && onRotationSave && (
-        <div className="mt-4 border-t border-admin-border pt-4">
-          <div className="flex items-center justify-between gap-4">
-            <label htmlFor="hero-rotation" className="text-label font-medium text-admin-fg">
-              Horizont ausrichten
-            </label>
-            <output htmlFor="hero-rotation" className="min-w-12 text-right text-label tabular-nums text-admin-fg2">
-              {angle > 0 ? "+" : ""}{angle.toFixed(1)}°
-            </output>
-          </div>
-          <input
-            id="hero-rotation"
-            type="range"
-            min={-5}
-            max={5}
-            step={0.1}
-            value={angle}
-            onChange={(event) => {
-              setAngle(Number(event.target.value));
-              setRotationSaved(false);
-            }}
-            className="mt-3 h-11 w-full cursor-ew-resize accent-admin-primary"
-            aria-describedby="hero-rotation-help"
-          />
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setAngle(0)}
-              disabled={angle === 0 || rotationBusy}
-              className="min-h-11 text-label font-medium text-admin-fg2 underline-offset-4 hover:underline disabled:opacity-45"
-            >
-              Auf 0° zurücksetzen
-            </button>
-            <button
-              type="button"
-              onClick={saveRotation}
-              disabled={angle === savedAngle || rotationBusy}
-              className="min-h-11 rounded-md bg-admin-primary px-4 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-            >
-              {rotationBusy ? "Speichern…" : "Drehung speichern"}
-            </button>
-            {rotationSaved && <span className="text-caption text-admin-success">Gespeichert</span>}
-          </div>
-          <p id="hero-rotation-help" className="mt-2 text-caption text-muted">
-            Kleine Neigungen von −5° bis +5° korrigieren. Die Einstellung gilt für Desktop und Mobile.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
