@@ -80,9 +80,13 @@ def versions(profile):
     }
 
 
-def main():
+def main(*, model_run_override: datetime | None = None):
     started = datetime.now(timezone.utc)
-    model_run = latest_safe_run(started)
+    model_run = model_run_override or latest_safe_run(started)
+    if model_run.tzinfo is None:
+        model_run = model_run.replace(tzinfo=timezone.utc)
+    else:
+        model_run = model_run.astimezone(timezone.utc)
     run_key = f"{STUDY_VERSION}:gfs-0p25:{model_run.isoformat()}"
     with SessionLocal() as db:
         before = snapshot_hashes(db)

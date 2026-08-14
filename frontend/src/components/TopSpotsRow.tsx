@@ -1,4 +1,4 @@
-import { useTopSpots } from "../lib/hooks";
+import { useTopSpots, useSpotsLive } from "../lib/hooks";
 import SpotCard from "./SpotCard";
 import { ErrorBanner } from "./AsyncStates";
 
@@ -11,14 +11,11 @@ function RowSkeleton() {
   return (
     <div className={GRID}>
       {Array.from({ length: MAX_TILES }).map((_, i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-2xl border border-line bg-surface"
-        >
-          <div className="aspect-video animate-pulse bg-line" />
-          <div className="space-y-2 p-3.5">
-            <div className="h-2 w-1/3 animate-pulse rounded bg-line" />
-            <div className="h-3.5 w-2/3 animate-pulse rounded bg-line" />
+        <div key={i}>
+          <div className="aspect-video animate-pulse rounded-2xl bg-band" />
+          <div className="space-y-2 pt-3">
+            <div className="h-2 w-1/3 animate-pulse rounded bg-band" />
+            <div className="h-3.5 w-2/3 animate-pulse rounded bg-band" />
           </div>
         </div>
       ))}
@@ -31,11 +28,13 @@ function RowSkeleton() {
  * spots (backend `/spots/top`: this week's wind forecast + today's conditions +
  * popularity, rotating daily). Fills the row's full width (no horizontal scroll,
  * so no tile is ever clipped), capped at MAX_TILES so the desktop row stays a
- * single clean line. No live conditions on the landing tiles.
+ * single clean line. A small, bounded row — cheap to also fetch live
+ * conditions for (see SpotCard's `live` prop).
  */
 export default function TopSpotsRow() {
   const { data: spots, loading, error, reload } = useTopSpots(MAX_TILES);
   const top = (spots ?? []).slice(0, MAX_TILES);
+  const { data: live } = useSpotsLive(top.map((s) => s.id));
 
   if (loading) return <RowSkeleton />;
   if (error)
@@ -54,7 +53,7 @@ export default function TopSpotsRow() {
           className="animate-fade-up"
           style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
         >
-          <SpotCard spot={spot} />
+          <SpotCard spot={spot} live={live?.get(spot.id)} />
         </div>
       ))}
     </div>

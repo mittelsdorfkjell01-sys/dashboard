@@ -14,7 +14,7 @@ import { EmptyState, ErrorBanner, SpotGridSkeleton } from "../components/AsyncSt
 import { ChevronDownIcon } from "../lib/icons";
 import type { RegionInfo } from "../lib/types";
 import { usableMediaUrl } from "../lib/api";
-import { useRegionBySlug, useSpots, useRegionSeason, useBestWeeks } from "../lib/hooks";
+import { useRegionBySlug, useSpots, useRegionSeason, useBestWeeks, useSpotsLive } from "../lib/hooks";
 import { regionSeasonToView } from "../lib/seasonView";
 import {
   filterSpots,
@@ -62,6 +62,7 @@ export default function RegionDetail() {
   );
   const { data: seasonRaw } = useRegionSeason(backendRegion?.id);
   const { data: bestWeeksRaw } = useBestWeeks(backendRegion?.id);
+  const { data: live } = useSpotsLive((spots ?? []).map((s) => s.id));
 
   const loading = regionsLoading || (backendRegion && spotsLoading);
   const error = regionsError || spotsError;
@@ -249,8 +250,8 @@ export default function RegionDetail() {
           )}
         </SectionBand>
 
-        {/* Die Spots */}
-        <SectionBand tone="page" pad="md">
+        {/* Die Spots — same body width as the spot detail page's content frame. */}
+        <SectionBand tone="page" pad="md" width="spotBody">
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line/70 pb-5">
             <h2 className="text-[28px] font-semibold leading-tight text-ink text-balance sm:text-[32px]">
               Die Spots
@@ -264,7 +265,7 @@ export default function RegionDetail() {
           ) : (
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
               {gridSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} />
+                <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />
               ))}
             </div>
           )}

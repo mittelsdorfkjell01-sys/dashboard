@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -42,20 +42,83 @@ router = APIRouter(
 @router.get("/shadow-study/status")
 def shadow_study_status(db: Session = Depends(get_db)) -> dict:
     """Sanitized internal diagnostics; no provider payloads or weights."""
-    study = db.scalar(select(WeatherShadowStudy).order_by(WeatherShadowStudy.started_at.desc()))
+    study = db.scalar(
+        select(WeatherShadowStudy).order_by(WeatherShadowStudy.started_at.desc())
+    )
     if study is None:
         return {"status": "not_started"}
-    run = db.scalar(select(WeatherShadowRun).where(WeatherShadowRun.study_id == study.id).order_by(WeatherShadowRun.issued_at.desc()))
-    points = db.scalar(select(func.count()).select_from(WeatherShadowForecast).where(WeatherShadowForecast.run_id == run.id)) if run else 0
-    variants = db.execute(select(WeatherShadowForecast.variant, func.count()).where(WeatherShadowForecast.run_id == run.id).group_by(WeatherShadowForecast.variant)).all() if run else []
+    run = db.scalar(
+        select(WeatherShadowRun)
+        .where(WeatherShadowRun.study_id == study.id)
+        .order_by(WeatherShadowRun.issued_at.desc())
+    )
+    points = (
+        db.scalar(
+            select(func.count())
+            .select_from(WeatherShadowForecast)
+            .where(WeatherShadowForecast.run_id == run.id)
+        )
+        if run
+        else 0
+    )
+    variants = (
+        db.execute(
+            select(WeatherShadowForecast.variant, func.count())
+            .where(WeatherShadowForecast.run_id == run.id)
+            .group_by(WeatherShadowForecast.variant)
+        ).all()
+        if run
+        else []
+    )
     diagnostics = run.diagnostics if run else {}
+    shadow_job = db.scalar(
+        select(ForecastProcessingJob)
+        .where(ForecastProcessingJob.kind == "weather_shadow_cycle")
+        .order_by(ForecastProcessingJob.created_at.desc())
+    )
     return {
-        "study_version": study.version, "status": study.status,
-        "last_run": run.finished_at if run else None, "forecast_points": points,
+        "study_version": study.version,
+        "status": study.status,
+        "last_run": run.finished_at if run else None,
+        "forecast_points": points,
         "variants": {key: count for key, count in variants},
-        "provider_status": {"gfs": "collected" if run else "pending", "icon_eu": diagnostics.get("icon_eu", "pending")},
+        "provider_status": {
+            "gfs": "collected" if run else "pending",
+            "icon_eu": diagnostics.get("icon_eu", "pending"),
+        },
         "observation_status": "blocked_observation_source",
-        "requests": diagnostics.get("requests", 0), "bytes": diagnostics.get("bytes", 0),
+        "requests": diagnostics.get("requests", 0),
+        "bytes": diagnostics.get("bytes", 0),
+        "scheduler_job": {
+            "id": str(shadow_job.id),
+            "status": shadow_job.status,
+            "attempt_count": shadow_job.attempt_count,
+            "retries": max(shadow_job.attempt_count - 1, 0),
+            "model_run": shadow_job.options.get("model_run"),
+            "event": shadow_job.diagnostics.get("event"),
+            "reference_spots": shadow_job.diagnostics.get("reference_spots", 5),
+            "forecast_points": shadow_job.diagnostics.get("forecast_points", 0),
+            "provider_requests": shadow_job.diagnostics.get("provider_requests", 0),
+            "provider_bytes": shadow_job.diagnostics.get("provider_bytes", 0),
+            "observation_points": shadow_job.diagnostics.get("observation_points", 0),
+            "station_blocker": "blocked_observation_source",
+            "started_at": shadow_job.started_at,
+            "finished_at": shadow_job.finished_at,
+            "duration_seconds": (
+                shadow_job.finished_at - shadow_job.started_at
+            ).total_seconds()
+            if shadow_job.started_at and shadow_job.finished_at
+            else None,
+            "next_model_run": (
+                datetime.fromisoformat(shadow_job.options["model_run"])
+                + timedelta(hours=6)
+            ).isoformat()
+            if shadow_job.options.get("model_run")
+            else None,
+            "public_effect": "none",
+        }
+        if shadow_job
+        else None,
     }
 
 

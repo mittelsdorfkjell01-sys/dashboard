@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
+import { useSpotsLive } from "../lib/hooks";
+import { countryName } from "../lib/flags";
 import SpotCard from "./SpotCard";
 import type { Spot } from "../lib/types";
 
@@ -8,8 +10,10 @@ interface SimilarSpotApi {
   name: string;
   sports?: string[];
   region?: string | null;
+  region_country?: string | null;
   image?: { url?: string | null } | null;
   wind?: number | null;
+  wave_height?: number | null;
   description?: string | null;
 }
 
@@ -17,8 +21,12 @@ function toCardSpot(item: SimilarSpotApi): Spot {
   return {
     id: item.id,
     name: item.name,
-    region: item.region ?? "",
+    region: [item.region, countryName(item.region_country ?? undefined)].filter(Boolean).join(", "),
+    regionName: item.region ?? undefined,
+    regionCountry: item.region_country ?? null,
     wind: item.wind ?? 0,
+    typicalWindKt: item.wind ?? null,
+    typicalWaveHeightM: item.wave_height ?? null,
     tags: [],
     image: resolveMediaUrl(item.image?.url) ?? "",
     sports: item.sports,
@@ -28,6 +36,7 @@ function toCardSpot(item: SimilarSpotApi): Spot {
 
 export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?: string }) {
   const [spots, setSpots] = useState<SimilarSpotApi[]>([]);
+  const { data: live } = useSpotsLive(spots.map((s) => s.id));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -55,7 +64,7 @@ export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?
       <div className="no-scrollbar mt-5 flex snap-x-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
         {spots.map((item) => (
           <div key={item.id} className="min-w-[clamp(196px,78vw,232px)] snap-start sm:min-w-0">
-            <SpotCard spot={toCardSpot(item)} />
+            <SpotCard spot={toCardSpot(item)} live={live?.get(item.id)} />
           </div>
         ))}
       </div>

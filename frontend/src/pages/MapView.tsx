@@ -5,7 +5,7 @@ import L, { type Map as LeafletMap } from "leaflet";
 import Header from "../components/Header";
 import SpotCard from "../components/SpotCard";
 import { CloseIcon, MinusIcon, PlusIcon } from "../lib/icons";
-import { useSpots } from "../lib/hooks";
+import { useSpots, useSpotsLive } from "../lib/hooks";
 
 /** Navy teardrop pin as a Leaflet divIcon. */
 const pinIcon = L.divIcon({
@@ -29,6 +29,8 @@ export default function MapView() {
     () => (spots ?? []).filter((s) => s.coords),
     [spots]
   );
+  const stripSpots = withCoords.slice(0, 5);
+  const { data: live } = useSpotsLive(stripSpots.map((s) => s.id));
   const center = useMemo<[number, number]>(() => {
     if (withCoords.length === 0) return [40.3, 9.3];
     return [
@@ -103,9 +105,9 @@ export default function MapView() {
       {/* Recommended strip — evenly distributed across the full width */}
       <div className="absolute inset-x-0 bottom-0 z-[600] pb-5 pt-10">
         <div className="mx-auto flex max-w-[1400px] gap-x-6 overflow-x-auto no-scrollbar px-4 sm:overflow-visible sm:px-8">
-          {withCoords.slice(0, 5).map((spot) => (
+          {stripSpots.map((spot) => (
             <div key={spot.id} className="w-[160px] shrink-0 sm:w-auto sm:min-w-0 sm:flex-1">
-              <SpotCard spot={spot} compact />
+              <SpotCard spot={spot} compact live={live?.get(spot.id)} />
             </div>
           ))}
         </div>

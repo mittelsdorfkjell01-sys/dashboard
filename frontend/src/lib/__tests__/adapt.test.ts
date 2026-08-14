@@ -7,6 +7,8 @@ const summary = (over: Partial<SpotSummary> = {}): SpotSummary => ({
   slug: "laboe",
   name: "Laboe",
   region_id: "r1",
+  region_name: null,
+  region_country: null,
   location: { lat: 54.4, lon: 10.2 },
   sports: ["kitesurf"],
   water_type: ["sea"],
@@ -19,6 +21,9 @@ const summary = (over: Partial<SpotSummary> = {}): SpotSummary => ({
   confidence: null,
   facing: 45,
   image: null,
+  typical_wind_kt: null,
+  typical_wave_height_m: null,
+  best_months: null,
   ...over,
 });
 

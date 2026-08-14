@@ -1,0 +1,63 @@
+name: Weather Shadow Collector
+
+on:
+  schedule:
+    - cron: "41 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weather-shadow-collector
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: production
+      DEPLOYMENT_MODE: admin
+      ENABLE_ADMIN_API: "true"
+      API_DEBUG: "false"
+      COOKIE_SECURE: "true"
+      PASSWORD_BREACH_CHECK_ENABLED: "true"
+      CORS_ORIGINS: https://kjellmittelsdorf.de
+      DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.WEATHER_SHADOW_WORKER_JWT_SECRET }}
+      WEATHER_SHADOW_ENDPOINT: ${{ vars.WEATHER_SHADOW_ENDPOINT }}
+      WEATHER_SHADOW_CRON_SECRET: ${{ secrets.WEATHER_SHADOW_CRON_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate scheduler configuration
+        shell: bash
+        run: |
+          test -n "$WEATHER_SHADOW_ENDPOINT"
+          test -n "$WEATHER_SHADOW_CRON_SECRET"
+          test -n "$DATABASE_URL"
+          test -n "$JWT_SECRET"
+
+      - name: Enqueue model generation
+        shell: bash
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --max-time 30 --retry 2 --retry-delay 10 --retry-all-errors \
+            --request POST \
+            --header "Authorization: Bearer ${WEATHER_SHADOW_CRON_SECRET}" \
+            --header "Content-Type: application/json" \
+            "$WEATHER_SHADOW_ENDPOINT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install worker dependencies
+        run: pip install -r requirements.txt
+
+      - name: Process one queued generation
+        run: python -m scripts.weather_shadow_worker

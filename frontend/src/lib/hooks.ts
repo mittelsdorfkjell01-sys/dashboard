@@ -87,14 +87,20 @@ export function useSpotLive(id?: string): AsyncStateReloadable<api.LiveCondition
   return useSwr(id ? `live:${id}` : null, () => api.getSpotLive(id!));
 }
 
-/** Batch live conditions for several spots → Map by spot_id. One request for the
- *  whole set instead of one per tile (bounded fan-out). Best-effort. */
+/** Batch live conditions for several spots → Map by spot_id. One request per
+ *  ≤20 ids (the endpoint's cap) instead of one per tile — chunked and merged
+ *  here so callers never have to think about the limit. Best-effort. */
 export function useSpotsLive(
   ids: string[]
 ): AsyncStateReloadable<Map<string, api.LiveConditionsRead>> {
   // Sort for a stable cache key regardless of input order.
   const key = ids.length ? `live-batch:${[...ids].sort().join(",")}` : null;
-  const state = useSwr(key, () => api.getSpotsLive(ids));
+  const state = useSwr(key, async () => {
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += 20) chunks.push(ids.slice(i, i + 20));
+    const results = await Promise.all(chunks.map((chunk) => api.getSpotsLive(chunk)));
+    return results.flat();
+  });
   const data = useMemo(
     () => (state.data ? new Map(state.data.map((d) => [d.spot_id, d])) : null),
     [state.data]

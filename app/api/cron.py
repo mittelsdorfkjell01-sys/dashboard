@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import secrets
+import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, select
 
@@ -13,23 +14,41 @@ from app.config import get_settings
 from app.db.session import get_db
 
 router = APIRouter(prefix="/cron", tags=["maintenance"])
+logger = logging.getLogger(__name__)
 
 
 def _require_cron(request: Request) -> None:
     expected = get_settings().cron_secret
     provided = request.headers.get("Authorization")
     if not expected:
-        raise HTTPException(status_code=503, detail="Cron maintenance is not configured.")
+        logger.error("cron_auth_configuration_missing")
+        raise HTTPException(
+            status_code=503, detail="Cron maintenance is not configured."
+        )
     if not provided or not secrets.compare_digest(provided, f"Bearer {expected}"):
+        logger.warning("cron_auth_rejected")
         raise HTTPException(status_code=401, detail="Unauthorized")
+    logger.info("cron_auth_accepted")
 
 
-@router.post("/weather-shadow", dependencies=[Depends(_require_cron)])
-def collect_weather_shadow() -> dict:
-    """Run/deduplicate one bounded internal study cycle; never publishes."""
-    from scripts.weather_phase4_initial import main
+@router.post(
+    "/weather-shadow",
+    dependencies=[Depends(_require_cron)],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def collect_weather_shadow(db: Session = Depends(get_db)) -> dict:
+    """Atomically enqueue one model generation and return without provider I/O."""
+    from app.weather.shadow_jobs import enqueue_shadow_cycle
 
-    return main()
+    job, created = enqueue_shadow_cycle(db)
+    return {
+        "status": "accepted" if created else "deduplicated",
+        "job_id": str(job.id),
+        "job_status": job.status,
+        "study_version": job.options.get("study_version"),
+        "model_run": job.options.get("model_run"),
+        "public_effect": "none",
+    }
 
 
 @router.get("/climatology", dependencies=[Depends(_require_cron)])
@@ -60,20 +79,36 @@ def maintain_climatology(
         from datetime import datetime, timezone
         from app.forecast.publisher import enqueue, run_job
         from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
+
         limit = get_settings().forecast_job_batch_size
         candidates = db.scalars(
-            select(Spot).outerjoin(
+            select(Spot)
+            .outerjoin(
                 ForecastSnapshot,
-                (ForecastSnapshot.spot_id == Spot.id) & ForecastSnapshot.active.is_(True),
-            ).where(
+                (ForecastSnapshot.spot_id == Spot.id)
+                & ForecastSnapshot.active.is_(True),
+            )
+            .where(
                 Spot.status == "published",
-                or_(ForecastSnapshot.id.is_(None), ForecastSnapshot.valid_until < datetime.now(timezone.utc)),
-            ).order_by(Spot.updated_at).limit(limit)
+                or_(
+                    ForecastSnapshot.id.is_(None),
+                    ForecastSnapshot.valid_until < datetime.now(timezone.utc),
+                ),
+            )
+            .order_by(Spot.updated_at)
+            .limit(limit)
         ).all()
         for spot in candidates:
             enqueue(db, spot.id, reason="cron")
-        jobs = db.scalars(select(ForecastProcessingJob).where(ForecastProcessingJob.status == "queued").order_by(ForecastProcessingJob.created_at).limit(get_settings().forecast_job_batch_size)).all()
-        result["forecast"] = [{"id": str(job.id), "status": run_job(db, job.id).status} for job in jobs]
+        jobs = db.scalars(
+            select(ForecastProcessingJob)
+            .where(ForecastProcessingJob.status == "queued")
+            .order_by(ForecastProcessingJob.created_at)
+            .limit(get_settings().forecast_job_batch_size)
+        ).all()
+        result["forecast"] = [
+            {"id": str(job.id), "status": run_job(db, job.id).status} for job in jobs
+        ]
     except Exception as exc:
         db.rollback()
         result["forecast"] = {"error": f"{type(exc).__name__}: {exc}"}

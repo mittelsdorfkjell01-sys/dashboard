@@ -5,7 +5,7 @@ import SearchBar from "../components/SearchBar";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
-import { useSpots } from "../lib/hooks";
+import { useSpots, useSpotsLive } from "../lib/hooks";
 import { MapIcon } from "../lib/icons";
 
 /**
@@ -22,6 +22,7 @@ export default function Landing() {
   const from = location.pathname + location.search;
   const { data: allSpots } = useSpots();
   const spots = allSpots ?? [];
+  const { data: live } = useSpotsLive(spots.map((s) => s.id));
 
   return (
     <div className="relative bg-page">
@@ -62,7 +63,7 @@ export default function Landing() {
           rises over the hero for a seamless transition. */}
       <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
         {/* aktuelle Top Spots — title left, map button right, now on white. */}
-        <div className="mx-auto w-full max-w-[1570px] pt-10">
+        <div className="mx-auto w-full max-w-[1727px] pt-10">
           <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
             <h2 className="text-[22px] font-semibold text-ink">aktuelle Top Spots</h2>
             <Link
@@ -78,7 +79,7 @@ export default function Landing() {
           <TopSpotsRow />
         </div>
 
-        <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">
+        <div className="mx-auto max-w-[1727px] px-4 pb-16 pt-12 sm:px-8">
           <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
           <p className="mt-1 text-[15px] text-muted">
             Stöbere durch die ganze Sammlung — Region, Wind- und Wellenspots.
@@ -87,7 +88,7 @@ export default function Landing() {
           {spots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {spots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} />
+                <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />
               ))}
             </div>
           )}
