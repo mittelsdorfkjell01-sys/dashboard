@@ -24,7 +24,7 @@ jobs:
       API_DEBUG: "false"
       COOKIE_SECURE: "true"
       PASSWORD_BREACH_CHECK_ENABLED: "true"
-      CORS_ORIGINS: https://kjellmittelsdorf.de
+      CORS_ORIGINS: https://dashboardsurfwind.vercel.app
       DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
       JWT_SECRET: ${{ secrets.WEATHER_SHADOW_WORKER_JWT_SECRET }}
       WEATHER_SHADOW_ENDPOINT: ${{ vars.WEATHER_SHADOW_ENDPOINT }}

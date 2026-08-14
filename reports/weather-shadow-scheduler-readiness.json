@@ -6,7 +6,7 @@
     "workflow": ".github/workflows/weather-shadow.yml",
     "schedule_utc": "41 */6 * * *",
     "method": "POST",
-    "endpoint": "https://kjellmittelsdorf.de/api/cron/weather-shadow",
+    "endpoint": "https://dashboardsurfwind.vercel.app/api/cron/weather-shadow",
     "idempotency": "study_version_and_model_run",
     "overlap_prevention": true,
     "max_attempts_per_job": 3,

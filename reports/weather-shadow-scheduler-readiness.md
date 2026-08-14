@@ -7,7 +7,8 @@ Endstatus: `awaiting_deployment_confirmation`
 - Gepushter Branch: `main`
 - Gepushter Commit: `72fc729a0dc97f8ebc9874d2c4d70796660b7e46`
 - Hosting: zwei Vercel-Projekte aus demselben Repository; der Shadow-Router ist nur
-  im Admin-Deployment `kjellmittelsdorf.de` mit `ENABLE_ADMIN_API=true` aktiv.
+  im Admin-Projekt `dashboard` mit dem Alias `dashboardsurfwind.vercel.app` und
+  `ENABLE_ADMIN_API=true` aktiv.
 - Letzter Production-Deploy dieses Commits: fehlgeschlagen. Vercel meldete einen
   Frontend-TypeScript-Typfehler in `frontend/src/lib/__tests__/adapt.test.ts`.
 - Schedulerklassifikation: `repo_managed_scheduler` über den bereits betrieblich
@@ -19,7 +20,7 @@ Endstatus: `awaiting_deployment_confirmation`
 
 ## Endpoint-Audit
 
-- Effektiver Pfad: `POST https://kjellmittelsdorf.de/api/cron/weather-shadow`
+- Effektiver Pfad: `POST https://dashboardsurfwind.vercel.app/api/cron/weather-shadow`
 - Authentifizierung: Header `Authorization: Bearer <secret>`; Backendvariable
   `CRON_SECRET`; zeitkonstanter Vergleich.
 - Kein Request-Body erforderlich; `Content-Type: application/json` wird vom

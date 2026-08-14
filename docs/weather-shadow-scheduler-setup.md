@@ -8,7 +8,7 @@ auf, während der sicherheitskritische Weather-Shadow-Endpunkt ausschließlich `
 akzeptiert. Außerdem bleibt die lang laufende Provider-Abfrage im GitHub-Worker und
 nicht in der Vercel-Funktion.
 
-- Ziel: `https://kjellmittelsdorf.de/api/cron/weather-shadow`
+- Ziel: `https://dashboardsurfwind.vercel.app/api/cron/weather-shadow`
 - Methode: `POST`
 - Header: `Authorization: Bearer <WEATHER_SHADOW_CRON_SECRET>`
 - Header: `Content-Type: application/json`
@@ -24,14 +24,14 @@ Modelllauf. Wiederholte Scheduler-Aufrufe sind dadurch idempotent.
 
 ## Einmalige Einrichtung
 
-1. Im Vercel-Projekt für `kjellmittelsdorf.de` unter **Settings → Environment
+1. Im Vercel-Projekt `dashboard` unter **Settings → Environment
    Variables** `CRON_SECRET` für Production setzen.
 2. In GitHub unter **Settings → Secrets and variables → Actions → Secrets**
    `WEATHER_SHADOW_CRON_SECRET` mit demselben Wert setzen.
 3. Dort zusätzlich `DIRECT_DATABASE_URL` und
    `WEATHER_SHADOW_WORKER_JWT_SECRET` als Repository-Secrets setzen.
 4. Unter **Variables** `WEATHER_SHADOW_ENDPOINT` exakt auf
-   `https://kjellmittelsdorf.de/api/cron/weather-shadow` setzen.
+   `https://dashboardsurfwind.vercel.app/api/cron/weather-shadow` setzen.
 5. Erst nach erfolgreichem Production-Deploy unter **Actions → Weather Shadow
    Collector → Run workflow** einen manuellen Probelauf auf `main` starten.
 
