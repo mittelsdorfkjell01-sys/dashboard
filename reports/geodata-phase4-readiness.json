@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-08-14T14:05:53.190336+00:00",
-  "status": "awaiting_deployment_confirmation",
+  "status": "scheduler_verified_collecting",
   "study_version": "swd-phase4-shadow-v1",
   "algorithms": {
     "consensus": "swd-consensus-v1",
@@ -90,7 +90,7 @@
     "workflow": ".github/workflows/weather-shadow.yml",
     "schedule_utc": "41 */6 * * *",
     "implementation": "ready",
-    "activation": "awaiting_deployment_confirmation",
+    "activation": "verified_collecting",
     "public_effect": false
   },
   "budgets": {

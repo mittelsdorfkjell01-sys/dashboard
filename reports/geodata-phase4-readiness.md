@@ -1,6 +1,6 @@
 # Phase-4 shadow readiness
 
-Status: `awaiting_deployment_confirmation`. Five class-A profiles are frozen into `swd-phase4-shadow-v1`. GFS collection works; ICON-EU is budget-blocked and observation bindings are unavailable. GitHub Actions is configured to enqueue `/cron/weather-shadow` every six hours and run the asynchronous worker. Public effect: none.
+Status: `scheduler_verified_collecting`. Five class-A profiles are frozen into `swd-phase4-shadow-v1`. GFS collection works; ICON-EU is budget-blocked and observation bindings are unavailable. GitHub Actions enqueues `/cron/weather-shadow` every six hours and runs the asynchronous worker; der Production-Smoke-Test wurde erfolgreich dedupliziert. Public effect: none.
 
 ## Observation coverage
 
@@ -17,6 +17,6 @@ No station is activated as ground truth. Bias correction therefore remains disab
 ## Scheduler readiness
 
 Endpoint, authentication, atomic deduplication, bounded retries and worker isolation
-are locally verified. Production activation is blocked until a successful Vercel
-deploy exists and the authenticated live smoke test passes. See
+are locally and in production verified. The Vercel deploy is ready and the
+authenticated accepted/deduplicated smoke sequence passed. See
 `docs/weather-shadow-scheduler-setup.md`.

@@ -1,16 +1,16 @@
 # Weather-Shadow-Scheduler – Readiness
 
-Endstatus: `awaiting_deployment_confirmation`
+Endstatus: `scheduler_verified_collecting`
 
 ## Deployment und Scheduler
 
 - Gepushter Branch: `main`
-- Gepushter Commit: `72fc729a0dc97f8ebc9874d2c4d70796660b7e46`
+- Verifizierter Production-Commit: `a44246908854e931221025347205f564df4b18e5`
 - Hosting: zwei Vercel-Projekte aus demselben Repository; der Shadow-Router ist nur
   im Admin-Projekt `dashboard` mit dem Alias `dashboardsurfwind.vercel.app` und
   `ENABLE_ADMIN_API=true` aktiv.
-- Letzter Production-Deploy dieses Commits: fehlgeschlagen. Vercel meldete einen
-  Frontend-TypeScript-Typfehler in `frontend/src/lib/__tests__/adapt.test.ts`.
+- Production-Deploy: `Ready`; der Alias `dashboardsurfwind.vercel.app` zeigt auf
+  diesen Deploy.
 - Schedulerklassifikation: `repo_managed_scheduler` über den bereits betrieblich
   genutzten GitHub-Actions-Fallback. Vercel Cron scheidet aus, weil er nur `GET`
   aufruft und der Endpunkt bewusst nur `POST` akzeptiert.
@@ -61,9 +61,17 @@ oder Tokenwert protokolliert.
 - Public-Baseline: Tests bestätigen unveränderte aktive Snapshots;
   `public_effect` bleibt `none`.
 
-Live-Smoke-Test und Scheduleraktivierung wurden nicht ausgeführt, weil kein
-erfolgreicher Deploy der neuen Konfiguration bestätigt ist. Es erfolgte kein
-Commit, Push, Deployment oder PR.
+Der Live-Smoke-Test wurde am 14. August 2026 erfolgreich ausgeführt. Der erste
+Aufruf wurde als `accepted` eingereiht und erfolgreich verarbeitet; 510 bereits
+gespeicherte Forecastpunkte wurden idempotent erkannt. Der zweite identische
+Aufruf wurde für denselben Job als `deduplicated` beantwortet, der Worker blieb
+`idle`. Beide Läufe meldeten `public_effect: none`. Der UTC-Schedule ist durch den
+aktiven GitHub-Actions-Workflow eingeschaltet.
+
+Der Frontend-CI-Job einschließlich E2E ist grün. Der vollständige Backend-CI-Job
+bleibt wegen fünf fachfremder Altregressionen rot (Moderation, Confidence,
+Medien-Mindestgröße und fehlendes `focal_mobile` in Migration/Seed); die isolierten
+Weather-Shadow-/Jobtests sind grün.
 
 ## Stationsstatus
 

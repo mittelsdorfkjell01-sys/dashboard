@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-08-14T00:00:00+02:00",
-  "status": "awaiting_deployment_confirmation",
+  "status": "scheduler_verified_collecting",
   "scheduler": {
     "provider": "github_actions",
     "workflow": ".github/workflows/weather-shadow.yml",
@@ -20,13 +20,16 @@
     "ruff": "passed",
     "python_compile": "passed",
     "git_diff_check": "passed",
-    "live_smoke_test": "not_run"
+    "live_smoke_test": "accepted_then_deduplicated",
+    "manual_runs": [31816609466, 31816677805],
+    "forecast_points": 510,
+    "public_effect": false
   },
   "deployment": {
-    "commit": "72fc729a0dc97f8ebc9874d2c4d70796660b7e46",
-    "production_status": "failed",
-    "blocker": "frontend_typescript_build_error",
-    "activation_allowed": false
+    "commit": "a44246908854e931221025347205f564df4b18e5",
+    "production_status": "ready",
+    "blocker": null,
+    "activation_allowed": true
   },
   "station_coverage": [
     {"spot": "Baleal", "candidate": "IPMA Cabo Carvoeiro 531", "distance_km_approx": 6.0, "status": "review_required"},
