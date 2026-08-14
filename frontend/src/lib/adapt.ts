@@ -3,7 +3,7 @@
 // only its data source changed (mock files → API).
 
 import type { Spot } from "./types";
-import { resolveMediaUrl, type Region, type SpotRead, type SpotSummary } from "./api";
+import { usableMediaUrl, type Region, type SpotRead, type SpotSummary } from "./api";
 import { fromImageRecord } from "./imageCredit";
 import { countryName } from "./flags";
 
@@ -50,9 +50,13 @@ export function adaptSpot(
     description,
     tags: [],
     // Empty string = "no image yet" → the UI renders a branded fallback (never
-    // an external placeholder). A real upload fills this in later.
-    image: resolveMediaUrl(s.image?.url) ?? "",
-    hero: resolveMediaUrl(s.image?.url),
+    // an external placeholder). A real upload fills this in later. Seed rows
+    // carry an unreachable `*.local` sentinel host on purpose (see
+    // usableMediaUrl) — resolveMediaUrl alone would pass that straight
+    // through as a real src and render a broken <img> instead of the
+    // fallback.
+    image: usableMediaUrl(s.image?.url) ?? "",
+    hero: usableMediaUrl(s.image?.url),
     heroFocal: s.image?.focal ?? null,
     heroFocalMobile: s.image?.focal_mobile ?? null,
     // The whole image object travels, so attribution and delivery are derived
