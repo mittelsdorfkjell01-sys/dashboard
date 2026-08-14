@@ -21,7 +21,6 @@ export default function SpotCommentBox({ spotId, posts, onPosted, loading = fals
 
   return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full">
     <h2 id="spot-comments-title" className="text-ui font-semibold text-ink">Kommentare</h2>
-    <div className="mx-auto mt-6 w-full max-w-[420px] shrink-0"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
     <div className="min-h-0 flex-1 lg:mt-2 lg:overflow-y-auto lg:pr-2">
       <div className="mt-7 lg:mt-2">
         {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-teal underline">Erneut versuchen</button></div> : threads.length === 0 ? <div className="py-8"><p className="text-body font-semibold text-ink">Teile deine Erfahrung mit diesem Spot</p><p className="mt-2 text-label leading-relaxed text-muted">Hilfreich sind Bedingungen, Einstieg, Gefahren oder Tipps zu ähnlichen Spots.</p></div> : <div className="space-y-7">
@@ -30,6 +29,7 @@ export default function SpotCommentBox({ spotId, posts, onPosted, loading = fals
       </div>
       {visible < threads.length && <button type="button" onClick={() => setVisible(v => v + PAGE_SIZE)} className="mt-6 min-h-11 self-start text-label font-medium text-teal transition-colors hover:text-teal-hover">Weitere Kommentare laden ({threads.length - visible})</button>}
     </div>
+    <div className="mx-auto mt-6 w-full max-w-[420px] shrink-0"><InlineTipComposer spotId={spotId} onPosted={onPosted} autoFocus={false} compact draftKey={`spot-comment:${spotId ?? "unknown"}`} /></div>
   </section>;
 }
 
