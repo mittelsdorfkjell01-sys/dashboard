@@ -1,0 +1,219 @@
+{
+  "generated_at": "2026-08-13T18:11:35Z",
+  "status": "downloaded",
+  "product_count": 18,
+  "coverage": {
+    "Baleal": [
+      {
+        "tile_center": [
+          38.5,
+          -8.5
+        ],
+        "product_id": "8a70045f-5773-4536-a8a6-63c0b635b2a5"
+      },
+      {
+        "tile_center": [
+          39.5,
+          -9.5
+        ],
+        "product_id": "c02a0487-322f-4172-8ae7-ca7f7d65f065"
+      },
+      {
+        "tile_center": [
+          40.5,
+          -8.5
+        ],
+        "product_id": "683c8645-fa15-4961-9784-31da0dd6b029"
+      }
+    ],
+    "Brouwersdam": [
+      {
+        "tile_center": [
+          50.5,
+          2.5
+        ],
+        "product_id": "64f37cff-b012-4741-87b1-bbac29be451a"
+      },
+      {
+        "tile_center": [
+          50.5,
+          5.5
+        ],
+        "product_id": "c2e15d99-f774-463b-98aa-cae403fdcf54"
+      },
+      {
+        "tile_center": [
+          51.5,
+          3.5
+        ],
+        "product_id": "d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa"
+      },
+      {
+        "tile_center": [
+          52.5,
+          5.5
+        ],
+        "product_id": "be21ba52-ac01-4ed2-8927-aa97c23ac040"
+      }
+    ],
+    "Mundaka": [
+      {
+        "tile_center": [
+          42.5,
+          -3.5
+        ],
+        "product_id": "8bbe23dd-1f05-4bd7-b16d-3934bccad60b"
+      },
+      {
+        "tile_center": [
+          42.5,
+          -1.5
+        ],
+        "product_id": "0bceba03-2dd6-48f6-b837-a502cf473b17"
+      },
+      {
+        "tile_center": [
+          43.5,
+          -2.5
+        ],
+        "product_id": "bbe5e32e-9e70-482a-94d3-6189b4951d92"
+      },
+      {
+        "tile_center": [
+          44.5,
+          -1.5
+        ],
+        "product_id": "b8349b69-81d6-47e2-a0a7-96081b9a0b95"
+      }
+    ],
+    "Lo Stagnone": [
+      {
+        "tile_center": [
+          36.5,
+          11.5
+        ],
+        "product_id": "e4718a58-ff67-41a7-9c74-ed14390adebe"
+      },
+      {
+        "tile_center": [
+          37.5,
+          12.5
+        ],
+        "product_id": "e0322357-9958-4ea3-a1a4-22c674967b5c"
+      },
+      {
+        "tile_center": [
+          38.5,
+          13.5
+        ],
+        "product_id": "1b3d678a-37e1-4a2f-a0a8-2df8528db677"
+      }
+    ],
+    "Pozo Izquierdo": [
+      {
+        "tile_center": [
+          26.5,
+          -14.5
+        ],
+        "product_id": "97493344-4bf0-49c3-be20-2ffed853bf68"
+      },
+      {
+        "tile_center": [
+          27.5,
+          -15.5
+        ],
+        "product_id": "aaae43cd-df4b-4776-a069-886d83bb861f"
+      },
+      {
+        "tile_center": [
+          28.5,
+          -16.5
+        ],
+        "product_id": "7e5d450d-2640-4523-b248-795da5b2d38e"
+      },
+      {
+        "tile_center": [
+          28.5,
+          -14.5
+        ],
+        "product_id": "bf71af35-1530-40c2-9d13-249c938b6a38"
+      }
+    ]
+  },
+  "missing_ocean_tiles": [
+    {
+      "spot": "Baleal",
+      "tile_center": [
+        38.5,
+        -10.5
+      ],
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Baleal",
+      "tile_center": [
+        40.5,
+        -10.5
+      ],
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Brouwersdam",
+      "tile_center": [
+        52.5,
+        2.5
+      ],
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Mundaka",
+      "tile_center": [
+        44.5,
+        -3.5
+      ],
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Lo Stagnone",
+      "tile_center": [
+        36.5,
+        13.5
+      ],
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Lo Stagnone",
+      "tile_center": [
+        38.5,
+        11.5
+      ],
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Pozo Izquierdo",
+      "tile_center": [
+        26.5,
+        -16.5
+      ],
+      "classification": "ocean_absent_dged"
+    }
+  ],
+  "runs": [
+    {
+      "index": 0,
+      "asset_count": 53,
+      "planned_bytes": 1036223752,
+      "downloaded_bytes": 1036223752,
+      "duration_seconds": 63.3
+    },
+    {
+      "index": 1,
+      "asset_count": 12,
+      "planned_bytes": 228193322,
+      "downloaded_bytes": 228193322,
+      "duration_seconds": 14.3
+    }
+  ],
+  "downloaded_bytes": 1264417074,
+  "cache_root": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1"
+}

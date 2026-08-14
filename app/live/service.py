@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import math
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
@@ -28,7 +29,6 @@ from app.live.consensus import (
     CONFIDENCE_LOW,
     CONFIDENCE_MEDIUM,
     confidence_from_spread,
-    spread,
 )
 from app.live.models import consensus_models, select_model
 from app.models import Spot
@@ -39,6 +39,11 @@ from app.weather.vectors import uv_to_wind, wind_to_uv
 from app.weather.profiles import resolve_weather_profile
 from app.weather.verification import lead_bucket, load_calibrations, store_forecast_samples
 from app.weather.shadow import physics_shadow
+from app.live.weather_contract import (
+    Availability, WEATHER_CONTRACT_VERSION, WMO_MAPPING_VERSION, distance_km,
+    marine_classification, provider_axis_utc, provider_time_utc, provider_timezone, valid_number,
+    weather_condition,
+)
 
 
 class InvalidSpotCoordinates(ValueError):
@@ -127,6 +132,27 @@ def _cached_marine(
     data = client.fetch_marine(lat, lon, MAX_FORECAST_DAYS)
     cache.set(key, data, get_settings().live_cache_ttl)
     return data
+
+
+def _marine_for_spot(spot, lat: float, lon: float, *, client, cache):
+    eligibility = marine_classification(spot)
+    diagnostics = {"status": eligibility.value, "requested_coordinate": {"latitude": lat, "longitude": lon}}
+    if eligibility is not Availability.AVAILABLE:
+        return {}, diagnostics
+    try:
+        marine = _cached_marine(lat, lon, client=client, cache=cache)
+    except Exception as exc:
+        diagnostics.update(status=Availability.UNAVAILABLE_PROVIDER.value, error_class=type(exc).__name__)
+        return {}, diagnostics
+    used_lat, used_lon = valid_number(marine.get("latitude")), valid_number(marine.get("longitude"))
+    if used_lat is not None and used_lon is not None:
+        grid_distance = distance_km(lat, lon, used_lat, used_lon)
+        diagnostics.update(used_coordinate={"latitude": used_lat, "longitude": used_lon}, grid_distance_km=round(grid_distance, 3))
+        if grid_distance > get_settings().weather_marine_grid_max_km:
+            diagnostics["status"] = Availability.UNAVAILABLE_OUT_OF_RANGE.value
+            return {}, diagnostics
+    diagnostics["status"] = Availability.AVAILABLE.value
+    return marine, diagnostics
 
 
 # --- multi-model field access ----------------------------------------------
@@ -286,12 +312,10 @@ def get_live_conditions_for_spot(
     lat, lon = _spot_coords(spot)
     profile = resolve_weather_profile(getattr(spot, "weather_profile", None))
     primary_model, models = _model_set(lat, lon, spot.model_pref)
-    multi = len(models) > 1
-
     fc = _cached_forecast(
         lat, lon, primary_model, ",".join(models), client=client, cache=cache
     )
-    mar = _cached_marine(lat, lon, client=client, cache=cache)
+    mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache)
     cur_f = fc.get("current") or {}
     cur_m = mar.get("current") or {}
 
@@ -318,8 +342,6 @@ def get_live_conditions_for_spot(
         "n": consensus.member_count,
     }
     local = apply_local_physics(0.0, consensus.direction_deg, profile) if consensus and consensus.direction_deg is not None else None
-    times = hourly.get("time") or []
-
     return {
         "spot_id": spot.id,
         "model": primary_model,
@@ -330,6 +352,7 @@ def get_live_conditions_for_spot(
         "trend": trend,
         "quality_tier": local.quality_tier if local else "coordinates",
         "coastal_classification": local.coastal_classification if local else None,
+        "availability": {"atmosphere": "available", "solar": "available", "marine": marine_diagnostics["status"]},
         "current": {
             "wind": _knots(consensus.speed_ms) if consensus else None,
             "gust": _knots(consensus.gust_ms) if consensus else None,
@@ -350,17 +373,19 @@ def get_live_conditions_for_spot(
 def _index_marine_hours(marine: dict) -> dict[str, dict]:
     hourly = marine.get("hourly") or {}
     times = hourly.get("time") or []
-    swh = hourly.get("swell_wave_height") or []
-    per = hourly.get("swell_wave_period") or []
-    sdir = hourly.get("swell_wave_direction") or []
+    swh = hourly.get("wave_height") or hourly.get("swell_wave_height") or []
+    per = hourly.get("wave_period") or hourly.get("swell_wave_period") or []
+    sdir = hourly.get("wave_direction") or hourly.get("swell_wave_direction") or []
     sst = hourly.get("sea_surface_temperature") or []
     by_time: dict[str, dict] = {}
-    for i, t in enumerate(times):
-        by_time[t] = {
-            "swell": swh[i] if i < len(swh) else None,
-            "period": per[i] if i < len(per) else None,
-            "swell_dir": sdir[i] if i < len(sdir) else None,
-            "sst": sst[i] if i < len(sst) else None,
+    for i, instant in enumerate(provider_axis_utc(times, provider_timezone(marine))):
+        if instant is None:
+            continue
+        by_time[instant.isoformat()] = {
+            "swell": valid_number(swh[i] if i < len(swh) else None, minimum=0),
+            "period": valid_number(per[i] if i < len(per) else None, minimum=0),
+            "swell_dir": valid_number(sdir[i] if i < len(sdir) else None, minimum=0, maximum=359.999),
+            "sst": valid_number(sst[i] if i < len(sst) else None),
         }
     return by_time
 
@@ -373,12 +398,20 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
 
     air_series = _column(hourly, "temperature_2m", src, multi) if src else []
     precip_series = _column(hourly, "precipitation", src, multi) if src else []
+    apparent_series = _column(hourly, "apparent_temperature", src, multi) if src else []
+    cloud_series = _column(hourly, "cloud_cover", src, multi) if src else []
+    pressure_series = _column(hourly, "pressure_msl", src, multi) if src else []
+    uv_series = _column(hourly, "uv_index", src, multi) if src else []
+    code_series = _column(hourly, "weather_code", src, multi) if src else []
+    day_series = _column(hourly, "is_day", src, multi) if src else []
     marine_by_time = _index_marine_hours(marine)
-    reference = _parse_provider_time((forecast.get("current") or {}).get("time"))
+    timezone_name = provider_timezone(forecast)
+    reference = provider_time_utc((forecast.get("current") or {}).get("time"), timezone_name)
 
     hours: list[dict] = []
-    for i, t in enumerate(times):
-        valid_at = _parse_provider_time(t)
+    for i, valid_at in enumerate(provider_axis_utc(times, timezone_name)):
+        if valid_at is None:
+            continue
         # Open-Meteo includes elapsed hours of the current day. They must not
         # influence a forward-looking daily summary or learned lead-time weight.
         if reference and valid_at and valid_at < reference.replace(minute=0, second=0, microsecond=0):
@@ -389,17 +422,27 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
             "median": _knots(consensus.speed_ms), "low": _knots(consensus.low_ms),
             "high": _knots(consensus.high_ms), "n": consensus.member_count,
         }
-        m = marine_by_time.get(t, {})
+        utc_time = valid_at.isoformat()
+        m = marine_by_time.get(utc_time, {})
+        code = code_series[i] if i < len(code_series) else None
+        code = int(code) if isinstance(code, (int, float)) and not isinstance(code, bool) else None
         hours.append(
             {
-                "time": t,
+                "time": utc_time,
                 "wind": _knots(consensus.speed_ms) if consensus else None,
                 "gust": _knots(consensus.gust_ms) if consensus else None,
                 "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
                 "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None else None,
                 "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
-                "air": air_series[i] if i < len(air_series) else None,
-                "precip": precip_series[i] if i < len(precip_series) else None,
+                "air": valid_number(air_series[i] if i < len(air_series) else None),
+                "apparent_temperature_c": valid_number(apparent_series[i] if i < len(apparent_series) else None),
+                "precip": valid_number(precip_series[i] if i < len(precip_series) else None, minimum=0),
+                "cloud_cover_pct": valid_number(cloud_series[i] if i < len(cloud_series) else None, minimum=0, maximum=100),
+                "pressure_msl_hpa": valid_number(pressure_series[i] if i < len(pressure_series) else None, minimum=0),
+                "uv_index": valid_number(uv_series[i] if i < len(uv_series) else None, minimum=0),
+                "weather_code": code,
+                "weather_condition": weather_condition(code),
+                "is_day": bool(day_series[i]) if i < len(day_series) and day_series[i] in (0, 1, False, True) else None,
                 "swell": m.get("swell"),
                 "period": m.get("period"),
                 "swell_dir": m.get("swell_dir"),
@@ -446,6 +489,50 @@ def _day_summary(hours: list[dict]) -> dict:
     }
 
 
+def _daily_weather(forecast: dict, models: list[str]) -> dict[str, dict]:
+    daily = forecast.get("daily") or {}
+    dates = daily.get("time") or []
+    primary, multi = (models[0] if models else None), len(models) > 1
+    def col(name):
+        return _column(daily, name, primary, multi) if primary else (daily.get(name) or [])
+    columns = {name: col(name) for name in (
+        "temperature_2m_min", "temperature_2m_max", "apparent_temperature_min",
+        "apparent_temperature_max", "precipitation_sum", "uv_index_max", "weather_code",
+        "sunrise", "sunset", "daylight_duration", "cloud_cover_mean",
+        "precipitation_probability_max",
+    )}
+    timezone_name = provider_timezone(forecast)
+    result = {}
+    for i, local_date in enumerate(dates):
+        def at(name, **bounds):
+            values = columns[name]
+            return valid_number(values[i] if i < len(values) else None, **bounds)
+        minimum, maximum = at("temperature_2m_min"), at("temperature_2m_max")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            minimum = maximum = None
+        code_value = columns["weather_code"][i] if i < len(columns["weather_code"]) else None
+        code = int(code_value) if isinstance(code_value, (int, float)) and not isinstance(code_value, bool) else None
+        sunrise_raw = columns["sunrise"][i] if i < len(columns["sunrise"]) else None
+        sunset_raw = columns["sunset"][i] if i < len(columns["sunset"]) else None
+        sunrise = provider_time_utc(sunrise_raw, timezone_name)
+        sunset = provider_time_utc(sunset_raw, timezone_name)
+        daylight = at("daylight_duration", minimum=0)
+        solar_state = "normal" if sunrise and sunset else "polar_day" if daylight is not None and daylight >= 86399 else "polar_night" if daylight == 0 else "unavailable"
+        result[str(local_date)] = {
+            "local_date": str(local_date), "temperature_min_c": minimum,
+            "temperature_max_c": maximum, "apparent_temperature_min_c": at("apparent_temperature_min"),
+            "apparent_temperature_max_c": at("apparent_temperature_max"),
+            "precipitation_sum_mm": at("precipitation_sum", minimum=0),
+            "precipitation_probability_max_pct": at("precipitation_probability_max", minimum=0, maximum=100),
+            "cloud_cover_mean_pct": at("cloud_cover_mean", minimum=0, maximum=100),
+            "uv_index_max": at("uv_index_max", minimum=0), "weather_code": code,
+            "weather_condition": weather_condition(code),
+            "sunrise_at": sunrise.isoformat() if sunrise else None,
+            "sunset_at": sunset.isoformat() if sunset else None, "solar_state": solar_state,
+        }
+    return result
+
+
 def _day_confidence(hours: list[dict], day_index: int) -> str:
     """Confidence from the day's mean wind model-disagreement.
 
@@ -486,25 +573,33 @@ def get_forecast_series(
     fc = _cached_forecast(
         lat, lon, primary_model, ",".join(models), client=client, cache=cache
     )
-    mar = _cached_marine(lat, lon, client=client, cache=cache)
+    mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache)
     resolved_profile = resolve_weather_profile(getattr(spot, "weather_profile", None))
     issued_at = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     calibrations = load_calibrations(db, spot.id)
     store_forecast_samples(db, spot.id, fc, models, issued_at)
     hours = _merge_hours(fc, mar, models, resolved_profile, calibrations)
 
+    instants = [h["time"] for h in hours]
+    if instants != sorted(instants) or len(instants) != len(set(instants)):
+        raise ValueError("forecast hourly time axis must be strictly sorted and unique")
+    timezone_name = provider_timezone(fc)
+    timezone_info = ZoneInfo(timezone_name)
+    daily_weather = _daily_weather(fc, models)
+
     # Group hours by calendar date, preserving order.
     by_date: dict[str, list[dict]] = {}
     for h in hours:
-        date = str(h["time"])[:10]
+        date = datetime.fromisoformat(h["time"]).astimezone(timezone_info).date().isoformat()
         by_date.setdefault(date, []).append(h)
 
     ordered_dates = list(by_date.keys())[:days]  # hard horizon cap
     day_records = [
         {
             "date": date,
+            "local_date": date,
             "confidence": _day_confidence(by_date[date], i),
-            "summary": _day_summary(by_date[date]),
+            "summary": {**_day_summary(by_date[date]), **daily_weather.get(date, {})},
             "hours": by_date[date] if i < 5 else [],
             "detail": "hourly" if i < 5 else "trend",
         }
@@ -516,6 +611,13 @@ def get_forecast_series(
         "model": primary_model,
         "models": models,
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "contract_version": WEATHER_CONTRACT_VERSION,
+        "timezone": timezone_name,
+        "availability": {
+            "atmosphere": Availability.AVAILABLE.value,
+            "solar": Availability.AVAILABLE.value if daily_weather else Availability.UNAVAILABLE_PROVIDER.value,
+            "marine": marine_diagnostics["status"],
+        },
         "days": day_records,
         "internal": {
             "units": "m/s",
@@ -525,5 +627,13 @@ def get_forecast_series(
             "calibrated": bool(calibrations),
             "physics_shadow": physics_shadow(spot, resolved_profile),
             "model_run_quality": "capture-time-only",
+            "weather_contract_version": WEATHER_CONTRACT_VERSION,
+            "weather_mapping_version": WMO_MAPPING_VERSION,
+            "marine": marine_diagnostics,
+            "horizons": {
+                "atmosphere_hours": len(hours),
+                "marine_hours": len(_index_marine_hours(mar)),
+                "daily_days": len(daily_weather),
+            },
         },
     }

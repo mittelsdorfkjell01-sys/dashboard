@@ -38,12 +38,14 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     assert resp.status_code == 200
     body = resp.json()
     assert body["model"]
-    assert len(body["models"]) >= 3            # consensus set exposed
+    # Public product boundary: the Surfwinddata result never exposes raw model
+    # membership. Model diagnostics remain admin-only.
+    assert body["models"] == []
     assert set(body["current"]) == {
         "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
         "wind_spread", "gust_spread", "wind_ms", "gust_ms",
     }
-    assert body["current"]["wind_spread"]["n"] == len(body["models"])
+    assert body["current"]["wind_spread"]["n"] >= 3
 
 
 def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):

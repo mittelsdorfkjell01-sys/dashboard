@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-08-14T13:05:20.552352+00:00",
+  "status": "accepted",
+  "network_requests": 0,
+  "network_fallback": false,
+  "identical": true,
+  "spots": [
+    {
+      "name": "Baleal",
+      "grid_hash": "6be05b98ae6484523561d95524476552455e128ca7ed0e5c118e842f3e7eb105",
+      "scientific_hash": "b2509afe07f5e08ebe028ee0c6effce2d5d05f65a9cb1bab3311654874dba23f",
+      "identical": true
+    },
+    {
+      "name": "Brouwersdam",
+      "grid_hash": "c4a73d9a113f3ba275a981496ed1c266b2944ea6525047f84b980954696ed4d0",
+      "scientific_hash": "2ac71a45ccd5ba98b5f7e45a9668f2612091ac2902516d031de45e75e0c8ee2e",
+      "identical": true
+    },
+    {
+      "name": "Mundaka",
+      "grid_hash": "677410a61596503de1d44c8774ac6b6b9cab030622ac863f64ece1f3611c9b0e",
+      "scientific_hash": "bf4732698d62e23f515541e561fe63c8590a3042ae1138adcf9fba24c76f7068",
+      "identical": true
+    },
+    {
+      "name": "Lo Stagnone",
+      "grid_hash": "4b5b3a55eaa713df8d0bd53eff28007ee9522cb05e826e4485903ef3a691ac88",
+      "scientific_hash": "9317b7fa2d272c6344e4bbb31314ae809528902cf105d6c7b63cd9e1d6dde2c6",
+      "identical": true
+    },
+    {
+      "name": "Pozo Izquierdo",
+      "grid_hash": "9ed7344977391253469f35d65c65f920f130eab64e7e9953b74e4c56049ce0d2",
+      "scientific_hash": "60648169f1f85ab1ec84e3f0a1c5192c810e8ea41762c619957fd0d45745fed7",
+      "identical": true
+    }
+  ]
+}

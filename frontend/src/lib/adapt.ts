@@ -28,6 +28,10 @@ export function adaptSpot(
   const typicalWind = Array.isArray(windRange)
     ? Math.round((windRange[0] + windRange[1]) / 2)
     : 0;
+  // SpotSummary (list/top endpoints) already carries the derived tile figures;
+  // SpotRead (single-spot detail) doesn't, so it falls back to the same
+  // wind_range midpoint computed above.
+  const summary = s as SpotSummary;
   const description =
     typeof editorial?.description === "string" &&
     editorial.description.trim() &&
@@ -67,6 +71,11 @@ export function adaptSpot(
     style: s.style,
     facilities: s.facilities,
     climatology: (s as SpotRead).climatology ?? null,
+    regionName: summary.region_name ?? region?.name,
+    regionCountry: summary.region_country ?? region?.country ?? null,
+    typicalWindKt: summary.typical_wind_kt ?? (typicalWind || null),
+    typicalWaveHeightM: summary.typical_wave_height_m ?? null,
+    bestMonths: summary.best_months ?? null,
     mapView:
       editorial?.map_view &&
       Array.isArray(editorial.map_view.center) &&

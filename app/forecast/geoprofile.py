@@ -24,7 +24,9 @@ def coordinate_hash(spot) -> str:
     return hashlib.sha256(f"{p.y:.7f},{p.x:.7f}".encode()).hexdigest()
 
 
-def ensure_profile(db, spot, *, force: bool = False) -> SpotGeoProfileVersion:
+def ensure_profile(
+    db, spot, *, force: bool = False, allow_remote_rasters: bool = True
+) -> SpotGeoProfileVersion:
     digest = coordinate_hash(spot)
     existing = db.scalar(
         select(SpotGeoProfileVersion).where(
@@ -57,6 +59,8 @@ def ensure_profile(db, spot, *, force: bool = False) -> SpotGeoProfileVersion:
     raster_diagnostics = {}
     worldcover_asset = None
     try:
+        if not allow_remote_rasters:
+            raise RuntimeError("remote raster access disabled for forecast generation")
         from app.forecast.geodata import WorldCoverAdapter, analysis_crs
         from app.forecast.geodata_catalog import sync_catalog
 

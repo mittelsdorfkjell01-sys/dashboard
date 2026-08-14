@@ -1,0 +1,287 @@
+{
+  "status": "downloaded",
+  "cold": true,
+  "generated_at": "2026-08-13T18:08:31Z",
+  "gate": {
+    "status": "ready",
+    "estimated_bytes": 491405150
+  },
+  "metrics": {
+    "assets": 25,
+    "downloaded_bytes": 491405150,
+    "cache_hits": 0,
+    "duration_seconds": 30.2
+  },
+  "spots": [
+    {
+      "name": "Baleal",
+      "coordinates": [
+        39.37353,
+        -9.33843
+      ],
+      "product_id": "c02a0487-322f-4172-8ae7-ca7f7d65f065",
+      "product_name": "DEM1_SAR_DGE_30_20110420T183153_20121021T183252_ADS_000000_b22i_9472dfba.DEM",
+      "modification_date": "2025-04-18T10:18:37.713430Z",
+      "pinned_hash": "84af367968b44a4f7cbc8a7007731127cc97bda94f1843cc8840a4f02eff11d7",
+      "layers": {
+        "DEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\c02a0487-322f-4172-8ae7-ca7f7d65f065\\DEM.tif",
+          "size_bytes": 51897972,
+          "sha256": "84969b9e0f8dd934a00fe262d98f936982a19baf28975911567179b69287d102",
+          "cache_hit": false,
+          "etag": "7258010b48cce4926d3c34fe83713f80-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121021T183252_ADS_000000_b22i_9472dfba/Copernicus_DSM_10_N39_00_W010_00/DEM/Copernicus_DSM_10_N39_00_W010_00_DEM.tif"
+        },
+        "WBM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\c02a0487-322f-4172-8ae7-ca7f7d65f065\\WBM.tif",
+          "size_bytes": 477662,
+          "sha256": "1a4a028cde27afbed0fb5840116a53cdafe198391230847c55e2707582638d8b",
+          "cache_hit": false,
+          "etag": "2d74bbb35057c9740f5f089370334925-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121021T183252_ADS_000000_b22i_9472dfba/Copernicus_DSM_10_N39_00_W010_00/AUXFILES/Copernicus_DSM_10_N39_00_W010_00_WBM.tif"
+        },
+        "HEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\c02a0487-322f-4172-8ae7-ca7f7d65f065\\HEM.tif",
+          "size_bytes": 51897934,
+          "sha256": "70c01c2737472c96048d5d82fe5e500046a4ee10aa39c72cdeeea36832656219",
+          "cache_hit": false,
+          "etag": "5fb973f841ddad7d91e5890963eaddc6-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121021T183252_ADS_000000_b22i_9472dfba/Copernicus_DSM_10_N39_00_W010_00/AUXFILES/Copernicus_DSM_10_N39_00_W010_00_HEM.tif"
+        },
+        "EDM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\c02a0487-322f-4172-8ae7-ca7f7d65f065\\EDM.tif",
+          "size_bytes": 498370,
+          "sha256": "777ecd2a21a396a4da226c83be2278e498eee997f5402efa886b9a2f565db3de",
+          "cache_hit": false,
+          "etag": "3a5b87d5d1eeeff44f7bd800f3187b30-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121021T183252_ADS_000000_b22i_9472dfba/Copernicus_DSM_10_N39_00_W010_00/AUXFILES/Copernicus_DSM_10_N39_00_W010_00_EDM.tif"
+        },
+        "FLM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\c02a0487-322f-4172-8ae7-ca7f7d65f065\\FLM.tif",
+          "size_bytes": 492434,
+          "sha256": "4231b3483f29a82daffa4b19e6e21903669d9b7c136575fbce25a2af3cbb2824",
+          "cache_hit": false,
+          "etag": "4a523e7727818df483f6907fef7bc0a9-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121021T183252_ADS_000000_b22i_9472dfba/Copernicus_DSM_10_N39_00_W010_00/AUXFILES/Copernicus_DSM_10_N39_00_W010_00_FLM.tif"
+        }
+      },
+      "status": "downloaded"
+    },
+    {
+      "name": "Brouwersdam",
+      "coordinates": [
+        51.76591,
+        3.85178
+      ],
+      "product_id": "d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa",
+      "product_name": "DEM1_SAR_DGE_30_20110327T173308_20121230T172708_ADS_000000_cduh_8303cb54.DEM",
+      "modification_date": "2025-04-18T10:32:08.131672Z",
+      "pinned_hash": "c7cdf61df724826fa013d2f137453ca702e664b89945699cbb012a125318c8c7",
+      "layers": {
+        "DEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa\\DEM.tif",
+          "size_bytes": 34613172,
+          "sha256": "7d69f38697389b4d8d9a5ef7a2bc253ca6fcc786d3ba3de7f1f77568617c9ab0",
+          "cache_hit": false,
+          "etag": "b286279c21cf95fbd7473869a4847342-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/03/27/DEM1_SAR_DGE_30_20110327T173308_20121230T172708_ADS_000000_cduh_8303cb54/Copernicus_DSM_10_N51_00_E003_00/DEM/Copernicus_DSM_10_N51_00_E003_00_DEM.tif"
+        },
+        "WBM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa\\WBM.tif",
+          "size_bytes": 444500,
+          "sha256": "760e138bcd6e61c9ce61198e0416c6ae891a03ccdcc2844e56a7826893476f98",
+          "cache_hit": false,
+          "etag": "4fd05c6d0973f597e0a0c780aa6e84c6-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/03/27/DEM1_SAR_DGE_30_20110327T173308_20121230T172708_ADS_000000_cduh_8303cb54/Copernicus_DSM_10_N51_00_E003_00/AUXFILES/Copernicus_DSM_10_N51_00_E003_00_WBM.tif"
+        },
+        "HEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa\\HEM.tif",
+          "size_bytes": 34613134,
+          "sha256": "05522e4140ba7c04091a7a4cb41c3b8783443b5a486d85f903ae44fa0ec19c39",
+          "cache_hit": false,
+          "etag": "edc7fbc7913539a1e7442a4df6b34f6f-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/03/27/DEM1_SAR_DGE_30_20110327T173308_20121230T172708_ADS_000000_cduh_8303cb54/Copernicus_DSM_10_N51_00_E003_00/AUXFILES/Copernicus_DSM_10_N51_00_E003_00_HEM.tif"
+        },
+        "EDM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa\\EDM.tif",
+          "size_bytes": 496544,
+          "sha256": "58045ac9e5336548d1b12bc99085513812a33cf6565426b003b0ee3f6b75d6ab",
+          "cache_hit": false,
+          "etag": "cc6bac89378242599b03fb508e4e2a36-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/03/27/DEM1_SAR_DGE_30_20110327T173308_20121230T172708_ADS_000000_cduh_8303cb54/Copernicus_DSM_10_N51_00_E003_00/AUXFILES/Copernicus_DSM_10_N51_00_E003_00_EDM.tif"
+        },
+        "FLM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\d4a3db80-4034-4fd0-9cce-ac3c4fea5dfa\\FLM.tif",
+          "size_bytes": 444188,
+          "sha256": "46b6a27dfa4b3b59b5fe8075f04495217aed35b920d2c9410c249d1c36cdec92",
+          "cache_hit": false,
+          "etag": "ca7a2c2f248feef6ade1bbc627a6c577-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/03/27/DEM1_SAR_DGE_30_20110327T173308_20121230T172708_ADS_000000_cduh_8303cb54/Copernicus_DSM_10_N51_00_E003_00/AUXFILES/Copernicus_DSM_10_N51_00_E003_00_FLM.tif"
+        }
+      },
+      "status": "downloaded"
+    },
+    {
+      "name": "Mundaka",
+      "coordinates": [
+        43.407,
+        -2.7
+      ],
+      "product_id": "bbe5e32e-9e70-482a-94d3-6189b4951d92",
+      "product_name": "DEM1_SAR_DGE_30_20111214T180728_20140905T175935_ADS_000000_aSnX_aedaeae0.DEM",
+      "modification_date": "2025-04-22T10:14:31.458689Z",
+      "pinned_hash": "e5e2195612b6bf9c4ac2a106c54b1643441a2fc5e7273333bb71d745662fc669",
+      "layers": {
+        "DEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\bbe5e32e-9e70-482a-94d3-6189b4951d92\\DEM.tif",
+          "size_bytes": 51897972,
+          "sha256": "89e2580265460b1cbc6609920decf0f93aed5ba7c2bd48ceea43c1843c98b823",
+          "cache_hit": false,
+          "etag": "43c021790c988f6f2f2d1f264c1014bd-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/12/14/DEM1_SAR_DGE_30_20111214T180728_20140905T175935_ADS_000000_aSnX_aedaeae0/Copernicus_DSM_10_N43_00_W003_00/DEM/Copernicus_DSM_10_N43_00_W003_00_DEM.tif"
+        },
+        "WBM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\bbe5e32e-9e70-482a-94d3-6189b4951d92\\WBM.tif",
+          "size_bytes": 416034,
+          "sha256": "ad43bdafac7b958f1cdfc33d515139c6a1b74a2966071897fe8870ee1cb03d7b",
+          "cache_hit": false,
+          "etag": "56eef5a7cff661102497f58f78e5006a-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/12/14/DEM1_SAR_DGE_30_20111214T180728_20140905T175935_ADS_000000_aSnX_aedaeae0/Copernicus_DSM_10_N43_00_W003_00/AUXFILES/Copernicus_DSM_10_N43_00_W003_00_WBM.tif"
+        },
+        "HEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\bbe5e32e-9e70-482a-94d3-6189b4951d92\\HEM.tif",
+          "size_bytes": 51897934,
+          "sha256": "5a47f811f4850a28c73b19dd65001461ecf09d7654d65d6861a70bc4b8d96530",
+          "cache_hit": false,
+          "etag": "1e4308d249adb88a7d295f1b5699f267-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/12/14/DEM1_SAR_DGE_30_20111214T180728_20140905T175935_ADS_000000_aSnX_aedaeae0/Copernicus_DSM_10_N43_00_W003_00/AUXFILES/Copernicus_DSM_10_N43_00_W003_00_HEM.tif"
+        },
+        "EDM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\bbe5e32e-9e70-482a-94d3-6189b4951d92\\EDM.tif",
+          "size_bytes": 485586,
+          "sha256": "f8d4d480ed0ec55e617ffec62befcb920ed22097ca5133ee8e50e4406c32cc3c",
+          "cache_hit": false,
+          "etag": "a55f7a25e6a7540eae8542503c418e77-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/12/14/DEM1_SAR_DGE_30_20111214T180728_20140905T175935_ADS_000000_aSnX_aedaeae0/Copernicus_DSM_10_N43_00_W003_00/AUXFILES/Copernicus_DSM_10_N43_00_W003_00_EDM.tif"
+        },
+        "FLM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\bbe5e32e-9e70-482a-94d3-6189b4951d92\\FLM.tif",
+          "size_bytes": 476560,
+          "sha256": "73207eb36bddc4e4d78557481dd08ed6743a8af62013b1234c2ac88cfa3d7049",
+          "cache_hit": false,
+          "etag": "46a435588cce206c0b8af17337f18739-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/12/14/DEM1_SAR_DGE_30_20111214T180728_20140905T175935_ADS_000000_aSnX_aedaeae0/Copernicus_DSM_10_N43_00_W003_00/AUXFILES/Copernicus_DSM_10_N43_00_W003_00_FLM.tif"
+        }
+      },
+      "status": "downloaded"
+    },
+    {
+      "name": "Lo Stagnone",
+      "coordinates": [
+        37.87,
+        12.47
+      ],
+      "product_id": "e0322357-9958-4ea3-a1a4-22c674967b5c",
+      "product_name": "DEM1_SAR_DGE_30_20110630T170549_20140130T051228_ADS_000000_1731_bf5f8c79.DEM",
+      "modification_date": "2025-04-22T10:10:05.032805Z",
+      "pinned_hash": "c0a32cb54e7315630fbf3370b9da1213c7afa6d7774e59de2405cae3f77c24c0",
+      "layers": {
+        "DEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\e0322357-9958-4ea3-a1a4-22c674967b5c\\DEM.tif",
+          "size_bytes": 51897972,
+          "sha256": "90262e3749e316d2d62b710c8a45ffa5192a76cd4224b63f36400426fa9fda36",
+          "cache_hit": false,
+          "etag": "206be96ab4ad459b3b398b23a97c1435-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/30/DEM1_SAR_DGE_30_20110630T170549_20140130T051228_ADS_000000_1731_bf5f8c79/Copernicus_DSM_10_N37_00_E012_00/DEM/Copernicus_DSM_10_N37_00_E012_00_DEM.tif"
+        },
+        "WBM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\e0322357-9958-4ea3-a1a4-22c674967b5c\\WBM.tif",
+          "size_bytes": 454108,
+          "sha256": "2ed094c2696b50ea15ff344d0e7335ae6e76b323b5175e234380689ec8ec4829",
+          "cache_hit": false,
+          "etag": "a58d6ca27133663cd0d87420bba12196-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/30/DEM1_SAR_DGE_30_20110630T170549_20140130T051228_ADS_000000_1731_bf5f8c79/Copernicus_DSM_10_N37_00_E012_00/AUXFILES/Copernicus_DSM_10_N37_00_E012_00_WBM.tif"
+        },
+        "HEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\e0322357-9958-4ea3-a1a4-22c674967b5c\\HEM.tif",
+          "size_bytes": 51897934,
+          "sha256": "18de9bfa8d7d9bd73547475ac6d802039c946aec18107faa0c96d8a3d90e66fa",
+          "cache_hit": false,
+          "etag": "1df08fb590d8b5ffe00eb43ac9b75a83-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/30/DEM1_SAR_DGE_30_20110630T170549_20140130T051228_ADS_000000_1731_bf5f8c79/Copernicus_DSM_10_N37_00_E012_00/AUXFILES/Copernicus_DSM_10_N37_00_E012_00_HEM.tif"
+        },
+        "EDM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\e0322357-9958-4ea3-a1a4-22c674967b5c\\EDM.tif",
+          "size_bytes": 464366,
+          "sha256": "1cccc4557b7bc9cb4fc9edc7ae843296e4c0359efe492bbbad97035d44041212",
+          "cache_hit": false,
+          "etag": "13e9c79dae792e48fa517b49271211b1-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/30/DEM1_SAR_DGE_30_20110630T170549_20140130T051228_ADS_000000_1731_bf5f8c79/Copernicus_DSM_10_N37_00_E012_00/AUXFILES/Copernicus_DSM_10_N37_00_E012_00_EDM.tif"
+        },
+        "FLM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\e0322357-9958-4ea3-a1a4-22c674967b5c\\FLM.tif",
+          "size_bytes": 457394,
+          "sha256": "4e3173a3db9252cf04459059f1bc6ce4a123092be8315534c2dc396be2dff52f",
+          "cache_hit": false,
+          "etag": "6910431f7cf8913086c32874a620d731-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/30/DEM1_SAR_DGE_30_20110630T170549_20140130T051228_ADS_000000_1731_bf5f8c79/Copernicus_DSM_10_N37_00_E012_00/AUXFILES/Copernicus_DSM_10_N37_00_E012_00_FLM.tif"
+        }
+      },
+      "status": "downloaded"
+    },
+    {
+      "name": "Pozo Izquierdo",
+      "coordinates": [
+        27.81,
+        -15.4
+      ],
+      "product_id": "aaae43cd-df4b-4776-a069-886d83bb861f",
+      "product_name": "DEM1_SAR_DGE_30_20110429T190357_20140405T070708_ADS_000000_L9ho_aedaeae0.DEM",
+      "modification_date": "2025-04-18T10:59:58.396850Z",
+      "pinned_hash": "79f6f0a541d8c6c5aee911cb22f3945d33d1d0935a883aad16938b3c16f3a501",
+      "layers": {
+        "DEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\aaae43cd-df4b-4776-a069-886d83bb861f\\DEM.tif",
+          "size_bytes": 51897972,
+          "sha256": "e261d10fe728f4eab9b4d59da54db5bab9dbd4e9a61db555a4fe63761a8386ca",
+          "cache_hit": false,
+          "etag": "970fd82f9579d785c8f1488b2a170cfe-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/29/DEM1_SAR_DGE_30_20110429T190357_20140405T070708_ADS_000000_L9ho_aedaeae0/Copernicus_DSM_10_N27_00_W016_00/DEM/Copernicus_DSM_10_N27_00_W016_00_DEM.tif"
+        },
+        "WBM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\aaae43cd-df4b-4776-a069-886d83bb861f\\WBM.tif",
+          "size_bytes": 418886,
+          "sha256": "a38a12bca534da5c213378f028cc4b0be976e6007cfa1de085aa19dabd7e232f",
+          "cache_hit": false,
+          "etag": "b2d213dbdffde658eb09e9da67e65ebb-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/29/DEM1_SAR_DGE_30_20110429T190357_20140405T070708_ADS_000000_L9ho_aedaeae0/Copernicus_DSM_10_N27_00_W016_00/AUXFILES/Copernicus_DSM_10_N27_00_W016_00_WBM.tif"
+        },
+        "HEM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\aaae43cd-df4b-4776-a069-886d83bb861f\\HEM.tif",
+          "size_bytes": 51897934,
+          "sha256": "7bf3e9210acc37cb062948a1efcccd3f41769114316e5d73e96e4b89e1d0d3cd",
+          "cache_hit": false,
+          "etag": "fa29fdfd54e021484281456533857591-2",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/29/DEM1_SAR_DGE_30_20110429T190357_20140405T070708_ADS_000000_L9ho_aedaeae0/Copernicus_DSM_10_N27_00_W016_00/AUXFILES/Copernicus_DSM_10_N27_00_W016_00_HEM.tif"
+        },
+        "EDM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\aaae43cd-df4b-4776-a069-886d83bb861f\\EDM.tif",
+          "size_bytes": 483244,
+          "sha256": "0413cccef8cdab0bbde108a917aa4494ebc8702a75d248abf3c2129782efb7a9",
+          "cache_hit": false,
+          "etag": "5a77cd2ce35c8291d2839e57d59b52db-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/29/DEM1_SAR_DGE_30_20110429T190357_20140405T070708_ADS_000000_L9ho_aedaeae0/Copernicus_DSM_10_N27_00_W016_00/AUXFILES/Copernicus_DSM_10_N27_00_W016_00_EDM.tif"
+        },
+        "FLM": {
+          "path": "C:\\Projects\\Web\\dashboard-main\\data\\geodata-cache\\cop-dem-glo30\\2024_1\\aaae43cd-df4b-4776-a069-886d83bb861f\\FLM.tif",
+          "size_bytes": 485344,
+          "sha256": "d2204f0d3de43dee6bf3881003f8319ea1aaec12d29caa44bcf593e660815854",
+          "cache_hit": false,
+          "etag": "f229d861a81e7f532b3f5d4a83dbf0ad-1",
+          "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/29/DEM1_SAR_DGE_30_20110429T190357_20140405T070708_ADS_000000_L9ho_aedaeae0/Copernicus_DSM_10_N27_00_W016_00/AUXFILES/Copernicus_DSM_10_N27_00_W016_00_FLM.tif"
+        }
+      },
+      "status": "downloaded"
+    }
+  ]
+}

@@ -15,6 +15,7 @@ def test_plan_is_deterministic_tile_centred_and_never_over_ten():
     assert first == second
     assert [len(b["spots"]) for b in first["batches"]] == [3, 5, 10, 5]
     assert all(len(b["spots"]) <= 10 for b in first["batches"])
+    assert all(len(b["assets"]) <= 200 for b in first["batches"])
     assert first["execution_allowed"] is False
 
 
@@ -24,6 +25,17 @@ def test_nearby_spots_share_assets_and_dateline_is_bounded():
     assert set(a["assets"]) & set(b["assets"])
     edge = signature(Candidate("c", "c", 0, 179.9))
     assert all("E180" not in asset for asset in edge["assets"])
+
+
+def test_plan_contains_intermediate_ray_tiles_not_only_halo_corners():
+    item = signature(Candidate("a", "a", 40.4, -9.4))
+    dem_tiles = {
+        asset.split(":")[2]
+        for asset in item["assets"]
+        if asset.startswith("cop-dem:")
+    }
+    assert "N40W010" in dem_tiles
+    assert len(dem_tiles) >= 9
 
 
 def test_cache_hits_reduce_requests_without_network():

@@ -1,6 +1,6 @@
 # Geoprofile phase 2 — directional shadow features
 
-Status 2026-08-12, algorithm `swd-shadow-v2-sectors16-rays9`. Phase 2 is implemented as an internal, versioned feature engine. Its five-spot Copernicus pilot remains externally blocked because local CDSE/CCM credentials and licence-enabled access are absent. This is not reported as successful live processing.
+Status 2026-08-14, algorithm `swd-shadow-v2-sectors16-rays9`. Phase 2 is implemented as an internal, versioned feature engine. The corrected ray-complete five-spot cold/cache-only pilot is accepted: every reference spot is class A with 16/16 valid sectors, and the warm run is science-identical with zero network requests.
 
 ## Strict production boundary
 
@@ -38,8 +38,13 @@ Run:
 python scripts/geodata_phase2_pilot.py
 ```
 
-The committed report is `reports/geodata-phase2-pilot.*`: all five spots are `blocked_credentials`, with 0 requests and 0 bytes. Lo Stagnone is explicitly a lagoon; the lake branch is covered synthetically.
+Reports `reports/geodata-phase2-cold.json`, `geodata-phase2-halo.json`,
+`geodata-phase2-analysis.json`, `geodata-phase2-warm.json` and
+`geodata-phase2-corrected-plan.json` record the live run without secrets. The
+warm run made zero network requests and is byte/science-identical. Lo Stagnone remains
+explicitly a lagoon; absent ocean DGED tiles are classified as ocean, never as
+unknown land or invented elevation.
 
 ## Next gate
 
-After local CCM registration and licence acceptance, resolve exact OData product metadata and layer asset sizes first. Only if the written plan fits all limits should one five-spot DEM/WBM/HEM/EDM/FLM pilot run. Phase 3 can begin only after plausible real sectors and cache/load evidence; it remains a bounded, tile-centred backfill, not public activation.
+The accepted pilot permits the bounded Phase-3 cache-only backfill. It does not permit public activation of shadow corrections or unbudgeted acquisition for uncached spots.

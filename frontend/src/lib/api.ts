@@ -119,6 +119,8 @@ export interface SpotSummary {
   slug: string;
   name: string;
   region_id: string | null;
+  region_name: string | null;
+  region_country: string | null;
   location: GeoPoint | null;
   sports: string[];
   water_type: string[];
@@ -131,6 +133,9 @@ export interface SpotSummary {
   confidence: number | null;
   facing: number | null;
   image: ImageRecord | null;
+  typical_wind_kt: number | null;
+  typical_wave_height_m: number | null;
+  best_months: number[] | null;
 }
 
 export interface SpotRead extends SpotSummary {
@@ -283,7 +288,22 @@ export interface ForecastDaySummary {
   air_min: number | null;
   air_max: number | null;
   swell_max: number | null;
+  local_date?: string | null;
+  temperature_min_c?: number | null;
+  temperature_max_c?: number | null;
+  apparent_temperature_min_c?: number | null;
+  apparent_temperature_max_c?: number | null;
+  precipitation_sum_mm?: number | null;
+  precipitation_probability_max_pct?: number | null;
+  cloud_cover_mean_pct?: number | null;
+  uv_index_max?: number | null;
+  weather_code?: number | null;
+  weather_condition?: WeatherCondition;
+  sunrise_at?: string | null;
+  sunset_at?: string | null;
+  solar_state?: "normal" | "polar_day" | "polar_night" | "unavailable";
 }
+export type WeatherCondition = "clear" | "mainly_clear" | "partly_cloudy" | "overcast" | "fog" | "drizzle" | "rain" | "snow" | "rain_showers" | "snow_showers" | "thunderstorm" | "unknown";
 export interface ForecastHour {
   time: string;
   wind: number | null;
@@ -297,9 +317,17 @@ export interface ForecastHour {
   swell_dir: number | null;
   precip: number | null; // mm/h
   sst: number | null; // deg C
+  apparent_temperature_c?: number | null;
+  cloud_cover_pct?: number | null;
+  pressure_msl_hpa?: number | null;
+  uv_index?: number | null;
+  weather_code?: number | null;
+  weather_condition?: WeatherCondition;
+  is_day?: boolean | null;
 }
 export interface ForecastDay {
   date: string;
+  local_date?: string | null;
   confidence: string;
   summary: ForecastDaySummary;
   hours: ForecastHour[];
@@ -314,6 +342,9 @@ export interface ForecastSeries {
   updated_at?: string | null;
   confidence_note?: string | null;
   stale?: boolean;
+  contract_version?: string | null;
+  timezone?: string;
+  availability?: Record<"atmosphere" | "solar" | "marine", string>;
   attributions?: Array<{ provider: string; text: string; url: string; licence: string }>;
 }
 

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 -m py_compile app/models/ugc.py app/community/service.py app/api/community.py alembic/versions/0011_tip_parent.py)"
+      "Bash(python3 -m py_compile app/models/ugc.py app/community/service.py app/api/community.py alembic/versions/0011_tip_parent.py)",
+      "Read(//c/Projects/Web/surfwinddata-main/**)",
+      "Bash(node .claude/skills/impeccable/scripts/context.mjs --target frontend/src/components/SpotCommentBox.tsx)",
+      "Bash(node repro-fix-verify.mjs)"
     ]
   }
 }

@@ -6,7 +6,7 @@ import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.admin.deps import get_extract_client
 from app.config import get_settings
@@ -22,6 +22,14 @@ def _require_cron(request: Request) -> None:
         raise HTTPException(status_code=503, detail="Cron maintenance is not configured.")
     if not provided or not secrets.compare_digest(provided, f"Bearer {expected}"):
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+@router.post("/weather-shadow", dependencies=[Depends(_require_cron)])
+def collect_weather_shadow() -> dict:
+    """Run/deduplicate one bounded internal study cycle; never publishes."""
+    from scripts.weather_phase4_initial import main
+
+    return main()
 
 
 @router.get("/climatology", dependencies=[Depends(_require_cron)])
@@ -49,8 +57,21 @@ def maintain_climatology(
         db.rollback()
         result["media"] = {"error": f"{type(exc).__name__}: {exc}"}
     try:
-        from app.forecast.publisher import run_job
-        from app.models import ForecastProcessingJob
+        from datetime import datetime, timezone
+        from app.forecast.publisher import enqueue, run_job
+        from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
+        limit = get_settings().forecast_job_batch_size
+        candidates = db.scalars(
+            select(Spot).outerjoin(
+                ForecastSnapshot,
+                (ForecastSnapshot.spot_id == Spot.id) & ForecastSnapshot.active.is_(True),
+            ).where(
+                Spot.status == "published",
+                or_(ForecastSnapshot.id.is_(None), ForecastSnapshot.valid_until < datetime.now(timezone.utc)),
+            ).order_by(Spot.updated_at).limit(limit)
+        ).all()
+        for spot in candidates:
+            enqueue(db, spot.id, reason="cron")
         jobs = db.scalars(select(ForecastProcessingJob).where(ForecastProcessingJob.status == "queued").order_by(ForecastProcessingJob.created_at).limit(get_settings().forecast_job_batch_size)).all()
         result["forecast"] = [{"id": str(job.id), "status": run_job(db, job.id).status} for job in jobs]
     except Exception as exc:

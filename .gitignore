@@ -24,6 +24,9 @@ data/tide-model*/
 # ERA5 raw extracts (downloaded data, not source)
 /data/era5_raw/
 
+# Reproducible CDSE/WorldCover runtime cache (multi-GB; reports retain hashes).
+/data/geodata-cache/
+
 # OS
 .DS_Store
 Thumbs.db

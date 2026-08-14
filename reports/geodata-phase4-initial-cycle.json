@@ -1,0 +1,101 @@
+{
+  "study_version": "swd-phase4-shadow-v1",
+  "status": "collecting_with_observation_gaps",
+  "started_at": "2026-08-14T14:02:59.141031+00:00",
+  "finished_at": "2026-08-14T14:04:16.519340+00:00",
+  "run_id": "db80da12-f37b-49ec-a024-57b78ffcdbf1",
+  "model_runs": {
+    "gfs": "2026-08-14T06:00:00+00:00",
+    "icon_eu": null
+  },
+  "forecast_points": 510,
+  "created": 510,
+  "deduplicated": false,
+  "deduplication_recheck": {
+    "same_run_detected": true,
+    "new_forecast_points": 0,
+    "network_requests": 0,
+    "network_bytes": 0
+  },
+  "provider_requests": 108,
+  "provider_bytes": 139087,
+  "preflight_requests": 3,
+  "retries": 0,
+  "spots": {
+    "Baleal": {
+      "variants": {
+        "gfs_raw": 21,
+        "consensus_uncorrected": 21,
+        "consensus_geo_candidate": 21,
+        "public_baseline": 98,
+        "open_meteo_baseline": 0,
+        "icon_eu_raw": 0
+      },
+      "gfs_status": "collected",
+      "icon_eu_status": "blocked_provider_budget",
+      "observation_status": "blocked_observation_source"
+    },
+    "Brouwersdam": {
+      "variants": {
+        "gfs_raw": 21,
+        "consensus_uncorrected": 21,
+        "consensus_geo_candidate": 21,
+        "public_baseline": 0,
+        "open_meteo_baseline": 0,
+        "icon_eu_raw": 0
+      },
+      "gfs_status": "collected",
+      "icon_eu_status": "blocked_provider_budget",
+      "observation_status": "blocked_observation_source"
+    },
+    "Mundaka": {
+      "variants": {
+        "gfs_raw": 21,
+        "consensus_uncorrected": 21,
+        "consensus_geo_candidate": 21,
+        "public_baseline": 0,
+        "open_meteo_baseline": 0,
+        "icon_eu_raw": 0
+      },
+      "gfs_status": "collected",
+      "icon_eu_status": "blocked_provider_budget",
+      "observation_status": "blocked_observation_source"
+    },
+    "Lo Stagnone": {
+      "variants": {
+        "gfs_raw": 21,
+        "consensus_uncorrected": 21,
+        "consensus_geo_candidate": 21,
+        "public_baseline": 97,
+        "open_meteo_baseline": 0,
+        "icon_eu_raw": 0
+      },
+      "gfs_status": "collected",
+      "icon_eu_status": "blocked_provider_budget",
+      "observation_status": "blocked_observation_source"
+    },
+    "Pozo Izquierdo": {
+      "variants": {
+        "gfs_raw": 21,
+        "consensus_uncorrected": 21,
+        "consensus_geo_candidate": 21,
+        "public_baseline": 0,
+        "open_meteo_baseline": 0,
+        "icon_eu_raw": 0
+      },
+      "gfs_status": "collected",
+      "icon_eu_status": "not_covered",
+      "observation_status": "blocked_observation_source"
+    }
+  },
+  "observations": 0,
+  "public_baseline_identical": true,
+  "blocked_components": {
+    "icon_eu": "blocked_provider_budget",
+    "observations": "blocked_observation_source"
+  },
+  "scheduler": {
+    "required_frequency_hours": 6,
+    "external_action_required": true
+  }
+}

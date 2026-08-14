@@ -1,0 +1,518 @@
+{
+  "spots": [
+    {
+      "name": "Baleal",
+      "planned_tiles": 9,
+      "resolved_products": 5
+    },
+    {
+      "name": "Brouwersdam",
+      "planned_tiles": 10,
+      "resolved_products": 8
+    },
+    {
+      "name": "Mundaka",
+      "planned_tiles": 9,
+      "resolved_products": 7
+    },
+    {
+      "name": "Lo Stagnone",
+      "planned_tiles": 7,
+      "resolved_products": 6
+    },
+    {
+      "name": "Pozo Izquierdo",
+      "planned_tiles": 8,
+      "resolved_products": 6
+    }
+  ],
+  "unique_products": 32,
+  "missing_ocean_tiles": [
+    {
+      "spot": "Baleal",
+      "tile": "N38W011",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Baleal",
+      "tile": "N39W011",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Baleal",
+      "tile": "N40W010",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Baleal",
+      "tile": "N40W011",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Brouwersdam",
+      "tile": "N52E002",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Brouwersdam",
+      "tile": "N52E003",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Mundaka",
+      "tile": "N44W003",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Mundaka",
+      "tile": "N44W004",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Lo Stagnone",
+      "tile": "N38E011",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Pozo Izquierdo",
+      "tile": "N26W016",
+      "classification": "ocean_absent_dged"
+    },
+    {
+      "spot": "Pozo Izquierdo",
+      "tile": "N27W015",
+      "classification": "ocean_absent_dged"
+    }
+  ],
+  "pending_assets": [
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "WBM",
+      "size_bytes": 466208
+    },
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "EDM",
+      "size_bytes": 507338
+    },
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "FLM",
+      "size_bytes": 495648
+    },
+    {
+      "product_id": "c000aa0e-529c-4c9a-a918-09ff4758fe6d",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "c000aa0e-529c-4c9a-a918-09ff4758fe6d",
+      "layer": "WBM",
+      "size_bytes": 445434
+    },
+    {
+      "product_id": "c000aa0e-529c-4c9a-a918-09ff4758fe6d",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "c000aa0e-529c-4c9a-a918-09ff4758fe6d",
+      "layer": "EDM",
+      "size_bytes": 579830
+    },
+    {
+      "product_id": "c000aa0e-529c-4c9a-a918-09ff4758fe6d",
+      "layer": "FLM",
+      "size_bytes": 558324
+    },
+    {
+      "product_id": "3ccbdafd-de67-4d99-8f1f-86cdec64e03d",
+      "layer": "DEM",
+      "size_bytes": 34613172
+    },
+    {
+      "product_id": "3ccbdafd-de67-4d99-8f1f-86cdec64e03d",
+      "layer": "WBM",
+      "size_bytes": 356338
+    },
+    {
+      "product_id": "3ccbdafd-de67-4d99-8f1f-86cdec64e03d",
+      "layer": "HEM",
+      "size_bytes": 34613134
+    },
+    {
+      "product_id": "3ccbdafd-de67-4d99-8f1f-86cdec64e03d",
+      "layer": "EDM",
+      "size_bytes": 504452
+    },
+    {
+      "product_id": "3ccbdafd-de67-4d99-8f1f-86cdec64e03d",
+      "layer": "FLM",
+      "size_bytes": 478628
+    },
+    {
+      "product_id": "bae66c69-6cfe-46cf-8809-381bedb95f92",
+      "layer": "DEM",
+      "size_bytes": 34613172
+    },
+    {
+      "product_id": "bae66c69-6cfe-46cf-8809-381bedb95f92",
+      "layer": "WBM",
+      "size_bytes": 351810
+    },
+    {
+      "product_id": "bae66c69-6cfe-46cf-8809-381bedb95f92",
+      "layer": "HEM",
+      "size_bytes": 34613134
+    },
+    {
+      "product_id": "bae66c69-6cfe-46cf-8809-381bedb95f92",
+      "layer": "EDM",
+      "size_bytes": 630938
+    },
+    {
+      "product_id": "bae66c69-6cfe-46cf-8809-381bedb95f92",
+      "layer": "FLM",
+      "size_bytes": 597480
+    },
+    {
+      "product_id": "8e39202c-d9b8-41cf-a7c4-fd1382613571",
+      "layer": "DEM",
+      "size_bytes": 34613172
+    },
+    {
+      "product_id": "8e39202c-d9b8-41cf-a7c4-fd1382613571",
+      "layer": "WBM",
+      "size_bytes": 350932
+    },
+    {
+      "product_id": "8e39202c-d9b8-41cf-a7c4-fd1382613571",
+      "layer": "HEM",
+      "size_bytes": 34613134
+    },
+    {
+      "product_id": "8e39202c-d9b8-41cf-a7c4-fd1382613571",
+      "layer": "EDM",
+      "size_bytes": 362894
+    },
+    {
+      "product_id": "8e39202c-d9b8-41cf-a7c4-fd1382613571",
+      "layer": "FLM",
+      "size_bytes": 356258
+    },
+    {
+      "product_id": "c61a92e2-88d0-4a45-9939-bd3ab7773b2b",
+      "layer": "DEM",
+      "size_bytes": 34613172
+    },
+    {
+      "product_id": "c61a92e2-88d0-4a45-9939-bd3ab7773b2b",
+      "layer": "WBM",
+      "size_bytes": 475438
+    },
+    {
+      "product_id": "c61a92e2-88d0-4a45-9939-bd3ab7773b2b",
+      "layer": "HEM",
+      "size_bytes": 34613134
+    },
+    {
+      "product_id": "c61a92e2-88d0-4a45-9939-bd3ab7773b2b",
+      "layer": "EDM",
+      "size_bytes": 667944
+    },
+    {
+      "product_id": "c61a92e2-88d0-4a45-9939-bd3ab7773b2b",
+      "layer": "FLM",
+      "size_bytes": 601090
+    },
+    {
+      "product_id": "564bc016-fb67-4203-9d7f-3bac7c8a652e",
+      "layer": "DEM",
+      "size_bytes": 34613172
+    },
+    {
+      "product_id": "564bc016-fb67-4203-9d7f-3bac7c8a652e",
+      "layer": "WBM",
+      "size_bytes": 412136
+    },
+    {
+      "product_id": "564bc016-fb67-4203-9d7f-3bac7c8a652e",
+      "layer": "HEM",
+      "size_bytes": 34613134
+    },
+    {
+      "product_id": "564bc016-fb67-4203-9d7f-3bac7c8a652e",
+      "layer": "EDM",
+      "size_bytes": 599582
+    },
+    {
+      "product_id": "564bc016-fb67-4203-9d7f-3bac7c8a652e",
+      "layer": "FLM",
+      "size_bytes": 543284
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "DEM",
+      "size_bytes": 34613172
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "WBM",
+      "size_bytes": 498336
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "HEM",
+      "size_bytes": 34613134
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "EDM",
+      "size_bytes": 587674
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "FLM",
+      "size_bytes": 536682
+    },
+    {
+      "product_id": "9f1ece9b-af96-4351-b9c2-2d7041b2c15f",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "9f1ece9b-af96-4351-b9c2-2d7041b2c15f",
+      "layer": "WBM",
+      "size_bytes": 407134
+    },
+    {
+      "product_id": "9f1ece9b-af96-4351-b9c2-2d7041b2c15f",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "9f1ece9b-af96-4351-b9c2-2d7041b2c15f",
+      "layer": "EDM",
+      "size_bytes": 444438
+    },
+    {
+      "product_id": "9f1ece9b-af96-4351-b9c2-2d7041b2c15f",
+      "layer": "FLM",
+      "size_bytes": 441144
+    },
+    {
+      "product_id": "2bcc650a-51ab-48b7-9083-6d2e9bb97365",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "2bcc650a-51ab-48b7-9083-6d2e9bb97365",
+      "layer": "WBM",
+      "size_bytes": 503760
+    },
+    {
+      "product_id": "2bcc650a-51ab-48b7-9083-6d2e9bb97365",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "2bcc650a-51ab-48b7-9083-6d2e9bb97365",
+      "layer": "EDM",
+      "size_bytes": 608464
+    },
+    {
+      "product_id": "2bcc650a-51ab-48b7-9083-6d2e9bb97365",
+      "layer": "FLM",
+      "size_bytes": 585692
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "WBM",
+      "size_bytes": 421796
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "EDM",
+      "size_bytes": 474610
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "FLM",
+      "size_bytes": 468010
+    },
+    {
+      "product_id": "9a3f6553-af76-46ec-8c39-485d31b63441",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "9a3f6553-af76-46ec-8c39-485d31b63441",
+      "layer": "WBM",
+      "size_bytes": 387878
+    },
+    {
+      "product_id": "9a3f6553-af76-46ec-8c39-485d31b63441",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "9a3f6553-af76-46ec-8c39-485d31b63441",
+      "layer": "EDM",
+      "size_bytes": 389386
+    },
+    {
+      "product_id": "9a3f6553-af76-46ec-8c39-485d31b63441",
+      "layer": "FLM",
+      "size_bytes": 389300
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "WBM",
+      "size_bytes": 388114
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "EDM",
+      "size_bytes": 388910
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "FLM",
+      "size_bytes": 388714
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "WBM",
+      "size_bytes": 450122
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "EDM",
+      "size_bytes": 481958
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "FLM",
+      "size_bytes": 477324
+    },
+    {
+      "product_id": "a72f74bc-a256-4530-98b6-b56689f37a28",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "a72f74bc-a256-4530-98b6-b56689f37a28",
+      "layer": "WBM",
+      "size_bytes": 402956
+    },
+    {
+      "product_id": "a72f74bc-a256-4530-98b6-b56689f37a28",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "a72f74bc-a256-4530-98b6-b56689f37a28",
+      "layer": "EDM",
+      "size_bytes": 411976
+    },
+    {
+      "product_id": "a72f74bc-a256-4530-98b6-b56689f37a28",
+      "layer": "FLM",
+      "size_bytes": 410788
+    },
+    {
+      "product_id": "84431f0b-5a70-45a0-8572-27d9120004f3",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "84431f0b-5a70-45a0-8572-27d9120004f3",
+      "layer": "WBM",
+      "size_bytes": 382104
+    },
+    {
+      "product_id": "84431f0b-5a70-45a0-8572-27d9120004f3",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "84431f0b-5a70-45a0-8572-27d9120004f3",
+      "layer": "EDM",
+      "size_bytes": 382108
+    },
+    {
+      "product_id": "84431f0b-5a70-45a0-8572-27d9120004f3",
+      "layer": "FLM",
+      "size_bytes": 382104
+    },
+    {
+      "product_id": "53020c1e-4797-41e0-a11e-23633ff600ad",
+      "layer": "DEM",
+      "size_bytes": 51897972
+    },
+    {
+      "product_id": "53020c1e-4797-41e0-a11e-23633ff600ad",
+      "layer": "WBM",
+      "size_bytes": 406666
+    },
+    {
+      "product_id": "53020c1e-4797-41e0-a11e-23633ff600ad",
+      "layer": "HEM",
+      "size_bytes": 51897934
+    },
+    {
+      "product_id": "53020c1e-4797-41e0-a11e-23633ff600ad",
+      "layer": "EDM",
+      "size_bytes": 433636
+    },
+    {
+      "product_id": "53020c1e-4797-41e0-a11e-23633ff600ad",
+      "layer": "FLM",
+      "size_bytes": 432994
+    }
+  ],
+  "pending_bytes": 1580819566,
+  "pending_gib": 1.472,
+  "daily_downloaded_bytes": 1755822224,
+  "daily_limit_bytes": 2147483648
+}

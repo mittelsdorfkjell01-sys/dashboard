@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.deps import require_role
@@ -27,6 +27,9 @@ from app.models import (
     SpotWeatherSector,
     WeatherModelCalibration,
     WeatherStation,
+    WeatherShadowForecast,
+    WeatherShadowRun,
+    WeatherShadowStudy,
 )
 
 router = APIRouter(
@@ -34,6 +37,26 @@ router = APIRouter(
     tags=["admin-weather"],
     dependencies=[Depends(require_role("admin", "curator"))],
 )
+
+
+@router.get("/shadow-study/status")
+def shadow_study_status(db: Session = Depends(get_db)) -> dict:
+    """Sanitized internal diagnostics; no provider payloads or weights."""
+    study = db.scalar(select(WeatherShadowStudy).order_by(WeatherShadowStudy.started_at.desc()))
+    if study is None:
+        return {"status": "not_started"}
+    run = db.scalar(select(WeatherShadowRun).where(WeatherShadowRun.study_id == study.id).order_by(WeatherShadowRun.issued_at.desc()))
+    points = db.scalar(select(func.count()).select_from(WeatherShadowForecast).where(WeatherShadowForecast.run_id == run.id)) if run else 0
+    variants = db.execute(select(WeatherShadowForecast.variant, func.count()).where(WeatherShadowForecast.run_id == run.id).group_by(WeatherShadowForecast.variant)).all() if run else []
+    diagnostics = run.diagnostics if run else {}
+    return {
+        "study_version": study.version, "status": study.status,
+        "last_run": run.finished_at if run else None, "forecast_points": points,
+        "variants": {key: count for key, count in variants},
+        "provider_status": {"gfs": "collected" if run else "pending", "icon_eu": diagnostics.get("icon_eu", "pending")},
+        "observation_status": "blocked_observation_source",
+        "requests": diagnostics.get("requests", 0), "bytes": diagnostics.get("bytes", 0),
+    }
 
 
 class SectorIn(BaseModel):
@@ -301,6 +324,9 @@ def put_profile(
 def diagnostics(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
     try:
         data = live_service.get_forecast_series(spot_id, 10, db=db)
+        for day in data.get("days", []):
+            for hour in day.get("hours", []):
+                hour.pop("_weights", None)
         profile = db.scalar(
             select(SpotGeoProfileVersion).where(
                 SpotGeoProfileVersion.spot_id == spot_id,

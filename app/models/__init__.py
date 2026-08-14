@@ -51,6 +51,11 @@ from app.models.forecast_system import (
     SpotGeoShadowProfile,
     SpotGeoShadowSector,
 )
+from app.models.weather_shadow import (
+    WeatherShadowForecast, WeatherShadowMatch, WeatherShadowMetric,
+    WeatherShadowObservation, WeatherShadowRun, WeatherShadowStationBinding,
+    WeatherShadowStudy,
+)
 
 __all__ = [
     "Base",
@@ -99,4 +104,7 @@ __all__ = [
     "SpotGeoProfileInput",
     "SpotGeoShadowProfile",
     "SpotGeoShadowSector",
+    "WeatherShadowStudy", "WeatherShadowRun", "WeatherShadowForecast",
+    "WeatherShadowStationBinding", "WeatherShadowObservation",
+    "WeatherShadowMatch", "WeatherShadowMetric",
 ]

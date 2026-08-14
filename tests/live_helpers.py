@@ -30,9 +30,11 @@ def _hourly_times(days: int) -> list[str]:
 def _single_model_forecast(times: list[str]) -> dict:
     """Bare-key response, mirroring Open-Meteo's single-model shape."""
     n = len(times)
+    days = sorted({time[:10] for time in times})
     return {
         "latitude": 36.0,
         "longitude": -5.6,
+        "timezone": "UTC",
         "current": {
             "time": times[0],
             "wind_speed_10m": 14.0,
@@ -47,7 +49,26 @@ def _single_model_forecast(times: list[str]) -> dict:
             "wind_direction_10m": [(i * 5) % 360 for i in range(n)],
             "temperature_2m": [18.0 + (i % 8) for i in range(n)],
             "precipitation": [round(0.1 * (i % 5), 1) for i in range(n)],
+            "apparent_temperature": [17.0 + (i % 8) for i in range(n)],
+            "cloud_cover": [i % 101 for i in range(n)],
+            "pressure_msl": [1012.0 for _ in range(n)],
+            "uv_index": [max(0, 6 - abs((i % 24) - 12)) for i in range(n)],
+            "weather_code": [0 if i % 4 else 2 for i in range(n)],
+            "is_day": [1 if 6 <= i % 24 < 20 else 0 for i in range(n)],
         },
+        "daily": _daily(days),
+    }
+
+
+def _daily(days: list[str]) -> dict:
+    return {
+        "time": days, "temperature_2m_min": [14.0] * len(days),
+        "temperature_2m_max": [24.0] * len(days), "apparent_temperature_min": [13.0] * len(days),
+        "apparent_temperature_max": [25.0] * len(days), "precipitation_sum": [1.2] * len(days),
+        "precipitation_probability_max": [30.0] * len(days), "cloud_cover_mean": [45.0] * len(days),
+        "weather_code": [2] * len(days), "sunrise": [f"{d}T05:30" for d in days],
+        "sunset": [f"{d}T20:30" for d in days], "daylight_duration": [54000.0] * len(days),
+        "uv_index_max": [7.0] * len(days),
     }
 
 
@@ -114,13 +135,31 @@ def make_forecast_response(
         "wind_direction_10m": 270.0,
         "temperature_2m": 22.0,
     }
-    return {"latitude": 36.0, "longitude": -5.6, "current": current, "hourly": hourly}
+    for name, values in {
+        "apparent_temperature": [17.0 + (i % 8) for i in range(n)],
+        "cloud_cover": [i % 101 for i in range(n)], "pressure_msl": [1012.0] * n,
+        "uv_index": [max(0, 6 - abs((i % 24) - 12)) for i in range(n)],
+        "weather_code": [0 if i % 4 else 2 for i in range(n)],
+        "is_day": [1 if 6 <= i % 24 < 20 else 0 for i in range(n)],
+    }.items():
+        for m in models:
+            hourly[f"{name}_{m}"] = values
+    days = sorted({time[:10] for time in times})
+    daily = {"time": days}
+    for name, values in _daily(days).items():
+        if name == "time": continue
+        for m in models:
+            daily[f"{name}_{m}"] = values
+    return {"latitude": 36.0, "longitude": -5.6, "timezone": "UTC", "current": current, "hourly": hourly, "daily": daily}
 
 
 def make_marine_response(days: int = 8) -> dict:
     times = _hourly_times(days)
     n = len(times)
     return {
+        "latitude": 36.01,
+        "longitude": -5.60,
+        "timezone": "GMT",
         "current": {
             "time": times[0],
             "swell_wave_height": 1.2,
@@ -176,6 +215,7 @@ def make_spot(lat: float = 36.0128, lon: float = -5.6035, model_pref=None) -> Sp
         model_pref=model_pref,
         sports=["kitesurf"],
         status="published",
+        water_type=["ocean"],
     )
     spot.id = uuid.uuid4()
     return spot

@@ -1,0 +1,120 @@
+{
+  "generated_at": "2026-08-14T14:05:53.190336+00:00",
+  "status": "collecting_with_observation_gaps",
+  "study_version": "swd-phase4-shadow-v1",
+  "algorithms": {
+    "consensus": "swd-consensus-v1",
+    "normalizer": "swd-wind-normalizer-v1",
+    "geo_candidate": "swd-shadow-geo-candidate-v1",
+    "public_effect": false
+  },
+  "spots": [
+    {
+      "name": "Baleal",
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "profile_id": "9059e720-b266-497d-8cd0-6ea6bfa3a023",
+      "profile_input_hash": "02c2ab83d1e1d69f2b740899aaf3fd70f7e256896768bb053c852a8b0cf4a52b",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "gfs": "covered",
+      "icon_eu": "blocked_provider_budget",
+      "observation_source": "blocked_observation_source",
+      "station_id": null,
+      "representativity": "unavailable"
+    },
+    {
+      "name": "Brouwersdam",
+      "spot_id": "ac782223-0fc3-46ca-af19-4faecf4cebc9",
+      "profile_id": "dae17c32-234b-4627-96ac-3ad166412e68",
+      "profile_input_hash": "55205d776a266ee95e7668be69e522758ba19f76a4b88c40e3a6a64d448aa0a7",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "gfs": "covered",
+      "icon_eu": "blocked_provider_budget",
+      "observation_source": "blocked_observation_source",
+      "station_id": null,
+      "representativity": "unavailable"
+    },
+    {
+      "name": "Mundaka",
+      "spot_id": "163ec991-b1b9-4cc7-bfeb-379b1903714a",
+      "profile_id": "a714a89b-5703-4802-8cfc-56bd0302d865",
+      "profile_input_hash": "8e6fe5fef30382e7325cc9518ce0bb85a3c6a9f834e5df87614598e2e2c28348",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "gfs": "covered",
+      "icon_eu": "blocked_provider_budget",
+      "observation_source": "blocked_observation_source",
+      "station_id": null,
+      "representativity": "unavailable"
+    },
+    {
+      "name": "Lo Stagnone",
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "profile_id": "94a72f07-6963-4325-be82-81d65a194a3a",
+      "profile_input_hash": "1d0f4505d7962b5099cd8381b71f7935a3923175b561d66722f824015958f083",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "gfs": "covered",
+      "icon_eu": "blocked_provider_budget",
+      "observation_source": "blocked_observation_source",
+      "station_id": null,
+      "representativity": "unavailable"
+    },
+    {
+      "name": "Pozo Izquierdo",
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "profile_id": "073859f5-491d-4e40-abcf-53d5a2198159",
+      "profile_input_hash": "d86ca3a9de60ce1a5155d47856d136cd941df8f9fd1c76955f7895c2da4aeaa8",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "gfs": "covered",
+      "icon_eu": "not_covered",
+      "observation_source": "blocked_observation_source",
+      "station_id": null,
+      "representativity": "unavailable"
+    }
+  ],
+  "variants": [
+    "public_baseline",
+    "open_meteo_baseline",
+    "gfs_raw",
+    "icon_eu_raw",
+    "consensus_uncorrected",
+    "consensus_geo_candidate"
+  ],
+  "frequency_hours": 6,
+  "external_scheduler_required": true,
+  "budgets": {
+    "requests_per_cycle": 200,
+    "bytes_per_cycle": 50000000,
+    "observed_initial_gfs_requests": 105,
+    "observed_initial_gfs_bytes": 137269
+  },
+  "observation_coverage": {
+    "implemented_adapters": [
+      "dwd",
+      "dmi",
+      "knmi_access_seam"
+    ],
+    "suitable_bindings": 0,
+    "blocker": "No representative official station binding has been verified for the five reference spots."
+  },
+  "metrics": [
+    "speed_bias_mae_rmse",
+    "uv_vector_error",
+    "circular_direction_error",
+    "gust_bias_mae_rmse",
+    "event_14kn"
+  ],
+  "lead_bands": [
+    "0-24h",
+    "25-48h",
+    "49-72h",
+    "73-120h",
+    "121-240h"
+  ],
+  "public_effect": false,
+  "earliest_14_days": "2026-08-28T14:02:59.141031+00:00",
+  "earliest_30_days": "2026-09-13T14:02:59.141031+00:00"
+}

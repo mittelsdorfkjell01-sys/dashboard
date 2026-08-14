@@ -23,6 +23,8 @@ class SpreadBand(BaseModel):
 class CurrentConditions(BaseModel):
     wind: float | None = None       # knots (consensus median)
     gust: float | None = None       # knots (consensus median)
+    wind_ms: float | None = None    # canonical m/s value
+    gust_ms: float | None = None    # canonical m/s value
     dir: float | None = None        # degrees, wind direction (primary model)
     air: float | None = None        # deg C (primary model)
     sst: float | None = None        # deg C
@@ -52,6 +54,13 @@ class ForecastHour(BaseModel):
     swell_dir: float | None = None
     precip: float | None = None      # mm/h
     sst: float | None = None         # deg C
+    apparent_temperature_c: float | None = None
+    cloud_cover_pct: float | None = None
+    pressure_msl_hpa: float | None = None
+    uv_index: float | None = None
+    weather_code: int | None = None
+    weather_condition: str = "unknown"
+    is_day: bool | None = None
     wind_spread: SpreadBand | None = None
 
 
@@ -64,10 +73,25 @@ class ForecastDaySummary(BaseModel):
     swell_max: float | None = None
     wind_low: float | None = None    # model-spread band around the day's peak wind
     wind_high: float | None = None
+    local_date: str | None = None
+    temperature_min_c: float | None = None
+    temperature_max_c: float | None = None
+    apparent_temperature_min_c: float | None = None
+    apparent_temperature_max_c: float | None = None
+    precipitation_sum_mm: float | None = None
+    precipitation_probability_max_pct: float | None = None
+    cloud_cover_mean_pct: float | None = None
+    uv_index_max: float | None = None
+    weather_code: int | None = None
+    weather_condition: str = "unknown"
+    sunrise_at: str | None = None
+    sunset_at: str | None = None
+    solar_state: str = "unavailable"
 
 
 class ForecastDay(BaseModel):
     date: str
+    local_date: str | None = None
     confidence: str  # hoch | mittel | niedrig (derived from model spread)
     summary: ForecastDaySummary
     hours: list[ForecastHour]
@@ -84,3 +108,6 @@ class ForecastSeriesRead(BaseModel):
     confidence_note: str | None = None
     attributions: list[dict] = []
     stale: bool = False
+    contract_version: str | None = None
+    timezone: str = "UTC"
+    availability: dict[str, str] = {}

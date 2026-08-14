@@ -135,7 +135,9 @@ def analyze_ray(grid: MetricRaster, bearing: float, max_m: float = 100000) -> di
     groups = (
         {
             name: sum(ROUGHNESS_GROUP.get(c) == name for c in covers) / len(covers)
-            for name in set(ROUGHNESS_GROUP.values())
+            # Stable order is part of the scientific hash. Iterating a set made
+            # floating-point summation differ by ~1e-17 between processes.
+            for name in sorted(set(ROUGHNESS_GROUP.values()))
         }
         if covers
         else {}

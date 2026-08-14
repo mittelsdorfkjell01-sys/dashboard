@@ -5,10 +5,11 @@ import hashlib
 import math
 from dataclasses import dataclass
 from app.forecast.geodata import analysis_crs, tile_code
-from app.forecast.shadow import SHADOW_VERSION
+from app.forecast.shadow import RAY_OFFSETS, SECTOR_CENTERS, SHADOW_VERSION, ray_distances
 
 PLAN_VERSION = "swd-geodata-backfill-v1"
 LAYERS = ("DEM", "WBM", "HEM", "EDM", "FLM")
+MAX_ASSETS_PER_BATCH = 200
 
 
 @dataclass(frozen=True)
@@ -20,16 +21,39 @@ class Candidate:
     priority: int = 0
 
 
-def _halo_points(lat, lon, radius_km=100):
-    dy = radius_km / 111
-    dx = radius_km / (111 * max(0.15, math.cos(math.radians(lat))))
-    return (
-        (lat - dy, lon - dx),
-        (lat - dy, lon + dx),
-        (lat + dy, lon - dx),
-        (lat + dy, lon + dx),
-        (lat, lon),
+def _destination(lat: float, lon: float, bearing: float, distance_m: float):
+    """Spherical destination matching the shadow engine's meteorological rays."""
+    radius = 6_371_000.0
+    angular = distance_m / radius
+    phi1 = math.radians(lat)
+    lam1 = math.radians(lon)
+    theta = math.radians(bearing)
+    phi2 = math.asin(
+        math.sin(phi1) * math.cos(angular)
+        + math.cos(phi1) * math.sin(angular) * math.cos(theta)
     )
+    lam2 = lam1 + math.atan2(
+        math.sin(theta) * math.sin(angular) * math.cos(phi1),
+        math.cos(angular) - math.sin(phi1) * math.sin(phi2),
+    )
+    return math.degrees(phi2), ((math.degrees(lam2) + 180) % 360) - 180
+
+
+def _halo_points(lat, lon, radius_km=100):
+    """Every geocell touched by the actual 16×9 multi-scale ray sampler.
+
+    The old five-point corners/centre approximation omitted intermediate cells
+    and produced D-class real pilots. Distances are deduplicated by tile below,
+    so this exhaustive planning step remains cheap and performs no network I/O.
+    """
+    maximum = radius_km * 1000
+    distances = ray_distances(maximum)
+    points = [(lat, lon)]
+    for center in SECTOR_CENTERS:
+        for offset in RAY_OFFSETS:
+            bearing = center + float(offset)
+            points.extend(_destination(lat, lon, bearing, float(d)) for d in distances)
+    return tuple(points)
 
 
 def signature(candidate: Candidate) -> dict:
@@ -78,8 +102,15 @@ def build_plan(
             3 if not batches else 5 if len(batches) == 1 else max_batch_size,
         )
         while remaining and len(batch) < stage_limit:
+            eligible = [
+                item
+                for item in remaining
+                if len(shared | set(item["assets"])) <= MAX_ASSETS_PER_BATCH
+            ]
+            if not eligible:
+                break
             best = max(
-                remaining,
+                eligible,
                 key=lambda item: (
                     len(shared & set(item["assets"])),
                     item["priority"],

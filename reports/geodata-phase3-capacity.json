@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-08-13T19:16:12Z",
+  "status": "paused_budget",
+  "cache_before_bytes": 0,
+  "provider_downloaded_bytes": 1755822224,
+  "cache_after_bytes": 1756182510,
+  "cache_file_count": 95,
+  "requests_estimate_completed": 90,
+  "retries": 0,
+  "partial_files": 0,
+  "free_storage_bytes": 164907687936,
+  "layer_bytes": {
+    "DEM": 865024296,
+    "EDM": 9043042,
+    "FLM": 8750524,
+    "HEM": 865023612,
+    "WBM": 7980750,
+    "npz": 360286
+  },
+  "warm": {
+    "network_requests": 0,
+    "network_fallback": false,
+    "identical": true,
+    "status": "rejected_quality"
+  },
+  "corrected_pilot": {
+    "unique_products": 32,
+    "pending_assets": 85,
+    "pending_bytes": 1580819566,
+    "expected_cache_after_bytes": 3337002076
+  },
+  "limits": {
+    "parallel_downloads": 2,
+    "max_assets_per_run": 200,
+    "max_asset_bytes": 268435456,
+    "max_run_bytes": 1073741824,
+    "max_daily_bytes": 2147483648,
+    "max_cache_bytes": 10737418240
+  },
+  "recommendation": {
+    "parallel_downloads": 2,
+    "pilot_subruns": 2,
+    "backfill_spots_max": 10,
+    "assets_per_batch_max": 200
+  },
+  "warning": "Five pilot spots are insufficient to generalize global throughput."
+}

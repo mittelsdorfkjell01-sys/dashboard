@@ -193,6 +193,8 @@ class Settings(BaseSettings):
     forecast_provider_parallelism: int = 2
     forecast_raw_retention_hours: int = 18
     forecast_srtm_dir: str | None = None
+    # Conservative maximum distance to Open-Meteo's selected sea cell.
+    weather_marine_grid_max_km: float = 25.0
 
     # Keep the featured "aktuelle Top Spots" cache warm from inside the app process
     # (a daemon thread), so the first visitor after the daily entry expires never

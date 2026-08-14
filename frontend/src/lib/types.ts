@@ -50,6 +50,22 @@ export interface Spot {
   climatology?: Record<string, any> | null;
   /** Admin-set preview frame for the wind/wave flow map (editorial.map_view). */
   mapView?: { center: [number, number]; zoom: number } | null;
+
+  // --- tile-facing fields (SpotCard) ---------------------------------------
+  /** Bare region name, separate from the combined `region` label (tile joins
+   *  it with the country itself, e.g. "Tarifa · Spanien"). */
+  regionName?: string;
+  /** ISO country code (e.g. "PT") — resolved to a display name via lib/flags. */
+  regionCountry?: string | null;
+  /** Typical wind, kts — exactly one of typicalWindKt/typicalWaveHeightM is
+   *  set, gated by the spot's primary sport (see app.scoring.context on the
+   *  backend). Distinct from `wind` above, which non-tile consumers rely on
+   *  as a plain always-kts fallback. */
+  typicalWindKt?: number | null;
+  /** Typical wave height, m — set for surf spots instead of typicalWindKt. */
+  typicalWaveHeightM?: number | null;
+  /** This spot's own best (working) months, 1–12; null until computed. */
+  bestMonths?: number[] | null;
 }
 
 export interface RegionInfo {

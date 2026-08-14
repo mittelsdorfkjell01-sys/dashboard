@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-08-13T19:16:12Z",
+  "product": "Surfwinddata Forecast",
+  "horizon_days": 10,
+  "source_hashes": {
+    "app/forecast/publisher.py": "339621478fa77cd2d4f1d8a3c2d9bd75d1d34cb26c25aa736806b6b8b0b15ab5",
+    "app/schemas/live.py": "5058112abb4b307f96428c077830c136e7c54ca257e1b491448a416aad0eb411"
+  },
+  "active_snapshot_count": 1,
+  "snapshots": [
+    {
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "payload_hash": "ae094696f95491d99460c405ddd69ab8e327c290cb634e4db77c84e300975bad",
+      "model": "surfwinddata",
+      "days": 10,
+      "fallback_status": "open_meteo_transition"
+    }
+  ],
+  "aggregate_hash": "b12998753cf505b2c3f1cc430329236b85fa9e46fa8ff1813e12e513c8fcaffd"
+}

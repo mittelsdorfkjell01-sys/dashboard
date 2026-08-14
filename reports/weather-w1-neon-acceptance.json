@@ -1,0 +1,59 @@
+{
+  "status": "ready_for_user_review",
+  "review_recommendation": "approve_with_conditions",
+  "database": {
+    "connection": "successful", "type": "Neon", "client_tls_active": true,
+    "alembic_revision": "0034_geodata_shadow_phase2", "spots": 52,
+    "published_spots": 49, "active_weather_v2_snapshots": 3
+  },
+  "test_database": {
+    "separate": true, "connection": "successful", "type": "local PostGIS",
+    "status": "test_database_ready"
+  },
+  "tests": {
+    "backend_passed": 52, "backend_skipped": 0,
+    "frontend_files_passed": 22, "frontend_tests_passed": 181,
+    "ruff": "passed", "python_compile": "passed", "eslint": "passed",
+    "vite_build": "passed", "ui_detector_findings": 0
+  },
+  "canary": {
+    "dry_run_spots": 3, "live_executed": true,
+    "provider_requests": 5, "provider_retries": 0,
+    "provider_bytes": 545659,
+    "requests_by_group": {"atmosphere": 3, "marine": 2},
+    "bytes_by_group": {"atmosphere": 517818, "marine": 27841},
+    "neon_snapshots_created": 3,
+    "deduplication": "Two dedicated canary jobs plus one pre-existing Fischbach Ost spot_created lifecycle job; no parallel duplicate was created."
+  },
+  "spots": [
+    {
+      "name": "Baleal", "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "classification": "ocean", "coordinate_hash": "b54d772a12768739",
+      "baseline_snapshot_id": "d89379fd-ffbd-4369-a856-401fa51f5f2e",
+      "snapshot_id": "566de942-c4eb-4211-8fe2-ea0b1c9b4987",
+      "snapshot_hash": "ab2993762d9f670701d536d4b944fc41f72ccdf65a85b084530093486d1daaa2",
+      "duration_s": 2.406, "snapshot_size_bytes": 42843,
+      "availability": {"atmosphere": "available", "solar": "available", "marine": "available"},
+      "atmosphere_hours": 218, "marine_hours": 240, "marine_grid_distance_km": 3.146
+    },
+    {
+      "name": "Fischbach Ost", "spot_id": "40121576-5fa2-4cc4-a179-a9c2054fbe72",
+      "classification": "lake", "coordinate_hash": "d8135ed7f425a5b3",
+      "baseline_snapshot_id": null, "snapshot_id": "133716bf-1eb6-410d-a4b4-477e9159b9f9",
+      "snapshot_hash": "d67f41ba2b2a105655fc83a67acf67b14ad3c4353fb36b6905f855a37eb66c47",
+      "duration_s": 1.204, "snapshot_size_bytes": 41937,
+      "availability": {"atmosphere": "available", "solar": "available", "marine": "not_applicable_inland"},
+      "atmosphere_hours": 217, "marine_hours": 0, "marine_grid_distance_km": null
+    },
+    {
+      "name": "Lo Stagnone", "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "classification": "lagoon", "coordinate_hash": "74981600ec0a6698",
+      "baseline_snapshot_id": null, "snapshot_id": "37825ac5-d137-424b-a264-ea68d21f7c3b",
+      "snapshot_hash": "03568b6e455e1775097792ca030fdc875b1d962c2717f759276541d1284eba52",
+      "duration_s": 2.093, "snapshot_size_bytes": 41863,
+      "availability": {"atmosphere": "available", "solar": "available", "marine": "available"},
+      "atmosphere_hours": 217, "marine_hours": 240, "marine_grid_distance_km": 8.356
+    }
+  ],
+  "forbidden_followup_executed": false
+}

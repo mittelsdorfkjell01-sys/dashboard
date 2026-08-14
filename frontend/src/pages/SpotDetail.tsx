@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
@@ -29,6 +29,7 @@ import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { waterTypeFromCharacter } from "../lib/seasonView";
+import { mapLinkProps } from "../lib/mapLinks";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
@@ -288,9 +289,11 @@ export default function SpotDetail() {
                   {spot.coords ? (
                     <section ref={mapSlotRef} aria-label="Lage" className="spot-locator-compact order-3 min-w-0 lg:order-4 lg:col-span-2">
                       {mapReady ? (
-                        <Suspense fallback={<MapPlaceholder />}>
-                          <LocatorMap coords={spot.coords} />
-                        </Suspense>
+                        <LocatorMapBoundary coords={spot.coords}>
+                          <Suspense fallback={<MapPlaceholder />}>
+                            <LocatorMap coords={spot.coords} />
+                          </Suspense>
+                        </LocatorMapBoundary>
                       ) : (
                         <MapPlaceholder />
                       )}
@@ -416,4 +419,41 @@ export default function SpotDetail() {
 
 function MapPlaceholder() {
   return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse bg-band sm:h-[440px] lg:h-full" />;
+}
+
+class LocatorMapBoundary extends Component<
+  { children: ReactNode; coords: [number, number] },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Locator map unavailable:", error, info);
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    const [lat, lng] = this.props.coords;
+    const link = mapLinkProps(lat, lng);
+    return (
+      <div className="grid h-[360px] place-items-center bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
+        <div>
+          <p className="text-ui font-semibold text-ink">Karte momentan nicht verfügbar</p>
+          <p className="mt-2 text-label text-muted">Die übrigen Spotinformationen funktionieren weiterhin.</p>
+          <a
+            href={link.href}
+            target={link.target}
+            rel={link.rel}
+            className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-ui font-medium text-white transition-colors hover:bg-teal-hover"
+          >
+            In externer Karte öffnen
+          </a>
+        </div>
+      </div>
+    );
+  }
 }

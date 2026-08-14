@@ -1,0 +1,568 @@
+{
+  "plan_id": "414bad41516e9f9fa25e6d68304510800b3c0a64d851717c2a97cce7e97cb8cb",
+  "algorithm_version": "swd-shadow-v2-sectors16-rays9",
+  "started_at": "2026-08-14T13:57:13.277911+00:00",
+  "finished_at": "2026-08-14T13:57:21.999611+00:00",
+  "published": 50,
+  "eligible": 50,
+  "planned": 50,
+  "canary": [
+    {
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "name": "Baleal",
+      "status": "completed",
+      "profile_id": "9059e720-b266-497d-8cd0-6ea6bfa3a023",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "02c2ab83d1e1d69f2b740899aaf3fd70f7e256896768bb053c852a8b0cf4a52b",
+      "scientific_hash": "b2509afe07f5e08ebe028ee0c6effce2d5d05f65a9cb1bab3311654874dba23f",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.766
+    },
+    {
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "name": "Lo Stagnone",
+      "status": "completed",
+      "profile_id": "94a72f07-6963-4325-be82-81d65a194a3a",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "1d0f4505d7962b5099cd8381b71f7935a3923175b561d66722f824015958f083",
+      "scientific_hash": "9317b7fa2d272c6344e4bbb31314ae809528902cf105d6c7b63cd9e1d6dde2c6",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.516
+    },
+    {
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "name": "Pozo Izquierdo",
+      "status": "completed",
+      "profile_id": "073859f5-491d-4e40-abcf-53d5a2198159",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "d86ca3a9de60ce1a5155d47856d136cd941df8f9fd1c76955f7895c2da4aeaa8",
+      "scientific_hash": "60648169f1f85ab1ec84e3f0a1c5192c810e8ea41762c619957fd0d45745fed7",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.547
+    }
+  ],
+  "five_spot_validation": [
+    {
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "name": "Baleal",
+      "status": "skipped_identical",
+      "profile_id": "9059e720-b266-497d-8cd0-6ea6bfa3a023",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "02c2ab83d1e1d69f2b740899aaf3fd70f7e256896768bb053c852a8b0cf4a52b",
+      "scientific_hash": "b2509afe07f5e08ebe028ee0c6effce2d5d05f65a9cb1bab3311654874dba23f",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.171
+    },
+    {
+      "spot_id": "ac782223-0fc3-46ca-af19-4faecf4cebc9",
+      "name": "Brouwersdam",
+      "status": "completed",
+      "profile_id": "dae17c32-234b-4627-96ac-3ad166412e68",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "55205d776a266ee95e7668be69e522758ba19f76a4b88c40e3a6a64d448aa0a7",
+      "scientific_hash": "2ac71a45ccd5ba98b5f7e45a9668f2612091ac2902516d031de45e75e0c8ee2e",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.547
+    },
+    {
+      "spot_id": "163ec991-b1b9-4cc7-bfeb-379b1903714a",
+      "name": "Mundaka",
+      "status": "completed",
+      "profile_id": "a714a89b-5703-4802-8cfc-56bd0302d865",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "8e6fe5fef30382e7325cc9518ce0bb85a3c6a9f834e5df87614598e2e2c28348",
+      "scientific_hash": "bf4732698d62e23f515541e561fe63c8590a3042ae1138adcf9fba24c76f7068",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.594
+    },
+    {
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "name": "Lo Stagnone",
+      "status": "skipped_identical",
+      "profile_id": "94a72f07-6963-4325-be82-81d65a194a3a",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "1d0f4505d7962b5099cd8381b71f7935a3923175b561d66722f824015958f083",
+      "scientific_hash": "9317b7fa2d272c6344e4bbb31314ae809528902cf105d6c7b63cd9e1d6dde2c6",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.156
+    },
+    {
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "name": "Pozo Izquierdo",
+      "status": "skipped_identical",
+      "profile_id": "073859f5-491d-4e40-abcf-53d5a2198159",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "d86ca3a9de60ce1a5155d47856d136cd941df8f9fd1c76955f7895c2da4aeaa8",
+      "scientific_hash": "60648169f1f85ab1ec84e3f0a1c5192c810e8ea41762c619957fd0d45745fed7",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.157
+    }
+  ],
+  "results": [
+    {
+      "spot_id": "030c7c21-1f93-4072-9ddf-dd33f461731a",
+      "name": "Zarautz",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "163ec991-b1b9-4cc7-bfeb-379b1903714a",
+      "name": "Mundaka",
+      "status": "completed",
+      "profile_id": "a714a89b-5703-4802-8cfc-56bd0302d865",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "8e6fe5fef30382e7325cc9518ce0bb85a3c6a9f834e5df87614598e2e2c28348",
+      "scientific_hash": "bf4732698d62e23f515541e561fe63c8590a3042ae1138adcf9fba24c76f7068",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.594
+    },
+    {
+      "spot_id": "aee835d5-1a70-47d5-ae4c-3cdce509841f",
+      "name": "La Gravière (Hossegor)",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "07f77153-2c79-45f2-95fd-13c02f7bb0f3",
+      "name": "El Médano",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "name": "Pozo Izquierdo",
+      "status": "skipped_identical",
+      "profile_id": "073859f5-491d-4e40-abcf-53d5a2198159",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "d86ca3a9de60ce1a5155d47856d136cd941df8f9fd1c76955f7895c2da4aeaa8",
+      "scientific_hash": "60648169f1f85ab1ec84e3f0a1c5192c810e8ea41762c619957fd0d45745fed7",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.157
+    },
+    {
+      "spot_id": "b2929828-877f-4017-b000-aef89b65329d",
+      "name": "Matas Bay",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "9cb8877f-2f89-4250-9cd7-4c2930a60f1d",
+      "name": "Sotavento",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "d6861d43-e1c2-474d-9479-a21771a5be82",
+      "name": "El Cotillo",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "0b4f0150-ebbe-4d5f-aa6c-5d0bfffc9e07",
+      "name": "Fistral Beach (Newquay)",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "f1347d4b-dcd8-4608-933f-8c577236c990",
+      "name": "Lahinch",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "e480c40a-42b8-4486-a810-4a4c50ffa624",
+      "name": "The Peak (Bundoran)",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "fdf6693b-227c-49d1-9027-9a21fde879b0",
+      "name": "Valdevaqueros",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "60b0c3b6-182c-47ce-9bbb-35853860e60d",
+      "name": "Balneario",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "1895746e-b1ea-4e31-ae2b-53d5fd1fd84f",
+      "name": "Keros",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "b3028690-4ebc-47e1-aa38-bea9f683ec0b",
+      "name": "Theologos (Fanes)",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "a9b99380-a16a-4469-ad93-0758fb0973d1",
+      "name": "Psalidi",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "acb9ea3d-0c15-4380-b7c2-641d0e77082e",
+      "name": "Prasonisi",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "60572156-921c-44d8-b6db-3a9b1d48ab4f",
+      "name": "Mikri Vigla",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "4a36ac75-cf68-4101-835f-36c17cddf8f2",
+      "name": "Pounda",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "fa38b6b8-2562-4ad7-b885-c2b0795e635e",
+      "name": "Flag Beach",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "531b6453-819f-440e-821c-d8df162b876d",
+      "name": "Majanicho",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "38a9ab3e-1233-47b3-96ca-4eaf45b7176d",
+      "name": "Capo Mannu",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "206b0341-239b-4a5f-8b67-3336c2f4caec",
+      "name": "La Sud (Hossegor)",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "63535628-9237-43ce-b35b-866b486d83cd",
+      "name": "Les Estagnots (Seignosse)",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "e0ac4e9b-ee0e-4714-8cef-f82b50474634",
+      "name": "Somo",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "a8436f25-9567-48d8-b183-f010e70eaec7",
+      "name": "Rodiles",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "f023f7fe-55a2-464a-aecb-0eae2447fa1c",
+      "name": "Heidkate",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "adeddb76-0991-405e-923a-be50126783be",
+      "name": "Stein",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "5af208cb-1360-4821-bbec-6df8ed0eb040",
+      "name": "Schilksee",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "3bc0f5c0-db46-4bb1-b068-125ed14a4f83",
+      "name": "Laboe",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "a38c88da-1830-4417-8e1e-e0a4cddcd239",
+      "name": "Fehmarn Wulfener Hals",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "5ffee534-7c7a-4b2f-ad57-bd2fd3d6f1b5",
+      "name": "Gold - Fehmarn",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "40121576-5fa2-4cc4-a179-a9c2054fbe72",
+      "name": "Fischbach Ost",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "edf75fb7-d762-403f-97fc-615393fbc604",
+      "name": "Porto Pollo",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "bf423851-525d-4bc5-aeb4-a8e731426895",
+      "name": "Poetto",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "77b414a2-d224-4fdf-aba7-075eb8cc0b99",
+      "name": "Punta Trettu",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "name": "Lo Stagnone",
+      "status": "skipped_identical",
+      "profile_id": "94a72f07-6963-4325-be82-81d65a194a3a",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "1d0f4505d7962b5099cd8381b71f7935a3923175b561d66722f824015958f083",
+      "scientific_hash": "9317b7fa2d272c6344e4bbb31314ae809528902cf105d6c7b63cd9e1d6dde2c6",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.156
+    },
+    {
+      "spot_id": "52d94a36-1875-4fd4-8c8d-d05e10db838f",
+      "name": "Foz do Lizandro",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "e8cb8e14-c8a1-455f-b46b-f3d568e5db08",
+      "name": "Ribeira d'Ilhas",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "c24cca3c-3cf1-4bf9-af59-9453b7264265",
+      "name": "Supertubos",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "name": "Baleal",
+      "status": "skipped_identical",
+      "profile_id": "9059e720-b266-497d-8cd0-6ea6bfa3a023",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "02c2ab83d1e1d69f2b740899aaf3fd70f7e256896768bb053c852a8b0cf4a52b",
+      "scientific_hash": "b2509afe07f5e08ebe028ee0c6effce2d5d05f65a9cb1bab3311654874dba23f",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.171
+    },
+    {
+      "spot_id": "d817c292-b22e-4472-86c7-93aa5d54230a",
+      "name": "Praia do Norte",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "9f588c34-1726-4076-91e0-ef9b2d63f43e",
+      "name": "Praia Grande",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "8f8c7877-d105-4be8-91b5-9818d5721579",
+      "name": "Praia do Guincho",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "75977a93-e90e-4a41-b15d-e12fd09b41d8",
+      "name": "Carcavelos",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "9100c3b9-1c6f-4181-902b-400314db0e5d",
+      "name": "Coxos",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "5db4574a-3829-494c-b317-bffc2e9665e7",
+      "name": "São Lourenço",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "736f4f1a-0f54-4cd4-a29e-878cd513c058",
+      "name": "Thurso East",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "cb98c5bb-9595-43a2-b6e1-de570bbd7886",
+      "name": "Leucate",
+      "status": "blocked_cache_missing",
+      "network_requests": 0,
+      "network_bytes": 0
+    },
+    {
+      "spot_id": "ac782223-0fc3-46ca-af19-4faecf4cebc9",
+      "name": "Brouwersdam",
+      "status": "completed",
+      "profile_id": "dae17c32-234b-4627-96ac-3ad166412e68",
+      "profile_class": "A",
+      "valid_sectors": 16,
+      "input_hash": "55205d776a266ee95e7668be69e522758ba19f76a4b88c40e3a6a64d448aa0a7",
+      "scientific_hash": "2ac71a45ccd5ba98b5f7e45a9668f2612091ac2902516d031de45e75e0c8ee2e",
+      "network_requests": 0,
+      "network_bytes": 0,
+      "duration_seconds": 0.547
+    }
+  ],
+  "counts": {
+    "blocked_cache_missing": 45,
+    "completed": 2,
+    "skipped_identical": 3
+  },
+  "network_requests": 0,
+  "network_bytes": 0,
+  "cache_only": true,
+  "public_baseline_identical": true,
+  "orphan_jobs": 0,
+  "partials": 0,
+  "batches": [
+    {
+      "index": 0,
+      "stage": "canary",
+      "spot_count": 3,
+      "tile_group": "6dc8dbbed51ef6e58e03e804efa8ce390df30bb92622f0d6d75362435c7be729",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 1,
+      "stage": "five",
+      "spot_count": 5,
+      "tile_group": "79ee0fcb232b86a9840c25a1ae39150323e730d1e72cd5d6770f42b4f9122b46",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 2,
+      "stage": "expanded",
+      "spot_count": 5,
+      "tile_group": "d5e5a96c3dbe774a994ee35ac067c9c2932e8c43ba8255a0dcd3a0509eeb30fe",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 3,
+      "stage": "expanded",
+      "spot_count": 9,
+      "tile_group": "e6db6ef8524a80db9a7d619967c0768ecd849416b102feec126b714084bafc5a",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 4,
+      "stage": "expanded",
+      "spot_count": 10,
+      "tile_group": "70681996b6993e0b5f9a007a1f331528e46f06e078af3455cbd9d0a48fff58ad",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 5,
+      "stage": "expanded",
+      "spot_count": 5,
+      "tile_group": "679f968f031378e4afbb45458d47f72d3e5c2af1584ebe9d67cb61ef13e044c7",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 6,
+      "stage": "expanded",
+      "spot_count": 10,
+      "tile_group": "d0307dd603cafb1cc6dcd27876b8c0ecb118f96ef10c17fd47d7a6c0734b29b5",
+      "max_temporary_bytes": 0
+    },
+    {
+      "index": 7,
+      "stage": "expanded",
+      "spot_count": 3,
+      "tile_group": "3db9cf07a37ac23e6ec21fa97948a07c9e3f3e4d225ceab24e4344274847e1b9",
+      "max_temporary_bytes": 0
+    }
+  ]
+}

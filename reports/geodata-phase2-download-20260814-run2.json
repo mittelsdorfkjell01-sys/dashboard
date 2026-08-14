@@ -1,0 +1,156 @@
+{
+  "generated_at": "2026-08-14T12:50:58Z",
+  "date_berlin": "2026-08-14",
+  "status": "completed",
+  "run_index": 2,
+  "limits": {
+    "assets": 200,
+    "asset_bytes": 268435456,
+    "run_bytes": 1073741824,
+    "daily_bytes": 2147483648,
+    "parallel_downloads": 2
+  },
+  "planned_assets": 11,
+  "planned_bytes": 519023064,
+  "transferred_bytes": 519023064,
+  "daily_transferred_bytes": 1580819566,
+  "cache_hits": 0,
+  "retries": 0,
+  "duration_seconds": 29.5,
+  "assets": [
+    {
+      "product_id": "c61a92e2-88d0-4a45-9939-bd3ab7773b2b",
+      "layer": "HEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/03/22/DEM1_SAR_DGE_30_20110322T172627_20130110T172720_ADS_000000_CFsl_aedaeae0/Copernicus_DSM_10_N51_00_E004_00/AUXFILES/Copernicus_DSM_10_N51_00_E004_00_HEM.tif",
+      "expected_bytes": 34613134,
+      "actual_bytes": 34613134,
+      "sha256": "a3e243d447830b8f576dc57944b43ecdeef22dae9e7a80fbf3ea70c0632a76c0",
+      "etag": "c739648c3a67859ccd22772262222368-2",
+      "cache_hit": false,
+      "duration_seconds": 2.162
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "DEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/05/08/DEM1_SAR_DGE_30_20110508T180558_20140808T180810_ADS_000000_JkdX_8303cb54/Copernicus_DSM_10_N43_00_W004_00/DEM/Copernicus_DSM_10_N43_00_W004_00_DEM.tif",
+      "expected_bytes": 51897972,
+      "actual_bytes": 51897972,
+      "sha256": "b6019f1ccb671b669e53570869f0581d276353e16045ad3127aeeb58eeccd90b",
+      "etag": "c17e6b778a6cd435ed1e8091e5b6b6ce-2",
+      "cache_hit": false,
+      "duration_seconds": 3.069
+    },
+    {
+      "product_id": "c77df1ea-5a6c-492d-a0b4-e72de9c5498a",
+      "layer": "HEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/05/08/DEM1_SAR_DGE_30_20110508T180558_20140808T180810_ADS_000000_JkdX_8303cb54/Copernicus_DSM_10_N43_00_W004_00/AUXFILES/Copernicus_DSM_10_N43_00_W004_00_HEM.tif",
+      "expected_bytes": 51897934,
+      "actual_bytes": 51897934,
+      "sha256": "7d09b24109ed03c1e24a0d87e1e6a3047d5843075853988b62a39125b72f6988",
+      "etag": "b8bd4f29f5b621bb04f19c6e3287fd2a-2",
+      "cache_hit": false,
+      "duration_seconds": 2.881
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "DEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/02/06/DEM1_SAR_DGE_30_20110206T172634_20130110T172720_ADS_000000_Lfrn_adea2397/Copernicus_DSM_10_N52_00_E004_00/DEM/Copernicus_DSM_10_N52_00_E004_00_DEM.tif",
+      "expected_bytes": 34613172,
+      "actual_bytes": 34613172,
+      "sha256": "339ca8eef74b21b09825757ded5c600881bb30a3428b60174046967b81c022bf",
+      "etag": "d78d97d5f4bf1878aae8d887da4a5df8-2",
+      "cache_hit": false,
+      "duration_seconds": 1.883
+    },
+    {
+      "product_id": "cd907f69-faa2-4155-b40e-16ec1ebfa351",
+      "layer": "HEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/02/06/DEM1_SAR_DGE_30_20110206T172634_20130110T172720_ADS_000000_Lfrn_adea2397/Copernicus_DSM_10_N52_00_E004_00/AUXFILES/Copernicus_DSM_10_N52_00_E004_00_HEM.tif",
+      "expected_bytes": 34613134,
+      "actual_bytes": 34613134,
+      "sha256": "a3089890a46d4ac756766ebb13c4bf9078f5295a72d23301ea4247c7190a8e42",
+      "etag": "4e2c66af6ea310f7bef394b31c55ad82-2",
+      "cache_hit": false,
+      "duration_seconds": 2.039
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "DEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/07/05/DEM1_SAR_DGE_30_20110705T171414_20120815T171434_ADS_000000_uE78_8303cb54/Copernicus_DSM_10_N37_00_E011_00/DEM/Copernicus_DSM_10_N37_00_E011_00_DEM.tif",
+      "expected_bytes": 51897972,
+      "actual_bytes": 51897972,
+      "sha256": "c27adbbdc781adffaa680208023f1d252840f9024e080de20da93fe5f457c15e",
+      "etag": "9f4379518d98cca1c4c7f63c8c9e32ca-2",
+      "cache_hit": false,
+      "duration_seconds": 2.997
+    },
+    {
+      "product_id": "ce1c017b-ad94-40e5-b774-80184ac126d4",
+      "layer": "HEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/07/05/DEM1_SAR_DGE_30_20110705T171414_20120815T171434_ADS_000000_uE78_8303cb54/Copernicus_DSM_10_N37_00_E011_00/AUXFILES/Copernicus_DSM_10_N37_00_E011_00_HEM.tif",
+      "expected_bytes": 51897934,
+      "actual_bytes": 51897934,
+      "sha256": "035ec1026bc7a0db7f7398affa0a1356e0fe3b199b25bdfc1d25f698269e3aee",
+      "etag": "da48db99e742f219adeaaf11136a374e-2",
+      "cache_hit": false,
+      "duration_seconds": 2.768
+    },
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "DEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121215T183239_ADS_000000_M107_7e3eb1c/Copernicus_DSM_10_N38_00_W010_00/DEM/Copernicus_DSM_10_N38_00_W010_00_DEM.tif",
+      "expected_bytes": 51897972,
+      "actual_bytes": 51897972,
+      "sha256": "cca02930dfa09df626b6841db898f0e2291a6aaaad5c170f6c1ff3776b6e3543",
+      "etag": "69ea87f12276d3be379549427fb41513-2",
+      "cache_hit": false,
+      "duration_seconds": 2.922
+    },
+    {
+      "product_id": "d2c7a5e3-6d1f-471a-b36f-8a327f35bdf0",
+      "layer": "HEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/04/20/DEM1_SAR_DGE_30_20110420T183153_20121215T183239_ADS_000000_M107_7e3eb1c/Copernicus_DSM_10_N38_00_W010_00/AUXFILES/Copernicus_DSM_10_N38_00_W010_00_HEM.tif",
+      "expected_bytes": 51897934,
+      "actual_bytes": 51897934,
+      "sha256": "65bb8c7fde7ac073c8761006971f2c72481685c60c44ff3f4a7625f670996cd4",
+      "etag": "d545d99403a95480e34a8e9c996dd766-2",
+      "cache_hit": false,
+      "duration_seconds": 2.904
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "DEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/08/DEM1_SAR_DGE_30_20110608T170545_20140914T165748_ADS_000000_2752_8303cb54/Copernicus_DSM_10_N37_00_E013_00/DEM/Copernicus_DSM_10_N37_00_E013_00_DEM.tif",
+      "expected_bytes": 51897972,
+      "actual_bytes": 51897972,
+      "sha256": "3fe867c6d6db14d296eba861fe951f495ded6b38fe568085262382ffc286f86a",
+      "etag": "4649c4f7589baeb3e00dee283b953a82-2",
+      "cache_hit": false,
+      "duration_seconds": 2.934
+    },
+    {
+      "product_id": "e91017f5-8adb-4e89-99a8-060b34d34cb0",
+      "layer": "HEM",
+      "object_key": "CCM/COP-DEM_GLO-30-DGED/SAR_DGE_30_A4AD/2011/06/08/DEM1_SAR_DGE_30_20110608T170545_20140914T165748_ADS_000000_2752_8303cb54/Copernicus_DSM_10_N37_00_E013_00/AUXFILES/Copernicus_DSM_10_N37_00_E013_00_HEM.tif",
+      "expected_bytes": 51897934,
+      "actual_bytes": 51897934,
+      "sha256": "cc62c66251e2f60b89a5674bea5cfe827de7fa04f134cd59701fbfa421cb7c88",
+      "etag": "99016744fb2a28e9968b308a7d0eeac4-2",
+      "cache_hit": false,
+      "duration_seconds": 2.985
+    }
+  ],
+  "ocean_absent_tiles": [
+    "N26W016",
+    "N27W015",
+    "N38E011",
+    "N38W011",
+    "N39W011",
+    "N40W010",
+    "N40W011",
+    "N44W003",
+    "N44W004",
+    "N52E002",
+    "N52E003"
+  ]
+}

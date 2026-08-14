@@ -18,12 +18,20 @@ MARINE_URL = "https://marine-api.open-meteo.com/v1/marine"
 
 FORECAST_HOURLY = (
     "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,"
-    "pressure_msl,cloud_cover,cloud_cover_low,shortwave_radiation_instant,precipitation"
+    "apparent_temperature,pressure_msl,cloud_cover,cloud_cover_low,"
+    "shortwave_radiation_instant,precipitation,uv_index,weather_code,is_day"
+)
+FORECAST_DAILY = (
+    "temperature_2m_min,temperature_2m_max,apparent_temperature_min,"
+    "apparent_temperature_max,precipitation_sum,precipitation_probability_max,"
+    "cloud_cover_mean,weather_code,sunrise,sunset,daylight_duration,uv_index_max"
 )
 FORECAST_MINUTELY_15 = "wind_speed_10m,wind_gusts_10m,wind_direction_10m"
 MARINE_HOURLY = (
-    "swell_wave_height,swell_wave_period,swell_wave_direction,sea_surface_temperature"
+    "wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,"
+    "swell_wave_direction,sea_surface_temperature"
 )
+MARINE_DAILY = "wave_height_max,wave_direction_dominant,wave_period_max"
 
 # Open-Meteo's hard limit for the free forecast horizon; we never request more.
 MAX_FORECAST_DAYS = 10
@@ -42,6 +50,10 @@ class HttpOpenMeteoClient:
         self._timeout = timeout
         self._attempts = max(1, attempts)
         self._budget = budget or default_request_budget
+        self.request_attempts = 0
+        self.response_bytes = 0
+        self.requests_by_endpoint = {"atmosphere": 0, "marine": 0}
+        self.bytes_by_endpoint = {"atmosphere": 0, "marine": 0}
 
     def _get(self, url: str, params: dict) -> dict:
         import httpx
@@ -50,8 +62,14 @@ class HttpOpenMeteoClient:
         for attempt in range(self._attempts):
             try:
                 self._budget.consume()
+                group = "marine" if url == MARINE_URL else "atmosphere"
+                self.request_attempts += 1
+                self.requests_by_endpoint[group] += 1
                 resp = httpx.get(url, params=params, timeout=self._timeout)
                 resp.raise_for_status()
+                size = len(resp.content)
+                self.response_bytes += size
+                self.bytes_by_endpoint[group] += size
                 return resp.json()
             except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as exc:
                 last_error = exc
@@ -82,10 +100,11 @@ class HttpOpenMeteoClient:
                 "hourly": FORECAST_HOURLY,
                 "minutely_15": FORECAST_MINUTELY_15,
                 "current": FORECAST_HOURLY,
+                "daily": FORECAST_DAILY,
                 "models": models,
                 "forecast_days": min(days, MAX_FORECAST_DAYS),
                 "wind_speed_unit": "ms",
-                "timezone": "GMT",
+                "timezone": "auto",
             },
         )
 
@@ -99,8 +118,10 @@ class HttpOpenMeteoClient:
                 "longitude": lon,
                 "hourly": MARINE_HOURLY,
                 "current": MARINE_HOURLY,
+                "daily": MARINE_DAILY,
                 "forecast_days": min(days, MAX_FORECAST_DAYS),
                 "timezone": "GMT",
+                "cell_selection": "sea",
             },
         )
 

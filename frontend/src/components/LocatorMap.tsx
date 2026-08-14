@@ -59,20 +59,28 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   const mapRef = useRef<MlMap | null>(null);
   const [active, setActive] = useState(false);
   const [ready, setReady] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
-    const map = new maplibregl.Map({
-      container,
-      style: KEY
-        ? `https://api.maptiler.com/maps/satellite/style.json?key=${KEY}`
-        : RASTER_STYLE,
-      center: [lng, lat],
-      zoom: 12.5,
-      pitch: 0, // flat top-down view
-      attributionControl: { compact: true },
-    });
+    let map: MlMap;
+    try {
+      map = new maplibregl.Map({
+        container,
+        style: KEY
+          ? `https://api.maptiler.com/maps/satellite/style.json?key=${KEY}`
+          : RASTER_STYLE,
+        center: [lng, lat],
+        zoom: 12.5,
+        pitch: 0, // flat top-down view
+        attributionControl: { compact: true },
+      });
+    } catch (error) {
+      console.error("Unable to initialise locator map:", error);
+      setUnavailable(true);
+      return;
+    }
     mapRef.current = map;
     map.dragRotate.disable();
     map.touchPitch.disable();
@@ -140,6 +148,24 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       map.off("click", lock);
     };
   }, [active]);
+
+  if (unavailable) {
+    return (
+      <div className="grid h-[360px] place-items-center bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
+        <div>
+          <p className="text-ui font-semibold text-ink">Karte momentan nicht verfügbar</p>
+          <a
+            href={link.href}
+            target={link.target}
+            rel={link.rel}
+            className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-ui font-medium text-white transition-colors hover:bg-teal-hover"
+          >
+            In externer Karte öffnen
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     // data-lenis-prevent stops the wheel from also scrolling the surrounding

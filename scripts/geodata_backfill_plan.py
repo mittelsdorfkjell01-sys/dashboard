@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import json
+import hashlib
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,6 +18,21 @@ from app.forecast.copernicus_gate import preflight_gate
 
 def main():
     gate = preflight_gate([])
+    pilot_ready = False
+    analysis_report = Path("reports/geodata-phase2-analysis.json")
+    warm_report = Path("reports/geodata-phase2-warm.json")
+    if analysis_report.exists() and warm_report.exists():
+        try:
+            analysis = json.loads(analysis_report.read_text(encoding="utf-8"))
+            warm = json.loads(warm_report.read_text(encoding="utf-8"))
+            pilot_ready = (
+                analysis.get("status") == "accepted"
+                and warm.get("status") == "accepted"
+                and warm.get("network_requests") == 0
+                and warm.get("identical") is True
+            )
+        except (OSError, ValueError):
+            pilot_ready = False
     candidates = []
     excluded = []
     with SessionLocal() as db:
@@ -27,7 +43,13 @@ def main():
                 )
             ).all()
         )
-        for spot in db.scalars(select(Spot).order_by(Spot.id)).all():
+        all_spots = db.scalars(select(Spot).order_by(Spot.id)).all()
+        for spot in all_spots:
+            if spot.status != "published":
+                excluded.append(
+                    {"spot_id": str(spot.id), "reason": "excluded_not_published"}
+                )
+                continue
             try:
                 p = to_shape(spot.location)
             except Exception:
@@ -45,13 +67,39 @@ def main():
                     str(spot.id), spot.name, p.y, p.x, 2 if spot.id not in active else 0
                 )
             )
+    effective_gate = "ready" if gate.status == "ready" and pilot_ready else "blocked_prerequisite"
     plan = build_plan(
         candidates,
         max_batch_size=10,
-        gate_status="blocked_prerequisite" if gate.status != "ready" else "ready",
+        gate_status=effective_gate,
     )
+    for batch in plan["batches"]:
+        for item in batch["spots"]:
+            raw = f"{item['coordinates'][0]:.7f}|{item['coordinates'][1]:.7f}"
+            item["coordinate_hash"] = hashlib.sha256(raw.encode()).hexdigest()
+            item["published"] = True
+    plan_id = hashlib.sha256(
+        json.dumps(
+            {
+                "plan_version": plan["plan_version"],
+                "algorithm_version": plan["algorithm_version"],
+                "spots": [
+                    {
+                        "spot_id": item["spot_id"],
+                        "coordinate_hash": item["coordinate_hash"],
+                        "asset_signature": item["asset_signature"],
+                    }
+                    for batch in plan["batches"]
+                    for item in batch["spots"]
+                ],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
     plan.update(
         {
+            "plan_id": plan_id,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "excluded": excluded,
             "access": {
@@ -59,6 +107,7 @@ def main():
                 "status": gate.status,
                 "reason": gate.reason,
             },
+            "pilot_accepted": pilot_ready,
             "dry_run": True,
             "downloads": 0,
             "profiles_created": 0,
