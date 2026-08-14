@@ -83,6 +83,8 @@ class SpotRead(BaseModel):
     slug: str
     name: str
     region_id: uuid.UUID | None = None
+    region_name: str | None = None
+    region_country: str | None = None
     location: GeoPoint | None = None
     era5_cell: dict[str, Any] | None = None
     model_pref: str | None = None
@@ -107,11 +109,14 @@ class SpotRead(BaseModel):
     @classmethod
     def from_orm_spot(cls, spot: Any) -> "SpotRead":
         """Build a read schema from an ORM spot, converting the geography column."""
+        region = getattr(spot, "region", None)
         return cls(
             id=spot.id,
             slug=spot.slug,
             name=spot.name,
             region_id=spot.region_id,
+            region_name=getattr(region, "name", None),
+            region_country=getattr(region, "country", None),
             location=GeoPoint.from_geo(spot.location),
             era5_cell=spot.era5_cell,
             model_pref=spot.model_pref,

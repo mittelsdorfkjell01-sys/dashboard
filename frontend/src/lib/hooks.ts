@@ -20,20 +20,15 @@ export type AsyncStateReloadable<T> = SwrState<T>;
  *  spot list never re-fetches the region catalogue from scratch. */
 export function useSpots(query: api.SpotQuery = {}): AsyncStateReloadable<Spot[]> {
   const spots = useSwr(`spots:${JSON.stringify(query)}`, () => api.getSpots(query));
-  const regions = useRegions();
-  const data = useMemo(() => {
-    if (!spots.data || !regions.data) return null;
-    const byId = new Map(regions.data.map((r) => [r.id, r]));
-    return adaptSpots(spots.data, byId);
-  }, [spots.data, regions.data]);
+  const data = useMemo(
+    () => (spots.data ? adaptSpots(spots.data, new Map()) : null),
+    [spots.data],
+  );
   return {
     data,
-    loading: spots.loading || regions.loading,
-    error: spots.error ?? regions.error,
-    reload: () => {
-      spots.reload();
-      regions.reload();
-    },
+    loading: spots.loading,
+    error: spots.error,
+    reload: spots.reload,
   };
 }
 
@@ -42,43 +37,30 @@ export function useSpots(query: api.SpotQuery = {}): AsyncStateReloadable<Spot[]
  *  regions. Rotates daily; same shape as {@link useSpots} so tiles are unchanged. */
 export function useTopSpots(limit = 5): AsyncStateReloadable<Spot[]> {
   const spots = useSwr(`top-spots:${limit}`, () => api.getTopSpots(limit));
-  const regions = useRegions();
-  const data = useMemo(() => {
-    if (!spots.data || !regions.data) return null;
-    const byId = new Map(regions.data.map((r) => [r.id, r]));
-    return adaptSpots(spots.data, byId);
-  }, [spots.data, regions.data]);
+  const data = useMemo(
+    () => (spots.data ? adaptSpots(spots.data, new Map()) : null),
+    [spots.data],
+  );
   return {
     data,
-    loading: spots.loading || regions.loading,
-    error: spots.error ?? regions.error,
-    reload: () => {
-      spots.reload();
-      regions.reload();
-    },
+    loading: spots.loading,
+    error: spots.error,
+    reload: spots.reload,
   };
 }
 
 /** A single spot (full record) + its region, adapted. */
 export function useSpot(id?: string): AsyncStateReloadable<Spot> {
   const spot = useSwr(id ? `spot:${id}` : null, () => api.getSpot(id!));
-  const regionId = spot.data?.region_id;
-  const region = useSwr(
-    regionId ? `region:${regionId}` : null,
-    () => api.getRegion(regionId!)
-  );
   const data = useMemo(
-    () => (spot.data ? adaptSpot(spot.data, region.data ?? undefined) : null),
-    [spot.data, region.data]
+    () => (spot.data ? adaptSpot(spot.data) : null),
+    [spot.data],
   );
   return {
     data,
     loading: spot.loading,
     error: spot.error,
-    reload: () => {
-      spot.reload();
-      region.reload();
-    },
+    reload: spot.reload,
   };
 }
 

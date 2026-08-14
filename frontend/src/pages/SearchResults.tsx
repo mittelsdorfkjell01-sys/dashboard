@@ -6,6 +6,7 @@ import { ErrorBanner, EmptyState } from "../components/AsyncStates";
 import * as api from "../lib/api";
 import { sportLabel } from "../lib/labels";
 import RegionTile from "../components/RegionTile";
+import { spotPath } from "../lib/spotRoutes";
 
 const MONTHS = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
@@ -183,7 +184,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
             {result.spots.map((s) => (
               <li key={s.id}>
                 <Link
-                  to={`/spot/${s.id}`}
+                  to={spotPath(s)}
                   className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-3 transition-colors hover:bg-band/60"
                 >
                   <span className="min-w-0">

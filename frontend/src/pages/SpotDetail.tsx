@@ -3,16 +3,12 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
 import Facilities from "../components/Facilities";
-import SpotFlowMap from "../components/SpotFlowMap";
 import SpotTabs from "../components/SpotTabs";
 import TidePanel from "../components/TidePanel";
 import WindRose from "../components/WindRose";
 import SpotDataHeader from "../components/data/SpotDataHeader";
 import LiveRow from "../components/data/LiveRow";
-import Meteogram from "../components/data/Meteogram";
 import TimeScrubber from "../components/data/TimeScrubber";
-import WeatherDetailsTable from "../components/data/WeatherDetailsTable";
-import Climatology from "../components/data/Climatology";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
@@ -31,12 +27,17 @@ import { facilitiesFromMap } from "../lib/spotView";
 import { waterTypeFromCharacter } from "../lib/seasonView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
+import { spotPath } from "../lib/spotRoutes";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
 const LocatorMap = lazy(() => import("../components/LocatorMap"));
+const SpotFlowMap = lazy(() => import("../components/SpotFlowMap"));
+const Meteogram = lazy(() => import("../components/data/Meteogram"));
+const WeatherDetailsTable = lazy(() => import("../components/data/WeatherDetailsTable"));
+const Climatology = lazy(() => import("../components/data/Climatology"));
 
 export default function SpotDetail() {
-  const { id } = useParams();
+  const { spotName } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = location.pathname.endsWith("/daten") ? "daten" : "info";
@@ -61,11 +62,19 @@ export default function SpotDetail() {
     exit: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir >= 0 ? -12 : 12 }),
   };
 
-  const { data: spot, loading, error, reload } = useSpot(id);
-  const { data: live } = useSpotLive(id);
+  const { data: spot, loading, error, reload } = useSpot(spotName);
+  const spotId = spot?.uuid;
+  const { data: live } = useSpotLive(activeTab === "daten" ? spotId : undefined);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
-    useSpotForecast(id);
-  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } = useCommunityFeed(id);
+    useSpotForecast(activeTab === "daten" ? spotId : undefined);
+  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } =
+    useCommunityFeed(activeTab === "info" ? spotId : undefined);
+
+  useEffect(() => {
+    if (!spot) return;
+    const canonical = spotPath(spot, activeTab);
+    if (location.pathname !== canonical) navigate(canonical, { replace: true });
+  }, [activeTab, location.pathname, navigate, spot]);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -154,12 +163,10 @@ export default function SpotDetail() {
   // The teaser shows the newest post that actually has text — a photo-only
   // post isn't a "comment", and its absence triggers the write-first prompt.
 
-  const tabs = id
-    ? [
-        { id: "info", label: "Info", href: `/spot/${id}` },
-        { id: "daten", label: "Daten", href: `/spot/${id}/daten` },
-      ]
-    : [];
+  const tabs = [
+    { id: "info", label: "Info", href: spotPath(spot, "info") },
+    { id: "daten", label: "Daten", href: spotPath(spot, "daten") },
+  ];
 
   return (
     <div className="spot-detail-page relative min-h-screen min-w-0 max-w-full overflow-x-clip bg-page">
@@ -303,7 +310,7 @@ export default function SpotDetail() {
                   )}
                   <div className="order-5 min-w-0">
                     <SpotCommentBox
-                      spotId={id}
+                      spotId={spotId}
                       posts={sortedPosts}
                       onPosted={(tip) => {
                         if (tip) addTip(tip);
@@ -315,10 +322,10 @@ export default function SpotDetail() {
                   </div>
               </div>
 
-              {id && (
+              {spotId && (
                 // 96px visible separation after the location/community group.
                 <div className="mt-24 lg:mt-[112.94px]">
-                  <SimilarSpots spotId={id} sport={spot.sports?.[0]} />
+                  <SimilarSpots spotId={spotId} sport={spot.sports?.[0]} />
                 </div>
               )}
             </SectionBand>
@@ -328,7 +335,7 @@ export default function SpotDetail() {
               onClose={() => setGalleryOpen(false)}
               triggerRef={galleryTriggerRef}
               photos={photos}
-              spotId={id}
+              spotId={spotId}
             />
             </motion.div>
           )}
@@ -359,27 +366,33 @@ export default function SpotDetail() {
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Meteogramm · 10 Tage</p></div>
                   {forecastLoading && <div className="h-[280px] animate-pulse bg-band" />}
-                  {!forecastLoading && forecast && forecast.days.length > 0 && <Meteogram forecast={forecast} />}
+                  {!forecastLoading && forecast && forecast.days.length > 0 && (
+                    <Suspense fallback={<DataModulePlaceholder height="h-[280px]" />}>
+                      <Meteogram forecast={forecast} />
+                    </Suspense>
+                  )}
                   {!forecastLoading && (!forecast || forecast.days.length === 0) && <EmptyState message={forecastError ? "Vorhersage momentan nicht verfügbar." : "Keine Vorhersage-Daten."} />}
                 </div>
 
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wind + Welle · Karte</p></div>
-                <SpotFlowMap
-                  coords={mapCoords}
-                  windDir={windDir}
-                  windKts={currentWind ?? spot.wind}
-                  waveDir={spot.waveDir ?? windDir}
-                  coast={spot.coast ?? ((spot.waveDir ?? windDir) + 180) % 360}
-                  period={live?.current.period ?? 5}
-                  waterType={waterType}
-                  zoom={spot.mapView?.zoom}
-                  mapCenter={spot.mapView?.center}
-                  live={live}
-                  forecast={forecast}
-                  showLayerSwitcher
-                  rounded={false}
-                />
+                <Suspense fallback={<DataModulePlaceholder height="h-[420px]" />}>
+                  <SpotFlowMap
+                    coords={mapCoords}
+                    windDir={windDir}
+                    windKts={currentWind ?? spot.wind}
+                    waveDir={spot.waveDir ?? windDir}
+                    coast={spot.coast ?? ((spot.waveDir ?? windDir) + 180) % 360}
+                    period={live?.current.period ?? 5}
+                    waterType={waterType}
+                    zoom={spot.mapView?.zoom}
+                    mapCenter={spot.mapView?.center}
+                    live={live}
+                    forecast={forecast}
+                    showLayerSwitcher
+                    rounded={false}
+                  />
+                </Suspense>
                   <TimeScrubber />
                 </div>
 
@@ -388,20 +401,24 @@ export default function SpotDetail() {
                     <p className="text-caption font-medium uppercase tracking-wider text-muted">Windrichtung · 52 W</p>
                     <WindRose windDir={windDir} waveDir={spot.waveDir ?? live?.current.swell_dir ?? undefined} className="mx-auto mt-2 h-52 max-w-full" />
                   </div>
-                  <TidePanel spotId={id!} />
+                  <TidePanel spotId={spotId!} />
                 </div>
 
                 {forecast && forecast.days.length > 0 && (
                   <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                     <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 10 Tage</p></div>
-                    <WeatherDetailsTable forecast={forecast} />
+                    <Suspense fallback={<DataModulePlaceholder height="h-64" />}>
+                      <WeatherDetailsTable forecast={forecast} />
+                    </Suspense>
                   </div>
                 )}
 
                 {spot.climatology && (
                   <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                     <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Klimatologie · Wann hierher</p></div>
-                    <Climatology spot={spot} />
+                    <Suspense fallback={<DataModulePlaceholder height="h-40" />}>
+                      <Climatology spot={spot} />
+                    </Suspense>
                   </div>
                 )}
               </div>
@@ -419,6 +436,10 @@ export default function SpotDetail() {
 
 function MapPlaceholder() {
   return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse bg-band sm:h-[440px] lg:h-full" />;
+}
+
+function DataModulePlaceholder({ height }: { height: string }) {
+  return <div role="status" aria-label="Datenansicht wird geladen" className={`${height} animate-pulse bg-band`} />;
 }
 
 class LocatorMapBoundary extends Component<

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
 import { useSpotsLive } from "../lib/hooks";
 import { countryName } from "../lib/flags";
@@ -36,9 +36,27 @@ function toCardSpot(item: SimilarSpotApi): Spot {
 
 export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?: string }) {
   const [spots, setSpots] = useState<SimilarSpotApi[]>([]);
+  const [ready, setReady] = useState(false);
+  const markerRef = useRef<HTMLDivElement>(null);
   const { data: live } = useSpotsLive(spots.map((s) => s.id));
 
   useEffect(() => {
+    const marker = markerRef.current;
+    if (!marker || ready) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setReady(true);
+        observer.disconnect();
+      },
+      { rootMargin: "500px 0px" },
+    );
+    observer.observe(marker);
+    return () => observer.disconnect();
+  }, [ready]);
+
+  useEffect(() => {
+    if (!ready) return;
     const controller = new AbortController();
     const query = new URLSearchParams({ mode: "charakter", limit: "5" });
     if (sport) query.set("sport", sport);
@@ -49,9 +67,9 @@ export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?
         if (!(error instanceof DOMException && error.name === "AbortError")) setSpots([]);
       });
     return () => controller.abort();
-  }, [spotId, sport]);
+  }, [ready, spotId, sport]);
 
-  if (!spots.length) return null;
+  if (!ready || !spots.length) return <div ref={markerRef} aria-hidden className="h-px" />;
 
   return (
     <section aria-labelledby="similar-spots-heading">

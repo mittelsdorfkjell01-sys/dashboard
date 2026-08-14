@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 import LandingHeader from "../components/LandingHeader";
 import HeroImage from "../components/HeroImage";
 import SearchBar from "../components/SearchBar";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
-import { useSpots, useSpotsLive } from "../lib/hooks";
+import { useSpots } from "../lib/hooks";
 import { MapIcon } from "../lib/icons";
 
 /**
@@ -20,9 +21,9 @@ export default function Landing() {
   const location = useLocation();
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
-  const { data: allSpots } = useSpots();
+  const [spotLimit, setSpotLimit] = useState(20);
+  const { data: allSpots, loading: spotsLoading } = useSpots({ limit: spotLimit });
   const spots = allSpots ?? [];
-  const { data: live } = useSpotsLive(spots.map((s) => s.id));
 
   return (
     <div className="relative bg-page">
@@ -88,8 +89,21 @@ export default function Landing() {
           {spots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {spots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />
+                <SpotCard key={spot.id} spot={spot} />
               ))}
+            </div>
+          )}
+
+          {spots.length >= spotLimit && spotLimit < 100 && (
+            <div className="mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setSpotLimit(100)}
+                disabled={spotsLoading}
+                className="min-h-11 rounded-xl border border-line bg-surface px-5 py-2.5 text-ui font-medium text-ink transition-colors hover:border-teal hover:text-teal disabled:cursor-wait disabled:opacity-60"
+              >
+                {spotsLoading ? "Weitere Spots werden geladen …" : "Alle Spots anzeigen"}
+              </button>
             </div>
           )}
         </div>

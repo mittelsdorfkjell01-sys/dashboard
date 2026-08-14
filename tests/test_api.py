@@ -52,6 +52,14 @@ def test_get_spot_by_id(client):
     assert resp.json()["id"] == spot_id
 
 
+def test_get_spot_by_display_name_and_legacy_slug(client):
+    by_name = client.get("/spots/Los-Lances")
+    by_slug = client.get("/spots/tarifa-los-lances")
+    assert by_name.status_code == by_slug.status_code == 200
+    assert by_name.json()["id"] == by_slug.json()["id"]
+    assert by_name.json()["region_name"] == "Tarifa"
+
+
 def test_get_spot_404(client):
     resp = client.get("/spots/00000000-0000-0000-0000-000000000000")
     assert resp.status_code == 404

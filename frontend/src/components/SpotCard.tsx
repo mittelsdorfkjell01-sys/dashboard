@@ -5,6 +5,7 @@ import { sportLabel } from "../lib/labels";
 import { countryName } from "../lib/flags";
 import { bestMonthsRange } from "../lib/bestMonths";
 import SpotImage from "./SpotImage";
+import { spotPath } from "../lib/spotRoutes";
 
 /**
  * The one spot-tile layout used everywhere a spot is browsed: landing grid,
@@ -33,7 +34,6 @@ export default function SpotCard({
   compact?: boolean;
   live?: LiveConditionsRead;
 }) {
-  const id = spot.uuid ?? spot.id;
   const sports = (spot.sports ?? []).map(sportLabel).join(" · ");
   const regionLine = [spot.regionName, countryName(spot.regionCountry ?? undefined)]
     .filter(Boolean)
@@ -48,7 +48,7 @@ export default function SpotCard({
 
   return (
     <Link
-      to={`/spot/${id}`}
+      to={spotPath(spot)}
       className="group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl">

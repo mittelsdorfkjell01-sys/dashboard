@@ -3,7 +3,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, defer, selectinload
 
 from app.api._http_cache import set_public_cache
@@ -14,6 +14,7 @@ from app.live.cache import Cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
 from app.models import Spot
+from app.names import normalize_name
 from app.public_catalog import PUBLISHED, get_published_spot
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
@@ -61,8 +62,12 @@ def list_spots(
     response: Response,
     db: Session = Depends(get_db),
     region_id: uuid.UUID | None = Query(default=None),
-    sport: str | None = Query(default=None, description="Filter to spots offering this sport"),
-    level: str | None = Query(default=None, description="Filter to spots at this rider level"),
+    sport: str | None = Query(
+        default=None, description="Filter to spots offering this sport"
+    ),
+    level: str | None = Query(
+        default=None, description="Filter to spots at this rider level"
+    ),
     water_character: str | None = Query(
         default=None, description="Filter by water character (Wasserart)"
     ),
@@ -83,12 +88,17 @@ def list_spots(
     """
     # Don't load the heavy JSONB columns for a list view — editorial stays
     # (SpotSummary derives typical_wind_kt/typical_wave_height_m from it).
-    stmt = select(Spot).where(Spot.status == PUBLISHED).options(
-        defer(Spot.climatology),
-        defer(Spot.overrides),
-        defer(Spot.era5_cell),
-        selectinload(Spot.region),
-    ).order_by(Spot.name)
+    stmt = (
+        select(Spot)
+        .where(Spot.status == PUBLISHED)
+        .options(
+            defer(Spot.climatology),
+            defer(Spot.overrides),
+            defer(Spot.era5_cell),
+            selectinload(Spot.region),
+        )
+        .order_by(Spot.name)
+    )
     if region_id is not None:
         stmt = stmt.where(Spot.region_id == region_id)
     if sport is not None:
@@ -114,11 +124,13 @@ def list_top_spots(
     response: Response,
     db: Session = Depends(get_db),
     limit: int = Query(default=5, ge=1, le=20),
-    sport: str | None = Query(default=None, description="Rank only spots offering this sport"),
+    sport: str | None = Query(
+        default=None, description="Rank only spots offering this sport"
+    ),
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),
 ) -> list[SpotSummary]:
-    """"aktuelle Top Spots": published spots ranked by a blend of this week's
+    """ "aktuelle Top Spots": published spots ranked by a blend of this week's
     wind forecast, today's conditions and community popularity.
 
     Stable within a day and re-ranked when the date rolls over (a date seed also
@@ -153,8 +165,10 @@ def list_top_spots(
         ordered = [by_id[i] for i in ids if i in by_id]
     else:
         # Graceful fallback: the pre-ranking behaviour (published spots by name).
-        stmt = select(Spot).where(Spot.status == "published").options(
-            selectinload(Spot.region)
+        stmt = (
+            select(Spot)
+            .where(Spot.status == "published")
+            .options(selectinload(Spot.region))
         )
         if sport is not None:
             stmt = stmt.where(Spot.sports.any(sport))
@@ -225,11 +239,53 @@ def get_spots_live_batch(
     return [results[spot.id] for spot in ordered if spot.id in results]
 
 
-@router.get("/{spot_id}", response_model=SpotRead)
+def _published_spot_by_reference(db: Session, reference: str) -> Spot | None:
+    """Resolve UUID, legacy slug, or a display-name URL without exposing IDs."""
+    try:
+        spot_id = uuid.UUID(reference)
+    except ValueError:
+        spot_id = None
+    if spot_id is not None:
+        return db.scalar(
+            select(Spot)
+            .where(Spot.id == spot_id, Spot.status == PUBLISHED)
+            .options(selectinload(Spot.region))
+        )
+
+    try:
+        normalized = normalize_name(reference.replace("-", " "))
+    except ValueError:
+        return None
+    rows = list(
+        db.scalars(
+            select(Spot)
+            .where(
+                Spot.status == PUBLISHED,
+                or_(
+                    Spot.slug == reference.casefold(),
+                    Spot.normalized_name == normalized,
+                ),
+            )
+            .options(selectinload(Spot.region))
+            .order_by(Spot.name)
+            .limit(2)
+        )
+    )
+    slug_match = next(
+        (spot for spot in rows if spot.slug == reference.casefold()), None
+    )
+    if slug_match is not None:
+        return slug_match
+    if len(rows) > 1:
+        raise HTTPException(status_code=409, detail="Spot name is ambiguous")
+    return rows[0] if rows else None
+
+
+@router.get("/{spot_reference}", response_model=SpotRead)
 def get_spot(
-    spot_id: uuid.UUID, response: Response, db: Session = Depends(get_db)
+    spot_reference: str, response: Response, db: Session = Depends(get_db)
 ) -> SpotRead:
-    spot = get_published_spot(db, spot_id)
+    spot = _published_spot_by_reference(db, spot_reference)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     set_public_cache(response)
@@ -258,9 +314,7 @@ def get_spot_live(
     return LiveConditionsRead.model_validate(data)
 
 
-@router.get(
-    "/{spot_id}/forecast", response_model=ForecastSeriesRead, tags=["live"]
-)
+@router.get("/{spot_id}/forecast", response_model=ForecastSeriesRead, tags=["live"])
 def get_spot_forecast(
     spot_id: uuid.UUID,
     db: Session = Depends(get_db),
@@ -272,6 +326,7 @@ def get_spot_forecast(
     if get_published_spot(db, spot_id) is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     from app.forecast.publisher import active_snapshot, public_payload
+
     snapshot = active_snapshot(db, spot_id)
     if snapshot is not None:
         return ForecastSeriesRead.model_validate(public_payload(snapshot))
@@ -286,15 +341,26 @@ def get_spot_forecast(
     data["model"] = "surfwinddata"
     data["models"] = []
     data["product"] = "Surfwinddata Forecast"
-    data["attributions"] = [{"provider":"Open-Meteo","text":"Weather data by Open-Meteo.com","url":"https://open-meteo.com/","licence":"CC BY 4.0"}]
+    data["attributions"] = [
+        {
+            "provider": "Open-Meteo",
+            "text": "Weather data by Open-Meteo.com",
+            "url": "https://open-meteo.com/",
+            "licence": "CC BY 4.0",
+        }
+    ]
     return ForecastSeriesRead.model_validate(data)
 
 
 @router.get("/{spot_id}/badge", tags=["score"])
 def get_spot_badge(
     spot_id: uuid.UUID,
-    sport: str | None = Query(default=None, description="Defaults to the spot's first sport"),
-    level: str | None = Query(default=None, description="Rider level (beginner, advanced, expert)"),
+    sport: str | None = Query(
+        default=None, description="Defaults to the spot's first sport"
+    ),
+    level: str | None = Query(
+        default=None, description="Rider level (beginner, advanced, expert)"
+    ),
     db: Session = Depends(get_db),
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),

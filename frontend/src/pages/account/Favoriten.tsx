@@ -8,6 +8,7 @@ import {
 } from "../../lib/account";
 import { sportLabel } from "../../lib/labels";
 import { HeartFilledIcon, SearchIcon } from "../../lib/icons";
+import { spotPath } from "../../lib/spotRoutes";
 
 export default function Favoriten() {
   const [favs, setFavs] = useState<FavoriteSpot[]>(listFavorites);
@@ -48,7 +49,7 @@ export default function Favoriten() {
           key={f.id}
           className="flex items-center gap-3 rounded-2xl border border-line bg-white p-3.5"
         >
-          <Link to={`/spot/${f.id}`} className="min-w-0 flex-1">
+          <Link to={spotPath(f)} className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-semibold text-ink">
               {f.name}
             </span>

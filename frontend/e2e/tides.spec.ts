@@ -16,7 +16,11 @@ const spot = {
 async function mockApi(page: Page) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
-    if (url.pathname === "/spots/test") return route.fulfill({ json: spot });
+    // The legacy reference resolves once, then the page canonicalizes to the
+    // public display-name URL without losing the already-supported old link.
+    if (["/spots/test", "/spots/Laboe"].includes(url.pathname)) {
+      return route.fulfill({ json: spot });
+    }
     if (url.pathname === "/regions/r1") return route.fulfill({ json: {
       id: "r1", slug: "kieler-bucht", name: "Kieler Bucht", country: "DE",
       center: null, description: null, image: null, season: null, defaults: null,
