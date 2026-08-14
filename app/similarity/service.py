@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.scoring import Scorer, default_scorer, distance_decay_d0
-from app.scoring.context import primary_sport
+from app.scoring.context import primary_sport, typical_figures
 from app.scoring.engine import _week_of
 from app.scoring.params import SCORING_PARAMS_V1, WEEK_GOOD_THRESHOLD, get_params
 from app.search.pins import coords, spot_brief
@@ -112,20 +112,15 @@ def _similar_brief(r: dict) -> dict:
     spot = r["spot"]
     editorial = getattr(spot, "editorial", None)
     editorial = editorial if isinstance(editorial, dict) else {}
-    wind_range = editorial.get("wind_range")
-    typical_wind = None
-    if (
-        isinstance(wind_range, (list, tuple))
-        and len(wind_range) == 2
-        and all(isinstance(value, (int, float)) for value in wind_range)
-    ):
-        typical_wind = round((float(wind_range[0]) + float(wind_range[1])) / 2)
+    typical_wind, typical_wave_height = typical_figures(spot)
     region = getattr(spot, "region", None)
     return {
         **spot_brief(spot),
         "region": getattr(region, "name", None),
+        "region_country": getattr(region, "country", None),
         "image": getattr(spot, "image", None),
         "wind": typical_wind,
+        "wave_height": typical_wave_height,
         "description": editorial.get("description"),
         "distance": r["distance"],
         "character": r["character"],
@@ -158,10 +153,14 @@ def _load_spot(db: Session, spot_id):
 
 
 def _candidates(db: Session, sport: str | None) -> list:
+    from sqlalchemy.orm import selectinload
+
     from app.models import Spot
     from app.public_catalog import PUBLISHED
 
-    stmt = select(Spot).where(Spot.status == PUBLISHED)
+    stmt = select(Spot).where(Spot.status == PUBLISHED).options(
+        selectinload(Spot.region)
+    )
     if sport:
         stmt = stmt.where(Spot.sports.any(sport))
     return list(db.scalars(stmt).all())

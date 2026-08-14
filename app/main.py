@@ -25,7 +25,7 @@ from app.csrf import CSRFMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
-EXPECTED_DB_REVISION = "0034_geodata_shadow_phase2"
+EXPECTED_DB_REVISION = "0035_spot_best_months"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)

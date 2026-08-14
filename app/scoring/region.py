@@ -96,6 +96,13 @@ def compute_best_months(
     return [m for m in range(1, 13) if total[m] and good[m] / total[m] >= 0.5]
 
 
+def compute_spot_best_months(spot: Any, *, db: Any | None = None) -> list[int]:
+    """A single spot's own best (working) months — the same rule as
+    :func:`compute_best_months`, applied to a one-spot list so "≥1 working
+    spot in the week" degenerates to "this spot clears its own threshold"."""
+    return compute_best_months([spot], db=db)
+
+
 def smooth_circular(series: list[float], window: int = 5) -> list[float]:
     """Circular moving average (the season wraps Dec→Jan)."""
     n = len(series)
@@ -162,14 +169,45 @@ def aggregate_all_regions(db) -> int:
     return len(regions)
 
 
+def aggregate_spot_best_months(spot_id, *, db) -> list[int]:
+    """Compute and persist a single spot's ``best_months``. Idempotent."""
+    from app.models import Spot
+
+    spot = db.get(Spot, spot_id)
+    if spot is None:
+        raise LookupError(f"unknown spot {spot_id}")
+    months = compute_spot_best_months(spot, db=db)
+    spot.best_months = months
+    db.commit()
+    db.refresh(spot)
+    return months
+
+
+def aggregate_all_spot_best_months(db) -> int:
+    """(Re)aggregate ``best_months`` for every spot with climatology data.
+    Returns the count processed."""
+    from sqlalchemy import select
+
+    from app.models import Spot
+
+    spots = db.scalars(select(Spot).where(Spot.climatology.isnot(None))).all()
+    for spot in spots:
+        spot.best_months = compute_spot_best_months(spot, db=db)
+    db.commit()
+    return len(spots)
+
+
 def _main() -> None:  # pragma: no cover - thin CLI
-    """`python -m app.scoring.region` — aggregate every region's season."""
+    """`python -m app.scoring.region` — aggregate every region's season and
+    every spot's own best_months."""
     from app.db.session import SessionLocal
 
     db = SessionLocal()
     try:
         n = aggregate_all_regions(db)
         print(f"Aggregated regions.season for {n} region(s).")
+        m = aggregate_all_spot_best_months(db)
+        print(f"Aggregated best_months for {m} spot(s).")
     finally:
         db.close()
 

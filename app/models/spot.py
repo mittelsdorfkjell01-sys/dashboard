@@ -80,6 +80,12 @@ class Spot(Base, TimestampMixin):
     climatology: Mapped[dict | None] = mapped_column(JSONB)
     overrides: Mapped[dict | None] = mapped_column(JSONB)
     image: Mapped[dict | None] = mapped_column(JSONB)
+    # Persisted cache of this spot's own best (working) months — same "≥50% of
+    # a month's weeks clear the sport's threshold" rule as
+    # Region.season["best_months"], applied to a single spot's own climatology
+    # curve instead of aggregated across a region. Computed by
+    # app.scoring.region.aggregate_spot_best_months; NULL until first computed.
+    best_months: Mapped[list[int] | None] = mapped_column(ARRAY(SmallInteger))
 
     region: Mapped["Region"] = relationship(  # noqa: F821
         back_populates="spots"

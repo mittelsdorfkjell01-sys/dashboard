@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
-from sqlalchemy.orm import Session, defer
+from sqlalchemy.orm import Session, defer, selectinload
 
 from app.api._http_cache import set_public_cache
 from app.db.session import get_db
@@ -75,16 +75,19 @@ def list_spots(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> list[SpotSummary]:
-    """List spots (lightweight view — no climatology/overrides/editorial blobs).
+    """List spots (lightweight view — no climatology/overrides blobs; editorial
+    is loaded only to derive the tile's typical wind/wave-height figure, never
+    returned raw).
 
     Fetch a single spot's full record (incl. climatology) via ``GET /spots/{id}``.
     """
-    # Don't even load the heavy JSONB columns for a list view.
+    # Don't load the heavy JSONB columns for a list view — editorial stays
+    # (SpotSummary derives typical_wind_kt/typical_wave_height_m from it).
     stmt = select(Spot).where(Spot.status == PUBLISHED).options(
         defer(Spot.climatology),
-        defer(Spot.editorial),
         defer(Spot.overrides),
         defer(Spot.era5_cell),
+        selectinload(Spot.region),
     ).order_by(Spot.name)
     if region_id is not None:
         stmt = stmt.where(Spot.region_id == region_id)
@@ -142,13 +145,17 @@ def list_top_spots(
         by_id = {
             s.id: s
             for s in db.scalars(
-                select(Spot).where(Spot.id.in_(ids), Spot.status == PUBLISHED)
+                select(Spot)
+                .where(Spot.id.in_(ids), Spot.status == PUBLISHED)
+                .options(selectinload(Spot.region))
             )
         }
         ordered = [by_id[i] for i in ids if i in by_id]
     else:
         # Graceful fallback: the pre-ranking behaviour (published spots by name).
-        stmt = select(Spot).where(Spot.status == "published")
+        stmt = select(Spot).where(Spot.status == "published").options(
+            selectinload(Spot.region)
+        )
         if sport is not None:
             stmt = stmt.where(Spot.sports.any(sport))
         ordered = list(db.scalars(stmt.order_by(Spot.name).limit(fetch_n)))

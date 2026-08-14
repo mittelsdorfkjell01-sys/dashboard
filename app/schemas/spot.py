@@ -5,14 +5,18 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.common import GeoPoint
+from app.scoring.context import typical_figures
 
 
 class SpotSummary(BaseModel):
     """Lightweight spot view for list/collection endpoints.
 
-    Deliberately omits the heavy JSONB blobs (``climatology``, ``overrides``,
-    ``editorial``) so a ``GET /spots?limit=500`` stays small. Use :class:`SpotRead`
-    on the single-spot detail endpoint when the full record is needed.
+    Omits the heavy JSONB blobs (``climatology``, ``overrides``, raw
+    ``editorial``) so a ``GET /spots?limit=500`` stays small — but still
+    surfaces the few derived tile figures (typical wind/wave-height, region
+    name/country, best_months) collection views need, so a tile never has to
+    fall back to the single-spot detail endpoint just to render. Use
+    :class:`SpotRead` when the full record is needed.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -21,6 +25,8 @@ class SpotSummary(BaseModel):
     slug: str
     name: str
     region_id: uuid.UUID | None = None
+    region_name: str | None = None
+    region_country: str | None = None
     location: GeoPoint | None = None
     sports: list[str]
     water_type: list[str] = []
@@ -33,14 +39,25 @@ class SpotSummary(BaseModel):
     confidence: float | None = None
     facing: int | None = None
     image: dict[str, Any] | None = None
+    # Exactly one of these is set, per the spot's primary sport (see
+    # _typical_figures). Never a live reading — use GET /spots/live for that.
+    typical_wind_kt: float | None = None
+    typical_wave_height_m: float | None = None
+    # Persisted cache (Spot.best_months); None until computed (see
+    # app.scoring.region.aggregate_spot_best_months).
+    best_months: list[int] | None = None
 
     @classmethod
     def from_orm_spot(cls, spot: Any) -> "SpotSummary":
+        region = getattr(spot, "region", None)
+        typical_wind_kt, typical_wave_height_m = typical_figures(spot)
         return cls(
             id=spot.id,
             slug=spot.slug,
             name=spot.name,
             region_id=spot.region_id,
+            region_name=getattr(region, "name", None),
+            region_country=getattr(region, "country", None),
             location=GeoPoint.from_geo(spot.location),
             sports=list(spot.sports or []),
             water_type=list(spot.water_type or []),
@@ -53,6 +70,9 @@ class SpotSummary(BaseModel):
             confidence=spot.confidence,
             facing=spot.facing,
             image=spot.image,
+            typical_wind_kt=typical_wind_kt,
+            typical_wave_height_m=typical_wave_height_m,
+            best_months=list(getattr(spot, "best_months", None) or []) or None,
         )
 
 
