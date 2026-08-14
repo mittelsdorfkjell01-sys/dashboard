@@ -72,6 +72,7 @@ CANONICAL_KEYS = (
     "delivery",
     "focal",
     "focal_mobile",
+    "rotation",
     "width",
     "height",
     "geo_verified",
@@ -106,6 +107,15 @@ def normalize_focal(x: Any, y: Any) -> dict[str, float]:
     except (TypeError, ValueError):
         raise ImageObjectError("Fokuspunkt muss aus zwei Zahlen bestehen.")
     return {"x": max(0.0, min(100.0, fx)), "y": max(0.0, min(100.0, fy))}
+
+
+def normalize_rotation(value: Any) -> float:
+    """Clamp a subtle horizon correction to the editor's supported range."""
+    try:
+        rotation = float(value)
+    except (TypeError, ValueError):
+        raise ImageObjectError("Drehung muss eine Zahl sein.")
+    return round(max(-5.0, min(5.0, rotation)), 1)
 
 
 def _coerce_focal(value: Any) -> dict[str, float]:
@@ -158,6 +168,7 @@ def build_image(
     delivery: str = "hosted",
     focal: Any = None,
     focal_mobile: Any = None,
+    rotation: Any = 0,
     width: Any = None,
     height: Any = None,
     geo_verified: bool = False,
@@ -215,6 +226,7 @@ def build_image(
         # from `focal` because a landscape hero cropped to 16:9 mobile often
         # needs a different area than the desktop 21:9.
         "focal_mobile": _coerce_focal(focal_mobile) if focal_mobile else None,
+        "rotation": normalize_rotation(rotation or 0),
         "width": _positive_int(width),
         "height": _positive_int(height),
         "geo_verified": bool(geo_verified),
@@ -259,6 +271,7 @@ def upgrade_legacy(image: Any) -> dict | None:
             if image.get("focal_mobile")
             else None
         ),
+        "rotation": normalize_rotation(image.get("rotation") or 0),
         "width": _positive_int(image.get("width")),
         "height": _positive_int(image.get("height")),
         "geo_verified": bool(image.get("geo_verified")),

@@ -535,6 +535,10 @@ class FocalMobileRequest(BaseModel):
     y: float | None = None
 
 
+class ImageRotationRequest(BaseModel):
+    rotation: float
+
+
 @router.post("/spots/{spot_id}/image/focal", response_model=SpotRead)
 def set_spot_image_focal(
     spot_id: uuid.UUID,
@@ -561,6 +565,24 @@ def set_spot_image_focal_mobile(
     try:
         spot = admin_spots.set_image_focal_mobile(
             spot_id, body.x, body.y, db=db, actor=actor
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return SpotRead.from_orm_spot(spot)
+
+
+@router.post("/spots/{spot_id}/image/rotation", response_model=SpotRead)
+def set_spot_image_rotation(
+    spot_id: uuid.UUID,
+    body: ImageRotationRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+):
+    try:
+        spot = admin_spots.set_image_rotation(
+            spot_id, body.rotation, db=db, actor=actor
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")

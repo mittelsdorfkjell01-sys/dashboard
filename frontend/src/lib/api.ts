@@ -98,6 +98,8 @@ export interface ImageRecord {
   /** Mobile-specific focal point (used under ≈640px). Optional — when absent,
    *  the mobile crop falls back to `focal`. */
   focal_mobile?: { x: number; y: number } | null;
+  /** Subtle horizon correction in degrees, clamped server-side to -5..5. */
+  rotation?: number;
   width?: number | null;
   height?: number | null;
   /** True only where coordinate proximity was actually established. */
@@ -1481,6 +1483,12 @@ export const setSpotImageFocalMobile = (
   request<SpotRead>(`/admin/spots/${id}/image/focal/mobile`, {
     method: "POST",
     body: JSON.stringify(point ?? { x: null, y: null }),
+  });
+
+export const setSpotImageRotation = (id: string, rotation: number) =>
+  request<SpotRead>(`/admin/spots/${id}/image/rotation`, {
+    method: "POST",
+    body: JSON.stringify({ rotation }),
   });
 
 /** Mark the hero image's location as operator-verified. */

@@ -12,13 +12,21 @@ export default function ImageFocalEditor({
   focal,
   onSave,
   aspect = "16 / 6",
+  rotation = 0,
+  onRotationSave,
+  showRotationControl = false,
 }: {
   url: string;
   focal?: { x: number; y: number } | null;
   onSave: (x: number, y: number) => Promise<void>;
   aspect?: string;
+  rotation?: number;
+  onRotationSave?: (rotation: number) => Promise<void>;
+  showRotationControl?: boolean;
 }) {
   const [pos, setPos] = useState({ x: focal?.x ?? 50, y: focal?.y ?? 50 });
+  const [angle, setAngle] = useState(rotation);
+  const [savedAngle, setSavedAngle] = useState(rotation);
 
   // Sync local pos back to the incoming focal whenever the parent re-loads
   // the spot (e.g. after a save from a sibling editor) so the two crops stay
@@ -30,9 +38,15 @@ export default function ImageFocalEditor({
     if (px == null || py == null) return;
     setPos((current) => (current.x === px && current.y === py ? current : { x: px, y: py }));
   }, [px, py]);
+  useEffect(() => {
+    setAngle(rotation);
+    setSavedAngle(rotation);
+  }, [rotation]);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [rotationBusy, setRotationBusy] = useState(false);
+  const [rotationSaved, setRotationSaved] = useState(false);
   const start = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
 
@@ -66,6 +80,22 @@ export default function ImageFocalEditor({
     }
   };
 
+  const saveRotation = async () => {
+    if (!onRotationSave || angle === savedAngle) return;
+    setRotationBusy(true);
+    setRotationSaved(false);
+    try {
+      await onRotationSave(angle);
+      setSavedAngle(angle);
+      setRotationSaved(true);
+      setTimeout(() => setRotationSaved(false), 1500);
+    } finally {
+      setRotationBusy(false);
+    }
+  };
+
+  const rotationScale = 1 + Math.abs(angle) * 0.04;
+
   return (
     <div>
       <div
@@ -81,7 +111,10 @@ export default function ImageFocalEditor({
           alt=""
           draggable={false}
           className="h-full w-full select-none object-cover"
-          style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+          style={{
+            objectPosition: `${pos.x}% ${pos.y}%`,
+            transform: angle ? `rotate(${angle}deg) scale(${rotationScale})` : undefined,
+          }}
         />
         {/* subtle rule-of-thirds guides */}
         <div className="pointer-events-none absolute inset-0 opacity-40">
@@ -95,6 +128,54 @@ export default function ImageFocalEditor({
         Bild ziehen, um den sichtbaren Ausschnitt zu wählen.{" "}
         {busy ? "Speichern…" : saved ? "✓ Gespeichert" : ""}
       </p>
+      {showRotationControl && onRotationSave && (
+        <div className="mt-4 border-t border-admin-border pt-4">
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="hero-rotation" className="text-label font-medium text-admin-fg">
+              Horizont ausrichten
+            </label>
+            <output htmlFor="hero-rotation" className="min-w-12 text-right text-label tabular-nums text-admin-fg2">
+              {angle > 0 ? "+" : ""}{angle.toFixed(1)}°
+            </output>
+          </div>
+          <input
+            id="hero-rotation"
+            type="range"
+            min={-5}
+            max={5}
+            step={0.1}
+            value={angle}
+            onChange={(event) => {
+              setAngle(Number(event.target.value));
+              setRotationSaved(false);
+            }}
+            className="mt-3 h-11 w-full cursor-ew-resize accent-admin-primary"
+            aria-describedby="hero-rotation-help"
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setAngle(0)}
+              disabled={angle === 0 || rotationBusy}
+              className="min-h-11 text-label font-medium text-admin-fg2 underline-offset-4 hover:underline disabled:opacity-45"
+            >
+              Auf 0° zurücksetzen
+            </button>
+            <button
+              type="button"
+              onClick={saveRotation}
+              disabled={angle === savedAngle || rotationBusy}
+              className="min-h-11 rounded-md bg-admin-primary px-4 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+            >
+              {rotationBusy ? "Speichern…" : "Drehung speichern"}
+            </button>
+            {rotationSaved && <span className="text-caption text-admin-success">Gespeichert</span>}
+          </div>
+          <p id="hero-rotation-help" className="mt-2 text-caption text-muted">
+            Kleine Neigungen von −5° bis +5° korrigieren. Die Einstellung gilt für Desktop und Mobile.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,6 +19,7 @@ export default function EditorialHero({
   image,
   focal,
   focalMobile,
+  rotation,
   alt,
   kicker,
   title,
@@ -33,6 +34,7 @@ export default function EditorialHero({
   image?: string | null;
   focal?: { x: number; y: number } | null;
   focalMobile?: { x: number; y: number } | null;
+  rotation?: number;
   alt: string;
   kicker?: ReactNode;
   title?: string;
@@ -83,6 +85,7 @@ export default function EditorialHero({
             alt={alt}
             focal={focal}
             focalMobile={focalMobile}
+            rotation={rotation}
             delivery={delivery}
             provider={credit?.provider}
             className="h-full w-full object-cover"

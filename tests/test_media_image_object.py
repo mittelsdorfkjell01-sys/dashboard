@@ -15,6 +15,7 @@ from app.media.image_object import (
     build_image,
     is_placeholder,
     normalize_focal,
+    normalize_rotation,
     placeholder_image,
     upgrade_legacy,
     with_fields,
@@ -112,6 +113,13 @@ def test_focal_pair_in_zero_to_one_is_scaled_not_stored_raw():
 
 def test_missing_focal_is_dead_centre():
     assert build_image(**FULL_RIGHTS, focal=None)["focal"] == CENTER_FOCAL
+
+
+def test_rotation_is_clamped_and_legacy_images_default_to_level():
+    assert normalize_rotation(8.24) == 5.0
+    assert normalize_rotation(-2.26) == -2.3
+    assert build_image(**FULL_RIGHTS)["rotation"] == 0.0
+    assert upgrade_legacy(FULL_RIGHTS)["rotation"] == 0.0
 
 
 # --- legacy upgrade --------------------------------------------------------

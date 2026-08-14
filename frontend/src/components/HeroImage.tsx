@@ -52,6 +52,7 @@ export default function HeroImage({
   className,
   focal,
   focalMobile,
+  rotation = 0,
   delivery,
   provider,
 }: {
@@ -64,6 +65,8 @@ export default function HeroImage({
    *  is used instead. A landscape photo often needs a different focal at 16:9
    *  mobile than at 21:9 desktop, hence the separate override. */
   focalMobile?: { x: number; y: number } | null;
+  /** Subtle horizon correction; extra scale prevents exposed frame corners. */
+  rotation?: number;
   /** How the bytes are served. `hotlinked` images stay on the provider's CDN
    *  (an Unsplash API condition) and are resized with its own parameters. */
   delivery?: "hotlinked" | "hosted";
@@ -73,7 +76,13 @@ export default function HeroImage({
   const isMobile = useMobileViewport();
   const activeFocal = isMobile && focalMobile ? focalMobile : focal;
   const entry = src.startsWith("/") ? heroManifest[keyFromSrc(src)] : undefined;
-  const style = activeFocal ? { objectPosition: objectPosition(activeFocal) } : undefined;
+  const safeRotation = Math.max(-5, Math.min(5, rotation));
+  const style = {
+    ...(activeFocal ? { objectPosition: objectPosition(activeFocal) } : {}),
+    transform: safeRotation
+      ? `rotate(${safeRotation}deg) scale(${1 + Math.abs(safeRotation) * 0.04})`
+      : undefined,
+  };
 
   const onError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (fallbackSrc && e.currentTarget.src !== fallbackSrc) {

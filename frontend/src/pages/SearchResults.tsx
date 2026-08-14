@@ -235,7 +235,7 @@ function BestRegionsList({
         {monthName ? `im ${monthName}` : "über die Saison"} · geordnet nach Abdeckung
         (Anteil der Spots mit fahrbaren Bedingungen).
       </p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3">
         {ranking.map((r, i) => {
           const m = r.id ? meta.get(r.id) : undefined;
           return (

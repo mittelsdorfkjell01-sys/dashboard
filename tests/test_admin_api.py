@@ -859,6 +859,18 @@ def test_spot_image_focal(admin, region_id):
     assert resp.json()["image"]["focal"] == {"x": 30.0, "y": 70.0}
 
 
+def test_spot_image_rotation(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    admin.post(f"/admin/spots/{sid}/image", json={
+        "url": "https://img/x.jpg", "source": "unsplash",
+        "license": "Unsplash License", "credit": "Jo",
+    })
+    resp = admin.post(f"/admin/spots/{sid}/image/rotation", json={"rotation": -2.3})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["image"]["rotation"] == -2.3
+
+
 def test_region_image_focal(admin, region_id):
     admin.post(f"/admin/regions/{region_id}/image", json={
         "url": "https://img/r.jpg", "credit": "Jo",

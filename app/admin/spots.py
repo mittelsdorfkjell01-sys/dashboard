@@ -469,6 +469,23 @@ def set_image_focal_mobile(
     return spot
 
 
+def set_image_rotation(
+    spot_id, rotation: float, *, db: Session, actor: str | None = "admin"
+) -> Any:
+    """Store a subtle clockwise/counter-clockwise hero correction."""
+    from app.media.image_object import normalize_rotation
+
+    spot = _load(db, spot_id)
+    if not (isinstance(spot.image, dict) and spot.image.get("url")):
+        raise ValueError("Kein Bild zum Drehen.")
+    normalized = normalize_rotation(rotation)
+    spot.image = with_fields(spot.image, rotation=normalized)
+    record_audit(db, spot.id, "image", {"rotation": normalized}, actor)
+    db.commit()
+    db.refresh(spot)
+    return spot
+
+
 def set_spot_status(
     spot_id, status: str, *, db: Session, actor: str | None = "admin"
 ) -> dict:

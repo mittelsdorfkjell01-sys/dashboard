@@ -20,6 +20,7 @@ import {
   setHeroAttribution,
   setSpotImageFocal,
   setSpotImageFocalMobile,
+  setSpotImageRotation,
   setSpotImageGeoVerified,
   updateSpot,
   uploadHeroImage,
@@ -902,10 +903,17 @@ export default function AdminSpotForm() {
                         <ImageFocalEditor
                           url={currentImage.url}
                           focal={currentImage.focal}
+                          rotation={currentImage.rotation ?? 0}
                           aspect="21 / 9"
+                          showRotationControl
                           onSave={async (x, y) => {
                             if (!id) return;
                             const spot = await setSpotImageFocal(id, x, y);
+                            seedImage((spot.image as ImageRecord | null) ?? null);
+                          }}
+                          onRotationSave={async (rotation) => {
+                            if (!id) return;
+                            const spot = await setSpotImageRotation(id, rotation);
                             seedImage((spot.image as ImageRecord | null) ?? null);
                           }}
                         />
@@ -917,6 +925,7 @@ export default function AdminSpotForm() {
                         <ImageFocalEditor
                           url={currentImage.url}
                           focal={currentImage.focal_mobile ?? currentImage.focal}
+                          rotation={currentImage.rotation ?? 0}
                           aspect="16 / 9"
                           onSave={async (x, y) => {
                             if (!id) return;

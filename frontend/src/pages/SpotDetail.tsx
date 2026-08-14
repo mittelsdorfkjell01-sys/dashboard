@@ -193,6 +193,7 @@ export default function SpotDetail() {
           image={spot.hero}
           focal={spot.heroFocal}
           focalMobile={spot.heroFocalMobile}
+          rotation={spot.heroRotation}
           alt={spot.name}
           credit={spot.heroCredit}
           delivery={spot.heroDelivery}

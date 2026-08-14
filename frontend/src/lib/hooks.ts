@@ -171,8 +171,12 @@ export function useCommunityFeed(spotId?: string): CommunityFeedState {
   return {
     posts,
     photos,
-    loading: ratings.loading || tips.loading || images.loading,
-    error: ratings.error ?? tips.error ?? images.error,
+    // Text comments do not depend on the gallery response. In particular,
+    // gallery cold starts or a slow media query must not keep the comments
+    // skeleton visible after ratings and tips are already available. Images
+    // still join the existing posts as soon as their request completes.
+    loading: ratings.loading || tips.loading,
+    error: ratings.error ?? tips.error,
     reload: () => {
       ratings.reload();
       tips.reload();

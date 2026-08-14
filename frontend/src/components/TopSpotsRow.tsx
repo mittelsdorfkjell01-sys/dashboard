@@ -4,7 +4,7 @@ import { ErrorBanner } from "./AsyncStates";
 
 // One full-width row on desktop; tiles wrap on smaller screens.
 const GRID =
-  "grid auto-rows-fr grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-10 lg:grid-cols-5";
+  "grid auto-rows-fr grid-cols-2 gap-x-5 gap-y-8 px-4 sm:grid-cols-3 sm:px-10 lg:grid-cols-5";
 const MAX_TILES = 5;
 
 function RowSkeleton() {
