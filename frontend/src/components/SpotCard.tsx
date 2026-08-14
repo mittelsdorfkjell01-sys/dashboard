@@ -15,7 +15,7 @@ import { spotPath } from "../lib/spotRoutes";
  * surface. No hover treatment on the card (no bg change) — the whole tile
  * is the tap target, `focus-visible` covers keyboard/a11y.
  *
- * The wind-or-wave-height figure gets a live orange-dot reading when the
+ * The wind-or-wave-height figure gets a live green-dot reading when the
  * caller passes `live` (see lib/hooks.ts's useSpotsLive, chunked to the
  * `/spots/live` endpoint's 20-id cap); otherwise it falls back to the
  * typical/editorial figure with no dot. Exactly one of wind/wave-height
@@ -64,7 +64,7 @@ export default function SpotCard({
           </p>
           {value != null && (
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              {isLive && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-orange" />}
+              {isLive && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
               <span className="text-label font-semibold text-ink">{value}</span>
               <span className="text-caption text-ink-soft">{unit}</span>
             </div>
