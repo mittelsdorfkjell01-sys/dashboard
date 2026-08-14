@@ -5,13 +5,13 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md";
 
 const BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-11 items-center justify-center gap-1.5 font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50";
 
 const VARIANT: Record<Variant, string> = {
-  primary: "bg-teal text-white hover:bg-teal-hover",
-  secondary: "bg-white text-teal ring-1 ring-teal/30 hover:ring-teal/50",
-  ghost: "border border-teal/30 bg-white text-teal hover:bg-teal/5",
-  danger: "bg-red-600 text-white hover:bg-red-700",
+  primary: "",
+  secondary: "",
+  ghost: "",
+  danger: "",
 };
 
 const SIZE: Record<Size, string> = {

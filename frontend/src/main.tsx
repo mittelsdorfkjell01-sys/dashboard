@@ -18,6 +18,9 @@ import RouteError from "./components/RouteError";
 import { ADMIN_DEPLOY } from "./lib/target";
 import { AuthProvider } from "./context/AuthContext";
 import { PrefsProvider } from "./context/PrefsContext";
+import { initializeTheme } from "./lib/theme";
+
+initializeTheme();
 
 const MapView = React.lazy(() => import("./pages/MapView"));
 const SpotDetail = React.lazy(() => import("./pages/SpotDetail"));

@@ -128,11 +128,13 @@ export const ParkingIcon = (p: IconProps) => (
   </svg>
 );
 
-/** Facility: surf school / rental — a symmetrical upright board. */
+/** Facility: surf school / rental — an upright surfboard: pointed nose, tapered
+ *  rounded tail, center stringer and a small tail fin. */
 export const SchoolIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M12 2.5c3 3.1 4.5 6.3 4.5 9.5S15 18.4 12 21.5C9 18.4 7.5 15.2 7.5 12S9 5.6 12 2.5Z" />
-    <path d="M12 2.5v19M7.8 13.8c2.7-1.7 5.7-1.7 8.4 0" />
+    <path d="M12 2.1c1.6 1.8 3.3 4.7 3.6 7.7.3 3-.3 6.8-1.7 10-.4.9-.9 1.3-1.9 1.3s-1.5-.4-1.9-1.3c-1.4-3.2-2-7-1.7-10 .3-3 2-5.9 3.6-7.7Z" />
+    <path d="M12 3.2v16.6" />
+    <path d="M10.9 21.1c.3 1.1.7 1.9 1.1 1.9s.8-.8 1.1-1.9" />
   </svg>
 );
 

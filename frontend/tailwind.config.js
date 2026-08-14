@@ -23,9 +23,9 @@ export default {
         band: "var(--sw-band)",
         // Page/body background — cards sit on this as surface.
         page: "var(--sw-page)",
-        // Interaction color — every button, link, hover, focus ring, active
-        // tab indicator. Never used for large text blocks the way `ink` is,
-        // but passes AA as both text-on-white and white-on-fill (5.9:1).
+        // Restricted editorial accent — selected interactive/link text, the
+        // search CTA exception and short data underlines. Never a generic
+        // button, surface, border, focus ring or running-text colour.
         teal: {
           DEFAULT: "var(--sw-teal)",
           hover: "var(--sw-teal-hover)",

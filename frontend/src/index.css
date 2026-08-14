@@ -11,8 +11,8 @@
   --sw-muted: #6B625B;
   --sw-line: #E6E1DA;
   --sw-line-soft: #F0EDE7;
-  --sw-teal: #1E6E7E;
-  --sw-teal-hover: #195C6A;
+  --sw-teal: #1C4E63;
+  --sw-teal-hover: #163E4F;
   --sw-orange: #B45309;
   --sw-green: #4A8159;
   --sw-overlay-soft: rgba(14, 17, 20, 0.16);
@@ -28,8 +28,8 @@ html[data-theme="dark"] {
   --sw-muted: #9B928A;
   --sw-line: #2A2F34;
   --sw-line-soft: #22262A;
-  --sw-teal: #3DA5B8;
-  --sw-teal-hover: #5FBED0;
+  --sw-teal: #5FA8C8;
+  --sw-teal-hover: #78B7D2;
   --sw-orange: #E7883A;
   --sw-green: #6BA97A;
   --sw-overlay-soft: rgba(0, 0, 0, 0.42);
@@ -85,7 +85,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
 
   /* --- Design token: global keyboard focus indicator (WCAG 2.4.7) --------
-     Every interactive element shows a clear teal ring when reached by
+     Every interactive element shows a clear ink ring when reached by
      keyboard (but not on mouse click, thanks to :focus-visible). Form fields
      opt out here and carry their own focus-visible ring via the ui/Input
      primitive, so they never render a doubled indicator. Modern browsers clip
@@ -100,7 +100,7 @@ html[data-theme="dark"] { color-scheme: dark; }
       [role="checkbox"],
       [tabindex]:not([tabindex="-1"])
     ):focus-visible {
-    outline: 2px solid theme("colors.teal.DEFAULT");
+    outline: 2px solid var(--sw-ink);
     outline-offset: 2px;
   }
 
@@ -110,7 +110,7 @@ html[data-theme="dark"] { color-scheme: dark; }
      reachable and clearly focused. `!important` beats the utility's transparent
      outline; there is no doubled indicator because the field token adds no ring. */
   :where(input, select, textarea):focus-visible {
-    outline: 2px solid theme("colors.teal.DEFAULT") !important;
+    outline: 2px solid var(--sw-ink) !important;
     outline-offset: 1px;
   }
 
@@ -125,9 +125,37 @@ html[data-theme="dark"] { color-scheme: dark; }
   .search-plain:focus-visible {
     outline: none !important;
   }
+
+  /* Search fields stay completely stroke-free. Keyboard focus is expressed by
+     a short ink underline below the persistent label, never by a coloured
+     border or a second outline around the input. */
+  .search-field-label::after {
+    display: block;
+    width: 1.5rem;
+    height: 2px;
+    margin-top: 2px;
+    background: var(--sw-ink);
+    content: "";
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 160ms ease-out;
+  }
+
+  .search-field:focus-within .search-field-label::after {
+    transform: scaleX(1);
+  }
 }
 
 @layer utilities {
+  /* Data accents are deliberately thicker and shorter than link underlines.
+     They have no hover behaviour and therefore do not suggest navigation. */
+  .data-accent {
+    text-decoration-line: underline;
+    text-decoration-color: var(--sw-teal);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
   /* 8px radius — matches the header buttons (rounded-2xl/3xl are both 8px). */
   .spot-media-frame {
     border-radius: 0.5rem;

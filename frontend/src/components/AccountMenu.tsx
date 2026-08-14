@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MenuIcon, UserIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
+import ThemeToggle from "./ThemeToggle";
 
 const ACCOUNT_LINKS: { label: string; to: string }[] = [
   { label: "Profil", to: "/konto/profil" },
@@ -15,7 +16,7 @@ const UTILITY: { label: string; to: string }[] = [
   { label: "Datenschutz", to: "/datenschutz" },
 ];
 
-/** Account pill + dropdown, shared by the landing and map/search headers. */
+/** Text-and-icon account action + dropdown, shared by public headers. */
 export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: boolean }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
   };
 
   const linkClass =
-    "block rounded-xl px-3 py-2.5 text-[14px] font-medium text-ink transition-colors hover:bg-band";
+    "flex min-h-11 items-center px-3 text-[14px] font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70";
 
   return (
     <div ref={ref} className="relative">
@@ -53,11 +54,11 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Konto-Menü"
-        className={`flex h-11 w-11 items-center justify-center p-0 text-white transition-colors sm:h-auto sm:w-auto sm:gap-2.5 sm:rounded-2xl sm:bg-teal sm:px-3.5 sm:py-2 sm:hover:bg-teal-hover ${bareOnMobile ? "bg-transparent hover:text-white/80" : "rounded-2xl bg-teal hover:bg-teal-hover"}`}
+        aria-label="Kontomenü"
+        className={`flex h-11 w-11 items-center justify-center p-0 text-ink transition-opacity hover:opacity-60 sm:w-auto sm:gap-2.5 sm:px-2 ${bareOnMobile ? "max-sm:justify-end" : ""}`}
       >
         <MenuIcon className="text-[20px]" />
-        <span className="hidden h-7 w-7 place-items-center rounded-full bg-white/20 sm:grid">
+        <span className="hidden h-7 w-7 place-items-center sm:grid">
           <UserIcon className="text-[16px]" />
         </span>
       </button>
@@ -71,7 +72,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: reduce ? 0 : -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-2xl border border-line bg-surface p-2"
+            className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-2xl bg-surface p-2"
           >
             {user ? (
               <>
@@ -81,7 +82,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
                   </p>
                   <p className="truncate text-[12px] text-muted">{user.email}</p>
                 </div>
-                <div className="border-t border-line pt-1">
+                <div className="mt-2">
                   {ACCOUNT_LINKS.map((item) => (
                     <Link
                       key={item.to}
@@ -94,12 +95,12 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
                     </Link>
                   ))}
                 </div>
-                <div className="mt-1 border-t border-line pt-1">
+                <div className="mt-2">
                   <button
                     type="button"
                     role="menuitem"
                     onClick={onLogout}
-                    className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] font-medium text-teal transition-colors hover:bg-band"
+                    className="flex min-h-11 w-full items-center px-3 text-left text-[14px] font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
                   >
                     Abmelden
                   </button>
@@ -119,21 +120,22 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
                   to="/anmelden?mode=register"
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="mb-1 block rounded-xl bg-teal px-3 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover"
+                  className={linkClass}
                 >
                   Konto erstellen
                 </Link>
               </>
             )}
 
-            <div className="mt-1 border-t border-line pt-1">
+            <div className="mt-2">
+              <ThemeToggle menuItem />
               {UTILITY.map((item) => (
                 <Link
                   key={item.label}
                   to={item.to}
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="block rounded-xl px-3 py-2.5 text-[14px] font-medium text-teal transition-colors hover:bg-band"
+                  className={linkClass}
                 >
                   {item.label}
                 </Link>

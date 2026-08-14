@@ -45,7 +45,7 @@ export default function Landing() {
         </div>
 
         <h1 className="sr-only">
-          surfwind data — die beste Sammlung von Surf- und Windspots
+          surfwind data · die beste Sammlung von Surfspots und Windspots
         </h1>
 
         <div className="flex-1" />
@@ -71,7 +71,7 @@ export default function Landing() {
               to="/map"
               state={{ from }}
               aria-label="Karte öffnen"
-              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-teal px-3.5 py-2 text-[15px] font-medium text-white transition-colors hover:bg-teal-hover"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-[15px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
               <MapIcon className="text-[18px]" />
               <span className="hidden sm:inline">Karte</span>
@@ -83,7 +83,7 @@ export default function Landing() {
         <div className="mx-auto max-w-[1727px] px-4 pb-16 pt-12 sm:px-8">
           <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
           <p className="mt-1 text-[15px] text-muted">
-            Stöbere durch die ganze Sammlung — Region, Wind- und Wellenspots.
+            Stöbere durch die ganze Sammlung · Regionen, Windspots und Wellenspots.
           </p>
 
           {spots.length > 0 && (
@@ -100,7 +100,7 @@ export default function Landing() {
                 type="button"
                 onClick={() => setSpotLimit(100)}
                 disabled={spotsLoading}
-                className="min-h-11 rounded-xl border border-line bg-surface px-5 py-2.5 text-ui font-medium text-ink transition-colors hover:border-teal hover:text-teal disabled:cursor-wait disabled:opacity-60"
+                className="min-h-11 px-5 py-2.5 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:cursor-wait disabled:opacity-60"
               >
                 {spotsLoading ? "Weitere Spots werden geladen …" : "Alle Spots anzeigen"}
               </button>

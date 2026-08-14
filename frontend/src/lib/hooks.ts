@@ -18,8 +18,14 @@ export type AsyncStateReloadable<T> = SwrState<T>;
 
 /** Spots (+ their regions), adapted. Regions come from the shared cache, so a
  *  spot list never re-fetches the region catalogue from scratch. */
-export function useSpots(query: api.SpotQuery = {}): AsyncStateReloadable<Spot[]> {
-  const spots = useSwr(`spots:${JSON.stringify(query)}`, () => api.getSpots(query));
+export function useSpots(
+  query: api.SpotQuery = {},
+  enabled = true,
+): AsyncStateReloadable<Spot[]> {
+  const spots = useSwr(
+    enabled ? `spots:${JSON.stringify(query)}` : null,
+    () => api.getSpots(query),
+  );
   const data = useMemo(
     () => (spots.data ? adaptSpots(spots.data, new Map()) : null),
     [spots.data],
@@ -109,8 +115,8 @@ export function useBestWeeks(regionId?: string): AsyncStateReloadable<api.BestWe
 }
 
 /** All regions (raw backend records), cached once and shared app-wide. */
-export function useRegions(): AsyncStateReloadable<api.Region[]> {
-  return useSwr("regions", () => api.getRegions());
+export function useRegions(enabled = true): AsyncStateReloadable<api.Region[]> {
+  return useSwr(enabled ? "regions" : null, () => api.getRegions());
 }
 
 /** Admin region list — includes drafts. */

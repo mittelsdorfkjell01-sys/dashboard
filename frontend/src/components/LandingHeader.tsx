@@ -3,13 +3,12 @@ import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { Wordmark } from "./ui";
 import AccountMenu from "./AccountMenu";
-import ThemeToggle from "./ThemeToggle";
 
 /**
  * Top bar for the hero pages. By default it's transparent and absolute over the
  * hero (spot/region pages keep this). With `sticky`, it's fixed and turns into a
  * solid, slightly smaller sticky bar once the hero is scrolled past (~half a
- * viewport) — a hairline + translucent blur appear, the padding tightens and the
+ * viewport) — a translucent surface appears, the padding tightens and the
  * wordmark steps down to its compact size. Used on the landing.
  */
 export default function LandingHeader({
@@ -51,9 +50,9 @@ export default function LandingHeader({
 
   return (
     <header
-      className={`${sticky ? "fixed" : "absolute"} inset-x-0 top-0 z-[1000] transition-[background-color,box-shadow] duration-200 ${
+      className={`${sticky ? "fixed" : "absolute"} inset-x-0 top-0 z-[1000] transition-colors duration-200 ${
         solid
-          ? "bg-white/85 shadow-[0_1px_0_rgba(36,28,23,0.08)] backdrop-blur"
+          ? "bg-page/90 backdrop-blur"
           : "pointer-events-none bg-transparent"
       }`}
     >
@@ -77,7 +76,7 @@ export default function LandingHeader({
 
           <Link
             to="/"
-            aria-label="surfwind data — Startseite"
+            aria-label="surfwind data · Startseite"
             className={`col-start-2 min-h-11 min-w-0 select-none items-center justify-self-center leading-none ${mobileSpotControls ? "hidden sm:flex" : "flex"}`}
           >
             <Wordmark size={solid ? "md" : "xl"} />
@@ -93,7 +92,6 @@ export default function LandingHeader({
               </Link>
             )}
 
-            <span className={mobileSpotControls ? "hidden sm:block" : undefined}><ThemeToggle /></span>
             <AccountMenu bareOnMobile={mobileSpotControls} />
           </div>
         </div>

@@ -34,7 +34,7 @@ export function ErrorBanner({
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 rounded-lg bg-red-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-red-700"
+          className="mt-3 min-h-11 px-3 text-[13px] font-semibold text-ink hover:underline hover:underline-offset-4"
         >
           Erneut versuchen
         </button>

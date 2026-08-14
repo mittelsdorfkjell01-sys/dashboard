@@ -17,8 +17,8 @@ export default function Header({ showAccount = true }: { showAccount?: boolean }
 
           <Link
             to="/"
-            aria-label="surfwind data — Startseite"
-            className="col-start-2 select-none justify-self-center leading-none"
+            aria-label="surfwind data · Startseite"
+            className="col-start-2 inline-flex min-h-11 select-none items-center justify-self-center leading-none"
           >
             <Wordmark size="md" />
           </Link>

@@ -107,9 +107,9 @@ export default function SearchResults() {
     : `Suche: „${q}“`;
 
   return (
-    <div className="min-h-screen bg-page">
+    <div className="flex min-h-screen flex-col bg-page">
       <Header />
-      <main className="mx-auto max-w-[1570px] px-4 pb-20 pt-7 sm:px-8">
+      <main className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-20 pt-24 sm:px-8 sm:pt-28">
         <nav className="mb-4 text-[13px] font-medium text-muted">
           <Link to="/" className="hover:underline">
             Übersicht
@@ -150,7 +150,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
   const empty = result.regionen.length === 0 && result.spots.length === 0;
   if (empty) {
     return (
-      <EmptyState message="Keine Treffer. Versuche einen anderen Ort oder Spot-Namen." />
+      <EmptyState message="Keine Treffer. Versuche einen anderen Ort oder Spotnamen." />
     );
   }
   return (
@@ -178,7 +178,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
         <section>
           <div className="mb-3 flex items-baseline justify-between gap-3">
             <h2 className="text-[15px] font-semibold text-ink">Spots</h2>
-            <span className="text-[12px] text-muted">Score 0–100 · höher = besser</span>
+            <span className="text-[12px] text-muted">Skala 0 bis 100 · höher bedeutet besser</span>
           </div>
           <ul className="space-y-2">
             {result.spots.map((s) => (
@@ -198,7 +198,7 @@ function SearchHits({ result }: { result: api.SearchResult }) {
                       className="shrink-0 text-[12px] text-muted"
                       title="Eignungs-Score für deinen Zeitraum (0–100), höher ist besser"
                     >
-                      Score {Math.round(s.score * 100)}
+                      Score <span className="data-accent">{Math.round(s.score * 100)}</span>
                     </span>
                   )}
                 </Link>
@@ -225,14 +225,14 @@ function BestRegionsList({
   );
   if (ranking.length === 0) {
     return (
-      <EmptyState message="Noch keine Saison-Daten (Klimatologie fehlt für die veröffentlichten Spots)." />
+      <EmptyState message="Noch keine Saisondaten (Klimatologie fehlt für die veröffentlichten Spots)." />
     );
   }
   return (
     <section>
       <p className="mb-5 text-[14px] text-muted">
         Offene Achse <b>wo</b>: die besten Reviere{" "}
-        {monthName ? `im ${monthName}` : "über die Saison"} — nach Abdeckung
+        {monthName ? `im ${monthName}` : "über die Saison"} · geordnet nach Abdeckung
         (Anteil der Spots mit fahrbaren Bedingungen).
       </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -271,7 +271,7 @@ function BestWeeksList({
   const weeks = (data.weeks ?? []).filter((w) => (w.score ?? 0) > 0).slice(0, 12);
   if (weeks.length === 0) {
     return (
-      <EmptyState message="Noch keine Saison-Daten für diesen Ort (Klimatologie fehlt)." />
+      <EmptyState message="Noch keine Saisondaten für diesen Ort (Klimatologie fehlt)." />
     );
   }
   const max = Math.max(...weeks.map((w) => w.score ?? 0), 0.01);
@@ -290,7 +290,7 @@ function BestWeeksList({
             <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
             <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink/10">
               <span
-                className="block h-full rounded-full bg-teal"
+                className="block h-full rounded-full bg-ink"
                 style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }}
               />
             </span>
@@ -299,7 +299,7 @@ function BestWeeksList({
                 className="w-24 shrink-0 text-right text-[13px] text-muted"
                 title="Anteil der Zeit mit fahrbaren Bedingungen in dieser Woche"
               >
-                {Math.round(w.score * 100)}% nutzbar
+                <span className="data-accent">{Math.round(w.score * 100)}%</span> nutzbar
               </span>
             )}
           </li>
