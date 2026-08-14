@@ -21,9 +21,15 @@ export default function Landing() {
   const location = useLocation();
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
-  const [spotLimit, setSpotLimit] = useState(20);
-  const { data: allSpots, loading: spotsLoading } = useSpots({ limit: spotLimit });
+  const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
+  // Fetch the lightweight catalogue once. Changing the request key from 20 to
+  // 100 used to temporarily unmount the entire grid while the second request
+  // ran; the page height collapsed and clamped the visitor's scroll position
+  // toward the top. Card images are still mounted only as they become visible
+  // and remain native lazy-loaded, so this does not eagerly download 100 photos.
+  const { data: allSpots, loading: spotsLoading } = useSpots({ limit: 100 });
   const spots = allSpots ?? [];
+  const visibleSpots = spots.slice(0, visibleSpotLimit);
 
   return (
     <div className="relative bg-page">
@@ -88,21 +94,20 @@ export default function Landing() {
 
           {spots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
-              {spots.map((spot) => (
+              {visibleSpots.map((spot) => (
                 <SpotCard key={spot.id} spot={spot} />
               ))}
             </div>
           )}
 
-          {spots.length >= spotLimit && spotLimit < 100 && (
+          {!spotsLoading && visibleSpotLimit < spots.length && (
             <div className="mt-10 flex justify-center">
               <button
                 type="button"
-                onClick={() => setSpotLimit(100)}
-                disabled={spotsLoading}
-                className="min-h-11 px-5 py-2.5 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:cursor-wait disabled:opacity-60"
+                onClick={() => setVisibleSpotLimit(spots.length)}
+                className="min-h-11 px-5 py-2.5 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
               >
-                {spotsLoading ? "Weitere Spots werden geladen …" : "Alle Spots anzeigen"}
+                Alle Spots anzeigen
               </button>
             </div>
           )}

@@ -100,6 +100,8 @@ export default function HeroImage({
         srcSet={cdnSrcSet}
         sizes="100vw"
         alt={alt}
+        loading="eager"
+        fetchPriority="high"
         className={className}
         style={style}
         onError={onError}
@@ -108,7 +110,7 @@ export default function HeroImage({
   }
 
   if (!entry) {
-    return <img src={src} alt={alt} className={className} style={style} onError={onError} />;
+    return <img src={src} alt={alt} loading="eager" fetchPriority="high" className={className} style={style} onError={onError} />;
   }
 
   const key = keyFromSrc(src);
@@ -122,7 +124,7 @@ export default function HeroImage({
           srcSet={entry.widths.map((w) => `/${key}-${w}.${fmt} ${w}w`).join(", ")}
         />
       ))}
-      <img src={entry.fallback} alt={alt} className={className} style={style} onError={onError} />
+      <img src={entry.fallback} alt={alt} loading="eager" fetchPriority="high" className={className} style={style} onError={onError} />
     </picture>
   );
 }
