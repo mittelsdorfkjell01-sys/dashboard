@@ -9,6 +9,11 @@
 /** Widths requested from a provider CDN, matching common hero display sizes. */
 export const CDN_WIDTHS = [640, 1024, 1600, 2400, 3840] as const;
 
+/** Smaller widths for browse cards. Even on a high-DPI desktop a card is
+ * nowhere near hero size; keeping this list separate prevents a 3840 px source
+ * from being selected for a roughly 300 px tile. */
+export const CARD_CDN_WIDTHS = [320, 480, 640, 960] as const;
+
 /** Unsplash CDN parameters: width, quality, format, and never upscale. */
 export function unsplashSized(url: string, width: number): string {
   const [base, hash] = url.split("#");
@@ -27,6 +32,16 @@ export function unsplashSized(url: string, width: number): string {
 export function hotlinkSrcSet(url: string, provider?: string | null): string | undefined {
   if (provider !== "unsplash") return undefined;
   return CDN_WIDTHS.map((width) => `${unsplashSized(url, width)} ${width}w`).join(", ");
+}
+
+/** Responsive srcset for a spot/region card rather than a full-bleed hero. */
+export function cardHotlinkSrcSet(url: string): string | undefined {
+  try {
+    if (new URL(url).hostname !== "images.unsplash.com") return undefined;
+  } catch {
+    return undefined;
+  }
+  return CARD_CDN_WIDTHS.map((width) => `${unsplashSized(url, width)} ${width}w`).join(", ");
 }
 
 /** Focal point → CSS object-position. Percentages, as stored. */

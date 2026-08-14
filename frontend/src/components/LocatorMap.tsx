@@ -158,7 +158,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
             href={link.href}
             target={link.target}
             rel={link.rel}
-            className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-teal px-4 py-2 text-ui font-medium text-white transition-colors hover:bg-teal-hover"
+            className="mt-4 inline-flex min-h-11 items-center px-4 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
             In externer Karte öffnen
           </a>

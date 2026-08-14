@@ -62,7 +62,7 @@ export default function Profil() {
         </div>
         <Link
           to="/konto/einstellungen"
-          className="shrink-0 rounded-xl bg-teal px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover sm:ml-auto"
+          className="shrink-0 px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 sm:ml-auto"
         >
           Profil bearbeiten
         </Link>

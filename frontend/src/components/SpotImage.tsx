@@ -1,3 +1,5 @@
+import { cardHotlinkSrcSet, unsplashSized } from "../lib/heroSource";
+
 /**
  * A spot's image with a branded fallback. When `src` is empty (a seed spot with
  * no hero uploaded yet), it renders a calm brand-coloured field carrying the
@@ -19,11 +21,15 @@ export default function SpotImage({
   compact?: boolean;
 }) {
   if (src) {
+    const srcSet = cardHotlinkSrcSet(src);
     return (
       <img
-        src={src}
+        src={srcSet ? unsplashSized(src, 640) : src}
+        srcSet={srcSet}
+        sizes={srcSet ? "(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw" : undefined}
         alt={name}
         loading="lazy"
+        decoding="async"
         className={`h-full w-full object-cover ${className}`}
       />
     );

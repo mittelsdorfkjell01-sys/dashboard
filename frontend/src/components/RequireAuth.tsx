@@ -33,7 +33,7 @@ export default function RequireAuth({
           <button
             type="button"
             onClick={() => void refresh()}
-            className="mt-4 min-h-11 rounded-lg bg-teal px-4 py-2 text-[14px] font-medium text-white"
+            className="mt-4 min-h-11 px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
             Erneut versuchen
           </button>

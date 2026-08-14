@@ -167,7 +167,7 @@ export default function InlineTipComposer({
           type="button"
           onClick={onSend}
           disabled={busy || !text.trim()}
-          className="min-h-10 rounded-2xl bg-teal px-5 py-2 text-label font-medium text-white transition-colors hover:bg-teal-hover disabled:opacity-40"
+          className="min-h-10 px-5 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:opacity-40 disabled:no-underline"
         >
           {busy ? "Senden…" : "absenden"}
         </button>

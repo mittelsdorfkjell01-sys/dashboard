@@ -23,13 +23,13 @@ export default function NotFound() {
           <div className="mt-6 flex justify-center gap-3">
             <Link
               to="/"
-              className="rounded-xl bg-teal px-4 py-2 text-[14px] font-medium text-white hover:bg-teal-hover"
+              className="px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
               Zur Übersicht
             </Link>
             <Link
               to="/map"
-              className="rounded-xl border border-teal/30 bg-white px-4 py-2 text-[14px] font-medium text-teal hover:bg-teal/5"
+              className="px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
               Zur Karte
             </Link>

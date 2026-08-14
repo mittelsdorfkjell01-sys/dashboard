@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, defer, selectinload
 
-from app.api._http_cache import set_public_cache
+from app.api._http_cache import set_public_cache, set_top_spots_cache
 from app.db.session import get_db
 from app.discovery import service as discovery
 from app.live import service as live_service
@@ -174,7 +174,7 @@ def list_top_spots(
             stmt = stmt.where(Spot.sports.any(sport))
         ordered = list(db.scalars(stmt.order_by(Spot.name).limit(fetch_n)))
 
-    set_public_cache(response)
+    set_top_spots_cache(response)
     # Serialize (dropping any malformed rows), then trim to the requested count.
     return _safe_summaries(ordered)[:limit]
 

@@ -33,7 +33,7 @@ export default function Favoriten() {
         </p>
         <Link
           to="/search"
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-teal px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-teal-hover"
+          className="mt-5 inline-flex items-center gap-2 px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
         >
           <SearchIcon className="text-[16px]" />
           Spots entdecken

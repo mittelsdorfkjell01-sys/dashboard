@@ -41,6 +41,8 @@ def fake_live(client):
 def test_top_endpoint_returns_published_spots(client, seeded, fake_live):
     resp = client.get("/spots/top?limit=5")
     assert resp.status_code == 200
+    assert "s-maxage=21600" in resp.headers["cache-control"]
+    assert "stale-while-revalidate=86400" in resp.headers["cache-control"]
     body = resp.json()
     assert isinstance(body, list)          # path wins over /spots/{spot_id}
     assert 0 < len(body) <= 5

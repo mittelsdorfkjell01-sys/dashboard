@@ -7,7 +7,14 @@ import {
   hasCredit,
   withUnsplashUtm,
 } from "../imageCredit";
-import { CDN_WIDTHS, hotlinkSrcSet, objectPosition, unsplashSized } from "../heroSource";
+import {
+  CARD_CDN_WIDTHS,
+  CDN_WIDTHS,
+  cardHotlinkSrcSet,
+  hotlinkSrcSet,
+  objectPosition,
+  unsplashSized,
+} from "../heroSource";
 import type { ImageRecord } from "../api";
 
 function image(overrides: Partial<ImageRecord> = {}): ImageRecord {
@@ -139,6 +146,17 @@ describe("hotlinked delivery", () => {
       expect(srcset).toContain(`w=${width}`);
       expect(srcset).toContain(`${width}w`);
     }
+  });
+
+  it("uses a bounded responsive set for browse cards", () => {
+    const srcset = cardHotlinkSrcSet("https://images.unsplash.com/photo-card");
+    expect(srcset).toBeDefined();
+    for (const width of CARD_CDN_WIDTHS) {
+      expect(srcset).toContain(`w=${width}`);
+      expect(srcset).toContain(`${width}w`);
+    }
+    expect(srcset).not.toContain("3840w");
+    expect(cardHotlinkSrcSet("https://example.com/photo.jpg")).toBeUndefined();
   });
 
   it("never upscales", () => {

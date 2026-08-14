@@ -179,7 +179,7 @@ export default function HourTable({
           type="button"
           onClick={() => setShowAllRows((v) => !v)}
           aria-expanded={showAllRows}
-          className="rounded-2xl border border-teal/30 px-4 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
+          className="px-4 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
         >
           {showAllRows ? "Weniger Zeilen" : "Mehr Zeilen"}
         </button>

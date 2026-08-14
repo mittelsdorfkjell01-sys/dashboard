@@ -213,7 +213,7 @@ export default function SortDropdown({
               type="button"
               onClick={() => onChange(emptyFilters())}
               disabled={count === 0}
-              className="text-[13px] font-medium text-teal underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+              className="text-[13px] font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
             >
               Zurücksetzen
             </button>
@@ -223,7 +223,7 @@ export default function SortDropdown({
                 setOpen(false);
                 triggerRef.current?.focus();
               }}
-              className="rounded-lg bg-teal px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-hover"
+              className="px-3 py-1.5 text-[13px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
               Fertig
             </button>

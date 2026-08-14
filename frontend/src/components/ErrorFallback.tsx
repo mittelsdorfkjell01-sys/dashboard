@@ -24,7 +24,7 @@ export default function ErrorFallback({
           <Button onClick={() => window.location.reload()}>Neu laden</Button>
           <a
             href="/"
-            className="inline-flex items-center rounded-xl border border-teal/30 bg-white px-4 py-2 text-[14px] font-medium text-teal hover:bg-teal/5"
+            className="inline-flex items-center px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
             Zur Startseite
           </a>

@@ -274,7 +274,7 @@ export default function Forecast({ forecast, coords }: { forecast: ForecastSerie
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
           aria-expanded={detailsOpen}
-          className="rounded-2xl border border-teal/30 px-5 py-2 text-label font-medium text-teal transition-colors hover:bg-teal/5"
+          className="px-5 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
         >
           {detailsOpen ? "Details ausblenden" : "Details anzeigen"}
         </button>

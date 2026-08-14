@@ -200,7 +200,7 @@ function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
       <button
         type="button"
         onClick={onAdd}
-        className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-teal px-5 py-2.5 text-label font-medium text-white transition-colors hover:bg-teal-hover"
+        className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
       >
         <PlusIcon className="text-[18px]" />
         Foto hinzufügen
