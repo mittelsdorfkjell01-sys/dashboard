@@ -13,14 +13,14 @@ import ImageCredit from "./ImageCredit";
 import { fromGalleryPhoto } from "../lib/imageCredit";
 
 /**
- * Fotogalerie overlay (Figma Frame_10) — title left, subtitle right, and the
+ * Fotogalerie overlay (Figma Frame_10) — title left, upload action right, and the
  * spot's community photos below. The Figma's fixed placeholder grid is
  * replaced by a data-driven **justified layout** (equal-height rows, widths by
  * aspect ratio) so any number of real photos in any format lay out cleanly
  * without hard cropping. Clicking a photo opens a lightbox. With no photos yet
  * it shows an inviting empty state instead of blank tiles.
  *
- * Triggered only by the gallery tile's "Fotogalerie" pill (see SpotGalleryTile).
+ * Triggered by the gallery tile (see SpotGalleryTile).
  */
 export default function PhotoGalleryOverlay({
   open,
@@ -65,9 +65,19 @@ export default function PhotoGalleryOverlay({
   return (
     <>
       <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef} mobileDragToClose>
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <h2 className="text-[28px] font-semibold leading-tight text-ink sm:text-[32px]">Fotogalerie</h2>
-          <p className="text-ui text-muted">Die besten Momente vom Spot</p>
+          {!uploadOpen && lightbox === null && (
+            <button
+              type="button"
+              onClick={onAdd}
+              aria-label="Foto hinzufügen"
+              title="Foto hinzufügen"
+              className="grid h-11 w-11 place-items-center text-ink transition-opacity hover:opacity-65"
+            >
+              <PlusIcon className="text-[26px]" />
+            </button>
+          )}
         </div>
 
         {uploadOpen && spotId && (
@@ -86,19 +96,6 @@ export default function PhotoGalleryOverlay({
           <JustifiedGallery photos={photos} onOpen={setLightbox} />
         )}
 
-        {/* Round "+" upload FAB, bottom-right of the panel. Hidden while the
-            form is open (the form has its own close) and while a photo is
-            being viewed full-screen. */}
-        {!uploadOpen && lightbox === null && (
-          <button
-            type="button"
-            onClick={onAdd}
-            aria-label="Foto hinzufügen"
-            className="fixed bottom-5 right-5 z-[1102] grid h-12 w-12 place-items-center rounded-2xl border border-white/15 bg-teal text-white transition-colors hover:bg-teal-hover sm:bottom-6 sm:right-6"
-          >
-            <PlusIcon className="text-[26px]" />
-          </button>
-        )}
       </OverlayPanel>
 
       <CommentAuthChoiceDialog

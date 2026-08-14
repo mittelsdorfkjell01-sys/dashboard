@@ -4,9 +4,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from "../lib/icons";
 
 /**
  * The Info tab's portrait gallery tile (Figma Frame_9). A single big image
- * with its own prev/next arrows to page through the spot's photos in place —
- * separate from the "Fotogalerie" pill, which is the *only* trigger for the
- * full gallery overlay (Frame_10). Landscape photos are center-cropped to
+ * with its own prev/next arrows to page through the spot's photos in place.
+ * The image surface opens the full gallery overlay (Frame_10). Landscape photos are center-cropped to
  * hold the portrait frame rather than letterboxed or stretched.
  */
 export default function SpotGalleryTile({
@@ -37,17 +36,7 @@ export default function SpotGalleryTile({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
 
-      <button
-        ref={galleryTriggerRef}
-        type="button"
-        onClick={onOpenGallery}
-        aria-label="Fotogalerie öffnen"
-        className="absolute left-4 top-4 z-10 inline-flex min-h-11 items-center rounded-2xl bg-teal/80 px-4 py-2 text-label font-medium text-white transition-colors hover:bg-teal sm:left-1/2 sm:min-h-0 sm:-translate-x-1/2"
-      >
-        Fotogalerie
-      </button>
-
-      <button type="button" onClick={onOpenGallery} aria-label="Fotogalerie öffnen" className="absolute inset-0 z-[5] cursor-zoom-in [-webkit-tap-highlight-color:transparent]" />
+      <button ref={galleryTriggerRef} type="button" onClick={onOpenGallery} aria-label="Fotogalerie öffnen" className="absolute inset-0 z-[5] cursor-zoom-in [-webkit-tap-highlight-color:transparent]" />
 
       {photos.length > 1 && (
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2">

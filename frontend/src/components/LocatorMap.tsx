@@ -189,21 +189,20 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       )}
 
       <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
-        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-xl bg-teal">
+        <div className="pointer-events-auto flex flex-col">
           <button
             type="button"
             aria-label="Vergrößern"
             onClick={() => mapRef.current?.zoomIn()}
-            className="grid h-11 w-11 place-items-center text-white transition-colors hover:bg-teal-hover"
+            className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
           >
             <ControlGlyph plus />
           </button>
-          <span className="mx-2 h-px bg-white/25" />
           <button
             type="button"
             aria-label="Verkleinern"
             onClick={() => mapRef.current?.zoomOut()}
-            className="grid h-11 w-11 place-items-center text-white transition-colors hover:bg-teal-hover"
+            className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
           >
             <ControlGlyph />
           </button>
@@ -215,7 +214,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           rel={link.rel}
           aria-label="In externer Karte öffnen"
           title="In externer Karte öffnen"
-          className="pointer-events-auto grid h-11 w-11 place-items-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
+          className="pointer-events-auto grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
         >
           <LinkIcon width={18} height={18} />
         </a>

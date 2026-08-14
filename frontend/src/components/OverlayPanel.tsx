@@ -37,28 +37,10 @@ export default function OverlayPanel({
   const reduce = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
-  const historyToken = useRef<string | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
-  useEffect(() => {
-    if (!open) return;
-    const token = `overlay-${Date.now()}`;
-    historyToken.current = token;
-    window.history.pushState({ ...window.history.state, surfwindOverlay: token }, "");
-    const onPopState = () => {
-      historyToken.current = null;
-      onCloseRef.current();
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [open]);
-
   const requestClose = useCallback(() => {
-    if (historyToken.current && window.history.state?.surfwindOverlay === historyToken.current) {
-      window.history.back();
-      return;
-    }
     onCloseRef.current();
   }, []);
 

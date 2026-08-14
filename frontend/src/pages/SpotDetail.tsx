@@ -230,11 +230,7 @@ export default function SpotDetail() {
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
-                    <p className="text-label text-ink-soft/80">
-                      {country && <span>{country}</span>}
-                      {country && regionPart && (
-                        <span className="mx-1.5 text-ink-soft/50">›</span>
-                      )}
+                    <p className="text-label leading-tight text-ink-soft/80">
                       {regionPart && (
                         <Link
                           to={`/region/${regionSlug(spot.region)}`}
@@ -243,6 +239,10 @@ export default function SpotDetail() {
                           {regionPart}
                         </Link>
                       )}
+                      {country && regionPart && (
+                        <span className="mx-1.5 text-ink-soft/50">·</span>
+                      )}
+                      {country && <span>{country}</span>}
                     </p>
                   )}
                   <h1 className="mt-3 text-[28px] font-semibold leading-[1.12] text-balance text-ink sm:text-[30px]">{spot.name}</h1>

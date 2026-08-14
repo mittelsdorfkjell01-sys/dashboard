@@ -917,6 +917,7 @@ export function GalleryUploadForm({
   onCancel: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [credit, setCredit] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [website, setWebsite] = useState("");
@@ -925,10 +926,22 @@ export function GalleryUploadForm({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getImageLicense().then(setTerms).catch(() => {});
   }, []);
+
+  // Keep the object URL in sync with the picked file, and always revoke the
+  // previous one — otherwise every re-pick leaks a blob URL.
+  const pickFile = (f: File | null) => {
+    setPreview((p) => {
+      if (p) URL.revokeObjectURL(p);
+      return f ? URL.createObjectURL(f) : null;
+    });
+    setFile(f);
+    setError(null);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -943,7 +956,7 @@ export function GalleryUploadForm({
         licenseAccept: accepted,
         review: true,
       });
-      setFile(null);
+      pickFile(null);
       setCredit("");
       setAccepted(false);
       setNotice("Danke! Dein Bild wartet auf Freigabe.");
@@ -959,38 +972,76 @@ export function GalleryUploadForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-3xl bg-ink/5 p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-ui font-medium text-ink">Bild hinzufügen</p>
-        <button type="button" onClick={onCancel} className="text-label text-muted hover:text-teal">
+    <form onSubmit={submit} className="mt-6 rounded-3xl border border-line p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-title font-semibold text-ink">Bild hinzufügen</p>
+          <p className="mt-1 text-caption text-muted">
+            Wird sofort hochgeladen, ist aber erst nach kurzer Prüfung für alle sichtbar.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="shrink-0 text-label font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+        >
           Schließen
         </button>
       </div>
-      <p className="mt-1 text-caption text-muted">
-        Wird sofort hochgeladen, ist aber erst nach kurzer Prüfung für alle sichtbar.
-      </p>
+
       <input
+        ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        className="mt-2 text-label text-ink"
+        onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+        className="hidden"
       />
+
+      {preview ? (
+        <div className="relative mt-4 overflow-hidden rounded-2xl bg-band">
+          <img src={preview} alt="" className="aspect-[4/3] w-full object-cover" />
+          <button
+            type="button"
+            onClick={() => pickFile(null)}
+            aria-label="Bild entfernen"
+            className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-ink/60 text-white transition-opacity hover:opacity-80"
+          >
+            <CloseIcon width={14} height={14} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line px-4 py-10 text-center transition-colors hover:border-ink/30 hover:bg-band/40"
+        >
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+            <rect x="3" y="5" width="18" height="14" rx="2.5" />
+            <circle cx="8.5" cy="10" r="1.6" />
+            <path d="m4 17 4.5-4.5a2 2 0 0 1 2.8 0L16 17" />
+            <path d="m14 15 1.8-1.8a2 2 0 0 1 2.8 0L21 15" />
+          </svg>
+          <span className="text-ui font-medium text-ink">Bild auswählen</span>
+          <span className="text-caption text-muted">JPG, PNG oder WebP</span>
+        </button>
+      )}
+
       <Input
         value={credit}
         onChange={(e) => setCredit(e.target.value)}
         placeholder="Credit: Name oder Instagram (optional)"
-        className="mt-2"
+        className="mt-4"
       />
-      <label className="mt-3 flex items-start gap-2 text-label text-ink">
+      <label className="mt-4 flex items-start gap-2.5 text-label text-ink">
         <input
           type="checkbox"
           checked={accepted}
           onChange={(e) => setAccepted(e.target.checked)}
-          className="mt-0.5"
+          className="mt-0.5 h-4 w-4 accent-ink"
         />
         <span>
           Ich bestätige die{" "}
-          <button type="button" onClick={() => setShowTerms((v) => !v)} className="underline">
+          <button type="button" onClick={() => setShowTerms((v) => !v)} className="underline underline-offset-2">
             Rechte- &amp; Einwilligungserklärung{terms ? ` (${terms.version})` : ""}
           </button>
           .
@@ -1002,9 +1053,9 @@ export function GalleryUploadForm({
         </pre>
       )}
       <Honeypot value={website} onChange={setWebsite} />
-      {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
-      {notice && <p role="status" className="mt-2 text-label text-green">{notice}</p>}
-      <Button type="submit" disabled={busy || !file || !accepted} className="mt-3">
+      {error && <p role="alert" className="mt-3 text-label text-red-600">{error}</p>}
+      {notice && <p role="status" className="mt-3 text-label text-green">{notice}</p>}
+      <Button type="submit" disabled={busy || !file || !accepted} className="mt-4">
         {busy ? "Hochladen…" : "Hochladen"}
       </Button>
     </form>
