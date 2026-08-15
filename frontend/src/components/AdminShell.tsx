@@ -43,6 +43,17 @@ const I = {
       <path d="M9 4v14M15 6v14" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   ),
+  weather: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7.5 18.5h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.4-1.7A4.9 4.9 0 0 0 7.5 18.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
   review: (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M20 6 9 17l-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -77,8 +88,8 @@ const I = {
 const NAV: NavItem[] = [
   { to: "/admin", label: "Übersicht", end: true, icon: I.overview },
   { to: "/admin/spots", label: "Spots", icon: I.spots },
-  { to: "/admin/weather", label: "Wetterprofile", icon: I.activity },
   { to: "/admin/regions", label: "Regionen", icon: I.regions },
+  { to: "/admin/weather", label: "Wetterprofile", icon: I.weather },
   { to: "/admin/review", label: "Review", icon: I.review },
   { to: "/admin/map", label: "Karte", icon: I.map },
   { to: "/admin/activity", label: "Aktivität", icon: I.activity },

@@ -21,4 +21,14 @@ describe("spot routes", () => {
   it("keeps letters readable and normalizes punctuation", () => {
     expect(spotNameSegment("Ribeira d’Ilhas")).toBe("Ribeira-d-Ilhas");
   });
+
+  it("builds the canonical Aileen's dashboard preview route", () => {
+    expect(
+      spotPath({
+        id: "6fb34adc-56be-4802-beb1-e207722079df",
+        slug: "aileens",
+        name: "Aileen's",
+      }),
+    ).toBe("/spot/aileens/info");
+  });
 });

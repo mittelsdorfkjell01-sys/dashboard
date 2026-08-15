@@ -69,6 +69,7 @@ import {
   parseDuplicateConflict,
   type DuplicateConflict,
 } from "../lib/duplicateConflicts";
+import { spotPath } from "../lib/spotRoutes";
 
 type Availability = "yes" | "no" | "unknown";
 
@@ -478,8 +479,29 @@ export default function AdminSpotForm() {
         spot = await createSpot(body);
       }
 
+      // The structural PATCH and the image upload are two separate requests.
+      // Rebase immediately after the first succeeds: if the upload then fails,
+      // retrying must not compare the already-saved fields with their stale
+      // pre-save values and report a false concurrent-edit conflict.
+      loadedSpotRef.current = spot;
+
       if (heroFile) {
-        await uploadHeroImage(spot.id, heroFile, credit.trim());
+        try {
+          await uploadHeroImage(spot.id, heroFile, credit.trim());
+        } catch (uploadError) {
+          if (uploadError instanceof ApiError) {
+            throw new ApiError(
+              `Das Bild wurde nicht hochgeladen. ${uploadError.message} Die übrigen Änderungen wurden gespeichert; das ausgewählte Bild bleibt für einen neuen Versuch erhalten.`,
+              uploadError.status,
+              uploadError.detail,
+            );
+          }
+          throw new ApiError(
+            "Das Bild wurde nicht hochgeladen. Die übrigen Änderungen wurden gespeichert; das ausgewählte Bild bleibt für einen neuen Versuch erhalten.",
+            0,
+            uploadError,
+          );
+        }
         spot = await getAdminSpot(spot.id);
       }
 
@@ -1233,7 +1255,12 @@ export default function AdminSpotForm() {
             </div>
           )}
 
-          {error && <ErrorBanner message={error} />}
+          {error && (
+            <ErrorBanner
+              title="Änderungen konnten nicht vollständig gespeichert werden."
+              message={error}
+            />
+          )}
 
           {isEdit && id ? (
             <div id="f-operations" className="scroll-mt-24">
@@ -1242,7 +1269,11 @@ export default function AdminSpotForm() {
                 onGapClick={focusGap}
                 submitting={submitting}
                 saveLabel="Änderungen speichern"
-                previewHref={`/spot/${id}`}
+                previewHref={spotPath({
+                  id,
+                  slug: loadedSpotRef.current?.slug,
+                  name: loadedSpotRef.current?.name ?? name,
+                })}
                 cancelSlot={
                   <AdminBackButton
                     onClick={back.goBack}
