@@ -106,8 +106,8 @@ export default function AdminShell() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-admin-bg text-admin-fg">
-      <div className="flex">
+    <div className="min-h-screen overflow-x-clip bg-admin-bg text-admin-fg">
+      <div className="flex items-start">
         {/* Sidebar (desktop) */}
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-5 lg:flex">
           <Link to="/admin" className="px-2 py-1">
@@ -142,63 +142,65 @@ export default function AdminShell() {
 
         {/* Content column */}
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
-            {/* Brand — shown until the sidebar appears (lg). */}
-            <Link to="/admin" className="lg:hidden">
-              <Wordmark size="sm" tag="Admin" />
-            </Link>
-            <div className="hidden lg:block" />
-            <div className="flex items-center gap-2 sm:gap-3">
-              <MediaBudgetIndicator />
-              <NotificationBell />
-              {user && (
-                <>
-                  <div className="mx-0.5 hidden h-5 w-px bg-admin-border sm:block" />
-                  <span className="hidden items-center gap-2 text-label text-admin-fg sm:flex">
-                    {user.display_name}
-                    <span className="rounded-full border border-admin-border bg-admin-hover px-2 py-0.5 text-caption font-medium text-admin-muted">
-                      {roleLabel(user.role)}
+          <div className="sticky top-0 z-20">
+            <header className="flex items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
+              {/* Brand — shown until the sidebar appears (lg). */}
+              <Link to="/admin" className="lg:hidden">
+                <Wordmark size="sm" tag="Admin" />
+              </Link>
+              <div className="hidden lg:block" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <MediaBudgetIndicator />
+                <NotificationBell />
+                {user && (
+                  <>
+                    <div className="mx-0.5 hidden h-5 w-px bg-admin-border sm:block" />
+                    <span className="hidden items-center gap-2 text-label text-admin-fg sm:flex">
+                      {user.display_name}
+                      <span className="rounded-full border border-admin-border bg-admin-hover px-2 py-0.5 text-caption font-medium text-admin-muted">
+                        {roleLabel(user.role)}
+                      </span>
                     </span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onLogout}
-                    className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-                  >
-                    Abmelden
-                  </button>
-                </>
-              )}
-            </div>
-          </header>
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+                    >
+                      Abmelden
+                    </button>
+                  </>
+                )}
+              </div>
+            </header>
 
-          {/* Compact top nav — used below the sidebar breakpoint (tablet, half-screen, mobile). */}
-          <nav
-            ref={mobileNavRef}
-            aria-label="Dashboard-Navigation"
-            className="no-scrollbar flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain border-b border-admin-border bg-admin-surface px-4 py-2 lg:hidden"
-          >
-            {items.map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.end}
-                className={({ isActive }) =>
-                  [
-                    "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-label font-medium transition-colors",
-                    isActive
-                      ? "bg-admin-hover text-admin-fg"
-                      : "text-admin-fg2 hover:bg-admin-hover",
-                  ].join(" ")
-                }
-              >
-                <span className="grid h-4 w-4 place-items-center [&_svg]:h-4 [&_svg]:w-4">
-                  {n.icon}
-                </span>
-                {n.label}
-              </NavLink>
-            ))}
-          </nav>
+            {/* Compact top nav — used below the sidebar breakpoint (tablet, half-screen, mobile). */}
+            <nav
+              ref={mobileNavRef}
+              aria-label="Dashboard-Navigation"
+              className="no-scrollbar flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain border-b border-admin-border bg-admin-surface px-4 py-2 lg:hidden"
+            >
+              {items.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  end={n.end}
+                  className={({ isActive }) =>
+                    [
+                      "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-label font-medium transition-colors",
+                      isActive
+                        ? "bg-admin-hover text-admin-fg"
+                        : "text-admin-fg2 hover:bg-admin-hover",
+                    ].join(" ")
+                  }
+                >
+                  <span className="grid h-4 w-4 place-items-center [&_svg]:h-4 [&_svg]:w-4">
+                    {n.icon}
+                  </span>
+                  {n.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
           <main className="px-4 py-6 sm:px-8">
             <Outlet />
