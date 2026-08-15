@@ -47,6 +47,7 @@ def create_region(
     data: dict,
     *,
     db: Session,
+    commit: bool = True,
     allow_duplicate: bool = False,
     actor: str | None = None,
 ) -> Any:
@@ -85,8 +86,10 @@ def create_region(
         status="draft",  # new regions start as draft → operator goes live
     )
     db.add(region)
-    db.commit()
-    db.refresh(region)
+    db.flush()
+    if commit:
+        db.commit()
+        db.refresh(region)
     if duplicate_candidates:
         logger.warning(
             "region duplicate override by %s for %s against %s",
