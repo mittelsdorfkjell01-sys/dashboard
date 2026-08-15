@@ -8,6 +8,7 @@ import {
   type TideEvent,
 } from "../../lib/api";
 import { Field, fieldClass } from "../ui";
+import { Button } from "./ui";
 
 // Operator UI: enter the observed HH:MM for the next high and low water,
 // enter a technical note, save. The panel translates the entered clock
@@ -177,7 +178,7 @@ export default function TideAdminPanel({ spotId }: {
   return (
     <div className="space-y-4">
       {error && (
-        <p role="alert" className="border-l-2 border-admin-danger-border pl-3 text-label text-red-700">
+        <p role="alert" className="border-l-2 border-admin-danger-border pl-3 text-label text-admin-danger">
           {error}
         </p>
       )}
@@ -232,30 +233,15 @@ export default function TideAdminPanel({ spotId }: {
       </Field>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onSave}
-          className="rounded-md bg-admin-accent px-3 py-2 text-label font-medium text-white disabled:opacity-50"
-        >
+        <Button variant="primary" disabled={busy} onClick={onSave}>
           Korrektur speichern
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onRecalc}
-          className="rounded-md border border-admin-border px-3 py-2 text-label font-medium text-admin-fg hover:bg-admin-hover disabled:opacity-50"
-        >
+        </Button>
+        <Button variant="secondary" disabled={busy} onClick={onRecalc}>
           Neu berechnen
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onReset}
-          className="rounded-md border border-admin-border px-3 py-2 text-label font-medium text-admin-fg hover:bg-admin-hover disabled:opacity-50"
-        >
+        </Button>
+        <Button variant="secondary" disabled={busy} onClick={onReset}>
           Korrektur zurücksetzen
-        </button>
+        </Button>
       </div>
     </div>
   );

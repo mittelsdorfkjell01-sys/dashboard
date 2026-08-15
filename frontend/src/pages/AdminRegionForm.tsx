@@ -29,8 +29,8 @@ import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
-import { Button, Input, Textarea } from "../components/ui";
-import { Badge } from "../components/admin/ui";
+import { Input, Textarea } from "../components/ui";
+import { Badge, Button } from "../components/admin/ui";
 import AdminBackButton, {
   useAdminBackNavigation,
 } from "../components/admin/AdminBackButton";
@@ -554,7 +554,7 @@ export default function AdminRegionForm() {
             {error}
           </div>
         )}
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" variant="primary" disabled={busy}>
           Speichern
         </Button>
       </form>
@@ -563,13 +563,9 @@ export default function AdminRegionForm() {
       <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-ui font-semibold text-admin-fg">Titelbild</h2>
-          <button
-            type="button"
-            onClick={() => setPickerOpen("hero")}
-            className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
-          >
+          <Button variant="primary" onClick={() => setPickerOpen("hero")}>
             Bild suchen
-          </button>
+          </Button>
         </div>
         <div className="mt-3 flex flex-wrap items-start gap-4">
           {region.image?.url ? (
@@ -601,14 +597,14 @@ export default function AdminRegionForm() {
                 }}
                 placeholder="Bild-URL setzen"
               />
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                className="shrink-0"
                 disabled={busy || !imgUrl.trim() || !imgCredit.trim()}
                 onClick={saveImageUrl}
-                className="shrink-0 rounded-md border border-admin-border bg-admin-surface px-3 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
               >
                 Setzen
-              </button>
+              </Button>
             </div>
     <div className="pb-20 xl:pb-0">
               <input
@@ -668,13 +664,9 @@ export default function AdminRegionForm() {
       <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-ui font-semibold text-admin-fg">Galerie</h2>
-          <button
-            type="button"
-            onClick={() => setPickerOpen("gallery")}
-            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-          >
+          <Button variant="secondary" onClick={() => setPickerOpen("gallery")}>
             Bild hinzufügen
-          </button>
+          </Button>
         </div>
         <div className="mt-3">
           {id && (
@@ -862,14 +854,14 @@ export default function AdminRegionForm() {
             ? `Diese Region hat ${spots.length} zugeordnete(n) Spot(s). Verschiebe sie zuerst — dann lässt sich die Region löschen.`
             : "Diese Region hat keine Spots und kann gelöscht werden. Das lässt sich nicht rückgängig machen."}
         </p>
-        <button
-          type="button"
+        <Button
+          variant="destructive"
+          className="mt-4"
           disabled={busy || spots.length > 0}
           onClick={() => setDeleteOpen(true)}
-          className="mt-4 rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-40"
         >
           Region löschen
-        </button>
+        </Button>
       </section>
         </div>
 
@@ -886,23 +878,21 @@ export default function AdminRegionForm() {
             </div>
             <div className="mt-4 flex flex-col gap-2">
               {region.status === "published" ? (
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
                   disabled={busy}
                   onClick={() => setStatus(unpublishRegion, "Region offline genommen.")}
-                  className="rounded-md border border-admin-border bg-admin-surface px-3 py-2 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                 >
                   Offline nehmen
-                </button>
+                </Button>
               ) : (
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
                   disabled={busy}
                   onClick={() => setStatus(publishRegion, "Region ist jetzt live.")}
-                  className="rounded-md bg-admin-primary px-3 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
                 >
                   Go-Live
-                </button>
+                </Button>
               )}
               <a
                 href={`/region/${region.slug}`}
@@ -913,14 +903,9 @@ export default function AdminRegionForm() {
                 Öffentliche Vorschau ↗
               </a>
               <div className="my-1 h-px bg-admin-border" />
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void doSaveFields()}
-                className="rounded-md bg-admin-primary px-3 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-              >
+              <Button variant="primary" block disabled={busy} onClick={() => void doSaveFields()}>
                 Änderungen speichern
-              </button>
+              </Button>
             </div>
           </div>
         </aside>
@@ -954,14 +939,14 @@ export default function AdminRegionForm() {
           showIcon={false}
           className="min-h-11 flex-1 justify-center"
         />
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          className="min-h-11 flex-1"
           disabled={busy}
           onClick={() => void doSaveFields(false)}
-          className="min-h-11 flex-1 rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg disabled:opacity-50"
         >
           {busy ? "Speichern …" : "Speichern"}
-        </button>
+        </Button>
       </div>
     </div>
   );

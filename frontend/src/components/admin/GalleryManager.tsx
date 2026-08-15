@@ -16,6 +16,7 @@ import {
 import type { MediaEntityType } from "../../lib/mediaPicker";
 import { moveItem, removalNeedsConfirmation } from "../../lib/gallery";
 import Modal from "../ui/Modal";
+import { Button } from "./ui";
 
 export default function GalleryManager({
   entityType,
@@ -164,21 +165,16 @@ export default function GalleryManager({
           Entfernen ist nicht rückgängig zu machen.
         </p>
         <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => setConfirmRemove(null)}
-            className="rounded-md border border-admin-border px-3.5 py-2 text-label font-medium text-admin-fg2 hover:bg-admin-hover"
-          >
+          <Button variant="secondary" onClick={() => setConfirmRemove(null)}>
             Abbrechen
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="destructive"
             disabled={!!confirmRemove && busyId === confirmRemove.id}
             onClick={() => confirmRemove && void remove(confirmRemove)}
-            className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-3.5 py-2 text-label font-medium text-admin-danger hover:opacity-80 disabled:opacity-50"
           >
             Entfernen
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>

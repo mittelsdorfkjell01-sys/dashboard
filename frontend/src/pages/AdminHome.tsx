@@ -82,11 +82,11 @@ export default function AdminHome() {
       <h1 className="sr-only">Übersicht</h1>
       {/* Region-less spots — most urgent, flagged red at the very top. */}
       {data.no_region.length > 0 && (
-        <section className="rounded-2xl border-2 border-red-400 bg-red-50/50 p-4">
-          <p className="text-body font-semibold text-red-700">
+        <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-4">
+          <p className="text-body font-semibold text-admin-danger">
             {data.no_region.length} Spot(s) ohne Region
           </p>
-          <p className="mt-0.5 text-caption text-red-700/80">
+          <p className="mt-0.5 text-caption text-admin-danger">
             Diesen Spots ist keine Region zugeordnet — bitte eine Region wählen,
             sonst erscheinen sie nicht korrekt auf der Seite.
           </p>
@@ -96,7 +96,7 @@ export default function AdminHome() {
                 key={s.id}
                 to={`/admin/spot/${s.id}/edit`}
                 state={editorState}
-                className="rounded-lg bg-white px-3 py-1.5 text-label font-medium text-red-700 ring-1 ring-red-300 hover:bg-admin-danger-bg"
+                className="rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-hover"
               >
                 {s.name} →
               </Link>

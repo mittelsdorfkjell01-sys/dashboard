@@ -11,7 +11,8 @@ import {
   updateBoardTask,
   type BoardTask,
 } from "../../lib/api";
-import { Button, Field, Input, Select, Textarea } from "../ui";
+import { Field, Input, Select, Textarea } from "../ui";
+import { Button } from "./ui";
 import Modal from "../ui/Modal";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import UnsavedChangesDialog from "./UnsavedChangesDialog";
@@ -110,15 +111,11 @@ export default function BoardPanel() {
           </label>
         )}
         {selected.size > 0 && (
-          <Button type="button" variant="danger" disabled={deleting} onClick={() => void remove([...selected])}>
+          <Button type="button" variant="destructive" disabled={deleting} onClick={() => void remove([...selected])}>
             {deleting ? "Löschen …" : `${selected.size} ausgewählte löschen`}
           </Button>
         )}
-        <Button
-          type="button"
-          onClick={() => setNewOpen(true)}
-          className="ml-auto !bg-admin-primary !text-admin-primary-fg hover:!bg-admin-primary-hover"
-        >
+        <Button type="button" variant="primary" onClick={() => setNewOpen(true)} className="ml-auto">
           Neue Aufgabe
         </Button>
       </div>

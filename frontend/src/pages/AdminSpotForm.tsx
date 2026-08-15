@@ -52,7 +52,7 @@ import {
   waterTypeLabel,
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
-import { PageHeader } from "../components/admin/ui";
+import { PageHeader, Button } from "../components/admin/ui";
 import AdminBackButton, {
   useAdminBackNavigation,
 } from "../components/admin/AdminBackButton";
@@ -917,13 +917,9 @@ export default function AdminSpotForm() {
             title="Headerbild ausrichten"
             aside={
               isEdit && id ? (
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen("hero")}
-                  className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
-                >
+                <Button variant="primary" onClick={() => setPickerOpen("hero")}>
                   Bild suchen
-                </button>
+                </Button>
               ) : null
             }
           >
@@ -987,16 +983,16 @@ export default function AdminSpotForm() {
                     <span className="text-label font-medium text-admin-warning">
                       Ortsbezug ungeprüft
                     </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      className="ml-auto"
                       onClick={async () => {
                         const spot = await setSpotImageGeoVerified(id, true);
                         seedImage((spot.image as ImageRecord | null) ?? null);
                       }}
-                      className="ml-auto rounded-md border border-admin-border bg-admin-surface px-3 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
                     >
                       Ortsbezug geprüft
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -1043,8 +1039,8 @@ export default function AdminSpotForm() {
                     </Field>
                   </div>
                   <div className="mt-3 flex items-center gap-3">
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
                       onClick={saveAttribution}
                       disabled={
                         attrBusy ||
@@ -1052,10 +1048,9 @@ export default function AdminSpotForm() {
                         !attrLicense.trim() ||
                         !attrSource.trim()
                       }
-                      className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
                     >
                       {attrBusy ? "Speichern…" : "Bildnachweis speichern"}
-                    </button>
+                    </Button>
                     {attrMsg && (
                       <span className="text-caption font-medium text-admin-success">{attrMsg}</span>
                     )}
@@ -1089,13 +1084,9 @@ export default function AdminSpotForm() {
                   }
                 }}
               />
-              <button
-                type="button"
-                onClick={() => heroInputRef.current?.click()}
-                className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-              >
+              <Button variant="secondary" onClick={() => heroInputRef.current?.click()}>
                 Bild hochladen
-              </button>
+              </Button>
               {heroFile && (
                 <p className="mt-2 text-caption text-admin-muted">
                   Übernommen: <span className="font-medium text-admin-fg">{heroFile.name}</span>
@@ -1131,13 +1122,9 @@ export default function AdminSpotForm() {
               id="f-galerie"
               title="Galerie"
               aside={
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen("gallery")}
-                  className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
-                >
+                <Button variant="primary" onClick={() => setPickerOpen("gallery")}>
                   Bild suchen
-                </button>
+                </Button>
               }
             >
               <p className="-mt-3 text-caption text-muted">
@@ -1203,14 +1190,14 @@ export default function AdminSpotForm() {
                 und Klimatologie. Das lässt sich nicht rückgängig machen — zum
                 Ausblenden lieber „Archivieren" verwenden.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="destructive"
+                className="mt-4"
                 disabled={deleting}
                 onClick={() => setPendingDelete(true)}
-                className="mt-4 rounded-md border border-admin-danger-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:bg-admin-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Spot löschen
-              </button>
+              </Button>
             </CollapsibleSection>
           )}
 
@@ -1288,13 +1275,9 @@ export default function AdminSpotForm() {
             // New spot: no ops panel yet (no id to fetch readiness for), so
             // a minimal card holds the primary action until the first save.
             <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-md bg-admin-primary px-5 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-              >
+              <Button type="submit" variant="primary" block disabled={submitting} className="min-h-11">
                 {submitting ? "Speichern …" : "Spot anlegen"}
-              </button>
+              </Button>
               <div className="mt-3 text-label">
                 <AdminBackButton
                   onClick={back.goBack}
@@ -1318,14 +1301,15 @@ export default function AdminSpotForm() {
           showIcon={false}
           className="min-h-11 flex-1 justify-center"
         />
-        <button
+        <Button
           type="submit"
           form="admin-spot-form"
+          variant="primary"
           disabled={submitting}
-          className="min-h-11 flex-1 rounded-md bg-admin-primary px-4 py-2 text-label font-medium text-admin-primary-fg disabled:opacity-50"
+          className="min-h-11 flex-1"
         >
           {submitting ? "Speichern …" : isEdit ? "Speichern" : "Spot anlegen"}
-        </button>
+        </Button>
       </div>
 
       <DuplicateWarningDialog

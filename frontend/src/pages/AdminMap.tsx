@@ -243,8 +243,7 @@ export default function AdminMap() {
                       <button
                         type="button"
                         onClick={() => setPending({ id: s.id, name: s.name })}
-                        className="text-label font-medium hover:underline"
-                        style={{ color: "#B45309" }}
+                        className="text-label font-medium text-admin-warning hover:underline"
                       >
                         Archivieren
                       </button>

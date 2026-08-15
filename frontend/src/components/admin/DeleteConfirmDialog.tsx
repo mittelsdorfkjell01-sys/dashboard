@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import Modal from "../ui/Modal";
+import { Button } from "./ui";
 
 export default function DeleteConfirmDialog({
   open,
@@ -52,22 +53,12 @@ export default function DeleteConfirmDialog({
         />
       </label>
       <div className="mt-5 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={busy}
-          className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-        >
+        <Button variant="secondary" onClick={onCancel} disabled={busy}>
           Abbrechen
-        </button>
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={!armed}
-          className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-1.5 text-label font-semibold text-admin-danger transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </Button>
+        <Button variant="destructive" onClick={onConfirm} disabled={!armed}>
           {busy ? "Löschen…" : "Endgültig löschen"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

@@ -22,6 +22,7 @@ import { gapLabel } from "../lib/labels";
 import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
 import RankControl from "./admin/RankControl";
 import ConfirmToast from "./admin/ConfirmToast";
+import { Button } from "./admin/ui";
 
 const ERA5_LABEL: Record<string, string> = {
   queued: "in Warteschlange",
@@ -269,14 +270,9 @@ export default function SpotOpsPanel({
           {era5?.error && (
             <p className="mt-1 break-words text-caption text-admin-danger">{era5.error}</p>
           )}
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onTriggerEra5}
-            className="mt-2 rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-          >
+          <Button variant="secondary" disabled={busy} onClick={onTriggerEra5} className="mt-2">
             Neu berechnen
-          </button>
+          </Button>
         </div>
 
         <div>
@@ -302,13 +298,9 @@ export default function SpotOpsPanel({
       {/* 3) Save + secondary actions. Sits inside the panel so the primary
              action is not visually detached from the state it changes. */}
       <div className="mt-5 border-t border-admin-border pt-5">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-admin-primary px-5 py-2.5 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
-        >
+        <Button type="submit" variant="primary" block disabled={submitting} className="min-h-11">
           {submitting ? "Speichern …" : saveLabel}
-        </button>
+        </Button>
         {(cancelSlot || previewHref) && (
           <div className="mt-3 flex items-center justify-between text-label">
             {cancelSlot ?? <span />}
@@ -332,46 +324,38 @@ export default function SpotOpsPanel({
              Offline (only when live) + Archivieren + first-time Go-Live. */}
       <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-admin-border pt-5">
         {status === "archived" ? (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             disabled={busy}
             onClick={() =>
               runStatus(() => reactivateSpot(spotId), "Spot ist wieder ein Entwurf.")
             }
-            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
           >
             Reaktivieren
-          </button>
+          </Button>
         ) : (
           <>
             {status !== "published" && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={onGoLive}
-                className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
-              >
+              <Button variant="secondary" disabled={busy} onClick={onGoLive}>
                 Go-Live
-              </button>
+              </Button>
             )}
             {status === "published" && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 disabled={busy}
                 onClick={() => runStatus(() => unpublishSpot(spotId), "Spot ist offline.")}
-                className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
               >
                 Offline nehmen
-              </button>
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               disabled={busy || pendingArchive}
               onClick={() => setPendingArchive(true)}
-              className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
             >
               Archivieren
-            </button>
+            </Button>
           </>
         )}
       </div>

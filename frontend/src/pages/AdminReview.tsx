@@ -26,7 +26,7 @@ import {
 } from "../lib/api";
 import { SPORT_LABELS } from "../lib/labels";
 import PromptDialog from "../components/ui/PromptDialog";
-import { PageHeader, Badge } from "../components/admin/ui";
+import { PageHeader, Badge, Button } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
@@ -537,23 +537,23 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 function Approve({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-md bg-admin-primary px-3 py-1.5 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50">
+    <Button variant="primary" disabled={busy} onClick={onClick}>
       {children}
-    </button>
+    </Button>
   );
 }
 function Reject({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-1.5 text-label font-medium text-admin-danger transition-colors hover:brightness-95 disabled:opacity-50">
+    <Button variant="destructive" disabled={busy} onClick={onClick}>
       {children}
-    </button>
+    </Button>
   );
 }
 function Neutral({ busy, onClick, children }: { busy: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" disabled={busy} onClick={onClick} className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50">
+    <Button variant="secondary" disabled={busy} onClick={onClick}>
       {children}
-    </button>
+    </Button>
   );
 }
 function ImagePreview({

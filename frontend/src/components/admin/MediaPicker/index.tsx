@@ -30,6 +30,7 @@ import {
   type TabState,
 } from "../../../lib/mediaPicker";
 import Modal from "../../ui/Modal";
+import { Button } from "../ui";
 import MediaTile from "./MediaTile";
 import PreviewPanel from "./PreviewPanel";
 import LicenseCard from "./LicenseCard";
@@ -479,18 +480,19 @@ export default function MediaPicker({
                   )}
                   <LicenseCard item={primary} />
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  block
+                  className="mt-3 shrink-0"
                   disabled={busy || selection.length === 0}
                   onClick={() => void adopt()}
-                  className="mt-3 w-full shrink-0 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
                 >
                   {busy
                     ? "Übernehme…"
                     : role === "gallery"
                       ? `Zur Galerie hinzufügen (${selection.length})`
                       : adoptLabel(role)}
-                </button>
+                </Button>
               </>
             ) : (
               <div className="rounded-lg border border-dashed border-admin-border p-6 text-center">
