@@ -5,7 +5,7 @@ import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
-import ConfirmToast from "../components/admin/ConfirmToast";
+import DeleteConfirmDialog from "../components/admin/DeleteConfirmDialog";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import TideAdminPanel from "../components/admin/TideAdminPanel";
 import CollapsibleSection from "../components/admin/CollapsibleSection";
@@ -37,6 +37,7 @@ import {
   BOTTOM_TYPES,
   LEVELS,
   MODEL_PREF_OPTIONS,
+  SPORTS,
   STYLES,
   WATER_CHARACTERS,
   WATER_TYPES,
@@ -69,8 +70,13 @@ import {
   type DuplicateConflict,
 } from "../lib/duplicateConflicts";
 
-const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"] as const;
 type Availability = "yes" | "no" | "unknown";
+
+const synchronizeWavekiteStyle = (sports: string[], styles: string[]) => {
+  const next = styles.filter((style) => style !== "wavekite");
+  if (sports.includes("kitesurf") && sports.includes("surf")) next.push("wavekite");
+  return next;
+};
 
 const slugify = (s: string) =>
   s
@@ -289,10 +295,11 @@ export default function AdminSpotForm() {
     } else {
       setMapView(null);
     }
-    setSports(s.sports ?? []);
+    const nextSports = s.sports ?? [];
+    setSports(nextSports);
     setLevel(s.level ?? []);
     setWaterCharacter(s.water_character ?? []);
-    setStyles(s.style ?? []);
+    setStyles(synchronizeWavekiteStyle(nextSports, s.style ?? []));
     setFacing(s.facing != null ? String(s.facing) : "");
     setWaterType(s.water_type ?? []);
     setBottomType(s.bottom_type ?? []);
@@ -692,7 +699,9 @@ export default function AdminSpotForm() {
                   active={sports.includes(s)}
                   onClick={() => {
                     markDirty("main");
-                    setSports(toggle(sports, s));
+                    const nextSports = toggle(sports, s);
+                    setSports(nextSports);
+                    setStyles((current) => synchronizeWavekiteStyle(nextSports, current));
                   }}
                 >
                   {sportLabel(s)}
@@ -757,13 +766,19 @@ export default function AdminSpotForm() {
                 </div>
               </Field>
               <Field label="Fahrstil">
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5" aria-describedby="wavekite-sync-hint">
                   {STYLES.map((s) => (
                     <Chip
                       key={s}
                       active={styles.includes(s)}
                       onClick={() => {
                         markDirty("main");
+                        if (s === "wavekite") {
+                          const nextSports = Array.from(new Set([...sports, "kitesurf", "surf"]));
+                          setSports(nextSports);
+                          setStyles((current) => synchronizeWavekiteStyle(nextSports, current));
+                          return;
+                        }
                         setStyles(toggle(styles, s));
                       }}
                     >
@@ -771,6 +786,10 @@ export default function AdminSpotForm() {
                     </Chip>
                   ))}
                 </div>
+                <p id="wavekite-sync-hint" className="mt-2 text-caption text-muted">
+                  Wavekite wird automatisch aktiviert, sobald Kitesurfen und Surfen gewählt sind.
+                  Die Auswahl von Wavekite ergänzt beide Sportarten ebenfalls automatisch.
+                </p>
               </Field>
               <Field label="Untergrund">
                 <div id="f-bottom_type" className="flex flex-wrap gap-1.5 scroll-mt-24">
@@ -1289,10 +1308,10 @@ export default function AdminSpotForm() {
       />
       <UnsavedChangesDialog blocker={blocker} />
 
-      <ConfirmToast
+      <DeleteConfirmDialog
         open={pendingDelete}
-        tone="danger"
-        message="Spot endgültig löschen?"
+        name={name.trim() || "Spot"}
+        consequences="Löscht diesen Spot samt aller Bewertungen, Tipps, Bilder und Klimatologie."
         busy={deleting}
         onConfirm={onDelete}
         onCancel={() => setPendingDelete(false)}

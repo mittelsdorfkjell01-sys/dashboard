@@ -94,6 +94,18 @@ def _create_spot(admin, region_id, **overrides):
     return resp.json()
 
 
+def _make_publishable(admin, sid):
+    """Fill the editorial hard-gate fields (description + fully-credited image)
+    so a spot passes the publish gate. Climatology is derived on go-live."""
+    admin.patch(f"/admin/spots/{sid}", json={
+        "editorial": {"description": "A breezy Baltic flatwater spot."},
+    })
+    admin.post(f"/admin/spots/{sid}/image", json={
+        "url": "https://img/x.jpg", "source": "unsplash",
+        "license": "Unsplash License", "credit": "Jo",
+    })
+
+
 def _create_region(admin, *, name: str, lat: float, lon: float, country: str = "DE"):
     suffix = uuid.uuid4().hex[:8]
     resp = admin.post("/admin/regions", json={
@@ -310,37 +322,29 @@ def test_create_spot_waits_for_explicit_climatology_action(admin, region_id, db)
 
 # --- readiness + go-live ---------------------------------------------------
 
-def test_go_live_always_allowed_with_advisory_gaps(admin, region_id, db):
+def test_go_live_blocks_incomplete_spot(admin, region_id, db):
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
 
-    # Go-live is always allowed, even when incomplete: 200 + published, with the
-    # remaining gaps returned as advisory (not a 409 block).
+    # Publishing an editorially incomplete spot is blocked (409) — nothing
+    # half-finished reaches the public site. The blocking gaps are returned.
     resp = admin.post(f"/admin/spots/{sid}/live")
-    assert resp.status_code == 200, resp.text
-    body = resp.json()
+    assert resp.status_code == 409, resp.text
+    detail = resp.json()["detail"]
+    assert {"editorial.description", "image"} <= set(detail["gaps"])
+    # Climatology never blocks (it is derived on go-live).
+    assert "climatology" not in detail["gaps"]
+    # The spot stayed a draft.
+    assert db.get(Spot, sid).status == "draft"
+
+    # Complete the editorial hard-gate fields → go-live now succeeds and the
+    # climatology is derived inline.
+    _make_publishable(admin, sid)
+    again = admin.post(f"/admin/spots/{sid}/live")
+    assert again.status_code == 200, again.text
+    body = again.json()
     assert body["status"] == "published"
-    assert body["ready"] is False
-    assert {"editorial.description", "image"} <= set(body["gaps"])
-    # Climatology is now computed synchronously on go-live, so it's no longer a gap.
-    assert "climatology" not in body["gaps"]
-    # usable_wind_directions is no longer a requirement (field + rule removed).
-    assert "editorial.usable_wind_directions" not in body["gaps"]
-
-    # Complete it → ready true, no gaps.
-    admin.patch(f"/admin/spots/{sid}", json={"editorial": {
-        "description": "A breezy Baltic flatwater spot.",
-    }})
-    admin.post(f"/admin/spots/{sid}/image", json={
-        "url": "https://img/x.jpg", "source": "unsplash",
-        "license": "Unsplash License", "credit": "Jo",
-    })
-    spot_row = db.get(Spot, sid)
-    spot_row.climatology = {"window": "2006-2025", "weeks": [{"week": 1}]}
-    db.commit()
-
-    again = admin.post(f"/admin/spots/{sid}/live").json()
-    assert again["ready"] is True and again["gaps"] == []
+    assert body["ready"] is True and body["gaps"] == []
 
 
 def test_go_live_computes_climatology_inline(admin, region_id, db):
@@ -348,6 +352,7 @@ def test_go_live_computes_climatology_inline(admin, region_id, db):
     Parquet) — the serverless-safe path, independent of ERA5_AUTOPROCESS."""
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
+    _make_publishable(admin, sid)
 
     body = admin.post(f"/admin/spots/{sid}/live").json()
     assert "climatology" not in body["gaps"]
@@ -362,6 +367,7 @@ def test_go_live_repairs_missing_snapshot_when_a_derived_job_already_exists(
 ):
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
+    _make_publishable(admin, sid)
     assert admin.post(f"/admin/spots/{sid}/era5").status_code == 200
     db.expire_all()
     row = db.get(Spot, sid)
@@ -391,6 +397,7 @@ def test_go_live_reports_climatology_failure_and_schedules_retry(
 
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
+    _make_publishable(admin, sid)
     app.dependency_overrides[get_cds_client] = lambda: FailingClient()
 
     response = admin.post(f"/admin/spots/{sid}/live")
@@ -482,6 +489,7 @@ def test_grid_cell_change_keeps_old_snapshot_and_queues_refresh(
 
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
+    _make_publishable(admin, sid)
     assert admin.post(f"/admin/spots/{sid}/era5").status_code == 200
     db.expire_all()
     before = db.get(Spot, sid)
@@ -1161,6 +1169,7 @@ def test_spot_tips_lists_all_with_thread_and_hide_restore(admin, region_id):
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
     # The community tips route rejects non-public spots — publish first.
+    _make_publishable(admin, sid)
     admin.post(f"/admin/spots/{sid}/live")
 
     root = _post_tip(admin, sid, "top-level")

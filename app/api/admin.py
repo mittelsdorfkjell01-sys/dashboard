@@ -76,6 +76,24 @@ router = APIRouter(
 )
 
 
+@router.get("/environment")
+def environment() -> dict:
+    """Local/prod indicator for the back-office banner: which database this
+    session is talking to and whether admin writes are currently blocked."""
+    from app.config import get_settings
+
+    return get_settings().environment_summary()
+
+
+@router.get("/operations")
+def operations(db: Session = Depends(get_db)) -> dict:
+    """Consolidated operations view: climatology freshness, job queue depth,
+    latest-job status counts and recent ERA5 runs (status/duration/error)."""
+    from app.admin import operations as admin_operations
+
+    return admin_operations.operations_summary(db)
+
+
 def _as_utc(dt: datetime) -> datetime:
     """Normalise to a timezone-aware instant so a naive DB value and an ISO
     string parsed by the client compare correctly."""
@@ -644,12 +662,21 @@ def go_live(
     actor: str = Depends(get_actor),
     client=Depends(get_extract_client),
 ) -> dict:
-    # Go-live is always allowed now; the response carries `ready`/`gaps` so the
-    # UI can show a non-blocking disclaimer.
+    # Publishing enforces editorial completeness: incomplete spots are blocked
+    # (409 with the blocking gaps) so nothing half-finished reaches the public
+    # site. The climatology is the one exempt gap — it is derived just below.
     try:
         result = admin_spots.set_spot_live(spot_id, db=db, actor=actor)
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
+    except admin_spots.NotReadyError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Spot ist noch nicht vollständig und kann nicht veröffentlicht werden.",
+                "gaps": exc.gaps,
+            },
+        )
 
     # Compute the climatology on go-live when it isn't ready yet. Done
     # SYNCHRONOUSLY and in memory (era5_worker.compute_now): on serverless the

@@ -14,15 +14,14 @@ import {
   type Region,
   type AdminSpotSummary,
 } from "../lib/api";
-import { gapAnchor, gapLabel, sportLabel, statusLabel } from "../lib/labels";
-import { PageHeader, Badge, type BadgeTone } from "../components/admin/ui";
+import { SPORTS, gapAnchor, gapLabel, sportLabel, statusLabel } from "../lib/labels";
+import { PageHeader, Badge, Button, type BadgeTone } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import {
   getAdminSpotSearches,
   rememberAdminSpotSearch,
 } from "../lib/adminSpotSearchHistory";
 
-const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 const MEDIA_FILTER_LABEL: Record<MediaFilterKey, string> = {
   no_hero: "Kein Hero",
   unverified: "Ortsbezug ungeprüft",
@@ -398,22 +397,20 @@ export default function AdminSpots() {
           {total === 0 ? "0" : `${offset + 1}–${offset + shown}`} von {total}
         </span>
         <div className="flex gap-2">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             disabled={offset === 0}
             onClick={() => setOffset(Math.max(0, offset - PAGE))}
-            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-40"
           >
             Zurück
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
             disabled={offset + shown >= total}
             onClick={() => setOffset(offset + PAGE)}
-            className="rounded-md border border-admin-border bg-admin-surface px-3 py-1.5 font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-40"
           >
             Weiter
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ from app.live.cache import Cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
 from app.models import Spot
-from app.names import normalize_name
+from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
@@ -254,6 +254,7 @@ def _published_spot_by_reference(db: Session, reference: str) -> Spot | None:
 
     try:
         normalized = normalize_name(reference.replace("-", " "))
+        route_slug = slugify(reference)
     except ValueError:
         return None
     rows = list(
@@ -263,6 +264,8 @@ def _published_spot_by_reference(db: Session, reference: str) -> Spot | None:
                 Spot.status == PUBLISHED,
                 or_(
                     Spot.slug == reference.casefold(),
+                    Spot.slug == route_slug,
+                    Spot.slug.endswith(f"-{route_slug}"),
                     Spot.normalized_name == normalized,
                 ),
             )
@@ -272,7 +275,12 @@ def _published_spot_by_reference(db: Session, reference: str) -> Spot | None:
         )
     )
     slug_match = next(
-        (spot for spot in rows if spot.slug == reference.casefold()), None
+        (
+            spot
+            for spot in rows
+            if spot.slug in {reference.casefold(), route_slug}
+        ),
+        None,
     )
     if slug_match is not None:
         return slug_match

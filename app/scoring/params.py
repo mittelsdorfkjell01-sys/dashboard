@@ -47,9 +47,6 @@ def _wind_params() -> dict:
 
 SCORING_PARAMS_V1: dict[str, dict] = {
     "kitesurf": _wind_params(),
-    # Wave-kiting is wind-powered like kitesurf; scored on wind for now (the
-    # wave overlay is a later refinement, mirroring the surf profile).
-    "wavekite": _wind_params(),
     "windsurf": _wind_params(),
     "wing": _wind_params(),
     "surf": {

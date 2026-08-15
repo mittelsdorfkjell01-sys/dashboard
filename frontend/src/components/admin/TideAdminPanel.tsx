@@ -177,7 +177,7 @@ export default function TideAdminPanel({ spotId }: {
   return (
     <div className="space-y-4">
       {error && (
-        <p role="alert" className="border-l-2 border-red-500 pl-3 text-label text-red-700">
+        <p role="alert" className="border-l-2 border-admin-danger-border pl-3 text-label text-red-700">
           {error}
         </p>
       )}

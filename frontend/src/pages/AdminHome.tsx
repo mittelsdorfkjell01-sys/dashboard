@@ -96,7 +96,7 @@ export default function AdminHome() {
                 key={s.id}
                 to={`/admin/spot/${s.id}/edit`}
                 state={editorState}
-                className="rounded-lg bg-white px-3 py-1.5 text-label font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-100"
+                className="rounded-lg bg-white px-3 py-1.5 text-label font-medium text-red-700 ring-1 ring-red-300 hover:bg-admin-danger-bg"
               >
                 {s.name} →
               </Link>
@@ -250,9 +250,11 @@ function Tile({
       to={to}
       className="rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong hover:bg-admin-hover"
     >
+      {/* Counters are secondary: kept deliberately quiet (smaller numerals) so
+          the prioritised task list above wins the squint test. */}
       <div
-        className={`admin-mono text-[28px] font-semibold leading-none ${
-          accent === "green" ? "text-admin-success" : "text-admin-fg"
+        className={`admin-mono text-[20px] font-semibold leading-none ${
+          accent === "green" ? "text-admin-success" : "text-admin-fg2"
         }`}
       >
         {value}

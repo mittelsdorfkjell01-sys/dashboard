@@ -15,7 +15,6 @@ from typing import Any, Protocol
 # global d0 = 40; kept per-sport here so a future override can differentiate.
 DEFAULT_D0_KM: dict[str, float] = {
     "kitesurf": 40.0,
-    "wavekite": 40.0,
     "windsurf": 40.0,
     "wing": 40.0,
     "surf": 40.0,

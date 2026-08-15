@@ -67,6 +67,14 @@
   /* Render native controls (select, checkbox, scrollbars, date pickers) in
      their dark variant so they match the theme instead of the OS light chrome. */
   color-scheme: dark;
+
+  /* The global keyboard-focus outline (index.css) is drawn with var(--sw-ink).
+     The admin runs dark via this scope class, not html[data-theme="dark"], so
+     without this remap --sw-ink stays the light-theme near-black (#241C17) and
+     the focus ring is invisible on the near-black admin canvas. Point the base
+     ink/line tokens at the admin equivalents so the ring is clearly visible. */
+  --sw-ink: var(--a-fg);
+  --sw-line: var(--a-border);
 }
 
 /* =========================================================================

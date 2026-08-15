@@ -53,10 +53,9 @@ STYLES: tuple[str, ...] = (
 # Facility kinds — exactly these five.
 FACILITY_KINDS: tuple[str, ...] = ("parking", "shower", "food", "camping", "school")
 
-# Sports offered by a spot / attached to a rating. "wavekite" is wave-oriented
-# kiting — wind-driven like kitesurf, but ridden in the wave (its own filter
-# facet), so it's a distinct key rather than a variant of "kitesurf".
-SPORTS: tuple[str, ...] = ("kitesurf", "wavekite", "windsurf", "wing", "surf")
+# Sports offered by a spot / attached to a rating. Wavekite is a riding style,
+# derived from a spot supporting both kitesurfing and surfing.
+SPORTS: tuple[str, ...] = ("kitesurf", "windsurf", "wing", "surf")
 
 # --- UGC / moderation vocabularies (Sprint C) ------------------------------
 # Rating/tip visibility after post-moderation.
@@ -83,6 +82,11 @@ def validate_sport(value: str) -> str:
     if value not in SPORTS:
         raise ValueError(f"invalid sport {value!r}; allowed: {list(SPORTS)}")
     return value
+
+
+def validate_sports(values: Iterable[str] | None) -> list[str]:
+    """Normalise a list of real sports (Wavekite is deliberately not one)."""
+    return _validate_multi(values, SPORTS, "sports")
 
 
 def validate_skill_level(value: str) -> str:
@@ -135,6 +139,17 @@ def _validate_multi(
 def validate_styles(values: Iterable[str] | None) -> list[str]:
     """Normalise a ``style`` multi-select: unique, order-preserved, all valid keys."""
     return _validate_multi(values, STYLES, "style")
+
+
+def synchronize_wavekite_style(
+    sports: Iterable[str] | None, styles: Iterable[str] | None
+) -> tuple[list[str], list[str]]:
+    """Keep the derived Wavekite style in lockstep with kitesurf + surf."""
+    clean_sports = validate_sports(sports)
+    clean_styles = [style for style in validate_styles(styles) if style != "wavekite"]
+    if "kitesurf" in clean_sports and "surf" in clean_sports:
+        clean_styles.append("wavekite")
+    return clean_sports, clean_styles
 
 
 def validate_levels(values: Iterable[str] | None) -> list[str]:

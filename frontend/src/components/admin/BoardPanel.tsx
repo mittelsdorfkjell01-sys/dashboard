@@ -238,7 +238,7 @@ function TaskCard({
           <button type="button" onClick={onEdit} className="text-muted hover:text-ink">
             Bearbeiten
           </button>
-          <button type="button" onClick={onDelete} className="text-muted hover:text-red-600">
+          <button type="button" onClick={onDelete} className="text-muted hover:text-admin-danger">
             Löschen
           </button>
         </div>

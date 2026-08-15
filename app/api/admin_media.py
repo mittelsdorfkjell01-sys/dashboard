@@ -315,7 +315,6 @@ def _coordinates(geography) -> tuple[float | None, float | None]:
 # query returns a fraction of the same catalogue.
 _SPORT_TERMS = {
     "kitesurf": "kitesurfing",
-    "wavekite": "kitesurfing waves",
     "windsurf": "windsurfing",
     "wing": "wing foiling",
     "surf": "surfing",

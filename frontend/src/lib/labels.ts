@@ -20,6 +20,7 @@ export const STYLES = [
   "wave_riding",
   "wavekite",
 ] as const;
+export const SPORTS = ["kitesurf", "windsurf", "wing", "surf"] as const;
 export const WATER_TYPES = ["ocean", "sea", "lake", "lagoon"] as const;
 export const FACILITY_KINDS: FacilityKind[] = [
   "parking",
@@ -76,7 +77,6 @@ export const FACILITY_LABELS: Record<FacilityKind, string> = {
 
 export const SPORT_LABELS: Record<string, string> = {
   kitesurf: "Kitesurfen",
-  wavekite: "Wavekiten",
   windsurf: "Windsurfen",
   wing: "Wingfoilen",
   surf: "Surfen",

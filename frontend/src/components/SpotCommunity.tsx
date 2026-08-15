@@ -19,7 +19,7 @@ import {
   type CommunityImage,
 } from "../lib/api";
 import { HERO_REQ, validateHeroFile } from "./ImageUpload";
-import { LEVELS, levelLabel, sportLabel } from "../lib/labels";
+import { LEVELS, SPORTS, levelLabel, sportLabel } from "../lib/labels";
 import { ChevronDownIcon, CloseIcon } from "../lib/icons";
 import { Button, Input, Select, Textarea } from "./ui";
 import { useCommunityFeed, usePersistedState } from "../lib/hooks";
@@ -35,7 +35,6 @@ import {
   type FeedSort,
 } from "../lib/communityFeed";
 
-const SPORTS = ["kitesurf", "wavekite", "windsurf", "wing", "surf"];
 const REPORT_REASONS: { key: string; label: string }[] = [
   { key: "copyright", label: "Urheberrecht / mein Bild" },
   { key: "inappropriate", label: "Unangemessen" },

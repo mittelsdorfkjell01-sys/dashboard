@@ -331,9 +331,9 @@ SPOTS: list[dict] = [
 
     {"slug": "tarifa-arte-vida", "name": "Arte Vida",
      "region_slug": "tarifa", "location": (-5.655, 36.035),
-     "sports": ["kitesurf", "wavekite", "surf"],
+     "sports": ["kitesurf", "surf"],
      "water_type": "sea", "bottom_type": "mixed", "level": "advanced",
-     "water_character": "welle_klein", "style": ["wave_riding", "freeride"],
+     "water_character": "welle_klein", "style": ["wave_riding", "freeride", "wavekite"],
      "status": "draft",
      "editorial": {"description": "Spot zwischen Los Lances und Valdevaqueros, "
         "der vor allem bei Poniente (West) funktioniert und für "

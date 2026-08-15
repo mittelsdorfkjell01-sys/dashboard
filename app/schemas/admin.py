@@ -13,6 +13,7 @@ from app.admin.constants import (
     validate_bottom_types,
     validate_facilities,
     validate_levels,
+    validate_sports,
     validate_styles,
     validate_water_characters,
     validate_water_types,
@@ -48,6 +49,7 @@ class SpotCreate(AdminWriteModel):
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
+    _v_sports = field_validator("sports")(staticmethod(validate_sports))
     _v_bottom = field_validator("bottom_type")(staticmethod(validate_bottom_types))
     _v_water = field_validator("water_character")(
         staticmethod(validate_water_characters)
@@ -100,6 +102,7 @@ class SpotUpdate(AdminWriteModel):
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
+    _v_sports = field_validator("sports")(staticmethod(validate_sports))
     _v_bottom = field_validator("bottom_type")(staticmethod(validate_bottom_types))
     _v_water = field_validator("water_character")(
         staticmethod(validate_water_characters)

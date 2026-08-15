@@ -1059,6 +1059,43 @@ export interface AdminOverview {
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
 
+/** Local/prod safety indicator for the back-office banner. */
+export interface AdminEnvironment {
+  app_env: "development" | "test" | "production";
+  database_target: "local" | "remote" | "unknown";
+  admin_writes_blocked: boolean;
+  allow_remote_writes: boolean;
+}
+
+export const getEnvironment = () =>
+  request<AdminEnvironment>(`/admin/environment`);
+
+/** Consolidated operations view (climatology/job health). */
+export interface OpsJob {
+  job_id: string;
+  spot_id: string | null;
+  spot_name: string | null;
+  status: string;
+  error: string | null;
+  error_category: "quota" | "coordinates" | "validation" | "provider" | "unknown" | null;
+  reason: string | null;
+  attempt_count: number;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  duration_s: number | null;
+}
+
+export interface AdminOperations {
+  freshness: { missing: number; stale: number; current: number; failed: number };
+  queue_depth: number;
+  job_status: Record<string, number>;
+  recent_jobs: OpsJob[];
+  public_update: { climatology_cron: string; edge_cache: string };
+}
+
+export const getOperations = () => request<AdminOperations>(`/admin/operations`);
+
 /** Lightweight spot for the admin map: coordinates + status only. */
 export interface AdminMapSpot {
   id: string;

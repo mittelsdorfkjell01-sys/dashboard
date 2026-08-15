@@ -99,7 +99,8 @@ export default function SpotOpsPanel({
     setBusy(true);
     setError(null);
     try {
-      // Go-live is always allowed; the response carries any remaining gaps.
+      // Publishing enforces editorial completeness: the API blocks an
+      // incomplete spot with 409 + the blocking gaps (handled below).
       const res = (await goLiveSpot(spotId)) as { ready?: boolean; gaps?: string[] };
       const gaps = res.gaps ?? [];
       const climate = (res as {
@@ -119,7 +120,17 @@ export default function SpotOpsPanel({
       );
       await refresh();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
+      if (e instanceof ApiError && e.status === 409) {
+        const detail = e.detail as { message?: string; gaps?: string[] } | undefined;
+        const gaps = detail?.gaps ?? [];
+        setError(
+          gaps.length > 0
+            ? `Nicht veröffentlicht — es fehlen: ${gaps.map(gapLabel).join(", ")}`
+            : detail?.message ?? e.message
+        );
+      } else {
+        setError(e instanceof ApiError ? e.message : "Aktion fehlgeschlagen.");
+      }
       await refresh();
     } finally {
       setBusy(false);

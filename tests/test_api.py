@@ -1,6 +1,9 @@
 import pytest
+from sqlalchemy import select
 
 from app.seed.seed import seed
+from app.admin.spots import _point
+from app.models import Region, Spot
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -58,6 +61,27 @@ def test_get_spot_by_display_name_and_legacy_slug(client):
     assert by_name.status_code == by_slug.status_code == 200
     assert by_name.json()["id"] == by_slug.json()["id"]
     assert by_name.json()["region_name"] == "Tarifa"
+
+
+def test_get_spot_by_display_name_when_punctuation_is_lost_in_url(client, db):
+    region = db.scalar(select(Region).where(Region.slug == "tarifa"))
+    spot = Spot(
+        slug="naxos-agios-georgios-laguna",
+        name="Agios Georgios / Laguna",
+        region_id=region.id,
+        location=_point(37.08, 25.37),
+        sports=["windsurf"],
+        status="published",
+    )
+    db.add(spot)
+    db.commit()
+    try:
+        response = client.get("/spots/Agios-Georgios-Laguna")
+        assert response.status_code == 200
+        assert response.json()["id"] == str(spot.id)
+    finally:
+        db.delete(spot)
+        db.commit()
 
 
 def test_get_spot_404(client):

@@ -16,7 +16,9 @@ from app.admin.constants import (
     validate_bottom_types,
     validate_level,
     validate_levels,
+    validate_sports,
     validate_styles,
+    synchronize_wavekite_style,
     validate_water_character,
     validate_water_characters,
     validate_water_types,
@@ -82,6 +84,22 @@ def test_validate_styles_dedups_and_validates():
         validate_styles(["freeride", "nope"])
     with pytest.raises(ValueError):
         validate_styles("freeride")  # a bare string is not a list
+
+
+def test_wavekite_is_derived_from_kitesurf_and_surf():
+    sports, styles = synchronize_wavekite_style(
+        ["kitesurf", "surf"], ["freeride"]
+    )
+    assert sports == ["kitesurf", "surf"]
+    assert styles == ["freeride", "wavekite"]
+
+    _, styles = synchronize_wavekite_style(["kitesurf"], ["wavekite", "freeride"])
+    assert styles == ["freeride"]
+
+
+def test_wavekite_is_not_a_sport():
+    with pytest.raises(ValueError):
+        validate_sports(["wavekite"])
 
 
 def test_validate_facilities_shape_and_cleaning():

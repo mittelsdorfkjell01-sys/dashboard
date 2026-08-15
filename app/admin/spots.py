@@ -14,7 +14,7 @@ from app.admin.constants import (
     validate_bottom_types,
     validate_facilities,
     validate_levels,
-    validate_styles,
+    synchronize_wavekite_style,
     validate_water_characters,
     validate_water_types,
 )
@@ -101,7 +101,7 @@ def create_spot(
     water_character = validate_water_characters(data.get("water_character"))
     water_type = validate_water_types(data.get("water_type"))
     bottom_type = validate_bottom_types(data.get("bottom_type"))
-    style = validate_styles(data.get("style"))
+    sports, style = synchronize_wavekite_style(data.get("sports"), data.get("style"))
     facilities = validate_facilities(data.get("facilities"))
 
     spot = Spot(
@@ -109,7 +109,7 @@ def create_spot(
         name=clean_display_name(data["name"]),
         region_id=region.id,
         location=_point(lat, lon),
-        sports=data.get("sports") or [],
+        sports=sports,
         water_type=water_type,
         bottom_type=bottom_type,
         level=level,
@@ -216,8 +216,9 @@ def update_spot(
 
             supersede_active_jobs(spot.id, db=db, commit=False)
             spot.climatology = mark_stale(spot.climatology, "grid_cell")
-    if "sports" in data and data["sports"] is not None:
-        spot.sports = list(data["sports"])
+    next_sports = data.get("sports", spot.sports) or []
+    next_styles = data.get("style", spot.style) or []
+    spot.sports, spot.style = synchronize_wavekite_style(next_sports, next_styles)
     if "bottom_type" in data:
         spot.bottom_type = validate_bottom_types(data["bottom_type"])
     if "model_pref" in data:
@@ -230,8 +231,6 @@ def update_spot(
         spot.level = validate_levels(data["level"])
     if "water_character" in data:
         spot.water_character = validate_water_characters(data["water_character"])
-    if "style" in data:
-        spot.style = validate_styles(data["style"])
     if "facilities" in data:
         spot.facilities = validate_facilities(data["facilities"])
     if "editorial" in data and data["editorial"] is not None:
@@ -395,11 +394,23 @@ def fetch_commons_images(spot_id, *, db: Session, client: Any) -> list[Any]:
     return create_commons_image_records(db, spot_id, results)
 
 
+# Readiness fields that must NOT block go-live: the climatology is derived
+# synchronously by the go-live endpoint itself right after publishing, so a
+# missing snapshot is expected at this point and is not an editorial gap.
+PUBLISH_GAP_EXEMPT = {"climatology"}
+
+
 def set_spot_live(spot_id, *, db: Session, actor: str | None = "admin") -> dict:
-    """Publish a spot. Publishing is always allowed — readiness is advisory:
-    the remaining gaps are returned so the UI can show a disclaimer, but they
-    never block go-live."""
+    """Publish a spot — only when it is editorially complete.
+
+    Every ``required`` gap blocks go-live (``NotReadyError`` → 409) except the
+    climatology, which the go-live endpoint computes immediately afterwards. A
+    field that legitimately does not apply is cleared with the ``n/a`` sentinel
+    in the editor, which satisfies the requirement without a real value."""
     readiness = validate_spot_readiness(spot_id, db=db)
+    blocking = [g for g in readiness["gaps"] if g not in PUBLISH_GAP_EXEMPT]
+    if blocking:
+        raise NotReadyError(blocking, readiness["checklist"])
     spot = _load(db, spot_id)
     spot.status = STATUS_LIVE
     record_audit(db, spot.id, "publish", {"status": STATUS_LIVE}, actor)

@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     # origin serves only the public + community endpoints — no /auth, no /admin.
     enable_admin_api: bool = False
 
+    # Safety valve for the remote-write guard: a non-production app pointed at a
+    # remote (production-like) database refuses admin-surface writes unless this
+    # is explicitly set. Keeps a dev/local session from mutating production data.
+    allow_remote_writes: bool = False
+
     # Browser origins allowed to call the API (CORS). The Vite dev server runs on
     # 5173 by default. NoDecode keeps pydantic-settings from JSON-parsing the env
     # var so the validator below can accept a comma-separated list too.
@@ -172,6 +177,32 @@ class Settings(BaseSettings):
                     "Unsafe production configuration: " + "; ".join(errors)
                 )
         return self
+
+    @property
+    def database_target(self) -> str:
+        """``"local"``, ``"remote"`` or ``"unknown"`` for the active DATABASE_URL."""
+        from app.environment import classify_db
+
+        return classify_db(self.database_url)
+
+    @property
+    def admin_writes_blocked(self) -> bool:
+        """True when admin-surface writes must be refused: a non-production app
+        talking to a remote (production-like) DB, without an explicit override."""
+        return (
+            self.database_target == "remote"
+            and self.app_env != "production"
+            and not self.allow_remote_writes
+        )
+
+    def environment_summary(self) -> dict:
+        """Compact banner payload for the back office."""
+        return {
+            "app_env": self.app_env,
+            "database_target": self.database_target,
+            "admin_writes_blocked": self.admin_writes_blocked,
+            "allow_remote_writes": self.allow_remote_writes,
+        }
 
     # Directory where ERA5 raw extracts (Parquet) are stored by the pipeline.
     era5_raw_dir: str = "data/era5_raw"

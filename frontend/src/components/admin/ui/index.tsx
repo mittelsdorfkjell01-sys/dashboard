@@ -4,7 +4,42 @@
 // dark mode without touching public styling. All colors come from the admin
 // tokens (see admin-theme.css); never hard-code hex here.
 
-import type { ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+
+/* ------------------------------------------------------------------------- */
+/* Button — the single admin button. A fixed variant set with identical       */
+/* geometry (height, padding, radius, type ramp); variants differ only in     */
+/* colour/emphasis, never in size. Keyboard focus comes from the global       */
+/* :focus-visible token. Use `block` for full-width; add `min-h-11` via       */
+/* className for primary touch targets on mobile bars.                        */
+/* ------------------------------------------------------------------------- */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+
+const BTN_BASE =
+  "inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-label font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+
+const BTN_VARIANT: Record<ButtonVariant, string> = {
+  primary:
+    "bg-admin-primary text-admin-primary-fg hover:bg-admin-primary-hover",
+  secondary:
+    "border border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg",
+  ghost: "text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg",
+  destructive:
+    "border border-admin-danger-border bg-admin-danger-bg text-admin-danger hover:brightness-110",
+};
+
+export const Button = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; block?: boolean }
+>(({ variant = "secondary", block = false, type = "button", className = "", ...props }, ref) => (
+  <button
+    ref={ref}
+    type={type}
+    className={`${BTN_BASE} ${BTN_VARIANT[variant]} ${block ? "w-full" : ""} ${className}`}
+    {...props}
+  />
+));
+Button.displayName = "AdminButton";
 
 /* ------------------------------------------------------------------------- */
 /* Page header — screen-reader title plus optional right-aligned actions.    */
