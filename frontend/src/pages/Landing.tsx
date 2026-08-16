@@ -3,6 +3,8 @@ import { useState } from "react";
 import LandingHeader from "../components/LandingHeader";
 import LandingHero from "../components/LandingHero";
 import SearchBar from "../components/SearchBar";
+import MobileSearchTrigger from "../components/MobileSearchTrigger";
+import MobileSearchSheet from "../components/MobileSearchSheet";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
@@ -22,6 +24,16 @@ export default function Landing() {
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
   const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
+  // Mobile search sheet (Airbnb-style full-screen flow); desktop keeps the
+  // inline SearchBar dropdown. `searchOriginY` lets the sheet grow out of the
+  // collapsed pill's position.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOriginY, setSearchOriginY] = useState<number | null>(null);
+  const openSearch = () => {
+    const rect = document.getElementById("landing-search")?.getBoundingClientRect();
+    setSearchOriginY(rect ? rect.top + rect.height / 2 : null);
+    setSearchOpen(true);
+  };
   // Fetch the lightweight catalogue once. Changing the request key from 20 to
   // 100 used to temporarily unmount the entire grid while the second request
   // ran; the page height collapsed and clamped the visitor's scroll position
@@ -53,10 +65,24 @@ export default function Landing() {
             above the fold and never reaches into the white spots section. */}
         <div className="flex justify-center px-4 pb-44 sm:px-6 sm:pb-56">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
-            <SearchBar />
+            {/* Mobile: collapsed pill → full-screen sheet. From sm: inline bar.
+                Hidden (but kept in layout) while the sheet is open so it does
+                not show through the sheet's translucent backdrop. */}
+            <div className={`sm:hidden ${searchOpen ? "invisible" : ""}`}>
+              <MobileSearchTrigger onClick={openSearch} />
+            </div>
+            <div className="hidden sm:block">
+              <SearchBar />
+            </div>
           </div>
         </div>
       </section>
+
+      <MobileSearchSheet
+        open={searchOpen}
+        originY={searchOriginY}
+        onClose={() => setSearchOpen(false)}
+      />
 
       {/* 2 — Extended white section: aktuelle Top Spots (moved here onto the
           white background) + all spots as Airbnb-style cards. The rounded sheet

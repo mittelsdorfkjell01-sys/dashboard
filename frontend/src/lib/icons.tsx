@@ -243,3 +243,32 @@ export const ChevronRightIcon = (p: IconProps) => (
     <path d="M9 5l7 7-7 7" />
   </svg>
 );
+
+/* Sport glyphs — thin line marks in the same 24px frame, for the search
+   "Welche Sportart?" list. Deliberately simple and stylistically uniform. */
+export const SurfIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 2c2.6 3.2 3.8 7.5 3.8 10.5S13.4 20 12 22c-1.4-2-3.8-6.5-3.8-9.5S9.4 5.2 12 2Z" />
+    <path d="M12 4.5v14" />
+  </svg>
+);
+export const KitesurfIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3.5 8.5c3-3.2 14-3.2 17 0" />
+    <path d="M6 9.8 12 18M18 9.8 12 18" />
+    <path d="M9 18.6h6" />
+  </svg>
+);
+export const WindsurfIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 4v11" />
+    <path d="M12 4c3.6 1 5.8 3.6 6.2 7.2L12 13Z" />
+    <path d="M5.5 18.5c3.5 1.4 9.5 1.4 13-.5" />
+  </svg>
+);
+export const WingIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 7c-4 0-7 2-8.5 4 3 1.3 5.6 2 8.5 2s5.5-.7 8.5-2C19 9 16 7 12 7Z" />
+    <path d="M12 7v8" />
+  </svg>
+);
