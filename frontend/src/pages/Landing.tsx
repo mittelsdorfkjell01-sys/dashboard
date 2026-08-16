@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import LandingHeader from "../components/LandingHeader";
-import HeroImage from "../components/HeroImage";
+import LandingHero from "../components/LandingHero";
 import SearchBar from "../components/SearchBar";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
@@ -41,14 +41,7 @@ export default function Landing() {
           bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
           hit the scrim and close instead of switching the panel. */}
       <section className="relative flex min-h-[100svh] flex-col overflow-hidden">
-        <div className="absolute inset-0 z-0" aria-hidden>
-          <HeroImage
-            src="/hero-surfwind.jpg"
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(30,110,126,0.35)]" />
-        </div>
+        <LandingHero spots={spots} />
 
         <h1 className="sr-only">
           surfwind data · die beste Sammlung von Surfspots und Windspots
@@ -70,7 +63,7 @@ export default function Landing() {
           rises over the hero for a seamless transition. */}
       <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
         {/* aktuelle Top Spots — title left, map button right, now on white. */}
-        <div className="mx-auto w-full max-w-[1727px] pt-10">
+        <div className="mx-auto w-full max-w-[1570px] pt-10">
           <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
             <h2 className="text-[22px] font-semibold text-ink">aktuelle Top Spots</h2>
             <Link
@@ -86,7 +79,7 @@ export default function Landing() {
           <TopSpotsRow />
         </div>
 
-        <div className="mx-auto max-w-[1727px] px-4 pb-16 pt-12 sm:px-8">
+        <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">
           <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
           <p className="mt-1 text-[15px] text-muted">
             Stöbere durch die ganze Sammlung · Regionen, Windspots und Wellenspots.
