@@ -5,9 +5,8 @@
 import { useEffect, useState } from "react";
 import { getActivity, type ActivityItem } from "../lib/api";
 import { gapLabel } from "../lib/labels";
-import { Input } from "../components/ui";
 import ActivityPreview from "../components/admin/ActivityPreview";
-import { PageHeader } from "../components/admin/ui";
+import { PageHeader, SearchInput } from "../components/admin/ui";
 
 export default function AdminActivity() {
   const [items, setItems] = useState<ActivityItem[]>([]);
@@ -28,11 +27,10 @@ export default function AdminActivity() {
       <PageHeader
         title="Aktivität"
         actions={
-          <Input
-            type="search"
+          <SearchInput
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Suche: Name, Spot …"
+            placeholder="Name oder Spot suchen …"
             className="w-full sm:max-w-[260px]"
           />
         }

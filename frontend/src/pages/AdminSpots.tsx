@@ -15,8 +15,9 @@ import {
   type AdminSpotSummary,
 } from "../lib/api";
 import { SPORTS, gapAnchor, gapLabel, sportLabel, statusLabel } from "../lib/labels";
-import { PageHeader, Badge, Button, type BadgeTone } from "../components/admin/ui";
+import { PageHeader, Badge, Button, ButtonLink, SearchInput, adminFieldClass, type BadgeTone } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { PlusIcon } from "../lib/icons";
 import {
   getAdminSpotSearches,
   rememberAdminSpotSearch,
@@ -126,8 +127,7 @@ export default function AdminSpots() {
     setParams(next);
   };
 
-  const selectCls =
-    "h-9 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary";
+  const selectCls = adminFieldClass;
 
   const total = data?.total ?? 0;
   const shown = data?.items.length ?? 0;
@@ -136,13 +136,9 @@ export default function AdminSpots() {
   // archive / reactivate) live on the editor's „Betrieb & Veröffentlichung" panel.
   const rowActions = (s: AdminSpotSummary) => (
     <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-      <Link
-        to={`/admin/spot/${s.id}/edit`}
-        state={editorState}
-        className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
-      >
+      <ButtonLink variant="secondary" to={`/admin/spot/${s.id}/edit`} state={editorState}>
         Bearbeiten
-      </Link>
+      </ButtonLink>
     </div>
   );
 
@@ -151,13 +147,9 @@ export default function AdminSpots() {
       <PageHeader
         title="Spots"
         actions={
-          <Link
-            to="/admin/spot/new"
-            state={editorState}
-            className="inline-flex items-center gap-1.5 rounded-md bg-admin-primary px-3.5 py-2 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover"
-          >
-            <span aria-hidden className="text-[15px] leading-none">+</span> Neuer Spot
-          </Link>
+          <ButtonLink variant="primary" to="/admin/spot/new" state={editorState}>
+            <PlusIcon className="text-[16px]" /> Spot anlegen
+          </ButtonLink>
         }
       />
 
@@ -186,11 +178,11 @@ export default function AdminSpots() {
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <label className="w-full text-label font-medium text-admin-fg sm:min-w-[220px] sm:flex-1">
           Suche
-          <input
-            type="search"
+          <SearchInput
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className={`${selectCls} mt-1 w-full`}
+            placeholder="Name oder Slug suchen …"
+            className="mt-1 w-full"
           />
         </label>
         <div className="grid grid-cols-2 gap-2 sm:contents">

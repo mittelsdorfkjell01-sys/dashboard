@@ -3,17 +3,17 @@
 // anywhere on the card opens it, everything else lives in the editor itself.
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   createRegion,
   getAdminRegions,
   type AdminRegionEntry,
 } from "../lib/api";
-import { Button, Field, Input } from "../components/ui";
+import { Field, Input } from "../components/ui";
 import Modal from "../components/ui/Modal";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
-import { PageHeader, Badge } from "../components/admin/ui";
+import { PageHeader, Badge, Button, ButtonLink, SearchInput } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import { PlusIcon } from "../lib/icons";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
@@ -83,27 +83,22 @@ export default function AdminRegions() {
       <PageHeader
         title="Regionen"
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button variant="primary" onClick={() => setCreateOpen(true)}>
             <PlusIcon className="text-[16px]" /> Region anlegen
           </Button>
         }
       />
 
-      <div className="mt-4 flex max-w-xl items-end gap-2">
-        <label className="min-w-0 flex-1 text-label font-medium text-admin-fg">
-          Region oder Land suchen
-          <Input
-            type="search"
+      <div className="mt-4 max-w-xl">
+        <label className="block text-label font-medium text-admin-fg">
+          Suche
+          <SearchInput
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Region oder Land suchen …"
             className="mt-1 w-full"
           />
         </label>
-        {searchText && (
-          <Button type="button" variant="ghost" onClick={() => setSearchText("")}>
-            Löschen
-          </Button>
-        )}
       </div>
 
       {notice && (
@@ -166,7 +161,7 @@ export default function AdminRegions() {
             <p className="text-ui text-admin-muted">
               {q ? `Keine Region für „${q}“ gefunden.` : "Noch keine Regionen vorhanden."}
             </p>
-            <Button className="mt-4" onClick={() => setCreateOpen(true)}>
+            <Button variant="primary" className="mt-4" onClick={() => setCreateOpen(true)}>
               <PlusIcon className="text-[16px]" /> Region anlegen
             </Button>
           </div>
@@ -225,14 +220,14 @@ function RegionCard({
           ) : (
             <Badge tone="neutral">Kein Bild</Badge>
           )}
-          <Link
+          <ButtonLink
+            variant="secondary"
             to={`/admin/region/${region.id}/edit`}
             state={editorState}
             onClick={(event) => event.stopPropagation()}
-            className="rounded-md border border-admin-border bg-admin-surface px-2.5 py-1 text-label font-medium text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
           >
             Bearbeiten
-          </Link>
+          </ButtonLink>
         </div>
       </div>
     </div>
@@ -353,7 +348,7 @@ function CreateRegionForm({
         <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
           Abbrechen
         </Button>
-        <Button type="submit" disabled={busy || !name.trim()}>
+        <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
           {busy ? "Suche…" : "Anlegen"}
         </Button>
       </div>

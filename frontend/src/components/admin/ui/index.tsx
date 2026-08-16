@@ -4,7 +4,9 @@
 // dark mode without touching public styling. All colors come from the admin
 // tokens (see admin-theme.css); never hard-code hex here.
 
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
+import { Link, type LinkProps } from "react-router-dom";
+import { SearchIcon } from "../../../lib/icons";
 
 /* ------------------------------------------------------------------------- */
 /* Button — the single admin button. A fixed variant set with identical       */
@@ -40,6 +42,52 @@ export const Button = forwardRef<
   />
 ));
 Button.displayName = "AdminButton";
+
+/* A router <Link> that wears the exact Button geometry + variant colours, so a
+   navigating action ("Neuer Spot", "Bearbeiten") is visually identical to a
+   real Button and never drifts into hand-rolled inline styling. */
+export const ButtonLink = forwardRef<
+  HTMLAnchorElement,
+  LinkProps & { variant?: ButtonVariant; block?: boolean }
+>(({ variant = "secondary", block = false, className = "", ...props }, ref) => (
+  <Link
+    ref={ref}
+    className={`${BTN_BASE} ${BTN_VARIANT[variant]} ${block ? "w-full" : ""} ${className}`}
+    {...props}
+  />
+));
+ButtonLink.displayName = "AdminButtonLink";
+
+/* ------------------------------------------------------------------------- */
+/* Field token + search input — one definition for every text-like admin      */
+/* control (inputs, selects). Focus shows only as a border-colour change to    */
+/* admin-primary; deliberately NO ring/box-shadow, so the stroke never         */
+/* thickens on activation. All colours come from admin tokens (dark-mode safe).*/
+/* ------------------------------------------------------------------------- */
+export const adminFieldClass =
+  "h-9 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary disabled:cursor-not-allowed disabled:opacity-50";
+
+/** The single admin search field: always carries a placeholder and the shared
+ *  field geometry, with a leading magnifier. Focus = border colour only. */
+export const SearchInput = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { placeholder?: string }
+>(({ placeholder = "Suchen …", className = "", ...props }, ref) => (
+  <div className={`relative ${className}`}>
+    <SearchIcon
+      aria-hidden
+      className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-admin-faint"
+    />
+    <input
+      ref={ref}
+      type="search"
+      placeholder={placeholder}
+      className={`${adminFieldClass} w-full pl-8`}
+      {...props}
+    />
+  </div>
+));
+SearchInput.displayName = "AdminSearchInput";
 
 /* ------------------------------------------------------------------------- */
 /* Page header — screen-reader title plus optional right-aligned actions.    */
