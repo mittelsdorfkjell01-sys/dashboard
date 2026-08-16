@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -69,8 +69,8 @@ export default function MobileSearchSheet({
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
-  // Which accordion section is expanded. "Wohin?" leads, like Airbnb.
-  const [section, setSection] = useState<Section>("where");
+  // Which accordion section is expanded (null = all collapsed to equal tiles).
+  const [section, setSection] = useState<Section>(null);
 
   // Lock body scroll while open; Esc closes.
   useEffect(() => {
@@ -87,11 +87,11 @@ export default function MobileSearchSheet({
     };
   }, [open, onClose]);
 
-  // Opening always starts a fresh search from the leading section.
+  // Opening always starts a fresh search, fully collapsed (equal-size tiles).
   useEffect(() => {
     if (open) {
       setVal(EMPTY_SEARCH);
-      setSection("where");
+      setSection(null);
     }
   }, [open]);
 
@@ -140,9 +140,12 @@ export default function MobileSearchSheet({
   // "Alles löschen": clear and collapse back to the small search pill.
   const reset = () => {
     setVal(EMPTY_SEARCH);
-    setSection("where");
+    setSection(null);
     onClose();
   };
+
+  const toggleSection = (s: Exclude<Section, null>) =>
+    setSection((cur) => (cur === s ? null : s));
 
   const pickWhere = (item: WhereRowItem) => {
     addRecent({
@@ -202,134 +205,121 @@ export default function MobileSearchSheet({
           >
             <div className="mx-auto flex w-full max-w-[520px] flex-col gap-3">
               {/* Wohin? */}
-              {section === "where" ? (
-                <section className="rounded-3xl bg-surface p-5 shadow-float">
-                  <p className="text-[17px] font-semibold text-teal">Wohin?</p>
-                  <input
-                    // eslint-disable-next-line jsx-a11y/no-autofocus
-                    autoFocus
-                    value={val.whereText}
-                    onChange={(e) =>
-                      setVal((v) => ({
-                        ...v,
-                        whereText: e.target.value,
-                        whereSel: null,
-                        whereOpen: false,
-                      }))
-                    }
-                    placeholder="Region oder Spot suchen"
-                    aria-label="Region oder Spot suchen"
-                    className="search-plain mt-1 w-full border-0 bg-transparent text-[16px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
-                  />
-                  <div className="mt-4 max-h-[46vh] overflow-y-auto">
-                    {items.length ? (
-                      <div className="flex flex-col">
-                        {items.map((it) => (
-                          <button
-                            key={it.key}
-                            type="button"
-                            onClick={() => pickWhere(it)}
-                            className="flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
-                          >
-                            <span className="flex w-7 shrink-0 justify-center text-ink">
-                              {it.kind === "spot" ? (
-                                <PinIcon className="text-[22px]" />
-                              ) : (
-                                <MapIcon className="text-[22px]" />
-                              )}
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block truncate text-[16px] font-medium text-ink">
-                                {it.label}
-                              </span>
-                              {it.subtitle && (
-                                <span className="block truncate text-[13px] text-muted">
-                                  {it.subtitle}
-                                </span>
-                              )}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="px-1.5 py-2 text-[14px] text-muted">
-                        Keine Treffer.
-                      </p>
-                    )}
-                  </div>
-                </section>
-              ) : (
-                <CollapsedRow
-                  label="Wohin?"
-                  value={whereValue}
+              <Section
+                label="Wohin?"
+                value={whereValue}
+                placeholder="Region oder Spot suchen"
+                open={section === "where"}
+                onToggle={() => toggleSection("where")}
+              >
+                <input
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus
+                  value={val.whereText}
+                  onChange={(e) =>
+                    setVal((v) => ({
+                      ...v,
+                      whereText: e.target.value,
+                      whereSel: null,
+                      whereOpen: false,
+                    }))
+                  }
                   placeholder="Region oder Spot suchen"
-                  onClick={() => setSection("where")}
+                  aria-label="Region oder Spot suchen"
+                  className="search-plain w-full border-0 bg-transparent text-[16px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                 />
-              )}
-
-              {/* Wann? */}
-              {section === "when" ? (
-                <section className="rounded-3xl bg-surface p-5 shadow-float">
-                  <MobileSearchWhen
-                    value={val.when}
-                    onChange={(when) => setVal((v) => ({ ...v, when }))}
-                  />
-                </section>
-              ) : (
-                <CollapsedRow
-                  label="Wann?"
-                  value={whenLabel(val.when)}
-                  placeholder="Zeitraum auswählen"
-                  onClick={() => setSection("when")}
-                />
-              )}
-
-              {/* Welche Sportart? */}
-              {section === "which" ? (
-                <section className="rounded-3xl bg-surface p-5 shadow-float">
-                  <p className="text-[17px] font-semibold text-teal">Welche Sportart?</p>
-                  <div className="mt-3 flex flex-col">
-                    {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
-                      const selected = val.which.includes(sport);
-                      return (
+                <div className="mt-3 max-h-[46vh] overflow-y-auto">
+                  {items.length ? (
+                    <div className="flex flex-col">
+                      {items.map((it) => (
                         <button
-                          key={sport}
+                          key={it.key}
                           type="button"
-                          onClick={() =>
-                            setVal((v) => ({
-                              ...v,
-                              which: selected
-                                ? v.which.filter((s) => s !== sport)
-                                : [...v.which, sport],
-                            }))
-                          }
-                          aria-pressed={selected}
-                          className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
+                          onClick={() => pickWhere(it)}
+                          className="flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
                         >
-                          <Icon className="shrink-0 text-[26px] text-ink" />
-                          <span className="flex-1 text-[16px] font-medium text-ink">
-                            {sportLabel(sport)}
+                          <span className="flex w-7 shrink-0 justify-center text-ink">
+                            {it.kind === "spot" ? (
+                              <PinIcon className="text-[22px]" />
+                            ) : (
+                              <MapIcon className="text-[22px]" />
+                            )}
                           </span>
-                          <span
-                            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
-                              selected ? "border-teal" : "border-line"
-                            }`}
-                          >
-                            {selected && <span className="h-3 w-3 rounded-full bg-teal" />}
+                          <span className="min-w-0">
+                            <span className="block truncate text-[16px] font-medium text-ink">
+                              {it.label}
+                            </span>
+                            {it.subtitle && (
+                              <span className="block truncate text-[13px] text-muted">
+                                {it.subtitle}
+                              </span>
+                            )}
                           </span>
                         </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              ) : (
-                <CollapsedRow
-                  label="Welche Sportart?"
-                  value={val.which.map(sportLabel).join(", ")}
-                  placeholder="Wähle deine Sportart aus"
-                  onClick={() => setSection("which")}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="px-1.5 py-2 text-[14px] text-muted">Keine Treffer.</p>
+                  )}
+                </div>
+              </Section>
+
+              {/* Wann? */}
+              <Section
+                label="Wann?"
+                value={whenLabel(val.when)}
+                placeholder="Zeitraum auswählen"
+                open={section === "when"}
+                onToggle={() => toggleSection("when")}
+              >
+                <MobileSearchWhen
+                  value={val.when}
+                  onChange={(when) => setVal((v) => ({ ...v, when }))}
                 />
-              )}
+              </Section>
+
+              {/* Welche Sportart? */}
+              <Section
+                label="Welche Sportart?"
+                value={val.which.map(sportLabel).join(", ")}
+                placeholder="Wähle deine Sportart aus"
+                open={section === "which"}
+                onToggle={() => toggleSection("which")}
+              >
+                <div className="flex flex-col">
+                  {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
+                    const selected = val.which.includes(sport);
+                    return (
+                      <button
+                        key={sport}
+                        type="button"
+                        onClick={() =>
+                          setVal((v) => ({
+                            ...v,
+                            which: selected
+                              ? v.which.filter((s) => s !== sport)
+                              : [...v.which, sport],
+                          }))
+                        }
+                        aria-pressed={selected}
+                        className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
+                      >
+                        <Icon className="shrink-0 text-[26px] text-ink" />
+                        <span className="flex-1 text-[16px] font-medium text-ink">
+                          {sportLabel(sport)}
+                        </span>
+                        <span
+                          className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
+                            selected ? "border-teal" : "border-line"
+                          }`}
+                        >
+                          {selected && <span className="h-3 w-3 rounded-full bg-teal" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Section>
 
               {/* Actions */}
               <div className="mt-1 grid grid-cols-2 gap-3">
@@ -359,32 +349,61 @@ export default function MobileSearchSheet({
 }
 
 /**
- * A collapsed accordion row: label left, current value (or placeholder) right.
- * Inert when `onClick` is omitted — the state for sections whose picker has not
- * been built yet.
+ * One accordion tile. Collapsed, every tile is the same size — just the header
+ * row (label + current value). Tapping expands it: the header label turns teal
+ * and the body reveals with a smooth height/opacity animation; collapsing
+ * reverses it. Exactly one tile is open at a time (state lives in the parent).
  */
-function CollapsedRow({
+function Section({
   label,
   value,
   placeholder,
-  onClick,
+  open,
+  onToggle,
+  children,
 }: {
   label: string;
   value: string;
   placeholder: string;
-  onClick?: () => void;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!onClick}
-      className="flex w-full items-center justify-between gap-3 rounded-3xl bg-surface px-5 py-4 text-left shadow-float transition-colors enabled:hover:bg-band disabled:cursor-default"
-    >
-      <span className="shrink-0 text-[15px] font-medium text-ink">{label}</span>
-      <span className="min-w-0 truncate text-[15px] text-muted">
-        {value || placeholder}
-      </span>
-    </button>
+    <div className="overflow-hidden rounded-3xl bg-surface shadow-float">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-band"
+      >
+        <span
+          className={`shrink-0 text-[16px] font-semibold transition-colors ${
+            open ? "text-teal" : "text-ink"
+          }`}
+        >
+          {label}
+        </span>
+        {!open && (
+          <span className="min-w-0 truncate text-[15px] text-muted">
+            {value || placeholder}
+          </span>
+        )}
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

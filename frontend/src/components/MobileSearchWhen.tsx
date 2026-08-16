@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { WhenDuration, WhenValue } from "../lib/searchSubmit";
 
 /**
@@ -56,35 +57,57 @@ export default function MobileSearchWhen({
 
   return (
     <div>
-      {/* Header: title, then a centred Datum/flexibel toggle. */}
-      <p className="text-[17px] font-semibold text-teal">Wann?</p>
-      <div className="mt-3 flex justify-center">
-        <div className="inline-flex rounded-full bg-teal p-1">
+      {/* Centred Datum/flexibel toggle (the section header carries the title). */}
+      <div className="flex justify-center">
+        <div className="relative inline-flex rounded-full bg-teal p-1">
           {(["date", "flex"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => switchTab(t)}
               aria-pressed={tab === t}
-              className={`rounded-full px-5 py-1.5 text-[13px] font-medium transition-colors ${
-                tab === t ? "bg-surface text-ink" : "text-white/90"
-              }`}
+              className="relative rounded-full px-5 py-1.5 text-[13px] font-medium"
             >
-              {t === "date" ? "Datum" : "flexibel"}
+              {/* Sliding white pill behind the active label. */}
+              {tab === t && (
+                <motion.span
+                  layoutId="when-toggle-pill"
+                  className="absolute inset-0 rounded-full bg-surface"
+                  transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                />
+              )}
+              <span
+                className={`relative transition-colors ${
+                  tab === t ? "text-ink" : "text-white/90"
+                }`}
+              >
+                {t === "date" ? "Datum" : "flexibel"}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
+      {/* Animated swap between the two modes. */}
       <div className="mt-4">
-        {tab === "date" ? (
-          <DateCalendar
-            selected={value?.mode === "range" ? value.from : undefined}
-            onPick={(iso) => onChange({ mode: "range", from: iso })}
-          />
-        ) : (
-          <FlexPicker value={value} onChange={onChange} />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, x: tab === "flex" ? 16 : -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: tab === "flex" ? -16 : 16 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {tab === "date" ? (
+              <DateCalendar
+                selected={value?.mode === "range" ? value.from : undefined}
+                onPick={(iso) => onChange({ mode: "range", from: iso })}
+              />
+            ) : (
+              <FlexPicker value={value} onChange={onChange} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
