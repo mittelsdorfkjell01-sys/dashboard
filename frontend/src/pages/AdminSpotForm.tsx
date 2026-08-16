@@ -586,7 +586,7 @@ export default function AdminSpotForm() {
       <form
         id="admin-spot-form"
         onSubmit={onSubmit}
-        className="pb-20 xl:pb-0 xl:pr-[352px]"
+        className="pb-20 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8 xl:pb-0"
       >
         {/* Left column: editorial fields (scrolls) */}
         <div className="min-w-0 space-y-8">
@@ -1203,56 +1203,17 @@ export default function AdminSpotForm() {
 
         </div>
 
-        {/* Right column: fixed on wide viewports so the actions do not shift
-            with the form's initial scroll. Below xl it stacks below the form
-            as before. The form uses xl:pr-[352px] to reserve the space. */}
-        <aside className="mt-8 space-y-4 xl:mt-0 xl:fixed xl:right-8 xl:top-[79px] xl:w-[320px] xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto xl:pr-1 no-scrollbar">
-          {isEdit && (
-            <div className="border-b border-admin-border px-1 pb-3">
-              <p className="truncate text-body font-semibold text-admin-fg">
-                {name.trim() || "Unbenannter Spot"}
-              </p>
-              <p className="mt-0.5 truncate text-label text-admin-muted">
-                {selectedRegionName}
-              </p>
-            </div>
-          )}
-          {savedId && readiness && (
-            <div className="rounded-lg border border-admin-success-border bg-admin-success-bg p-4">
-              <p className="text-ui font-semibold text-admin-success">
-                ✓ Gespeichert.{" "}
-                {readiness.ready
-                  ? "Der Spot erfüllt alle Pflichtfelder und kann live gehen."
-                  : "Für die Veröffentlichung fehlen noch Angaben:"}
-              </p>
-              {!readiness.ready && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {readiness.gaps.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => focusGap(g)}
-                      className="rounded-md border border-admin-border bg-admin-surface px-2 py-0.5 text-caption font-medium text-admin-fg2 transition-colors hover:border-admin-border-strong"
-                    >
-                      {gapLabel(g)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {error && (
-            <ErrorBanner
-              title="Änderungen konnten nicht vollständig gespeichert werden."
-              message={error}
-            />
-          )}
-
+        {/* Right column: sticky on wide viewports. As a grid track it starts on
+            the same row as "Basisdaten", so its top aligns with that card when
+            scrolled to the top; `sticky` then pins it without the panel itself
+            scrolling. Below xl it stacks below the form as before. */}
+        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[79px] xl:self-start xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto no-scrollbar">
           {isEdit && id ? (
             <div id="f-operations" className="scroll-mt-24">
               <SpotOpsPanel
                 spotId={id}
+                spotName={name}
+                regionName={selectedRegionName}
                 onGapClick={focusGap}
                 submitting={submitting}
                 saveLabel="Änderungen speichern"
@@ -1287,6 +1248,40 @@ export default function AdminSpotForm() {
                 />
               </div>
             </div>
+          )}
+
+          {/* Save-Feedback + Fehler sitzen unter der Kachel, damit deren
+              Oberkante bündig mit „Basisdaten" bleibt. */}
+          {savedId && readiness && (
+            <div className="rounded-lg border border-admin-success-border bg-admin-success-bg p-4">
+              <p className="text-ui font-semibold text-admin-success">
+                ✓ Gespeichert.{" "}
+                {readiness.ready
+                  ? "Der Spot erfüllt alle Pflichtfelder und kann live gehen."
+                  : "Für die Veröffentlichung fehlen noch Angaben:"}
+              </p>
+              {!readiness.ready && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {readiness.gaps.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => focusGap(g)}
+                      className="rounded-md border border-admin-border bg-admin-surface px-2 py-0.5 text-caption font-medium text-admin-fg2 transition-colors hover:border-admin-border-strong"
+                    >
+                      {gapLabel(g)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && (
+            <ErrorBanner
+              title="Änderungen konnten nicht vollständig gespeichert werden."
+              message={error}
+            />
           )}
         </aside>
       </form>
