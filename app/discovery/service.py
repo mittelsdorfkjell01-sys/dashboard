@@ -34,6 +34,7 @@ NO = "nein"
 GOOD = "gut"
 CACHE_VERSION = 1
 N_WEEKS = 52
+STALE_FALLBACK_SECONDS = 24 * 60 * 60
 
 
 # --- cache -----------------------------------------------------------------
@@ -42,11 +43,16 @@ def _cache_key(sport: str | None, limit: int, day: date) -> str:
     return f"featured:v{CACHE_VERSION}:{sport or 'any'}:{limit}:{day.isoformat()}"
 
 
-def _seconds_until_next_utc_midnight(day: date, *, now: datetime | None = None) -> int:
-    """TTL that expires at the next UTC midnight, so the set lives exactly one day."""
+def _cache_ttl(day: date, *, now: datetime | None = None) -> int:
+    """Keep an entry one extra day for an instant cold-start fallback.
+
+    The date remains part of the key, so normal reads never mistake yesterday's
+    ranking for today's.  The overlap only lets the public request path serve a
+    known-good list while the scheduled warm-up prepares the new daily entry.
+    """
     now = now or datetime.now(timezone.utc)
     midnight = datetime.combine(day + timedelta(days=1), time.min, tzinfo=timezone.utc)
-    return max(60, int((midnight - now).total_seconds()))
+    return max(60, int((midnight - now).total_seconds()) + STALE_FALLBACK_SECONDS)
 
 
 # --- candidate loading -----------------------------------------------------
@@ -291,6 +297,8 @@ def top_spot_ids(
     client: OpenMeteoClient | None = None,
     cache: Cache | None = None,
     today: date | None = None,
+    allow_stale: bool = True,
+    compute_on_miss: bool = True,
 ) -> list[uuid.UUID]:
     """Ordered ids of the "aktuelle Top Spots", cached per ``(sport, limit, day)``.
 
@@ -308,8 +316,23 @@ def top_spot_ids(
     if hit is not None:
         return [uuid.UUID(x) for x in hit]
 
+    # The ranking key rolls over at UTC midnight. On the public request path,
+    # prefer yesterday's retained result to making the first morning visitor
+    # wait for up to one forecast request per published spot. Warm-up callers
+    # opt out so they still compute and publish today's result.
+    if allow_stale:
+        stale = cache.get(_cache_key(sport, limit, day - timedelta(days=1)))
+        if stale is not None:
+            return [uuid.UUID(x) for x in stale]
+
+    # Public HTTP requests use the endpoint's cheap alphabetical DB fallback
+    # when neither today's nor yesterday's entry exists. The scheduled warm-up
+    # is the only caller that should pay for provider I/O on a true cold cache.
+    if not compute_on_miss:
+        return []
+
     ordered = _compute(
         db, limit=limit, sport=sport, client=client, cache=cache, day=day
     )
-    cache.set(key, [str(x) for x in ordered], _seconds_until_next_utc_midnight(day))
+    cache.set(key, [str(x) for x in ordered], _cache_ttl(day))
     return ordered

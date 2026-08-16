@@ -2,33 +2,18 @@
 // region. Like the spot list, each card only links to the editor — clicking
 // anywhere on the card opens it, everything else lives in the editor itself.
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
-  createRegion,
   getAdminRegions,
   type AdminRegionEntry,
 } from "../lib/api";
-import { Field, Input } from "../components/ui";
-import Modal from "../components/ui/Modal";
-import ConfirmDialog from "../components/ui/ConfirmDialog";
-import { PageHeader, Badge, Button, ButtonLink, SearchInput } from "../components/admin/ui";
+import { PageHeader, Badge, ButtonLink, SearchInput } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 import { PlusIcon } from "../lib/icons";
-import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
-import {
-  parseDuplicateConflict,
-  type DuplicateConflict,
-} from "../lib/duplicateConflicts";
-import {
-  useFormDirty,
-  useUnsavedChangesGuard,
-} from "../lib/useUnsavedChangesGuard";
-import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 
 export default function AdminRegions() {
-  const { blocker, setDirty } = useUnsavedChangesGuard();
   const location = useLocation();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -38,12 +23,6 @@ export default function AdminRegions() {
   const [entries, setEntries] = useState<AdminRegionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createDirty, setCreateDirty] = useState(false);
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
-
-  useEffect(() => setDirty("create-region", createDirty), [createDirty, setDirty]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,19 +52,14 @@ export default function AdminRegions() {
     return () => window.clearTimeout(timer);
   }, [searchText, q, params, setParams]);
 
-  const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(null), 3000);
-  };
-
   return (
     <div>
       <PageHeader
         title="Regionen"
         actions={
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
+          <ButtonLink variant="primary" to="/admin/region/new" state={editorState}>
             <PlusIcon className="text-[16px]" /> Region anlegen
-          </Button>
+          </ButtonLink>
         }
       />
 
@@ -101,14 +75,6 @@ export default function AdminRegions() {
         </label>
       </div>
 
-      {notice && (
-        <div
-          role="status"
-          className="mt-4 rounded-md border border-admin-success-border bg-admin-success-bg px-3 py-2 text-label font-medium text-admin-success"
-        >
-          {notice}
-        </div>
-      )}
       {error && (
         <div
           role="alert"
@@ -117,39 +83,6 @@ export default function AdminRegions() {
           {error}
         </div>
       )}
-
-      {createOpen && (
-        <Modal
-          open
-          onClose={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
-          labelledBy="create-region-title"
-        >
-          <CreateRegionForm
-            onDirtyChange={setCreateDirty}
-            onCancel={() => createDirty ? setConfirmDiscard(true) : setCreateOpen(false)}
-            onCreated={async (name) => {
-              setCreateDirty(false);
-              setCreateOpen(false);
-              flash(`Region „${name}" angelegt.`);
-              await load();
-            }}
-            onError={setError}
-          />
-        </Modal>
-      )}
-      <ConfirmDialog
-        open={confirmDiscard}
-        title="Eingaben verwerfen?"
-        message="Die noch nicht gespeicherten Angaben zur Region gehen verloren."
-        confirmText="Verwerfen"
-        onCancel={() => setConfirmDiscard(false)}
-        onConfirm={() => {
-          setConfirmDiscard(false);
-          setCreateDirty(false);
-          setCreateOpen(false);
-        }}
-      />
-      <UnsavedChangesDialog blocker={blocker} />
 
       {/* Card list: single column, two columns on wide desktops (2xl) so the
           cards don't stretch into a huge empty middle. */}
@@ -161,9 +94,9 @@ export default function AdminRegions() {
             <p className="text-ui text-admin-muted">
               {q ? `Keine Region für „${q}“ gefunden.` : "Noch keine Regionen vorhanden."}
             </p>
-            <Button variant="primary" className="mt-4" onClick={() => setCreateOpen(true)}>
+            <ButtonLink variant="primary" className="mt-4" to="/admin/region/new" state={editorState}>
               <PlusIcon className="text-[16px]" /> Region anlegen
-            </Button>
+            </ButtonLink>
           </div>
         ) : (
           entries.map((entry) => (
@@ -231,136 +164,5 @@ function RegionCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function CreateRegionForm({
-  onCreated,
-  onError,
-  onCancel,
-  onDirtyChange,
-}: {
-  onCreated: (name: string) => void | Promise<void>;
-  onError: (msg: string) => void;
-  onCancel: () => void;
-  onDirtyChange: (dirty: boolean) => void;
-}) {
-  const [name, setName] = useState("");
-  const [country, setCountry] = useState("");
-  const [lat, setLat] = useState("");
-  const [lon, setLon] = useState("");
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [duplicateConflict, setDuplicateConflict] = useState<DuplicateConflict | null>(null);
-  const dirty = useFormDirty({ name, country, lat, lon }, { name: "", country: "", lat: "", lon: "" });
-
-  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
-
-  const save = async (allowDuplicate = false) => {
-    const hasLat = lat.trim() !== "";
-    const hasLon = lon.trim() !== "";
-    if (hasLat !== hasLon) {
-      setFieldError("Breiten- und Längengrad bitte gemeinsam angeben.");
-      return;
-    }
-    const latitude = hasLat ? Number(lat.replace(",", ".")) : undefined;
-    const longitude = hasLon ? Number(lon.replace(",", ".")) : undefined;
-    if ((latitude !== undefined && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
-        (longitude !== undefined && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
-      setFieldError("Bitte gültige Koordinaten eingeben.");
-      return;
-    }
-    setFieldError(null);
-    setBusy(true);
-    try {
-      // No coordinates: the backend geocodes the name → centre + bounds.
-      await createRegion({
-        name: name.trim(),
-        country: country.trim() || undefined,
-        lat: latitude,
-        lon: longitude,
-        allow_duplicate: allowDuplicate,
-      });
-      setName("");
-      setCountry("");
-      setLat("");
-      setLon("");
-      onDirtyChange(false);
-      await onCreated(name.trim());
-    } catch (err) {
-      const duplicate = parseDuplicateConflict(err);
-      if (duplicate) {
-        setDuplicateConflict(duplicate);
-        return;
-      }
-      onError(err instanceof ApiError ? err.message : "Anlegen fehlgeschlagen.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    void save(false);
-  };
-
-  return (
-    <form onSubmit={submit} className="space-y-4" noValidate>
-      <h2 id="create-region-title" className="text-[18px] font-semibold text-admin-fg">
-        Region anlegen
-      </h2>
-      <div>
-        <label htmlFor="create-region-name" className="text-label font-medium text-admin-fg">
-          Name
-        </label>
-        <Input
-          id="create-region-name"
-          className="mt-1 w-full"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-      </div>
-      <div>
-        <label htmlFor="create-region-country" className="text-label font-medium text-admin-fg">
-          Landcode
-        </label>
-        <Input
-          id="create-region-country"
-          className="mt-1 w-full"
-          placeholder="z. B. IT"
-          maxLength={2}
-          value={country}
-          onChange={(e) => setCountry(e.target.value.toUpperCase())}
-        />
-        <p className="mt-1 text-caption text-admin-muted">Mittelpunkt und Fläche werden zunächst automatisch ermittelt.</p>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Breitengrad" hint="Optionaler manueller Fallback">
-          <Input id="create-region-lat" inputMode="decimal" placeholder="54,47" value={lat} onChange={(e) => setLat(e.target.value)} aria-invalid={Boolean(fieldError)} />
-        </Field>
-        <Field label="Längengrad">
-          <Input id="create-region-lon" inputMode="decimal" placeholder="11,14" value={lon} onChange={(e) => setLon(e.target.value)} aria-invalid={Boolean(fieldError)} />
-        </Field>
-      </div>
-      {fieldError && <p role="alert" className="text-caption font-medium text-red-700">{fieldError}</p>}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-          Abbrechen
-        </Button>
-        <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
-          {busy ? "Suche…" : "Anlegen"}
-        </Button>
-      </div>
-      <DuplicateWarningDialog
-        conflict={duplicateConflict}
-        busy={busy}
-        onClose={() => setDuplicateConflict(null)}
-        onOverride={() => {
-          setDuplicateConflict(null);
-          void save(true);
-        }}
-      />
-    </form>
   );
 }

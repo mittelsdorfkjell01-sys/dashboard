@@ -12,9 +12,10 @@ run after the entry expires; every other run is a near-free no-op. The interval
 therefore bounds the worst-case cold window (how long after midnight an unlucky
 visitor might still trigger the recompute themselves).
 
-Warm the combination the landing page requests (``limit=5``, no sport filter):
+Warm the cache key the landing endpoint requests (``limit=8``: five visible
+tiles plus three malformed-row reserves, no sport filter):
 
-    python -m app.discovery.warmup                       # limit=5, sport=any
+    python -m app.discovery.warmup                       # limit=8, sport=any
     python -m app.discovery.warmup --limit 5 --limit 8   # several sizes
     python -m app.discovery.warmup --sport kitesurf      # a sport-filtered list
     python -m app.discovery.warmup --loop --interval 1800
@@ -62,6 +63,7 @@ def warm_once(
                     client=client,
                     cache=cache,
                     today=today,
+                    allow_stale=False,
                 )
                 results.append((sport, limit, len(ids)))
                 print(
@@ -99,11 +101,11 @@ def run_in_background(
 
     Used from the app startup hook so production keeps the featured cache warm
     without a separate always-on container (leaner on a small VPS). Defaults warm
-    the combination the landing page requests (``limit=5``, no sport filter).
+    the landing endpoint's ranking key (``limit=8``, no sport filter).
     """
     import threading
 
-    limits = limits or [5]
+    limits = limits or [8]
     sports = sports if sports is not None else [None]
 
     threading.Thread(
@@ -123,8 +125,8 @@ def main(argv: list[str] | None = None) -> None:
         type=int,
         action="append",
         metavar="N",
-        help="Top-Spots list size to warm (repeatable; default: 5 — matches the "
-        "landing page)",
+        help="Top-Spots ranking size to warm (repeatable; default: 8 — five "
+        "landing tiles plus three serialization reserves)",
     )
     parser.add_argument(
         "--sport",
@@ -145,7 +147,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
 
-    limits = args.limit or [5]
+    limits = args.limit or [8]
     # ``[None]`` = the unfiltered list the landing page requests.
     sports: list[str | None] = list(args.sport) if args.sport else [None]
 

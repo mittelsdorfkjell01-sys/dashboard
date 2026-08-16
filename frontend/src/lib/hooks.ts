@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import type { Spot } from "./types";
 import * as api from "./api";
 import { adaptSpot, adaptSpots } from "./adapt";
-import { useSwr, type SwrState } from "./swr";
+import { usePersistentSwr, useSwr, type SwrState } from "./swr";
 import { mutate } from "./swr";
 import { mergeFeed, type FeedPost } from "./communityFeed";
 
@@ -22,9 +22,15 @@ export function useSpots(
   query: api.SpotQuery = {},
   enabled = true,
 ): AsyncStateReloadable<Spot[]> {
-  const spots = useSwr(
-    enabled ? `spots:${JSON.stringify(query)}` : null,
+  const key = `spots:${JSON.stringify(query)}`;
+  const persist = query.limit === 100 && Object.keys(query).length === 1;
+  const spots = usePersistentSwr(
+    enabled ? key : null,
     () => api.getSpots(query),
+    persist ? {
+        storageKey: "swd.public-spots.v1",
+        maxAgeMs: 7 * 24 * 60 * 60 * 1000,
+      } : null,
   );
   const data = useMemo(
     () => (spots.data ? adaptSpots(spots.data, new Map()) : null),
@@ -42,7 +48,10 @@ export function useSpots(
  *  today's conditions and popularity (backend `/spots/top`), adapted with their
  *  regions. Rotates daily; same shape as {@link useSpots} so tiles are unchanged. */
 export function useTopSpots(limit = 5): AsyncStateReloadable<Spot[]> {
-  const spots = useSwr(`top-spots:${limit}`, () => api.getTopSpots(limit));
+  const spots = usePersistentSwr(`top-spots:${limit}`, () => api.getTopSpots(limit), {
+    storageKey: `swd.top-spots.v1.${limit}`,
+    maxAgeMs: 7 * 24 * 60 * 60 * 1000,
+  });
   const data = useMemo(
     () => (spots.data ? adaptSpots(spots.data, new Map()) : null),
     [spots.data],
@@ -79,10 +88,11 @@ export function useSpotLive(id?: string): AsyncStateReloadable<api.LiveCondition
  *  ≤20 ids (the endpoint's cap) instead of one per tile — chunked and merged
  *  here so callers never have to think about the limit. Best-effort. */
 export function useSpotsLive(
-  ids: string[]
+  ids: string[],
+  enabled = true,
 ): AsyncStateReloadable<Map<string, api.LiveConditionsRead>> {
   // Sort for a stable cache key regardless of input order.
-  const key = ids.length ? `live-batch:${[...ids].sort().join(",")}` : null;
+  const key = enabled && ids.length ? `live-batch:${[...ids].sort().join(",")}` : null;
   const state = useSwr(key, async () => {
     const chunks: string[][] = [];
     for (let i = 0; i < ids.length; i += 20) chunks.push(ids.slice(i, i + 20));

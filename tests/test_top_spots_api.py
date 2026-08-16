@@ -5,7 +5,7 @@ doubles. DB-gated (skips when the test DB is down)."""
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -102,6 +102,50 @@ def test_service_uses_cache_on_second_call(seeded):
     discovery.top_spot_ids(seeded, client=fake, cache=cache, today=day)
     # Second call served from cache — no further forecast fetches.
     assert fake.forecast_calls == calls_after_first
+
+
+def test_public_cold_start_uses_retained_previous_day(seeded):
+    fake, cache = FakeOpenMeteoClient(), InMemoryCache()
+    today = date(2026, 7, 19)
+    yesterday = today - timedelta(days=1)
+    previous = discovery.top_spot_ids(
+        seeded, client=fake, cache=cache, today=yesterday, allow_stale=False
+    )
+    calls_after_previous = fake.forecast_calls
+
+    ids = discovery.top_spot_ids(seeded, client=fake, cache=cache, today=today)
+
+    assert ids == previous
+    assert fake.forecast_calls == calls_after_previous
+
+
+def test_warmup_bypasses_previous_day_fallback(seeded):
+    fake, cache = FakeOpenMeteoClient(), InMemoryCache()
+    today = date(2026, 7, 19)
+    discovery.top_spot_ids(
+        seeded, client=fake, cache=cache, today=today - timedelta(days=1),
+        allow_stale=False,
+    )
+    discovery.top_spot_ids(
+        seeded, client=fake, cache=cache, today=today, allow_stale=False
+    )
+
+    assert cache.get(discovery._cache_key(None, 5, today)) is not None
+
+
+def test_public_true_cold_start_skips_forecast_computation(seeded):
+    fake, cache = FakeOpenMeteoClient(), InMemoryCache()
+
+    ids = discovery.top_spot_ids(
+        seeded,
+        client=fake,
+        cache=cache,
+        today=date(2026, 7, 19),
+        compute_on_miss=False,
+    )
+
+    assert ids == []
+    assert fake.forecast_calls == 0
 
 
 # --- resilience: the widget must never 500 ---------------------------------

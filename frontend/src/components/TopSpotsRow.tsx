@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTopSpots, useSpotsLive } from "../lib/hooks";
 import SpotCard from "./SpotCard";
 import { ErrorBanner } from "./AsyncStates";
@@ -34,7 +35,21 @@ function RowSkeleton() {
 export default function TopSpotsRow() {
   const { data: spots, loading, error, reload } = useTopSpots(MAX_TILES);
   const top = (spots ?? []).slice(0, MAX_TILES);
-  const { data: live } = useSpotsLive(top.map((s) => s.id));
+  const [loadLive, setLoadLive] = useState(false);
+  useEffect(() => {
+    if (!top.length) return;
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (win.requestIdleCallback) {
+      const id = win.requestIdleCallback(() => setLoadLive(true), { timeout: 2500 });
+      return () => win.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(() => setLoadLive(true), 1200);
+    return () => window.clearTimeout(id);
+  }, [top.length]);
+  const { data: live } = useSpotsLive(top.map((s) => s.id), loadLive);
 
   if (loading) return <RowSkeleton />;
   if (error)

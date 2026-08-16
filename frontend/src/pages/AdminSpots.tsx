@@ -176,15 +176,15 @@ export default function AdminSpots() {
 
       {/* Filters — full-width stack on mobile, flowing row on sm+. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <label className="w-full text-label font-medium text-admin-fg sm:min-w-[220px] sm:flex-1">
-          Suche
+        <div className="w-full sm:min-w-[220px] sm:flex-1">
           <SearchInput
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             placeholder="Name oder Slug suchen …"
-            className="mt-1 w-full"
+            aria-label="Spots suchen"
+            className="w-full"
           />
-        </label>
+        </div>
         <div className="grid grid-cols-2 gap-2 sm:contents">
           <select
             value={regionId}

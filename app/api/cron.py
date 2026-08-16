@@ -112,4 +112,16 @@ def maintain_climatology(
     except Exception as exc:
         db.rollback()
         result["forecast"] = {"error": f"{type(exc).__name__}: {exc}"}
+    try:
+        # Publish today's featured list off the visitor request path. Combined
+        # with the retained previous-day entry, the landing page is instant
+        # even across the UTC date rollover and a serverless cold start.
+        from app.discovery.warmup import warm_once
+
+        # /spots/top?limit=5 ranks eight candidates before safe serialization.
+        warmed = warm_once(limits=[8], sports=[None], db=db)
+        result["featured"] = {"spots": warmed[0][2] if warmed else 0}
+    except Exception as exc:
+        db.rollback()
+        result["featured"] = {"error": f"{type(exc).__name__}: {exc}"}
     return result

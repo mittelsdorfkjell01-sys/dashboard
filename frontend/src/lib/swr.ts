@@ -98,6 +98,69 @@ export interface SwrState<T> {
   reload: () => void;
 }
 
+interface PersistentEnvelope<T> {
+  version: 1;
+  savedAt: number;
+  data: T;
+}
+
+export interface PersistentSwrOptions {
+  storageKey: string;
+  maxAgeMs: number;
+}
+
+function browserStorage(): Storage | null {
+  try {
+    return typeof window !== "undefined" ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Seed the memory cache synchronously from a bounded, versioned public-data
+ * snapshot. This makes a returning visitor's first paint independent of a
+ * serverless/DB cold start; the normal SWR request still refreshes it. */
+export function hydratePersistent<T>(
+  key: string,
+  options: PersistentSwrOptions,
+  storage: Pick<Storage, "getItem" | "removeItem"> | null = browserStorage(),
+  now = Date.now(),
+): boolean {
+  if (store.has(key) || !storage) return false;
+  try {
+    const raw = storage.getItem(options.storageKey);
+    if (!raw) return false;
+    const saved = JSON.parse(raw) as PersistentEnvelope<T>;
+    if (
+      saved?.version !== 1 ||
+      !Number.isFinite(saved.savedAt) ||
+      now - saved.savedAt > options.maxAgeMs ||
+      saved.data == null
+    ) {
+      storage.removeItem(options.storageKey);
+      return false;
+    }
+    // Treat the restored value as fresh in memory. Its original age is still
+    // enforced above, and useSwr starts a background revalidation immediately.
+    storeEntry(key, { data: saved.data, ts: now });
+    return true;
+  } catch {
+    try { storage.removeItem(options.storageKey); } catch { /* unavailable */ }
+    return false;
+  }
+}
+
+function persistPublicData<T>(options: PersistentSwrOptions, data: T) {
+  try {
+    browserStorage()?.setItem(
+      options.storageKey,
+      JSON.stringify({ version: 1, savedAt: Date.now(), data } satisfies PersistentEnvelope<T>),
+    );
+  } catch {
+    // Private mode/quota: the in-memory SWR cache remains fully functional.
+  }
+}
+
 /**
  * Stale-while-revalidate data hook. A `null` key disables the fetch (for
  * dependent/conditional queries). The `key` fully identifies the request, so
@@ -136,4 +199,18 @@ export function useSwr<T>(
       if (key) void revalidate(key, fetcher);
     },
   };
+}
+
+/** SWR for non-sensitive public catalogue data that should survive reloads. */
+export function usePersistentSwr<T>(
+  key: string | null,
+  fetcher: () => Promise<T>,
+  options: PersistentSwrOptions | null,
+): SwrState<T> {
+  if (key && options) hydratePersistent<T>(key, options);
+  return useSwr(key, async () => {
+    const data = await fetcher();
+    if (options) persistPublicData(options, data);
+    return data;
+  });
 }

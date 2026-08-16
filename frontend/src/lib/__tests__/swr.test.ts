@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { revalidate, peek, __resetCache } from "../swr";
+import { revalidate, peek, __resetCache, hydratePersistent } from "../swr";
 
 beforeEach(() => __resetCache());
 
@@ -48,5 +48,27 @@ describe("swr cache", () => {
     await revalidate("k", fetcher);
     expect(calls).toBe(2);
     expect(peek<number>("k")?.data).toBe(2);
+  });
+});
+
+describe("persistent SWR hydration", () => {
+  it("restores a valid public snapshot before the network responds", () => {
+    const storage = {
+      getItem: () => JSON.stringify({ version: 1, savedAt: 1_000, data: [1, 2, 3] }),
+      removeItem: () => undefined,
+    };
+    expect(hydratePersistent<number[]>("spots", { storageKey: "x", maxAgeMs: 500 }, storage, 1_400)).toBe(true);
+    expect(peek<number[]>("spots")?.data).toEqual([1, 2, 3]);
+  });
+
+  it("rejects and removes an expired snapshot", () => {
+    let removed = false;
+    const storage = {
+      getItem: () => JSON.stringify({ version: 1, savedAt: 1_000, data: [1] }),
+      removeItem: () => { removed = true; },
+    };
+    expect(hydratePersistent("spots", { storageKey: "x", maxAgeMs: 500 }, storage, 1_501)).toBe(false);
+    expect(removed).toBe(true);
+    expect(peek("spots")).toBeUndefined();
   });
 });

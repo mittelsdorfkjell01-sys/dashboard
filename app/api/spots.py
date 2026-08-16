@@ -146,7 +146,12 @@ def list_top_spots(
     fetch_n = min(limit + 3, 20)
     try:
         ids = discovery.top_spot_ids(
-            db, limit=fetch_n, sport=sport, client=client, cache=cache
+            db,
+            limit=fetch_n,
+            sport=sport,
+            client=client,
+            cache=cache,
+            compute_on_miss=False,
         )
     except Exception:
         logger.exception("featured top-spots ranking failed — serving published list")
