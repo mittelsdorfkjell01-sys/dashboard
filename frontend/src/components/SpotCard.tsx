@@ -55,7 +55,7 @@ export default function SpotCard({
         <SpotImage src={spot.image} name={spot.name} region={spot.region} compact />
       </div>
 
-      <div className={`flex flex-1 flex-col ${compact ? "gap-0.5 pt-2" : "gap-1 pt-3"}`}>
+      <div className={`flex flex-1 flex-col ${compact ? "gap-0.5 pt-2" : "gap-1 pt-2 sm:pt-3"}`}>
         <div className="flex items-baseline justify-between gap-3">
           <p
             className={`min-w-0 truncate font-semibold text-ink ${compact ? "text-label" : "text-body"}`}
@@ -73,13 +73,13 @@ export default function SpotCard({
 
         {!compact && (
           <>
-            {regionLine && <p className="truncate text-caption text-muted">{regionLine}</p>}
+            {regionLine && <p className="truncate text-[11px] text-muted sm:text-caption">{regionLine}</p>}
 
             {(sports || monthsRange) && (
               <div className="mt-auto flex items-baseline justify-between gap-3 pt-1">
-                {sports && <span className="min-w-0 truncate text-caption text-muted">{sports}</span>}
+                {sports && <span className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{sports}</span>}
                 {monthsRange && (
-                  <span className="shrink-0 text-caption font-semibold text-ink">{monthsRange}</span>
+                  <span className="shrink-0 text-[11px] font-semibold text-ink sm:text-caption">{monthsRange}</span>
                 )}
               </div>
             )}

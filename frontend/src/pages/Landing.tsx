@@ -93,7 +93,7 @@ export default function Landing() {
           </p>
 
           {spots.length > 0 && (
-            <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5">
               {visibleSpots.map((spot) => (
                 <SpotCard key={spot.id} spot={spot} />
               ))}
