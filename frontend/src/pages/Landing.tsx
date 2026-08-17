@@ -30,8 +30,10 @@ export default function Landing() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchOriginY, setSearchOriginY] = useState<number | null>(null);
   const openSearch = () => {
-    const rect = document.getElementById("landing-search")?.getBoundingClientRect();
+    const rect = document.getElementById("mobile-search-bar")?.getBoundingClientRect();
     setSearchOriginY(rect ? rect.top + rect.height / 2 : null);
+    // If the visitor has scrolled down, glide back to the top as the sheet opens.
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setSearchOpen(true);
   };
   // Fetch the lightweight catalogue once. Changing the request key from 20 to
@@ -44,7 +46,7 @@ export default function Landing() {
   const visibleSpots = spots.slice(0, visibleSpotLimit);
 
   return (
-    <div className="relative bg-page">
+    <div className="relative bg-page pb-24 sm:pb-0">
       <LandingHeader sticky />
 
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
@@ -61,22 +63,25 @@ export default function Landing() {
 
         <div className="flex-1" />
 
-        {/* Search — sits high in the hero so the (compact) dropdown always fits
-            above the fold and never reaches into the white spots section. */}
-        <div className="flex justify-center px-4 pb-44 sm:px-6 sm:pb-56">
+        {/* Search — desktop inline bar sits high in the hero so the dropdown
+            always fits above the fold. Mobile uses the sticky bottom bar below. */}
+        <div className="hidden justify-center px-4 pb-44 sm:flex sm:px-6 sm:pb-56">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
-            {/* Mobile: collapsed pill → full-screen sheet. From sm: inline bar.
-                Hidden (but kept in layout) while the sheet is open so it does
-                not show through the sheet's translucent backdrop. */}
-            <div className={`sm:hidden ${searchOpen ? "invisible" : ""}`}>
-              <MobileSearchTrigger onClick={openSearch} />
-            </div>
-            <div className="hidden sm:block">
-              <SearchBar />
-            </div>
+            <SearchBar />
           </div>
         </div>
       </section>
+
+      {/* Sticky mobile search bar — always reachable while scrolling. Tapping it
+          glides back to the top and opens the search sheet. Hidden while open. */}
+      <div
+        id="mobile-search-bar"
+        className={`fixed inset-x-0 bottom-0 z-[1100] px-4 pb-6 pt-2 transition-opacity sm:hidden ${
+          searchOpen ? "pointer-events-none opacity-0" : ""
+        }`}
+      >
+        <MobileSearchTrigger onClick={openSearch} />
+      </div>
 
       <MobileSearchSheet
         open={searchOpen}

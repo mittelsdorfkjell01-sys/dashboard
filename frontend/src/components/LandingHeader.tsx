@@ -34,7 +34,10 @@ export default function LandingHeader({
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
     const onScroll = () => {
       const search = document.getElementById("landing-search");
-      if (search) setSolid(search.getBoundingClientRect().top <= TRIGGER_Y);
+      const rect = search?.getBoundingClientRect();
+      // Only trust the search bar when it is actually visible (it is hidden on
+      // mobile, where a display:none rect would otherwise read as top 0).
+      if (rect && rect.width > 0) setSolid(rect.top <= TRIGGER_Y);
       else setSolid(window.scrollY > window.innerHeight * 0.5);
     };
     onScroll();

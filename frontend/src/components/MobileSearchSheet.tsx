@@ -11,7 +11,7 @@ import {
   WindsurfIcon,
   WingIcon,
 } from "../lib/icons";
-import MobileSearchWhen from "./MobileSearchWhen";
+import MobileSearchWhen, { WhenToggle, type WhenTab } from "./MobileSearchWhen";
 import { sportLabel } from "../lib/labels";
 import { useRegions, useSpots } from "../lib/hooks";
 import { addRecent } from "../lib/recentSearches";
@@ -71,6 +71,7 @@ export default function MobileSearchSheet({
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
   // Which accordion section is expanded (null = all collapsed to equal tiles).
   const [section, setSection] = useState<Section>(null);
+  const [whenTab, setWhenTab] = useState<WhenTab>("date");
 
   // Lock body scroll while open; Esc closes.
   useEffect(() => {
@@ -92,6 +93,7 @@ export default function MobileSearchSheet({
     if (open) {
       setVal(EMPTY_SEARCH);
       setSection(null);
+      setWhenTab("date");
     }
   }, [open]);
 
@@ -147,6 +149,13 @@ export default function MobileSearchSheet({
   const toggleSection = (s: Exclude<Section, null>) =>
     setSection((cur) => (cur === s ? null : s));
 
+  // Switching Datum ↔ flexibel starts that mode fresh (the two are exclusive).
+  const changeWhenTab = (t: WhenTab) => {
+    if (t === whenTab) return;
+    setWhenTab(t);
+    setVal((v) => ({ ...v, when: null }));
+  };
+
   const pickWhere = (item: WhereRowItem) => {
     addRecent({
       label: item.pick.label,
@@ -189,13 +198,12 @@ export default function MobileSearchSheet({
             onClick={onClose}
           />
 
-          {/* Card stack — grows out of the pill's position (Airbnb), scrolls if
-              it outgrows the viewport. */}
+          {/* Content grows out of the pill's position (Airbnb). Tiles scroll
+              above a fixed action bar pinned at the search-bar's height. */}
           <motion.div
-            data-lenis-prevent
-            className="relative flex-1 overflow-y-auto px-4 pb-6 pt-[13vh]"
+            className="absolute inset-0 flex flex-col"
             style={{ transformOrigin: originY != null ? `50% ${originY}px` : "50% 82%" }}
-            initial={reduce ? false : { opacity: 0, scale: 0.9 }}
+            initial={reduce ? false : { opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={
               reduce
@@ -203,8 +211,10 @@ export default function MobileSearchSheet({
                 : { type: "spring", stiffness: 380, damping: 34, mass: 0.9 }
             }
           >
-            <div className="mx-auto flex w-full max-w-[520px] flex-col gap-3">
-              {/* Wohin? */}
+            {/* Tiles — bottom-aligned above the actions; scroll if they grow. */}
+            <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto px-4">
+              <div className="mx-auto flex min-h-full w-full max-w-[520px] flex-col justify-end gap-3 pb-3 pt-[12vh]">
+                {/* Wohin? */}
               <Section
                 label="Wohin?"
                 value={whereValue}
@@ -228,7 +238,7 @@ export default function MobileSearchSheet({
                   aria-label="Region oder Spot suchen"
                   className="search-plain w-full border-0 bg-transparent text-[16px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                 />
-                <div className="mt-3 max-h-[46vh] overflow-y-auto">
+                <div className="mt-3 h-[190px] overflow-y-auto">
                   {items.length ? (
                     <div className="flex flex-col">
                       {items.map((it) => (
@@ -264,15 +274,17 @@ export default function MobileSearchSheet({
                 </div>
               </Section>
 
-              {/* Wann? */}
+              {/* Wann? — the Datum/flexibel toggle sits in the tile header. */}
               <Section
                 label="Wann?"
                 value={whenLabel(val.when)}
                 placeholder="Zeitraum auswählen"
                 open={section === "when"}
                 onToggle={() => toggleSection("when")}
+                headerAccessory={<WhenToggle tab={whenTab} onChange={changeWhenTab} />}
               >
                 <MobileSearchWhen
+                  tab={whenTab}
                   value={val.when}
                   onChange={(when) => setVal((v) => ({ ...v, when }))}
                 />
@@ -321,8 +333,12 @@ export default function MobileSearchSheet({
                 </div>
               </Section>
 
-              {/* Actions */}
-              <div className="mt-1 grid grid-cols-2 gap-3">
+              </div>
+            </div>
+
+            {/* Actions — pinned at the bottom, on the search-bar's height. */}
+            <div className="px-4 pb-6 pt-2">
+              <div className="mx-auto grid w-full max-w-[520px] grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={reset}
@@ -360,6 +376,7 @@ function Section({
   placeholder,
   open,
   onToggle,
+  headerAccessory,
   children,
 }: {
   label: string;
@@ -367,29 +384,34 @@ function Section({
   placeholder: string;
   open: boolean;
   onToggle: () => void;
+  /** Rendered on the header's right when open (e.g. the Datum/flexibel toggle). */
+  headerAccessory?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-3xl bg-surface shadow-float">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-band"
-      >
-        <span
-          className={`shrink-0 text-[16px] font-semibold transition-colors ${
-            open ? "text-teal" : "text-ink"
-          }`}
+      <div className="flex items-center justify-between gap-3 px-5 py-4">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
         >
-          {label}
-        </span>
-        {!open && (
-          <span className="min-w-0 truncate text-[15px] text-muted">
-            {value || placeholder}
+          <span
+            className={`shrink-0 text-[16px] font-semibold transition-colors ${
+              open ? "text-teal" : "text-ink"
+            }`}
+          >
+            {label}
           </span>
-        )}
-      </button>
+          {!open && (
+            <span className="min-w-0 truncate text-[15px] text-muted">
+              {value || placeholder}
+            </span>
+          )}
+        </button>
+        {open && headerAccessory}
+      </div>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
