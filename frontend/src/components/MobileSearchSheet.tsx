@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useDragControls,
+  useReducedMotion,
+} from "framer-motion";
 import {
   KitesurfIcon,
   MapIcon,
@@ -33,6 +38,15 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
   { value: "windsurf", Icon: WindsurfIcon },
   { value: "wing", Icon: WingIcon },
 ];
+
+// One shared spring so every motion in the sheet feels of a piece.
+const SPRING = { type: "spring" as const, stiffness: 420, damping: 34, mass: 0.9 };
+// Staggered tile entrance on open.
+const TILES = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } };
+const TILE = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: SPRING },
+};
 
 /** A place suggestion, flattened for the mobile single-column list. */
 interface WhereRowItem {
@@ -176,45 +190,84 @@ export default function MobileSearchSheet({
   const whereValue =
     val.whereSel?.label || val.whereText || (val.whereOpen ? "Überall" : "");
 
+  // Swipe-to-close: dragging the grab handle drives the sheet's y.
+  const dragControls = useDragControls();
+  // Delayed autofocus + auto-scroll refs.
+  const whereInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the "Wohin?" field only after its tile has finished expanding, so the
+  // keyboard does not fight the open animation.
+  useEffect(() => {
+    if (!open || section !== "where") return;
+    const t = window.setTimeout(() => whereInputRef.current?.focus(), 320);
+    return () => window.clearTimeout(t);
+  }, [open, section]);
+
+  // Bring the freshly opened tile fully into view above the action bar.
+  useEffect(() => {
+    if (!open || !section) return;
+    const t = window.setTimeout(() => {
+      document
+        .getElementById(`msheet-${section}`)
+        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [open, section]);
+
   return createPortal(
     <AnimatePresence>
-      {open && (
+      {open && [
+        <motion.button
+          key="backdrop"
+          type="button"
+          aria-label="Suche schließen"
+          className="fixed inset-0 z-[1300] bg-black/25 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={onClose}
+        />,
         <motion.div
           key="sheet"
           className="fixed inset-0 z-[1300] flex flex-col"
           role="dialog"
           aria-modal="true"
           aria-label="Suche"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          style={{ transformOrigin: originY != null ? `50% ${originY}px` : "50% 82%" }}
+          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
+          transition={reduce ? { duration: 0.15 } : SPRING}
+          drag="y"
+          dragListener={false}
+          dragControls={dragControls}
+          dragConstraints={{ top: 0 }}
+          dragElastic={{ top: 0, bottom: 0.2 }}
+          dragSnapToOrigin
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 120 || info.velocity.y > 600) onClose();
+          }}
         >
-          {/* Backdrop — keeps the hero visible, taps close. */}
-          <button
-            type="button"
-            aria-label="Suche schließen"
-            className="absolute inset-0 bg-black/15"
-            onClick={onClose}
-          />
+          {/* Tiles — bottom-aligned above the actions; scroll if they grow. */}
+          <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto px-4">
+            <motion.div
+              variants={TILES}
+              initial={reduce ? false : "hidden"}
+              animate="show"
+              className="mx-auto flex min-h-full w-full max-w-[520px] flex-col justify-end gap-3 pb-3 pt-[12vh]"
+            >
+              {/* Grab handle — drag down to close. */}
+              <div
+                className="flex cursor-grab justify-center pb-1 pt-1 active:cursor-grabbing"
+                style={{ touchAction: "none" }}
+                onPointerDown={(e) => dragControls.start(e)}
+              >
+                <span className="h-1.5 w-10 rounded-full bg-white/70 shadow-sm" />
+              </div>
 
-          {/* Content grows out of the pill's position (Airbnb). Tiles scroll
-              above a fixed action bar pinned at the search-bar's height. */}
-          <motion.div
-            className="absolute inset-0 flex flex-col"
-            style={{ transformOrigin: originY != null ? `50% ${originY}px` : "50% 82%" }}
-            initial={reduce ? false : { opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={
-              reduce
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 380, damping: 34, mass: 0.9 }
-            }
-          >
-            {/* Tiles — bottom-aligned above the actions; scroll if they grow. */}
-            <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto px-4">
-              <div className="mx-auto flex min-h-full w-full max-w-[520px] flex-col justify-end gap-3 pb-3 pt-[12vh]">
-                {/* Wohin? */}
+              {/* Wohin? */}
+              <motion.div variants={TILE} id="msheet-where">
               <Section
                 label="Wohin?"
                 value={whereValue}
@@ -223,8 +276,7 @@ export default function MobileSearchSheet({
                 onToggle={() => toggleSection("where")}
               >
                 <input
-                  // eslint-disable-next-line jsx-a11y/no-autofocus
-                  autoFocus
+                  ref={whereInputRef}
                   value={val.whereText}
                   onChange={(e) =>
                     setVal((v) => ({
@@ -242,9 +294,10 @@ export default function MobileSearchSheet({
                   {items.length ? (
                     <div className="flex flex-col">
                       {items.map((it) => (
-                        <button
+                        <motion.button
                           key={it.key}
                           type="button"
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => pickWhere(it)}
                           className="flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
                         >
@@ -265,7 +318,7 @@ export default function MobileSearchSheet({
                               </span>
                             )}
                           </span>
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   ) : (
@@ -273,8 +326,10 @@ export default function MobileSearchSheet({
                   )}
                 </div>
               </Section>
+              </motion.div>
 
               {/* Wann? — the Datum/flexibel toggle sits in the tile header. */}
+              <motion.div variants={TILE} id="msheet-when">
               <Section
                 label="Wann?"
                 value={whenLabel(val.when)}
@@ -286,11 +341,17 @@ export default function MobileSearchSheet({
                 <MobileSearchWhen
                   tab={whenTab}
                   value={val.when}
-                  onChange={(when) => setVal((v) => ({ ...v, when }))}
+                  onChange={(when) => {
+                    setVal((v) => ({ ...v, when }));
+                    // Guided flow: a concrete date advances to the sport step.
+                    if (when?.mode === "range" && when.from) setSection("which");
+                  }}
                 />
               </Section>
+              </motion.div>
 
               {/* Welche Sportart? */}
+              <motion.div variants={TILE} id="msheet-which">
               <Section
                 label="Welche Sportart?"
                 value={val.which.map(sportLabel).join(", ")}
@@ -302,9 +363,10 @@ export default function MobileSearchSheet({
                   {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
                     const selected = val.which.includes(sport);
                     return (
-                      <button
+                      <motion.button
                         key={sport}
                         type="button"
+                        whileTap={{ scale: 0.98 }}
                         onClick={() =>
                           setVal((v) => ({
                             ...v,
@@ -325,40 +387,48 @@ export default function MobileSearchSheet({
                             selected ? "border-teal" : "border-line"
                           }`}
                         >
-                          {selected && <span className="h-3 w-3 rounded-full bg-teal" />}
+                          {selected && (
+                            <motion.span
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", stiffness: 600, damping: 28 }}
+                              className="h-3 w-3 rounded-full bg-teal"
+                            />
+                          )}
                         </span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
               </Section>
+              </motion.div>
+            </motion.div>
+          </div>
 
-              </div>
+          {/* Actions — pinned at the bottom, on the search-bar's height. */}
+          <div className="px-4 pb-6 pt-2">
+            <div className="mx-auto grid w-full max-w-[520px] grid-cols-2 gap-3">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={reset}
+                className="min-h-[56px] rounded-3xl bg-surface px-4 text-[15px] font-medium text-ink shadow-float transition-colors hover:bg-band"
+              >
+                Alles löschen
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={submit}
+                className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-3xl bg-surface px-4 text-[15px] font-medium text-teal shadow-float transition-colors hover:bg-band"
+              >
+                <SearchIcon className="text-[18px]" />
+                Suchen
+              </motion.button>
             </div>
-
-            {/* Actions — pinned at the bottom, on the search-bar's height. */}
-            <div className="px-4 pb-6 pt-2">
-              <div className="mx-auto grid w-full max-w-[520px] grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="min-h-[56px] rounded-3xl bg-surface px-4 text-[15px] font-medium text-ink shadow-float transition-colors hover:bg-band"
-                >
-                  Alles löschen
-                </button>
-                <button
-                  type="button"
-                  onClick={submit}
-                  className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-3xl bg-surface px-4 text-[15px] font-medium text-teal shadow-float transition-colors hover:bg-band"
-                >
-                  <SearchIcon className="text-[18px]" />
-                  Suchen
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
+          </div>
+        </motion.div>,
+      ]}
     </AnimatePresence>,
     document.body
   );

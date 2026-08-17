@@ -150,9 +150,10 @@ function DateCalendar({
                 const isSelected = iso === selected;
                 return (
                   <div key={iso} className="flex justify-center py-0.5">
-                    <button
+                    <motion.button
                       type="button"
                       disabled={isPast}
+                      whileTap={isPast ? undefined : { scale: 0.85 }}
                       onClick={() => onPick(iso)}
                       className={`grid h-8 w-8 place-items-center rounded-full text-[13px] transition-colors ${
                         isSelected
@@ -163,7 +164,7 @@ function DateCalendar({
                       }`}
                     >
                       {day}
-                    </button>
+                    </motion.button>
                   </div>
                 );
               })}
@@ -206,41 +207,44 @@ function FlexPicker({
           const m = i + 1;
           const active = month === m;
           return (
-            <button
+            <motion.button
               key={label}
               type="button"
+              whileTap={{ scale: 0.94 }}
               onClick={() => commit(active ? undefined : m, duration)}
               className={chip(active)}
             >
               {label}
-            </button>
+            </motion.button>
           );
         })}
       </div>
 
       <p className="mt-4 text-[13px] font-medium text-muted">Zeitspanne</p>
       <div className="mt-2 space-y-2">
-        <button
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.97 }}
           onClick={() =>
             commit(month, duration === "weekend" ? undefined : "weekend")
           }
           className={`w-full ${chip(duration === "weekend")}`}
         >
           Ein Wochenende
-        </button>
+        </motion.button>
         <div className="grid grid-cols-2 gap-2">
           {DURATIONS.filter((d) => d.value !== "weekend").map((d) => (
-            <button
+            <motion.button
               key={d.value}
               type="button"
+              whileTap={{ scale: 0.96 }}
               onClick={() =>
                 commit(month, duration === d.value ? undefined : d.value)
               }
               className={chip(duration === d.value)}
             >
               {d.label}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
