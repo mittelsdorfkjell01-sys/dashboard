@@ -246,11 +246,18 @@ export default function MobileSearchSheet({
             <span className="h-1.5 w-10 rounded-full bg-line" />
           </div>
 
-          {/* Header — a clear close + title anchor the screen. */}
-          <div className="flex items-center gap-3 px-4 py-3">
+          {/* Header — a clear close + title anchor the screen. The whole row is
+              a drag zone (together with the grab handle), so a pull-down here
+              closes the sheet; the close button opts out so its tap still fires. */}
+          <div
+            className="flex items-center gap-3 px-4 py-3"
+            style={{ touchAction: "none" }}
+            onPointerDown={(e) => dragControls.start(e)}
+          >
             <button
               type="button"
               onClick={onClose}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Schließen"
               className="grid h-9 w-9 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
             >
