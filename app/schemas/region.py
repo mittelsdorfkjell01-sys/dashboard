@@ -35,7 +35,9 @@ class RegionRead(BaseModel):
             bounds=GeoPolygon.from_geo(region.bounds),
             description=region.description,
             image=region.image,
-            season=region.season,
+            # Region wind availability is deliberately unknown until a V2
+            # aggregation rule has been product-approved.
+            season=None,
             defaults=region.defaults,
             status=getattr(region, "status", "published"),
             created_at=region.created_at,

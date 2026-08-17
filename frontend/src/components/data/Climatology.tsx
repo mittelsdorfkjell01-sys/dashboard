@@ -1,40 +1,41 @@
+import { useEffect, useRef, useState } from "react";
+import type { WindWindowKey } from "../../lib/api";
+import { useWindClimatology } from "../../lib/hooks";
 import type { Spot } from "../../lib/types";
-import { climatologyToPercentile } from "../../lib/seasonView";
-import { windColor } from "../../lib/windScale";
 
-const MONTHS = ["JAN", "FEB", "MÄR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
+const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+const WINDOWS: [WindWindowKey, string][] = [["10_15", "10–15 kt"], ["15_20", "15–20 kt"], ["20_30", "20–30 kt"], ["30_plus", "30+ kt"]];
 
-/** Compact 12 × 4 weekly climatology for the technical data tab.
- * Existing real weekly values are grouped by calendar display month. Short
- * groups repeat their monthly mean; they are never linearly interpolated. */
 export default function Climatology({ spot }: { spot: Spot }) {
-  const monthly = climatologyToPercentile(spot.climatology, 75);
-  if (!monthly) return null;
-  // TODO(backend): expose a stable 48-value weekly climatology contract.
-  const weeks = monthly.flatMap((month) => {
-    if (month.weeks.length >= 4) return month.weeks.slice(0, 4);
-    const mean = month.weeks.reduce((sum, value) => sum + value, 0) / month.weeks.length;
-    return Array(4).fill(mean);
-  });
-  const today = new Date();
-  const current = Math.min(47, today.getMonth() * 4 + Math.floor((today.getDate() - 1) / 8));
-
-  return (
-    <div className="overflow-x-auto px-4 py-3">
-      <svg viewBox="0 0 640 130" className="h-[130px] min-w-[640px] w-full" role="img" aria-label="Windklimatologie mit vier Wochen je Monat">
-        {[20, 55, 90].map((y) => <line key={y} x1={24} y1={y} x2={620} y2={y} stroke="var(--sw-line)" strokeWidth={0.5} strokeDasharray="2 4" />)}
-        <line x1={24} y1={108} x2={620} y2={108} stroke="var(--sw-ink)" strokeWidth={0.5} />
-        {[24, 16, 8, 0].map((value, index) => <text key={value} x={0} y={[24, 59, 94, 112][index]} fontSize={9} fontFamily="Poppins" fill="var(--sw-muted)">{value}</text>)}
-        {MONTHS.map((month, monthIndex) => {
-          const start = 30 + monthIndex * 50;
-          return <g key={month}>{weeks.slice(monthIndex * 4, monthIndex * 4 + 4).map((value, weekIndex) => {
-            const height = Math.min(88, value * 4.1);
-            const x = start + weekIndex * 11;
-            const active = monthIndex * 4 + weekIndex === current;
-            return <g key={weekIndex}><rect x={x} y={108 - height} width={9} height={height} fill={windColor(value)} />{active && <rect x={x - 1} y={107 - height} width={11} height={height + 2} fill="none" stroke="var(--sw-orange)" strokeWidth={1.2} />}</g>;
-          })}{monthIndex < 11 && <line x1={start + 45} y1={16} x2={start + 45} y2={108} stroke="var(--sw-line)" strokeWidth={0.5} />}<text x={start + 22} y={126} fontFamily="Poppins" fontSize={9} fontWeight={500} fill="var(--sw-muted)" letterSpacing={1} textAnchor="middle">{month}</text></g>;
-        })}
-      </svg>
+  const { data, loading, error } = useWindClimatology(spot.id);
+  const [windowKey, setWindowKey] = useState<WindWindowKey>(() => (sessionStorage.getItem("wind-window") as WindWindowKey) || "15_20");
+  const [unit, setUnit] = useState<"percent" | "hours">(() => sessionStorage.getItem("wind-unit") === "hours" ? "hours" : "percent");
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => { sessionStorage.setItem("wind-window", windowKey); }, [windowKey]);
+  useEffect(() => { sessionStorage.setItem("wind-unit", unit); }, [unit]);
+  useEffect(() => { scroller.current?.children[new Date().getMonth()]?.scrollIntoView({ inline: "start", block: "nearest" }); }, [data?.status]);
+  if (loading) return <p className="p-5 text-sm text-muted">Windverfügbarkeit wird geladen …</p>;
+  if (error || !data || data.status === "failed") return <p className="p-5 text-sm text-muted">Die Windverfügbarkeit ist derzeit nicht verfügbar.</p>;
+  if (data.status !== "ready" || !data.sections) return <p className="p-5 text-sm text-muted">Die Windverfügbarkeit wird berechnet.</p>;
+  const sections = data.sections;
+  const selectedLabel = WINDOWS.find(([key]) => key === windowKey)![1];
+  return <div className="p-4">
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div><h3 className="font-display text-lg text-ink">Windfenster im Jahresverlauf</h3><p className="text-sm text-muted">Wie häufig liegt der Wind tagsüber im gewählten Bereich?</p></div>
+      <div className="flex flex-wrap gap-2">
+        <div className="flex rounded-full border border-line p-1" aria-label="Windfenster">{WINDOWS.map(([key, label]) => <button key={key} onClick={() => setWindowKey(key)} aria-pressed={windowKey === key} className={`rounded-full px-3 py-1 text-xs ${windowKey === key ? "bg-ink text-white" : "text-muted"}`}>{label}</button>)}</div>
+        <div className="flex rounded-full border border-line p-1" aria-label="Einheit">{([["percent", "Prozent"], ["hours", "Stunden/Tag"]] as const).map(([key, label]) => <button key={key} onClick={() => setUnit(key)} aria-pressed={unit === key} className={`rounded-full px-3 py-1 text-xs ${unit === key ? "bg-ink text-white" : "text-muted"}`}>{label}</button>)}</div>
+      </div>
     </div>
-  );
+    {data.refresh_status && <p className="mt-3 text-xs text-muted">Eine aktualisierte Berechnung läuft; angezeigt bleibt die letzte vollständige Version.</p>}
+    <div ref={scroller} className="mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3">
+      {MONTHS.map((month, monthIndex) => <div key={month} className="w-36 shrink-0 snap-start"><div className="flex h-44 items-end gap-1 border-b border-line px-1">{sections.slice(monthIndex * 4, monthIndex * 4 + 4).map((section) => {
+        const metric = section.windows[windowKey]; const value = unit === "percent" ? metric.percent : metric.hours_per_day; const height = Math.max(value > 0 ? 3 : 0, value / (unit === "percent" ? 100 : 24) * 100);
+        const end = section.day_end === "month_end" ? "Monatsende" : section.day_end;
+        return <button key={section.section} className="group relative flex h-full flex-1 items-end focus:outline-none focus:ring-2 focus:ring-orange" title={`${section.day_start}.–${end} ${month}: ${metric.percent}% · ${metric.hours_per_day} h/Tag (${data.period!.start_year}–${data.period!.end_year})`} aria-label={`${section.day_start}. bis ${end} ${month}, ${selectedLabel}: ${metric.percent} Prozent, ${metric.hours_per_day} Stunden pro Tag`}><span className="w-full rounded-t bg-cyan-600 transition-opacity group-hover:opacity-75" style={{ height: `${height}%` }}><span className="sr-only">{value}</span></span></button>;
+      })}</div><p className="pt-2 text-center text-xs font-medium uppercase tracking-wider text-muted">{month}</p></div>)}
+    </div>
+    <p className="mt-3 text-xs leading-relaxed text-muted">Windrichtung und lokale Bedingungen sind nicht berücksichtigt. Die Stunden müssen nicht zusammenhängend auftreten.</p>
+    <p className="mt-2 text-xs text-muted">ERA5 · 10-Meter-Wind · {data.period?.start_year}–{data.period?.end_year} · Tageslichtstunden · ca. {data.grid?.resolution_degrees}° Raster · {data.updated_at ? new Date(data.updated_at).toLocaleDateString("de-DE") : ""} · Open-Meteo / ERA5</p>
+  </div>;
 }

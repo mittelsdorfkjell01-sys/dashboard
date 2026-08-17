@@ -84,7 +84,6 @@ const SECTIONS: Section[] = [
     title: "Medien & Daten",
     fields: [
       { key: "image", label: "Titelbild", value: (s) => (s.image?.url ? "gesetzt" : "—") },
-      { key: "climatology", label: "Klimatologie", value: (s) => (s.climatology?.weeks ? "vorhanden" : "—") },
     ],
   },
 ];

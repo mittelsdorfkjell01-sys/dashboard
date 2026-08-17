@@ -4,7 +4,6 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import LandingHeader from "../components/LandingHeader";
 import SpotCard from "../components/SpotCard";
-import RegionSeason from "../components/RegionSeason";
 import SimilarRegions from "../components/SimilarRegions";
 import SortDropdown from "../components/SortDropdown";
 import Footer from "../components/Footer";
@@ -14,8 +13,7 @@ import { EmptyState, ErrorBanner, SpotGridSkeleton } from "../components/AsyncSt
 import { ChevronDownIcon } from "../lib/icons";
 import type { RegionInfo } from "../lib/types";
 import { usableMediaUrl } from "../lib/api";
-import { useRegionBySlug, useSpots, useRegionSeason, useBestWeeks, useSpotsLive } from "../lib/hooks";
-import { regionSeasonToView } from "../lib/seasonView";
+import { useRegionBySlug, useSpots, useSpotsLive } from "../lib/hooks";
 import {
   filterSpots,
   filtersToSearchParams,
@@ -60,8 +58,6 @@ export default function RegionDetail() {
   } = useSpots(
     backendRegion ? { region_id: backendRegion.id } : {}
   );
-  const { data: seasonRaw } = useRegionSeason(backendRegion?.id);
-  const { data: bestWeeksRaw } = useBestWeeks(backendRegion?.id);
   const { data: live } = useSpotsLive((spots ?? []).map((s) => s.id));
 
   const loading = regionsLoading || (backendRegion && spotsLoading);
@@ -135,10 +131,6 @@ export default function RegionDetail() {
   }
 
   const description = backendRegion.description ?? "";
-  const seasonView = seasonRaw
-    ? regionSeasonToView(seasonRaw, region.spots.length)
-    : null;
-  const bestWeeks = (bestWeeksRaw?.weeks ?? []).slice(0, 8);
 
   // Hero source, in order: the region's own image → the first spot's image →
   // EditorialHero's designed fallback. The focal point and the attribution only
@@ -218,36 +210,9 @@ export default function RegionDetail() {
           <Lede>{description}</Lede>
         </SectionBand>
 
-        {/* Reisezeit — best weeks and the season curve read as one answer */}
+        {/* No region aggregation until a V2 product rule has been defined. */}
         <SectionBand tone="band" heading="Wann hinfahren" pad="md">
-          {seasonView ? (
-            <RegionSeason season={seasonView.season} bestMonths={seasonView.bestMonths} />
-          ) : (
-            <p className="text-[15px] text-muted">
-              Noch keine Saison-Daten für diese Region (Klimatologie fehlt).
-            </p>
-          )}
-
-          {bestWeeks.length > 0 && (
-            <div className="mt-10 border-t border-line pt-6">
-              <h3 className="text-caption uppercase tracking-[0.14em] text-muted">
-                Beste Wochen
-              </h3>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {bestWeeks.map((w) => (
-                  <span
-                    key={w.week}
-                    className="inline-flex items-center rounded-2xl bg-teal/10 px-2.5 py-1 text-[12px] font-medium text-teal"
-                    title={`Score ${Math.round((w.score ?? 0) * 100)} · ${
-                      w.spots_working ?? 0
-                    } Spots`}
-                  >
-                    KW {w.week}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          <p className="text-[15px] text-muted">Windverfügbarkeit für Regionen: Unbekannt</p>
         </SectionBand>
 
         {/* Die Spots — same body width as the spot detail page's content frame. */}

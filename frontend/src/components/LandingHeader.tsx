@@ -1,21 +1,25 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
+import { SearchIcon } from "../lib/icons";
 import { Wordmark } from "./ui";
+import SearchBar from "./SearchBar";
 import AccountMenu from "./AccountMenu";
 
 /**
  * Top bar for the hero pages. By default it's transparent and absolute over the
  * hero (spot/region pages keep this). With `sticky`, it's fixed and turns into a
  * solid, slightly smaller sticky bar once the hero is scrolled past (~half a
- * viewport) — a translucent surface appears, the padding tightens and the
- * wordmark steps down to its compact size. Used on the landing.
+ * viewport) — a translucent surface appears and the padding tightens. On the
+ * landing, once scrolled a compact search entry docks in where the wordmark was:
+ * a full-screen sheet on mobile, the expanding SearchBar overlay on desktop.
  */
 export default function LandingHeader({
   left,
   width = "wide",
   sticky = false,
   mobileSpotControls = false,
+  onMobileSearch,
 }: {
   left?: ReactNode;
   /** `"body"` snaps the bar to the 1180px content column (spot page). */
@@ -24,6 +28,9 @@ export default function LandingHeader({
   sticky?: boolean;
   /** Reduce the mobile spot hero chrome to back + menu only. */
   mobileSpotControls?: boolean;
+  /** Landing only: once scrolled, a compact search pill docks into the header
+   *  (mobile), replacing the wordmark next to the menu. Tapping it fires this. */
+  onMobileSearch?: () => void;
 }) {
   const [solid, setSolid] = useState(false);
   useEffect(() => {
@@ -64,7 +71,7 @@ export default function LandingHeader({
           solid ? "py-2.5" : sticky ? "py-6 sm:py-8" : "pt-9 sm:pt-12"
         }`}
       >
-        <div className="pointer-events-auto grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
+        <div className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
           <div className="min-w-0 justify-self-start">
             {left ?? (
               <span
@@ -77,13 +84,45 @@ export default function LandingHeader({
             )}
           </div>
 
-          <Link
-            to="/"
-            aria-label="surfwind data · Startseite"
-            className={`col-start-2 min-h-11 min-w-0 select-none items-center justify-self-center leading-none ${mobileSpotControls ? "hidden sm:flex" : "flex"}`}
-          >
-            <Wordmark size={solid ? "md" : "xl"} />
-          </Link>
+          {/* Center — the wordmark, or (landing, scrolled) a docked search. On
+              desktop a compact pill expands the SearchBar overlay. */}
+          <div className="col-start-2 flex min-w-0 items-center justify-center justify-self-center">
+            {!solid && (
+              <Link
+                to="/"
+                aria-label="surfwind data · Startseite"
+                className={`min-h-11 min-w-0 select-none items-center leading-none ${
+                  mobileSpotControls ? "hidden sm:flex" : "flex"
+                }`}
+              >
+                <Wordmark size="xl" />
+              </Link>
+            )}
+
+            {/* Desktop (sm+): a compact pill that opens the SearchBar overlay. */}
+            {sticky && solid && (
+              <div className="hidden sm:block">
+                <SearchBar variant="pill" />
+              </div>
+            )}
+          </div>
+
+          {/* Mobile: a compact search pill docks in once scrolled, sitting where
+              the wordmark was, beside the menu. Opens the full-screen sheet at
+              the current scroll position (no jump to the top). */}
+          {onMobileSearch && (
+            <button
+              type="button"
+              onClick={onMobileSearch}
+              aria-label="Suche öffnen"
+              className={`absolute inset-y-0 left-0 right-12 my-auto flex h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-[15px] font-medium text-ink shadow-sm transition-opacity duration-200 sm:hidden ${
+                solid ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            >
+              <SearchIcon className="text-[18px]" />
+              Suchen
+            </button>
+          )}
 
           <div className="col-start-3 flex min-w-0 items-center justify-end gap-1 sm:gap-5">
             {INCLUDE_ADMIN && (

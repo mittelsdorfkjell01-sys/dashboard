@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
-import { ChevronRightIcon } from "../lib/icons";
+import { countryName } from "../lib/flags";
+import { ChevronRightIcon, PinIcon } from "../lib/icons";
 import type { Spot } from "../lib/types";
 
 const ADVANCE_MS = 6000;
@@ -59,6 +60,8 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
   }
 
   const current = slides[Math.min(index, count - 1)];
+  // Desktop pill carries the region too; mobile shows only the spot name.
+  const region = countryName(current.regionCountry ?? undefined) || current.regionName || "";
 
   return (
     <>
@@ -97,13 +100,20 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(30,110,126,0.35)]" />
       </div>
 
-      {/* CTA — a small text link (no button chrome), jumps to the spot on screen. */}
+      {/* CTA — a compact frosted "location" pill (bottom-left). Names the spot
+          on screen and links to it; doubles as the photo's caption. Desktop adds
+          the region; mobile keeps just the name. */}
       <Link
         to={spotPath(current)}
-        className="group absolute bottom-4 right-4 z-20 inline-flex items-center gap-0.5 text-[13px] font-medium text-white/90 [text-shadow:0_1px_3px_rgba(0,0,0,0.5)] transition-colors hover:text-white sm:bottom-6 sm:right-6"
+        aria-label={`Zum Spot ${current.name}`}
+        className="group absolute bottom-4 left-4 z-20 inline-flex max-w-[70vw] items-center gap-2 rounded-2xl border border-white/25 bg-black/25 py-2 pl-3 pr-2.5 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/35 sm:bottom-6 sm:left-6"
       >
-        Spot herausfinden
-        <ChevronRightIcon className="text-[14px] transition-transform group-hover:translate-x-0.5" />
+        <PinIcon className="shrink-0 text-[16px]" />
+        <span className="min-w-0 truncate text-[13px] font-medium">
+          {current.name}
+          {region && <span className="hidden font-normal text-white/75 sm:inline"> · {region}</span>}
+        </span>
+        <ChevronRightIcon className="shrink-0 text-[15px] transition-transform group-hover:translate-x-0.5" />
       </Link>
     </>
   );

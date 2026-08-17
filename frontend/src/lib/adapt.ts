@@ -75,12 +75,11 @@ export function adaptSpot(
     waterCharacter: s.water_character,
     style: s.style,
     facilities: s.facilities,
-    climatology: (s as SpotRead).climatology ?? null,
     regionName: summary.region_name ?? region?.name,
     regionCountry: summary.region_country ?? region?.country ?? null,
     typicalWindKt: summary.typical_wind_kt ?? (typicalWind || null),
     typicalWaveHeightM: summary.typical_wave_height_m ?? null,
-    bestMonths: summary.best_months ?? null,
+    windAvailability: summary.wind_availability ?? null,
     mapView:
       editorial?.map_view &&
       Array.isArray(editorial.map_view.center) &&

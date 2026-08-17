@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, select
 
-from app.admin.deps import get_extract_client
 from app.config import get_settings
 from app.db.session import get_db
 
@@ -54,7 +53,6 @@ def collect_weather_shadow(db: Session = Depends(get_db)) -> dict:
 @router.get("/climatology", dependencies=[Depends(_require_cron)])
 def maintain_climatology(
     db: Session = Depends(get_db),
-    client=Depends(get_extract_client),
 ) -> dict:
     """Queue stale snapshots and process a bounded daily batch.
 
@@ -62,14 +60,8 @@ def maintain_climatology(
     cheap DELETE that rides along on the existing schedule, so the media picker
     needs no cron of its own.
     """
-    from app.admin.era5_worker import process_due_batch
     from app.media.budget import sweep_expired
-
-    result = process_due_batch(
-        db,
-        client=client,
-        limit=min(max(get_settings().climatology_cron_batch_size, 1), 5),
-    )
+    result = {}
     try:
         result["media"] = sweep_expired(db)
     except Exception as exc:  # never let housekeeping fail the climatology run
@@ -124,4 +116,14 @@ def maintain_climatology(
     except Exception as exc:
         db.rollback()
         result["featured"] = {"error": f"{type(exc).__name__}: {exc}"}
+    try:
+        from app.models import WindClimatologyRun
+        from app.wind_climatology.service import backfill, process
+
+        backfill(db, limit=2)
+        queued = db.scalars(select(WindClimatologyRun).where(WindClimatologyRun.status == "pending").order_by(WindClimatologyRun.created_at).limit(1)).all()
+        result["wind_climatology_v2"] = [{"id": str(run.id), "status": process(db, run.id).status} for run in queued]
+    except Exception as exc:
+        db.rollback()
+        result["wind_climatology_v2"] = {"error": f"{type(exc).__name__}: {exc}"}
     return result

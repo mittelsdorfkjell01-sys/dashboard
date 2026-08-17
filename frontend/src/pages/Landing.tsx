@@ -25,17 +25,12 @@ export default function Landing() {
   const from = location.pathname + location.search;
   const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
   // Mobile search sheet (Airbnb-style full-screen flow); desktop keeps the
-  // inline SearchBar dropdown. `searchOriginY` lets the sheet grow out of the
-  // collapsed pill's position.
+  // inline SearchBar dropdown. The sheet is a full-screen overlay that locks
+  // body scroll while open, so we deliberately do NOT scroll to the top when
+  // opening: the visitor stays exactly where they were and, on close, keeps
+  // scrolling from that same point.
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchOriginY, setSearchOriginY] = useState<number | null>(null);
-  const openSearch = () => {
-    const rect = document.getElementById("mobile-search-bar")?.getBoundingClientRect();
-    setSearchOriginY(rect ? rect.top + rect.height / 2 : null);
-    // If the visitor has scrolled down, glide back to the top as the sheet opens.
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setSearchOpen(true);
-  };
+  const openSearch = () => setSearchOpen(true);
   // Fetch the lightweight catalogue once. Changing the request key from 20 to
   // 100 used to temporarily unmount the entire grid while the second request
   // ran; the page height collapsed and clamped the visitor's scroll position
@@ -46,8 +41,8 @@ export default function Landing() {
   const visibleSpots = spots.slice(0, visibleSpotLimit);
 
   return (
-    <div className="relative bg-page pb-24 sm:pb-0">
-      <LandingHeader sticky />
+    <div className="relative bg-page">
+      <LandingHeader sticky onMobileSearch={openSearch} />
 
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
           it paints above the page's white background but below the search bar).
@@ -63,29 +58,24 @@ export default function Landing() {
 
         <div className="flex-1" />
 
-        {/* Search — desktop inline bar sits high in the hero so the dropdown
-            always fits above the fold. Mobile uses the sticky bottom bar below. */}
-        <div className="hidden justify-center px-4 pb-44 sm:flex sm:px-6 sm:pb-56">
+        {/* Search — sits a bit higher in the hero. On mobile it is the search
+            entry and docks into the header once scrolled (see LandingHeader);
+            the inline SearchBar dropdown takes over from sm. */}
+        <div className="flex justify-center px-4 pb-40 sm:px-6 sm:pb-40">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
-            <SearchBar />
+            {/* Mobile pill; hidden (kept in layout) while the sheet is open. */}
+            <div className={`sm:hidden ${searchOpen ? "invisible" : ""}`}>
+              <MobileSearchTrigger onClick={openSearch} />
+            </div>
+            <div className="hidden sm:block">
+              <SearchBar />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Sticky mobile search bar — always reachable while scrolling. Tapping it
-          glides back to the top and opens the search sheet. Hidden while open. */}
-      <div
-        id="mobile-search-bar"
-        className={`fixed inset-x-0 bottom-0 z-[1100] px-4 pb-6 pt-2 transition-opacity sm:hidden ${
-          searchOpen ? "pointer-events-none opacity-0" : ""
-        }`}
-      >
-        <MobileSearchTrigger onClick={openSearch} />
-      </div>
-
       <MobileSearchSheet
         open={searchOpen}
-        originY={searchOriginY}
         onClose={() => setSearchOpen(false)}
       />
 

@@ -26,7 +26,7 @@ from app.safety import RemoteWriteGuardMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
-EXPECTED_DB_REVISION = "0036_weather_shadow_study"
+EXPECTED_DB_REVISION = "0038_wind_climatology_v2"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)

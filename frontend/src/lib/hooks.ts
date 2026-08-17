@@ -79,6 +79,10 @@ export function useSpot(id?: string): AsyncStateReloadable<Spot> {
   };
 }
 
+export function useWindClimatology(id?: string): AsyncStateReloadable<api.WindClimatologyRead> {
+  return useSwr(id ? `wind-climatology-v2:${id}` : null, () => api.getWindClimatology(id!));
+}
+
 /** Live conditions for a spot (best-effort; failure is non-fatal). */
 export function useSpotLive(id?: string): AsyncStateReloadable<api.LiveConditionsRead> {
   return useSwr(id ? `live:${id}` : null, () => api.getSpotLive(id!));

@@ -137,14 +137,13 @@ export interface SpotSummary {
   image: ImageRecord | null;
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
-  best_months: number[] | null;
+  wind_availability: number[] | null;
 }
 
 export interface SpotRead extends SpotSummary {
   era5_cell: Record<string, unknown> | null;
   model_pref: string | null;
   editorial: Record<string, any> | null;
-  climatology: Record<string, any> | null;
   overrides: Record<string, any> | null;
   finish_rank: Rank | null;
   created_at: string;
@@ -503,6 +502,23 @@ export const getTopSpots = (limit = 5, sport?: string) =>
   request<SpotSummary[]>(`/spots/top${qs({ limit, sport })}`);
 
 export const getSpot = (id: string) => request<SpotRead>(`/spots/${id}`);
+
+export type WindWindowKey = "10_15" | "15_20" | "20_30" | "30_plus";
+export interface WindClimatologySection {
+  month: number; section: number; day_start: number; day_end: number | "month_end";
+  date_label: string; calendar_days: number; daylight_hours: number;
+  windows: Record<WindWindowKey, { hours: number; percent: number; hours_per_day: number }>;
+}
+export interface WindClimatologyRead {
+  status: "ready" | "pending" | "processing" | "failed" | "unavailable";
+  refresh_status?: "pending" | "processing";
+  period?: { start_year: number; end_year: number };
+  model?: string; wind_height_m?: number; unit?: string; method_version?: string;
+  algorithm_version?: string; updated_at?: string; attribution?: string;
+  grid?: { resolution_degrees: number }; sections?: WindClimatologySection[];
+}
+export const getWindClimatology = (id: string) =>
+  request<WindClimatologyRead>(`/spots/${id}/wind-climatology`);
 
 export const getSpotTides = (id: string) =>
   request<PublicTides>(`/spots/${id}/tides`);

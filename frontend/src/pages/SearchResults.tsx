@@ -251,7 +251,7 @@ function BestRegionsList({
                 image={api.resolveMediaUrl(m?.image?.url)}
                 coverage={r.coverage ?? null}
                 rank={i + 1}
-                windMonths={(m?.season?.best_months as number[] | undefined) ?? null}
+                windMonths={null}
               />
             </div>
           );

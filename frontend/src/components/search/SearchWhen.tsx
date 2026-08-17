@@ -1,15 +1,16 @@
-// "Wann?" panel (Frame_3). Two ways to say "when", which are mutually exclusive:
-//  • LEFT  — a two-month calendar for an explicit date range.
-//  • RIGHT — a flexible pick: a month AND/OR a duration (e.g. "January + a
-//    weekend" → the backend finds the best weekend(s) in that month).
-// Touching one side greys out + disables the other; "Zurücksetzen" clears both.
+// "Wann?" panel for the desktop search. The Datum/flexibel toggle (owned by the
+// SearchBar and passed as `tab`) picks the mode; this renders only the active
+// one, full width:
+//  • "date" → a two-month calendar for an explicit range (mode:"range").
+//  • "flex" → a month grid + a duration (mode:"flex").
 
 import { useState } from "react";
 import type { SVGProps } from "react";
 import type { WhenDuration, WhenValue } from "../../lib/searchSubmit";
+import type { WhenTab } from "../MobileSearchWhen";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-const MONTHS_SHORT = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"];
+const MONTHS_SHORT = ["JAN", "FEB", "MÄR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
 const MONTHS_LONG = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember",
@@ -52,9 +53,12 @@ const addMonth = (a: { y: number; m: number }, delta: number) => {
 export default function SearchWhen({
   value,
   onChange,
+  tab,
 }: {
   value: WhenValue;
   onChange: (next: WhenValue) => void;
+  /** Datum (calendar) or flexibel (month + duration); owned by the SearchBar. */
+  tab: WhenTab;
 }) {
   const today = new Date();
   const [anchor, setAnchor] = useState({ y: today.getFullYear(), m: today.getMonth() });
@@ -63,11 +67,6 @@ export default function SearchWhen({
   const flex = value?.mode === "flex" ? value : null;
   const selMonth = flex?.month ?? null;
   const selDuration = flex?.duration ?? null;
-
-  // A choice on one side locks the other until reset; "egal wann" locks both.
-  const isOpen = value?.mode === "open";
-  const calDisabled = value?.mode === "flex" || isOpen;
-  const flexDisabled = value?.mode === "range" || isOpen;
 
   const clickDay = (d: Date) => {
     const iso = toISO(d);
@@ -115,40 +114,36 @@ export default function SearchWhen({
 
   const months = [anchor, addMonth(anchor, 1)];
 
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-6">
-      <div
-        aria-disabled={calDisabled}
-        className={`flex flex-1 gap-4 transition-opacity ${
-          calDisabled ? "pointer-events-none opacity-40" : ""
-        }`}
-      >
+  // ── Datum: two-month calendar, full width ────────────────────────────────
+  if (tab === "date") {
+    return (
+      <div className="flex items-start gap-8">
         {months.map((mm, idx) => (
           <div key={idx} className="flex-1">
-            <div className="mb-1 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, -1))}
                 aria-label="Vorheriger Monat"
-                className={`grid h-6 w-6 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
+                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
               >
-                <ChevL className="text-[16px]" />
+                <ChevL className="text-[18px]" />
               </button>
-              <span className="text-[13px] font-semibold text-ink">
+              <span className="text-[14px] font-semibold text-ink">
                 {MONTHS_LONG[mm.m]} {mm.y}
               </span>
               <button
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, 1))}
                 aria-label="Nächster Monat"
-                className={`grid h-6 w-6 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
+                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
               >
-                <ChevR className="text-[16px]" />
+                <ChevR className="text-[18px]" />
               </button>
             </div>
             <div className="grid grid-cols-7 gap-y-0.5">
               {WEEKDAYS.map((w) => (
-                <span key={w} className="pb-0.5 text-center text-[10px] font-medium text-muted">
+                <span key={w} className="pb-1 text-center text-[11px] font-medium text-muted">
                   {w}
                 </span>
               ))}
@@ -158,7 +153,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-6 w-6 place-items-center rounded-lg text-[11px] transition-colors ${
+                    className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-[13px] transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -176,73 +171,43 @@ export default function SearchWhen({
           </div>
         ))}
       </div>
+    );
+  }
 
-      <div className="sm:w-[200px]">
-        <div
-          aria-disabled={flexDisabled}
-          className={`transition-opacity ${
-            flexDisabled ? "pointer-events-none opacity-40" : ""
-          }`}
-        >
-          <p className="mb-1 text-[12px] font-medium text-muted">Monat</p>
-          <div className="grid grid-cols-4 gap-1.5">
-            {MONTHS_SHORT.map((mon, i) => (
-              <button
-                key={mon}
-                type="button"
-                onClick={() => pickMonth(i + 1)}
-                className={`flex h-7 items-center justify-center rounded-lg border px-2 text-[12px] font-medium transition-colors ${
-                  selMonth === i + 1
-                    ? "border-teal bg-teal/10 text-teal"
-                    : "border-line text-teal hover:border-teal"
-                }`}
-              >
-                {mon}
-              </button>
-            ))}
-          </div>
+  // ── flexibel: month grid + duration, full width ──────────────────────────
+  const monthChip = (active: boolean) =>
+    `flex h-10 items-center justify-center rounded-xl border px-2 text-[13px] font-medium transition-colors ${
+      active ? "border-teal bg-teal/10 text-teal" : "border-line text-ink hover:border-teal"
+    }`;
+  const durChip = (active: boolean) =>
+    `flex h-10 items-center justify-center rounded-full border px-5 text-[13px] font-medium transition-colors ${
+      active ? "border-teal bg-teal/10 text-teal" : "border-line text-ink hover:border-teal"
+    }`;
 
-          <p className="mb-1 mt-2 text-[12px] font-medium text-muted">Zeitspanne</p>
-          {/* "Ein Wochenende" spans the row; "Eine Woche" + "zwei Wochen" sit
-              side by side below it. */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {(
-              [
-                ["Ein Wochenende", "weekend"],
-                ["Eine Woche", "week"],
-                ["zwei Wochen", "twoweeks"],
-              ] as const
-            ).map(([label, dur]) => (
-              <button
-                key={dur}
-                type="button"
-                onClick={() => pickDuration(dur)}
-                className={`flex h-7 items-center justify-center rounded-2xl border px-2 text-[12px] transition-colors ${
-                  dur === "weekend" ? "col-span-2" : ""
-                } ${
-                  selDuration === dur
-                    ? "border-teal bg-teal/10 text-teal"
-                    : "border-line text-teal hover:border-teal"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+  return (
+    <div>
+      <p className="mb-2 text-[13px] font-medium text-muted">Monat</p>
+      <div className="grid grid-cols-6 gap-2">
+        {MONTHS_SHORT.map((mon, i) => (
+          <button key={mon} type="button" onClick={() => pickMonth(i + 1)} className={monthChip(selMonth === i + 1)}>
+            {mon}
+          </button>
+        ))}
+      </div>
 
-        {/* Always rendered (just hidden when empty) so showing it doesn't grow the panel. */}
-        <button
-          type="button"
-          onClick={() => onChange(null)}
-          aria-hidden={!value}
-          tabIndex={value ? 0 : -1}
-          className={`mt-2 text-[12px] font-medium text-teal underline underline-offset-2 transition-colors hover:text-teal-hover ${
-            value ? "" : "invisible"
-          }`}
-        >
-          Zurücksetzen
-        </button>
+      <p className="mb-2 mt-5 text-[13px] font-medium text-muted">Zeitspanne</p>
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["Ein Wochenende", "weekend"],
+            ["Eine Woche", "week"],
+            ["zwei Wochen", "twoweeks"],
+          ] as const
+        ).map(([label, dur]) => (
+          <button key={dur} type="button" onClick={() => pickDuration(dur)} className={durChip(selDuration === dur)}>
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   );

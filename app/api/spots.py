@@ -13,14 +13,12 @@ from app.live import service as live_service
 from app.live.cache import Cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
-from app.models import Spot
+from app.models import Spot, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
 from app.scoring import (
-    describe_week_entry,
-    score_climatology_curve,
     score_live,
 )
 from app.similarity import service as similarity_service
@@ -39,15 +37,35 @@ def get_spot_tides(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> PublicT
     return PublicTideRead.model_validate(tide_service.public_tides(spot_id, db=db))
 
 
-def _safe_summaries(rows: list[Spot]) -> list[SpotSummary]:
+def _wind_availability(db: Session, rows: list[Spot]) -> dict[uuid.UUID, list[float]]:
+    ids = [spot.id for spot in rows]
+    if not ids:
+        return {}
+    runs = db.scalars(select(WindClimatologyRun).where(WindClimatologyRun.spot_id.in_(ids), WindClimatologyRun.is_active.is_(True))).all()
+    result = {}
+    for run in runs:
+        sections = (run.public_data or {}).get("sections") or []
+        months = []
+        for month in range(1, 13):
+            rows_for_month = [s for s in sections if s.get("month") == month]
+            denominator = sum(s.get("daylight_hours", 0) for s in rows_for_month)
+            numerator = sum((s.get("windows", {}).get("15_20", {}).get("hours", 0)) for s in rows_for_month)
+            months.append(round(numerator / denominator * 100, 1) if denominator else 0.0)
+        if len(sections) == 48:
+            result[run.spot_id] = months
+    return result
+
+
+def _safe_summaries(rows: list[Spot], db: Session) -> list[SpotSummary]:
     """Serialize a list of spots, skipping (and logging) any row whose data
     can't be summarized. One malformed spot must never 500 the whole list — a
     single bad record would otherwise take down the public landing/map views.
     The log names the spot so the underlying data can be repaired."""
     out: list[SpotSummary] = []
+    wind = _wind_availability(db, rows)
     for s in rows:
         try:
-            out.append(SpotSummary.from_orm_spot(s))
+            out.append(SpotSummary.from_orm_spot(s, wind.get(s.id)))
         except Exception:
             logger.exception(
                 "skipping spot %s (%s): summary serialization failed",
@@ -80,11 +98,11 @@ def list_spots(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> list[SpotSummary]:
-    """List spots (lightweight view — no climatology/overrides blobs; editorial
+    """List spots (lightweight view — no legacy climatology/overrides blobs; editorial
     is loaded only to derive the tile's typical wind/wave-height figure, never
     returned raw).
 
-    Fetch a single spot's full record (incl. climatology) via ``GET /spots/{id}``.
+    V2 wind availability is supplied from the active versioned run.
     """
     # Don't load the heavy JSONB columns for a list view — editorial stays
     # (SpotSummary derives typical_wind_kt/typical_wave_height_m from it).
@@ -116,7 +134,7 @@ def list_spots(
 
     rows = db.scalars(stmt).all()
     set_public_cache(response)
-    return _safe_summaries(rows)
+    return _safe_summaries(rows, db)
 
 
 @router.get("/top", response_model=list[SpotSummary])
@@ -181,7 +199,7 @@ def list_top_spots(
 
     set_top_spots_cache(response)
     # Serialize (dropping any malformed rows), then trim to the requested count.
-    return _safe_summaries(ordered)[:limit]
+    return _safe_summaries(ordered, db)[:limit]
 
 
 @router.get("/live", response_model=list[LiveConditionsRead], tags=["live"])
@@ -305,6 +323,20 @@ def get_spot(
     return SpotRead.from_orm_spot(spot)
 
 
+@router.get("/{spot_reference}/wind-climatology")
+def get_wind_climatology(
+    spot_reference: str, response: Response, db: Session = Depends(get_db)
+) -> dict:
+    """Public V2 wind availability; never exposes cell warnings or run errors."""
+    spot = _published_spot_by_reference(db, spot_reference)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    from app.wind_climatology.service import public_state
+
+    set_public_cache(response)
+    return public_state(db, spot.id)
+
+
 @router.get("/{spot_id}/live", response_model=LiveConditionsRead, tags=["live"])
 def get_spot_live(
     spot_id: uuid.UUID,
@@ -388,42 +420,6 @@ def get_spot_badge(
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-
-
-@router.get("/{spot_id}/season", tags=["score"])
-def get_spot_season(
-    spot_id: uuid.UUID,
-    stage: int = Query(default=2, ge=1, le=2),
-    sport: str | None = Query(default=None),
-    level: str | None = Query(default=None),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Seasonal curve. ``stage=1`` is descriptive (no gates); ``stage=2`` scores
-    the usable-hours curve over 52 weeks."""
-    spot = get_published_spot(db, spot_id)
-    if spot is None:
-        raise HTTPException(status_code=404, detail="Spot not found")
-    if not (spot.climatology and spot.climatology.get("weeks")):
-        raise HTTPException(status_code=404, detail="Spot has no climatology")
-
-    if stage == 1:
-        weeks = sorted(spot.climatology["weeks"], key=lambda w: w.get("week", 0))
-        return {
-            "stage": 1,
-            "spot_id": spot.id,
-            "window": spot.climatology.get("window"),
-            "weeks": [describe_week_entry(w) for w in weeks],
-        }
-
-    resolved_sport = sport or (spot.sports[0] if spot.sports else None)
-    if resolved_sport is None:
-        raise HTTPException(status_code=422, detail="No sport to score")
-    profile = {"level": level} if level else None
-    try:
-        result = score_climatology_curve(spot_id, profile, resolved_sport, db=db)
-    except KeyError:
-        raise HTTPException(status_code=422, detail=f"Unknown sport {resolved_sport!r}")
-    return {"stage": 2, "spot_id": spot.id, **result}
 
 
 @router.get("/{spot_id}/similar", tags=["similarity"])

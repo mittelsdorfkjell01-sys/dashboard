@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { SearchIcon } from "../lib/icons";
+import {
+  KitesurfIcon,
+  SearchIcon,
+  SurfIcon,
+  WindsurfIcon,
+  WingIcon,
+} from "../lib/icons";
 import SearchWhere, { type WhereItem, type WherePick } from "./search/SearchWhere";
 import SearchWhen from "./search/SearchWhen";
+import { WhenToggle, type WhenTab } from "./MobileSearchWhen";
+import { sportLabel } from "../lib/labels";
 import { addRecent } from "../lib/recentSearches";
 import { useRegions, useSpots } from "../lib/hooks";
 import {
@@ -14,25 +22,39 @@ import {
   type SearchValue,
 } from "../lib/searchSubmit";
 
-type Segment = "where" | "when";
+type Segment = "where" | "when" | "which";
+
+const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
+  { value: "surf", Icon: SurfIcon },
+  { value: "kitesurf", Icon: KitesurfIcon },
+  { value: "windsurf", Icon: WindsurfIcon },
+  { value: "wing", Icon: WingIcon },
+];
+
+// One shared spring so the rise-up + panel motion feel of a piece.
+const SPRING = { type: "spring" as const, stiffness: 420, damping: 38, mass: 0.8 };
 
 /**
- * Airbnb-style search. The "Wohin?" text field (the Tippleiste) lives directly
- * in the bar; typing opens a panel below with the matching Spots/Regionen. Both
- * panels span the full bar width and size to their content (dynamic height,
- * capped at 70vh). Fields never dim — the bar stays crisp above the scrim.
+ * Desktop search (Airbnb-style). Collapsed it is a single, simple bar. Tapping
+ * it lifts a dimmed overlay: the bar rises to the top and grows into three
+ * segments — Wohin · Wann · Welche Sportart — with a panel below whose width
+ * follows the active segment (Wohin/Welche ≈ half, Wann full, incl. the
+ * Datum/flexibel toggle). Desktop-only; mobile uses MobileSearchSheet.
+ *
+ *  - variant "hero": the large collapsed bar in the landing hero.
+ *  - variant "pill": the compact pill docked in the header once scrolled.
  */
-export default function SearchBar() {
+export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pill" }) {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const [open, setOpen] = useState<Segment | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState<Segment>("where");
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
-  const barRef = useRef<HTMLDivElement>(null);
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [whenTab, setWhenTab] = useState<WhenTab>("date");
 
   // "Wohin?" results (owned here so ↑/↓/Enter can navigate them). Spots first,
   // then Regionen — the flat order the arrow keys move through.
-  const searchDataEnabled = open === "where" || val.whereText.trim().length > 0;
+  const searchDataEnabled = expanded || val.whereText.trim().length > 0;
   const { data: spots } = useSpots({}, searchDataEnabled);
   const { data: regions } = useRegions(searchDataEnabled);
   const q = val.whereText.trim().toLowerCase();
@@ -69,9 +91,7 @@ export default function SearchBar() {
         })),
     [regions, q]
   );
-  // Keyboard highlight: which column + row (row -1 = none). ↑/↓ move within the
-  // column, ←/→ switch Spots↔Regionen (only once navigating, so plain typing can
-  // still move the text caret). Reset while typing.
+  // Keyboard highlight for "Wohin?": which column + row (-1 = none).
   const [activeCol, setActiveCol] = useState<"spot" | "region">("spot");
   const [activeRow, setActiveRow] = useState(-1);
   useEffect(() => {
@@ -79,33 +99,37 @@ export default function SearchBar() {
     setActiveCol("spot");
   }, [val.whereText]);
 
-  // Both panels span the full bar width (measured at open time).
-  const openSeg = (s: Segment) => {
-    setRect(barRef.current?.getBoundingClientRect() ?? null);
-    setOpen(s);
-  };
-  const close = () => setOpen(null);
+  const whereInputRef = useRef<HTMLInputElement>(null);
 
-  // While open: Esc closes, and page scroll/resize collapse the panel (its
-  // position is captured from a rect at open time).
+  const openExpanded = (seg: Segment = "where") => {
+    setOpen(seg);
+    setExpanded(true);
+  };
+  const collapse = () => setExpanded(false);
+
+  // Lock body scroll while the overlay is up; Esc closes it.
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
-    const onScroll = () => close();
-    const onResize = () => close();
+    if (!expanded) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && collapse();
     window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll);
-    window.addEventListener("resize", onResize);
     return () => {
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
     };
-  }, [open]);
+  }, [expanded]);
+
+  // Focus the "Wohin?" field once it is the active segment.
+  useEffect(() => {
+    if (!expanded || open !== "where") return;
+    const t = window.setTimeout(() => whereInputRef.current?.focus(), 80);
+    return () => window.clearTimeout(t);
+  }, [expanded, open]);
 
   const submit = () => {
     navigate(`/search?${buildSearchParams(val).toString()}`);
-    close();
+    collapse();
   };
 
   const pickWhere = (pick: WherePick) => {
@@ -116,20 +140,30 @@ export default function SearchBar() {
       whereText: pick.label,
       whereOpen: false,
     }));
-    // Airbnb flow: after choosing the place, advance to "Wann?" (the date step).
-    openSeg("when");
+    // Airbnb flow: after the place, advance to the date step.
+    setOpen("when");
   };
 
-  // Keyboard on the "Wohin?" input: ↓/↑ move within the active column, ←/→ hop
-  // between Spots and Regionen (only after navigation started, so before that
-  // ←/→ still edit the text). Enter picks the highlighted result — or, with none
-  // highlighted, runs the search with the free text as typed (partial word ok,
-  // no date required).
+  // Switching Datum ↔ flexibel starts that mode fresh (the two are exclusive).
+  const changeWhenTab = (t: WhenTab) => {
+    if (t === whenTab) return;
+    setWhenTab(t);
+    setVal((v) => ({ ...v, when: null }));
+  };
+
+  const toggleSport = (sport: string) =>
+    setVal((v) => ({
+      ...v,
+      which: v.which.includes(sport)
+        ? v.which.filter((s) => s !== sport)
+        : [...v.which, sport],
+    }));
+
   const onWhereKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const curLen = activeCol === "spot" ? spotItems.length : regionItems.length;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      if (open !== "where") openSeg("where");
+      if (open !== "where") setOpen("where");
       setActiveRow((r) => Math.min(r + 1, curLen - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -146,145 +180,198 @@ export default function SearchBar() {
       e.preventDefault();
       const items = activeCol === "spot" ? spotItems : regionItems;
       const item = activeRow >= 0 ? items[activeRow] : undefined;
-      // Highlighted result → pick it (→ Wann). Free text typed → keep it and
-      // advance to Wann too. Nothing entered → run the open search.
       if (item) pickWhere(item.pick);
-      else if (val.whereText.trim()) openSeg("when");
+      else if (val.whereText.trim()) setOpen("when");
       else submit();
     }
   };
 
+  const whereText = val.whereSel?.label || val.whereText;
+  const sportText = val.which.map(sportLabel).join(", ");
+  const summary = [whereText, whenLabel(val.when), sportText]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <>
-      <div ref={barRef} className="relative">
-        <div className="flex flex-col gap-1.5 rounded-3xl border border-line bg-surface p-2 sm:flex-row sm:items-stretch sm:gap-1 sm:rounded-2xl">
-          {/* Wohin? — the Tippleiste. A <label> so a click anywhere in the field
-              (not just on the text) focuses the input; no active tint/box, the
-              bar stays white and the input has no border. */}
-          <label className="flex flex-1 cursor-text flex-col items-start rounded-2xl px-6 py-2">
-            <span className="text-[13px] font-semibold text-teal">Wohin?</span>
-            <input
-              value={val.whereText}
-              onFocus={() => openSeg("where")}
-              onChange={(e) => {
-                const text = e.target.value;
-                setVal((v) => ({ ...v, whereText: text, whereSel: null, whereOpen: false }));
-                if (open !== "where") openSeg("where");
-              }}
-              onKeyDown={onWhereKeyDown}
-              placeholder="Region oder Spot suchen"
-              aria-label="Region oder Spot suchen"
-              aria-expanded={open === "where"}
-              className="search-plain w-full truncate border-0 bg-transparent text-[13px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
-            />
-          </label>
-
-          <Divider />
-
-          <Segment
-            label="Wann?"
-            placeholder="Datum wählen"
-            value={whenLabel(val.when)}
-            active={open === "when"}
-            onClick={() => openSeg("when")}
-          />
-
-          <button
-            type="button"
-            onClick={submit}
-            aria-label="Suchen"
-            className="my-auto flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-teal text-[15px] font-medium text-white transition-colors hover:bg-teal-hover sm:ml-3 sm:mr-1 sm:w-12 sm:gap-0"
+      {/* Collapsed trigger — a simple bar (hero) or compact pill (header). */}
+      {variant === "pill" ? (
+        <button
+          type="button"
+          onClick={() => openExpanded()}
+          aria-label="Suche öffnen"
+          className={`flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface py-1.5 pl-5 pr-1.5 text-[14px] font-medium text-ink shadow-sm transition-shadow hover:shadow-float ${
+            expanded ? "invisible" : ""
+          }`}
+        >
+          <span className="truncate">{summary || "Suchen"}</span>
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-teal text-white">
+            <SearchIcon className="text-[16px]" />
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => openExpanded()}
+          aria-label="Suche öffnen"
+          className={`flex w-full items-center gap-3 rounded-2xl border border-line bg-surface py-2.5 pl-6 pr-2.5 text-left shadow-float transition-shadow hover:shadow-lg ${
+            expanded ? "invisible" : ""
+          }`}
+        >
+          <span
+            className={`flex-1 truncate text-[15px] ${
+              summary ? "font-medium text-ink" : "text-muted"
+            }`}
           >
-            <SearchIcon className="text-[20px]" />
-            <span className="sm:hidden">Suchen</span>
-          </button>
-        </div>
-      </div>
+            {summary || "Jetzt suchen"}
+          </span>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-teal text-white">
+            <SearchIcon className="text-[18px]" />
+          </span>
+        </button>
+      )}
 
       {createPortal(
         <AnimatePresence>
-          {open && rect && (
-            <>
+          {expanded && (
+            <motion.div
+              key="overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Suche"
+              // A light dim + slight blur behind the panel; also the click
+              // catcher — a click anywhere outside the panel (e.g. the hero)
+              // collapses it back to the simple bar.
+              className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/25 px-4 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              onClick={collapse}
+            >
               <motion.div
-                key="scrim"
-                className="scrim fixed inset-0 z-[1100]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                onClick={close}
-              />
-              <motion.div
-                key="panel"
-                role="dialog"
-                aria-modal="false"
-                // Seed position/width in `initial` so the panel mounts in place;
-                // height is left to the content (dynamic), capped by maxHeight.
-                initial={{
-                  opacity: 0,
-                  y: reduce ? 0 : -8,
-                  top: rect.bottom + 12,
-                  left: rect.left,
-                  width: rect.width,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                  top: rect.bottom + 12,
-                  left: rect.left,
-                  width: rect.width,
-                }}
-                exit={{ opacity: 0, y: reduce ? 0 : -8 }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : {
-                        type: "spring",
-                        stiffness: 420,
-                        damping: 40,
-                        mass: 0.7,
-                        opacity: { duration: 0.18, ease: "easeOut" },
-                      }
-                }
-                style={{
-                  position: "fixed",
-                  zIndex: 1150,
-                  maxWidth: "calc(100vw - 16px)",
-                }}
-                className="overflow-hidden rounded-3xl border border-line bg-surface"
+                className="relative w-[860px] max-w-full"
+                onClick={(e) => e.stopPropagation()}
+                initial={reduce ? false : { opacity: 0, y: 28, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
+                transition={reduce ? { duration: 0.15 } : SPRING}
+                style={{ transformOrigin: "center top" }}
               >
-                <div data-lenis-prevent className="p-5">
-                  {/* Airbnb-style switch: the panel stays open and only its
-                      content swaps when Wohin/Wann is clicked — the new section
-                      slides in from the side of its tab (left = Wohin, right =
-                      Wann). No height/layout animation, so typing (which filters
-                      the list) never makes rows slide around. */}
-                  <motion.div
-                    key={open}
-                    initial={reduce ? false : { opacity: 0, x: open === "when" ? 18 : -18 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                    className="h-[232px]"
-                  >
-                    {open === "where" && (
-                      <SearchWhere
-                        spotItems={spotItems}
-                        regionItems={regionItems}
-                        activeCol={activeCol}
-                        activeRow={activeRow}
-                        onPick={pickWhere}
+                <div className="relative">
+                  {/* Segmented bar — same radius as the tiles (rounded-2xl). */}
+                  <div className="flex items-stretch gap-1 rounded-2xl border border-line bg-surface p-2 shadow-float">
+                    {/* Wohin? — the Tippleiste lives in the bar. */}
+                    <label
+                      onClick={() => setOpen("where")}
+                      className="relative flex flex-1 cursor-text flex-col items-start justify-center rounded-xl px-6 py-2 transition-colors hover:bg-band/60"
+                    >
+                      {open === "where" && (
+                        <motion.span
+                          layoutId="search-seg"
+                          className="absolute inset-0 rounded-xl bg-band"
+                          transition={{ type: "spring", stiffness: 520, damping: 42 }}
+                        />
+                      )}
+                      <span className="relative z-10 text-[13px] font-semibold text-teal">Wohin?</span>
+                      <input
+                        ref={whereInputRef}
+                        value={val.whereText}
+                        onFocus={() => setOpen("where")}
+                        onChange={(e) => {
+                          const text = e.target.value;
+                          setVal((v) => ({ ...v, whereText: text, whereSel: null, whereOpen: false }));
+                          if (open !== "where") setOpen("where");
+                        }}
+                        onKeyDown={onWhereKeyDown}
+                        placeholder="Region oder Spot suchen"
+                        aria-label="Region oder Spot suchen"
+                        aria-expanded={open === "where"}
+                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-[13px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                       />
-                    )}
-                    {open === "when" && (
-                      <SearchWhen
-                        value={val.when}
-                        onChange={(when) => setVal((v) => ({ ...v, when }))}
-                      />
-                    )}
-                  </motion.div>
+                    </label>
+
+                    <SegmentButton
+                      label="Wann?"
+                      placeholder="Datum wählen"
+                      value={whenLabel(val.when)}
+                      active={open === "when"}
+                      onClick={() => setOpen("when")}
+                    />
+
+                    <SegmentButton
+                      label="Welche Sportart?"
+                      placeholder="Sportart wählen"
+                      value={sportText}
+                      active={open === "which"}
+                      onClick={() => setOpen("which")}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={submit}
+                      aria-label="Suchen"
+                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal text-white transition-colors hover:bg-teal-hover"
+                    >
+                      <SearchIcon className="text-[20px]" />
+                    </button>
+                  </div>
+
+                  {/* Panel — width/alignment follow the active segment. A quick
+                      cross-fade (no wait) keeps the Wohin→Wann→Welche switch
+                      snappy, Airbnb-style. */}
+                  <AnimatePresence initial={false}>
+                    <motion.div
+                      key={open}
+                      initial={reduce ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.1, ease: "easeOut" }}
+                      className={`absolute top-full mt-3 ${
+                        open === "when"
+                          ? "inset-x-0"
+                          : open === "where"
+                          ? "left-0 w-1/2"
+                          : "right-0 w-1/2"
+                      }`}
+                    >
+                      {/* Uniform height across panels — the Wann calendar is the
+                          reference; Wohin/Welche top-align within it. */}
+                      <div className="h-[340px] overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-float">
+                        {open === "where" && (
+                          <SearchWhere
+                            spotItems={spotItems}
+                            regionItems={regionItems}
+                            activeCol={activeCol}
+                            activeRow={activeRow}
+                            onPick={pickWhere}
+                          />
+                        )}
+                        {open === "when" && (
+                          <div>
+                            <div className="mb-3 flex justify-center">
+                              <WhenToggle tab={whenTab} onChange={changeWhenTab} />
+                            </div>
+                            <SearchWhen
+                              tab={whenTab}
+                              value={val.when}
+                              onChange={(when) => {
+                                setVal((v) => ({ ...v, when }));
+                                // Guided flow: a concrete date advances to sport.
+                                if (when?.mode === "range" && when.from) setOpen("which");
+                              }}
+                            />
+                          </div>
+                        )}
+                        {open === "which" && (
+                          <SportPicker selected={val.which} onToggle={toggleSport} />
+                        )}
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </motion.div>
-            </>
+            </motion.div>
           )}
         </AnimatePresence>,
         document.body
@@ -293,12 +380,7 @@ export default function SearchBar() {
   );
 }
 
-function Divider() {
-  // Vertical hairline between segments on desktop; hidden when the bar stacks.
-  return <span className="my-2 hidden w-px self-stretch bg-line sm:block" />;
-}
-
-function Segment({
+function SegmentButton({
   label,
   placeholder,
   value,
@@ -316,12 +398,55 @@ function Segment({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className="flex flex-1 flex-col items-start rounded-2xl px-6 py-2 text-left"
+      className="relative flex flex-1 flex-col items-start justify-center rounded-xl px-6 py-2 text-left transition-colors hover:bg-band/60"
     >
-      <span className="text-[13px] font-semibold text-teal">{label}</span>
-      <span className={`truncate text-[13px] ${value ? "text-ink" : "text-muted"}`}>
+      {active && (
+        <motion.span
+          layoutId="search-seg"
+          className="absolute inset-0 rounded-xl bg-band"
+          transition={{ type: "spring", stiffness: 520, damping: 42 }}
+        />
+      )}
+      <span className="relative z-10 text-[13px] font-semibold text-teal">{label}</span>
+      <span className={`relative z-10 truncate text-[13px] ${value ? "text-ink" : "text-muted"}`}>
         {value || placeholder}
       </span>
     </button>
+  );
+}
+
+/** "Welche Sportart?" — a compact multi-select list of the four sports. */
+function SportPicker({
+  selected,
+  onToggle,
+}: {
+  selected: string[];
+  onToggle: (sport: string) => void;
+}): ReactNode {
+  return (
+    <div className="flex flex-col">
+      {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
+        const isOn = selected.includes(sport);
+        return (
+          <button
+            key={sport}
+            type="button"
+            onClick={() => onToggle(sport)}
+            aria-pressed={isOn}
+            className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
+          >
+            <Icon className="shrink-0 text-[26px] text-ink" />
+            <span className="flex-1 text-[16px] font-medium text-ink">{sportLabel(sport)}</span>
+            <span
+              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
+                isOn ? "border-teal" : "border-line"
+              }`}
+            >
+              {isOn && <span className="h-3 w-3 rounded-full bg-teal" />}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }

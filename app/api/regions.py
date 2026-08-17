@@ -9,7 +9,6 @@ from app.db.session import get_db
 from app.models import Region
 from app.public_catalog import PUBLISHED, get_published_region
 from app.schemas import RegionRead
-from app.scoring.region import aggregate_region_season, region_when_to_go
 
 router = APIRouter(prefix="/regions", tags=["regions"])
 
@@ -59,18 +58,9 @@ def get_region_season(
     smooth: bool = Query(default=False, description="Also return the smoothed when-to-go curve"),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Region season aggregate (52 weeks of ``spots_working`` + median wind/sst/air).
-
-    Computed and cached on `regions.season`; recomputed when a `sport` is given."""
+    """No V2 region aggregation has been defined yet."""
     region = get_published_region(db, region_id)
     if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
 
-    season = region.season or {}
-    if sport or "weeks" not in season:
-        season = aggregate_region_season(region_id, db=db, sport=sport)
-
-    result: dict = {"region_id": str(region.id), "season": season}
-    if smooth:
-        result["when_to_go"] = region_when_to_go(region_id, db=db, sport=sport)
-    return result
+    return {"region_id": str(region.id), "status": "unknown", "season": None}

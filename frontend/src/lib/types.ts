@@ -47,8 +47,6 @@ export interface Spot {
   waterCharacter?: string[];
   style?: string[];
   facilities?: FacilityMap | null;
-  /** Derived 52-week climatology (from the detail record); null when not derived. */
-  climatology?: Record<string, any> | null;
   /** Admin-set preview frame for the wind/wave flow map (editorial.map_view). */
   mapView?: { center: [number, number]; zoom: number } | null;
 
@@ -65,8 +63,8 @@ export interface Spot {
   typicalWindKt?: number | null;
   /** Typical wave height, m — set for surf spots instead of typicalWindKt. */
   typicalWaveHeightM?: number | null;
-  /** This spot's own best (working) months, 1–12; null until computed. */
-  bestMonths?: number[] | null;
+  /** Weighted monthly daylight availability for 15–20 kt from active V2. */
+  windAvailability?: number[] | null;
 }
 
 export interface RegionInfo {

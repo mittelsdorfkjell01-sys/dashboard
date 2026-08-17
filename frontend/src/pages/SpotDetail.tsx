@@ -414,14 +414,11 @@ export default function SpotDetail() {
                   </div>
                 )}
 
-                {spot.climatology && (
-                  <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
-                    <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Klimatologie · Wann hierher</p></div>
+                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                     <Suspense fallback={<DataModulePlaceholder height="h-40" />}>
                       <Climatology spot={spot} />
                     </Suspense>
                   </div>
-                )}
               </div>
             </SpotDataScopeProvider>
             </motion.div>

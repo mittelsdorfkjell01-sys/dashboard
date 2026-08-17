@@ -30,6 +30,8 @@ from app.models import (
     WeatherShadowForecast,
     WeatherShadowRun,
     WeatherShadowStudy,
+    WindClimatologyCell,
+    WindClimatologyRun,
 )
 
 router = APIRouter(
@@ -37,6 +39,44 @@ router = APIRouter(
     tags=["admin-weather"],
     dependencies=[Depends(require_role("admin", "curator"))],
 )
+
+
+class WindCellSelection(BaseModel):
+    mode: Literal["automatic", "manual"]
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+
+
+@router.get("/spots/{spot_id}/wind-climatology")
+def wind_climatology_status(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    cell = db.scalar(select(WindClimatologyCell).where(WindClimatologyCell.spot_id == spot_id))
+    latest = db.scalar(select(WindClimatologyRun).where(WindClimatologyRun.spot_id == spot_id).order_by(WindClimatologyRun.created_at.desc()))
+    active = db.scalar(select(WindClimatologyRun).where(WindClimatologyRun.spot_id == spot_id, WindClimatologyRun.is_active.is_(True)))
+    return {
+        "cell": None if cell is None else {"mode": cell.selection_mode, "spot": [cell.spot_lat, cell.spot_lon], "requested": [cell.requested_lat, cell.requested_lon], "actual": [cell.actual_lat, cell.actual_lon] if cell.actual_lat is not None else None, "distance_km": cell.distance_km, "model": cell.model, "resolution_degrees": cell.resolution_deg, "status": cell.status, "warnings": cell.warnings},
+        "active": None if active is None else {"id": str(active.id), "period": [active.start_year, active.end_year], "activated_at": active.activated_at},
+        "latest": None if latest is None else {"id": str(latest.id), "status": latest.status, "error": latest.error, "started_at": latest.started_at, "completed_at": latest.completed_at},
+    }
+
+
+@router.put("/spots/{spot_id}/wind-climatology/cell", status_code=202)
+def update_wind_cell(spot_id: uuid.UUID, body: WindCellSelection, db: Session = Depends(get_db)) -> dict:
+    from app.wind_climatology.service import set_cell
+    try:
+        run = set_cell(db, spot_id, mode=body.mode, lat=body.latitude, lon=body.longitude)
+    except (LookupError, ValueError) as exc:
+        raise HTTPException(status_code=404 if isinstance(exc, LookupError) else 422, detail=str(exc))
+    return {"run_id": str(run.id), "status": run.status}
+
+
+@router.post("/spots/{spot_id}/wind-climatology/recalculate", status_code=202)
+def recalculate_wind_climatology(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    from app.wind_climatology.service import enqueue
+    try:
+        run, created = enqueue(db, spot_id, force=True)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return {"run_id": str(run.id), "status": run.status, "created": created}
 
 
 @router.get("/shadow-study/status")

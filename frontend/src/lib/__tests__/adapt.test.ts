@@ -23,7 +23,7 @@ const summary = (over: Partial<SpotSummary> = {}): SpotSummary => ({
   image: null,
   typical_wind_kt: null,
   typical_wave_height_m: null,
-  best_months: null,
+  wind_availability: null,
   ...over,
 });
 

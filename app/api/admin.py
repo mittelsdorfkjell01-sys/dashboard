@@ -660,7 +660,6 @@ def go_live(
     spot_id: uuid.UUID,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
-    client=Depends(get_extract_client),
 ) -> dict:
     # Publishing enforces editorial completeness: incomplete spots are blocked
     # (409 with the blocking gaps) so nothing half-finished reaches the public
@@ -678,29 +677,16 @@ def go_live(
             },
         )
 
-    # Compute the climatology on go-live when it isn't ready yet. Done
-    # SYNCHRONOUSLY and in memory (era5_worker.compute_now): on serverless the
-    # FastAPI background task doesn't run reliably and pyarrow isn't bundled, so
-    # the old fire-and-forget path never actually produced a climatology. A
-    # queued job is still recorded first as a visible fallback. Best-effort —
-    # compute_now never raises and go-live already succeeded above.
-    if "climatology" in (result.get("gaps") or []):
-        try:
-            trigger_era5_job(
-                spot_id, db=db, client=client, reason="go_live"
-            )
-        except Exception:
-            db.rollback()
-        from app.admin import era5_worker
+    # Publishing queues only V2. No legacy 52-week/P75 calculation is started.
+    try:
+        from app.wind_climatology.service import enqueue as enqueue_wind_v2
 
-        outcome, detail = era5_worker.compute_now(spot_id, client=client)
-        result["climatology_job"] = {"status": outcome, "detail": detail}
-        if outcome == "ok":
-            # Reflect the freshly derived climatology in the response (compute_now
-            # committed it in its own session, so the request session is stale).
-            gaps = [g for g in (result.get("gaps") or []) if g != "climatology"]
-            result["gaps"] = gaps
-            result["ready"] = len(gaps) == 0
+        wind_run, created = enqueue_wind_v2(db, spot_id)
+        result["wind_climatology_v2"] = {
+            "run_id": str(wind_run.id), "status": wind_run.status, "created": created
+        }
+    except Exception:
+        db.rollback()
 
     return result
 
@@ -1035,17 +1021,6 @@ def update_region(
         raise _duplicate_conflict(exc, principal)
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
-    return RegionRead.from_orm_region(region)
-
-
-@router.post("/regions/{region_id}/compute-months", response_model=RegionRead)
-def compute_region_months(region_id: uuid.UUID, db: Session = Depends(get_db)):
-    """Recompute the region's best months from its spots' climatology (the
-    Windmonate 'Berechnen' toggle)."""
-    try:
-        region = admin_regions.recompute_best_months(region_id, db=db)
-    except LookupError:
-        raise HTTPException(status_code=404, detail="Region not found")
     return RegionRead.from_orm_region(region)
 
 

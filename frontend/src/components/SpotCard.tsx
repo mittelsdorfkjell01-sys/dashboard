@@ -3,7 +3,6 @@ import type { Spot } from "../lib/types";
 import type { LiveConditionsRead } from "../lib/api";
 import { sportLabel } from "../lib/labels";
 import { countryName } from "../lib/flags";
-import { bestMonthsRange } from "../lib/bestMonths";
 import SpotImage from "./SpotImage";
 import { spotPath } from "../lib/spotRoutes";
 
@@ -38,7 +37,6 @@ export default function SpotCard({
   const regionLine = [spot.regionName, countryName(spot.regionCountry ?? undefined)]
     .filter(Boolean)
     .join(" · ");
-  const monthsRange = bestMonthsRange(spot.bestMonths);
 
   const isWave = spot.typicalWaveHeightM != null;
   const liveValue = isWave ? live?.current.swell : live?.current.wind;
@@ -75,12 +73,13 @@ export default function SpotCard({
           <>
             {regionLine && <p className="truncate text-[11px] text-muted sm:text-caption">{regionLine}</p>}
 
-            {(sports || monthsRange) && (
-              <div className="mt-auto flex items-baseline justify-between gap-3 pt-1">
+            {(sports || spot.windAvailability) && (
+              <div className="mt-auto pt-1">
+                <div className="flex items-baseline justify-between gap-3">
                 {sports && <span className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{sports}</span>}
-                {monthsRange && (
-                  <span className="shrink-0 text-[11px] font-semibold text-ink sm:text-caption">{monthsRange}</span>
-                )}
+                {spot.windAvailability && <span className="shrink-0 text-[10px] text-muted">15–20 kt</span>}
+                </div>
+                {spot.windAvailability && <div className="mt-1.5 grid grid-cols-12 gap-0.5" aria-label="Monatliche Windverfügbarkeit bei 15 bis 20 Knoten">{spot.windAvailability.map((value, index) => <span key={index} title={`${index + 1}. Monat: ${value}%`} className="h-1.5 rounded-sm bg-teal" style={{ opacity: Math.max(.12, value / 100) }}><span className="sr-only">{value}%</span></span>)}</div>}
               </div>
             )}
           </>
