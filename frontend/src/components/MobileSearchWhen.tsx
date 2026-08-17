@@ -126,23 +126,20 @@ function DateCalendar({
 
   return (
     <div>
-      {/* Weekday header — shared across all months below. */}
-      <div className="grid grid-cols-7 px-1 text-center text-[11px] font-medium text-muted">
-        {WEEKDAYS.map((w) => (
-          <span key={w} className="py-1">
-            {w}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-1 h-[220px] overflow-y-auto pr-1">
-        {months.map(({ year, month0 }) => (
-          <div key={`${year}-${month0}`} className="mb-3">
-            <p className="mb-0.5 px-1 text-[14px] font-semibold text-ink">
-              {MONTHS_FULL[month0]} {year}
-            </p>
-            <div className="grid grid-cols-7">
-              {monthCells(year, month0).map((day, i) => {
+      {months.map(({ year, month0 }) => (
+        <div key={`${year}-${month0}`} className="mb-5">
+          <p className="mb-1.5 px-1 text-[15px] font-semibold text-ink">
+            {MONTHS_FULL[month0]} {year}
+          </p>
+          <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted">
+            {WEEKDAYS.map((w) => (
+              <span key={w} className="pb-1">
+                {w}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {monthCells(year, month0).map((day, i) => {
                 if (day === null) return <span key={`e-${i}`} />;
                 const iso = isoOf(year, month0, day);
                 const isPast =
@@ -171,7 +168,6 @@ function DateCalendar({
             </div>
           </div>
         ))}
-      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import {
+  CloseIcon,
   KitesurfIcon,
   MapIcon,
   PinIcon,
@@ -73,7 +74,6 @@ interface WhereRowItem {
 export default function MobileSearchSheet({
   open,
   onClose,
-  originY,
 }: {
   open: boolean;
   onClose: () => void;
@@ -153,11 +153,11 @@ export default function MobileSearchSheet({
     onClose();
   };
 
-  // "Alles löschen": clear and collapse back to the small search pill.
+  // "Alles löschen": clear the search but stay in the sheet (Airbnb-style).
   const reset = () => {
     setVal(EMPTY_SEARCH);
     setSection(null);
-    onClose();
+    setWhenTab("date");
   };
 
   const toggleSection = (s: Exclude<Section, null>) =>
@@ -216,28 +216,16 @@ export default function MobileSearchSheet({
 
   return createPortal(
     <AnimatePresence>
-      {open && [
-        <motion.button
-          key="backdrop"
-          type="button"
-          aria-label="Suche schließen"
-          className="fixed inset-0 z-[1300] bg-black/25 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          onClick={onClose}
-        />,
+      {open && (
         <motion.div
           key="sheet"
-          className="fixed inset-0 z-[1300] flex flex-col"
+          className="fixed inset-0 z-[1300] flex flex-col bg-page"
           role="dialog"
           aria-modal="true"
           aria-label="Suche"
-          style={{ transformOrigin: originY != null ? `50% ${originY}px` : "50% 82%" }}
-          initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94 }}
+          initial={reduce ? { opacity: 0 } : { y: "100%" }}
+          animate={reduce ? { opacity: 1 } : { y: 0 }}
+          exit={reduce ? { opacity: 0 } : { y: "100%" }}
           transition={reduce ? { duration: 0.15 } : SPRING}
           drag="y"
           dragListener={false}
@@ -249,23 +237,37 @@ export default function MobileSearchSheet({
             if (info.offset.y > 120 || info.velocity.y > 600) onClose();
           }}
         >
-          {/* Tiles — bottom-aligned above the actions; scroll if they grow. */}
-          <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto px-4">
+          {/* Grab handle — swipe down to close. */}
+          <div
+            className="flex cursor-grab justify-center pt-2 active:cursor-grabbing"
+            style={{ touchAction: "none" }}
+            onPointerDown={(e) => dragControls.start(e)}
+          >
+            <span className="h-1.5 w-10 rounded-full bg-line" />
+          </div>
+
+          {/* Header — a clear close + title anchor the screen. */}
+          <div className="flex items-center gap-3 px-4 py-3">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Schließen"
+              className="grid h-9 w-9 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
+            >
+              <CloseIcon className="text-[15px]" />
+            </button>
+            <span className="text-[15px] font-semibold text-ink">Suchen</span>
+          </div>
+
+          {/* Tiles — top-aligned; content sizes to itself and the whole area
+              scrolls, so nothing lives in a cramped inner scroll box. */}
+          <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
             <motion.div
               variants={TILES}
               initial={reduce ? false : "hidden"}
               animate="show"
-              className="mx-auto flex min-h-full w-full max-w-[520px] flex-col justify-end gap-3 pb-3 pt-[12vh]"
+              className="mx-auto flex w-full max-w-[520px] flex-col gap-3"
             >
-              {/* Grab handle — drag down to close. */}
-              <div
-                className="flex cursor-grab justify-center pb-1 pt-1 active:cursor-grabbing"
-                style={{ touchAction: "none" }}
-                onPointerDown={(e) => dragControls.start(e)}
-              >
-                <span className="h-1.5 w-10 rounded-full bg-white/70 shadow-sm" />
-              </div>
-
               {/* Wohin? */}
               <motion.div variants={TILE} id="msheet-where">
               <Section
@@ -290,7 +292,7 @@ export default function MobileSearchSheet({
                   aria-label="Region oder Spot suchen"
                   className="search-plain w-full border-0 bg-transparent text-[16px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                 />
-                <div className="mt-3 h-[190px] overflow-y-auto">
+                <div className="mt-3">
                   {items.length ? (
                     <div className="flex flex-col">
                       {items.map((it) => (
@@ -405,30 +407,29 @@ export default function MobileSearchSheet({
             </motion.div>
           </div>
 
-          {/* Actions — pinned at the bottom, on the search-bar's height. */}
-          <div className="px-4 pb-6 pt-2">
-            <div className="mx-auto grid w-full max-w-[520px] grid-cols-2 gap-3">
-              <motion.button
+          {/* Actions — a text-link clear + a filled primary search button. */}
+          <div className="border-t border-line bg-page px-4 pb-6 pt-3">
+            <div className="mx-auto flex w-full max-w-[520px] items-center justify-between gap-3">
+              <button
                 type="button"
-                whileTap={{ scale: 0.97 }}
                 onClick={reset}
-                className="min-h-[56px] rounded-3xl bg-surface px-4 text-[15px] font-medium text-ink shadow-float transition-colors hover:bg-band"
+                className="min-h-11 px-2 text-[15px] font-semibold text-ink underline underline-offset-4 transition-opacity hover:opacity-70"
               >
                 Alles löschen
-              </motion.button>
+              </button>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={submit}
-                className="inline-flex min-h-[56px] items-center justify-center gap-2 rounded-3xl bg-surface px-4 text-[15px] font-medium text-teal shadow-float transition-colors hover:bg-band"
+                className="inline-flex min-h-12 items-center gap-2 rounded-full bg-teal px-6 text-[15px] font-medium text-white transition-colors hover:bg-teal-hover"
               >
                 <SearchIcon className="text-[18px]" />
                 Suchen
               </motion.button>
             </div>
           </div>
-        </motion.div>,
-      ]}
+        </motion.div>
+      )}
     </AnimatePresence>,
     document.body
   );
