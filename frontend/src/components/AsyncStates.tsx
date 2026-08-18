@@ -15,7 +15,10 @@ export function SpotGridSkeleton({ count = 10 }: { count?: number }) {
   );
 }
 
-/** An inline error banner with an optional retry. */
+/** An inline error banner with an optional retry. Uses the app's own tokens
+ *  (surface + hairline + the `orange` attention colour) so it reads as part of
+ *  the warm sand/petrol system and stays correct in dark mode — no raw
+ *  Tailwind `red-*` values, which have no dark-mode variant here. */
 export function ErrorBanner({
   message,
   onRetry,
@@ -28,15 +31,15 @@ export function ErrorBanner({
   return (
     <div
       role="alert"
-      className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-[14px] text-red-700"
+      className="rounded-2xl border border-line bg-surface px-5 py-4 text-ui text-ink-soft"
     >
-      <p className="font-medium">{title}</p>
-      <p className="mt-1 text-red-600/90">{message}</p>
+      <p className="font-semibold text-orange">{title}</p>
+      <p className="mt-1 text-muted">{message}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 min-h-11 px-3 text-[13px] font-semibold text-ink hover:underline hover:underline-offset-4"
+          className="mt-3 min-h-11 text-label font-semibold text-ink hover:underline hover:underline-offset-4"
         >
           Erneut versuchen
         </button>
@@ -45,10 +48,10 @@ export function ErrorBanner({
   );
 }
 
-/** A neutral empty state. */
+/** A neutral empty state on the alternating band surface. */
 export function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-2xl bg-[#F1F5FA] px-5 py-10 text-center text-[14px] text-muted">
+    <div className="rounded-2xl bg-band px-5 py-10 text-center text-ui text-muted">
       {message}
     </div>
   );
