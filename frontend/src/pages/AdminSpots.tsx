@@ -22,6 +22,7 @@ import {
   getAdminSpotSearches,
   rememberAdminSpotSearch,
 } from "../lib/adminSpotSearchHistory";
+import { countActiveAdminSpotFilters, resetAdminSpotFilters } from "../lib/adminSpotFilters";
 
 const MEDIA_FILTER_LABEL: Record<MediaFilterKey, string> = {
   no_hero: "Kein Hero",
@@ -51,7 +52,7 @@ export default function AdminSpots() {
   const completeness = params.get("completeness") ?? "";
   const media = (params.get("media") ?? "") as MediaFilterKey | "";
   const offset = Number(params.get("offset") ?? "0") || 0;
-  const activeFilterCount = [q, status, regionId, sport, completeness, media].filter(Boolean).length;
+  const activeFilterCount = countActiveAdminSpotFilters(params);
 
   const [data, setData] = useState<AdminSpotsResponse | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -130,9 +131,7 @@ export default function AdminSpots() {
 
   const resetFilters = () => {
     setSearchText("");
-    const next = new URLSearchParams();
-    if (sort && sort !== "name") next.set("sort", sort);
-    setParams(next);
+    setParams(resetAdminSpotFilters(params));
   };
 
   const selectCls = adminFieldClass;

@@ -145,6 +145,7 @@ export default function AdminSpotForm() {
   const [galleryVersion, setGalleryVersion] = useState(0);
 
   const [submitting, setSubmitting] = useState(false);
+  const returnAfterSaveRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState<MediaRole | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -445,7 +446,11 @@ export default function AdminSpotForm() {
     return patch;
   };
 
-  const doSave = async (allowDuplicate = false, returnAfterSave = false) => {
+  const doSave = async (
+    allowDuplicate = false,
+    returnAfterSave = returnAfterSaveRef.current,
+  ) => {
+    returnAfterSaveRef.current = returnAfterSave;
     setError(null);
     setReadiness(null);
     setSubmitting(true);
@@ -523,6 +528,7 @@ export default function AdminSpotForm() {
           },
         });
       } else if (returnAfterSave) {
+        returnAfterSaveRef.current = false;
         back.goBack();
       }
     } catch (err) {

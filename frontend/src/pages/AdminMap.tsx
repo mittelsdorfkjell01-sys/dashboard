@@ -13,6 +13,7 @@ import { statusLabel } from "../lib/labels";
 import { PageHeader } from "../components/admin/ui";
 import ConfirmToast from "../components/admin/ConfirmToast";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { adminClusterMarkerLabel, adminSpotMarkerLabel } from "../lib/adminMapAccessibility";
 
 const STATUS_COLOR: Record<string, string> = {
   published: "#4A8159", // grün
@@ -218,8 +219,8 @@ export default function AdminMap() {
               key={s.id}
               position={[s.lat, s.lon]}
               icon={pinIcon(STATUS_COLOR[s.status] ?? fallbackColor)}
-              title={`Spot öffnen: ${s.name}`}
-              alt={`Spot öffnen: ${s.name}`}
+              title={adminSpotMarkerLabel(s.name)}
+              alt={adminSpotMarkerLabel(s.name)}
             >
               <Popup>
                 {/* Inline colours: the Leaflet popup keeps a white background,
@@ -277,8 +278,8 @@ function ClusterMarker({
       position={position}
       icon={clusterIcon(count)}
       eventHandlers={{ click: () => map.setView(position, expansionZoom) }}
-      title={`${count} Spots anzeigen`}
-      alt={`${count} Spots anzeigen`}
+      title={adminClusterMarkerLabel(count)}
+      alt={adminClusterMarkerLabel(count)}
     />
   );
 }

@@ -1,0 +1,3246 @@
+{
+  "profiles": {
+    "desktop": {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "routes": [
+        {
+          "route": "/admin",
+          "title": "Übersicht",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Neue Aufgabe"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/spots",
+          "title": "Spots",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Alle",
+            "Entwürfe",
+            "Veröffentlicht",
+            "Archiviert",
+            "Zurück",
+            "Weiter"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/spot/new",
+          "title": "Neuen Spot anlegen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Zurück zu den Spots",
+            "Basisdaten",
+            "✓ Fixieren",
+            "Sportarten",
+            "Kitesurfen",
+            "Windsurfen",
+            "Wingfoilen",
+            "Surfen",
+            "Kategorien",
+            "Anfänger",
+            "Fortgeschritten",
+            "Experte",
+            "Wettkampf-Spot",
+            "Flachwasser",
+            "Chop / Kabbelwelle",
+            "Kleine Welle",
+            "Große Welle",
+            "Tiefes Wasser",
+            "Offenes Meer",
+            "Geschütztes Meer",
+            "See",
+            "Lagune",
+            "Freeride",
+            "Freestyle",
+            "Big Air",
+            "Wellenreiten",
+            "Wavekite",
+            "Sand"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/hero",
+          "title": "Hero-Rotation",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Mobilen Ausschnitt für Arte Vida wählen",
+            "Mobilen Ausschnitt für Baleal wählen",
+            "Mobilen Ausschnitt für Balneario wählen",
+            "Mobilen Ausschnitt für Brouwersdam wählen",
+            "Mobilen Ausschnitt für Capo Mannu wählen",
+            "Mobilen Ausschnitt für Carcavelos wählen",
+            "Mobilen Ausschnitt für Costa Teguise wählen",
+            "Mobilen Ausschnitt für Coxos wählen",
+            "Mobilen Ausschnitt für El Cotillo wählen",
+            "Mobilen Ausschnitt für El Médano wählen",
+            "Mobilen Ausschnitt für Fehmarn Wulfener Hals wählen",
+            "Mobilen Ausschnitt für Fistral Beach (Newquay) wählen",
+            "Mobilen Ausschnitt für Flag Beach wählen",
+            "Mobilen Ausschnitt für Foz do Lizandro wählen",
+            "Mobilen Ausschnitt für Heidkate wählen",
+            "Mobilen Ausschnitt für Keros wählen",
+            "Mobilen Ausschnitt für La Gravière (Hossegor) wählen",
+            "Mobilen Ausschnitt für La Sud (Hossegor) wählen",
+            "Mobilen Ausschnitt für Laboe wählen",
+            "Mobilen Ausschnitt für Lahinch wählen",
+            "Mobilen Ausschnitt für Les Estagnots (Seignosse) wählen",
+            "Mobilen Ausschnitt für Leucate wählen",
+            "Mobilen Ausschnitt für Lo Stagnone wählen",
+            "Mobilen Ausschnitt für Los Lances wählen",
+            "Mobilen Ausschnitt für Majanicho wählen",
+            "Mobilen Ausschnitt für Matas Bay wählen",
+            "Mobilen Ausschnitt für Mikri Vigla wählen",
+            "Mobilen Ausschnitt für Mundaka wählen"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/regions",
+          "title": "Regionen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/region/new",
+          "title": "Region anlegen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Zurück zu den Regionen",
+            "✓ Fixieren",
+            "Jan",
+            "Feb",
+            "Mär",
+            "Apr",
+            "Mai",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Okt",
+            "Nov",
+            "Dez",
+            "Region anlegen",
+            "Abbrechen"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/review",
+          "title": "Review",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Spot-Einreichungen",
+            "Hero-Bilder",
+            "Galeriebilder",
+            "Gemeldete Bilder",
+            "Tips & Bewertungen"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/map",
+          "title": "Karte",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Veröffentlicht (2 im Ausschnitt)",
+            "Entwurf (5 im Ausschnitt)",
+            "+",
+            "−"
+          ],
+          "axe": [
+            {
+              "id": "aria-command-name",
+              "impact": "serious",
+              "nodes": 4,
+              "help": "ARIA commands must have an accessible name"
+            }
+          ]
+        },
+        {
+          "route": "/admin/activity",
+          "title": "Aktivität",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/operations",
+          "title": "Betrieb",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/weather",
+          "title": "Wetterprofile",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/users",
+          "title": "Benutzer",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1425,
+          "clientWidth": 1440,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Benutzer anlegen",
+            "Deaktivieren",
+            "Bearbeiten",
+            "Passwort",
+            "Löschen",
+            "Deaktivieren",
+            "Bearbeiten",
+            "Passwort",
+            "Löschen"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    "tablet": {
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "routes": [
+        {
+          "route": "/admin",
+          "title": "Übersicht",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Neue Aufgabe"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/spots",
+          "title": "Spots",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Alle",
+            "Entwürfe",
+            "Veröffentlicht",
+            "Archiviert",
+            "Zurück",
+            "Weiter"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/spot/new",
+          "title": "Neuen Spot anlegen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Zurück zu den Spots",
+            "Basisdaten",
+            "✓ Fixieren",
+            "Sportarten",
+            "Kitesurfen",
+            "Windsurfen",
+            "Wingfoilen",
+            "Surfen",
+            "Kategorien",
+            "Anfänger",
+            "Fortgeschritten",
+            "Experte",
+            "Wettkampf-Spot",
+            "Flachwasser",
+            "Chop / Kabbelwelle",
+            "Kleine Welle",
+            "Große Welle",
+            "Tiefes Wasser",
+            "Offenes Meer",
+            "Geschütztes Meer",
+            "See",
+            "Lagune",
+            "Freeride",
+            "Freestyle",
+            "Big Air",
+            "Wellenreiten",
+            "Wavekite",
+            "Sand"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/hero",
+          "title": "Hero-Rotation",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Mobilen Ausschnitt für Arte Vida wählen",
+            "Mobilen Ausschnitt für Baleal wählen",
+            "Mobilen Ausschnitt für Balneario wählen",
+            "Mobilen Ausschnitt für Brouwersdam wählen",
+            "Mobilen Ausschnitt für Capo Mannu wählen",
+            "Mobilen Ausschnitt für Carcavelos wählen",
+            "Mobilen Ausschnitt für Costa Teguise wählen",
+            "Mobilen Ausschnitt für Coxos wählen",
+            "Mobilen Ausschnitt für El Cotillo wählen",
+            "Mobilen Ausschnitt für El Médano wählen",
+            "Mobilen Ausschnitt für Fehmarn Wulfener Hals wählen",
+            "Mobilen Ausschnitt für Fistral Beach (Newquay) wählen",
+            "Mobilen Ausschnitt für Flag Beach wählen",
+            "Mobilen Ausschnitt für Foz do Lizandro wählen",
+            "Mobilen Ausschnitt für Heidkate wählen",
+            "Mobilen Ausschnitt für Keros wählen",
+            "Mobilen Ausschnitt für La Gravière (Hossegor) wählen",
+            "Mobilen Ausschnitt für La Sud (Hossegor) wählen",
+            "Mobilen Ausschnitt für Laboe wählen",
+            "Mobilen Ausschnitt für Lahinch wählen",
+            "Mobilen Ausschnitt für Les Estagnots (Seignosse) wählen",
+            "Mobilen Ausschnitt für Leucate wählen",
+            "Mobilen Ausschnitt für Lo Stagnone wählen",
+            "Mobilen Ausschnitt für Los Lances wählen",
+            "Mobilen Ausschnitt für Majanicho wählen",
+            "Mobilen Ausschnitt für Matas Bay wählen",
+            "Mobilen Ausschnitt für Mikri Vigla wählen",
+            "Mobilen Ausschnitt für Mundaka wählen"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/regions",
+          "title": "Regionen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/region/new",
+          "title": "Region anlegen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Zurück zu den Regionen",
+            "✓ Fixieren",
+            "Jan",
+            "Feb",
+            "Mär",
+            "Apr",
+            "Mai",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Okt",
+            "Nov",
+            "Dez",
+            "Region anlegen",
+            "Abbrechen",
+            "Abbrechen",
+            "Region anlegen"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/review",
+          "title": "Review",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Spot-Einreichungen",
+            "Hero-Bilder",
+            "Galeriebilder",
+            "Gemeldete Bilder",
+            "Tips & Bewertungen"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/map",
+          "title": "Karte",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Veröffentlicht (2 im Ausschnitt)",
+            "Entwurf (1 im Ausschnitt)",
+            "+",
+            "−"
+          ],
+          "axe": [
+            {
+              "id": "aria-command-name",
+              "impact": "serious",
+              "nodes": 3,
+              "help": "ARIA commands must have an accessible name"
+            },
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/activity",
+          "title": "Aktivität",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/operations",
+          "title": "Betrieb",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            },
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access"
+            }
+          ]
+        },
+        {
+          "route": "/admin/weather",
+          "title": "Wetterprofile",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        },
+        {
+          "route": "/admin/users",
+          "title": "Benutzer",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 1009,
+          "clientWidth": 1024,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 215,
+              "h": 40
+            },
+            {
+              "text": "Übersicht",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Spots",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Hero",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Regionen",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Karte",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Review",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Aktivität",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Betrieb",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benutzer",
+              "w": 215,
+              "h": 36
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Benutzer anlegen",
+            "Deaktivieren",
+            "Bearbeiten",
+            "Passwort",
+            "Löschen",
+            "Deaktivieren",
+            "Bearbeiten",
+            "Passwort",
+            "Löschen"
+          ],
+          "axe": [
+            {
+              "id": "color-contrast",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Elements must meet minimum color contrast ratio thresholds"
+            }
+          ]
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    },
+    "mobile": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "routes": [
+        {
+          "route": "/admin",
+          "title": "Übersicht",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Neue Aufgabe"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/spots",
+          "title": "Spots",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Alle",
+            "Entwürfe",
+            "Veröffentlicht",
+            "Archiviert",
+            "Zurück",
+            "Weiter"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/spot/new",
+          "title": "Neuen Spot anlegen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Zurück zu den Spots",
+            "Basisdaten",
+            "✓ Fixieren",
+            "Sportarten",
+            "Kitesurfen",
+            "Windsurfen",
+            "Wingfoilen",
+            "Surfen",
+            "Kategorien",
+            "Anfänger",
+            "Fortgeschritten",
+            "Experte",
+            "Wettkampf-Spot",
+            "Flachwasser",
+            "Chop / Kabbelwelle",
+            "Kleine Welle",
+            "Große Welle",
+            "Tiefes Wasser",
+            "Offenes Meer",
+            "Geschütztes Meer",
+            "See",
+            "Lagune",
+            "Freeride",
+            "Freestyle",
+            "Big Air",
+            "Wellenreiten",
+            "Wavekite",
+            "Sand"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/hero",
+          "title": "Hero-Rotation",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Mobilen Ausschnitt für Arte Vida wählen",
+            "Mobilen Ausschnitt für Baleal wählen",
+            "Mobilen Ausschnitt für Balneario wählen",
+            "Mobilen Ausschnitt für Brouwersdam wählen",
+            "Mobilen Ausschnitt für Capo Mannu wählen",
+            "Mobilen Ausschnitt für Carcavelos wählen",
+            "Mobilen Ausschnitt für Costa Teguise wählen",
+            "Mobilen Ausschnitt für Coxos wählen",
+            "Mobilen Ausschnitt für El Cotillo wählen",
+            "Mobilen Ausschnitt für El Médano wählen",
+            "Mobilen Ausschnitt für Fehmarn Wulfener Hals wählen",
+            "Mobilen Ausschnitt für Fistral Beach (Newquay) wählen",
+            "Mobilen Ausschnitt für Flag Beach wählen",
+            "Mobilen Ausschnitt für Foz do Lizandro wählen",
+            "Mobilen Ausschnitt für Heidkate wählen",
+            "Mobilen Ausschnitt für Keros wählen",
+            "Mobilen Ausschnitt für La Gravière (Hossegor) wählen",
+            "Mobilen Ausschnitt für La Sud (Hossegor) wählen",
+            "Mobilen Ausschnitt für Laboe wählen",
+            "Mobilen Ausschnitt für Lahinch wählen",
+            "Mobilen Ausschnitt für Les Estagnots (Seignosse) wählen",
+            "Mobilen Ausschnitt für Leucate wählen",
+            "Mobilen Ausschnitt für Lo Stagnone wählen",
+            "Mobilen Ausschnitt für Los Lances wählen",
+            "Mobilen Ausschnitt für Majanicho wählen",
+            "Mobilen Ausschnitt für Matas Bay wählen",
+            "Mobilen Ausschnitt für Mikri Vigla wählen",
+            "Mobilen Ausschnitt für Mundaka wählen"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/regions",
+          "title": "Regionen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/region/new",
+          "title": "Region anlegen",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Zurück zu den Regionen",
+            "✓ Fixieren",
+            "Jan",
+            "Feb",
+            "Mär",
+            "Apr",
+            "Mai",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Okt",
+            "Nov",
+            "Dez",
+            "Region anlegen",
+            "Abbrechen",
+            "Abbrechen",
+            "Region anlegen"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/review",
+          "title": "Review",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Spot-Einreichungen",
+            "Hero-Bilder",
+            "Galeriebilder",
+            "Gemeldete Bilder",
+            "Tips & Bewertungen"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/map",
+          "title": "Karte",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Veröffentlicht (2 im Ausschnitt)",
+            "Entwurf (0 im Ausschnitt)",
+            "+",
+            "−"
+          ],
+          "axe": [
+            {
+              "id": "aria-command-name",
+              "impact": "serious",
+              "nodes": 2,
+              "help": "ARIA commands must have an accessible name"
+            }
+          ]
+        },
+        {
+          "route": "/admin/activity",
+          "title": "Aktivität",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/operations",
+          "title": "Betrieb",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": [
+            {
+              "id": "scrollable-region-focusable",
+              "impact": "serious",
+              "nodes": 1,
+              "help": "Scrollable region must have keyboard access"
+            }
+          ]
+        },
+        {
+          "route": "/admin/weather",
+          "title": "Wetterprofile",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden"
+          ],
+          "axe": []
+        },
+        {
+          "route": "/admin/users",
+          "title": "Benutzer",
+          "bodyTheme": "admin-scope",
+          "overflow": false,
+          "scrollWidth": 375,
+          "clientWidth": 390,
+          "small": [
+            {
+              "text": "surfwinddataAdmin",
+              "w": 155,
+              "h": 24
+            },
+            {
+              "text": "Benachrichtigungen",
+              "w": 32,
+              "h": 32
+            },
+            {
+              "text": "Abmelden",
+              "w": 94,
+              "h": 34
+            },
+            {
+              "text": "Übersicht",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Spots",
+              "w": 79,
+              "h": 32
+            },
+            {
+              "text": "Hero",
+              "w": 72,
+              "h": 32
+            },
+            {
+              "text": "Regionen",
+              "w": 104,
+              "h": 32
+            },
+            {
+              "text": "Karte",
+              "w": 77,
+              "h": 32
+            },
+            {
+              "text": "Review",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Aktivität",
+              "w": 96,
+              "h": 32
+            },
+            {
+              "text": "Betrieb",
+              "w": 88,
+              "h": 32
+            },
+            {
+              "text": "Wetterprofile",
+              "w": 127,
+              "h": 32
+            }
+          ],
+          "buttons": [
+            "Benachrichtigungen",
+            "Abmelden",
+            "Benutzer anlegen",
+            "Deaktivieren",
+            "Bearbeiten",
+            "Passwort",
+            "Löschen",
+            "Deaktivieren",
+            "Bearbeiten",
+            "Passwort",
+            "Löschen"
+          ],
+          "axe": []
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ]
+    }
+  },
+  "workflow": {
+    "findSpot": {
+      "searchUrl": "http://127.0.0.1:4173/admin/spots?q=Tarifa",
+      "editUrl": "http://127.0.0.1:4173/admin/spot/2ad2d3a0-83cb-4e63-adc1-70e9845b9bf8/edit",
+      "returnUrl": "http://127.0.0.1:4173/admin/spots",
+      "searchValue": ""
+    },
+    "newRegion": {
+      "buttons": [
+        "",
+        "Abmelden",
+        "Zurück zu den Regionen",
+        "✓ Fixieren",
+        "Jan",
+        "Feb",
+        "Mär",
+        "Apr",
+        "Mai",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Dez",
+        "Region anlegen",
+        "Abbrechen"
+      ],
+      "fields": 8
+    },
+    "unsaved": {
+      "dialog": [],
+      "url": "http://127.0.0.1:4173/admin/spots"
+    }
+  },
+  "screenshots": [
+    "desktop-admin.png",
+    "desktop-admin-spots.png",
+    "desktop-admin-spot-new.png",
+    "desktop-admin-regions.png",
+    "desktop-admin-review.png",
+    "desktop-admin-operations.png",
+    "mobile-admin.png",
+    "mobile-admin-spots.png",
+    "mobile-admin-spot-new.png"
+  ],
+  "startedAt": "2026-08-20T19:18:07.524Z",
+  "finishedAt": "2026-08-20T19:19:16.409Z"
+}
