@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-import L from "leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import L, { type Map as LeafletMap } from "leaflet";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import SearchBar from "../components/SearchBar";
 import SpotCard from "../components/SpotCard";
 import RegionTile from "../components/RegionTile";
-import TopSpotsRow from "../components/TopSpotsRow";
-import { SectionBand } from "../components/editorial";
 import { ErrorBanner, EmptyState, SpotGridSkeleton } from "../components/AsyncStates";
+import { CloseIcon, MapIcon, MinusIcon, PlusIcon } from "../lib/icons";
+import { countryName } from "../lib/flags";
 import * as api from "../lib/api";
+import { API_BASE, resolveMediaUrl } from "../lib/api";
 import { sportLabel } from "../lib/labels";
-import { spotPath } from "../lib/spotRoutes";
-import { useSpots, useSpotsLive, useRegions } from "../lib/hooks";
+import { useSpots, useSpotsLive, useTopSpots, useRegions } from "../lib/hooks";
 import type { Spot } from "../lib/types";
 
 const MONTHS = [
@@ -34,9 +34,8 @@ const pinIcon = L.divIcon({
   popupAnchor: [0, -34],
 });
 
-/** Grey chip carrying one facet of the query the visitor just submitted, so the
- *  result head mirrors the question back. Same 8px radius + hairline as the rest
- *  of the UI. */
+// --- shared bits -----------------------------------------------------------
+
 function Chip({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface px-3 py-1.5 text-label font-medium text-ink">
@@ -45,38 +44,305 @@ function Chip({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** One tile row: a heading + a grid of spot cards, sized for the narrow left
+ *  column of the split view (2 cols on phones, 3 from lg). */
+function SpotRow({
+  title,
+  subtitle,
+  spots,
+  live,
+}: {
+  title: string;
+  subtitle?: string;
+  spots: Spot[];
+  live?: Map<string, api.LiveConditionsRead>;
+}) {
+  if (spots.length === 0) return null;
+  return (
+    <section className="pt-2">
+      <div className="border-b border-line/70 pb-3">
+        <h2 className="text-title font-semibold text-ink">{title}</h2>
+        {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-3">
+        {spots.map((spot, i) => (
+          <div key={spot.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+            <SpotCard spot={spot} live={live?.get(spot.id)} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** One tile row of region tiles. */
+function RegionRow({
+  title,
+  subtitle,
+  regions,
+}: {
+  title: string;
+  subtitle?: string;
+  regions: { slug: string; name: string; country?: string | null; image?: string | null; coverage?: number | null; rank?: number }[];
+}) {
+  if (regions.length === 0) return null;
+  return (
+    <section className="pt-2">
+      <div className="border-b border-line/70 pb-3">
+        <h2 className="text-title font-semibold text-ink">{title}</h2>
+        {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-2">
+        {regions.map((r, i) => (
+          <div key={r.slug || i} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+            <RegionTile slug={r.slug} name={r.name} country={r.country} image={r.image} coverage={r.coverage} rank={r.rank} windMonths={null} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// --- map -------------------------------------------------------------------
+
+/** Recentre the map imperatively when the result set (and thus the anchor)
+ *  changes, without remounting the Leaflet instance. */
+function Recenter({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom, { animate: false });
+  }, [map, center, zoom]);
+  return null;
+}
+
+function ResultsMap({
+  spots,
+  center,
+  zoom = 7,
+  live,
+}: {
+  spots: Spot[];
+  center: [number, number];
+  zoom?: number;
+  live?: Map<string, api.LiveConditionsRead>;
+}) {
+  const [map, setMap] = useState<LeafletMap | null>(null);
+  const withCoords = spots.filter((s) => s.coords);
+  return (
+    <div className="relative h-full w-full">
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        zoomControl={false}
+        scrollWheelZoom={false}
+        ref={setMap}
+        className="h-full w-full"
+      >
+        <Recenter center={center} zoom={zoom} />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+        />
+        {withCoords.map((spot) => (
+          <Marker key={spot.id} position={spot.coords!} icon={pinIcon}>
+            <Popup className="spot-popup" closeButton={false}>
+              <div className="w-[200px]">
+                <SpotCard spot={spot} compact live={live?.get(spot.id)} />
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+
+      {/* Zoom controls (scroll-wheel zoom is off so the page keeps scrolling
+          past the sticky map). */}
+      <div className="pointer-events-none absolute right-3 top-3 z-[600] flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
+        <button type="button" aria-label="Vergrößern" onClick={() => map?.zoomIn()} className="pointer-events-auto grid h-10 w-10 place-items-center text-teal transition-colors hover:bg-line/40">
+          <PlusIcon className="text-[18px]" />
+        </button>
+        <span className="mx-2 h-px bg-line" />
+        <button type="button" aria-label="Verkleinern" onClick={() => map?.zoomOut()} className="pointer-events-auto grid h-10 w-10 place-items-center text-teal transition-colors hover:bg-line/40">
+          <MinusIcon className="text-[18px]" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const EUROPE_CENTER: [number, number] = [43.5, 6.5];
+
+function centerFor(primary: Spot[], fallback: Spot[]): [number, number] {
+  const anchor = primary.find((s) => s.coords) ?? fallback.find((s) => s.coords);
+  return anchor?.coords ?? EUROPE_CENTER;
+}
+
 /**
- * Search results. Three rankings, chosen from which axes are open (place × time):
- *  • place fixed + time fixed/free  → GET /search  (spots/regions, incl. the
- *    geocoded "in der Nähe von …" fallback for a place the catalogue doesn't hold).
- *  • place fixed (entity) + time open → GET /areas/best-weeks  (best weeks here).
- *  • place open + a month            → GET /search/best-regions (best regions).
- *  • place open + time open ("nur Suchen") → a discovery view: a map around the
- *    visitor's location, else the current top spots + regions.
+ * Split view: tiles left, a companion map right (Airbnb-style). The map is
+ * sticky on desktop; on mobile it opens full-screen from a floating button.
+ */
+function SplitView({
+  children,
+  mapSpots,
+  center,
+  zoom,
+  live,
+}: {
+  children: React.ReactNode;
+  mapSpots: Spot[];
+  center: [number, number];
+  zoom?: number;
+  live?: Map<string, api.LiveConditionsRead>;
+}) {
+  const [showMap, setShowMap] = useState(false);
+  const hasMap = mapSpots.some((s) => s.coords);
+
+  return (
+    <div className="mx-auto w-full max-w-[1570px] px-4 pb-16 sm:px-8">
+      <div className="lg:grid lg:grid-cols-[1fr_minmax(360px,40%)] lg:gap-8">
+        <div className="min-w-0 space-y-10">{children}</div>
+
+        {hasMap && (
+          <div className="hidden lg:block">
+            <div className="sticky top-24 h-[calc(100dvh-7rem)] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
+              <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: floating toggle → full-screen map. */}
+      {hasMap && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowMap(true)}
+            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-ink px-5 py-3 text-ui font-semibold text-white shadow-float lg:hidden"
+          >
+            Karte <MapIcon className="text-[18px]" />
+          </button>
+
+          {showMap && (
+            <div className="fixed inset-0 z-[1400] bg-page lg:hidden" data-lenis-prevent>
+              <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
+              <button
+                type="button"
+                onClick={() => setShowMap(false)}
+                aria-label="Karte schließen"
+                className="absolute right-4 top-4 z-[10] grid h-11 w-11 place-items-center rounded-2xl border border-line bg-white text-teal shadow-card"
+              >
+                <CloseIcon className="text-[20px]" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// --- similar-profile fetch (reuses /spots/{id}/similar?mode=charakter) ------
+
+interface SimilarSpotApi {
+  id: string;
+  name: string;
+  sports?: string[];
+  region?: string | null;
+  region_country?: string | null;
+  image?: { url?: string | null } | null;
+  wind?: number | null;
+  wave_height?: number | null;
+}
+
+function similarToSpot(item: SimilarSpotApi): Spot {
+  return {
+    id: item.id,
+    name: item.name,
+    region: [item.region, countryName(item.region_country ?? undefined)].filter(Boolean).join(", "),
+    regionName: item.region ?? undefined,
+    regionCountry: item.region_country ?? null,
+    wind: item.wind ?? 0,
+    typicalWindKt: item.wind ?? null,
+    typicalWaveHeightM: item.wave_height ?? null,
+    tags: [],
+    image: resolveMediaUrl(item.image?.url) ?? "",
+    sports: item.sports,
+  };
+}
+
+/** Spots with a comparable profile to the anchor spot. */
+function useSimilarSpots(spotId: string | undefined, sport?: string): Spot[] {
+  const [spots, setSpots] = useState<Spot[]>([]);
+  useEffect(() => {
+    if (!spotId) {
+      setSpots([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    const query = new URLSearchParams({ mode: "charakter", limit: "6" });
+    if (sport) query.set("sport", sport);
+    fetch(`${API_BASE}/spots/${encodeURIComponent(spotId)}/similar?${query}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("similar unavailable"))))
+      .then((body: { results?: SimilarSpotApi[] }) => setSpots((body.results ?? []).map(similarToSpot)))
+      .catch((e: unknown) => {
+        if (!(e instanceof DOMException && e.name === "AbortError")) setSpots([]);
+      });
+    return () => ctrl.abort();
+  }, [spotId, sport]);
+  return spots;
+}
+
+/** Resolve light search hits to full catalogue Spots (image/region/meta). */
+function enrichSpots(hits: api.SearchSpot[], catalogue: Spot[]): Spot[] {
+  const bySlug = new Map<string, Spot>();
+  const byId = new Map<string, Spot>();
+  for (const s of catalogue) {
+    if (s.slug) bySlug.set(s.slug, s);
+    byId.set(s.id, s);
+    if (s.uuid) byId.set(s.uuid, s);
+  }
+  return hits.map((h) => bySlug.get(h.slug) ?? byId.get(h.id)).filter((s): s is Spot => Boolean(s));
+}
+
+// --- page ------------------------------------------------------------------
+
+/**
+ * Search results in an Airbnb-style split: tiles on the left, a companion map
+ * on the right. Three tile rows top-to-bottom — direct hits, spots with a
+ * comparable profile, and what's performing right now — plus the region
+ * rankings for the open-axis queries. Everything renders in the landing's own
+ * grammar (SpotCard / RegionTile) so a result reads as the same product.
  *
- * Everything renders in the site's editorial grammar (LandingHeader chrome aside):
- * the 1570px content frame, SectionBand rhythm and the SpotCard / RegionTile
- * tiles — so a result reads as the same product as the landing, not a separate
- * dashboard.
+ * Routing by open axes (place × time):
+ *  • place present (spot/region/free text) → GET /search → direct hits + similar + performing.
+ *  • place open + a month → GET /search/best-regions → region ranking + performing.
+ *  • place open + time open ("nur Suchen") → discovery: performing + a map around the visitor.
+ *  • ?mode=weeks + an entity → GET /areas/best-weeks → the temporal "best weeks" list.
  */
 export default function SearchResults() {
   const [params] = useSearchParams();
   const q = (params.get("q") ?? "").trim();
   const sport = params.get("sport") ?? undefined;
-  // The landing search forwards every selected sport as a CSV `sports=` (the
-  // backend still reads only the first `sport=`, so ranking is unchanged); the
-  // head shows all of them so a multi-sport query is mirrored back in full.
   const sports = (params.get("sports")?.split(",").filter(Boolean)) ?? (sport ? [sport] : []);
   const week = params.get("week");
   const month = params.get("month");
   const spotId = params.get("spot_id") ?? undefined;
   const regionId = params.get("region_id") ?? undefined;
+  const mode = params.get("mode"); // "weeks" → the temporal best-weeks list
 
   const placeOpen = !q && !spotId && !regionId;
   const timeOpen = !week && !month;
   const placeEntity = spotId ?? regionId;
-  // "Nur Suchen": both axes open and no month picked → the discovery view.
-  const discovery = placeOpen && timeOpen;
+
+  const showWeeks = mode === "weeks" && Boolean(placeEntity);
+  const discovery = placeOpen && timeOpen && !showWeeks;
+  const showBestRegions = placeOpen && !timeOpen && !showWeeks; // a month, place open
+  const showSearch = !placeOpen && !showWeeks; // a place is present
+
+  // Shared data.
+  const { data: catalogue } = useSpots({ limit: 100 });
+  const { data: topSpots } = useTopSpots(6);
+  const performing = useMemo(() => (topSpots ?? []).slice(0, 6), [topSpots]);
 
   const [result, setResult] = useState<api.SearchResult | null>(null);
   const [bestRegions, setBestRegions] = useState<api.BestRegionsResponse | null>(null);
@@ -85,10 +351,6 @@ export default function SearchResults() {
   const [loading, setLoading] = useState(!discovery);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
-
-  // Catalogue (persistent, shared with the landing): used to enrich the light
-  // search hits into full SpotCards (image, region, meta).
-  const { data: catalogue } = useSpots({ limit: 100 });
 
   useEffect(() => {
     if (discovery) {
@@ -104,10 +366,9 @@ export default function SearchResults() {
     setBestWeeks(null);
 
     let run: Promise<unknown>;
-    if (placeOpen) {
-      // WO offen (aber ein Monat gewählt) → beste Reviere. Regionen-Stammdaten
-      // (Bild/Land) parallel laden und per id zuordnen, damit die Kacheln
-      // denselben Look wie der Rest der Seite bekommen.
+    if (showWeeks) {
+      run = api.getBestWeeks({ spot_id: spotId, region_id: regionId, sport }).then((r) => alive && setBestWeeks(r));
+    } else if (showBestRegions) {
       run = Promise.all([
         api.getBestRegions({ sport, month: month ? Number(month) : undefined }),
         api.getRegions(),
@@ -116,131 +377,139 @@ export default function SearchResults() {
         setBestRegions(r);
         setRegionMeta(new Map(regions.map((x) => [x.id, x])));
       });
-    } else if (placeEntity && timeOpen) {
-      // Ort fix + WANN offen → beste Wochen für diesen Ort
-      run = api
-        .getBestWeeks({ spot_id: spotId, region_id: regionId, sport })
-        .then((r) => alive && setBestWeeks(r));
     } else {
-      // Ort + Zeit fix (oder Freitext, inkl. geocodiertem "in der Nähe von …")
-      run = api
-        .getSearch({ q, sport, week: week ? Number(week) : undefined })
-        .then((r) => alive && setResult(r));
+      // A place is present (spot / region / free text, incl. the geocoded
+      // "nearby" fallback). Always resolve to spots so picking a spot shows
+      // that spot — not the best-weeks list.
+      run = api.getSearch({ q, sport, week: week ? Number(week) : undefined }).then((r) => alive && setResult(r));
     }
 
     run
-      .catch(
-        (e) =>
-          alive &&
-          setError(e instanceof api.ApiError ? e.message : "Suche fehlgeschlagen.")
-      )
+      .catch((e) => alive && setError(e instanceof api.ApiError ? e.message : "Suche fehlgeschlagen."))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [q, sport, week, month, spotId, regionId, placeOpen, placeEntity, timeOpen, discovery, retry]);
+  }, [q, sport, week, month, spotId, regionId, discovery, showWeeks, showBestRegions, retry]);
 
   const monthName = month ? MONTHS[Number(month) - 1] : null;
-
-  // Timeframe chip label (open → nothing).
   const timeChip = week ? `KW ${week}` : monthName ?? null;
-  // Place / nearby heading. For a geocoded place the /search result carries the
-  // resolved name, so "Kiel" (not in the catalogue) reads as "in der Nähe von Kiel".
   const geocodeName = result?.geocode?.name;
   const nearby = result?.resolved === "point" || result?.resolved === "area";
 
-  const heading = discovery
-    ? "Entdecken"
-    : placeOpen
-    ? monthName
-      ? `Beste Reviere im ${monthName}`
-      : "Beste Reviere für die Saison"
-    : placeEntity && timeOpen
+  const heading = showWeeks
     ? `Beste Wochen für „${q}“`
+    : discovery
+    ? "Entdecken"
+    : showBestRegions
+    ? monthName ? `Beste Reviere im ${monthName}` : "Beste Reviere"
     : nearby && geocodeName
-    ? result?.resolved === "area"
-      ? `Spots in ${geocodeName}`
-      : `Spots in der Nähe von ${geocodeName}`
-    : `Suche: „${q}“`;
+    ? result?.resolved === "area" ? `Spots in ${geocodeName}` : `Spots in der Nähe von ${geocodeName}`
+    : q ? `Ergebnisse für „${q}“` : "Suche";
+
+  // Direct-hit spots (enriched) + the anchor for the "comparable profile" row.
+  const directSpots = useMemo(
+    () => (result ? enrichSpots(result.spots, catalogue ?? []) : []),
+    [result, catalogue],
+  );
+  const anchorSpotId = spotId ?? directSpots[0]?.uuid ?? directSpots[0]?.id;
+  const similar = useSimilarSpots(showSearch ? anchorSpotId : undefined, sport);
+
+  // Live conditions for everything shown on tiles/map.
+  const liveIds = useMemo(
+    () => Array.from(new Set([...directSpots, ...similar, ...performing].map((s) => s.id))),
+    [directSpots, similar, performing],
+  );
+  const { data: liveData } = useSpotsLive(liveIds);
+  const live = liveData ?? undefined;
+
+  const mapSpots = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Spot[] = [];
+    for (const s of [...directSpots, ...similar, ...performing]) {
+      if (s.coords && !seen.has(s.id)) {
+        seen.add(s.id);
+        out.push(s);
+      }
+    }
+    return out;
+  }, [directSpots, similar, performing]);
+  const center = centerFor(directSpots, performing);
+
+  const directRegions = (result?.regionen ?? []).map((r) => ({ slug: r.slug, name: r.name }));
 
   return (
     <div className="flex min-h-screen flex-col bg-page">
       <Header />
 
       <main className="flex-1 pt-20 sm:pt-24">
-        {/* Result head — mirrors the question back: breadcrumb, headline, the
-            query as chips, and a search bar to refine right where you are. */}
-        <SectionBand tone="page" pad="sm" className="pt-2">
+        {/* Head — mirrors the query back + a search bar to refine in place. */}
+        <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
           <nav className="text-caption font-medium text-muted">
             <Link to="/" className="hover:underline">Übersicht</Link>
             <span className="mx-1.5 text-muted">›</span>
             <span className="text-ink">Suche</span>
           </nav>
-
-          <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">
-            {heading}
-          </h1>
-
+          <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h1>
           {(sports.length > 0 || timeChip || (!nearby && q)) && (
             <div className="mt-3 flex flex-wrap gap-2">
               {!nearby && q && <Chip>{q}</Chip>}
               {timeChip && <Chip>{timeChip}</Chip>}
-              {sports.map((s) => (
-                <Chip key={s}>{sportLabel(s)}</Chip>
-              ))}
+              {sports.map((s) => <Chip key={s}>{sportLabel(s)}</Chip>)}
             </div>
           )}
-
           <div className="mt-6 max-w-[760px]">
             <SearchBar />
           </div>
-        </SectionBand>
+        </div>
 
-        {loading && (
-          <SectionBand tone="page" pad="md">
-            <SpotGridSkeleton />
-          </SectionBand>
-        )}
+        <div className="mt-8">
+          {loading && (
+            <div className="mx-auto w-full max-w-[1570px] px-4 sm:px-8">
+              <SpotGridSkeleton />
+            </div>
+          )}
 
-        {error && !loading && (
-          <SectionBand tone="page" pad="md">
-            <ErrorBanner message={error} onRetry={() => setRetry((n) => n + 1)} />
-          </SectionBand>
-        )}
+          {error && !loading && (
+            <div className="mx-auto w-full max-w-[1570px] px-4 sm:px-8">
+              <ErrorBanner message={error} onRetry={() => setRetry((n) => n + 1)} />
+            </div>
+          )}
 
-        {!loading && !error && (
-          <>
-            {discovery && <DiscoveryView />}
+          {!loading && !error && showWeeks && bestWeeks && (
+            <div className="mx-auto w-full max-w-[1180px] px-4 pb-16 sm:px-8">
+              <BestWeeksList data={bestWeeks} place={q} />
+            </div>
+          )}
 
-            {result && (
-              <SearchHits result={result} catalogue={catalogue ?? []} />
-            )}
+          {!loading && !error && (discovery || showBestRegions || showSearch) && (
+            <SplitView mapSpots={discovery ? (catalogue ?? []).filter((s) => s.coords) : mapSpots} center={center} live={live}>
+              {showSearch && (
+                <>
+                  <RegionRow title="Direkte Treffer" subtitle="Regionen zu deiner Suche" regions={directRegions} />
+                  <SpotRow
+                    title={directRegions.length ? "Spots" : "Direkte Treffer"}
+                    subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Passend zu deiner Suche"}
+                    spots={directSpots}
+                    live={live}
+                  />
+                  {directSpots.length === 0 && directRegions.length === 0 && (
+                    <EmptyState message="Keine direkten Treffer. Versuche einen anderen Ort oder Spotnamen." />
+                  )}
+                  <SpotRow title="Vergleichbares Profil" subtitle="Spots mit ähnlichem Charakter" spots={similar} live={live} />
+                </>
+              )}
 
-            {bestRegions && (
-              <BestRegionsSection data={bestRegions} monthName={monthName} meta={regionMeta} />
-            )}
+              {showBestRegions && (
+                <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
+              )}
 
-            {bestWeeks && <BestWeeksSection data={bestWeeks} place={q} />}
+              <SpotRow title="Gerade gut" subtitle="Spots mit aktuell guten Bedingungen" spots={performing} live={live} />
 
-            {/* Achsen-Cross-Sell — die jeweils andere Achse als eigener Bereich. */}
-            {placeEntity && (
-              <CrossSell
-                to={
-                  timeOpen
-                    ? // gerade "beste Wochen" → ähnliche Reviere entdecken
-                      `/search?${new URLSearchParams({ ...(sport ? { sport } : {}), ...(month ? { month } : {}) }).toString()}`
-                    : // Ergebnis für eine feste Woche → wann ist es hier am besten?
-                      `/search?${new URLSearchParams({ ...(spotId ? { spot_id: spotId } : {}), ...(regionId ? { region_id: regionId } : {}), q, ...(sport ? { sport } : {}) }).toString()}`
-                }
-                label={
-                  timeOpen
-                    ? "Ähnliche Reviere entdecken"
-                    : `Wann ist es in „${q}“ am besten?`
-                }
-              />
-            )}
-          </>
-        )}
+              {discovery && <DiscoveryRegions />}
+            </SplitView>
+          )}
+        </div>
       </main>
 
       <Footer />
@@ -248,195 +517,102 @@ export default function SearchResults() {
   );
 }
 
-/** Resolve a light search hit to a full catalogue Spot (image/region/meta) so it
- *  renders as the same tile used everywhere else. Matches by slug first, then by
- *  the spot's uuid/id. */
-function enrichSpots(hits: api.SearchSpot[], catalogue: Spot[]): Spot[] {
-  const bySlug = new Map<string, Spot>();
-  const byId = new Map<string, Spot>();
-  for (const s of catalogue) {
-    if (s.slug) bySlug.set(s.slug, s);
-    byId.set(s.id, s);
-    if (s.uuid) byId.set(s.uuid, s);
-  }
-  return hits
-    .map((h) => bySlug.get(h.slug) ?? byId.get(h.id))
-    .filter((s): s is Spot => Boolean(s));
-}
+// --- open-axis pieces ------------------------------------------------------
 
-function SearchHits({
-  result,
-  catalogue,
-}: {
-  result: api.SearchResult;
-  catalogue: Spot[];
-}) {
-  const spots = useMemo(() => enrichSpots(result.spots, catalogue), [result.spots, catalogue]);
-  const { data: live } = useSpotsLive(spots.map((s) => s.id));
-
-  const empty = result.regionen.length === 0 && result.spots.length === 0;
-  if (empty) {
-    return (
-      <SectionBand tone="page" pad="md">
-        <EmptyState message="Keine Treffer. Versuche einen anderen Ort oder Spotnamen." />
-      </SectionBand>
-    );
-  }
-
-  return (
-    <>
-      {result.regionen.length > 0 && (
-        <SectionBand tone="page" pad="md" heading="Regionen">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3">
-            {result.regionen.map((r, i) => (
-              <div
-                key={r.id}
-                className="animate-fade-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
-              >
-                <RegionTile slug={r.slug} name={r.name} windMonths={null} />
-              </div>
-            ))}
-          </div>
-        </SectionBand>
-      )}
-
-      {result.spots.length > 0 && (
-        <SectionBand tone="page" pad="md" heading="Spots">
-          {spots.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5">
-              {spots.map((spot, i) => (
-                <div
-                  key={spot.id}
-                  className="animate-fade-up"
-                  style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
-                >
-                  <SpotCard spot={spot} live={live?.get(spot.id)} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            // Catalogue not (yet) resolvable — never show a blank section.
-            <ul className="space-y-2">
-              {result.spots.map((s) => (
-                <li key={s.id}>
-                  <Link
-                    to={spotPath({ slug: s.slug, name: s.name })}
-                    className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-3 transition-colors hover:bg-band/60"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium text-ink">{s.name}</span>
-                      <span className="block truncate text-caption text-muted">
-                        {s.sports.map(sportLabel).join(", ")}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </SectionBand>
-      )}
-    </>
-  );
-}
-
-function BestRegionsSection({
+function BestRegionsRow({
   data,
   monthName,
   meta,
 }: {
-  data: api.BestRegionsResponse;
+  data: api.BestRegionsResponse | null;
   monthName: string | null;
   meta: Map<string, api.Region>;
 }) {
-  const ranking = (data.regions ?? []).filter(
-    (r) => (r.coverage ?? 0) > 0 || (r.intensity ?? 0) > 0
-  );
+  const ranking = (data?.regions ?? []).filter((r) => (r.coverage ?? 0) > 0 || (r.intensity ?? 0) > 0);
   if (ranking.length === 0) {
-    return (
-      <SectionBand tone="page" pad="md">
-        <EmptyState message="Noch keine Saisondaten (Klimatologie fehlt für die veröffentlichten Spots)." />
-      </SectionBand>
-    );
+    return <EmptyState message="Noch keine Saisondaten (Klimatologie fehlt für die veröffentlichten Spots)." />;
   }
   return (
-    <SectionBand tone="page" pad="md">
-      <p className="mb-6 max-w-[62ch] text-body text-muted">
-        Die besten Reviere {monthName ? `im ${monthName}` : "über die Saison"} · geordnet
-        nach Abdeckung (Anteil der Spots mit fahrbaren Bedingungen).
-      </p>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3">
-        {ranking.map((r, i) => {
-          const m = r.id ? meta.get(r.id) : undefined;
-          return (
-            <div
-              key={r.id ?? r.slug ?? i}
-              className="animate-fade-up"
-              style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
-            >
-              <RegionTile
-                slug={r.slug ?? m?.slug ?? ""}
-                name={r.name ?? m?.name ?? r.slug ?? ""}
-                country={m?.country ?? null}
-                image={api.resolveMediaUrl(m?.image?.url)}
-                coverage={r.coverage ?? null}
-                rank={i + 1}
-                windMonths={null}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </SectionBand>
+    <RegionRow
+      title="Direkte Treffer"
+      subtitle={`Beste Reviere ${monthName ? `im ${monthName}` : "über die Saison"} · nach Abdeckung`}
+      regions={ranking.map((r, i) => {
+        const m = r.id ? meta.get(r.id) : undefined;
+        return {
+          slug: r.slug ?? m?.slug ?? "",
+          name: r.name ?? m?.name ?? r.slug ?? "",
+          country: m?.country ?? null,
+          image: resolveMediaUrl(m?.image?.url),
+          coverage: r.coverage ?? null,
+          rank: i + 1,
+        };
+      })}
+    />
   );
 }
 
-function BestWeeksSection({
-  data,
-  place,
-}: {
-  data: api.BestWeeksResponse;
-  place: string;
-}) {
+/** Season ranking of regions for the discovery view ("gerade gut performen"). */
+function DiscoveryRegions() {
+  const [data, setData] = useState<api.BestRegionsResponse | null>(null);
+  const [meta, setMeta] = useState<Map<string, api.Region>>(new Map());
+  const { data: regions } = useRegions();
+
+  useEffect(() => {
+    let alive = true;
+    api.getBestRegions({}).then((r) => alive && setData(r)).catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (regions) setMeta(new Map(regions.map((x) => [x.id, x])));
+  }, [regions]);
+
+  const ranking = (data?.regions ?? [])
+    .filter((r) => (r.coverage ?? 0) > 0 || (r.intensity ?? 0) > 0)
+    .slice(0, 4);
+  if (ranking.length === 0) return null;
+  return (
+    <RegionRow
+      title="Top-Regionen"
+      subtitle="Reviere, die gerade gut laufen"
+      regions={ranking.map((r, i) => {
+        const m = r.id ? meta.get(r.id) : undefined;
+        return {
+          slug: r.slug ?? m?.slug ?? "",
+          name: r.name ?? m?.name ?? r.slug ?? "",
+          country: m?.country ?? null,
+          image: resolveMediaUrl(m?.image?.url),
+          coverage: r.coverage ?? null,
+          rank: i + 1,
+        };
+      })}
+    />
+  );
+}
+
+/** The temporal "best weeks" answer — a bar list, reached via ?mode=weeks. */
+function BestWeeksList({ data, place }: { data: api.BestWeeksResponse; place: string }) {
   const weeks = (data.weeks ?? []).filter((w) => (w.score ?? 0) > 0).slice(0, 12);
   if (weeks.length === 0) {
-    return (
-      <SectionBand tone="page" pad="md">
-        <EmptyState message="Noch keine Saisondaten für diesen Ort (Klimatologie fehlt)." />
-      </SectionBand>
-    );
+    return <EmptyState message="Noch keine Saisondaten für diesen Ort (Klimatologie fehlt)." />;
   }
   const max = Math.max(...weeks.map((w) => w.score ?? 0), 0.01);
   const best = weeks[0]?.week;
   return (
-    <SectionBand tone="page" pad="md">
-      <p className="mb-4 max-w-[62ch] text-body text-muted">
-        Die besten Wochen für {place || "diesen Ort"} — nach nutzbaren Stunden.
-      </p>
+    <section>
+      <p className="mb-4 max-w-[62ch] text-body text-muted">Die besten Wochen für {place || "diesen Ort"} — nach nutzbaren Stunden.</p>
       <ul className="space-y-2">
         {weeks.map((w) => {
           const isBest = w.week === best;
           return (
-            <li
-              key={w.week}
-              className="flex items-center gap-4 rounded-2xl border border-line bg-surface px-4 py-3"
-            >
+            <li key={w.week} className="flex items-center gap-4 rounded-2xl border border-line bg-surface px-4 py-3">
               <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
               <span className="h-2 flex-1 overflow-hidden rounded-full bg-line">
-                {/* Data bar in the shared data accent (teal); the peak week is
-                    flagged with the attention colour (orange), matching the
-                    "best season" role used across the site. */}
-                <span
-                  className={`block h-full rounded-full ${isBest ? "bg-orange" : "bg-teal"}`}
-                  style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }}
-                />
+                <span className={`block h-full rounded-full ${isBest ? "bg-orange" : "bg-teal"}`} style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }} />
               </span>
               {typeof w.score === "number" && (
-                <span
-                  className="w-24 shrink-0 text-right text-label text-muted"
-                  title="Anteil der Zeit mit fahrbaren Bedingungen in dieser Woche"
-                >
+                <span className="w-24 shrink-0 text-right text-label text-muted" title="Anteil der Zeit mit fahrbaren Bedingungen in dieser Woche">
                   <span className="data-accent">{Math.round(w.score * 100)}%</span> nutzbar
                 </span>
               )}
@@ -444,143 +620,6 @@ function BestWeeksSection({
           );
         })}
       </ul>
-    </SectionBand>
-  );
-}
-
-/** The other axis, as its own band — turns three result types into one
- *  exploration space instead of three dead ends. */
-function CrossSell({ to, label }: { to: string; label: string }) {
-  return (
-    <SectionBand tone="band" pad="md">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-body font-medium text-ink-soft">Noch nicht das Richtige?</p>
-        <Link
-          to={to}
-          className="inline-flex min-h-11 items-center gap-1.5 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
-        >
-          {label} ›
-        </Link>
-      </div>
-    </SectionBand>
-  );
-}
-
-/**
- * "Nur Suchen" landed here with both axes open. Ask for the visitor's location:
- * a map around it if granted, otherwise fall back to the current top spots and
- * top regions — never an empty screen, and always in the site's own grammar.
- */
-function DiscoveryView() {
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null | "denied">(null);
-  const { data: spots } = useSpots({ limit: 100 });
-
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setCoords("denied");
-      return;
-    }
-    let alive = true;
-    navigator.geolocation.getCurrentPosition(
-      (p) => alive && setCoords({ lat: p.coords.latitude, lon: p.coords.longitude }),
-      () => alive && setCoords("denied"),
-      { timeout: 8000, maximumAge: 10 * 60 * 1000 }
-    );
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const withCoords = (spots ?? []).filter((s) => s.coords);
-
-  // Located → a live map centred on the visitor, spots as pins.
-  if (coords && coords !== "denied" && withCoords.length > 0) {
-    return (
-      <SectionBand tone="page" pad="md" heading="Spots in deiner Nähe">
-        <div className="overflow-hidden rounded-3xl border border-line">
-          <MapContainer
-            center={[coords.lat, coords.lon]}
-            zoom={8}
-            zoomControl={false}
-            scrollWheelZoom
-            className="h-[360px] w-full sm:h-[520px]"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-              subdomains="abcd"
-            />
-            {withCoords.map((spot) => (
-              <Marker key={spot.id} position={spot.coords!} icon={pinIcon}>
-                <Popup className="spot-popup" closeButton={false}>
-                  <div className="w-[200px]">
-                    <SpotCard spot={spot} compact />
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      </SectionBand>
-    );
-  }
-
-  // Still asking (null) or denied → the current top spots + top regions.
-  return (
-    <>
-      <SectionBand tone="page" pad="md" heading="Aktuelle Top-Spots">
-        <TopSpotsRow />
-      </SectionBand>
-      <SectionBand tone="band" pad="md" heading="Top-Regionen aktuell">
-        <TopRegions />
-      </SectionBand>
-    </>
-  );
-}
-
-/** Season ranking of regions, tiles in the landing grammar. */
-function TopRegions() {
-  const [data, setData] = useState<api.BestRegionsResponse | null>(null);
-  const [meta, setMeta] = useState<Map<string, api.Region>>(new Map());
-  const { data: regions } = useRegions();
-
-  useEffect(() => {
-    let alive = true;
-    api.getBestRegions({}).then((r) => alive && setData(r));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (regions) setMeta(new Map(regions.map((x) => [x.id, x])));
-  }, [regions]);
-
-  const ranking = (data?.regions ?? [])
-    .filter((r) => (r.coverage ?? 0) > 0 || (r.intensity ?? 0) > 0)
-    .slice(0, 6);
-
-  if (ranking.length === 0) {
-    return <EmptyState message="Noch keine Regionen-Daten verfügbar." />;
-  }
-  return (
-    <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3">
-      {ranking.map((r, i) => {
-        const m = r.id ? meta.get(r.id) : undefined;
-        return (
-          <div key={r.id ?? r.slug ?? i} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
-            <RegionTile
-              slug={r.slug ?? m?.slug ?? ""}
-              name={r.name ?? m?.name ?? r.slug ?? ""}
-              country={m?.country ?? null}
-              image={api.resolveMediaUrl(m?.image?.url)}
-              coverage={r.coverage ?? null}
-              rank={i + 1}
-              windMonths={null}
-            />
-          </div>
-        );
-      })}
-    </div>
+    </section>
   );
 }

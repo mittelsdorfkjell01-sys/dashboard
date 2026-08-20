@@ -480,6 +480,25 @@ def set_image_focal_mobile(
     return spot
 
 
+def set_image_hero_reel(
+    spot_id, value: bool, *, db: Session, actor: str | None = "admin"
+) -> Any:
+    """Add/remove the spot's hero photo from the curated landing-hero rotation.
+
+    A flag on the image object (not a spot column) so it travels with the photo:
+    replace the hero and the reel membership resets with it, which is the
+    intended behaviour — the reel curates *photos*, not spots.
+    """
+    spot = _load(db, spot_id)
+    if not (isinstance(spot.image, dict) and spot.image.get("url")):
+        raise ValueError("Kein Bild für die Hero-Rotation.")
+    spot.image = with_fields(spot.image, hero_reel=bool(value))
+    record_audit(db, spot.id, "image", {"hero_reel": bool(value)}, actor)
+    db.commit()
+    db.refresh(spot)
+    return spot
+
+
 def set_image_rotation(
     spot_id, rotation: float, *, db: Session, actor: str | None = "admin"
 ) -> Any:

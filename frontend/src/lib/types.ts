@@ -25,6 +25,7 @@ export interface Spot {
   heroFocal?: { x: number; y: number } | null; // object-position % for the crop
   heroFocalMobile?: { x: number; y: number } | null; // mobile override, optional
   heroRotation?: number; // subtle horizon correction in degrees
+  heroReel?: boolean; // in the curated landing-hero rotation (admin Hero tab)
   // Full attribution (photographer, provider, licence + their links). One
   // object rather than loose strings, so stock, Commons and community photos
   // all render through the same credit line.

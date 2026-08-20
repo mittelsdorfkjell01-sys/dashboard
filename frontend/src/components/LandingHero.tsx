@@ -25,9 +25,15 @@ const ADVANCE_MS = 10000;
 export default function LandingHero({ spots }: { spots: Spot[] }) {
   const reduce = useReducedMotion();
   // Only spots with a real uploaded hero make good full-screen backgrounds;
-  // the branded fallback field is for tiles, not a 100vh photo. Cap the reel so
-  // we never cycle through the entire catalogue.
-  const slides = useMemo(() => spots.filter((s) => s.hero).slice(0, 12), [spots]);
+  // the branded fallback field is for tiles, not a 100vh photo. Prefer the
+  // photos an operator curated into the reel (admin Hero tab, image.hero_reel);
+  // until any are picked, fall back to every spot with a hero so the reel is
+  // never empty. Cap it so we never cycle the entire catalogue.
+  const slides = useMemo(() => {
+    const withHero = spots.filter((s) => s.hero);
+    const curated = withHero.filter((s) => s.heroReel);
+    return (curated.length ? curated : withHero).slice(0, 12);
+  }, [spots]);
   const count = slides.length;
   const [index, setIndex] = useState(0);
 

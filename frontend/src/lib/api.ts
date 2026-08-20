@@ -105,6 +105,9 @@ export interface ImageRecord {
   /** True only where coordinate proximity was actually established. */
   geo_verified?: boolean;
   role?: "hero" | "gallery";
+  /** True → this hero photo is one of the curated landing-hero reel slides
+   *  (admin Hero tab). Absent/false → used on tiles/detail only. */
+  hero_reel?: boolean;
   /** Source health from the maintenance check: "ok" | "dead" | null (never
    *  checked). Photos get deleted and accounts vanish. */
   source_status?: "ok" | "dead" | null;
@@ -1542,6 +1545,13 @@ export const setSpotImageRotation = (id: string, rotation: number) =>
   request<SpotRead>(`/admin/spots/${id}/image/rotation`, {
     method: "POST",
     body: JSON.stringify({ rotation }),
+  });
+
+/** Add/remove the spot's hero photo from the curated landing-hero rotation. */
+export const setSpotImageHeroReel = (id: string, value: boolean) =>
+  request<SpotRead>(`/admin/spots/${id}/image/hero-reel`, {
+    method: "POST",
+    body: JSON.stringify({ value }),
   });
 
 /** Mark the hero image's location as operator-verified. */

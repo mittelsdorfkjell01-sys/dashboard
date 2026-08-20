@@ -213,10 +213,18 @@ function TaskCard({
     <div
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", task.id)}
-      className={`cursor-grab rounded-lg border bg-white p-3 active:cursor-grabbing ${selected ? "border-teal ring-1 ring-teal/30" : "border-line"}`}
+      onClick={onEdit}
+      className={`cursor-pointer rounded-lg border bg-white p-3 active:cursor-grabbing ${selected ? "border-teal ring-1 ring-teal/30" : "border-line"}`}
     >
       <div className="flex items-start gap-2">
-        <input type="checkbox" checked={selected} onChange={onSelect} aria-label={`Aufgabe ${task.title} auswählen`} className="mt-0.5 h-4 w-4 rounded border-line accent-[var(--a-primary)]" />
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onSelect}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Aufgabe ${task.title} auswählen`}
+          className="mt-0.5 h-4 w-4 rounded border-line accent-[var(--a-primary)]"
+        />
         <p className="min-w-0 flex-1 text-label font-medium text-ink">{task.title}</p>
       </div>
       {task.body && <TaskDetails body={task.body} />}
@@ -224,18 +232,39 @@ function TaskCard({
         <span className="text-caption text-muted">{task.author ?? "—"}</span>
         <div className="flex items-center gap-2 text-caption">
           {task.status === "open" ? (
-            <button type="button" onClick={() => onMove("done")} className="font-medium text-teal hover:underline">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove("done");
+              }}
+              className="font-medium text-teal hover:underline"
+            >
               → Erledigt
             </button>
           ) : (
-            <button type="button" onClick={() => onMove("open")} className="font-medium text-teal hover:underline">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove("open");
+              }}
+              className="font-medium text-teal hover:underline"
+            >
               ← Offen
             </button>
           )}
           <button type="button" onClick={onEdit} className="text-muted hover:text-ink">
             Bearbeiten
           </button>
-          <button type="button" onClick={onDelete} className="text-muted hover:text-admin-danger">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-muted hover:text-admin-danger"
+          >
             Löschen
           </button>
         </div>

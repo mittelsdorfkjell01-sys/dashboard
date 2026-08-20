@@ -591,6 +591,28 @@ def set_spot_image_focal_mobile(
     return SpotRead.from_orm_spot(spot)
 
 
+class HeroReelRequest(BaseModel):
+    """Toggle whether the spot's hero photo is in the landing-hero rotation."""
+
+    value: bool = True
+
+
+@router.post("/spots/{spot_id}/image/hero-reel", response_model=SpotRead)
+def set_spot_image_hero_reel(
+    spot_id: uuid.UUID,
+    body: HeroReelRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+):
+    try:
+        spot = admin_spots.set_image_hero_reel(spot_id, body.value, db=db, actor=actor)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return SpotRead.from_orm_spot(spot)
+
+
 @router.post("/spots/{spot_id}/image/rotation", response_model=SpotRead)
 def set_spot_image_rotation(
     spot_id: uuid.UUID,

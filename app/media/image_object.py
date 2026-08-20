@@ -77,6 +77,10 @@ CANONICAL_KEYS = (
     "height",
     "geo_verified",
     "role",
+    # Curated landing-hero rotation flag. True → this spot's hero photo is one of
+    # the full-screen slides the landing reel cycles through (see the admin Hero
+    # tab + LandingHero). Absent/False → the photo is used on tiles/detail only.
+    "hero_reel",
     # Source health, written by the maintenance check (Sprint 3). "ok" |
     # "dead" | None (never checked). Photos get deleted and accounts vanish, so
     # a hero that still renders from cache can already be gone at the source.
@@ -173,6 +177,7 @@ def build_image(
     height: Any = None,
     geo_verified: bool = False,
     role: str = "hero",
+    hero_reel: bool = False,
     source_status: str | None = None,
     source_checked_at: str | None = None,
 ) -> dict:
@@ -231,6 +236,7 @@ def build_image(
         "height": _positive_int(height),
         "geo_verified": bool(geo_verified),
         "role": role,
+        "hero_reel": bool(hero_reel),
         "source_status": source_status,
         "source_checked_at": _clean(source_checked_at),
     }
@@ -276,6 +282,7 @@ def upgrade_legacy(image: Any) -> dict | None:
         "height": _positive_int(image.get("height")),
         "geo_verified": bool(image.get("geo_verified")),
         "role": role if role in ROLES else "hero",
+        "hero_reel": bool(image.get("hero_reel")),
         "source_status": (
             image.get("source_status")
             if image.get("source_status") in SOURCE_STATUSES
