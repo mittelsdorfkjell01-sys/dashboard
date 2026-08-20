@@ -3,11 +3,10 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
-import { countryName } from "../lib/flags";
 import { ChevronRightIcon, PinIcon } from "../lib/icons";
 import type { Spot } from "../lib/types";
 
-const ADVANCE_MS = 10000;
+const ADVANCE_MS = 60000;
 
 /**
  * Landing hero. Instead of one static photo, this rotates on its own through
@@ -66,8 +65,6 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
   }
 
   const current = slides[Math.min(index, count - 1)];
-  // Desktop pill carries the region too; mobile shows only the spot name.
-  const region = countryName(current.regionCountry ?? undefined) || current.regionName || "";
 
   return (
     <>
@@ -85,20 +82,14 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
             i === (index - 1 + count) % count;
           if (!near) return null;
           return (
-            // Ken Burns: the active slide zooms very slowly (1 → 1.08) across its
-            // whole dwell while cross-fading to the next — a calm, living window.
+            // Static background: only a cross-fade between slides, no motion
+            // on the image itself (no Ken Burns zoom/pan).
             <motion.div
               key={s.id}
               className="absolute inset-0"
               initial={false}
-              animate={{ opacity: active ? 1 : 0, scale: active && !reduce ? 1.08 : 1 }}
-              transition={{
-                opacity: { duration: reduce ? 0.2 : 1.2, ease: "easeInOut" },
-                scale: active
-                  ? { duration: ADVANCE_MS / 1000, ease: "linear" }
-                  : { duration: 1.4, ease: "easeOut" },
-              }}
-              style={{ transformOrigin: "center" }}
+              animate={{ opacity: active ? 1 : 0 }}
+              transition={{ duration: reduce ? 0.2 : 1.2, ease: "easeInOut" }}
             >
               <HeroImage
                 src={s.hero!}
@@ -118,21 +109,17 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
       {/* CTA — a compact frosted "location" pill. Names the spot on screen and
           links to it; doubles as the photo's caption. Sits in the same centred
           content column as the header, so its left edge lines up with the
-          "Best collection" tagline on desktop. Desktop adds the region; mobile
-          keeps just the name. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-8 z-20 sm:bottom-12">
+          "Best collection" tagline on desktop. Icon + name only, no region. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-12 z-20 sm:bottom-16">
         <div className="mx-auto flex max-w-[1570px] px-4 sm:px-10">
           <Link
             to={spotPath(current)}
             aria-label={`Zum Spot ${current.name}`}
-            className="group pointer-events-auto inline-flex max-w-[70vw] items-center gap-2 rounded-2xl border border-white/25 bg-black/25 py-2 pl-3 pr-2.5 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/35"
+            className="group pointer-events-auto inline-flex max-w-[70vw] items-center gap-1.5 rounded-xl border border-white/25 bg-black/25 py-1.5 pl-2.5 pr-2 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-black/35"
           >
-            <PinIcon className="shrink-0 text-[16px]" />
-            <span className="min-w-0 truncate text-[13px] font-medium">
-              {current.name}
-              {region && <span className="hidden font-normal text-white/75 sm:inline"> · {region}</span>}
-            </span>
-            <ChevronRightIcon className="shrink-0 text-[15px] transition-transform group-hover:translate-x-0.5" />
+            <PinIcon className="shrink-0 text-[13px]" />
+            <span className="min-w-0 truncate text-[12px] font-medium">{current.name}</span>
+            <ChevronRightIcon className="shrink-0 text-[13px] transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>

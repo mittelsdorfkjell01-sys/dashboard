@@ -7,7 +7,6 @@ import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import DeleteConfirmDialog from "../components/admin/DeleteConfirmDialog";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
-import TideAdminPanel from "../components/admin/TideAdminPanel";
 import CollapsibleSection from "../components/admin/CollapsibleSection";
 import FormNavBar from "../components/admin/FormNavBar";
 import { ErrorBanner } from "../components/AsyncStates";
@@ -1185,15 +1184,6 @@ export default function AdminSpotForm() {
                 sich wiederherstellen.
               </p>
               <SpotCommentsPanel spotId={id} />
-            </CollapsibleSection>
-          )}
-
-          {/* Gezeiten — sitzt zwischen Kommentaren und dem Löschen-Block, damit
-              tägliche Redigierarbeit oben bleibt und die Kalibrier-Kachel nicht
-              beim Speichern durch das halbe Formular scrollt. */}
-          {id && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon)) && (
-            <CollapsibleSection id="f-gezeiten" title="Gezeiten-Korrektur">
-              <TideAdminPanel spotId={id} spotLat={Number(lat)} spotLon={Number(lon)} />
             </CollapsibleSection>
           )}
 

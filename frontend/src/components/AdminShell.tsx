@@ -66,6 +66,12 @@ const I = {
       <path d="M20 6 9 17l-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  tides: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 9c1.8 0 1.8-2 3.6-2s1.8 2 3.6 2 1.8-2 3.6-2 1.8 2 3.6 2 1.8-2 3.6-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 15c1.8 0 1.8-2 3.6-2s1.8 2 3.6 2 1.8-2 3.6-2 1.8 2 3.6 2 1.8-2 3.6-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   map: (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
@@ -103,6 +109,7 @@ const NAV: NavItem[] = [
   // Backend
   { to: "/admin/operations", label: "Betrieb", icon: I.operations },
   { to: "/admin/weather", label: "Wetterprofile", icon: I.weather },
+  { to: "/admin/tides", label: "Tidenkorrektur", icon: I.tides },
   // Admin
   { to: "/admin/users", label: "Benutzer", role: "admin", icon: I.users },
   { to: "/admin/activity", label: "Aktivität", icon: I.activity },

@@ -27,6 +27,7 @@ const AdminSpotForm = React.lazy(() => import("./pages/AdminSpotForm"));
 const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 const AdminWeatherProfiles = React.lazy(() => import("./pages/AdminWeatherProfiles"));
 const AdminWeatherProfile = React.lazy(() => import("./pages/AdminWeatherProfile"));
+const AdminTides = React.lazy(() => import("./pages/AdminTides"));
 
 const adminRoutes: RouteObject[] = [
   {
@@ -54,6 +55,7 @@ const adminRoutes: RouteObject[] = [
           { path: "hero", element: <AdminHero /> },
           { path: "weather", element: <AdminWeatherProfiles /> },
           { path: "weather/:spotId", element: <AdminWeatherProfile /> },
+          { path: "tides", element: <AdminTides /> },
           { path: "regions", element: <AdminRegions /> },
           { path: "region/new", element: <AdminRegionCreate /> },
           { path: "region/:id/edit", element: <AdminRegionForm /> },
