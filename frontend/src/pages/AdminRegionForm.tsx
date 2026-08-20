@@ -868,7 +868,7 @@ export default function AdminRegionForm() {
         {/* Right: sticky action panel (status / go-live / preview / save).
             top clears the sticky app header so the rail stays visible while the
             long form scrolls. */}
-        <aside className="xl:sticky xl:top-[72px] xl:h-fit xl:self-start">
+        <aside className="xl:sticky xl:top-[var(--admin-header-h,64px)] xl:h-fit xl:self-start">
           <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-ui font-semibold text-admin-fg">Status</h2>

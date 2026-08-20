@@ -1206,8 +1206,13 @@ export default function AdminSpotForm() {
         {/* Right column: sticky on wide viewports. As a grid track it starts on
             the same row as "Basisdaten", so its top aligns with that card when
             scrolled to the top; `sticky` then pins it without the panel itself
-            scrolling. Below xl it stacks below the form as before. */}
-        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[79px] xl:self-start xl:max-h-[calc(100vh-95px)] xl:overflow-y-auto no-scrollbar">
+            scrolling. Below xl it stacks below the form as before.
+            The top offset reads the admin header's real rendered height from
+            --admin-header-h (set in AdminShell) instead of a guessed pixel
+            value, so the panel locks flush under the header with no visible
+            creep. max-h is a safety net for content taller than the
+            viewport — it only engages then, it isn't the normal case. */}
+        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[var(--admin-header-h,64px)] xl:self-start xl:max-h-[calc(100vh-var(--admin-header-h,64px)-16px)] xl:overflow-y-auto no-scrollbar">
           {isEdit && id ? (
             <div id="f-operations" className="scroll-mt-24">
               <SpotOpsPanel

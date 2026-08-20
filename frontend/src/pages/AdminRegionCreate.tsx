@@ -181,7 +181,7 @@ export default function AdminRegionCreate() {
           </section>
         </div>
 
-        <aside className="xl:sticky xl:top-[72px] xl:h-fit">
+        <aside className="xl:sticky xl:top-[var(--admin-header-h,64px)] xl:h-fit">
           <div className="rounded-lg border border-admin-border bg-admin-surface p-4">
             <p className="font-semibold text-admin-fg">{name.trim() || "Neue Region"}</p>
             <p className="mt-1 text-caption text-admin-muted">Wird zunächst als Entwurf angelegt.</p>

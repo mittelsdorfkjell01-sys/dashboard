@@ -88,6 +88,11 @@ export default function MediaPicker({
     selection.some((it) => itemKey(it) === itemKey(item));
 
   const abortRef = useRef<AbortController | null>(null);
+  // Separate controller for the per-tab reload button, so reloading one tab
+  // never cancels the other tabs' in-flight bulk-search requests.
+  const reloadAbortRef = useRef<AbortController | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const outerScrollRef = useRef<HTMLDivElement>(null);
 
   // --- context: chips, coordinates, title -----------------------------------
   useEffect(() => {
@@ -115,72 +120,88 @@ export default function MediaPicker({
   // The chip is shared across tabs, so switching tabs keeps the search and
   // costs nothing. Debounced because each chip change is one upstream request
   // per provider, and Unsplash's demo tier is 50 per hour.
+  // One provider's fetch, shared by the bulk search (all tabs at once) and
+  // the per-tab reload button (just the active one — for when a provider's
+  // tab silently failed to populate after a fast tab switch).
+  const fetchProvider = useCallback(
+    (provider: ProviderKey, searchQuery: string, ctx: MediaContext, signal: AbortSignal) => {
+      const isNearby = provider === "nearby";
+      if (isNearby && (ctx.lat == null || ctx.lon == null)) {
+        setTabs((prev) => ({
+          ...prev,
+          [provider]: {
+            status: "disabled",
+            items: [],
+            total: 0,
+            loading: false,
+            message: "Keine Koordinaten hinterlegt.",
+          },
+        }));
+        return;
+      }
+      setTabs((prev) => ({ ...prev, [provider]: { ...EMPTY_TAB } }));
+      searchMedia(
+        {
+          provider,
+          q: searchQuery,
+          role,
+          lat: isNearby ? ctx.lat : undefined,
+          lon: isNearby ? ctx.lon : undefined,
+        },
+        signal
+      )
+        .then((response) => {
+          setTabs((prev) => ({
+            ...prev,
+            [provider]: {
+              status: response.status,
+              items: response.items,
+              total: response.total,
+              loading: false,
+              message: response.meta.message,
+              budget: response.meta.budget,
+            },
+          }));
+        })
+        .catch((err) => {
+          if (signal.aborted) return;
+          setTabs((prev) => ({
+            ...prev,
+            [provider]: {
+              status: "error",
+              items: [],
+              total: 0,
+              loading: false,
+              message: err instanceof ApiError ? err.message : "Fehler",
+            },
+          }));
+        });
+    },
+    // `role` is intentionally excluded: the server does not vary results by
+    // role, so toggling Hero/Galerie must not refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const runSearch = useCallback(
     (searchQuery: string, ctx: MediaContext) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
-
-      setTabs(Object.fromEntries(providers.map((p) => [p, { ...EMPTY_TAB }])));
-
-      providers.forEach((provider) => {
-        const isNearby = provider === "nearby";
-        if (isNearby && (ctx.lat == null || ctx.lon == null)) {
-          setTabs((prev) => ({
-            ...prev,
-            [provider]: {
-              status: "disabled",
-              items: [],
-              total: 0,
-              loading: false,
-              message: "Keine Koordinaten hinterlegt.",
-            },
-          }));
-          return;
-        }
-        searchMedia(
-          {
-            provider,
-            q: searchQuery,
-            role,
-            lat: isNearby ? ctx.lat : undefined,
-            lon: isNearby ? ctx.lon : undefined,
-          },
-          controller.signal
-        )
-          .then((response) => {
-            setTabs((prev) => ({
-              ...prev,
-              [provider]: {
-                status: response.status,
-                items: response.items,
-                total: response.total,
-                loading: false,
-                message: response.meta.message,
-                budget: response.meta.budget,
-              },
-            }));
-          })
-          .catch((err) => {
-            if (controller.signal.aborted) return;
-            setTabs((prev) => ({
-              ...prev,
-              [provider]: {
-                status: "error",
-                items: [],
-                total: 0,
-                loading: false,
-                message: err instanceof ApiError ? err.message : "Fehler",
-              },
-            }));
-          });
-      });
+      providers.forEach((provider) => fetchProvider(provider, searchQuery, ctx, controller.signal));
     },
-    // `role` is intentionally excluded: the server does not vary results by
-    // role, so toggling Hero/Galerie must not refetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [providers]
+    [providers, fetchProvider]
   );
+
+  // Reload just the active tab — its own controller so it can't cancel the
+  // other tabs' in-flight requests.
+  const reloadActiveTab = () => {
+    if (!context || !query) return;
+    reloadAbortRef.current?.abort();
+    const controller = new AbortController();
+    reloadAbortRef.current = controller;
+    fetchProvider(activeTab, query, context, controller.signal);
+  };
 
   useEffect(() => {
     if (!open || !context || !query) return;
@@ -188,7 +209,18 @@ export default function MediaPicker({
     return () => window.clearTimeout(timer);
   }, [open, context, query, runSearch]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => () => {
+    abortRef.current?.abort();
+    reloadAbortRef.current?.abort();
+  }, []);
+
+  // Switching libraries (tabs) always starts scrolled to the top of the
+  // results — otherwise a scroll position from the previous tab carries
+  // over and the operator lands mid-grid on an unrelated set of photos.
+  useEffect(() => {
+    resultsRef.current?.scrollTo({ top: 0 });
+    outerScrollRef.current?.scrollTo({ top: 0 });
+  }, [activeTab]);
 
   // Reset transient state whenever the overlay closes, so nothing reopens
   // mid-flow with a stale selection.
@@ -370,7 +402,7 @@ export default function MediaPicker({
         </div>
 
         {/* tabs with post-filter counts */}
-        <div className="flex flex-wrap gap-1 border-b border-admin-border px-4">
+        <div className="flex flex-wrap items-center gap-1 border-b border-admin-border px-4">
           {providers.map((provider) => (
             <button
               key={provider}
@@ -385,6 +417,36 @@ export default function MediaPicker({
               {tabLabel(provider, tabs[provider])}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={reloadActiveTab}
+            disabled={current?.loading || !context || !query}
+            title="Diese Bibliothek neu laden"
+            aria-label="Diese Bibliothek neu laden"
+            className="ml-auto rounded-md p-1.5 text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-40"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+              className={`h-4 w-4 ${current?.loading ? "animate-spin" : ""}`}
+            >
+              <path
+                d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* slim indeterminate bar while the active tab is (re)loading */}
+        <div className="h-0.5 bg-admin-border">
+          {current?.loading && (
+            <div className="admin-progress-bar h-full text-admin-primary" />
+          )}
         </div>
 
         {(error || notice || budgetWarning) && (
@@ -419,8 +481,9 @@ export default function MediaPicker({
             On wide viewports only the grid scrolls; the preview + adopt
             action stays in view (so the operator does not have to scroll
             back up to hit "Als Hero übernehmen"). */}
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 lg:flex-row lg:overflow-hidden">
+        <div ref={outerScrollRef} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 lg:flex-row lg:overflow-hidden">
           <div
+            ref={resultsRef}
             className="min-w-0 flex-1 outline-none lg:min-h-0 lg:overflow-y-auto"
             tabIndex={0}
             role="listbox"

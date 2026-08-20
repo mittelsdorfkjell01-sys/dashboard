@@ -122,6 +122,8 @@ export default function AdminShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const mobileNavRef = useRef<HTMLElement>(null);
+  const headerStackRef = useRef<HTMLDivElement>(null);
+  const contentColRef = useRef<HTMLDivElement>(null);
   const items = NAV.filter((n) => !n.role || n.role === user?.role);
 
   useEffect(() => {
@@ -129,6 +131,24 @@ export default function AdminShell() {
       ?.querySelector<HTMLElement>('[aria-current="page"]')
       ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [location.pathname]);
+
+  // Exposes the sticky header stack's real rendered height as a CSS var on
+  // the content column, so page-level sticky sidebars (e.g. the spot/region
+  // form's "Betrieb" panel) can pin themselves flush beneath it instead of
+  // guessing a pixel offset — a mismatch there is what made those panels
+  // visibly creep a few pixels before locking in place.
+  useEffect(() => {
+    const headerEl = headerStackRef.current;
+    const contentEl = contentColRef.current;
+    if (!headerEl || !contentEl) return;
+    const update = () => {
+      contentEl.style.setProperty("--admin-header-h", `${headerEl.offsetHeight}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(headerEl);
+    return () => ro.disconnect();
+  }, []);
 
   const onLogout = async () => {
     await logout();
@@ -171,8 +191,8 @@ export default function AdminShell() {
         </aside>
 
         {/* Content column */}
-        <div className="min-w-0 flex-1">
-          <div className="sticky top-0 z-20">
+        <div ref={contentColRef} className="min-w-0 flex-1">
+          <div ref={headerStackRef} className="sticky top-0 z-20">
             <header className="flex items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
               {/* Brand — shown until the sidebar appears (lg). */}
               <Link to="/admin" className="lg:hidden">
