@@ -83,7 +83,7 @@ function RegionRow({
 }: {
   title: string;
   subtitle?: string;
-  regions: { slug: string; name: string; country?: string | null; image?: string | null; coverage?: number | null; rank?: number }[];
+  regions: { slug: string; name: string; country?: string | null; image?: string | null; spotCount?: number | null; sports?: string[] | null }[];
 }) {
   if (regions.length === 0) return null;
   return (
@@ -95,7 +95,7 @@ function RegionRow({
       <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-2">
         {regions.map((r, i) => (
           <div key={r.slug || i} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
-            <RegionTile slug={r.slug} name={r.name} country={r.country} image={r.image} coverage={r.coverage} rank={r.rank} windMonths={null} />
+            <RegionTile slug={r.slug} name={r.name} country={r.country} image={r.image} spotCount={r.spotCount} sports={r.sports} />
           </div>
         ))}
       </div>
@@ -343,6 +343,15 @@ export default function SearchResults() {
   const { data: catalogue } = useSpots({ limit: 100 });
   const { data: topSpots } = useTopSpots(6);
   const performing = useMemo(() => (topSpots ?? []).slice(0, 6), [topSpots]);
+  // Region catalogue (SWR-cached under the "regions" key — every consumer on
+  // this page, including DiscoveryRegions below, shares the one fetch) so
+  // direct-hit region tiles can carry image/country/spot_count/sports
+  // without an extra request per tile.
+  const { data: regionsCatalogue } = useRegions();
+  const regionById = useMemo(
+    () => new Map((regionsCatalogue ?? []).map((r) => [r.id, r])),
+    [regionsCatalogue],
+  );
 
   const [result, setResult] = useState<api.SearchResult | null>(null);
   const [bestRegions, setBestRegions] = useState<api.BestRegionsResponse | null>(null);
@@ -436,7 +445,21 @@ export default function SearchResults() {
   }, [directSpots, similar, performing]);
   const center = centerFor(directSpots, performing);
 
-  const directRegions = (result?.regionen ?? []).map((r) => ({ slug: r.slug, name: r.name }));
+  const directRegions = useMemo(
+    () =>
+      (result?.regionen ?? []).map((r) => {
+        const meta = regionById.get(r.id);
+        return {
+          slug: r.slug,
+          name: r.name,
+          country: meta?.country ?? null,
+          image: resolveMediaUrl(meta?.image?.url),
+          spotCount: meta?.spot_count ?? null,
+          sports: meta?.sports ?? null,
+        };
+      }),
+    [result, regionById],
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-page">
@@ -536,15 +559,15 @@ function BestRegionsRow({
     <RegionRow
       title="Direkte Treffer"
       subtitle={`Beste Reviere ${monthName ? `im ${monthName}` : "über die Saison"} · nach Abdeckung`}
-      regions={ranking.map((r, i) => {
+      regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
           slug: r.slug ?? m?.slug ?? "",
           name: r.name ?? m?.name ?? r.slug ?? "",
           country: m?.country ?? null,
           image: resolveMediaUrl(m?.image?.url),
-          coverage: r.coverage ?? null,
-          rank: i + 1,
+          spotCount: m?.spot_count ?? null,
+          sports: m?.sports ?? null,
         };
       })}
     />
@@ -576,15 +599,15 @@ function DiscoveryRegions() {
     <RegionRow
       title="Top-Regionen"
       subtitle="Reviere, die gerade gut laufen"
-      regions={ranking.map((r, i) => {
+      regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
           slug: r.slug ?? m?.slug ?? "",
           name: r.name ?? m?.name ?? r.slug ?? "",
           country: m?.country ?? null,
           image: resolveMediaUrl(m?.image?.url),
-          coverage: r.coverage ?? null,
-          rank: i + 1,
+          spotCount: m?.spot_count ?? null,
+          sports: m?.sports ?? null,
         };
       })}
     />

@@ -115,3 +115,41 @@ def test_get_region_by_id(client):
     resp = client.get(f"/regions/{region_id}")
     assert resp.status_code == 200
     assert resp.json()["id"] == region_id
+
+
+def test_region_spot_count_and_sports_from_published_spots(client):
+    # Tarifa's three seed spots are all published and, between them, cover
+    # exactly kitesurf + windsurf.
+    regions = client.get("/regions").json()
+    tarifa = next(r for r in regions if r["slug"] == "tarifa")
+    assert tarifa["spot_count"] == 3
+    assert tarifa["sports"] == ["kitesurf", "windsurf"]
+
+    by_id = client.get(f"/regions/{tarifa['id']}").json()
+    assert by_id["spot_count"] == 3
+    assert by_id["sports"] == ["kitesurf", "windsurf"]
+
+    by_slug = client.get("/regions/by-slug/tarifa").json()
+    assert by_slug["spot_count"] == 3
+    assert by_slug["sports"] == ["kitesurf", "windsurf"]
+
+
+def test_region_spot_count_excludes_unpublished_spots(client, db):
+    region = db.scalar(select(Region).where(Region.slug == "tarifa"))
+    draft = Spot(
+        slug="tarifa-draft-count-test",
+        name="Draft Count Test Spot",
+        region_id=region.id,
+        location=_point(36.0, -5.6),
+        sports=["surf"],
+        status="draft",
+    )
+    db.add(draft)
+    db.commit()
+    try:
+        body = client.get(f"/regions/{region.id}").json()
+        assert body["spot_count"] == 3
+        assert "surf" not in body["sports"]
+    finally:
+        db.delete(draft)
+        db.commit()

@@ -258,6 +258,10 @@ export interface Region {
   defaults: Record<string, any> | null;
   status: string;
   updated_at: string;
+  /** Published spots in the region. */
+  spot_count: number;
+  /** Unique sports across the region's published spots. */
+  sports: string[];
 }
 
 export interface CurrentConditions {

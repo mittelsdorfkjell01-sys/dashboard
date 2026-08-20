@@ -39,6 +39,8 @@ const region: Region = {
   defaults: null,
   status: "published",
   updated_at: "2024-01-01T00:00:00Z",
+  spot_count: 0,
+  sports: [],
 };
 
 describe("adaptSpot", () => {

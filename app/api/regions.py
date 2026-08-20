@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.api._http_cache import set_public_cache
 from app.db.session import get_db
 from app.models import Region
-from app.public_catalog import PUBLISHED, get_published_region
+from app.public_catalog import PUBLISHED, get_published_region, get_region_spot_stats
 from app.schemas import RegionRead
 
 router = APIRouter(prefix="/regions", tags=["regions"])
@@ -23,8 +23,17 @@ def list_regions(
     """List published regions. Editorial states are never public."""
     stmt = select(Region).where(Region.status == PUBLISHED).order_by(Region.name)
     rows = db.scalars(stmt.limit(limit).offset(offset)).all()
+    # One collective query for every region on the page — never one per tile.
+    stats = get_region_spot_stats(db, [r.id for r in rows])
     set_public_cache(response)
-    return [RegionRead.from_orm_region(r) for r in rows]
+    return [
+        RegionRead.from_orm_region(
+            r,
+            spot_count=stats.get(r.id, {}).get("spot_count", 0),
+            sports=stats.get(r.id, {}).get("sports"),
+        )
+        for r in rows
+    ]
 
 
 @router.get("/by-slug/{slug}", response_model=RegionRead)
@@ -36,8 +45,11 @@ def get_region_by_slug(
     )
     if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
+    stats = get_region_spot_stats(db, [region.id]).get(region.id, {})
     set_public_cache(response)
-    return RegionRead.from_orm_region(region)
+    return RegionRead.from_orm_region(
+        region, spot_count=stats.get("spot_count", 0), sports=stats.get("sports")
+    )
 
 
 @router.get("/{region_id}", response_model=RegionRead)
@@ -47,8 +59,11 @@ def get_region(
     region = get_published_region(db, region_id)
     if region is None:
         raise HTTPException(status_code=404, detail="Region not found")
+    stats = get_region_spot_stats(db, [region.id]).get(region.id, {})
     set_public_cache(response)
-    return RegionRead.from_orm_region(region)
+    return RegionRead.from_orm_region(
+        region, spot_count=stats.get("spot_count", 0), sports=stats.get("sports")
+    )
 
 
 @router.get("/{region_id}/season", tags=["open-axes"])

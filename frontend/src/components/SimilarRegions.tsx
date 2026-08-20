@@ -1,15 +1,15 @@
-import { Link } from "react-router-dom";
 import type { RegionInfo, Spot } from "../lib/types";
-import { WindBadge } from "./SpotBits";
-import SpotImage from "./SpotImage";
+import RegionTile from "./RegionTile";
+import { resolveMediaUrl } from "../lib/api";
 import { useRegions, useSpots } from "../lib/hooks";
 
 /**
  * "Ähnliche Regionen" — reviers that resemble the current one, drawn from the
  * live catalogue (no mock data / picsum). Placeholder ranking: same country
  * first, then closest mean wind; the real similarity comes from the backend in a
- * later step. A region card = the lead spot's image (or a branded fallback),
- * country, name, spot count and the region's mean wind.
+ * later step. Renders through the shared RegionTile so this reads as the same
+ * card as search results — the region's own image is preferred, falling back
+ * to a lead spot's image only when the region has none.
  */
 export default function SimilarRegions({
   region,
@@ -61,26 +61,15 @@ export default function SimilarRegions({
 
       <div className="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-4">
         {ranked.map(({ r, list }) => (
-          <Link key={r.slug} to={`/region/${r.slug}`} className="group block">
-            <div className="relative aspect-[16/11] overflow-hidden rounded-2xl bg-line">
-              <SpotImage
-                src={list[0]?.image}
-                name={r.name}
-                region={r.country ?? undefined}
-                className="transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-              />
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="truncate text-[12px] text-muted">{r.country}</p>
-                <WindBadge value={meanWind(list)} />
-              </div>
-              <h3 className="mt-1 text-lg font-semibold leading-tight text-ink">{r.name}</h3>
-              <p className="mt-1 text-[12px] text-muted">
-                {list.length} {list.length === 1 ? "Spot" : "Spots"}
-              </p>
-            </div>
-          </Link>
+          <RegionTile
+            key={r.slug}
+            slug={r.slug}
+            name={r.name}
+            country={r.country}
+            image={resolveMediaUrl(r.image?.url) ?? (list[0]?.image || undefined)}
+            spotCount={r.spot_count}
+            sports={r.sports}
+          />
         ))}
       </div>
     </section>

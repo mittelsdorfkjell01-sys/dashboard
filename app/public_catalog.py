@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,3 +22,24 @@ def get_published_region(db: Session, region_id) -> Region | None:
     return db.scalar(
         select(Region).where(Region.id == region_id, Region.status == PUBLISHED)
     )
+
+
+def get_region_spot_stats(
+    db: Session, region_ids: list[uuid.UUID] | None = None
+) -> dict[uuid.UUID, dict[str, object]]:
+    """Published spot count + unique sports per region.
+
+    One query for every region that's asked for (or, with `region_ids=None`,
+    for the whole catalogue) — never one query per region/tile.
+    """
+    stmt = select(Spot.region_id, Spot.sports).where(
+        Spot.status == PUBLISHED, Spot.region_id.isnot(None)
+    )
+    if region_ids is not None:
+        stmt = stmt.where(Spot.region_id.in_(region_ids))
+    stats: dict[uuid.UUID, dict[str, object]] = {}
+    for region_id, sports in db.execute(stmt):
+        entry = stats.setdefault(region_id, {"spot_count": 0, "sports": set()})
+        entry["spot_count"] += 1
+        entry["sports"].update(sports or [])
+    return stats
