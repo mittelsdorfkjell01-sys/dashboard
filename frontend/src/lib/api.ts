@@ -498,10 +498,15 @@ export interface SpotQuery {
   bottom_type?: string[];
   limit?: number;
   offset?: number;
+  /** Live-map cache buster returned by `/spots/version`. */
+  catalog_version?: string;
 }
 
 export const getSpots = (params: SpotQuery = {}) =>
   request<SpotSummary[]>(`/spots${qs(params as Record<string, unknown>)}`);
+
+export const getSpotCatalogVersion = () =>
+  request<{ version: string }>("/spots/version", { cache: "no-store" });
 
 /** "aktuelle Top Spots": published spots ranked by this week's wind forecast,
  *  today's conditions and popularity. Stable per day, rotates daily. */
@@ -559,10 +564,6 @@ export async function getRegionBySlug(slug: string): Promise<Region | undefined>
     throw e;
   }
 }
-
-/** "Berechnen" mode: recompute best months from the region's spots' climatology. */
-export const computeRegionMonths = (id: string) =>
-  request<Region>(`/admin/regions/${id}/compute-months`, { method: "POST" });
 
 export const publishRegion = (id: string) =>
   request<Region>(`/admin/regions/${id}/publish`, { method: "POST" });

@@ -27,10 +27,13 @@ import { spotPath } from "../lib/spotRoutes";
 export default function SpotCard({
   spot,
   compact = false,
+  mapRail = false,
   live,
 }: {
   spot: Spot;
   compact?: boolean;
+  /** Public /map rail: compact image card with its factual region line. */
+  mapRail?: boolean;
   live?: LiveConditionsRead;
 }) {
   const sports = (spot.sports ?? []).map(sportLabel).join(" · ");
@@ -67,6 +70,10 @@ export default function SpotCard({
             </div>
           )}
         </div>
+
+        {mapRail && regionLine && (
+          <p className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{regionLine}</p>
+        )}
 
         {!compact && (
           <div className="flex items-baseline justify-between gap-3">

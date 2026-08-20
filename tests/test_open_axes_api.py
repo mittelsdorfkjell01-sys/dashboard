@@ -70,10 +70,17 @@ def test_aggregate_region_season_counts_working_spots(db, sardinia_id):
 
 
 def test_region_season_endpoint(client, sardinia_id):
+    """GET /regions/{id}/season is a deliberate stub: the legacy per-spot-
+    climatology-based aggregate() tested above (test_aggregate_region_season_
+    counts_working_spots) is still correct, but it is not wired into any
+    public endpoint — a region-level V2 aggregation needs product approval
+    first (see the "deliberately unknown" comment on RegionRead in
+    app/schemas/region.py). Serving the old V1 aggregate here would quietly
+    reintroduce the system that decision moved away from."""
     resp = client.get(f"/regions/{sardinia_id}/season", params={"sport": "kitesurf"})
     assert resp.status_code == 200
     body = resp.json()
-    assert len(body["season"]["weeks"]) == 52
+    assert body == {"region_id": str(sardinia_id), "status": "unknown", "season": None}
 
 
 # --- open-axes endpoints ---------------------------------------------------

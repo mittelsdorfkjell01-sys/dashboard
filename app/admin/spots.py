@@ -394,9 +394,10 @@ def fetch_commons_images(spot_id, *, db: Session, client: Any) -> list[Any]:
     return create_commons_image_records(db, spot_id, results)
 
 
-# Readiness fields that must NOT block go-live: the climatology is derived
-# synchronously by the go-live endpoint itself right after publishing, so a
-# missing snapshot is expected at this point and is not an editorial gap.
+# Readiness fields that must NOT block go-live: the legacy per-spot
+# climatology snapshot is no longer derived by go-live at all (it only
+# queues an async wind_climatology_v2 run — see app/api/admin.py's go_live),
+# so a missing snapshot is expected and must not be an editorial gap.
 PUBLISH_GAP_EXEMPT = {"climatology"}
 
 
@@ -404,9 +405,11 @@ def set_spot_live(spot_id, *, db: Session, actor: str | None = "admin") -> dict:
     """Publish a spot — only when it is editorially complete.
 
     Every ``required`` gap blocks go-live (``NotReadyError`` → 409) except the
-    climatology, which the go-live endpoint computes immediately afterwards. A
-    field that legitimately does not apply is cleared with the ``n/a`` sentinel
-    in the editor, which satisfies the requirement without a real value."""
+    climatology, which is never treated as a blocking editorial gap (it is
+    tracked asynchronously via wind_climatology_v2, not synchronously here).
+    A field that legitimately does not apply is cleared with the ``n/a``
+    sentinel in the editor, which satisfies the requirement without a real
+    value."""
     readiness = validate_spot_readiness(spot_id, db=db)
     blocking = [g for g in readiness["gaps"] if g not in PUBLISH_GAP_EXEMPT]
     if blocking:

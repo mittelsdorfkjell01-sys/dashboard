@@ -96,7 +96,9 @@ def _create_spot(admin, region_id, **overrides):
 
 def _make_publishable(admin, sid):
     """Fill the editorial hard-gate fields (description + fully-credited image)
-    so a spot passes the publish gate. Climatology is derived on go-live."""
+    so a spot passes the publish gate. Climatology is exempt from blocking
+    go-live but is not derived by it — go-live only queues an async
+    wind_climatology_v2 run, so the "climatology" gap stays open afterwards."""
     admin.patch(f"/admin/spots/{sid}", json={
         "editorial": {"description": "A breezy Baltic flatwater spot."},
     })
@@ -337,86 +339,47 @@ def test_go_live_blocks_incomplete_spot(admin, region_id, db):
     # The spot stayed a draft.
     assert db.get(Spot, sid).status == "draft"
 
-    # Complete the editorial hard-gate fields → go-live now succeeds and the
-    # climatology is derived inline.
+    # Complete the editorial hard-gate fields → go-live now succeeds. The
+    # climatology gap stays open (it is only ever exempt from *blocking*,
+    # never satisfied by go-live itself): go-live no longer derives it
+    # synchronously, it only queues a wind_climatology_v2 run — see
+    # app/api/admin.py's go_live and test_go_live_enqueues_wind_climatology_v2.
     _make_publishable(admin, sid)
     again = admin.post(f"/admin/spots/{sid}/live")
     assert again.status_code == 200, again.text
     body = again.json()
     assert body["status"] == "published"
-    assert body["ready"] is True and body["gaps"] == []
+    assert body["ready"] is False and body["gaps"] == ["climatology"]
 
 
-def test_go_live_computes_climatology_inline(admin, region_id, db):
-    """Go-live derives + stores the climatology synchronously, in memory (no
-    Parquet) — the serverless-safe path, independent of ERA5_AUTOPROCESS."""
+def test_go_live_enqueues_wind_climatology_v2(admin, region_id, db):
+    """Go-live no longer derives the legacy per-spot climatology snapshot
+    synchronously (that in-memory ``compute_now`` path — and the failure/retry
+    reporting built around it — was retired together with the region season
+    aggregate; see app/api/admin.py's go_live). It only queues an async
+    wind_climatology_v2 run, surfaced under ``wind_climatology_v2`` in the
+    response. Manual retry-on-failure behaviour for the legacy pipeline is
+    still covered via the ``/admin/spots/{id}/era5`` path by
+    test_manual_climatology_failure_can_be_retried and
+    test_climatology_job_fails_permanently_after_three_attempts below."""
+    from app.models import WindClimatologyRun
+
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
     _make_publishable(admin, sid)
 
     body = admin.post(f"/admin/spots/{sid}/live").json()
-    assert "climatology" not in body["gaps"]
-
-    db.expire_all()  # compute_now committed in its own session
-    row = db.get(Spot, sid)
-    assert row.climatology and row.climatology.get("weeks")
-
-
-def test_go_live_repairs_missing_snapshot_when_a_derived_job_already_exists(
-    admin, region_id, db
-):
-    spot = _create_spot(admin, region_id)
-    sid = spot["id"]
-    _make_publishable(admin, sid)
-    assert admin.post(f"/admin/spots/{sid}/era5").status_code == 200
-    db.expire_all()
-    row = db.get(Spot, sid)
-    row.climatology = None
-    db.commit()
-
-    response = admin.post(f"/admin/spots/{sid}/live")
-
-    assert response.status_code == 200, response.text
-    assert response.json()["climatology_job"]["status"] == "ok"
-    db.expire_all()
-    assert db.get(Spot, sid).climatology.get("weeks")
-
-
-def test_go_live_reports_climatology_failure_and_schedules_retry(
-    admin, region_id, db
-):
-    class FailingClient:
-        def submit(self, dataset, request):
-            return "failing-request"
-
-        def poll(self, request_id):
-            return "completed"
-
-        def fetch_series(self, request_id):
-            raise RuntimeError("Open-Meteo unavailable")
-
-    spot = _create_spot(admin, region_id)
-    sid = spot["id"]
-    _make_publishable(admin, sid)
-    app.dependency_overrides[get_cds_client] = lambda: FailingClient()
-
-    response = admin.post(f"/admin/spots/{sid}/live")
-
-    assert response.status_code == 200, response.text
-    body = response.json()
     assert body["status"] == "published"
-    assert body["climatology_job"]["status"] == "fail"
-    assert "climatology" in body["gaps"]
+    # Legacy climatology is untouched by go-live — still absent.
+    assert "climatology_job" not in body
     db.expire_all()
-    job = db.scalar(
-        select(Era5Job)
-        .where(Era5Job.spot_id == sid)
-        .order_by(Era5Job.created_at.desc())
-    )
-    assert job.status == "queued"
-    assert job.params["attempt_count"] == 1
-    assert job.params["next_attempt_at"]
-    assert "Open-Meteo unavailable" in job.error
+    assert db.get(Spot, sid).climatology is None
+
+    run_info = body["wind_climatology_v2"]
+    assert run_info["created"] is True
+    run = db.get(WindClimatologyRun, uuid.UUID(run_info["run_id"]))
+    assert run is not None and run.spot_id == uuid.UUID(sid)
+    assert run.status == run_info["status"] == "pending"
 
 
 def test_manual_climatology_failure_can_be_retried(admin, region_id, db):
@@ -648,24 +611,57 @@ def test_era5_process_queue(admin, region_id, db, tmp_path, monkeypatch):
 def test_climatology_cron_is_secret_guarded_and_processes_a_batch(
     admin, region_id, db, monkeypatch
 ):
-    from app.admin.jobs import trigger_era5_job
+    """/cron/climatology now runs several unrelated housekeeping sweeps in one
+    call (media cache, forecast jobs, featured warmup, wind_climatology_v2).
+    The old legacy-ERA5-only batch (keyed "processed", driven by the
+    now-unused ``climatology_cron_batch_size`` setting) was retired alongside
+    go-live's synchronous climatology derivation — see app/api/cron.py and
+    test_go_live_enqueues_wind_climatology_v2. The legacy Era5Job queue is
+    still processed, just no longer by this cron — see
+    test_era5_process_queue's manual ``/admin/era5/process-queue`` instead."""
+    from datetime import date, datetime, timedelta, timezone as dt_timezone
+
     from app.config import get_settings
+    from app.models import WindClimatologyRun
+    from app.wind_climatology.service import enqueue, full_year_window
 
     monkeypatch.setattr(get_settings(), "cron_secret", "cron-test-secret")
-    monkeypatch.setattr(get_settings(), "climatology_cron_batch_size", 1)
     spot = _create_spot(admin, region_id)
-    db.execute(
-        delete(Era5Job).where(
-            Era5Job.status.in_(("queued", "processing", "extracting"))
-        )
-    )
+
+    # cron's wind_climatology_v2 step always picks the *globally* oldest
+    # pending run (no per-test scoping) — clear stray pending runs first so
+    # the batch it processes below is deterministically ours.
+    db.execute(delete(WindClimatologyRun).where(WindClimatologyRun.status == "pending"))
     db.commit()
-    trigger_era5_job(
-        spot["id"],
-        db=db,
-        client=FakeCdsClient(make_synthetic_series()),
-        force=True,
-        reason="annual_refresh",
+    run, created = enqueue(db, uuid.UUID(spot["id"]))
+    assert created
+
+    start, end = full_year_window()
+    expected_hours = (date(end + 1, 1, 1) - date(start, 1, 1)).days * 24
+    # One real, sequential hourly timestamp per hour of the 20-year window —
+    # aggregate() buckets by actual year/month/day, so (unlike the fetch-layer
+    # unit tests) a placeholder timestamp repeated for every hour leaves every
+    # bucket empty. Real (not stubbed) daylight_mask + a full hourly series at
+    # a real coordinate keeps every bucket's "hours_per_day" safely under 24
+    # even across DST transitions — an all-hours-are-daylight stub pushes an
+    # October DST fall-back bucket slightly over that ceiling instead.
+    window_start = datetime(start, 1, 1, tzinfo=dt_timezone.utc)
+    hourly_times = [int((window_start + timedelta(hours=h)).timestamp()) for h in range(expected_hours)]
+
+    class _FakeOpenMeteoResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                "latitude": 54.25, "longitude": 10.0, "timezone": "Europe/Berlin",
+                "hourly_units": {"wind_speed_10m": "kn"},
+                "hourly": {"time": hourly_times, "wind_speed_10m": [15.0] * expected_hours},
+            }
+
+    monkeypatch.setattr(
+        "app.wind_climatology.client.httpx.get",
+        lambda *a, **k: _FakeOpenMeteoResponse(),
     )
 
     assert admin.get("/cron/climatology").status_code == 401
@@ -674,9 +670,11 @@ def test_climatology_cron_is_secret_guarded_and_processes_a_batch(
         headers={"Authorization": "Bearer cron-test-secret"},
     )
     assert response.status_code == 200, response.text
-    assert response.json()["processed"] == 1
+    body = response.json()
+    assert body["wind_climatology_v2"] == [{"id": str(run.id), "status": "ready"}]
+
     db.expire_all()
-    assert db.get(Spot, spot["id"]).climatology.get("weeks")
+    assert db.get(WindClimatologyRun, run.id).status == "ready"
 
 
 def test_na_counts_as_fulfilled(admin, region_id, db):
@@ -758,7 +756,10 @@ def test_region_update_and_manual_image(admin, region_id):
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["description"] == "Schöne Ostsee-Region"
-    assert body["season"]["weeks"][0]["wind_p50"] == 12
+    # The write is accepted (still persisted to regions.season for whenever a
+    # V2 region aggregation is product-approved), but RegionRead deliberately
+    # never echoes it back — see app/schemas/region.py's from_orm_region.
+    assert body["season"] is None
 
     img = admin.post(f"/admin/regions/{region_id}/image", json={
         "url": "https://img/region.jpg", "credit": "Jo",
@@ -1440,16 +1441,6 @@ def test_region_publish_status_and_public_filter(admin):
     # Unpublish → draft again.
     assert admin.post(f"/admin/regions/{rid}/unpublish").json()["status"] == "draft"
 
-
-# --- Windmonate compute toggle (WP-D) --------------------------------------
-
-def test_compute_region_months_sets_auto_mode(admin, region_id):
-    _create_spot(admin, region_id)  # a spot under the region
-    resp = admin.post(f"/admin/regions/{region_id}/compute-months")
-    assert resp.status_code == 200, resp.text
-    season = resp.json()["season"] or {}
-    assert season.get("mode") == "auto"
-    assert isinstance(season.get("best_months"), list)
 
 
 # --- activity: actor names + search (WP-E) ---------------------------------

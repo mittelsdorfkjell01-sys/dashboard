@@ -3,7 +3,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, defer, selectinload
 
 from app.api._http_cache import set_public_cache, set_top_spots_cache
@@ -97,6 +97,10 @@ def list_spots(
     ),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    catalog_version: str | None = Query(
+        default=None,
+        description="Cache-busting catalogue version used by live public maps",
+    ),
 ) -> list[SpotSummary]:
     """List spots (lightweight view — no legacy climatology/overrides blobs; editorial
     is loaded only to derive the tile's typical wind/wave-height figure, never
@@ -133,8 +137,27 @@ def list_spots(
     stmt = stmt.limit(limit).offset(offset)
 
     rows = db.scalars(stmt).all()
-    set_public_cache(response)
+    if catalog_version:
+        response.headers["Cache-Control"] = "no-store"
+    else:
+        set_public_cache(response)
     return _safe_summaries(rows, db)
+
+
+@router.get("/version")
+def spot_catalog_version(
+    response: Response,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Return a cheap change token for automatic public-map refreshes."""
+    count, latest = db.execute(
+        select(func.count(Spot.id), func.max(Spot.updated_at)).where(
+            Spot.status == PUBLISHED
+        )
+    ).one()
+    response.headers["Cache-Control"] = "no-store"
+    latest_token = latest.isoformat() if latest is not None else "none"
+    return {"version": f"{count}:{latest_token}"}
 
 
 @router.get("/top", response_model=list[SpotSummary])

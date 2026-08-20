@@ -47,6 +47,37 @@ def test_list_spots_structure_and_coords(client):
     assert "kitesurf" in los_lances["sports"]
 
 
+def test_spot_catalog_version_changes_with_public_markers(client, db):
+    before = client.get("/spots/version")
+    assert before.status_code == 200
+    assert before.headers["cache-control"] == "no-store"
+
+    region = db.scalar(select(Region).where(Region.slug == "tarifa"))
+    spot = Spot(
+        slug="public-map-version-test",
+        name="Public Map Version Test",
+        region_id=region.id,
+        location=_point(36.1, -5.7),
+        sports=["kitesurf"],
+        status="published",
+    )
+    db.add(spot)
+    db.commit()
+    try:
+        after = client.get("/spots/version")
+        assert after.status_code == 200
+        assert after.json()["version"] != before.json()["version"]
+    finally:
+        db.delete(spot)
+        db.commit()
+
+
+def test_live_map_catalogue_bypasses_public_edge_cache(client):
+    response = client.get("/spots", params={"limit": 500, "catalog_version": "test"})
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+
+
 def test_get_spot_by_id(client):
     spots = client.get("/spots").json()
     spot_id = spots[0]["id"]
