@@ -196,7 +196,7 @@ export default function MapView() {
   }, [selectedId]);
 
   return (
-    <main data-lenis-prevent className={`swd-public-map relative w-screen overflow-hidden ${showCards && railSpots.length ? "has-map-cards" : ""}`} aria-labelledby="public-map-title">
+    <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${showCards && railSpots.length ? "has-map-cards" : ""}`} aria-labelledby="public-map-title">
       <Header showAccount={false} />
       <h1 id="public-map-title" className="sr-only">Spot-Karte</h1>
       <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" className="absolute inset-0">

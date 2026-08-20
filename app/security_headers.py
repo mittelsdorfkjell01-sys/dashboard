@@ -9,7 +9,7 @@ CONTENT_SECURITY_POLICY = (
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' data: https://fonts.gstatic.com; "
     "img-src 'self' data: blob: https:; "
-    "connect-src 'self' https://api.maptiler.com https://*.maptiler.com; "
+    "connect-src 'self' https://api.maptiler.com https://*.maptiler.com https://*.cartocdn.com; "
     "worker-src 'self' blob:; manifest-src 'self'"
 )
 

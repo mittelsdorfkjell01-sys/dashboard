@@ -34,6 +34,7 @@ def test_browser_security_headers_are_present() -> None:
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
     assert "default-src 'self'" in response.headers["content-security-policy"]
+    assert "https://*.cartocdn.com" in response.headers["content-security-policy"]
 
 
 def test_media_proxy_is_mounted_on_the_admin_deployment() -> None:
