@@ -15,7 +15,6 @@ import {
 import { parseDuplicateConflict, type DuplicateConflict } from "../lib/duplicateConflicts";
 import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 
-const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const MODELS = [
   { value: "", label: "Automatisch" },
   { value: "icon_d2", label: "ICON-D2" },
@@ -36,7 +35,6 @@ export default function AdminRegionCreate() {
   const [lat, setLat] = useState("");
   const [lon, setLon] = useState("");
   const [model, setModel] = useState("");
-  const [months, setMonths] = useState<number[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [imageCredit, setImageCredit] = useState("");
   const [mapView, setMapView] = useState<MapView | null>(null);
@@ -73,10 +71,9 @@ export default function AdminRegionCreate() {
         defaults: model ? { model_pref: model } : undefined,
         allow_duplicate: allowDuplicate,
       });
-      if (description.trim() || months.length) {
+      if (description.trim()) {
         await updateRegion(created.id, {
           description: description.trim() || null,
-          season: { mode: "manual", best_months: [...months].sort((a, b) => a - b) },
         });
       }
       if (imageUrl.trim()) {
@@ -105,7 +102,7 @@ export default function AdminRegionCreate() {
     <div className="w-full pb-20 xl:pb-0">
       <AdminBackButton onClick={back.goBack} label={back.label} />
       <h1 className="mt-5 text-[24px] font-semibold text-admin-fg">Region anlegen</h1>
-      <p className="mt-1 text-label text-admin-muted">Stammdaten, Mittelpunkt, Saison und Titelbild in einem Schritt erfassen.</p>
+      <p className="mt-1 text-label text-admin-muted">Stammdaten, Mittelpunkt und Titelbild in einem Schritt erfassen.</p>
 
       <form id="admin-region-create" onSubmit={submit} className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
@@ -156,15 +153,9 @@ export default function AdminRegionCreate() {
           </section>
 
           <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
-            <h2 className="text-ui font-semibold text-admin-fg">Beste Monate</h2>
-            <p className="mt-1 text-caption text-admin-muted">Optional manuell wählen; später kann die Klimatologie der zugeordneten Spots übernehmen.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {MONTHS.map((month, index) => {
-                const value = index + 1;
-                const active = months.includes(value);
-                return <button key={month} type="button" onClick={() => change(setMonths, active ? months.filter((m) => m !== value) : [...months, value])} className={`rounded-md px-3 py-2 text-label font-medium ${active ? "bg-admin-primary text-admin-primary-fg" : "border border-admin-border bg-admin-surface text-admin-fg hover:bg-admin-hover"}`}>{month}</button>;
-              })}
-            </div>
+            <h2 className="text-ui font-semibold text-admin-fg">Windverfügbarkeit</h2>
+            <p className="mt-2 text-label font-medium text-admin-fg2">Unbekannt</p>
+            <p className="mt-1 text-caption text-admin-muted">Regionale Windverfügbarkeit wird derzeit nicht manuell gepflegt.</p>
           </section>
 
           <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">

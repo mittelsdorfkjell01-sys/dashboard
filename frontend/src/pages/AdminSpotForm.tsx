@@ -445,7 +445,7 @@ export default function AdminSpotForm() {
     return patch;
   };
 
-  const doSave = async (allowDuplicate = false) => {
+  const doSave = async (allowDuplicate = false, returnAfterSave = false) => {
     setError(null);
     setReadiness(null);
     setSubmitting(true);
@@ -522,6 +522,8 @@ export default function AdminSpotForm() {
             adminJustCreated: { id: spot.id },
           },
         });
+      } else if (returnAfterSave) {
+        back.goBack();
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -557,6 +559,12 @@ export default function AdminSpotForm() {
     setError(null);
     if (!validateLocal()) return;
     void doSave();
+  };
+
+  const saveAndReturn = () => {
+    setError(null);
+    if (!validateLocal()) return;
+    void doSave(false, true);
   };
 
   const regionOptions = useMemo(
@@ -869,7 +877,7 @@ export default function AdminSpotForm() {
                   <span className="w-40 shrink-0 text-[13.5px] font-medium text-ink">
                     {facilityLabel(k)}
                   </span>
-                  <div className="mt-2 flex gap-1.5 sm:mt-0">
+                  <div className="mt-2 grid min-w-0 grid-cols-2 gap-1.5 sm:mt-0 sm:flex">
                     {(
                       [
                         ["yes", "Vorhanden"],
@@ -880,6 +888,7 @@ export default function AdminSpotForm() {
                       <Chip
                         key={st}
                         active={facilities[k].state === st}
+                        className="min-w-0 justify-center whitespace-normal"
                         onClick={() => {
                           markDirty("main");
                           setFacilities((prev) => ({
@@ -1222,6 +1231,11 @@ export default function AdminSpotForm() {
                 onGapClick={focusGap}
                 submitting={submitting}
                 saveLabel="Änderungen speichern"
+                secondarySaveAction={
+                  <Button variant="secondary" block disabled={submitting} onClick={saveAndReturn}>
+                    Speichern und zurück
+                  </Button>
+                }
                 previewHref={spotPath({
                   id,
                   slug: loadedSpotRef.current?.slug,
@@ -1310,6 +1324,26 @@ export default function AdminSpotForm() {
         >
           {submitting ? "Speichern …" : isEdit ? "Speichern" : "Spot anlegen"}
         </Button>
+        {isEdit && (
+          <details className="relative">
+            <summary
+              aria-label="Weitere Speicheraktionen"
+              className="grid min-h-11 min-w-11 cursor-pointer list-none place-items-center rounded-md border border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover"
+            >
+              <span aria-hidden="true">•••</span>
+            </summary>
+            <div className="absolute bottom-full right-0 mb-2 w-52 rounded-lg border border-admin-border bg-admin-elevated p-1.5 shadow-lg">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={saveAndReturn}
+                className="min-h-10 w-full rounded-md px-3 text-left text-label font-medium text-admin-fg2 hover:bg-admin-hover disabled:opacity-50"
+              >
+                Speichern und zurück
+              </button>
+            </div>
+          </details>
+        )}
       </div>
 
       <DuplicateWarningDialog

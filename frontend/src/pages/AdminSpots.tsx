@@ -51,6 +51,7 @@ export default function AdminSpots() {
   const completeness = params.get("completeness") ?? "";
   const media = (params.get("media") ?? "") as MediaFilterKey | "";
   const offset = Number(params.get("offset") ?? "0") || 0;
+  const activeFilterCount = [q, status, regionId, sport, completeness, media].filter(Boolean).length;
 
   const [data, setData] = useState<AdminSpotsResponse | null>(null);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -124,6 +125,13 @@ export default function AdminSpots() {
     const next = new URLSearchParams(params);
     if (value > 0) next.set("offset", String(value));
     else next.delete("offset");
+    setParams(next);
+  };
+
+  const resetFilters = () => {
+    setSearchText("");
+    const next = new URLSearchParams();
+    if (sort && sort !== "name") next.set("sort", sort);
     setParams(next);
   };
 
@@ -265,6 +273,11 @@ export default function AdminSpots() {
             ))}
           </select>
         </div>
+        {activeFilterCount >= 2 && (
+          <Button variant="secondary" onClick={resetFilters} className="w-full sm:w-auto">
+            Filter zurücksetzen
+          </Button>
+        )}
       </div>
 
       {error && (

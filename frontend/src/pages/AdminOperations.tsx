@@ -122,7 +122,11 @@ export default function AdminOperations() {
 
       {/* Recent ERA5 runs. */}
       <h2 className="mt-8 text-label font-semibold text-admin-fg">Letzte Läufe</h2>
-      <div className="mt-3 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface">
+      <div
+        tabIndex={0}
+        aria-label="Tabelle der Betriebsläufe horizontal scrollen"
+        className="mt-3 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+      >
         <table className="w-full min-w-[820px] text-left text-ui">
           <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
             <tr>

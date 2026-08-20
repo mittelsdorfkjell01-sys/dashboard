@@ -101,11 +101,11 @@ const NAV: NavItem[] = [
   { to: "/admin/map", label: "Karte", icon: I.map },
   { to: "/admin/review", label: "Review", icon: I.review },
   // Backend
-  { to: "/admin/activity", label: "Aktivität", icon: I.activity },
   { to: "/admin/operations", label: "Betrieb", icon: I.operations },
   { to: "/admin/weather", label: "Wetterprofile", icon: I.weather },
   // Admin
   { to: "/admin/users", label: "Benutzer", role: "admin", icon: I.users },
+  { to: "/admin/activity", label: "Aktivität", icon: I.activity },
 ];
 
 function sideNavClass({ isActive }: { isActive: boolean }) {
@@ -184,7 +184,7 @@ export default function AdminShell() {
             ))}
           </nav>
           <div className="mt-auto px-2 pt-4">
-            <p className="text-caption text-admin-faint">
+            <p className="text-caption text-admin-muted">
               surfwind data · Back office
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function AdminShell() {
                         {roleLabel(user.role)}
                       </span>
                     </span>
-                    <Button variant="secondary" onClick={onLogout}>
+                    <Button variant="secondary" onClick={onLogout} className="min-h-10 lg:min-h-0">
                       Abmelden
                     </Button>
                   </>
@@ -232,7 +232,7 @@ export default function AdminShell() {
                   end={n.end}
                   className={({ isActive }) =>
                     [
-                      "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-label font-medium transition-colors",
+                      "flex min-h-10 shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-label font-medium transition-colors lg:min-h-0",
                       isActive
                         ? "bg-admin-hover text-admin-fg"
                         : "text-admin-fg2 hover:bg-admin-hover",

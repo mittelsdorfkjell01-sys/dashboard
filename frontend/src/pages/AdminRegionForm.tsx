@@ -1,5 +1,5 @@
 // Edit a region like a spot: description, hero image (manual URL or upload),
-// Windmonate (season JSON, auto-generated but correctable), model default, and
+// read-only regional wind availability, model default, and
 // which spots belong to it (reassign in/out — fixes wrong auto-assignment).
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -9,7 +9,6 @@ import {
   assignSpotRegion,
   bulkAssignSpotRegion,
   bulkUnassignSpotRegion,
-  computeRegionMonths,
   deleteRegion,
   getAdminRegion,
   getAdminSpots,
@@ -48,10 +47,6 @@ import {
 } from "../lib/duplicateConflicts";
 
 const label = "text-label font-medium text-admin-fg";
-const MONTHS_SHORT = [
-  "Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
-  "Jul", "Aug", "Sep", "Okt", "Nov", "Dez",
-];
 
 export default function AdminRegionForm() {
   const { id } = useParams();
@@ -68,10 +63,6 @@ export default function AdminRegionForm() {
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
   const [description, setDescription] = useState("");
-  const [bestMonths, setBestMonths] = useState<number[]>([]);
-  // "auto" = best months computed from spot climatology (checkboxes locked);
-  // "manual" = hand-picked and never overwritten by the computation.
-  const [seasonMode, setSeasonMode] = useState<"auto" | "manual">("manual");
   const [imgUrl, setImgUrl] = useState("");
   const [imgCredit, setImgCredit] = useState("");
 
@@ -93,19 +84,14 @@ export default function AdminRegionForm() {
   const [moveOutTarget, setMoveOutTarget] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [fieldsBaseline, setFieldsBaseline] = useState<string | null>(null);
-  const [seasonBaseline, setSeasonBaseline] = useState<string | null>(null);
   const [imageBaseline, setImageBaseline] = useState(stableFormValue({ url: "", credit: "" }));
 
   const fieldsValue = stableFormValue({ name, country, description });
-  const seasonValue = stableFormValue({ bestMonths, seasonMode });
   const imageValue = stableFormValue({ url: imgUrl, credit: imgCredit });
 
   useEffect(() => {
     setDirty("fields", fieldsBaseline !== null && fieldsValue !== fieldsBaseline);
   }, [fieldsBaseline, fieldsValue, setDirty]);
-  useEffect(() => {
-    setDirty("season", seasonBaseline !== null && seasonValue !== seasonBaseline);
-  }, [seasonBaseline, seasonValue, setDirty]);
   useEffect(() => {
     setDirty("image", imageValue !== imageBaseline);
   }, [imageBaseline, imageValue, setDirty]);
@@ -122,45 +108,10 @@ export default function AdminRegionForm() {
     setName(r.name);
     setCountry(r.country ?? "");
     setDescription(r.description ?? "");
-    const months = Array.isArray(r.season?.best_months)
-      ? (r.season!.best_months as number[])
-      : [];
-    const mode = r.season?.mode === "auto" ? "auto" : "manual";
-    setBestMonths(months);
-    setSeasonMode(mode);
     setFieldsBaseline(
       stableFormValue({ name: r.name, country: r.country ?? "", description: r.description ?? "" })
     );
-    setSeasonBaseline(stableFormValue({ bestMonths: months, seasonMode: mode }));
     markClean();
-  };
-
-  const computeMonths = async () => {
-    if (!id) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const r = await computeRegionMonths(id);
-      setRegion(r);
-      setBestMonths(
-        Array.isArray(r.season?.best_months) ? (r.season!.best_months as number[]) : []
-      );
-      setSeasonMode("auto");
-      setSeasonBaseline(
-        stableFormValue({
-          bestMonths: Array.isArray(r.season?.best_months)
-            ? (r.season!.best_months as number[])
-            : [],
-          seasonMode: "auto",
-        })
-      );
-      markClean("season");
-      flash("Windmonate aus der Spot-Klimatologie berechnet.");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Berechnen fehlgeschlagen.");
-    } finally {
-      setBusy(false);
-    }
   };
 
   const loadSpots = async () => {
@@ -194,19 +145,10 @@ export default function AdminRegionForm() {
     if (!id) return;
     setBusy(true);
     setError(null);
-    // Preserve other season keys. In manual mode persist the hand-picked months;
-    // in auto mode keep the computed months (the compute endpoint owns them).
-    const season: Record<string, unknown> = {
-      ...(region?.season ?? {}),
-      mode: seasonMode,
-    };
-    if (seasonMode === "manual") {
-      season.best_months = [...bestMonths].sort((a, b) => a - b);
-    }
     try {
       const patch: Parameters<typeof updateRegion>[1] = { expected_values: {} };
       const expected = patch.expected_values!;
-      const add = (field: "name" | "country" | "description" | "season", value: unknown, oldValue: unknown) => {
+      const add = (field: "name" | "country" | "description", value: unknown, oldValue: unknown) => {
         if (stableFormValue(value) === stableFormValue(oldValue)) return;
         (patch as Record<string, unknown>)[field] = value;
         expected[field] = oldValue;
@@ -214,21 +156,14 @@ export default function AdminRegionForm() {
       add("name", name.trim(), region?.name);
       add("country", country.trim() || null, region?.country ?? null);
       add("description", description.trim() || null, region?.description ?? null);
-      add("season", season, region?.season ?? null);
       patch.allow_duplicate = allowDuplicate;
       const updated = Object.keys(expected).length
         ? await updateRegion(id, patch)
         : region!;
       setRegion(updated);
-      const updatedMonths = Array.isArray(updated.season?.best_months)
-        ? (updated.season!.best_months as number[])
-        : [];
-      const updatedMode = updated.season?.mode === "auto" ? "auto" : "manual";
       setName(updated.name);
       setCountry(updated.country ?? "");
       setDescription(updated.description ?? "");
-      setBestMonths(updatedMonths);
-      setSeasonMode(updatedMode);
       setFieldsBaseline(
         stableFormValue({
           name: updated.name,
@@ -236,11 +171,7 @@ export default function AdminRegionForm() {
           description: updated.description ?? "",
         })
       );
-      setSeasonBaseline(
-        stableFormValue({ bestMonths: updatedMonths, seasonMode: updatedMode })
-      );
       markClean("fields");
-      markClean("season");
       flash("Region gespeichert.");
     } catch (err) {
       const duplicate = parseDuplicateConflict(err);
@@ -485,69 +416,12 @@ export default function AdminRegionForm() {
             placeholder="Beschreibung der Region…"
           />
         </label>
-        <div className="block">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className={label}>Beste Monate (Windmonate)</span>
-            {/* Mode toggle: berechnen (auto) vs. auswählen (manual). */}
-            <div className="inline-flex overflow-hidden rounded-lg border border-line">
-              <button
-                type="button"
-                onClick={() => {
-                  markDirty("season");
-                  setSeasonMode("manual");
-                }}
-                className={`px-3 py-1 text-label font-medium ${
-                  seasonMode === "manual" ? "bg-teal text-white" : "bg-white text-ink hover:bg-teal/5"
-                }`}
-              >
-                Auswählen
-              </button>
-              <button
-                type="button"
-                onClick={computeMonths}
-                disabled={busy}
-                className={`px-3 py-1 text-label font-medium disabled:opacity-50 ${
-                  seasonMode === "auto" ? "bg-teal text-white" : "bg-white text-ink hover:bg-teal/5"
-                }`}
-              >
-                Berechnen
-              </button>
-            </div>
-          </div>
-          <span className="mt-1 block text-caption text-muted">
-            {seasonMode === "auto"
-              ? "Automatisch aus der Klimatologie der zugeordneten Spots berechnet — „Berechnen“ erneut klicken zum Aktualisieren."
-              : "Monate anklicken, in denen die Region am besten läuft."}
-          </span>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {MONTHS_SHORT.map((m, i) => {
-              const month = i + 1;
-              const on = bestMonths.includes(month);
-              const locked = seasonMode === "auto";
-              return (
-                <button
-                  key={month}
-                  type="button"
-                  disabled={locked}
-                  onClick={() => {
-                    markDirty("season");
-                    setBestMonths((prev) =>
-                      prev.includes(month)
-                        ? prev.filter((x) => x !== month)
-                        : [...prev, month]
-                    );
-                  }}
-                  className={`rounded-lg px-3 py-1.5 text-label font-medium ${
-                    on
-                      ? "bg-teal text-white"
-                      : "border border-line bg-white text-ink hover:bg-teal/5"
-                  } ${locked ? "cursor-not-allowed opacity-60 hover:bg-white" : ""}`}
-                >
-                  {m}
-                </button>
-              );
-            })}
-          </div>
+        <div>
+          <span className={label}>Windverfügbarkeit</span>
+          <p className="mt-1.5 text-label font-medium text-admin-fg2">Unbekannt</p>
+          <p className="mt-1 text-caption text-admin-muted">
+            Regionale Windverfügbarkeit wird derzeit nicht manuell gepflegt.
+          </p>
         </div>
         {error && (
           <div role="alert" className="rounded-md border border-admin-danger-border bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger">

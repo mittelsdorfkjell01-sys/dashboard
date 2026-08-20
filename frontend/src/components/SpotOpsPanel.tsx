@@ -45,6 +45,7 @@ export default function SpotOpsPanel({
   saveLabel = "Änderungen speichern",
   cancelSlot,
   previewHref,
+  secondarySaveAction,
 }: {
   spotId: string;
   /** Spot name — rendered as the panel's identity header. */
@@ -60,6 +61,7 @@ export default function SpotOpsPanel({
   cancelSlot?: ReactNode;
   /** When present, shows the "Öffentliche Vorschau" link. */
   previewHref?: string;
+  secondarySaveAction?: ReactNode;
 }) {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [overrides, setOverrides] = useState<Record<string, unknown> | null>(null);
@@ -261,6 +263,7 @@ export default function SpotOpsPanel({
         <Button type="submit" variant="primary" block disabled={submitting} className="min-h-11">
           {submitting ? "Speichern …" : saveLabel}
         </Button>
+        {secondarySaveAction && <div className="mt-2 hidden xl:block">{secondarySaveAction}</div>}
         {(cancelSlot || previewHref) && (
           <div className="mt-3 flex items-center justify-between text-label">
             {cancelSlot ?? <span />}

@@ -218,6 +218,8 @@ export default function AdminMap() {
               key={s.id}
               position={[s.lat, s.lon]}
               icon={pinIcon(STATUS_COLOR[s.status] ?? fallbackColor)}
+              title={`Spot öffnen: ${s.name}`}
+              alt={`Spot öffnen: ${s.name}`}
             >
               <Popup>
                 {/* Inline colours: the Leaflet popup keeps a white background,
@@ -275,7 +277,8 @@ function ClusterMarker({
       position={position}
       icon={clusterIcon(count)}
       eventHandlers={{ click: () => map.setView(position, expansionZoom) }}
-      title={`${count} Spots`}
+      title={`${count} Spots anzeigen`}
+      alt={`${count} Spots anzeigen`}
     />
   );
 }

@@ -93,7 +93,7 @@ export default function NotificationBell() {
         type="button"
         onClick={toggle}
         aria-label={`Benachrichtigungen${unread ? `, ${unread} ungelesen` : ""}`}
-        className="relative grid h-8 w-8 place-items-center rounded-md border border-admin-border bg-admin-surface text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg"
+        className="relative grid h-10 w-10 place-items-center rounded-md border border-admin-border bg-admin-surface text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg lg:h-8 lg:w-8"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
