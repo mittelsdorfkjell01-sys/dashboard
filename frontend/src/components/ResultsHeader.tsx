@@ -5,20 +5,27 @@ import SearchBar from "./SearchBar";
 import AccountMenu from "./AccountMenu";
 import MobileSearchSheet from "./MobileSearchSheet";
 import { SearchIcon } from "../lib/icons";
+import { useAutoHideHeader } from "../lib/useAutoHideHeader";
 
 /**
  * Header for the search results page: logo left, search pill centred, account
  * menu right — all three visible at once (unlike LandingHeader, which docks
  * the pill in on scroll). Tapping the pill opens the same SearchBar overlay
- * used everywhere else.
+ * used everywhere else. Scrolls with the page — hides on scroll-down, reveals
+ * on scroll-up (mobile-browser-chrome pattern) rather than staying pinned.
  */
 export default function ResultsHeader() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const hidden = useAutoHideHeader();
 
   return (
     <>
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000]">
-      <div className="mx-auto max-w-[1570px] px-4 pt-4 sm:px-8 sm:pt-6">
+    <header
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[1000] bg-page/90 backdrop-blur transition-transform duration-300 ease-out ${
+        hidden ? "-translate-y-full" : "translate-y-0"
+      }`}
+    >
+      <div className="mx-auto max-w-[1570px] px-4 pt-4 sm:px-8 sm:pt-6 sm:pb-2">
         <div className="pointer-events-auto relative grid grid-cols-[auto_1fr_auto] items-center gap-4">
           <Link
             to="/"

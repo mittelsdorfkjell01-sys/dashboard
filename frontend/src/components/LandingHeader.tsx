@@ -5,6 +5,7 @@ import { SearchIcon } from "../lib/icons";
 import { Wordmark } from "./ui";
 import SearchBar from "./SearchBar";
 import AccountMenu from "./AccountMenu";
+import ResultsHeader from "./ResultsHeader";
 
 /**
  * Top bar for the hero pages. By default it's transparent and absolute over the
@@ -55,6 +56,10 @@ export default function LandingHeader({
       window.removeEventListener("resize", onScroll);
     };
   }, [sticky]);
+
+  // Landing only: once scrolled past the hero, swap wholesale to the results
+  // page's header (logo left, pill centred, account right, scroll-aware).
+  if (sticky && solid) return <ResultsHeader />;
 
   const innerWidth = width === "body" ? "max-w-[1570px] sm:px-8" : "max-w-[1570px] sm:px-10";
 
