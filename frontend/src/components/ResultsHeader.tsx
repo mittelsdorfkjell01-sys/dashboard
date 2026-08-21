@@ -11,8 +11,9 @@ import { useAutoHideHeader } from "../lib/useAutoHideHeader";
  * Header for the search results page: logo left, search pill centred, account
  * menu right — all three visible at once (unlike LandingHeader, which docks
  * the pill in on scroll). Tapping the pill opens the same SearchBar overlay
- * used everywhere else. Scrolls with the page — hides on scroll-down, reveals
- * on scroll-up (mobile-browser-chrome pattern) rather than staying pinned.
+ * used everywhere else. Desktop scrolls with the page — hides on scroll-down,
+ * reveals on scroll-up. Mobile stays put (opaque bar, taller, square search
+ * button) so the search entry is always one tap away.
  */
 export default function ResultsHeader() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -21,11 +22,11 @@ export default function ResultsHeader() {
   return (
     <>
     <header
-      className={`pointer-events-none fixed inset-x-0 top-0 z-[1000] bg-page/90 backdrop-blur transition-transform duration-200 ease-out sm:duration-300 ${
-        hidden ? "-translate-y-full" : "translate-y-0"
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[1000] translate-y-0 bg-surface transition-transform duration-200 ease-out sm:bg-page/90 sm:backdrop-blur sm:duration-300 ${
+        hidden ? "sm:-translate-y-full" : "sm:translate-y-0"
       }`}
     >
-      <div className="mx-auto max-w-[1570px] px-4 pt-4 sm:px-8 sm:pt-6 sm:pb-2">
+      <div className="mx-auto max-w-[1570px] px-4 py-5 sm:px-8 sm:pt-6 sm:pb-2">
         <div className="pointer-events-auto relative grid grid-cols-[auto_1fr_auto] items-center gap-4">
           <Link
             to="/"
@@ -46,7 +47,7 @@ export default function ResultsHeader() {
             type="button"
             onClick={() => setMobileSearchOpen(true)}
             aria-label="Suche öffnen"
-            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-teal text-white shadow-sm active:scale-[0.97] sm:hidden"
+            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-sm active:scale-[0.97] sm:hidden"
           >
             <SearchIcon className="text-[18px]" />
           </button>
