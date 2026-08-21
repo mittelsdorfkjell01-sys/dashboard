@@ -34,6 +34,7 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
 // One shared, non-bouncy spring gives the shell and active segment the same
 // cadence. Panels keep their existing widths and alignment.
 const SPRING = { type: "spring" as const, stiffness: 360, damping: 34, mass: 0.75 };
+const PANEL_TRANSITION = { duration: 0.07, ease: [0.16, 1, 0.3, 1] as const };
 const PANEL_HEIGHT = 350;
 const PANEL_GAP = 12;
 
@@ -268,7 +269,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: reduce ? 0.12 : expanded ? 0.18 : 0.14, ease: "easeOut" }}
+              transition={{ duration: reduce ? 0.07 : expanded ? 0.14 : 0.09, ease: "easeOut" }}
               onClick={collapse}
             >
               <motion.div
@@ -287,7 +288,11 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                 onClick={(e) => e.stopPropagation()}
                 initial={variant === "hero" && !reduce ? { opacity: 0, scale: 0.98 } : false}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={variant === "hero" && !reduce ? { opacity: 0, scale: 0.98 } : { opacity: 0 }}
+                exit={
+                  variant === "hero" && !reduce
+                    ? { opacity: 0, scale: 0.99, transition: { duration: 0.09, ease: "easeOut" } }
+                    : { opacity: 0, transition: { duration: 0.09, ease: "easeOut" } }
+                }
                 transition={reduce ? { duration: 0.12 } : SPRING}
                 onAnimationComplete={() => {
                   if (expanded) setShellReady(true);
@@ -310,7 +315,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                         <motion.span
                           layoutId={reduce ? undefined : "search-seg"}
                           className="absolute inset-0 rounded-xl bg-band"
-                          transition={reduce ? { duration: 0.12 } : SPRING}
+                          transition={reduce ? { duration: 0.05 } : PANEL_TRANSITION}
                         />
                       )}
                       <span className="relative z-10 text-[12px] font-semibold leading-tight text-teal">Wohin?</span>
@@ -359,16 +364,15 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                     </button>
                   </motion.div>
 
-                  {/* Panel — width/alignment follow the active segment. A quick
-                      cross-fade (no wait) keeps the Wohin→Wann→Welche switch
-                      snappy, Airbnb-style. */}
-                  <AnimatePresence initial={false} mode="wait">
+                  {/* Incoming and outgoing panels cross-fade concurrently with
+                      one shared timing, so every switch has the same cadence. */}
+                  <AnimatePresence initial={false}>
                     <motion.div
                       key={open}
                       initial={reduce ? false : { opacity: 0, y: 3 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: reduce ? 0 : -2 }}
-                      transition={{ duration: reduce ? 0.06 : 0.08, ease: [0.16, 1, 0.3, 1] }}
+                      transition={reduce ? { duration: 0.05, ease: "easeOut" } : PANEL_TRANSITION}
                       className={`absolute top-full mt-3 ${
                         open === "when"
                           ? "inset-x-0"
@@ -448,7 +452,7 @@ function SegmentButton({
         <motion.span
           layoutId={reduceMotion ? undefined : "search-seg"}
           className="absolute inset-0 rounded-xl bg-band"
-          transition={reduceMotion ? { duration: 0.12 } : SPRING}
+          transition={reduceMotion ? { duration: 0.05 } : PANEL_TRANSITION}
         />
       )}
       <span className="relative z-10 text-[12px] font-semibold leading-tight text-teal">{label}</span>

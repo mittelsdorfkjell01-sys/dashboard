@@ -215,13 +215,12 @@ function SplitView({
         </div>
 
         {hasMap && (
-          <div className="hidden lg:block">
-            {/* top offset ≈ head + first row's title/subtitle, so the map's
-                top edge lines up with the tile grid (not the page heading);
-                it already sits at that offset at scroll 0, so it never
-                visibly floats or scrolls with the page. Square: height
-                matches the column's own (responsive) width. */}
-            <div className="sticky top-[17.4rem] aspect-square overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
+          <div className="hidden pt-44 lg:block">
+            {/* Real flow spacing aligns the map with the first tile row from
+                the initial frame. A header-sized sticky offset then takes over
+                only while scrolling; async result rows can no longer move the
+                map from a constrained temporary position. */}
+            <div className="sticky top-24 aspect-square overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
               <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
             </div>
           </div>
