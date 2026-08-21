@@ -196,8 +196,7 @@ function SplitView({
   live,
 }: {
   children: React.ReactNode;
-  /** Rendered atop the left column, in the same grid row as the map — so the
-   *  map's top edge lines up with the heading instead of sitting below it. */
+  /** Rendered atop the left column, in the same grid row as the map. */
   head?: React.ReactNode;
   mapSpots: Spot[];
   center: [number, number];
@@ -217,11 +216,12 @@ function SplitView({
 
         {hasMap && (
           <div className="hidden lg:block">
-            {/* top offset matches main's pt-24 + this wrapper's pt-2, so the
-                map is already "stuck" at scroll 0 — it never visibly floats
-                or scrolls with the page, and its top edge lines up with the
-                heading in the left column. */}
-            <div className="sticky top-[6.5rem] h-[calc(80dvh_-_5.6rem)] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
+            {/* top offset ≈ head + first row's title/subtitle, so the map's
+                top edge lines up with the tile grid (not the page heading);
+                it already sits at that offset at scroll 0, so it never
+                visibly floats or scrolls with the page. Height is reduced by
+                the same amount so the bottom edge stays put. */}
+            <div className="sticky top-[17.4rem] h-[calc(80dvh_-_16.5rem)] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
               <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
             </div>
           </div>
