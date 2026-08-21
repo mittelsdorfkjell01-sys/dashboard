@@ -34,6 +34,8 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
 // One shared, non-bouncy spring gives the shell and active segment the same
 // cadence. Panels keep their existing widths and alignment.
 const SPRING = { type: "spring" as const, stiffness: 360, damping: 34, mass: 0.75 };
+const PANEL_HEIGHT = 350;
+const PANEL_GAP = 12;
 
 /**
  * Desktop search (Airbnb-style). Collapsed it is a single, simple bar. Tapping
@@ -51,6 +53,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   const [expanded, setExpanded] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [shellReady, setShellReady] = useState(false);
+  const [heroAnchor, setHeroAnchor] = useState<{ top: number; left: number; width: number } | null>(null);
   const [open, setOpen] = useState<Segment>("where");
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
   const [whenTab, setWhenTab] = useState<WhenTab>("date");
@@ -103,8 +106,13 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   }, [val.whereText]);
 
   const whereInputRef = useRef<HTMLInputElement>(null);
+  const heroTriggerRef = useRef<HTMLButtonElement>(null);
 
   const openExpanded = (seg: Segment = "where") => {
+    if (variant === "hero") {
+      const rect = heroTriggerRef.current?.getBoundingClientRect();
+      if (rect) setHeroAnchor({ top: rect.top, left: rect.left, width: rect.width });
+    }
     setOpen(seg);
     setExiting(false);
     setShellReady(Boolean(reduce));
@@ -222,10 +230,11 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
         </motion.button>
       ) : (
         <button
+          ref={heroTriggerRef}
           type="button"
           onClick={() => openExpanded()}
           aria-label="Suche öffnen"
-          className={`flex w-full items-center gap-3 rounded-2xl border border-line bg-surface py-2.5 pl-6 pr-2.5 text-left shadow-float transition-shadow hover:shadow-lg ${
+          className={`flex h-14 w-full items-center gap-3 rounded-2xl border border-line bg-surface p-1 pl-5 text-left shadow-float transition-shadow hover:shadow-lg ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
@@ -236,7 +245,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           >
             {summary || "Jetzt suchen"}
           </span>
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-teal text-white">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-teal text-white">
             <SearchIcon className="text-[18px]" />
           </span>
         </button>
@@ -250,14 +259,11 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               role="dialog"
               aria-modal="true"
               aria-label="Suche"
-              // A light dim behind the panel, anchored at the same height as
-              // the trigger (the header's own top padding for the pill; a
-              // lower offset for the hero bar) so it visibly rises in place
-              // — Airbnb-style — rather than dropping below the header. Also
-              // the click catcher — a click anywhere outside the panel
-              // collapses it back to the simple bar.
-              className={`fixed inset-0 z-[1300] flex items-start justify-center bg-black/25 px-4 ${
-                variant === "pill" ? "pt-4 sm:pt-6" : "pt-20 sm:pt-24"
+              // Header searches rise to the top. In the landing hero the open
+              // stack ends exactly at the collapsed bar's former bottom edge:
+              // search shell first, active panel directly underneath.
+              className={`fixed inset-0 z-[1300] bg-black/25 ${
+                variant === "pill" ? "flex items-start justify-center px-4 pt-4 sm:pt-6" : ""
               }`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -267,15 +273,25 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
             >
               <motion.div
                 className="relative w-[760px] max-w-full"
+                style={
+                  variant === "hero" && heroAnchor
+                    ? {
+                        position: "absolute",
+                        top: heroAnchor.top - PANEL_HEIGHT - PANEL_GAP,
+                        left: heroAnchor.left,
+                        width: heroAnchor.width,
+                        transformOrigin: "center bottom",
+                      }
+                    : { transformOrigin: "center top" }
+                }
                 onClick={(e) => e.stopPropagation()}
-                initial={variant === "hero" && !reduce ? { opacity: 0, y: 28, scale: 0.98 } : false}
+                initial={variant === "hero" && !reduce ? { opacity: 0, scale: 0.98 } : false}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={variant === "hero" && !reduce ? { opacity: 0, y: 28, scale: 0.98 } : { opacity: 0 }}
+                exit={variant === "hero" && !reduce ? { opacity: 0, scale: 0.98 } : { opacity: 0 }}
                 transition={reduce ? { duration: 0.12 } : SPRING}
                 onAnimationComplete={() => {
                   if (expanded) setShellReady(true);
                 }}
-                style={{ transformOrigin: "center top" }}
               >
                 <div className="relative">
                   {/* Segmented bar — same radius as the tiles (rounded-2xl). The
@@ -283,12 +299,12 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       the header pill instead of fading in mid-page. */}
                   <motion.div
                     layoutId={variant === "pill" && !reduce ? "search-shell" : undefined}
-                    className="flex h-11 items-stretch gap-1 rounded-2xl bg-surface p-1 shadow-float"
+                    className="flex h-14 items-stretch gap-1 rounded-2xl bg-surface p-1 shadow-float"
                   >
                     {/* Wohin? — the Tippleiste lives in the bar. */}
                     <label
                       onClick={() => setOpen("where")}
-                      className="relative flex h-9 flex-1 cursor-text flex-col items-start justify-center rounded-xl px-5 py-0 transition-colors hover:bg-band/60"
+                      className="relative flex h-12 flex-1 cursor-text flex-col items-start justify-center rounded-xl px-5 py-0 transition-colors hover:bg-band/60"
                     >
                       {open === "where" && (
                         <motion.span
@@ -297,7 +313,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           transition={reduce ? { duration: 0.12 } : SPRING}
                         />
                       )}
-                      <span className="relative z-10 text-[11px] font-semibold leading-tight text-teal">Wohin?</span>
+                      <span className="relative z-10 text-[12px] font-semibold leading-tight text-teal">Wohin?</span>
                       <input
                         ref={whereInputRef}
                         value={val.whereText}
@@ -311,7 +327,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                         placeholder="Region oder Spot suchen"
                         aria-label="Region oder Spot suchen"
                         aria-expanded={open === "where"}
-                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-[12px] leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
+                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-[13px] leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                       />
                     </label>
 
@@ -337,9 +353,9 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       type="button"
                       onClick={submit}
                       aria-label="Suchen"
-                      className="my-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
+                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
                     >
-                      <SearchIcon className="text-[17px]" />
+                      <SearchIcon className="text-[18px]" />
                     </button>
                   </motion.div>
 
@@ -426,7 +442,7 @@ function SegmentButton({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className="relative flex h-9 flex-1 flex-col items-start justify-center rounded-xl px-5 py-0 text-left transition-colors hover:bg-band/60"
+      className="relative flex h-12 flex-1 flex-col items-start justify-center rounded-xl px-5 py-0 text-left transition-colors hover:bg-band/60"
     >
       {active && (
         <motion.span
@@ -435,8 +451,8 @@ function SegmentButton({
           transition={reduceMotion ? { duration: 0.12 } : SPRING}
         />
       )}
-      <span className="relative z-10 text-[11px] font-semibold leading-tight text-teal">{label}</span>
-      <span className={`relative z-10 truncate text-[12px] leading-tight ${value ? "text-ink" : "text-muted"}`}>
+      <span className="relative z-10 text-[12px] font-semibold leading-tight text-teal">{label}</span>
+      <span className={`relative z-10 truncate text-[13px] leading-tight ${value ? "text-ink" : "text-muted"}`}>
         {value || placeholder}
       </span>
     </button>
