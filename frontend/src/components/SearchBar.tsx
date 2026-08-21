@@ -239,10 +239,12 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               role="dialog"
               aria-modal="true"
               aria-label="Suche"
-              // A light dim + slight blur behind the panel; also the click
-              // catcher — a click anywhere outside the panel (e.g. the hero)
-              // collapses it back to the simple bar.
-              className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/25 px-4 backdrop-blur-sm"
+              // A light dim behind the panel, anchored near the header (not
+              // vertically centered) so the bar visibly rises out of the
+              // header — Airbnb-style. Also the click catcher — a click
+              // anywhere outside the panel collapses it back to the simple
+              // bar.
+              className="fixed inset-0 z-[1300] flex items-start justify-center bg-black/25 px-4 pt-20 sm:pt-24"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -260,7 +262,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               >
                 <div className="relative">
                   {/* Segmented bar — same radius as the tiles (rounded-2xl). */}
-                  <div className="flex items-stretch gap-1 rounded-2xl border border-line bg-surface p-2 shadow-float">
+                  <div className="flex items-stretch gap-1 rounded-2xl bg-surface p-2 shadow-float">
                     {/* Wohin? — the Tippleiste lives in the bar. */}
                     <label
                       onClick={() => setOpen("where")}
@@ -335,9 +337,8 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           : "right-0 w-1/2"
                       }`}
                     >
-                      {/* Uniform height across panels — the Wann calendar is the
-                          reference; Wohin/Welche top-align within it. */}
-                      <div className="h-[340px] overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-float">
+                      {/* Sized to its own content — no fixed height, no scroll. */}
+                      <div className="rounded-2xl bg-surface p-5 shadow-float">
                         {open === "where" && (
                           <SearchWhere
                             spotItems={spotItems}

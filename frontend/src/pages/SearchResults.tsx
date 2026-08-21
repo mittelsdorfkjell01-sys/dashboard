@@ -37,7 +37,7 @@ const pinIcon = L.divIcon({
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface px-3 py-1.5 text-label font-medium text-ink">
+    <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 py-1 text-caption font-medium text-ink">
       {children}
     </span>
   );
@@ -467,14 +467,14 @@ export default function SearchResults() {
       <main className="flex-1 pt-20 sm:pt-24">
         {/* Head — mirrors the query back; refining happens via the header's search pill. */}
         <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
-          <nav className="text-caption font-medium text-muted">
+          <nav className="text-[11px] font-medium text-muted">
             <Link to="/" className="hover:underline">Übersicht</Link>
             <span className="mx-1.5 text-muted">›</span>
             <span className="text-ink">Suche</span>
           </nav>
           <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h1>
           {(sports.length > 0 || timeChip || (!nearby && q)) && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {!nearby && q && <Chip>{q}</Chip>}
               {timeChip && <Chip>{timeChip}</Chip>}
               {sports.map((s) => <Chip key={s}>{sportLabel(s)}</Chip>)}
