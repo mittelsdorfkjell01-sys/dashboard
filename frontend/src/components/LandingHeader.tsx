@@ -33,28 +33,26 @@ export default function LandingHeader({
    *  (mobile), replacing the wordmark next to the menu. Tapping it fires this. */
   onMobileSearch?: () => void;
 }) {
-  const [solid, setSolid] = useState(false);
+  // 0 (top of hero) → 1 (fully solid). Driven continuously off scroll, not a
+  // single on/off flip, so the mobile bar hardens gradually over the last
+  // RANGE px before the trigger — by the time it hits 1 and swaps over to
+  // ResultsHeader, it already looks identical, so the swap itself is invisible.
+  const [progress, setProgress] = useState(0);
   useEffect(() => {
     if (!sticky) return;
-    // Observe a one-pixel sentinel instead of forcing layout through
-    // getBoundingClientRect on every touch-scroll event.
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
+    const RANGE = 64; // px over which the bar hardens
     const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
-    if (sentinel && "IntersectionObserver" in window) {
-      const observer = new IntersectionObserver(
-        ([entry]) => setSolid(!entry.isIntersecting && entry.boundingClientRect.top <= TRIGGER_Y),
-        { rootMargin: `-${TRIGGER_Y}px 0px 0px 0px`, threshold: 0 },
-      );
-      observer.observe(sentinel);
-      return () => observer.disconnect();
-    }
 
-    // Small compatibility fallback: one layout read at most once per frame.
     let frame = 0;
     const update = () => {
       frame = 0;
       const top = sentinel?.getBoundingClientRect().top;
-      setSolid(top != null ? top <= TRIGGER_Y : window.scrollY > window.innerHeight * 0.5);
+      const raw =
+        top != null
+          ? (TRIGGER_Y + RANGE - top) / RANGE
+          : (window.scrollY - (window.innerHeight * 0.5 - RANGE)) / RANGE;
+      setProgress(Math.min(1, Math.max(0, raw)));
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
@@ -69,6 +67,8 @@ export default function LandingHeader({
     };
   }, [sticky]);
 
+  const solid = progress >= 1;
+
   // Landing only: once scrolled past the hero, swap wholesale to the results
   // page's header (logo left, pill centred, account right, scroll-aware).
   if (sticky && solid) return <ResultsHeader />;
@@ -77,67 +77,92 @@ export default function LandingHeader({
 
   return (
     <header
-      className={`${sticky ? "fixed" : "absolute"} inset-x-0 top-0 z-[1000] transition-colors duration-200 ${
-        solid
-          ? "bg-page/90 backdrop-blur"
-          : "pointer-events-none bg-transparent"
+      className={`${sticky ? "fixed" : "absolute"} inset-x-0 top-0 z-[1000] bg-transparent ${
+        solid ? "" : "pointer-events-none"
       }`}
     >
+      {/* The hero header hardens continuously into the same opaque material as
+          ResultsHeader. At progress=1 the component swap is visually inert. */}
+      {sticky && (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-surface"
+          style={{
+            opacity: progress,
+            backdropFilter: `blur(${progress * 12}px)`,
+            WebkitBackdropFilter: `blur(${progress * 12}px)`,
+          }}
+        />
+      )}
+
       <div
-        className={`mx-auto px-4 transition-[padding] duration-200 ${innerWidth} ${
-          solid ? "py-2.5" : sticky ? "py-6 sm:py-8" : "pt-9 sm:pt-12"
+        className={`relative mx-auto px-4 transition-[padding] duration-200 ${innerWidth} ${
+          sticky ? `py-5 ${solid ? "sm:py-2.5" : "sm:py-6 sm:py-8"}` : "pt-9 sm:pt-12"
         }`}
       >
         <div className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
           <div className="min-w-0 justify-self-start">
             {left ?? (
-              <span
-                className={`hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] transition-colors sm:block ${
-                  solid ? "text-teal" : "text-white/90"
-                }`}
-              >
-                Best collection of surfspots
-              </span>
+              <div className="relative flex min-h-11 items-center">
+                <span
+                  className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
+                  style={sticky ? { opacity: 1 - progress } : undefined}
+                >
+                  Best collection of surfspots
+                </span>
+                {sticky && (
+                  <Link
+                    to="/"
+                    aria-label="surfwind data · Startseite"
+                    className="absolute left-0 hidden min-h-11 select-none items-center leading-none sm:flex"
+                    style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
+                  >
+                    <Wordmark size="md" />
+                  </Link>
+                )}
+              </div>
             )}
           </div>
 
           {/* Center — the wordmark, or (landing, scrolled) a docked search. On
-              desktop a compact pill expands the SearchBar overlay. */}
-          <div className="col-start-2 flex min-w-0 items-center justify-center justify-self-center">
-            {!solid && (
-              <Link
-                to="/"
-                aria-label="surfwind data · Startseite"
-                className={`min-h-11 min-w-0 select-none items-center leading-none ${
-                  mobileSpotControls ? "hidden sm:flex" : "flex"
-                }`}
-              >
-                <Wordmark size="xl" />
-              </Link>
-            )}
+              desktop a compact pill expands the SearchBar overlay. Mobile
+              fades the wordmark out as `progress` rises, in step with the
+              bar hardening and the search button fading in below. */}
+          <div className="relative col-start-2 flex min-h-11 min-w-0 items-center justify-center justify-self-center">
+            <Link
+              to="/"
+              aria-label="surfwind data · Startseite"
+              style={sticky ? { opacity: 1 - progress, pointerEvents: progress > 0.5 ? "none" : "auto" } : undefined}
+              className={`min-h-11 min-w-0 select-none items-center leading-none transition-opacity duration-150 ${
+                mobileSpotControls ? "hidden sm:flex" : "flex"
+              } ${solid ? "sm:hidden" : "sm:flex"}`}
+            >
+              <Wordmark size="xl" />
+            </Link>
 
-            {/* Desktop (sm+): a compact pill that opens the SearchBar overlay. */}
-            {sticky && solid && (
-              <div className="hidden sm:block">
+            {/* Desktop: the compact search takes over continuously as the hero
+                identity recedes, matching ResultsHeader at the hand-off. */}
+            {sticky && (
+              <div
+                className="absolute hidden sm:block"
+                style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
+              >
                 <SearchBar variant="pill" />
               </div>
             )}
           </div>
 
-          {/* Mobile: a compact search pill docks in once scrolled, sitting where
-              the wordmark was, beside the menu. Opens the full-screen sheet at
-              the current scroll position (no jump to the top). */}
+          {/* Mobile: a square icon button — same shape as ResultsHeader's —
+              fades in as the bar hardens, sitting where the wordmark was. */}
           {onMobileSearch && (
             <button
               type="button"
               onClick={onMobileSearch}
               aria-label="Suche öffnen"
-              className={`absolute inset-y-0 left-0 right-12 my-auto flex h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-[15px] font-medium text-ink shadow-sm transition-opacity duration-200 sm:hidden ${
-                solid ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
+              style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
+              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-sm transition-opacity duration-150 sm:hidden"
             >
               <SearchIcon className="text-[18px]" />
-              Suchen
             </button>
           )}
 
