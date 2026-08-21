@@ -108,6 +108,10 @@ export default function MobileSearchSheet({
       setVal(EMPTY_SEARCH);
       setSection(null);
       setWhenTab("date");
+      // Warm the code-split results route while the sheet is open. On slower
+      // mobile networks this removes the first-navigation race; stale deploy
+      // chunks are recovered centrally by the vite:preloadError handler.
+      void import("../pages/SearchResults").catch(() => undefined);
     }
   }, [open]);
 

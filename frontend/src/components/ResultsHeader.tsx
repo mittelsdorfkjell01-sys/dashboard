@@ -19,7 +19,7 @@ export default function ResultsHeader() {
     <>
     <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000]">
       <div className="mx-auto max-w-[1570px] px-4 pt-4 sm:px-8 sm:pt-6">
-        <div className="pointer-events-auto grid grid-cols-[auto_1fr_auto] items-center gap-4">
+        <div className="pointer-events-auto relative grid grid-cols-[auto_1fr_auto] items-center gap-4">
           <Link
             to="/"
             aria-label="surfwind data · Startseite"
@@ -28,22 +28,21 @@ export default function ResultsHeader() {
             <Wordmark size="md" />
           </Link>
 
-          <div className="flex min-w-0 justify-center">
-            <div className="hidden sm:block">
-              <SearchBar variant="pill" />
-            </div>
-            <button
-              type="button"
-              onClick={() => setMobileSearchOpen(true)}
-              aria-label="Suche öffnen"
-              className="flex min-h-11 max-w-full items-center gap-2 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-[14px] font-medium text-ink shadow-sm active:scale-[0.99] sm:hidden"
-            >
-              <span className="truncate">Suchen</span>
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-teal text-white">
-                <SearchIcon className="text-[15px]" />
-              </span>
-            </button>
+          <div className="hidden min-w-0 justify-center sm:flex">
+            <SearchBar variant="pill" />
           </div>
+
+          {/* Mobile: icon-only, centred on the header row itself (not the
+              middle grid track, which is off-centre — logo and account menu
+              aren't the same width). */}
+          <button
+            type="button"
+            onClick={() => setMobileSearchOpen(true)}
+            aria-label="Suche öffnen"
+            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-teal text-white shadow-sm active:scale-[0.97] sm:hidden"
+          >
+            <SearchIcon className="text-[18px]" />
+          </button>
 
           <div className="justify-self-end">
             <AccountMenu />

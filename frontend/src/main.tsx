@@ -46,10 +46,17 @@ function RouteFallback() {
 // surfaces as an uncaught render error that trips the top-level ErrorBoundary
 // over what a reload fixes in place. The sessionStorage guard stops a reload
 // loop if the asset is actually missing for good.
-window.addEventListener("vite:preloadError", () => {
+window.addEventListener("vite:preloadError", (event) => {
   const key = "swd-preload-reload";
-  if (sessionStorage.getItem(key)) return;
-  sessionStorage.setItem(key, "1");
+  const now = Date.now();
+  const previousAttempt = Number(sessionStorage.getItem(key) ?? 0);
+  // Let a genuinely persistent asset failure reach the route fallback instead
+  // of entering a reload loop. A later deployment gets a fresh recovery try.
+  if (Number.isFinite(previousAttempt) && now - previousAttempt < 10_000) return;
+  // Vite otherwise rethrows the rejected lazy import after this listener,
+  // briefly rendering RouteError even though the reload already started.
+  event.preventDefault();
+  sessionStorage.setItem(key, String(now));
   window.location.reload();
 });
 

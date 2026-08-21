@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 import SpotCard from "../components/SpotCard";
 import RegionTile from "../components/RegionTile";
 import { ErrorBanner, EmptyState, SpotGridSkeleton } from "../components/AsyncStates";
-import { CloseIcon, MapIcon, MinusIcon, PlusIcon } from "../lib/icons";
+import { ChevronLeftIcon, MapIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { countryName } from "../lib/flags";
 import * as api from "../lib/api";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
@@ -126,11 +126,14 @@ function ResultsMap({
   center,
   zoom = 7,
   live,
+  /** Leaves the top-right corner free for the mobile full-screen back button. */
+  topInset = false,
 }: {
   spots: Spot[];
   center: [number, number];
   zoom?: number;
   live?: Map<string, api.LiveConditionsRead>;
+  topInset?: boolean;
 }) {
   const [map, setMap] = useState<LeafletMap | null>(null);
   const withCoords = spots.filter((s) => s.coords);
@@ -163,7 +166,7 @@ function ResultsMap({
 
       {/* Zoom controls (scroll-wheel zoom is off so the page keeps scrolling
           past the sticky map). */}
-      <div className="pointer-events-none absolute right-3 top-3 z-[600] flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
+      <div className={`pointer-events-none absolute right-3 z-[600] flex flex-col overflow-hidden rounded-2xl border border-line bg-white ${topInset ? "top-20" : "top-3"}`}>
         <button type="button" aria-label="Vergrößern" onClick={() => map?.zoomIn()} className="pointer-events-auto grid h-10 w-10 place-items-center text-teal transition-colors hover:bg-line/40">
           <PlusIcon className="text-[18px]" />
         </button>
@@ -233,21 +236,21 @@ function SplitView({
           <button
             type="button"
             onClick={() => setShowMap(true)}
-            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-ink px-5 py-3 text-ui font-semibold text-white shadow-float lg:hidden"
+            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-1.5 rounded-xl bg-teal px-4 py-2 text-[14px] font-semibold text-white shadow-float lg:hidden"
           >
-            Karte <MapIcon className="text-[18px]" />
+            Karte <MapIcon className="text-[15px]" />
           </button>
 
           {showMap && (
             <div className="fixed inset-0 z-[1400] bg-page lg:hidden" data-lenis-prevent>
-              <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
+              <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} topInset />
               <button
                 type="button"
                 onClick={() => setShowMap(false)}
-                aria-label="Karte schließen"
-                className="absolute right-4 top-4 z-[10] grid h-11 w-11 place-items-center rounded-2xl border border-line bg-white text-teal shadow-card"
+                aria-label="Zurück"
+                className="absolute right-4 top-4 z-[1100] grid h-11 w-11 place-items-center rounded-2xl border border-line bg-white text-teal shadow-card"
               >
-                <CloseIcon className="text-[20px]" />
+                <ChevronLeftIcon className="text-[20px]" />
               </button>
             </div>
           )}
