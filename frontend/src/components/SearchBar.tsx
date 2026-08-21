@@ -31,8 +31,9 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
   { value: "wing", Icon: WingIcon },
 ];
 
-// One shared spring so the rise-up + panel motion feel of a piece.
-const SPRING = { type: "spring" as const, stiffness: 420, damping: 38, mass: 0.8 };
+// One shared, non-bouncy spring gives the shell and active segment the same
+// cadence. Panels keep their existing widths and alignment.
+const SPRING = { type: "spring" as const, stiffness: 360, damping: 34, mass: 0.75 };
 
 /**
  * Desktop search (Airbnb-style). Collapsed it is a single, simple bar. Tapping
@@ -48,6 +49,8 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const [shellReady, setShellReady] = useState(false);
   const [open, setOpen] = useState<Segment>("where");
   const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
   const [whenTab, setWhenTab] = useState<WhenTab>("date");
@@ -103,9 +106,15 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
 
   const openExpanded = (seg: Segment = "where") => {
     setOpen(seg);
+    setExiting(false);
+    setShellReady(Boolean(reduce));
     setExpanded(true);
   };
-  const collapse = () => setExpanded(false);
+  const collapse = () => {
+    setExiting(true);
+    setExpanded(false);
+    setShellReady(false);
+  };
 
   // Lock body scroll while the overlay is up; Esc closes it.
   useEffect(() => {
@@ -120,12 +129,13 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
     };
   }, [expanded]);
 
-  // Focus the "Wohin?" field once it is the active segment.
+  // Focus only once the opening motion has settled. A fixed timer could fire
+  // midway through a spring on slower devices and make the browser jump.
   useEffect(() => {
-    if (!expanded || open !== "where") return;
-    const t = window.setTimeout(() => whereInputRef.current?.focus(), 80);
-    return () => window.clearTimeout(t);
-  }, [expanded, open]);
+    if (!expanded || !shellReady || open !== "where") return;
+    const frame = window.requestAnimationFrame(() => whereInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [expanded, open, shellReady]);
 
   const submit = () => {
     navigate(`/search?${buildSearchParams(val).toString()}`);
@@ -197,12 +207,12 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
       {/* Collapsed trigger — a simple bar (hero) or compact pill (header). */}
       {variant === "pill" ? (
         <motion.button
-          layoutId="search-shell"
+          layoutId={reduce ? undefined : "search-shell"}
           type="button"
           onClick={() => openExpanded()}
           aria-label="Suche öffnen"
           className={`flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-[14px] font-medium text-ink shadow-sm transition-shadow hover:shadow-float ${
-            expanded ? "invisible" : ""
+            expanded || exiting ? "invisible" : ""
           }`}
         >
           <span className="truncate">{summary || "Suchen"}</span>
@@ -216,7 +226,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           onClick={() => openExpanded()}
           aria-label="Suche öffnen"
           className={`flex w-full items-center gap-3 rounded-2xl border border-line bg-surface py-2.5 pl-6 pr-2.5 text-left shadow-float transition-shadow hover:shadow-lg ${
-            expanded ? "invisible" : ""
+            expanded || exiting ? "invisible" : ""
           }`}
         >
           <span
@@ -233,7 +243,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
       )}
 
       {createPortal(
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={() => setExiting(false)}>
           {expanded && (
             <motion.div
               key="overlay"
@@ -252,16 +262,19 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.12 }}
+              transition={{ duration: reduce ? 0.12 : expanded ? 0.18 : 0.14, ease: "easeOut" }}
               onClick={collapse}
             >
               <motion.div
-                className="relative w-[860px] max-w-full"
+                className="relative w-[760px] max-w-full"
                 onClick={(e) => e.stopPropagation()}
                 initial={variant === "hero" && !reduce ? { opacity: 0, y: 28, scale: 0.98 } : false}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={variant === "hero" && !reduce ? { opacity: 0, y: 28, scale: 0.98 } : { opacity: 0 }}
-                transition={reduce ? { duration: 0.15 } : SPRING}
+                transition={reduce ? { duration: 0.12 } : SPRING}
+                onAnimationComplete={() => {
+                  if (expanded) setShellReady(true);
+                }}
                 style={{ transformOrigin: "center top" }}
               >
                 <div className="relative">
@@ -269,22 +282,22 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       shared layoutId (pill trigger only) makes this grow out of
                       the header pill instead of fading in mid-page. */}
                   <motion.div
-                    layoutId={variant === "pill" ? "search-shell" : undefined}
-                    className="flex items-stretch gap-1 rounded-2xl bg-surface p-2 shadow-float"
+                    layoutId={variant === "pill" && !reduce ? "search-shell" : undefined}
+                    className="flex h-11 items-stretch gap-1 rounded-2xl bg-surface p-1 shadow-float"
                   >
                     {/* Wohin? — the Tippleiste lives in the bar. */}
                     <label
                       onClick={() => setOpen("where")}
-                      className="relative flex flex-1 cursor-text flex-col items-start justify-center rounded-xl px-6 py-2 transition-colors hover:bg-band/60"
+                      className="relative flex h-9 flex-1 cursor-text flex-col items-start justify-center rounded-xl px-5 py-0 transition-colors hover:bg-band/60"
                     >
                       {open === "where" && (
                         <motion.span
-                          layoutId="search-seg"
+                          layoutId={reduce ? undefined : "search-seg"}
                           className="absolute inset-0 rounded-xl bg-band"
-                          transition={{ type: "spring", stiffness: 520, damping: 42 }}
+                          transition={reduce ? { duration: 0.12 } : SPRING}
                         />
                       )}
-                      <span className="relative z-10 text-[13px] font-semibold text-teal">Wohin?</span>
+                      <span className="relative z-10 text-[11px] font-semibold leading-tight text-teal">Wohin?</span>
                       <input
                         ref={whereInputRef}
                         value={val.whereText}
@@ -298,7 +311,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                         placeholder="Region oder Spot suchen"
                         aria-label="Region oder Spot suchen"
                         aria-expanded={open === "where"}
-                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-[13px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
+                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-[12px] leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                       />
                     </label>
 
@@ -307,6 +320,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       placeholder="Datum wählen"
                       value={whenLabel(val.when)}
                       active={open === "when"}
+                      reduceMotion={Boolean(reduce)}
                       onClick={() => setOpen("when")}
                     />
 
@@ -315,6 +329,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       placeholder="Sportart wählen"
                       value={sportText}
                       active={open === "which"}
+                      reduceMotion={Boolean(reduce)}
                       onClick={() => setOpen("which")}
                     />
 
@@ -322,22 +337,22 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       type="button"
                       onClick={submit}
                       aria-label="Suchen"
-                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal text-white transition-colors hover:bg-teal-hover"
+                      className="my-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
                     >
-                      <SearchIcon className="text-[20px]" />
+                      <SearchIcon className="text-[17px]" />
                     </button>
                   </motion.div>
 
                   {/* Panel — width/alignment follow the active segment. A quick
                       cross-fade (no wait) keeps the Wohin→Wann→Welche switch
                       snappy, Airbnb-style. */}
-                  <AnimatePresence initial={false}>
+                  <AnimatePresence initial={false} mode="wait">
                     <motion.div
                       key={open}
-                      initial={reduce ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.1, ease: "easeOut" }}
+                      initial={reduce ? false : { opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: reduce ? 0 : -2 }}
+                      transition={{ duration: reduce ? 0.06 : 0.08, ease: [0.16, 1, 0.3, 1] }}
                       className={`absolute top-full mt-3 ${
                         open === "when"
                           ? "inset-x-0"
@@ -346,8 +361,9 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           : "right-0 w-1/2"
                       }`}
                     >
-                      {/* Sized to its own content — no fixed height, no scroll. */}
-                      <div className="rounded-2xl bg-surface p-5 shadow-float">
+                      {/* Every step uses the calendar's content height so the
+                          shell no longer jumps vertically while switching. */}
+                      <div className="h-[350px] overflow-y-auto rounded-2xl bg-surface p-5 shadow-float">
                         {open === "where" && (
                           <SearchWhere
                             spotItems={spotItems}
@@ -395,12 +411,14 @@ function SegmentButton({
   placeholder,
   value,
   active,
+  reduceMotion,
   onClick,
 }: {
   label: string;
   placeholder: string;
   value: string;
   active: boolean;
+  reduceMotion: boolean;
   onClick: () => void;
 }) {
   return (
@@ -408,17 +426,17 @@ function SegmentButton({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className="relative flex flex-1 flex-col items-start justify-center rounded-xl px-6 py-2 text-left transition-colors hover:bg-band/60"
+      className="relative flex h-9 flex-1 flex-col items-start justify-center rounded-xl px-5 py-0 text-left transition-colors hover:bg-band/60"
     >
       {active && (
         <motion.span
-          layoutId="search-seg"
+          layoutId={reduceMotion ? undefined : "search-seg"}
           className="absolute inset-0 rounded-xl bg-band"
-          transition={{ type: "spring", stiffness: 520, damping: 42 }}
+          transition={reduceMotion ? { duration: 0.12 } : SPRING}
         />
       )}
-      <span className="relative z-10 text-[13px] font-semibold text-teal">{label}</span>
-      <span className={`relative z-10 truncate text-[13px] ${value ? "text-ink" : "text-muted"}`}>
+      <span className="relative z-10 text-[11px] font-semibold leading-tight text-teal">{label}</span>
+      <span className={`relative z-10 truncate text-[12px] leading-tight ${value ? "text-ink" : "text-muted"}`}>
         {value || placeholder}
       </span>
     </button>
@@ -434,7 +452,7 @@ function SportPicker({
   onToggle: (sport: string) => void;
 }): ReactNode {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-2">
       {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
         const isOn = selected.includes(sport);
         return (
