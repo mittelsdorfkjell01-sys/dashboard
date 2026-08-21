@@ -219,9 +219,9 @@ function SplitView({
             {/* top offset ≈ head + first row's title/subtitle, so the map's
                 top edge lines up with the tile grid (not the page heading);
                 it already sits at that offset at scroll 0, so it never
-                visibly floats or scrolls with the page. Height is reduced by
-                the same amount so the bottom edge stays put. */}
-            <div className="sticky top-[17.4rem] h-[calc(80dvh_-_16.5rem)] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
+                visibly floats or scrolls with the page. Square: height
+                matches the column's own (responsive) width. */}
+            <div className="sticky top-[17.4rem] aspect-square overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
               <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
             </div>
           </div>
