@@ -244,31 +244,48 @@ export const ChevronRightIcon = (p: IconProps) => (
   </svg>
 );
 
-/* Sport glyphs — thin line marks in the same 24px frame, for the search
-   "Welche Sportart?" list. Deliberately simple and stylistically uniform. */
+/* Sport glyphs — solid silhouette marks (fill = currentColor, a thin evenodd
+   notch stands in for a highlight/fold), for the search "Welche Sportart?"
+   list. Deliberately simple and stylistically uniform with each other. */
+const fillBase = {
+  width: "1em",
+  height: "1em",
+  viewBox: "0 0 24 24",
+  fill: "currentColor",
+};
 export const SurfIcon = (p: IconProps) => (
-  <svg {...base} {...p}>
-    <path d="M12 2c2.6 3.2 3.8 7.5 3.8 10.5S13.4 20 12 22c-1.4-2-3.8-6.5-3.8-9.5S9.4 5.2 12 2Z" />
-    <path d="M12 4.5v14" />
+  <svg {...fillBase} {...p}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2c3.6 3.5 4.8 7.7 4.8 10.6 0 3.4-1.9 6.4-4.8 8.4-2.9-2-4.8-5-4.8-8.4C7.2 9.7 8.4 5.5 12 2Zm-3.4 5.9 6-2.4.6 1.5-6 2.4Z"
+    />
   </svg>
 );
 export const KitesurfIcon = (p: IconProps) => (
-  <svg {...base} {...p}>
-    <path d="M3.5 8.5c3-3.2 14-3.2 17 0" />
-    <path d="M6 9.8 12 18M18 9.8 12 18" />
-    <path d="M9 18.6h6" />
+  <svg {...fillBase} {...p}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M2 9.2C4.6 5.7 8.1 4 12 4s7.4 1.7 10 5.2c-2.5 3.7-6 6.3-9.2 6.7l-.4 1.6.9 1 -1 .9-1-1.1-1 1.1-1-.9.9-1-.4-1.6C8 15.5 4.5 12.9 2 9.2Zm9.3 3.3.9-2.4 1.5.6-.9 2.4Z"
+    />
   </svg>
 );
 export const WindsurfIcon = (p: IconProps) => (
-  <svg {...base} {...p}>
-    <path d="M12 4v11" />
-    <path d="M12 4c3.6 1 5.8 3.6 6.2 7.2L12 13Z" />
-    <path d="M5.5 18.5c3.5 1.4 9.5 1.4 13-.5" />
+  <svg {...fillBase} {...p}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12.4 2.3c2.5 2.7 4.2 5.9 4.2 8.6 0 2-.9 3.4-2.5 4l-1.7-1-1.6 1c-1.6-.6-2.5-2-2.5-4 0-2.7 1.7-5.9 4.1-8.6ZM9.6 9.3l5.5-2.1.5 1.3-5.5 2.1ZM11.6 13.2h1v6.4h-1Z M3 20c2.8-1.3 5.7-2 8.6-2s5.8.7 8.6 2c-2.8 1.4-5.7 2.1-8.6 2.1S5.8 21.4 3 20Z"
+    />
   </svg>
 );
 export const WingIcon = (p: IconProps) => (
-  <svg {...base} {...p}>
-    <path d="M12 7c-4 0-7 2-8.5 4 3 1.3 5.6 2 8.5 2s5.5-.7 8.5-2C19 9 16 7 12 7Z" />
-    <path d="M12 7v8" />
+  <svg {...fillBase} {...p}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4 19C6 8 14 2 20 5C16 11 8 16 4 19Zm9-6.4 1.9-2.2 1 .9-1.9 2.2Zm-.3 1.6 1.8-.6.8 1.5-1.8.6Z"
+    />
   </svg>
 );
