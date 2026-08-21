@@ -368,7 +368,7 @@ export default function MobileSearchSheet({
                 open={section === "which"}
                 onToggle={() => toggleSection("which")}
               >
-                <div className="mx-auto flex w-full max-w-[280px] flex-col gap-2">
+                <div className="flex flex-col gap-2">
                   {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
                     const selected = val.which.includes(sport);
                     return (
