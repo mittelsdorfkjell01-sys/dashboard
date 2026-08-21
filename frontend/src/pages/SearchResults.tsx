@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L, { type Map as LeafletMap } from "leaflet";
-import Header from "../components/Header";
+import ResultsHeader from "../components/ResultsHeader";
 import Footer from "../components/Footer";
-import SearchBar from "../components/SearchBar";
 import SpotCard from "../components/SpotCard";
 import RegionTile from "../components/RegionTile";
 import { ErrorBanner, EmptyState, SpotGridSkeleton } from "../components/AsyncStates";
@@ -463,10 +462,10 @@ export default function SearchResults() {
 
   return (
     <div className="flex min-h-screen flex-col bg-page">
-      <Header />
+      <ResultsHeader />
 
       <main className="flex-1 pt-20 sm:pt-24">
-        {/* Head — mirrors the query back + a search bar to refine in place. */}
+        {/* Head — mirrors the query back; refining happens via the header's search pill. */}
         <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
           <nav className="text-caption font-medium text-muted">
             <Link to="/" className="hover:underline">Übersicht</Link>
@@ -481,9 +480,6 @@ export default function SearchResults() {
               {sports.map((s) => <Chip key={s}>{sportLabel(s)}</Chip>)}
             </div>
           )}
-          <div className="mt-6 max-w-[760px]">
-            <SearchBar />
-          </div>
         </div>
 
         <div className="mt-8">
