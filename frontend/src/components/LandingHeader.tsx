@@ -41,7 +41,8 @@ export default function LandingHeader({
   useEffect(() => {
     if (!sticky) return;
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
-    const RANGE = 64; // px over which the bar hardens
+    const RANGE = 20; // px over which the bar hardens — short, so the
+    // in-between state (two logos, hero bleeding through) is barely visible
     const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
 
     let frame = 0;
@@ -68,6 +69,9 @@ export default function LandingHeader({
   }, [sticky]);
 
   const solid = progress >= 1;
+  // The bar itself goes opaque well before the content crossfade finishes, so
+  // the hero (incl. its own search bar) never shows through mid-transition.
+  const bgOpacity = Math.min(1, progress * 3);
 
   // Landing only: once scrolled past the hero, swap wholesale to the results
   // page's header (logo left, pill centred, account right, scroll-aware).
@@ -88,9 +92,9 @@ export default function LandingHeader({
           aria-hidden
           className="absolute inset-0 bg-surface"
           style={{
-            opacity: progress,
-            backdropFilter: `blur(${progress * 12}px)`,
-            WebkitBackdropFilter: `blur(${progress * 12}px)`,
+            opacity: bgOpacity,
+            backdropFilter: `blur(${bgOpacity * 12}px)`,
+            WebkitBackdropFilter: `blur(${bgOpacity * 12}px)`,
           }}
         />
       )}
@@ -103,24 +107,12 @@ export default function LandingHeader({
         <div className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
           <div className="min-w-0 justify-self-start">
             {left ?? (
-              <div className="relative flex min-h-11 items-center">
-                <span
-                  className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
-                  style={sticky ? { opacity: 1 - progress } : undefined}
-                >
-                  Best collection of surfspots
-                </span>
-                {sticky && (
-                  <Link
-                    to="/"
-                    aria-label="surfwind data · Startseite"
-                    className="absolute left-0 hidden min-h-11 select-none items-center leading-none sm:flex"
-                    style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
-                  >
-                    <Wordmark size="md" />
-                  </Link>
-                )}
-              </div>
+              <span
+                className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
+                style={sticky ? { opacity: 1 - progress } : undefined}
+              >
+                Best collection of surfspots
+              </span>
             )}
           </div>
 
