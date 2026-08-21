@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import maplibregl, { LngLatBounds, type Map as MapLibreMap, type Marker } from "maplibre-gl";
-import Supercluster from "supercluster";
+import maplibregl, { LngLatBounds, type GeoJSONSource, type Map as MapLibreMap, type Marker } from "maplibre-gl";
 import Header from "../components/Header";
 import SpotCard from "../components/SpotCard";
 import { CloseIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { useSpots, useSpotsLive } from "../lib/hooks";
 import { getSpotCatalogVersion } from "../lib/api";
 import type { Spot } from "../lib/types";
-import { applyPublicMapStyle, clusterRadiusForZoom, parsePublicMapUrl, PUBLIC_MAP_STYLE_URL, publicMapSearch, sortViewportSpots, spotCountLabel, type PublicMapTheme } from "../lib/publicMap";
+import { applyPublicMapStyle, applyPublicSpotTheme, ensurePublicSpotLayers, parsePublicMapUrl, PUBLIC_MAP_STYLE_URL, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapTheme, updatePublicMapLayerVisibility } from "../lib/publicMap";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const CATALOG_POLL_MS = 3_000;
 const MAX_RAIL_CARDS = 12;
-type PointProps = { spotId: string; name: string };
 const currentTheme = (): PublicMapTheme => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -36,7 +34,9 @@ export default function MapView() {
   const [selectedId, setSelectedId] = useState<string | undefined>(() => parsePublicMapUrl(window.location.search)?.spot);
   const [hoveredId, setHoveredId] = useState<string>();
   const [catalogVersion, setCatalogVersion] = useState<string>();
+  const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
+  const versionRequest = useRef<Promise<void> | null>(null);
   const { data: spots } = useSpots({ limit: 500, catalog_version: catalogVersion });
 
   useEffect(() => {
@@ -44,10 +44,15 @@ export default function MapView() {
     let timer: number | undefined;
     const checkVersion = async () => {
       if (document.visibilityState === "hidden") return;
+      if (versionRequest.current) return versionRequest.current;
+      versionRequest.current = (async () => {
       try {
         const { version } = await getSpotCatalogVersion();
         if (!cancelled && version !== knownVersion.current) { knownVersion.current = version; setCatalogVersion(version); }
       } catch { /* Retain the current catalogue after transient failures. */ }
+      finally { versionRequest.current = null; }
+      })();
+      return versionRequest.current;
     };
     const schedule = () => {
       if (cancelled) return;
@@ -83,23 +88,47 @@ export default function MapView() {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const saved = parsePublicMapUrl(window.location.search);
-    const map = new maplibregl.Map({
+    let map: MapLibreMap;
+    try {
+      map = new maplibregl.Map({
       container: containerRef.current,
       style: PUBLIC_MAP_STYLE_URL[currentTheme()],
       center: saved?.center ?? [9.3, 40.3], zoom: saved?.zoom ?? 3,
-      minZoom: 1.5, maxZoom: 18, pitchWithRotate: false, dragRotate: false,
+      minZoom: 1.5, maxZoom: 17, bearing: 0, pitch: 0,
+      pitchWithRotate: false, dragRotate: false, renderWorldCopies: false,
+      crossSourceCollisions: true, fadeDuration: 200, refreshExpiredTiles: true,
       attributionControl: false,
-    });
+      });
+    } catch {
+      setMapError(true);
+      return;
+    }
     mapRef.current = map;
     map.touchPitch.disable();
+    map.scrollZoom.setWheelZoomRate(1 / 600);
+    map.scrollZoom.setZoomRate(1 / 130);
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-    map.on("style.load", () => applyPublicMapStyle(map, currentTheme()));
-    map.on("load", () => setMapReady(true));
+    const applyStyle = () => {
+      applyPublicMapStyle(map, currentTheme());
+      ensurePublicSpotLayers(map);
+      applyPublicSpotTheme(map, currentTheme());
+    };
+    map.on("style.load", applyStyle);
+    map.on("zoomend", () => updatePublicMapLayerVisibility(map));
+    map.on("load", () => {
+      // Cached styles can finish before React attaches `style.load`; applying
+      // again on the map's definitive load event keeps the hierarchy reliable.
+      applyStyle();
+      setMapError(false);
+      setMapReady(true);
+    });
+    map.on("error", () => { if (!map.isStyleLoaded()) setMapError(true); });
     const observer = new MutationObserver(() => {
       const next = currentTheme();
       if (next !== mapThemeRef.current) {
         mapThemeRef.current = next;
-        map.setStyle(PUBLIC_MAP_STYLE_URL[next]);
+        applyPublicMapStyle(map, next);
+        applyPublicSpotTheme(map, next);
       }
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -125,45 +154,48 @@ export default function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
+    setPublicSpotData(map, withCoords);
+  }, [mapReady, withCoords]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    setPublicSpotSelection(map, hoveredId, selectedId);
+  }, [hoveredId, mapReady, selectedId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
     const renderMarkers = () => {
       markersRef.current.forEach((marker) => marker.remove()); markersRef.current = [];
-      if (!withCoords.length) return;
-      const zoom = map.getZoom();
-      const index = new Supercluster<PointProps>({ radius: clusterRadiusForZoom(zoom), maxZoom: 16 });
-      index.load(withCoords.map((spot) => ({ type: "Feature", geometry: { type: "Point", coordinates: [spot.coords[1], spot.coords[0]] }, properties: { spotId: spot.id, name: spot.name } })));
-      const b = map.getBounds();
-      const features = index.getClusters([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], Math.floor(zoom));
+      const features = map.queryRenderedFeatures({ layers: [PUBLIC_SPOT_LAYER_IDS.clusters, PUBLIC_SPOT_LAYER_IDS.points] });
+      const seen = new Set<string>();
       for (const feature of features) {
+        if (feature.geometry.type !== "Point") continue;
         const [lng, lat] = feature.geometry.coordinates;
-        const cluster = "cluster" in feature.properties && Boolean(feature.properties.cluster);
+        const cluster = Boolean(feature.properties?.cluster);
+        const key = cluster ? `cluster:${feature.properties.cluster_id}` : `spot:${feature.properties?.spotId}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         const el = document.createElement("button");
         el.type = "button";
-        el.className = cluster ? "swd-map-cluster" : "swd-map-marker";
+        el.className = "swd-map-a11y-marker";
+        let ariaLabel: string;
         if (cluster) {
-          const properties = feature.properties as Supercluster.ClusterProperties;
-          const count = properties.point_count;
-          el.textContent = String(count);
-          el.dataset.count = String(count);
-          el.dataset.size = count >= 50 ? "lg" : count >= 10 ? "md" : "sm";
-          el.setAttribute("aria-label", `Cluster mit ${count} Surfspots. Aktivieren zum Vergrößern.`);
-          el.addEventListener("click", () => {
-            const leaves = index.getLeaves(properties.cluster_id, Infinity);
-            const bounds = new LngLatBounds();
-            leaves.forEach((leaf) => bounds.extend(leaf.geometry.coordinates as [number, number]));
-            const northEast = bounds.getNorthEast();
-            const southWest = bounds.getSouthWest();
-            if (northEast.lng === southWest.lng && northEast.lat === southWest.lat) map.easeTo({ center: [lng, lat], zoom: Math.min(18, zoom + 2), duration: reducedMotion() ? 0 : 380 });
-            else map.fitBounds(bounds, { padding: { top: 100, right: 64, bottom: 250, left: 64 }, maxZoom: Math.min(18, index.getClusterExpansionZoom(properties.cluster_id)), duration: reducedMotion() ? 0 : 520 });
+          const count = Number(feature.properties.point_count);
+          ariaLabel = `Cluster mit ${count} Surfspots. Aktivieren zum Vergrößern.`;
+          el.addEventListener("click", async () => {
+            map.stop();
+            const source = map.getSource(PUBLIC_SPOT_SOURCE_ID) as GeoJSONSource;
+            const zoom = await source.getClusterExpansionZoom(Number(feature.properties.cluster_id));
+            map.easeTo({ center: [lng, lat], zoom: Math.min(17, zoom), duration: reducedMotion() ? 0 : 480 });
           });
         } else {
-          const id = feature.properties.spotId;
+          const id = String(feature.properties?.spotId || "");
           const spot = spotById.get(id);
           if (!spot) continue;
-          const active = id === selectedId;
-          el.classList.toggle("is-selected", active);
-          el.classList.toggle("is-highlighted", active || id === hoveredId);
-          el.setAttribute("aria-label", `Surfspot ${spot.name}`);
-          el.setAttribute("aria-pressed", String(active));
+          ariaLabel = `Surfspot ${spot.name}`;
+          el.setAttribute("aria-pressed", String(id === selectedId));
           el.dataset.tooltip = spot.name;
           el.addEventListener("mouseenter", () => setHoveredId(id));
           el.addEventListener("mouseleave", () => setHoveredId((value) => value === id ? undefined : value));
@@ -171,12 +203,22 @@ export default function MapView() {
           el.addEventListener("blur", () => setHoveredId((value) => value === id ? undefined : value));
           el.addEventListener("click", () => setSelectedId(id));
         }
-        markersRef.current.push(new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([lng, lat]).addTo(map));
+        const marker = new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([lng, lat]).addTo(map);
+        // MapLibre assigns the generic label "Map marker" while constructing
+        // a marker, so restore the useful localized label afterwards.
+        el.setAttribute("aria-label", ariaLabel);
+        markersRef.current.push(marker);
       }
     };
-    renderMarkers(); map.on("moveend", renderMarkers);
-    return () => { map.off("moveend", renderMarkers); markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; };
-  }, [hoveredId, mapReady, selectedId, spotById, withCoords]);
+    requestAnimationFrame(renderMarkers);
+    map.on("moveend", renderMarkers);
+    map.on("zoomend", renderMarkers);
+    map.on("idle", renderMarkers);
+    return () => {
+      map.off("moveend", renderMarkers); map.off("zoomend", renderMarkers); map.off("idle", renderMarkers);
+      markersRef.current.forEach((marker) => marker.remove()); markersRef.current = [];
+    };
+  }, [mapReady, selectedId, spotById, withCoords]);
 
   const viewportSpots = useMemo(() => viewportIds.flatMap((id) => { const spot = spotById.get(id); return spot ? [spot] : []; }), [spotById, viewportIds]);
   const orderedSpots = useMemo(() => {
@@ -202,6 +244,12 @@ export default function MapView() {
       <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" className="absolute inset-0">
         <div ref={containerRef} className="h-full w-full" />
       </div>
+      {mapError && (
+        <div role="status" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
+          <span>Karte momentan nicht vollständig verfügbar.</span>
+          <button type="button" onClick={() => { const map = mapRef.current; if (map) map.setStyle(PUBLIC_MAP_STYLE_URL[currentTheme()]); else window.location.reload(); }}>Erneut versuchen</button>
+        </div>
+      )}
       <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
         <button type="button" aria-label="Zur Startseite" onClick={() => navigate("/")} className="swd-map-control pointer-events-auto"><CloseIcon className="text-[18px]" /></button>
         <div className="pointer-events-auto flex flex-col overflow-hidden rounded-lg border border-line bg-surface/95">
