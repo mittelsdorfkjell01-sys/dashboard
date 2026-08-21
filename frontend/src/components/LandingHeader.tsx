@@ -36,24 +36,36 @@ export default function LandingHeader({
   const [solid, setSolid] = useState(false);
   useEffect(() => {
     if (!sticky) return;
-    // Solidify exactly when the search bar has scrolled up to meet the header —
-    // i.e. the wordmark bar "catches" the search bar. Falls back to half-a-
-    // viewport when the search bar isn't on the page (other hero pages).
+    // Observe a one-pixel sentinel instead of forcing layout through
+    // getBoundingClientRect on every touch-scroll event.
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
-    const onScroll = () => {
-      const search = document.getElementById("landing-search");
-      const rect = search?.getBoundingClientRect();
-      // Only trust the search bar when it is actually visible (it is hidden on
-      // mobile, where a display:none rect would otherwise read as top 0).
-      if (rect && rect.width > 0) setSolid(rect.top <= TRIGGER_Y);
-      else setSolid(window.scrollY > window.innerHeight * 0.5);
+    const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
+    if (sentinel && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        ([entry]) => setSolid(!entry.isIntersecting && entry.boundingClientRect.top <= TRIGGER_Y),
+        { rootMargin: `-${TRIGGER_Y}px 0px 0px 0px`, threshold: 0 },
+      );
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }
+
+    // Small compatibility fallback: one layout read at most once per frame.
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const top = sentinel?.getBoundingClientRect().top;
+      setSolid(top != null ? top <= TRIGGER_Y : window.scrollY > window.innerHeight * 0.5);
     };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
     };
   }, [sticky]);
 

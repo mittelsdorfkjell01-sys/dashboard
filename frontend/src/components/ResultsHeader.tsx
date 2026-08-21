@@ -21,7 +21,7 @@ export default function ResultsHeader() {
   return (
     <>
     <header
-      className={`pointer-events-none fixed inset-x-0 top-0 z-[1000] bg-page/90 backdrop-blur transition-transform duration-300 ease-out ${
+      className={`pointer-events-none fixed inset-x-0 top-0 z-[1000] bg-page/90 backdrop-blur transition-transform duration-200 ease-out sm:duration-300 ${
         hidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >

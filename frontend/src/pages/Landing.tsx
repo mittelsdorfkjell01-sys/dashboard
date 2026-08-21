@@ -63,6 +63,7 @@ export default function Landing() {
             the inline SearchBar dropdown takes over from sm. */}
         <div className="flex justify-center px-4 pb-40 sm:px-6 sm:pb-40">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
+            <span data-landing-header-sentinel aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px" />
             {/* Mobile pill; hidden (kept in layout) while the sheet is open. */}
             <div className={`sm:hidden ${searchOpen ? "invisible" : ""}`}>
               <MobileSearchTrigger onClick={openSearch} />

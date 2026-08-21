@@ -39,7 +39,8 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     // Reduced motion: no smoothing at all — the browser's native scroll stays
     // fully in charge (System B is skipped separately). Navigation/anchors work
     // via the ScrollManager's native fallback.
-    if (prefersReducedMotion()) return;
+    const nativeTouch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+    if (prefersReducedMotion() || nativeTouch) return;
 
     const instance = new Lenis({
       duration: 1.1, // calm, high-end momentum (not floaty, not abrupt)

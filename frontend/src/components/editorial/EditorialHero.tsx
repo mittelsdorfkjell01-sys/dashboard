@@ -62,7 +62,10 @@ export default function EditorialHero({
 }) {
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
-  const still = reduce || !parallax;
+  const nativeTouch =
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+  const still = reduce || nativeTouch || !parallax;
 
   // Image parallax: the wrapper is pre-inflated by the max travel distance
   // (60px top + 60px bottom = the 120px range the spec calls for) so the

@@ -40,7 +40,7 @@ export default function RegionTile({
   return (
     <Link
       to={to}
-      className="group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+      className="swd-mobile-deferred-card group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl">
         <SpotImage src={usable} name={name} region={geography || undefined} compact />

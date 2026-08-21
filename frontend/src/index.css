@@ -82,6 +82,15 @@ html[data-theme="dark"] { color-scheme: dark; }
     overflow: hidden;
   }
 
+  /* Skip layout/paint work for off-screen catalogue cards on touch screens.
+     The intrinsic block size keeps the scroll range stable until measured. */
+  @media (pointer: coarse) and (hover: none) {
+    .swd-mobile-deferred-card {
+      content-visibility: auto;
+      contain-intrinsic-block-size: auto 180px;
+    }
+  }
+
   /* Uppercase field labels: WO? / WANN? */
   .label-caps {
     @apply text-[12px] font-medium tracking-[0.18em] text-ink-soft uppercase;
