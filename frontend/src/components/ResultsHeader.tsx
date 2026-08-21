@@ -23,9 +23,7 @@ export default function ResultsHeader() {
           </Link>
 
           <div className="flex min-w-0 justify-center">
-            <div className="w-full max-w-[420px]">
-              <SearchBar variant="pill" />
-            </div>
+            <SearchBar variant="pill" />
           </div>
 
           <div className="justify-self-end">

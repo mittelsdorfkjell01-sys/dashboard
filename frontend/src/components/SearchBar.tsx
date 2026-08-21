@@ -196,19 +196,20 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
     <>
       {/* Collapsed trigger — a simple bar (hero) or compact pill (header). */}
       {variant === "pill" ? (
-        <button
+        <motion.button
+          layoutId="search-shell"
           type="button"
           onClick={() => openExpanded()}
           aria-label="Suche öffnen"
-          className={`flex max-w-full items-center gap-3 rounded-2xl border border-line bg-surface py-1.5 pl-5 pr-1.5 text-[14px] font-medium text-ink shadow-sm transition-shadow hover:shadow-float ${
+          className={`flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-[14px] font-medium text-ink shadow-sm transition-shadow hover:shadow-float ${
             expanded ? "invisible" : ""
           }`}
         >
           <span className="truncate">{summary || "Suchen"}</span>
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-teal text-white">
-            <SearchIcon className="text-[16px]" />
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-teal text-white">
+            <SearchIcon className="text-[14px]" />
           </span>
-        </button>
+        </motion.button>
       ) : (
         <button
           type="button"
@@ -239,12 +240,15 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               role="dialog"
               aria-modal="true"
               aria-label="Suche"
-              // A light dim behind the panel, anchored near the header (not
-              // vertically centered) so the bar visibly rises out of the
-              // header — Airbnb-style. Also the click catcher — a click
-              // anywhere outside the panel collapses it back to the simple
-              // bar.
-              className="fixed inset-0 z-[1300] flex items-start justify-center bg-black/25 px-4 pt-20 sm:pt-24"
+              // A light dim behind the panel, anchored at the same height as
+              // the trigger (the header's own top padding for the pill; a
+              // lower offset for the hero bar) so it visibly rises in place
+              // — Airbnb-style — rather than dropping below the header. Also
+              // the click catcher — a click anywhere outside the panel
+              // collapses it back to the simple bar.
+              className={`fixed inset-0 z-[1300] flex items-start justify-center bg-black/25 px-4 ${
+                variant === "pill" ? "pt-4 sm:pt-6" : "pt-20 sm:pt-24"
+              }`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -254,15 +258,20 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               <motion.div
                 className="relative w-[860px] max-w-full"
                 onClick={(e) => e.stopPropagation()}
-                initial={reduce ? false : { opacity: 0, y: 28, scale: 0.98 }}
+                initial={variant === "hero" && !reduce ? { opacity: 0, y: 28, scale: 0.98 } : false}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
+                exit={variant === "hero" && !reduce ? { opacity: 0, y: 28, scale: 0.98 } : { opacity: 0 }}
                 transition={reduce ? { duration: 0.15 } : SPRING}
                 style={{ transformOrigin: "center top" }}
               >
                 <div className="relative">
-                  {/* Segmented bar — same radius as the tiles (rounded-2xl). */}
-                  <div className="flex items-stretch gap-1 rounded-2xl bg-surface p-2 shadow-float">
+                  {/* Segmented bar — same radius as the tiles (rounded-2xl). The
+                      shared layoutId (pill trigger only) makes this grow out of
+                      the header pill instead of fading in mid-page. */}
+                  <motion.div
+                    layoutId={variant === "pill" ? "search-shell" : undefined}
+                    className="flex items-stretch gap-1 rounded-2xl bg-surface p-2 shadow-float"
+                  >
                     {/* Wohin? — the Tippleiste lives in the bar. */}
                     <label
                       onClick={() => setOpen("where")}
@@ -317,7 +326,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                     >
                       <SearchIcon className="text-[20px]" />
                     </button>
-                  </div>
+                  </motion.div>
 
                   {/* Panel — width/alignment follow the active segment. A quick
                       cross-fade (no wait) keeps the Wohin→Wann→Welche switch

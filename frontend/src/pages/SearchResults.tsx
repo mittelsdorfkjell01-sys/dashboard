@@ -11,7 +11,6 @@ import { CloseIcon, MapIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { countryName } from "../lib/flags";
 import * as api from "../lib/api";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
-import { sportLabel } from "../lib/labels";
 import { useSpots, useSpotsLive, useTopSpots, useRegions } from "../lib/hooks";
 import type { Spot } from "../lib/types";
 
@@ -35,11 +34,19 @@ const pinIcon = L.divIcon({
 
 // --- shared bits -----------------------------------------------------------
 
-function Chip({ children }: { children: React.ReactNode }) {
+/** Breadcrumb + heading — shared by every axis so it can sit either above the
+ *  content (loading/error/best-weeks) or inside the split-view grid (so its
+ *  row lines up with the map). */
+function ResultHead({ heading }: { heading: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 py-1 text-caption font-medium text-ink">
-      {children}
-    </span>
+    <>
+      <nav className="text-[11px] font-medium text-muted">
+        <Link to="/" className="hover:underline">Übersicht</Link>
+        <span className="mx-1.5 text-muted">›</span>
+        <span className="text-ink">Suche</span>
+      </nav>
+      <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h1>
+    </>
   );
 }
 
@@ -59,7 +66,7 @@ function SpotRow({
   if (spots.length === 0) return null;
   return (
     <section className="pt-2">
-      <div className="border-b border-line/70 pb-3">
+      <div>
         <h2 className="text-title font-semibold text-ink">{title}</h2>
         {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
       </div>
@@ -87,7 +94,7 @@ function RegionRow({
   if (regions.length === 0) return null;
   return (
     <section className="pt-2">
-      <div className="border-b border-line/70 pb-3">
+      <div>
         <h2 className="text-title font-semibold text-ink">{title}</h2>
         {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
       </div>
@@ -182,12 +189,16 @@ function centerFor(primary: Spot[], fallback: Spot[]): [number, number] {
  */
 function SplitView({
   children,
+  head,
   mapSpots,
   center,
   zoom,
   live,
 }: {
   children: React.ReactNode;
+  /** Rendered atop the left column, in the same grid row as the map — so the
+   *  map's top edge lines up with the heading instead of sitting below it. */
+  head?: React.ReactNode;
   mapSpots: Spot[];
   center: [number, number];
   zoom?: number;
@@ -197,13 +208,20 @@ function SplitView({
   const hasMap = mapSpots.some((s) => s.coords);
 
   return (
-    <div className="mx-auto w-full max-w-[1570px] px-4 pb-16 sm:px-8">
+    <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 pb-16 sm:px-8">
       <div className="lg:grid lg:grid-cols-[1fr_minmax(360px,40%)] lg:gap-8">
-        <div className="min-w-0 space-y-10">{children}</div>
+        <div className="min-w-0">
+          {head}
+          <div className="mt-8 space-y-10">{children}</div>
+        </div>
 
         {hasMap && (
           <div className="hidden lg:block">
-            <div className="sticky top-24 h-[calc(100dvh-7rem)] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
+            {/* top offset matches main's pt-24 + this wrapper's pt-2, so the
+                map is already "stuck" at scroll 0 — it never visibly floats
+                or scrolls with the page, and its top edge lines up with the
+                heading in the left column. */}
+            <div className="sticky top-[6.5rem] h-[calc(80dvh_-_5.6rem)] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
               <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
             </div>
           </div>
@@ -322,7 +340,6 @@ export default function SearchResults() {
   const [params] = useSearchParams();
   const q = (params.get("q") ?? "").trim();
   const sport = params.get("sport") ?? undefined;
-  const sports = (params.get("sports")?.split(",").filter(Boolean)) ?? (sport ? [sport] : []);
   const week = params.get("week");
   const month = params.get("month");
   const spotId = params.get("spot_id") ?? undefined;
@@ -401,7 +418,6 @@ export default function SearchResults() {
   }, [q, sport, week, month, spotId, regionId, discovery, showWeeks, showBestRegions, retry]);
 
   const monthName = month ? MONTHS[Number(month) - 1] : null;
-  const timeChip = week ? `KW ${week}` : monthName ?? null;
   const geocodeName = result?.geocode?.name;
   const nearby = result?.resolved === "point" || result?.resolved === "area";
 
@@ -465,70 +481,65 @@ export default function SearchResults() {
       <ResultsHeader />
 
       <main className="flex-1 pt-20 sm:pt-24">
-        {/* Head — mirrors the query back; refining happens via the header's search pill. */}
-        <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
-          <nav className="text-[11px] font-medium text-muted">
-            <Link to="/" className="hover:underline">Übersicht</Link>
-            <span className="mx-1.5 text-muted">›</span>
-            <span className="text-ink">Suche</span>
-          </nav>
-          <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h1>
-          {(sports.length > 0 || timeChip || (!nearby && q)) && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {!nearby && q && <Chip>{q}</Chip>}
-              {timeChip && <Chip>{timeChip}</Chip>}
-              {sports.map((s) => <Chip key={s}>{sportLabel(s)}</Chip>)}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          {loading && (
-            <div className="mx-auto w-full max-w-[1570px] px-4 sm:px-8">
+        {loading && (
+          <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
+            <ResultHead heading={heading} />
+            <div className="mt-8">
               <SpotGridSkeleton />
             </div>
-          )}
+          </div>
+        )}
 
-          {error && !loading && (
-            <div className="mx-auto w-full max-w-[1570px] px-4 sm:px-8">
+        {error && !loading && (
+          <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
+            <ResultHead heading={heading} />
+            <div className="mt-8">
               <ErrorBanner message={error} onRetry={() => setRetry((n) => n + 1)} />
             </div>
-          )}
+          </div>
+        )}
 
-          {!loading && !error && showWeeks && bestWeeks && (
-            <div className="mx-auto w-full max-w-[1180px] px-4 pb-16 sm:px-8">
+        {!loading && !error && showWeeks && bestWeeks && (
+          <div className="mx-auto w-full max-w-[1180px] px-4 pt-2 pb-16 sm:px-8">
+            <ResultHead heading={heading} />
+            <div className="mt-8">
               <BestWeeksList data={bestWeeks} place={q} />
             </div>
-          )}
+          </div>
+        )}
 
-          {!loading && !error && (discovery || showBestRegions || showSearch) && (
-            <SplitView mapSpots={discovery ? (catalogue ?? []).filter((s) => s.coords) : mapSpots} center={center} live={live}>
-              {showSearch && (
-                <>
-                  <RegionRow title="Direkte Treffer" subtitle="Regionen zu deiner Suche" regions={directRegions} />
-                  <SpotRow
-                    title={directRegions.length ? "Spots" : "Direkte Treffer"}
-                    subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Passend zu deiner Suche"}
-                    spots={directSpots}
-                    live={live}
-                  />
-                  {directSpots.length === 0 && directRegions.length === 0 && (
-                    <EmptyState message="Keine direkten Treffer. Versuche einen anderen Ort oder Spotnamen." />
-                  )}
-                  <SpotRow title="Vergleichbares Profil" subtitle="Spots mit ähnlichem Charakter" spots={similar} live={live} />
-                </>
-              )}
+        {!loading && !error && (discovery || showBestRegions || showSearch) && (
+          <SplitView
+            head={<ResultHead heading={heading} />}
+            mapSpots={discovery ? (catalogue ?? []).filter((s) => s.coords) : mapSpots}
+            center={center}
+            live={live}
+          >
+            {showSearch && (
+              <>
+                <RegionRow title="Direkte Treffer" subtitle="Regionen zu deiner Suche" regions={directRegions} />
+                <SpotRow
+                  title={directRegions.length ? "Spots" : "Direkte Treffer"}
+                  subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Passend zu deiner Suche"}
+                  spots={directSpots}
+                  live={live}
+                />
+                {directSpots.length === 0 && directRegions.length === 0 && (
+                  <EmptyState message="Keine direkten Treffer. Versuche einen anderen Ort oder Spotnamen." />
+                )}
+                <SpotRow title="Vergleichbares Profil" subtitle="Spots mit ähnlichem Charakter" spots={similar} live={live} />
+              </>
+            )}
 
-              {showBestRegions && (
-                <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
-              )}
+            {showBestRegions && (
+              <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
+            )}
 
-              <SpotRow title="Gerade gut" subtitle="Spots mit aktuell guten Bedingungen" spots={performing} live={live} />
+            <SpotRow title="Gerade gut" subtitle="Spots mit aktuell guten Bedingungen" spots={performing} live={live} />
 
-              {discovery && <DiscoveryRegions />}
-            </SplitView>
-          )}
-        </div>
+            {discovery && <DiscoveryRegions />}
+          </SplitView>
+        )}
       </main>
 
       <Footer />
