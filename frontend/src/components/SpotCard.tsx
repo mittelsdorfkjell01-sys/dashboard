@@ -45,17 +45,13 @@ export default function SpotCard({
   const windValue = windLive ?? spot.typicalWindKt;
   const windIsLive = windLive != null;
   const waveValue = spot.typicalWaveHeightM;
-  // Map rail: "18 kn · live" / "18 kn · vor 12 Min." instead of a bare dot —
-  // only when the API gave a real timestamp; no invented age otherwise.
-  const liveMinutesAgo = windIsLive && live?.time ? Math.max(0, Math.round((Date.now() - new Date(live.time).getTime()) / 60_000)) : null;
-  const liveSuffix = windIsLive ? (liveMinutesAgo !== null && liveMinutesAgo >= 1 ? `vor ${liveMinutesAgo} Min.` : "live") : null;
 
   return (
     <Link
       to={spotPath(spot)}
       className="swd-mobile-deferred-card group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
-      <div className={`relative overflow-hidden rounded-2xl ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>
+      <div className="relative aspect-video overflow-hidden rounded-2xl">
         <SpotImage src={spot.image} name={spot.name} region={spot.region} compact />
       </div>
 
@@ -68,10 +64,9 @@ export default function SpotCard({
           </p>
           {windValue != null && (
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              {!mapRail && windIsLive && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
+              {windIsLive && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
               <span className="text-label font-semibold text-ink">{windValue}</span>
               <span className="text-caption text-ink-soft">kts</span>
-              {mapRail && liveSuffix && <span className="text-caption text-muted">· {liveSuffix}</span>}
             </div>
           )}
         </div>
