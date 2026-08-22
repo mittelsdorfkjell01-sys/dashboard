@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { validateHeroFile } from "../components/ImageUpload";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import SpotOpsPanel from "../components/SpotOpsPanel";
+import WindClimatologyV3Summary from "../components/admin/WindClimatologyV3Summary";
 import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import DeleteConfirmDialog from "../components/admin/DeleteConfirmDialog";
@@ -1218,6 +1219,7 @@ export default function AdminSpotForm() {
             creep. max-h is a safety net for content taller than the
             viewport — it only engages then, it isn't the normal case. */}
         <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[var(--admin-header-h,64px)] xl:self-start xl:max-h-[calc(100vh-var(--admin-header-h,64px)-16px)] xl:overflow-y-auto no-scrollbar">
+          {isEdit && id && <WindClimatologyV3Summary spotId={id} />}
           {isEdit && id ? (
             <div id="f-operations" className="scroll-mt-24">
               <SpotOpsPanel

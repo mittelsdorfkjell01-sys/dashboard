@@ -12,7 +12,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.auth.deps import require_role
+from app.auth.deps import Principal, get_actor, require_role
+from app.admin.audit import record_audit
 from app.db.session import get_db
 from app.live import service as live_service
 from app.models import (
@@ -45,6 +46,12 @@ class WindCellSelection(BaseModel):
     mode: Literal["automatic", "manual"]
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
+
+
+class WindDirectionSelection(BaseModel):
+    sectors: list[int] = Field(default_factory=list, max_length=16)
+    reviewed: bool = False
+    expected_updated_at: datetime | None = None
 
 
 @router.get("/spots/{spot_id}/wind-climatology")
@@ -91,11 +98,104 @@ def create_wind_climatology_v3_run(spot_id: uuid.UUID, db: Session = Depends(get
 
 
 @router.get("/spots/{spot_id}/wind-climatology-v3/status")
-def wind_climatology_v3_status(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+def wind_climatology_v3_status(spot_id: uuid.UUID, db: Session = Depends(get_db),
+    principal: Principal = Depends(require_role("admin", "curator"))) -> dict:
     from app.wind_climatology.v3_service import status
     if db.get(Spot, spot_id) is None:
         raise HTTPException(status_code=404, detail="Spot not found")
-    return status(db, spot_id)
+    result = status(db, spot_id)
+    if principal.role != "admin":
+        for key in ("latest", "active"):
+            if result.get(key): result[key].pop("error", None)
+    return result
+
+
+@router.get("/spots/{spot_id}/wind-climatology-v3/directions")
+def wind_climatology_v3_directions(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    profile = _load(db, spot_id)
+    selected: list[int] = []
+    if profile:
+        for sector in profile.sectors:
+            if not sector.enabled:
+                continue
+            start, end = round(sector.start_deg % 360, 6), round(sector.end_deg % 360, 6)
+            for index in range(16):
+                if start == round(index * 22.5, 6) and end == round(((index + 1) * 22.5) % 360, 6):
+                    selected.append(index)
+    return {"sectors": sorted(set(selected)), "reviewed": bool(profile and profile.reviewed_at),
+            "reviewed_at": profile.reviewed_at if profile else None,
+            "updated_at": profile.updated_at if profile else None,
+            "convention": "meteorological_from", "sector_count": 16}
+
+
+@router.put("/spots/{spot_id}/wind-climatology-v3/directions")
+def update_wind_climatology_v3_directions(spot_id: uuid.UUID, body: WindDirectionSelection,
+    db: Session = Depends(get_db), actor: str = Depends(get_actor)) -> dict:
+    if db.get(Spot, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    if len(set(body.sectors)) != len(body.sectors) or any(i < 0 or i > 15 for i in body.sectors):
+        raise HTTPException(status_code=422, detail="Sectors must be unique indices from 0 to 15")
+    profile = _load(db, spot_id) or SpotWeatherProfile(spot_id=spot_id)
+    if profile.id and body.expected_updated_at:
+        loaded = profile.updated_at if profile.updated_at.tzinfo else profile.updated_at.replace(tzinfo=timezone.utc)
+        expected = body.expected_updated_at if body.expected_updated_at.tzinfo else body.expected_updated_at.replace(tzinfo=timezone.utc)
+        if loaded != expected:
+            raise HTTPException(status_code=409, detail="Die Windrichtungen wurden zwischenzeitlich geändert.")
+    before = {"reviewed": bool(profile.reviewed_at), "windows": [
+        [s.start_deg, s.end_deg] for s in profile.sectors if s.enabled]}
+    db.add(profile)
+    profile.sectors.clear()
+    profile.sectors.extend(SpotWeatherSector(start_deg=i * 22.5,
+        end_deg=((i + 1) * 22.5) % 360, speed_factor=1, direction_offset_deg=0,
+        version=1, enabled=True, note="Windklimatologie V3") for i in sorted(body.sectors))
+    profile.reviewed_at = datetime.now(timezone.utc) if body.reviewed else None
+    db.flush()
+    after = {"reviewed": body.reviewed, "windows": [[s.start_deg, s.end_deg] for s in profile.sectors]}
+    effective_changed = before != after
+    run = None; created = False
+    if effective_changed:
+        record_audit(db, spot_id, "wind_climatology_v3_directions", {"before": before, "after": after}, actor)
+        db.flush()
+        if body.reviewed:
+            from app.wind_climatology.v3_service import enqueue
+            run, created = enqueue(db, spot_id)
+        else:
+            db.commit()
+    else:
+        db.commit()
+    db.refresh(profile)
+    return {"sectors": sorted(body.sectors), "reviewed": bool(profile.reviewed_at),
+        "reviewed_at": profile.reviewed_at, "updated_at": profile.updated_at,
+        "run": None if run is None else {"id": str(run.id), "status": run.status, "created": created},
+        "public_effect": "none"}
+
+
+@router.get("/spots/{spot_id}/wind-climatology-v3/cell")
+def get_wind_climatology_v3_cell(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    from app.wind_climatology.v3_service import cell_view
+    if db.get(Spot, spot_id) is None: raise HTTPException(status_code=404, detail="Spot not found")
+    return {"cell": cell_view(db.scalar(select(WindClimatologyCell).where(WindClimatologyCell.spot_id == spot_id))), "public_effect": "none"}
+
+
+@router.put("/spots/{spot_id}/wind-climatology-v3/cell", status_code=202)
+def update_wind_climatology_v3_cell(spot_id: uuid.UUID, body: WindCellSelection,
+    db: Session = Depends(get_db), actor: str = Depends(get_actor)) -> dict:
+    from app.wind_climatology.v3_service import cell_view, set_cell
+    try:
+        cell, run, created = set_cell(db, spot_id, mode=body.mode, lat=body.latitude, lon=body.longitude)
+    except LookupError as exc: raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc: raise HTTPException(status_code=422, detail=str(exc))
+    if run:
+        record_audit(db, spot_id, "wind_climatology_v3_cell", {"mode": body.mode,
+            "requested": [cell.requested_lat, cell.requested_lon]}, actor)
+        db.commit()
+    return {"cell": cell_view(cell), "run": None if run is None else {"id": str(run.id), "status": run.status, "created": created}, "public_effect": "none"}
+
+
+@router.get("/wind-climatology-v3/operations")
+def wind_climatology_v3_operations(db: Session = Depends(get_db)) -> dict:
+    from app.wind_climatology.v3_service import operations
+    return operations(db)
 
 
 @router.get("/spots/{spot_id}/wind-climatology-v3/variant")

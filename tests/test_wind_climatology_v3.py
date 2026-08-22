@@ -9,7 +9,7 @@ from app.wind_climatology.v3_artifact import decode_cube, encode_cube
 from app.wind_climatology.v3_direction import canonical_windows, direction_matches
 from app.wind_climatology.v3_engine import Hour, _sessions, aggregate_variant, variant_specs
 from app.wind_climatology.v3_time import expected_hours_by_week, seasonal_week
-from app.wind_climatology.v3_service import _config, _hash
+from app.wind_climatology.v3_service import _config, _hash, error_category, state_label
 
 
 def hour(at: datetime, speed=16.0, direction=0.0, daylight=True) -> Hour:
@@ -132,3 +132,24 @@ def test_config_hash_changes_with_coordinates_and_directions():
     original = _hash(_config(**base))
     assert _hash(_config(**{**base, "spot_coords": (1.1, 2)})) != original
     assert _hash(_config(**{**base, "windows": [{"start_deg": 315, "end_deg": 45}]})) != original
+
+
+class _Run:
+    def __init__(self, status, quality=None):
+        self.status = status
+        self.quality_metadata = quality or {}
+
+
+def test_dashboard_state_preserves_active_version_during_refresh_and_failure():
+    active = _Run("ready")
+    assert state_label(_Run("processing"), active, False) == "refresh_processing"
+    assert state_label(_Run("failed"), active, False) == "failed_active_preserved"
+    assert state_label(_Run("failed"), None, False) == "failed_no_active"
+    assert state_label(active, active, True) == "stale"
+
+
+def test_dashboard_error_categories_are_sanitized():
+    assert error_category("Open-Meteo timeout") == "provider"
+    assert error_category("invalid timezone") == "validation"
+    assert error_category("bad grid coordinate") == "coordinates"
+    assert error_category("secret implementation detail") == "unknown"

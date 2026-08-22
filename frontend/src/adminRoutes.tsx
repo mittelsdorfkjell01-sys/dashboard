@@ -24,6 +24,7 @@ const AdminMap = React.lazy(() => import("./pages/AdminMap"));
 const AdminActivity = React.lazy(() => import("./pages/AdminActivity"));
 const AdminOperations = React.lazy(() => import("./pages/AdminOperations"));
 const AdminSpotForm = React.lazy(() => import("./pages/AdminSpotForm"));
+const AdminWindClimatologyV3 = React.lazy(() => import("./pages/AdminWindClimatologyV3"));
 const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 const AdminWeatherProfiles = React.lazy(() => import("./pages/AdminWeatherProfiles"));
 const AdminWeatherProfile = React.lazy(() => import("./pages/AdminWeatherProfile"));
@@ -65,6 +66,7 @@ const adminRoutes: RouteObject[] = [
           { path: "operations", element: <AdminOperations /> },
           { path: "spot/new", element: <AdminSpotForm /> },
           { path: "spot/:id/edit", element: <AdminSpotForm /> },
+          { path: "spot/:spotId/wind-climatology-v3", element: <AdminWindClimatologyV3 /> },
           {
             path: "users",
             element: (

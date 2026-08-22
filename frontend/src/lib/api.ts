@@ -1120,6 +1120,42 @@ export interface AdminOperations {
 
 export const getOperations = () => request<AdminOperations>(`/admin/operations`);
 
+export interface V3RunView {
+  id: string; status: string; period: [number, number]; algorithm_version: string;
+  config_hash: string; started_at: string | null; completed_at: string | null;
+  activated_at: string | null; is_active: boolean; quality: Record<string, unknown>;
+  warnings: string[]; error_category: string | null; error: string | null;
+}
+export interface V3Cell {
+  mode: "automatic" | "manual"; spot: [number, number]; requested: [number, number];
+  actual: [number, number] | null; distance_km: number | null; model: string;
+  resolution_degrees: number; status: string; warnings: string[];
+}
+export interface V3Status {
+  state: string; stale: boolean; latest: V3RunView | null; active: V3RunView | null;
+  directions: { reviewed: boolean; windows: Array<{start_deg:number; end_deg:number}>; usable_available: boolean };
+  cell: V3Cell | null; public_effect: "none";
+}
+export interface V3Directions { sectors: number[]; reviewed: boolean; reviewed_at: string | null; updated_at: string | null; }
+export interface V3Week {
+  week: number; reliability_percent: number | null; sample_years: number; successful_years: number;
+  median_usable_days: number | null; median_session_hours: number | null;
+  p25_session_hours: number | null; p75_session_hours: number | null; quality_status: string;
+  [key: string]: unknown;
+}
+export interface V3Variant { run_id: string; period: [number,number]; algorithm_version: string; variant: { min_wind_kn:number; max_wind_kn:number|null; direction_mode:"all"|"usable"; weeks: V3Week[] } }
+export interface V3Operations {
+  counts: {current:number; stale:number; missing:number; failed:number; inflight:number}; queue_depth:number;
+  recent_runs: Array<{run_id:string;spot_id:string;spot_name:string|null;status:string;period:[number,number];algorithm_version:string;quality_status:string|null;created_at:string|null;started_at:string|null;completed_at:string|null;duration_s:number|null;error_category:string|null;has_active_version:boolean}>;
+}
+export const getV3Status = (spotId:string) => request<V3Status>(`/admin/weather/spots/${spotId}/wind-climatology-v3/status`);
+export const getV3Directions = (spotId:string) => request<V3Directions>(`/admin/weather/spots/${spotId}/wind-climatology-v3/directions`);
+export const putV3Directions = (spotId:string, body:{sectors:number[];reviewed:boolean;expected_updated_at?:string|null}) => request<V3Directions & {run?:{id:string;status:string;created:boolean}|null}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/directions`, {method:"PUT",body:JSON.stringify(body)});
+export const putV3Cell = (spotId:string, body:{mode:"automatic"|"manual";latitude?:number|null;longitude?:number|null}) => request<{cell:V3Cell;run:null|{id:string;status:string;created:boolean}}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/cell`, {method:"PUT",body:JSON.stringify(body)});
+export const enqueueV3 = (spotId:string) => request<{run_id:string;status:string;created:boolean}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/runs`, {method:"POST"});
+export const getV3Variant = (spotId:string,min:number,max:number|null,mode:"all"|"usable") => request<V3Variant>(`/admin/weather/spots/${spotId}/wind-climatology-v3/variant?min_wind_kn=${min}&max_wind_kn=${max ?? 40}&open_upper=${max == null}&direction_mode=${mode}`);
+export const getV3Operations = () => request<V3Operations>(`/admin/weather/wind-climatology-v3/operations`);
+
 /** Lightweight spot for the admin map: coordinates + status only. */
 export interface AdminMapSpot {
   id: string;

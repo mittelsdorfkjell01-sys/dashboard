@@ -112,3 +112,13 @@ Only a successful ready run is activated. Enqueue/processing/failure does not de
 The reproducible read-only pilot is `python -m scripts.wind_climatology_v3_pilot`; configuration is in `config/wind-climatology-v3-pilots.json`. It writes only aggregated reports, never raw history or V3 database rows. See `reports/wind-climatology-v3-pilot.{md,json}`.
 
 Phase 4 requires: reviewed canonical direction sectors for representative spots; accepted artifact/runtime budget; migration applied in a non-production test database; dashboard controls/status; product copy and uncertainty design; explicit decision for region seasons, `best_months`, V1 removal and public V2-to-V3 rollout. A production backfill and deployment require separate approval.
+
+## Phase 4 — administrative dashboard
+
+Phase 4 exposes V3 only inside the authenticated admin bundle. The spot editor contains a compact status summary and links to one V3 detail route. That route owns the 16-sector meteorological-from editor, review status, automatic/manual grid selection, idempotent recalculation and the precomputed 52-week variant preview. The operations page has a separate canonical V3 section; existing `Era5Job` and V1/V2 data are explicitly labelled Legacy.
+
+The direction editor persists through the existing `SpotWeatherProfile` / `SpotWeatherSector` source. Draft sectors do not affect V3. A reviewed effective sector change writes a spot audit entry and enqueues the new configuration; an identical save does neither. Grid changes use the existing `WindClimatologyCell`, write an audit entry and enqueue V3 without deactivating an active run. No additional Phase-4 table is required: migration 0039 remains additive and backward compatible, existing spots default to no reviewed directions and automatic cell selection, and rollback of the dashboard code leaves V1/V2 and stored V3 artifacts intact.
+
+The preview reads one immutable prepared variant per selection. It never requests provider data or starts computation. It rejects artifacts that do not contain exactly 52 weeks and hides a filtered comparison if `usable` would increase reliability or session hours over `all`.
+
+Phase 4 does not decide region seasons, `best_months`, V1 removal or the public V2-to-V3 rollout. Those remain explicit later-phase product decisions. It also does not deploy, migrate production, run a catalogue backfill or add all-spots worker infrastructure.
