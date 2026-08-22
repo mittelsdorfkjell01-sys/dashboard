@@ -7,7 +7,7 @@ import { ListIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { useSpots, useSpotsLive } from "../lib/hooks";
 import { getSpotCatalogVersion } from "../lib/api";
 import type { Spot } from "../lib/types";
-import { applyPublicMapStyle, applyPublicSpotTheme, ensurePublicSpotLayers, parsePublicMapUrl, PUBLIC_MAP_STYLE_URL, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapTheme, updatePublicMapLayerVisibility } from "../lib/publicMap";
+import { fetchPublicMapStyle, parsePublicMapUrl, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapTheme } from "../lib/publicMap";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // Background catalogue check, not a live feed: 60s is plenty to notice a
@@ -15,6 +15,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // covering the "I just made a change" case without polling every 3s.
 const CATALOG_POLL_MS = 60_000;
 const MAX_RAIL_CARDS = 12;
+// Coalesce a burst of moveends (e.g. several quick pan-and-release gestures)
+// into one live-wind fetch instead of one per settle.
+const VIEWPORT_DEBOUNCE_MS = 300;
 const currentTheme = (): PublicMapTheme => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -31,6 +34,12 @@ export default function MapView() {
   const railRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ x: number; y: number }>();
   const [mapReady, setMapReady] = useState(false);
+  // Bumped after every completed `setStyle` (theme flip, error retry).
+  // `setStyle` gives the GeoJSON source a fresh (empty) copy of its style
+  // spec — the live data + selection/hover filters applied imperatively
+  // after the *first* load do not carry over on their own, so the effects
+  // that (re-)apply them re-run whenever this changes.
+  const [styleGeneration, setStyleGeneration] = useState(0);
   const [mapZoom, setMapZoom] = useState(() => parsePublicMapUrl(window.location.search)?.zoom ?? 3);
   const [viewportIds, setViewportIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => parsePublicMapUrl(window.location.search)?.spot);
@@ -78,65 +87,97 @@ export default function MapView() {
   const spotById = useMemo(() => new Map(withCoords.map((spot) => [spot.id, spot])), [withCoords]);
   useEffect(() => { if (selectedId && spots && !spotById.has(selectedId)) setSelectedId(undefined); }, [selectedId, spotById, spots]);
 
+  const viewportTimer = useRef<number>();
   const updateViewport = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
     const center = map.getCenter();
     const zoom = map.getZoom();
     setMapZoom(zoom);
-    setViewportIds(withCoords.filter((spot) => isVisible(map, spot)).map((spot) => spot.id));
+    // URL sync stays immediate (cheap, and a stale-by-300ms URL during a pan
+    // is harmless); only the live-data-triggering viewport commit is debounced.
     const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search);
     window.history.replaceState(null, "", `${window.location.pathname}${search}${window.location.hash}`);
+    window.clearTimeout(viewportTimer.current);
+    viewportTimer.current = window.setTimeout(() => {
+      setViewportIds(withCoords.filter((spot) => isVisible(map, spot)).map((spot) => spot.id));
+    }, VIEWPORT_DEBOUNCE_MS);
   }, [selectedId, withCoords]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const container = containerRef.current;
     const saved = parsePublicMapUrl(window.location.search);
-    let map: MapLibreMap;
-    try {
-      map = new maplibregl.Map({
-      container: containerRef.current,
-      style: PUBLIC_MAP_STYLE_URL[currentTheme()],
-      center: saved?.center ?? [9.3, 40.3], zoom: saved?.zoom ?? 3,
-      minZoom: 1.5, maxZoom: 17, bearing: 0, pitch: 0,
-      pitchWithRotate: false, dragRotate: false, renderWorldCopies: false,
-      crossSourceCollisions: true, fadeDuration: 200, refreshExpiredTiles: true,
-      attributionControl: false,
-      });
-    } catch {
-      setMapError(true);
-      return;
-    }
-    mapRef.current = map;
-    map.touchPitch.disable();
-    map.scrollZoom.setWheelZoomRate(1 / 600);
-    map.scrollZoom.setZoomRate(1 / 130);
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-    const applyStyle = () => {
-      applyPublicMapStyle(map, currentTheme());
-      ensurePublicSpotLayers(map);
-      applyPublicSpotTheme(map, currentTheme());
-    };
-    map.on("style.load", applyStyle);
-    map.on("zoomend", () => updatePublicMapLayerVisibility(map));
-    map.on("load", () => {
-      // Cached styles can finish before React attaches `style.load`; applying
-      // again on the map's definitive load event keeps the hierarchy reliable.
-      applyStyle();
-      setMapError(false);
-      setMapReady(true);
-    });
-    map.on("error", () => { if (!map.isStyleLoaded()) setMapError(true); });
-    const observer = new MutationObserver(() => {
-      const next = currentTheme();
-      if (next !== mapThemeRef.current) {
-        mapThemeRef.current = next;
-        applyPublicMapStyle(map, next);
-        applyPublicSpotTheme(map, next);
+    let cancelled = false;
+    let observer: MutationObserver | undefined;
+    void (async () => {
+      let style;
+      try {
+        style = await fetchPublicMapStyle(currentTheme());
+      } catch (err) {
+        console.error("Public map: failed to load base style", err);
+        if (!cancelled) setMapError(true);
+        return;
       }
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => { observer.disconnect(); markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; map.remove(); mapRef.current = null; };
+      if (cancelled) return;
+      let map: MapLibreMap;
+      try {
+        map = new maplibregl.Map({
+          container,
+          style,
+          center: saved?.center ?? [9.3, 40.3], zoom: saved?.zoom ?? 3,
+          minZoom: 1.5, maxZoom: 17, bearing: 0, pitch: 0,
+          pitchWithRotate: false, dragRotate: false, renderWorldCopies: false,
+          crossSourceCollisions: true, fadeDuration: 200, refreshExpiredTiles: true,
+          attributionControl: false,
+        });
+      } catch (err) {
+        console.error("Public map: failed to construct MapLibre map", err);
+        setMapError(true);
+        return;
+      }
+      mapRef.current = map;
+      map.touchPitch.disable();
+      map.scrollZoom.setWheelZoomRate(1 / 600);
+      map.scrollZoom.setZoomRate(1 / 130);
+      map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+      map.on("load", () => { setMapError(false); setMapReady(true); });
+      map.on("error", (event) => {
+        console.error("Public map: MapLibre runtime error", event.error);
+        if (!map.isStyleLoaded()) setMapError(true);
+      });
+      // Theme flips rebuild the whole (already-colored) style document and
+      // hand it to `setStyle` — MapLibre diffs it against the current one
+      // (same source/layer ids, only paint/zoom values differ) and patches
+      // in place, so this is a single, complete repaint rather than ~40
+      // hand-written `setPaintProperty` calls kept in sync by hand.
+      observer = new MutationObserver(() => {
+        const next = currentTheme();
+        if (next === mapThemeRef.current) return;
+        mapThemeRef.current = next;
+        fetchPublicMapStyle(next)
+          .then((nextStyle) => {
+            if (mapRef.current !== map) return;
+            // `setStyle`'s diff (default) applies source/layer changes
+            // synchronously — including resetting the GeoJSON source back to
+            // its spec's empty placeholder data — and does *not* emit
+            // "style.load" for a diffed update (that event is reserved for a
+            // full reload). Re-apply state right after the call returns
+            // rather than waiting for an event that will never come.
+            map.setStyle(nextStyle);
+            setStyleGeneration((g) => g + 1);
+          })
+          .catch((err) => console.error("Public map: failed to load theme style", err));
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    })();
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+      window.clearTimeout(viewportTimer.current);
+      const map = mapRef.current;
+      if (map) { markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; map.remove(); mapRef.current = null; }
+    };
   }, []);
 
   useEffect(() => {
@@ -159,20 +200,21 @@ export default function MapView() {
     const map = mapRef.current;
     if (!mapReady || !map) return;
     setPublicSpotData(map, withCoords);
-  }, [mapReady, withCoords]);
+  }, [mapReady, styleGeneration, withCoords]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
     setPublicSpotSelection(map, hoveredId, selectedId);
-  }, [hoveredId, mapReady, selectedId]);
+  }, [hoveredId, mapReady, selectedId, styleGeneration]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
     setPublicClusterHover(map, hoveredClusterId);
-  }, [hoveredClusterId, mapReady]);
+  }, [hoveredClusterId, mapReady, styleGeneration]);
 
+  const clusterZoomToken = useRef(0);
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
@@ -201,8 +243,14 @@ export default function MapView() {
           el.addEventListener("blur", () => setHoveredClusterId((value) => value === clusterId ? undefined : value));
           el.addEventListener("click", async () => {
             map.stop();
+            // A second cluster click before this promise resolves must win —
+            // without this token, a slow first lookup could still land and
+            // ease the map toward the *first* cluster after the user already
+            // moved on to a second one.
+            const token = ++clusterZoomToken.current;
             const source = map.getSource(PUBLIC_SPOT_SOURCE_ID) as GeoJSONSource;
             const zoom = await source.getClusterExpansionZoom(clusterId);
+            if (clusterZoomToken.current !== token) return;
             map.easeTo({ center: [lng, lat], zoom: Math.min(17, zoom), duration: reducedMotion() ? 0 : 480 });
           });
         } else {
@@ -266,7 +314,22 @@ export default function MapView() {
       {mapError && (
         <div role="status" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
           <span>Karte momentan nicht vollständig verfügbar.</span>
-          <button type="button" onClick={() => { const map = mapRef.current; if (map) map.setStyle(PUBLIC_MAP_STYLE_URL[currentTheme()]); else window.location.reload(); }}>Erneut versuchen</button>
+          <button
+            type="button"
+            onClick={() => {
+              const map = mapRef.current;
+              if (!map) { window.location.reload(); return; }
+              fetchPublicMapStyle(currentTheme())
+                .then((style) => {
+                  map.setStyle(style);
+                  setStyleGeneration((g) => g + 1);
+                  setMapError(false);
+                })
+                .catch(() => window.location.reload());
+            }}
+          >
+            Erneut versuchen
+          </button>
         </div>
       )}
       <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">

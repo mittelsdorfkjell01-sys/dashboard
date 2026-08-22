@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import type { StyleSpecification } from "maplibre-gl";
 import {
-  applyPublicSpotTheme,
-  ensurePublicSpotLayers,
+  buildPublicMapStyle,
   parsePublicMapUrl,
   PUBLIC_MAP_LAYER_RULES,
   PUBLIC_MAP_PALETTE,
@@ -11,6 +11,8 @@ import {
   PUBLIC_SPOT_LAYER_IDS,
   PUBLIC_SPOT_SOURCE_ID,
   publicMapSearch,
+  publicSpotLayers,
+  publicSpotSource,
   setPublicClusterHover,
   setPublicSpotSelection,
   sortViewportSpots,
@@ -21,27 +23,27 @@ import type { Spot } from "../types";
 
 const spot = (id: string, name: string, coords: [number, number]): Spot => ({ id, name, coords, region: "", wind: 0, favorite: false, tags: [], image: "" });
 
-/** A minimal fake of the MapLibre GL `Map` surface `publicMap.ts` touches —
- *  enough to exercise `ensurePublicSpotLayers`/`applyPublicSpotTheme` without
- *  a real WebGL context, and to assert on the exact source/layer config it
- *  builds (not just an isolated helper). */
-function fakeMap() {
-  const sources = new Map<string, any>();
-  const layers = new Map<string, any>();
+/** A minimal-but-real CARTO Voyager-shaped style document, standing in for
+ *  the actual fetched JSON. Layer ids match real ones `buildPublicMapStyle`
+ *  targets, so the transform's behavior against the genuine document shape
+ *  is exercised, not just against an isolated helper. */
+function fakeBaseStyle(): StyleSpecification {
   return {
-    _sources: sources,
-    _layers: layers,
-    getSource: (id: string) => sources.get(id),
-    addSource: (id: string, spec: any) => sources.set(id, spec),
-    getLayer: (id: string) => layers.get(id),
-    addLayer: (spec: any) => layers.set(spec.id, spec),
-    setFilter: vi.fn((id: string, filter: unknown) => { const l = layers.get(id); if (l) l.filter = filter; }),
-    setPaintProperty: vi.fn((id: string, prop: string, value: unknown) => { const l = layers.get(id); if (l) l.paint = { ...l.paint, [prop]: value }; }),
-    setLayoutProperty: vi.fn(),
-    setLayerZoomRange: vi.fn(),
-    getStyle: () => ({ layers: [] }),
-    getZoom: () => 3,
-  } as any;
+    version: 8,
+    sources: { openmaptiles: { type: "vector", url: "https://example.test/tiles.json" } },
+    layers: [
+      { id: "background", type: "background", paint: { "background-color": "#000000" } },
+      { id: "water", type: "fill", source: "openmaptiles", "source-layer": "water", paint: { "fill-color": "#000000" } },
+      { id: "water_shadow", type: "fill", source: "openmaptiles", "source-layer": "water", paint: { "fill-color": "#000000" } },
+      { id: "landcover", type: "fill", source: "openmaptiles", "source-layer": "landcover", paint: { "fill-color": "#000000" } },
+      { id: "road_pri_fill_noramp", type: "line", source: "openmaptiles", "source-layer": "transportation", paint: { "line-color": "#000000" } },
+      { id: "road_minor_fill", type: "line", source: "openmaptiles", "source-layer": "transportation", paint: { "line-color": "#000000" } },
+      { id: "place_country_1", type: "symbol", source: "openmaptiles", "source-layer": "place", paint: { "text-color": "#000000" }, layout: { "text-field": "{name}" } },
+      { id: "place_capital_dot_z7", type: "symbol", source: "openmaptiles", "source-layer": "place", paint: {}, layout: {} },
+      { id: "poi_stadium", type: "symbol", source: "openmaptiles", "source-layer": "poi", paint: {}, layout: {} },
+      { id: "housenumber", type: "symbol", source: "openmaptiles", "source-layer": "housenumber", paint: {}, layout: {} },
+    ] as StyleSpecification["layers"],
+  } as StyleSpecification;
 }
 
 describe("public map state and hierarchy", () => {
@@ -67,18 +69,27 @@ describe("public map state and hierarchy", () => {
     expect(PUBLIC_MAP_LAYER_RULES.roads.secondary).toBe(11.5);
     expect(PUBLIC_MAP_LAYER_RULES.roads.minor).toBe(13);
     expect(PUBLIC_MAP_LAYER_RULES.buildings).toBe(15.5);
-    // Spot names must appear at the local/regional zoom, not street level.
     expect(PUBLIC_MAP_LAYER_RULES.spotNames.minzoom).toBe(11);
   });
 
   it("defines two genuinely distinct palettes, not a filtered copy", () => {
-    expect(PUBLIC_MAP_PALETTE.light.water).toBe("#D8E8E9");
-    expect(PUBLIC_MAP_PALETTE.dark.water).toBe("#0C2E34");
     expect(PUBLIC_MAP_PALETTE.light.spot).toBe("#126B70");
     expect(PUBLIC_MAP_PALETTE.dark.spot).toBe("#6AC2C0");
     expect(PUBLIC_MAP_PALETTE.light.selection).toBe("#F06F4F");
     expect(PUBLIC_MAP_PALETTE.dark.selection).toBe("#FF8160");
     expect(PUBLIC_MAP_PALETTE.light.water).not.toBe(PUBLIC_MAP_PALETTE.dark.water);
+  });
+
+  it("uses a bright, clearly-blue light water and a lightened land tone (2026-08-22 feedback)", () => {
+    // Sanity-checked as HSL rather than pinning exact hex: "too dark" is a
+    // brightness complaint, so the regression test should catch a future
+    // value sliding back down, not just a literal string match.
+    const toRgb = (hex: string) => [0, 2, 4].map((i) => parseInt(hex.slice(1 + i, 3 + i), 16));
+    const luminance = ([r, g, b]: number[]) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const [wr, wg, wb] = toRgb(PUBLIC_MAP_PALETTE.light.water);
+    expect(luminance([wr, wg, wb])).toBeGreaterThan(0.75); // bright, not muted
+    expect(wb).toBeGreaterThan(wr); // reads as blue, not teal/grey
+    expect(luminance(toRgb(PUBLIC_MAP_PALETTE.light.land))).toBeGreaterThan(0.9);
   });
 
   it("uses the verified keyless CARTO Voyager vector style for both patched themes", () => {
@@ -88,10 +99,8 @@ describe("public map state and hierarchy", () => {
 });
 
 describe("cluster source configuration", () => {
-  it("wires the real GeoJSON source to a fixed radius and a max zoom that unclusters around zoom 10", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    const source = map.getSource(PUBLIC_SPOT_SOURCE_ID);
+  it("uses a fixed radius and a max zoom that unclusters around zoom 10", () => {
+    const source = publicSpotSource();
     expect(source.cluster).toBe(true);
     expect(source.clusterRadius).toBe(PUBLIC_SPOT_CLUSTER_RADIUS);
     expect(source.clusterRadius).toBe(44);
@@ -99,20 +108,9 @@ describe("cluster source configuration", () => {
     expect(source.clusterMaxZoom).toBeLessThan(10);
   });
 
-  it("does not recreate the source or duplicate layers on a second call (style/theme restoration)", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    const firstSource = map.getSource(PUBLIC_SPOT_SOURCE_ID);
-    const layerCountBefore = map._layers.size;
-    ensurePublicSpotLayers(map);
-    expect(map.getSource(PUBLIC_SPOT_SOURCE_ID)).toBe(firstSource);
-    expect(map._layers.size).toBe(layerCountBefore);
-  });
-
   it("stages cluster circle radii as small/medium/large, capped well under 42px", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    const step = map.getLayer(PUBLIC_SPOT_LAYER_IDS.clusters).paint["circle-radius"];
+    const clusters = publicSpotLayers("light").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.clusters)!;
+    const step = (clusters.paint as any)["circle-radius"];
     expect(step[0]).toBe("step");
     const [, , base, , mid, , large] = step;
     expect(base).toBeLessThan(mid);
@@ -122,12 +120,9 @@ describe("cluster source configuration", () => {
 });
 
 describe("marker geometry", () => {
-  it("keeps the normal spot marker compact (≈18–20px diameter)", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    const radiusExpr = map.getLayer(PUBLIC_SPOT_LAYER_IDS.points).paint["circle-radius"];
-    // ["interpolate", ["linear"], ["zoom"], z1, r1, z2, r2, ...] — radii sit
-    // at the odd positions from index 4 on; every one stays within 16–20px.
+  it("keeps the normal spot marker compact (≈16–20px diameter)", () => {
+    const points = publicSpotLayers("light").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!;
+    const radiusExpr = (points.paint as any)["circle-radius"];
     const radii: number[] = [];
     for (let i = 4; i < radiusExpr.length; i += 2) radii.push(radiusExpr[i]);
     expect(radii.length).toBeGreaterThan(0);
@@ -136,22 +131,26 @@ describe("marker geometry", () => {
   });
 
   it("enlarges hover/focus and selected markers only modestly, with a coral accent", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    const hover = map.getLayer(PUBLIC_SPOT_LAYER_IDS.hover).paint;
-    const selected = map.getLayer(PUBLIC_SPOT_LAYER_IDS.selected).paint;
+    const layers = publicSpotLayers("light");
+    const hover = layers.find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.hover)!.paint as any;
+    const selected = layers.find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.selected)!.paint as any;
     expect(hover["circle-radius"] * 2).toBeLessThanOrEqual(24);
     expect(selected["circle-radius"] * 2).toBeLessThanOrEqual(24);
-    expect(hover["circle-stroke-color"]).toBe("#F06F4F");
-    expect(selected["circle-stroke-color"]).toBe("#F06F4F");
+    expect(hover["circle-stroke-color"]).toBe(PUBLIC_MAP_PALETTE.light.selection);
+    expect(selected["circle-stroke-color"]).toBe(PUBLIC_MAP_PALETTE.light.selection);
+  });
+
+  it("colors the marker stack per theme at build time (no shared mutable state)", () => {
+    const lightPoints = publicSpotLayers("light").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!.paint as any;
+    const darkPoints = publicSpotLayers("dark").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!.paint as any;
+    expect(lightPoints["circle-color"]).toBe(PUBLIC_MAP_PALETTE.light.spot);
+    expect(darkPoints["circle-color"]).toBe(PUBLIC_MAP_PALETTE.dark.spot);
   });
 
   it("gates the collision-driven name layer at the local/regional zoom, not street level", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    const names = map.getLayer(PUBLIC_SPOT_LAYER_IDS.names);
+    const names = publicSpotLayers("light").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.names)!;
     expect(names.minzoom).toBe(11);
-    expect(names.layout["text-allow-overlap"]).toBe(false);
+    expect((names.layout as any)["text-allow-overlap"]).toBe(false);
   });
 
   it("exposes exactly the documented layer ids (shadow/clusters/hover/selection/names stack)", () => {
@@ -160,42 +159,81 @@ describe("marker geometry", () => {
   });
 });
 
-describe("selection and theme restoration", () => {
+describe("buildPublicMapStyle — pure style-document transform", () => {
+  it("bakes the spot source and marker layers into the returned document", () => {
+    const style = buildPublicMapStyle(fakeBaseStyle(), "light");
+    expect(style.sources[PUBLIC_SPOT_SOURCE_ID]).toBeDefined();
+    const ids = style.layers.map((l: any) => l.id);
+    for (const id of Object.values(PUBLIC_SPOT_LAYER_IDS)) expect(ids).toContain(id);
+  });
+
+  it("recolors water/land/roads and never leaves the base document's placeholder black", () => {
+    const style = buildPublicMapStyle(fakeBaseStyle(), "light");
+    const byId = new Map(style.layers.map((l: any) => [l.id, l]));
+    expect((byId.get("water").paint as any)["fill-color"]).toBe(PUBLIC_MAP_PALETTE.light.water);
+    expect((byId.get("background").paint as any)["background-color"]).toBe(PUBLIC_MAP_PALETTE.light.land);
+    expect((byId.get("road_pri_fill_noramp").paint as any)["line-color"]).not.toBe("#000000");
+  });
+
+  it("produces two independently colored documents for light/dark from the same base", () => {
+    const base = fakeBaseStyle();
+    const light = buildPublicMapStyle(base, "light");
+    const dark = buildPublicMapStyle(base, "dark");
+    const waterOf = (s: StyleSpecification) => (s.layers.find((l: any) => l.id === "water") as any).paint["fill-color"];
+    expect(waterOf(light)).toBe(PUBLIC_MAP_PALETTE.light.water);
+    expect(waterOf(dark)).toBe(PUBLIC_MAP_PALETTE.dark.water);
+    // The base document passed in must not be mutated — building the dark
+    // variant right after the light one must not have altered it.
+    expect((base.layers[1] as any).paint["fill-color"]).toBe("#000000");
+  });
+
+  it("hides layers with no place in the editorial map (poi clutter, house numbers)", () => {
+    const style = buildPublicMapStyle(fakeBaseStyle(), "light");
+    const byId = new Map(style.layers.map((l: any) => [l.id, l]));
+    expect((byId.get("poi_stadium").layout as any).visibility).toBe("none");
+    expect((byId.get("housenumber").layout as any).visibility).toBe("none");
+  });
+
+  it("keeps only national capitals (capital = 2), filtering out the upstream regional set", () => {
+    const style = buildPublicMapStyle(fakeBaseStyle(), "light");
+    const capital = style.layers.find((l: any) => l.id === "place_capital_dot_z7") as any;
+    expect(capital.filter).toEqual(["==", "capital", 2]);
+  });
+
+  it("tolerates an optional CARTO layer being absent from the fetched document", () => {
+    const sparse: StyleSpecification = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: {} }] } as StyleSpecification;
+    expect(() => buildPublicMapStyle(sparse, "light")).not.toThrow();
+    const style = buildPublicMapStyle(sparse, "light");
+    expect(style.layers.some((l: any) => l.id === PUBLIC_SPOT_LAYER_IDS.points)).toBe(true);
+  });
+});
+
+describe("selection state (live map only)", () => {
+  function fakeMap() {
+    const layers = new Map<string, any>();
+    for (const id of Object.values(PUBLIC_SPOT_LAYER_IDS)) layers.set(id, { id, filter: undefined });
+    return {
+      getLayer: (id: string) => layers.get(id),
+      setFilter: vi.fn((id: string, filter: unknown) => { const l = layers.get(id); if (l) l.filter = filter; }),
+      _layers: layers,
+    } as any;
+  }
+
   it("filters hover/selected layers by feature id, defaulting to an impossible match", () => {
     const map = fakeMap();
-    ensurePublicSpotLayers(map);
     setPublicSpotSelection(map, "hover-1", "sel-1");
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.hover).filter).toEqual(["==", ["get", "spotId"], "hover-1"]);
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.selected).filter).toEqual(["==", ["get", "spotId"], "sel-1"]);
+    expect(map._layers.get(PUBLIC_SPOT_LAYER_IDS.hover).filter).toEqual(["==", ["get", "spotId"], "hover-1"]);
+    expect(map._layers.get(PUBLIC_SPOT_LAYER_IDS.selected).filter).toEqual(["==", ["get", "spotId"], "sel-1"]);
     setPublicSpotSelection(map, undefined, undefined);
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.hover).filter).toEqual(["==", ["get", "spotId"], ""]);
+    expect(map._layers.get(PUBLIC_SPOT_LAYER_IDS.hover).filter).toEqual(["==", ["get", "spotId"], ""]);
   });
 
   it("filters the cluster hover ring by cluster_id, off by default", () => {
     const map = fakeMap();
-    ensurePublicSpotLayers(map);
     setPublicClusterHover(map, 42);
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.clusterHover).filter).toEqual(["==", ["get", "cluster_id"], 42]);
+    expect(map._layers.get(PUBLIC_SPOT_LAYER_IDS.clusterHover).filter).toEqual(["==", ["get", "cluster_id"], 42]);
     setPublicClusterHover(map, undefined);
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.clusterHover).filter).toEqual(["==", ["get", "cluster_id"], -1]);
-  });
-
-  it("repaints spot/cluster/name colors independently per theme (not a shared filter)", () => {
-    const map = fakeMap();
-    ensurePublicSpotLayers(map);
-    applyPublicSpotTheme(map, "light");
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.points).paint["circle-color"]).toBe(PUBLIC_MAP_PALETTE.light.spot);
-    applyPublicSpotTheme(map, "dark");
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.points).paint["circle-color"]).toBe(PUBLIC_MAP_PALETTE.dark.spot);
-    expect(map.getLayer(PUBLIC_SPOT_LAYER_IDS.points).paint["circle-color"]).not.toBe(PUBLIC_MAP_PALETTE.light.spot);
-  });
-
-  it("tolerates an optional CARTO layer being absent from the loaded style", () => {
-    const map = fakeMap();
-    // No ensurePublicSpotLayers() call — every layer id is missing.
-    expect(() => applyPublicSpotTheme(map, "dark")).not.toThrow();
-    expect(() => setPublicSpotSelection(map, "x", "y")).not.toThrow();
-    expect(() => setPublicClusterHover(map, 1)).not.toThrow();
+    expect(map._layers.get(PUBLIC_SPOT_LAYER_IDS.clusterHover).filter).toEqual(["==", ["get", "cluster_id"], -1]);
   });
 });
 
