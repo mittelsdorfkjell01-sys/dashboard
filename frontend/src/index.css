@@ -531,11 +531,15 @@ html[data-theme="dark"] { color-scheme: dark; }
   --sw-green: #4A8159;
 }
 
-/* Controls — 40px desktop / 44px touch, warm floating surface, no blur. */
-.swd-map-controls {
+/* Controls — 40px desktop / 44px touch, warm floating surface, no blur.
+   Two independent floating stacks: `-left` (back + zoom) and the plain
+   `.swd-map-controls` (list), mirrored left/right at the same top offset. */
+.swd-map-controls,
+.swd-map-controls-left {
   top: max(20px, env(safe-area-inset-top));
-  right: var(--map-control-edge);
 }
+.swd-map-controls { right: var(--map-control-edge); }
+.swd-map-controls-left { left: var(--map-control-edge); }
 .swd-map-control {
   display: inline-flex;
   align-items: center;
@@ -562,6 +566,44 @@ html[data-theme="dark"] { color-scheme: dark; }
   background: color-mix(in srgb, var(--map-surface) 96%, transparent);
 }
 .swd-map-control-stacked { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+
+/* Back — the one filled/primary control on the map, bigger than the rest
+   (48px / 52px touch) so it reads as the main way off the page. */
+.swd-map-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--sw-teal);
+  color: #fff;
+  box-shadow: 0 3px 10px rgb(15 25 25 / 18%);
+  transition: background-color 160ms ease-out, transform 160ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-back { width: 52px; height: 52px; }
+}
+.swd-map-back:hover { background: var(--sw-teal-hover); }
+.swd-map-back:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+
+/* Bare close control (results tiles / chart panel) — intentionally no
+   border, shadow or fill; the larger tap target is invisible padding. */
+.swd-map-plain-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sw-muted);
+  transition: color 140ms ease-out;
+}
+.swd-map-plain-close:hover { color: var(--sw-ink); }
+.swd-map-plain-close:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
 
 /* Accessible hit-target sitting over each GL marker/cluster — carries the
    real click/hover/focus handling and, via ::after, the name capsule (used
@@ -624,17 +666,18 @@ html[data-theme="dark"] { color-scheme: dark; }
 }
 .swd-map-error button { min-height: 44px; color: var(--sw-teal); font-weight: 600; }
 
-/* Rail shell — a soft gradient stands in for a solid panel behind the cards.
-   Positioning (absolute/inset-x-0/bottom-0) stays on the Tailwind classes in
-   MapView.tsx; that `position: absolute` already gives the `::before` below
-   a positioning context, so this rule must not also set `position` — doing
-   so here would win the cascade (this file loads after Tailwind's
-   utilities) and silently turn the rail into a `relative` box, unpinning it
-   from the bottom of the map. */
-.swd-map-rail-shell {
-  padding: 34px 0 max(16px, env(safe-area-inset-bottom));
+/* Bottom shell — a soft gradient stands in for a solid panel behind the
+   tiles/chart, never a dark scrim (the map must stay visible and pannable
+   underneath at all times). Positioning (absolute/inset-x-0/bottom-0) stays
+   on the Tailwind classes in MapView.tsx; that `position: absolute` already
+   gives the `::before` below a positioning context, so this rule must not
+   also set `position` — doing so here would win the cascade (this file
+   loads after Tailwind's utilities) and silently turn the shell into a
+   `relative` box, unpinning it from the bottom of the map. */
+.swd-map-bottom-shell {
+  padding: 34px max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom));
 }
-.swd-map-rail-shell::before {
+.swd-map-bottom-shell::before {
   content: "";
   position: absolute;
   inset: -48px 0 0;
@@ -642,49 +685,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   pointer-events: none;
   background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sw-page) 55%, transparent) 55%, color-mix(in srgb, var(--sw-page) 80%, transparent));
 }
-.swd-map-rail {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  padding: 6px max(20px, env(safe-area-inset-left));
-  scroll-padding-inline: max(20px, env(safe-area-inset-left));
-  scroll-snap-type: x mandatory;
-}
-.swd-map-card {
-  position: relative;
-  width: 260px;
-  flex: 0 0 260px;
-  scroll-snap-align: center;
-  border-radius: 15px;
-  background: var(--sw-surface);
-  padding: 7px;
-  box-shadow: 0 2px 10px rgb(15 25 25 / 10%);
-  transition: transform 180ms ease-out, box-shadow 180ms ease-out;
-}
-.swd-map-card.is-selected { transform: translateY(-3px); box-shadow: 0 8px 20px rgb(15 25 25 / 16%); }
-.swd-map-card.is-selected::after {
-  content: "";
-  position: absolute;
-  inset: auto 12px 3px 12px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--map-selection);
-}
-.swd-map-card.is-highlighted:not(.is-selected) { box-shadow: 0 5px 16px rgb(15 25 25 / 13%); }
-.swd-map-card-badge {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 1;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sw-ink) 78%, transparent);
-  color: var(--sw-page);
-  font: 600 10px/1 "Poppins", system-ui, sans-serif;
-  padding: 5px 9px;
-}
-.swd-map-status,
-.swd-map-more {
+.swd-map-status {
   width: max-content;
   max-width: calc(100vw - 40px);
   margin: 0 auto;
@@ -696,59 +697,71 @@ html[data-theme="dark"] { color-scheme: dark; }
   font-size: 12px;
   box-shadow: 0 2px 10px rgb(36 28 23 / 10%);
 }
-.swd-map-more { margin-top: 3px; padding-block: 5px; color: var(--sw-muted); }
 .swd-public-map .maplibregl-ctrl-bottom-right {
   right: max(12px, env(safe-area-inset-right));
   bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
 }
-.swd-public-map.has-map-cards .maplibregl-ctrl-bottom-right { bottom: max(226px, calc(210px + env(safe-area-inset-bottom))); }
+.swd-public-map.has-bottom-panel .maplibregl-ctrl-bottom-right { bottom: max(360px, calc(344px + env(safe-area-inset-bottom))); }
 .swd-public-map .maplibregl-ctrl-attrib { background: var(--sw-surface) !important; color: var(--sw-ink-soft); }
 .swd-public-map .maplibregl-ctrl-attrib-inner { color: var(--sw-ink-soft) !important; }
 .swd-public-map .maplibregl-ctrl-attrib a { color: var(--sw-ink) !important; }
 
-/* Textbasierte Ergebnisliste (Abschnitt 9) — Bottom Sheet mobil, Seitenpanel
-   ab sm. */
-.swd-map-list-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1400;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgb(10 18 20 / 32%);
-  animation: swd-map-list-fade 160ms ease-out;
-}
-.swd-map-list-panel {
-  width: 100%;
-  max-height: 74vh;
-  overflow-y: auto;
-  border-radius: 20px 20px 0 0;
+/* Shared panel chrome (tile pair / wind chart) — a floating card, not a
+   modal: no backdrop, no outside-click-to-close, the map keeps working. */
+.swd-map-panel {
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 18px;
   background: var(--sw-surface);
-  padding: 16px max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom));
-  box-shadow: 0 -8px 30px rgb(15 25 25 / 20%);
+  box-shadow: 0 -6px 24px rgb(15 25 25 / 14%), 0 4px 16px rgb(15 25 25 / 10%);
+  padding: 12px 14px 14px;
 }
-@media (min-width: 640px) {
-  .swd-map-list-overlay { align-items: stretch; justify-content: flex-end; }
-  .swd-map-list-panel { width: 360px; max-width: 92vw; max-height: none; border-radius: 0; padding: 20px; box-shadow: -8px 0 30px rgb(15 25 25 / 16%); }
+.swd-map-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.swd-map-list-title { font-size: 14px; font-weight: 600; color: var(--sw-ink); }
+.swd-map-list-empty { padding: 20px 4px; color: var(--sw-muted); font-size: 13px; }
+
+/* Two Landing-style tiles, side by side — the `list` trigger's whole point
+   is browsing without leaving the map, not a text list. */
+.swd-map-tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+
+/* Wind/weather chart panel (bottom, on selection) — the "Zum Spot" link
+   reads as a small filled action, distinct from the bare close control. */
+.swd-map-chart-cta {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--sw-teal);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 140ms ease-out;
 }
-.swd-map-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.swd-map-list-title { font-size: 15px; font-weight: 600; color: var(--sw-ink); }
-.swd-map-list-empty { padding: 24px 4px; color: var(--sw-muted); font-size: 13px; }
-.swd-map-list-items { display: flex; flex-direction: column; gap: 4px; }
-.swd-map-list-item { width: 100%; text-align: left; padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease-out; }
-.swd-map-list-item:hover, .swd-map-list-item:focus-visible { background: var(--sw-band); }
-.swd-map-list-item.is-selected { background: color-mix(in srgb, var(--map-selection) 14%, var(--sw-band)); }
-.swd-map-list-name { display: block; font-size: 14px; font-weight: 600; color: var(--sw-ink); }
-.swd-map-list-meta { display: block; margin-top: 1px; font-size: 12px; color: var(--sw-muted); }
-@keyframes swd-map-list-fade { from { opacity: 0; } to { opacity: 1; } }
+.swd-map-chart-cta:hover { background: var(--sw-teal-hover); }
+.swd-map-chart-scroll { overflow-x: auto; border-radius: 12px; background: var(--sw-band); }
+
+/* Marker popup — the selected spot's Landing-style tile, anchored to the
+   marker. Desktop only: on narrow screens there isn't room to hover a card
+   next to a marker without it running off-edge, so the bottom chart panel's
+   "Zum Spot" link is the mobile path to the spot page instead. */
+.swd-map-popup .maplibregl-popup-content {
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--sw-surface);
+  box-shadow: 0 10px 28px rgb(15 25 25 / 20%);
+  width: 190px;
+}
+.swd-map-popup .maplibregl-popup-tip { display: none; }
+@media (max-width: 767px) {
+  .swd-map-popup { display: none !important; }
+}
 
 @media (max-width: 639px) {
-  .swd-map-rail { gap: 12px; padding-right: 16vw; }
-  .swd-map-card { width: min(84vw, 320px); flex-basis: min(84vw, 320px); }
-  .swd-public-map .maplibregl-ctrl-bottom-right { bottom: max(246px, calc(230px + env(safe-area-inset-bottom))); }
+  .swd-map-panel { max-width: none; }
+  .swd-public-map .maplibregl-ctrl-bottom-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .swd-map-a11y-marker::after, .swd-map-card, .swd-map-control { transition-duration: 1ms; }
-  .swd-map-list-overlay { animation-duration: 1ms; }
-  .swd-map-rail { scroll-behavior: auto; }
+  .swd-map-a11y-marker::after, .swd-map-control, .swd-map-back, .swd-map-plain-close { transition-duration: 1ms; }
 }

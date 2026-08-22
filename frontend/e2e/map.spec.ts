@@ -66,21 +66,51 @@ test("the map stays on its light palette and keeps its markers regardless of the
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
 });
 
-test("results list opens via its trigger, closes on Escape, and returns focus", async ({ page }) => {
+test("the list trigger shows two Landing-style tiles inline, not a text list or a dark overlay", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map");
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
 
-  const trigger = page.getByRole("button", { name: "Als Liste anzeigen" });
+  const trigger = page.getByRole("button", { name: "Spots im Ausschnitt anzeigen" });
   await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
-  const dialog = page.getByRole("dialog", { name: "Surfspots im Kartenausschnitt als Liste" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("Spot A")).toBeVisible();
+  const panel = page.locator(".swd-map-tile-grid");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("link", { name: /Spot A/ })).toBeVisible();
+  await expect(panel.getByRole("link", { name: /Spot B/ })).toBeVisible();
 
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
-  await expect(trigger).toBeFocused();
+  // No modal/dialog role and no dark scrim — the map underneath must stay
+  // interactive (still pannable) while the panel is open.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const mapCanvas = page.locator(".maplibregl-canvas");
+  await expect(mapCanvas).toBeVisible();
+
+  await page.getByRole("button", { name: "Schließen" }).click();
+  await expect(panel).toBeHidden();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+});
+
+test("selecting a marker shows its chart panel with a plain-X close and a link to the full spot page", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/map?lat=54&lon=10&z=9");
+  const marker = page.getByRole("button", { name: "Surfspot Spot A" });
+  await expect(marker).toBeVisible();
+  await marker.click();
+  await expect(marker).toHaveAttribute("aria-pressed", "true");
+
+  // The desktop marker popup also renders a "Spot A" tile, so scope this to
+  // the bottom chart panel specifically.
+  const chartPanel = page.locator(".swd-map-panel");
+  await expect(chartPanel.getByText("Spot A", { exact: true })).toBeVisible();
+  const spotLink = page.getByRole("link", { name: "Zum Spot" });
+  await expect(spotLink).toHaveAttribute("href", /\/spot\/spot-a/);
+
+  const closeButton = page.getByRole("button", { name: "Schließen" });
+  await expect(closeButton).toBeVisible();
+  await closeButton.click();
+  await expect(marker).toHaveAttribute("aria-pressed", "false");
+  await expect(spotLink).toBeHidden();
 });
 
 test("a deep-linked spot is selected on load and the shared position is not overwritten by fitBounds", async ({ page }) => {

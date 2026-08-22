@@ -1,64 +1,50 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Wordmark } from "./ui";
 import SearchBar from "./SearchBar";
 import MobileSearchTrigger from "./MobileSearchTrigger";
 import MobileSearchSheet from "./MobileSearchSheet";
-import { ChevronLeftIcon } from "../lib/icons";
 
 /**
- * The /map page's own top bar: a back control (with a real fallback, not an
- * isolated "close") plus the same search entry used everywhere else — no
- * second search implementation. The wordmark rides along next to the back
- * arrow instead of floating centred, since centring it here had no
- * functional purpose. Desktop keeps the inline `SearchBar` pill; mobile
- * reuses `MobileSearchTrigger` + `MobileSearchSheet` (the Landing/Results
- * pattern) as one wide capsule.
+ * The /map page's own top bar: wordmark (same size as the results page)
+ * left, search centred — the same search entry used everywhere else, no
+ * second search implementation. The back control now lives with the other
+ * floating map controls (see MapView's `.swd-map-controls-left`), not in
+ * this bar, so it isn't accounted for here.
  */
 export default function Header() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  // `location.key === "default"` means this tab has no entry to go back to
-  // (deep link, reload, new tab) — fall back to the homepage instead of
-  // leaving the visitor stuck or navigating outside the app.
-  const goBack = () => { if (location.key !== "default") navigate(-1); else navigate("/"); };
 
   return (
     <>
+      {/* Left/right padding on `sm+` clears the floating back+zoom (left)
+          and list (right) control stacks, which are pinned to the viewport
+          edge independently of this centred, max-width bar. */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-[1000]">
-        {/* Right padding is wider than the left on `sm+` — it clears the
-            top-right zoom/list control stack, which is pinned to the
-            viewport edge independently of this (centred, max-width) bar and
-            would otherwise sit under the search pill at laptop widths. */}
-        <div className="mx-auto max-w-[1400px] px-4 pt-4 sm:pl-8 sm:pr-24 sm:pt-6">
-          {/* The row itself stays pointer-events-none — only real controls
-              opt back in — so nothing here can sit on top of (and steal
-              clicks from) the top-right zoom/list stack. The mobile search
-              capsule is additionally width-capped (not padded: padding
-              would still capture hit-testing) to stop short of that
-              stack's reserved column. */}
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={goBack}
-              aria-label="Zurück"
-              className="swd-map-control pointer-events-auto inline-flex h-11 w-11 shrink-0 items-center justify-center gap-1.5 sm:w-auto sm:px-3.5"
-            >
-              <ChevronLeftIcon className="text-[18px]" />
-              <span className="hidden text-[13px] font-semibold sm:inline">Zurück</span>
-            </button>
-
+        <div className="mx-auto max-w-[1400px] px-4 pt-4 sm:pl-20 sm:pr-16 sm:pt-6">
+          {/* Search is absolutely centred on the row itself (not balanced
+              against the wordmark via a grid) — a grid's `1fr` centre
+              column shifts off-centre by the wordmark's own width, which
+              reads as "not actually centred". The row stays
+              pointer-events-none: a `flex` box is full-width even with
+              off-centre content, so making the *row* clickable would swallow
+              clicks over its empty right-hand slack — including the list
+              button floating on top of it in that exact spot. */}
+          <div className="relative flex min-h-[44px] items-center sm:min-h-[48px]">
             <Link
               to="/"
               aria-label="surfwind data · Startseite"
-              className="pointer-events-auto hidden shrink-0 select-none items-center leading-none md:inline-flex"
+              className="pointer-events-auto hidden shrink-0 select-none items-center leading-none sm:inline-flex"
             >
-              <Wordmark size="sm" />
+              <Wordmark size="md" />
             </Link>
 
-            <div className="pointer-events-auto min-w-0 w-[calc(100vw-168px)] sm:ml-auto sm:w-auto">
-              <div className="sm:hidden">
+            <div className="pointer-events-auto absolute inset-y-0 left-1/2 flex -translate-x-1/2 items-center">
+              {/* Width-capped (not just centered) on mobile: clears the
+                  floating back+zoom stack on the left and the list button
+                  on the right, both pinned to the viewport edge outside
+                  this bar's own layout. */}
+              <div className="w-[calc(100vw-176px)] sm:hidden">
                 <MobileSearchTrigger onClick={() => setMobileSearchOpen(true)} label="Ort, Region oder Spot" compact />
               </div>
               <div className="hidden sm:block">
