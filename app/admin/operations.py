@@ -87,9 +87,9 @@ def operations_summary(db: Session) -> dict:
         "job_status": _job_status_counts(db),
         "recent_jobs": recent_jobs(db),
         # When a fix becomes visible publicly (from the known schedule + edge cache;
-        # see vercel.json cron + app/api/_http_cache.py).
+        # see the dedicated GitHub refresh workflow + app/api/_http_cache.py).
         "public_update": {
-            "climatology_cron": "täglich 04:15 UTC",
+            "climatology_cron": "halbjährlich am 1. Februar und 1. August",
             "edge_cache": "Öffentliche Listen/Detail ≤ 10 s; Top-Spots bis 6 h (Edge-Cache).",
         },
     }

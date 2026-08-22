@@ -1,0 +1,815 @@
+{
+  "generated_at": "2026-08-22T20:43:29.331524+00:00",
+  "mode": "real_open_meteo_read_only",
+  "source": "Open-Meteo Historical Weather API / ERA5",
+  "selection_reason": "Ten published spots across ten countries/regions and varied catalogue wind-direction metadata; no reviewed V3 sectors existed at selection time.",
+  "period": [
+    2006,
+    2025
+  ],
+  "spots": [
+    {
+      "spot_name": "Brandenburger Strand",
+      "spot_id": "12da4429-abea-4e2c-ae12-eeea5f523bfe",
+      "slug": "sylt-schleswig-holstein-brandenburger-strand",
+      "country": "DE",
+      "requested_coordinates": [
+        54.91763,
+        8.30263
+      ],
+      "actual_coordinates": [
+        55.0,
+        8.25
+      ],
+      "grid_distance_km": 9.756,
+      "timezone": "Europe/Berlin",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 9617,
+        "5-10": 35082,
+        "10-15": 50641,
+        "15-20": 45771,
+        "20-25": 23874,
+        "25-30": 8001,
+        "30-40": 2276,
+        "40-60": 58,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 4957,
+        "22.5-45.0": 4876,
+        "45.0-67.5": 6771,
+        "67.5-90.0": 8481,
+        "90.0-112.5": 11217,
+        "112.5-135.0": 9051,
+        "135.0-157.5": 8327,
+        "157.5-180.0": 7882,
+        "180.0-202.5": 11174,
+        "202.5-225.0": 14934,
+        "225.0-247.5": 17579,
+        "247.5-270.0": 15977,
+        "270.0-292.5": 15578,
+        "292.5-315.0": 16578,
+        "315.0-337.5": 14554,
+        "337.5-360.0": 7384
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 26.38
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 80.0,
+        "weeks_at_or_above_50_percent": 52
+      },
+      "fetch_seconds": 2.278,
+      "aggregation_seconds_default_variant": 14.65,
+      "peak_memory_mb": 60.74,
+      "single_variant_gzip_bytes": 1247,
+      "estimated_all_variant_bytes": 830502,
+      "prepared_variant_selection_ms": 1.56,
+      "runtime_seconds": 19.691,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Pozo Izquierdo",
+      "spot_id": "1271f927-1d64-4ea8-8214-6e32ed06a91c",
+      "slug": "gran-canaria-pozo-izquierdo",
+      "country": "ES",
+      "requested_coordinates": [
+        27.81,
+        -15.4
+      ],
+      "actual_coordinates": [
+        27.75,
+        -15.5
+      ],
+      "grid_distance_km": 11.887,
+      "timezone": "Atlantic/Canary",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 29421,
+        "5-10": 52110,
+        "10-15": 61864,
+        "15-20": 29319,
+        "20-25": 2565,
+        "25-30": 40,
+        "30-40": 1,
+        "40-60": 0,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 41787,
+        "22.5-45.0": 66290,
+        "45.0-67.5": 23532,
+        "67.5-90.0": 7684,
+        "90.0-112.5": 4495,
+        "112.5-135.0": 2418,
+        "135.0-157.5": 2238,
+        "157.5-180.0": 1959,
+        "180.0-202.5": 2526,
+        "202.5-225.0": 2877,
+        "225.0-247.5": 4190,
+        "247.5-270.0": 3845,
+        "270.0-292.5": 2592,
+        "292.5-315.0": 1376,
+        "315.0-337.5": 2076,
+        "337.5-360.0": 5435
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 11.43
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 32.5,
+        "weeks_at_or_above_50_percent": 12
+      },
+      "fetch_seconds": 2.022,
+      "aggregation_seconds_default_variant": 14.395,
+      "peak_memory_mb": 56.05,
+      "single_variant_gzip_bytes": 1194,
+      "estimated_all_variant_bytes": 795204,
+      "prepared_variant_selection_ms": 1.57,
+      "runtime_seconds": 19.11,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Almanarre",
+      "spot_id": "eb00c569-61ee-4e81-b738-25bddea7f8b9",
+      "slug": "hyeres-almanarre",
+      "country": "FR",
+      "requested_coordinates": [
+        43.0552,
+        6.13335
+      ],
+      "actual_coordinates": [
+        43.0,
+        6.25
+      ],
+      "grid_distance_km": 11.295,
+      "timezone": "Europe/Paris",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 51750,
+        "5-10": 62234,
+        "10-15": 30513,
+        "15-20": 19694,
+        "20-25": 9513,
+        "25-30": 1553,
+        "30-40": 63,
+        "40-60": 0,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 3757,
+        "22.5-45.0": 4588,
+        "45.0-67.5": 9903,
+        "67.5-90.0": 20449,
+        "90.0-112.5": 11662,
+        "112.5-135.0": 6296,
+        "135.0-157.5": 5225,
+        "157.5-180.0": 4430,
+        "180.0-202.5": 5287,
+        "202.5-225.0": 5796,
+        "225.0-247.5": 9947,
+        "247.5-270.0": 16842,
+        "270.0-292.5": 30030,
+        "292.5-315.0": 25524,
+        "315.0-337.5": 10505,
+        "337.5-360.0": 5079
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 11.52
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 37.5,
+        "weeks_at_or_above_50_percent": 10
+      },
+      "fetch_seconds": 2.003,
+      "aggregation_seconds_default_variant": 14.192,
+      "peak_memory_mb": 57.87,
+      "single_variant_gzip_bytes": 1114,
+      "estimated_all_variant_bytes": 741924,
+      "prepared_variant_selection_ms": 1.56,
+      "runtime_seconds": 18.652,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Thurso East",
+      "spot_id": "736f4f1a-0f54-4cd4-a29e-878cd513c058",
+      "slug": "caithness-thurso-east",
+      "country": "GB",
+      "requested_coordinates": [
+        58.598,
+        -3.516
+      ],
+      "actual_coordinates": [
+        58.5,
+        -3.5
+      ],
+      "grid_distance_km": 10.937,
+      "timezone": "Europe/London",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 29280,
+        "5-10": 60210,
+        "10-15": 52898,
+        "15-20": 24613,
+        "20-25": 6833,
+        "25-30": 1319,
+        "30-40": 165,
+        "40-60": 2,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 5657,
+        "22.5-45.0": 4208,
+        "45.0-67.5": 4584,
+        "67.5-90.0": 4873,
+        "90.0-112.5": 7753,
+        "112.5-135.0": 13263,
+        "135.0-157.5": 17379,
+        "157.5-180.0": 13475,
+        "180.0-202.5": 14182,
+        "202.5-225.0": 12204,
+        "225.0-247.5": 14771,
+        "247.5-270.0": 16167,
+        "270.0-292.5": 14770,
+        "292.5-315.0": 12049,
+        "315.0-337.5": 11155,
+        "337.5-360.0": 8830
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 17.04
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 47.5,
+        "weeks_at_or_above_50_percent": 26
+      },
+      "fetch_seconds": 2.072,
+      "aggregation_seconds_default_variant": 14.426,
+      "peak_memory_mb": 57.19,
+      "single_variant_gzip_bytes": 1221,
+      "estimated_all_variant_bytes": 813186,
+      "prepared_variant_selection_ms": 1.542,
+      "runtime_seconds": 19.303,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Keros",
+      "spot_id": "1895746e-b1ea-4e31-ae2b-53d5fd1fd84f",
+      "slug": "lemnos-keros",
+      "country": "GR",
+      "requested_coordinates": [
+        39.87,
+        25.4
+      ],
+      "actual_coordinates": [
+        39.75,
+        25.5
+      ],
+      "grid_distance_km": 15.843,
+      "timezone": "Europe/Athens",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 18706,
+        "5-10": 38854,
+        "10-15": 45722,
+        "15-20": 36873,
+        "20-25": 23327,
+        "25-30": 8893,
+        "30-40": 2896,
+        "40-60": 49,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 18934,
+        "22.5-45.0": 55118,
+        "45.0-67.5": 21446,
+        "67.5-90.0": 3713,
+        "90.0-112.5": 2431,
+        "112.5-135.0": 2392,
+        "135.0-157.5": 4282,
+        "157.5-180.0": 10827,
+        "180.0-202.5": 15306,
+        "202.5-225.0": 7573,
+        "225.0-247.5": 5434,
+        "247.5-270.0": 4022,
+        "270.0-292.5": 3782,
+        "292.5-315.0": 3678,
+        "315.0-337.5": 6321,
+        "337.5-360.0": 10061
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 21.45
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 70.0,
+        "weeks_at_or_above_50_percent": 50
+      },
+      "fetch_seconds": 1.968,
+      "aggregation_seconds_default_variant": 14.9,
+      "peak_memory_mb": 56.38,
+      "single_variant_gzip_bytes": 1292,
+      "estimated_all_variant_bytes": 860472,
+      "prepared_variant_selection_ms": 1.137,
+      "runtime_seconds": 19.354,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Aileen's",
+      "spot_id": "6fb34adc-56be-4802-beb1-e207722079df",
+      "slug": "aileens",
+      "country": "IE",
+      "requested_coordinates": [
+        52.971,
+        -9.43
+      ],
+      "actual_coordinates": [
+        53.0,
+        -9.5
+      ],
+      "grid_distance_km": 5.688,
+      "timezone": "Europe/Dublin",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 13324,
+        "5-10": 46780,
+        "10-15": 54438,
+        "15-20": 36418,
+        "20-25": 16369,
+        "25-30": 5903,
+        "30-40": 2027,
+        "40-60": 61,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 5521,
+        "22.5-45.0": 5463,
+        "45.0-67.5": 6797,
+        "67.5-90.0": 6867,
+        "90.0-112.5": 6979,
+        "112.5-135.0": 8727,
+        "135.0-157.5": 10655,
+        "157.5-180.0": 10393,
+        "180.0-202.5": 11502,
+        "202.5-225.0": 14968,
+        "225.0-247.5": 18482,
+        "247.5-270.0": 18209,
+        "270.0-292.5": 17937,
+        "292.5-315.0": 14091,
+        "315.0-337.5": 10892,
+        "337.5-360.0": 7837
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 22.57
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 65.0,
+        "weeks_at_or_above_50_percent": 49
+      },
+      "fetch_seconds": 2.045,
+      "aggregation_seconds_default_variant": 13.535,
+      "peak_memory_mb": 57.32,
+      "single_variant_gzip_bytes": 1276,
+      "estimated_all_variant_bytes": 849816,
+      "prepared_variant_selection_ms": 1.372,
+      "runtime_seconds": 18.259,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Lo Stagnone",
+      "spot_id": "bc2331bb-1f66-4c18-ad7f-5d85b23deafb",
+      "slug": "sicily-lo-stagnone",
+      "country": "IT",
+      "requested_coordinates": [
+        37.87,
+        12.47
+      ],
+      "actual_coordinates": [
+        37.75,
+        12.5
+      ],
+      "grid_distance_km": 13.601,
+      "timezone": "Europe/Rome",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 39366,
+        "5-10": 73333,
+        "10-15": 42883,
+        "15-20": 15636,
+        "20-25": 3660,
+        "25-30": 426,
+        "30-40": 16,
+        "40-60": 0,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 14752,
+        "22.5-45.0": 7774,
+        "45.0-67.5": 3895,
+        "67.5-90.0": 2454,
+        "90.0-112.5": 3730,
+        "112.5-135.0": 8609,
+        "135.0-157.5": 20693,
+        "157.5-180.0": 11553,
+        "180.0-202.5": 7589,
+        "202.5-225.0": 4928,
+        "225.0-247.5": 6082,
+        "247.5-270.0": 8904,
+        "270.0-292.5": 15404,
+        "292.5-315.0": 18907,
+        "315.0-337.5": 20331,
+        "337.5-360.0": 19715
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 9.84
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 32.5,
+        "weeks_at_or_above_50_percent": 9
+      },
+      "fetch_seconds": 1.963,
+      "aggregation_seconds_default_variant": 14.353,
+      "peak_memory_mb": 57.82,
+      "single_variant_gzip_bytes": 1129,
+      "estimated_all_variant_bytes": 751914,
+      "prepared_variant_selection_ms": 1.41,
+      "runtime_seconds": 19.042,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Brouwersdam",
+      "spot_id": "ac782223-0fc3-46ca-af19-4faecf4cebc9",
+      "slug": "zeeland-brouwersdam",
+      "country": "NL",
+      "requested_coordinates": [
+        51.76591,
+        3.85178
+      ],
+      "actual_coordinates": [
+        51.75,
+        3.75
+      ],
+      "grid_distance_km": 7.225,
+      "timezone": "Europe/Amsterdam",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 16685,
+        "5-10": 56217,
+        "10-15": 56782,
+        "15-20": 31516,
+        "20-25": 11208,
+        "25-30": 2588,
+        "30-40": 321,
+        "40-60": 3,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 9124,
+        "22.5-45.0": 9301,
+        "45.0-67.5": 10073,
+        "67.5-90.0": 9265,
+        "90.0-112.5": 7549,
+        "112.5-135.0": 5758,
+        "135.0-157.5": 6564,
+        "157.5-180.0": 8648,
+        "180.0-202.5": 14710,
+        "202.5-225.0": 17055,
+        "225.0-247.5": 23304,
+        "247.5-270.0": 15165,
+        "270.0-292.5": 11501,
+        "292.5-315.0": 8887,
+        "315.0-337.5": 9192,
+        "337.5-360.0": 9224
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 17.13
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 55.0,
+        "weeks_at_or_above_50_percent": 42
+      },
+      "fetch_seconds": 1.926,
+      "aggregation_seconds_default_variant": 14.371,
+      "peak_memory_mb": 56.94,
+      "single_variant_gzip_bytes": 1227,
+      "estimated_all_variant_bytes": 817182,
+      "prepared_variant_selection_ms": 1.181,
+      "runtime_seconds": 18.759,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Chałupy",
+      "spot_id": "85c63363-90ed-400c-87eb-55075c0ea6bf",
+      "slug": "halbinsel-hel-pommern-chalupy",
+      "country": "PL",
+      "requested_coordinates": [
+        54.74974,
+        18.53069
+      ],
+      "actual_coordinates": [
+        54.75,
+        18.5
+      ],
+      "grid_distance_km": 1.97,
+      "timezone": "Europe/Warsaw",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 15247,
+        "5-10": 57222,
+        "10-15": 60451,
+        "15-20": 30882,
+        "20-25": 9233,
+        "25-30": 1960,
+        "30-40": 325,
+        "40-60": 0,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 6469,
+        "22.5-45.0": 7222,
+        "45.0-67.5": 8070,
+        "67.5-90.0": 7740,
+        "90.0-112.5": 8504,
+        "112.5-135.0": 9341,
+        "135.0-157.5": 10923,
+        "157.5-180.0": 10641,
+        "180.0-202.5": 10784,
+        "202.5-225.0": 11901,
+        "225.0-247.5": 16104,
+        "247.5-270.0": 21261,
+        "270.0-292.5": 20467,
+        "292.5-315.0": 10785,
+        "315.0-337.5": 8344,
+        "337.5-360.0": 6764
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 17.52
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 60.0,
+        "weeks_at_or_above_50_percent": 34
+      },
+      "fetch_seconds": 1.839,
+      "aggregation_seconds_default_variant": 14.0,
+      "peak_memory_mb": 57.28,
+      "single_variant_gzip_bytes": 1255,
+      "estimated_all_variant_bytes": 835830,
+      "prepared_variant_selection_ms": 1.183,
+      "runtime_seconds": 18.563,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    },
+    {
+      "spot_name": "Baleal",
+      "spot_id": "80bced3b-3046-4e82-9bcb-972916e9498f",
+      "slug": "peniche-baleal",
+      "country": "PT",
+      "requested_coordinates": [
+        39.37353,
+        -9.33843
+      ],
+      "actual_coordinates": [
+        39.25,
+        -9.25
+      ],
+      "grid_distance_km": 15.702,
+      "timezone": "Europe/Lisbon",
+      "period": [
+        2006,
+        2025
+      ],
+      "expected_hours": 175320,
+      "available_hours": 175320,
+      "missing_speed_values": 0,
+      "missing_direction_values": 0,
+      "completeness_percent": 100.0,
+      "speed_distribution_kt": {
+        "0-5": 27997,
+        "5-10": 74695,
+        "10-15": 53633,
+        "15-20": 16584,
+        "20-25": 2218,
+        "25-30": 175,
+        "30-40": 18,
+        "40-60": 0,
+        "60-120": 0
+      },
+      "direction_distribution_16_sectors": {
+        "0.0-22.5": 20891,
+        "22.5-45.0": 6658,
+        "45.0-67.5": 5057,
+        "67.5-90.0": 5024,
+        "90.0-112.5": 7033,
+        "112.5-135.0": 4689,
+        "135.0-157.5": 4811,
+        "157.5-180.0": 5082,
+        "180.0-202.5": 6760,
+        "202.5-225.0": 7693,
+        "225.0-247.5": 7799,
+        "247.5-270.0": 7099,
+        "270.0-292.5": 8643,
+        "292.5-315.0": 10699,
+        "315.0-337.5": 19557,
+        "337.5-360.0": 47825
+      },
+      "reviewed_direction_windows": [],
+      "usable_mode_available": false,
+      "v2_default_summary": {
+        "method": "pooled_daylight_hours",
+        "sections": 48,
+        "median_percent": 11.04
+      },
+      "v3_default_summary": {
+        "method": "yearly_session_reliability",
+        "weeks": 52,
+        "median_reliability_percent": 35.0,
+        "weeks_at_or_above_50_percent": 12
+      },
+      "fetch_seconds": 1.952,
+      "aggregation_seconds_default_variant": 14.934,
+      "peak_memory_mb": 58.11,
+      "single_variant_gzip_bytes": 1116,
+      "estimated_all_variant_bytes": 743256,
+      "prepared_variant_selection_ms": 1.572,
+      "runtime_seconds": 19.671,
+      "warnings": [
+        "No reviewed usable direction sectors; all-direction mode only."
+      ],
+      "technically_suitable": true
+    }
+  ],
+  "full_cube_benchmark": {
+    "dataset": "Brandenburger Strand real 2006-2025 ERA5 series",
+    "direction_mode": "all",
+    "variants": 666,
+    "build_seconds": 456.815,
+    "encode_seconds_monolithic_prototype": 2.937,
+    "monolithic_gzip_bytes": 247225,
+    "peak_additional_memory_mb": 25.9,
+    "monolithic_selection_ms": 1000.911,
+    "selected_variant_gzip_bytes_mean_across_pilots": 1207.1,
+    "selected_variant_decode_ms_mean_across_pilots": 1.4087,
+    "storage_decision": "indexed individually compressed variant artifacts; monolithic prototype rejected for selection latency",
+    "estimated_catalogue_artifact_bytes_all_mode_51_spots": 41000359,
+    "optimization_gate": "Full cube build must be vectorized before Phase 4 mass backfill."
+  },
+  "summary": {
+    "requested": 10,
+    "suitable": 10,
+    "failed": 0,
+    "reviewed_direction_spots": 0,
+    "public_effect": "none",
+    "persisted_raw_data": false
+  }
+}

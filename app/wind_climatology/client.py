@@ -46,3 +46,32 @@ class WindHistoryClient:
         if payload.get("latitude") is None or payload.get("longitude") is None or not payload.get("timezone"):
             raise RuntimeError("Open-Meteo response lacks grid coordinates/timezone")
         return {"times": hourly["time"], "speeds_kn": hourly["wind_speed_10m"], "actual_lat": float(payload["latitude"]), "actual_lon": float(payload["longitude"]), "timezone": payload["timezone"], "unit": units["wind_speed_10m"], "request": params}
+
+    def fetch_v3(self, lat: float, lon: float, start_year: int, end_year: int) -> dict:
+        """Fetch validated hourly ERA5 speed + meteorological-from direction."""
+        params = {"latitude": lat, "longitude": lon, "start_date": f"{start_year}-01-01", "end_date": f"{end_year}-12-31", "hourly": "wind_speed_10m,wind_direction_10m", "wind_speed_unit": "kn", "timezone": "auto", "timeformat": "unixtime", "models": "era5", "cell_selection": "nearest", "elevation": "nan"}
+        payload = self.http(ARCHIVE_URL, params)
+        hourly, units = payload.get("hourly") or {}, payload.get("hourly_units") or {}
+        times, speeds, directions = hourly.get("time"), hourly.get("wind_speed_10m"), hourly.get("wind_direction_10m")
+        if units.get("wind_speed_10m") not in {"kn", "kt"}:
+            raise RuntimeError(f"unexpected wind unit: {units.get('wind_speed_10m')!r}")
+        if units.get("wind_direction_10m") not in {"°", "deg", "degree", "degrees"}:
+            raise RuntimeError(f"unexpected wind direction unit: {units.get('wind_direction_10m')!r}")
+        reported_model = payload.get("model") or payload.get("models")
+        if reported_model and "era5" not in str(reported_model).lower():
+            raise RuntimeError(f"unexpected weather model: {reported_model!r}")
+        if not all(isinstance(values, list) for values in (times, speeds, directions)):
+            raise RuntimeError("Open-Meteo response lacks hourly ERA5 speed/direction")
+        if not len(times) == len(speeds) == len(directions):
+            raise RuntimeError("Open-Meteo V3 arrays differ")
+        expected = (date(end_year + 1, 1, 1) - date(start_year, 1, 1)).days * 24
+        if len(times) != expected:
+            raise RuntimeError(f"incomplete ERA5 period: expected {expected} hours, got {len(times)}")
+        if any(not isinstance(value, (int, float)) for value in times) or any(right <= left for left, right in zip(times, times[1:])):
+            raise RuntimeError("Open-Meteo V3 timestamps are not unique and monotone")
+        invalid_directions = [value for value in directions if value is not None and (not isinstance(value, (int, float)) or not 0 <= value <= 360)]
+        if invalid_directions:
+            raise RuntimeError("Open-Meteo V3 direction is outside meteorological degrees")
+        if payload.get("latitude") is None or payload.get("longitude") is None or not payload.get("timezone"):
+            raise RuntimeError("Open-Meteo response lacks grid coordinates/timezone")
+        return {"times": times, "speeds_kn": speeds, "directions_deg": directions, "actual_lat": float(payload["latitude"]), "actual_lon": float(payload["longitude"]), "timezone": payload["timezone"], "units": {"speed": units["wind_speed_10m"], "direction": units["wind_direction_10m"]}, "direction_convention": "meteorological_from", "request": params}

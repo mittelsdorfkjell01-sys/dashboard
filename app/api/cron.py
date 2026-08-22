@@ -116,14 +116,4 @@ def maintain_climatology(
     except Exception as exc:
         db.rollback()
         result["featured"] = {"error": f"{type(exc).__name__}: {exc}"}
-    try:
-        from app.models import WindClimatologyRun
-        from app.wind_climatology.service import backfill, process
-
-        backfill(db, limit=2)
-        queued = db.scalars(select(WindClimatologyRun).where(WindClimatologyRun.status == "pending").order_by(WindClimatologyRun.created_at).limit(1)).all()
-        result["wind_climatology_v2"] = [{"id": str(run.id), "status": process(db, run.id).status} for run in queued]
-    except Exception as exc:
-        db.rollback()
-        result["wind_climatology_v2"] = {"error": f"{type(exc).__name__}: {exc}"}
     return result

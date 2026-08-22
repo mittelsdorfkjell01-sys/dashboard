@@ -30,6 +30,8 @@ def test_facing_is_never_a_weather_profile_fallback():
 
 def test_weather_admin_requires_authentication(anon_client):
     assert anon_client.get("/admin/weather/profiles").status_code == 401
+    assert anon_client.get(f"/admin/weather/spots/{uuid.uuid4()}/wind-climatology-v3/status").status_code == 401
+    assert anon_client.post(f"/admin/weather/spots/{uuid.uuid4()}/wind-climatology-v3/runs").status_code == 401
 
 
 def test_profile_api_validates_timezone_and_advanced_gating(client, db):

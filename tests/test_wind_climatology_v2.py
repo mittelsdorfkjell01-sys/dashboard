@@ -46,6 +46,28 @@ def test_unexpected_unit_or_model_fails_closed():
         WindHistoryClient(lambda *_: {**base, "model": "best_match", "hourly_units": {"wind_speed_10m": "kn"}}).fetch(1, 2, 2006, 2025)
 
 
+def test_v3_client_requests_and_validates_meteorological_direction():
+    captured = {}
+    expected = (datetime(2026, 1, 1) - datetime(2006, 1, 1)).days * 24
+    def fake(_url, params):
+        captured.update(params)
+        return {"latitude": 54.25, "longitude": 10.0, "timezone": "Europe/Berlin", "model": "era5", "hourly_units": {"wind_speed_10m": "kn", "wind_direction_10m": "°"}, "hourly": {"time": list(range(expected)), "wind_speed_10m": [15.0] * expected, "wind_direction_10m": [270.0] * expected}}
+    result = WindHistoryClient(fake).fetch_v3(54.2, 10.1, 2006, 2025)
+    assert captured["hourly"] == "wind_speed_10m,wind_direction_10m"
+    assert captured["timezone"] == "auto"
+    assert result["direction_convention"] == "meteorological_from"
+
+
+def test_v3_client_rejects_duplicate_timestamps_and_bad_direction_unit():
+    expected = (datetime(2026, 1, 1) - datetime(2006, 1, 1)).days * 24
+    base = {"latitude": 1, "longitude": 2, "timezone": "UTC", "model": "era5", "hourly_units": {"wind_speed_10m": "kn", "wind_direction_10m": "°"}, "hourly": {"time": [0] * expected, "wind_speed_10m": [15.0] * expected, "wind_direction_10m": [90.0] * expected}}
+    with pytest.raises(RuntimeError, match="unique"):
+        WindHistoryClient(lambda *_: base).fetch_v3(1, 2, 2006, 2025)
+    base["hourly_units"]["wind_direction_10m"] = "radians"
+    with pytest.raises(RuntimeError, match="direction unit"):
+        WindHistoryClient(lambda *_: base).fetch_v3(1, 2, 2006, 2025)
+
+
 def test_aggregation_has_48_unsmoothed_sections_and_full_denominator(monkeypatch):
     times, speeds = [], []
     for year in range(2006, 2026):

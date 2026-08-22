@@ -133,13 +133,19 @@ def set_cell(db: Session, spot_id: uuid.UUID, *, mode: str, lat: float | None = 
     return enqueue(db, spot_id, force=True)[0]
 
 
-def backfill(db: Session, *, limit: int = 2) -> list[WindClimatologyRun]:
+def backfill(db: Session, *, limit: int | None = 2) -> list[WindClimatologyRun]:
+    """Enqueue missing/outdated runs for published spots.
+
+    ``None`` queues the complete catalogue.  The bounded default is retained for
+    interactive/admin callers; the twice-yearly worker deliberately uses the
+    unbounded mode and then drains every pending run.
+    """
     spots = db.scalars(select(Spot).where(Spot.status == "published").order_by(Spot.updated_at)).all()
     queued = []
     for spot in spots:
         run, created = enqueue(db, spot.id)
         if created:
             queued.append(run)
-            if len(queued) >= limit:
+            if limit is not None and len(queued) >= limit:
                 break
     return queued

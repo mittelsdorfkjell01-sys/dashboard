@@ -56,7 +56,7 @@ from app.models.weather_shadow import (
     WeatherShadowObservation, WeatherShadowRun, WeatherShadowStationBinding,
     WeatherShadowStudy,
 )
-from app.models.wind_climatology import WindClimatologyCell, WindClimatologyRun
+from app.models.wind_climatology import WindClimatologyCell, WindClimatologyRun, WindClimatologyV3Run, WindClimatologyV3Variant
 
 __all__ = [
     "Base",
@@ -108,5 +108,5 @@ __all__ = [
     "WeatherShadowStudy", "WeatherShadowRun", "WeatherShadowForecast",
     "WeatherShadowStationBinding", "WeatherShadowObservation",
     "WeatherShadowMatch", "WeatherShadowMetric",
-    "WindClimatologyCell", "WindClimatologyRun",
+    "WindClimatologyCell", "WindClimatologyRun", "WindClimatologyV3Run", "WindClimatologyV3Variant",
 ]

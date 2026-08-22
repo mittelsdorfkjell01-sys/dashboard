@@ -79,6 +79,48 @@ def recalculate_wind_climatology(spot_id: uuid.UUID, db: Session = Depends(get_d
     return {"run_id": str(run.id), "status": run.status, "created": created}
 
 
+@router.post("/spots/{spot_id}/wind-climatology-v3/runs", status_code=202)
+def create_wind_climatology_v3_run(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    """Create a shadow-only run; processing is an explicit worker action."""
+    from app.wind_climatology.v3_service import enqueue
+    try:
+        run, created = enqueue(db, spot_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return {"run_id": str(run.id), "status": run.status, "created": created, "public_effect": "none"}
+
+
+@router.get("/spots/{spot_id}/wind-climatology-v3/status")
+def wind_climatology_v3_status(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    from app.wind_climatology.v3_service import status
+    if db.get(Spot, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    return status(db, spot_id)
+
+
+@router.get("/spots/{spot_id}/wind-climatology-v3/variant")
+def wind_climatology_v3_variant(spot_id: uuid.UUID, min_wind_kn: int = Query(15, ge=5, le=40), max_wind_kn: int = Query(20, ge=6, le=40), open_upper: bool = False, direction_mode: Literal["all", "usable"] = "all", db: Session = Depends(get_db)) -> dict:
+    from app.wind_climatology.v3_service import variant
+    try:
+        return variant(db, spot_id, min_wind_kn=min_wind_kn, max_wind_kn=None if open_upper else max_wind_kn, direction_mode=direction_mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.get("/spots/{spot_id}/wind-climatology-v3/compare")
+def compare_wind_climatology_v2_v3(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    """Structural pilot comparison without changing or ranking public V2."""
+    from app.wind_climatology.v3_service import status as v3_status, variant
+    v2 = db.scalar(select(WindClimatologyRun).where(WindClimatologyRun.spot_id == spot_id, WindClimatologyRun.is_active.is_(True)))
+    try:
+        v3 = variant(db, spot_id, min_wind_kn=15, max_wind_kn=20, direction_mode="all")
+    except LookupError:
+        v3 = None
+    return {"v2": None if v2 is None else {"run_id": str(v2.id), "method": "pooled_daylight_hours", "sections": len((v2.public_data or {}).get("sections", []))}, "v3": None if v3 is None else {"run_id": v3["run_id"], "method": "yearly_session_reliability", "weeks": len(v3["variant"]["weeks"])}, "status": v3_status(db, spot_id), "public_effect": "none"}
+
+
 @router.get("/shadow-study/status")
 def shadow_study_status(db: Session = Depends(get_db)) -> dict:
     """Sanitized internal diagnostics; no provider payloads or weights."""

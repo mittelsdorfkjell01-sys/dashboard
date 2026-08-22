@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -59,4 +59,56 @@ class WindClimatologyRun(Base, TimestampMixin):
         Index("ix_wind_clim_runs_spot_status", "spot_id", "status"),
         Index("uq_wind_clim_active_spot", "spot_id", unique=True, postgresql_where=text("is_active")),
         Index("uq_wind_clim_inflight_config", "spot_id", "config_hash", unique=True, postgresql_where=text("status IN ('pending','processing')")),
+    )
+
+
+class WindClimatologyV3Run(Base, TimestampMixin):
+    """Additive shadow-only V3 run; V2 rows and public state stay untouched."""
+
+    __tablename__ = "wind_climatology_v3_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
+    spot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False)
+    cell_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("wind_climatology_cells.id", ondelete="RESTRICT"), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'pending'"))
+    start_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    end_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    algorithm_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    timezone: Mapped[str | None] = mapped_column(String(64))
+    grid_lat: Mapped[float | None] = mapped_column(Float)
+    grid_lon: Mapped[float | None] = mapped_column(Float)
+    direction_windows: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    quality_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    variant_count: Mapped[int | None] = mapped_column(Integer)
+    artifact_bytes: Mapped[int | None] = mapped_column(Integer)
+    warnings: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    error: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+
+    __table_args__ = (
+        Index("ix_wind_clim_v3_spot_status", "spot_id", "status"),
+        Index("uq_wind_clim_v3_active_spot", "spot_id", unique=True, postgresql_where=text("is_active")),
+        Index("uq_wind_clim_v3_inflight_config", "spot_id", "config_hash", unique=True, postgresql_where=text("status IN ('pending','processing')")),
+    )
+
+
+class WindClimatologyV3Variant(Base, TimestampMixin):
+    __tablename__ = "wind_climatology_v3_variants"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("wind_climatology_v3_runs.id", ondelete="CASCADE"), nullable=False)
+    min_wind_kn: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_wind_kn: Mapped[int | None] = mapped_column(Integer)
+    direction_mode: Mapped[str] = mapped_column(String(12), nullable=False)
+    payload_blob: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        Index("uq_wind_clim_v3_variant", "run_id", "min_wind_kn", "max_wind_kn", "direction_mode", unique=True, postgresql_nulls_not_distinct=True),
+        Index("ix_wind_clim_v3_variant_lookup", "run_id", "direction_mode", "min_wind_kn", "max_wind_kn"),
     )

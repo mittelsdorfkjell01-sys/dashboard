@@ -1,0 +1,47 @@
+name: Wind Climatology Refresh
+
+on:
+  schedule:
+    # Refresh after each completed half-year; ERA5 uses completed calendar years.
+    - cron: "15 4 1 2,8 *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wind-climatology-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      APP_ENV: production
+      DEPLOYMENT_MODE: admin
+      ENABLE_ADMIN_API: "true"
+      API_DEBUG: "false"
+      DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.WEATHER_SHADOW_WORKER_JWT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate worker configuration
+        shell: bash
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$JWT_SECRET"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install worker dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh every published spot
+        run: python -m scripts.wind_climatology_worker
