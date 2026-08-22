@@ -247,6 +247,12 @@ export const ChevronRightIcon = (p: IconProps) => (
     <path d="M9 5l7 7-7 7" />
   </svg>
 );
+export const ListIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M8 6h13M8 12h13M8 18h13" />
+    <path d="M3 6h.01M3 12h.01M3 18h.01" />
+  </svg>
+);
 
 /* Sport glyphs — the uploaded artwork itself (PNG, black on transparent),
    for the search "Welche Sportart?" list. `dark:invert` flips them white on

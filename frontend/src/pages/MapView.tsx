@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import maplibregl, { LngLatBounds, type GeoJSONSource, type Map as MapLibreMap, type Marker } from "maplibre-gl";
 import Header from "../components/Header";
 import SpotCard from "../components/SpotCard";
-import { CloseIcon, MinusIcon, PlusIcon } from "../lib/icons";
+import MapResultsList from "../components/MapResultsList";
+import { ListIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { useSpots, useSpotsLive } from "../lib/hooks";
 import { getSpotCatalogVersion } from "../lib/api";
 import type { Spot } from "../lib/types";
-import { applyPublicMapStyle, applyPublicSpotTheme, ensurePublicSpotLayers, parsePublicMapUrl, PUBLIC_MAP_STYLE_URL, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapTheme, updatePublicMapLayerVisibility } from "../lib/publicMap";
+import { applyPublicMapStyle, applyPublicSpotTheme, ensurePublicSpotLayers, parsePublicMapUrl, PUBLIC_MAP_STYLE_URL, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapTheme, updatePublicMapLayerVisibility } from "../lib/publicMap";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const CATALOG_POLL_MS = 3_000;
+// Background catalogue check, not a live feed: 60s is plenty to notice a
+// published/unpublished spot, with immediate checks on visibility/reconnect
+// covering the "I just made a change" case without polling every 3s.
+const CATALOG_POLL_MS = 60_000;
 const MAX_RAIL_CARDS = 12;
 const currentTheme = (): PublicMapTheme => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -20,7 +23,6 @@ function isVisible(map: MapLibreMap, spot: Spot): boolean {
 }
 
 export default function MapView() {
-  const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -33,6 +35,8 @@ export default function MapView() {
   const [viewportIds, setViewportIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => parsePublicMapUrl(window.location.search)?.spot);
   const [hoveredId, setHoveredId] = useState<string>();
+  const [hoveredClusterId, setHoveredClusterId] = useState<number>();
+  const [listOpen, setListOpen] = useState(false);
   const [catalogVersion, setCatalogVersion] = useState<string>();
   const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
@@ -166,6 +170,12 @@ export default function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
+    setPublicClusterHover(map, hoveredClusterId);
+  }, [hoveredClusterId, mapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
     const renderMarkers = () => {
       markersRef.current.forEach((marker) => marker.remove()); markersRef.current = [];
       const features = map.queryRenderedFeatures({ layers: [PUBLIC_SPOT_LAYER_IDS.clusters, PUBLIC_SPOT_LAYER_IDS.points] });
@@ -183,11 +193,16 @@ export default function MapView() {
         let ariaLabel: string;
         if (cluster) {
           const count = Number(feature.properties.point_count);
+          const clusterId = Number(feature.properties.cluster_id);
           ariaLabel = `Cluster mit ${count} Surfspots. Aktivieren zum Vergrößern.`;
+          el.addEventListener("mouseenter", () => setHoveredClusterId(clusterId));
+          el.addEventListener("mouseleave", () => setHoveredClusterId((value) => value === clusterId ? undefined : value));
+          el.addEventListener("focus", () => setHoveredClusterId(clusterId));
+          el.addEventListener("blur", () => setHoveredClusterId((value) => value === clusterId ? undefined : value));
           el.addEventListener("click", async () => {
             map.stop();
             const source = map.getSource(PUBLIC_SPOT_SOURCE_ID) as GeoJSONSource;
-            const zoom = await source.getClusterExpansionZoom(Number(feature.properties.cluster_id));
+            const zoom = await source.getClusterExpansionZoom(clusterId);
             map.easeTo({ center: [lng, lat], zoom: Math.min(17, zoom), duration: reducedMotion() ? 0 : 480 });
           });
         } else {
@@ -237,12 +252,16 @@ export default function MapView() {
     railRef.current?.querySelector<HTMLElement>(`[data-spot-id="${CSS.escape(selectedId)}"]`)?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", inline: "center", block: "nearest" });
   }, [selectedId]);
 
+  const emptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`;
+
   return (
     <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${showCards && railSpots.length ? "has-map-cards" : ""}`} aria-labelledby="public-map-title">
-      <Header showAccount={false} />
+      <Header />
       <h1 id="public-map-title" className="sr-only">Spot-Karte</h1>
       <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" className="absolute inset-0">
-        <div ref={containerRef} className="h-full w-full" />
+        {/* Opacity-gated until the patched style has actually painted, so the
+            unstyled Voyager default never flashes before the theme applies. */}
+        <div ref={containerRef} className={`h-full w-full transition-opacity duration-300 ${mapReady ? "opacity-100" : "opacity-0"}`} />
       </div>
       {mapError && (
         <div role="status" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
@@ -251,34 +270,49 @@ export default function MapView() {
         </div>
       )}
       <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
-        <button type="button" aria-label="Zur Startseite" onClick={() => navigate("/")} className="swd-map-control pointer-events-auto"><CloseIcon className="text-[18px]" /></button>
-        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-lg border border-line bg-surface/95">
-          <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control"><PlusIcon className="text-[18px]" /></button>
+        <button type="button" aria-label="Als Liste anzeigen" aria-expanded={listOpen} onClick={() => setListOpen(true)} className="swd-map-control pointer-events-auto h-10 w-10 sm:h-10 sm:w-10">
+          <ListIcon className="text-[17px]" />
+        </button>
+        <div className="swd-map-control-group pointer-events-auto flex flex-col overflow-hidden">
+          <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control swd-map-control-stacked"><PlusIcon className="text-[17px]" /></button>
           <span className="mx-2 h-px bg-line" />
-          <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control"><MinusIcon className="text-[18px]" /></button>
+          <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control swd-map-control-stacked"><MinusIcon className="text-[17px]" /></button>
         </div>
       </div>
       <section aria-label="Surfspots im Kartenausschnitt" className="swd-map-rail-shell pointer-events-none absolute inset-x-0 bottom-0 z-10">
         {!showCards || railSpots.length === 0 ? (
-          <p role="status" className="swd-map-status pointer-events-auto">{viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`}</p>
+          <p role="status" className="swd-map-status pointer-events-auto">{emptyLabel}</p>
         ) : (
           <>
             <div ref={railRef} data-lenis-prevent className="swd-map-rail pointer-events-auto no-scrollbar" onWheel={(event) => { if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) event.currentTarget.scrollLeft += event.deltaY; }}>
-              {railSpots.map((spot) => (
+              {railSpots.map((spot) => {
+                const outOfViewport = spot.id === selectedId && !viewportSpots.some((s) => s.id === spot.id);
+                return (
                 <div key={spot.id} data-spot-id={spot.id} aria-current={spot.id === selectedId ? "true" : undefined}
                   className={`swd-map-card ${spot.id === selectedId ? "is-selected" : ""} ${spot.id === hoveredId ? "is-highlighted" : ""}`}
                   onMouseEnter={() => setHoveredId(spot.id)} onMouseLeave={() => setHoveredId((value) => value === spot.id ? undefined : value)}
                   onFocusCapture={() => setHoveredId(spot.id)} onBlurCapture={() => setHoveredId((value) => value === spot.id ? undefined : value)}
                   onPointerDown={(event) => { dragStartRef.current = { x: event.clientX, y: event.clientY }; }}
                   onClickCapture={(event) => { const start = dragStartRef.current; dragStartRef.current = undefined; if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) { event.preventDefault(); event.stopPropagation(); return; } setSelectedId(spot.id); }}>
+                  {outOfViewport && <span className="swd-map-card-badge">Außerhalb des Ausschnitts</span>}
                   <SpotCard spot={spot} compact mapRail live={live?.get(spot.id)} />
                 </div>
-              ))}
+                );
+              })}
             </div>
             {orderedSpots.length > MAX_RAIL_CARDS && <p className="swd-map-more">Weitere Spots durch Heranzoomen entdecken</p>}
           </>
         )}
       </section>
+      <MapResultsList
+        open={listOpen}
+        onClose={() => setListOpen(false)}
+        spots={orderedSpots.slice(0, MAX_RAIL_CARDS)}
+        live={live}
+        selectedId={selectedId}
+        onSelect={(id) => { setSelectedId(id); setListOpen(false); }}
+        emptyLabel={emptyLabel}
+      />
     </main>
   );
 }
