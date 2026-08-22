@@ -496,3 +496,251 @@ html[data-theme="dark"] { color-scheme: dark; }
 .spot-popup .leaflet-popup-close-button {
   display: none;
 }
+
+/* Public map — isolated from the admin, region and search-result maps.
+   A coastal-atlas palette (Komoot clarity + Airbnb lightness + a restrained
+   maritime accent) lives here as CSS custom properties, mirroring the GL
+   paint values in lib/publicMap.ts's PUBLIC_MAP_PALETTE. */
+.swd-public-map {
+  height: 100vh;
+  height: 100dvh;
+  background: #D8E8E9;
+  --map-control-edge: max(20px, env(safe-area-inset-right));
+  --map-surface: #FFFDF8;
+  --map-spot: #126B70;
+  --map-selection: #F06F4F;
+  --map-label: #233638;
+  --map-label-soft: #68797A;
+  --map-line: #C8C5BA;
+}
+html[data-theme="dark"] .swd-public-map {
+  background: #0C2E34;
+  --map-surface: #172326;
+  --map-spot: #6AC2C0;
+  --map-selection: #FF8160;
+  --map-label: #EDE9DF;
+  --map-label-soft: #A8B8B7;
+  --map-line: #3A4A4C;
+}
+
+/* Controls — 40px desktop / 44px touch, warm floating surface, no blur. */
+.swd-map-controls {
+  top: max(20px, env(safe-area-inset-top));
+  right: var(--map-control-edge);
+}
+.swd-map-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  min-width: 40px;
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  color: var(--map-spot);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  transition: color 160ms ease-out, background-color 160ms ease-out, transform 160ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-control { height: 44px; min-width: 44px; }
+}
+.swd-map-control:hover { color: var(--map-selection); }
+.swd-map-control:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+.swd-map-control-group {
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+}
+.swd-map-control-stacked { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+
+/* Accessible hit-target sitting over each GL marker/cluster — carries the
+   real click/hover/focus handling and, via ::after, the name capsule (used
+   for hover, focus AND the always-visible selected label). The visible dot
+   itself is drawn by the GL circle layers in lib/publicMap.ts, kept small
+   (18–20px) and separate from this larger, invisible touch target. */
+.swd-map-a11y-marker {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+.swd-map-a11y-marker:focus-visible {
+  outline: 2px solid var(--map-selection);
+  outline-offset: 2px;
+}
+.swd-map-a11y-marker::after {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  max-width: 150px;
+  overflow: hidden;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--map-surface);
+  color: var(--map-label);
+  content: attr(data-tooltip);
+  font: 600 11px/1.3 "Poppins", system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(15 25 25 / 16%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 3px);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+.swd-map-a11y-marker[data-tooltip]:is(:hover, :focus-visible)::after { opacity: 1; transform: translate(-50%, 0); }
+/* Selected spot: the name capsule stays up regardless of hover/focus. */
+.swd-map-a11y-marker[data-tooltip][aria-pressed="true"]::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  border: 1px solid color-mix(in srgb, var(--map-selection) 55%, transparent);
+}
+
+.swd-map-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100% - 40px);
+  border-radius: 10px;
+  background: var(--sw-surface);
+  padding: 10px 12px;
+  color: var(--sw-ink);
+  font-size: 12px;
+  box-shadow: 0 3px 14px rgb(36 28 23 / 13%);
+}
+.swd-map-error button { min-height: 44px; color: var(--sw-teal); font-weight: 600; }
+
+/* Rail shell — a soft gradient stands in for a solid panel behind the cards.
+   Positioning (absolute/inset-x-0/bottom-0) stays on the Tailwind classes in
+   MapView.tsx; that `position: absolute` already gives the `::before` below
+   a positioning context, so this rule must not also set `position` — doing
+   so here would win the cascade (this file loads after Tailwind's
+   utilities) and silently turn the rail into a `relative` box, unpinning it
+   from the bottom of the map. */
+.swd-map-rail-shell {
+  padding: 34px 0 max(16px, env(safe-area-inset-bottom));
+}
+.swd-map-rail-shell::before {
+  content: "";
+  position: absolute;
+  inset: -48px 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sw-page) 55%, transparent) 55%, color-mix(in srgb, var(--sw-page) 80%, transparent));
+}
+.swd-map-rail {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 6px max(20px, env(safe-area-inset-left));
+  scroll-padding-inline: max(20px, env(safe-area-inset-left));
+  scroll-snap-type: x mandatory;
+}
+.swd-map-card {
+  position: relative;
+  width: 260px;
+  flex: 0 0 260px;
+  scroll-snap-align: center;
+  border-radius: 15px;
+  background: var(--sw-surface);
+  padding: 7px;
+  box-shadow: 0 2px 10px rgb(15 25 25 / 10%);
+  transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+.swd-map-card.is-selected { transform: translateY(-3px); box-shadow: 0 8px 20px rgb(15 25 25 / 16%); }
+.swd-map-card.is-selected::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 3px 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--map-selection);
+}
+.swd-map-card.is-highlighted:not(.is-selected) { box-shadow: 0 5px 16px rgb(15 25 25 / 13%); }
+.swd-map-card-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sw-ink) 78%, transparent);
+  color: var(--sw-page);
+  font: 600 10px/1 "Poppins", system-ui, sans-serif;
+  padding: 5px 9px;
+}
+.swd-map-status,
+.swd-map-more {
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  margin: 0 auto;
+  border: 1px solid var(--sw-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sw-surface) 96%, transparent);
+  padding: 9px 14px;
+  color: var(--sw-ink);
+  font-size: 12px;
+  box-shadow: 0 2px 10px rgb(36 28 23 / 10%);
+}
+.swd-map-more { margin-top: 3px; padding-block: 5px; color: var(--sw-muted); }
+.swd-public-map .maplibregl-ctrl-bottom-right {
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
+}
+.swd-public-map.has-map-cards .maplibregl-ctrl-bottom-right { bottom: max(226px, calc(210px + env(safe-area-inset-bottom))); }
+.swd-public-map .maplibregl-ctrl-attrib { background: var(--sw-surface) !important; color: var(--sw-ink-soft); }
+.swd-public-map .maplibregl-ctrl-attrib-inner { color: var(--sw-ink-soft) !important; }
+.swd-public-map .maplibregl-ctrl-attrib a { color: var(--sw-ink) !important; }
+
+/* Textbasierte Ergebnisliste (Abschnitt 9) — Bottom Sheet mobil, Seitenpanel
+   ab sm. */
+.swd-map-list-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(10 18 20 / 32%);
+  animation: swd-map-list-fade 160ms ease-out;
+}
+.swd-map-list-panel {
+  width: 100%;
+  max-height: 74vh;
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  background: var(--sw-surface);
+  padding: 16px max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 30px rgb(15 25 25 / 20%);
+}
+@media (min-width: 640px) {
+  .swd-map-list-overlay { align-items: stretch; justify-content: flex-end; }
+  .swd-map-list-panel { width: 360px; max-width: 92vw; max-height: none; border-radius: 0; padding: 20px; box-shadow: -8px 0 30px rgb(15 25 25 / 16%); }
+}
+.swd-map-list-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.swd-map-list-title { font-size: 15px; font-weight: 600; color: var(--sw-ink); }
+.swd-map-list-empty { padding: 24px 4px; color: var(--sw-muted); font-size: 13px; }
+.swd-map-list-items { display: flex; flex-direction: column; gap: 4px; }
+.swd-map-list-item { width: 100%; text-align: left; padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease-out; }
+.swd-map-list-item:hover, .swd-map-list-item:focus-visible { background: var(--sw-band); }
+.swd-map-list-item.is-selected { background: color-mix(in srgb, var(--map-selection) 14%, var(--sw-band)); }
+.swd-map-list-name { display: block; font-size: 14px; font-weight: 600; color: var(--sw-ink); }
+.swd-map-list-meta { display: block; margin-top: 1px; font-size: 12px; color: var(--sw-muted); }
+@keyframes swd-map-list-fade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 639px) {
+  .swd-map-rail { gap: 12px; padding-right: 16vw; }
+  .swd-map-card { width: min(84vw, 320px); flex-basis: min(84vw, 320px); }
+  .swd-public-map .maplibregl-ctrl-bottom-right { bottom: max(246px, calc(230px + env(safe-area-inset-bottom))); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-map-a11y-marker::after, .swd-map-card, .swd-map-control { transition-duration: 1ms; }
+  .swd-map-list-overlay { animation-duration: 1ms; }
+  .swd-map-rail { scroll-behavior: auto; }
+}
