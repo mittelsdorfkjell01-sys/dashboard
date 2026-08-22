@@ -500,27 +500,35 @@ html[data-theme="dark"] { color-scheme: dark; }
 /* Public map — isolated from the admin, region and search-result maps.
    A coastal-atlas palette (Komoot clarity + Airbnb lightness + a restrained
    maritime accent) lives here as CSS custom properties, mirroring the GL
-   paint values in lib/publicMap.ts's PUBLIC_MAP_PALETTE. */
+   paint values in lib/publicMap.ts's PUBLIC_MAP_PALETTE.
+   Deliberately always light (2026-08-22 feedback: the map should never
+   switch to the dark palette, even when the rest of the site is in dark
+   mode) — so this re-pins every `--sw-*` site token to its light value
+   too, overriding `html[data-theme="dark"]` for everything reused here
+   (rail cards, results list, error banner, controls). */
 .swd-public-map {
   height: 100vh;
   height: 100dvh;
-  background: #D8E8E9;
+  background: #BFE3F5;
   --map-control-edge: max(20px, env(safe-area-inset-right));
   --map-surface: #FFFDF8;
   --map-spot: #126B70;
   --map-selection: #F06F4F;
   --map-label: #233638;
-  --map-label-soft: #68797A;
-  --map-line: #C8C5BA;
-}
-html[data-theme="dark"] .swd-public-map {
-  background: #0C2E34;
-  --map-surface: #172326;
-  --map-spot: #6AC2C0;
-  --map-selection: #FF8160;
-  --map-label: #EDE9DF;
-  --map-label-soft: #A8B8B7;
-  --map-line: #3A4A4C;
+  --map-label-soft: #6C7A82;
+  --map-line: #D2CEC2;
+  --sw-page: #F7F7F7;
+  --sw-band: #F5F3F0;
+  --sw-surface: #FFFFFF;
+  --sw-ink: #241C17;
+  --sw-ink-soft: #3D332C;
+  --sw-muted: #6B625B;
+  --sw-line: #E6E1DA;
+  --sw-line-soft: #F0EDE7;
+  --sw-teal: #1C4E63;
+  --sw-teal-hover: #163E4F;
+  --sw-orange: #B45309;
+  --sw-green: #4A8159;
 }
 
 /* Controls — 40px desktop / 44px touch, warm floating surface, no blur. */

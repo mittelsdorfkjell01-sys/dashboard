@@ -7,7 +7,7 @@ import { ListIcon, MinusIcon, PlusIcon } from "../lib/icons";
 import { useSpots, useSpotsLive } from "../lib/hooks";
 import { getSpotCatalogVersion } from "../lib/api";
 import type { Spot } from "../lib/types";
-import { fetchPublicMapStyle, parsePublicMapUrl, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapTheme } from "../lib/publicMap";
+import { fetchPublicMapStyle, parsePublicMapUrl, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel } from "../lib/publicMap";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // Background catalogue check, not a live feed: 60s is plenty to notice a
@@ -18,7 +18,9 @@ const MAX_RAIL_CARDS = 12;
 // Coalesce a burst of moveends (e.g. several quick pan-and-release gestures)
 // into one live-wind fetch instead of one per settle.
 const VIEWPORT_DEBOUNCE_MS = 300;
-const currentTheme = (): PublicMapTheme => document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+// The map is deliberately always light — it never follows the site's dark
+// mode (2026-08-22 feedback). See the matching `--sw-*`/`--map-*` token
+// overrides scoped to `.swd-public-map` in index.css.
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function isVisible(map: MapLibreMap, spot: Spot): boolean {
@@ -29,16 +31,15 @@ export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
-  const mapThemeRef = useRef<PublicMapTheme>(currentTheme());
   const initialFitDone = useRef(Boolean(parsePublicMapUrl(window.location.search)));
   const railRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ x: number; y: number }>();
   const [mapReady, setMapReady] = useState(false);
-  // Bumped after every completed `setStyle` (theme flip, error retry).
-  // `setStyle` gives the GeoJSON source a fresh (empty) copy of its style
-  // spec — the live data + selection/hover filters applied imperatively
-  // after the *first* load do not carry over on their own, so the effects
-  // that (re-)apply them re-run whenever this changes.
+  // Bumped after the error-retry button's `setStyle` call. `setStyle` gives
+  // the GeoJSON source a fresh (empty) copy of its style spec — the live
+  // data + selection/hover filters applied imperatively after the *first*
+  // load do not carry over on their own, so the effects that (re-)apply
+  // them re-run whenever this changes.
   const [styleGeneration, setStyleGeneration] = useState(0);
   const [mapZoom, setMapZoom] = useState(() => parsePublicMapUrl(window.location.search)?.zoom ?? 3);
   const [viewportIds, setViewportIds] = useState<string[]>([]);
@@ -109,11 +110,10 @@ export default function MapView() {
     const container = containerRef.current;
     const saved = parsePublicMapUrl(window.location.search);
     let cancelled = false;
-    let observer: MutationObserver | undefined;
     void (async () => {
       let style;
       try {
-        style = await fetchPublicMapStyle(currentTheme());
+        style = await fetchPublicMapStyle("light");
       } catch (err) {
         console.error("Public map: failed to load base style", err);
         if (!cancelled) setMapError(true);
@@ -146,34 +146,9 @@ export default function MapView() {
         console.error("Public map: MapLibre runtime error", event.error);
         if (!map.isStyleLoaded()) setMapError(true);
       });
-      // Theme flips rebuild the whole (already-colored) style document and
-      // hand it to `setStyle` — MapLibre diffs it against the current one
-      // (same source/layer ids, only paint/zoom values differ) and patches
-      // in place, so this is a single, complete repaint rather than ~40
-      // hand-written `setPaintProperty` calls kept in sync by hand.
-      observer = new MutationObserver(() => {
-        const next = currentTheme();
-        if (next === mapThemeRef.current) return;
-        mapThemeRef.current = next;
-        fetchPublicMapStyle(next)
-          .then((nextStyle) => {
-            if (mapRef.current !== map) return;
-            // `setStyle`'s diff (default) applies source/layer changes
-            // synchronously — including resetting the GeoJSON source back to
-            // its spec's empty placeholder data — and does *not* emit
-            // "style.load" for a diffed update (that event is reserved for a
-            // full reload). Re-apply state right after the call returns
-            // rather than waiting for an event that will never come.
-            map.setStyle(nextStyle);
-            setStyleGeneration((g) => g + 1);
-          })
-          .catch((err) => console.error("Public map: failed to load theme style", err));
-      });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     })();
     return () => {
       cancelled = true;
-      observer?.disconnect();
       window.clearTimeout(viewportTimer.current);
       const map = mapRef.current;
       if (map) { markersRef.current.forEach((marker) => marker.remove()); markersRef.current = []; map.remove(); mapRef.current = null; }
@@ -319,7 +294,7 @@ export default function MapView() {
             onClick={() => {
               const map = mapRef.current;
               if (!map) { window.location.reload(); return; }
-              fetchPublicMapStyle(currentTheme())
+              fetchPublicMapStyle("light")
                 .then((style) => {
                   map.setStyle(style);
                   setStyleGeneration((g) => g + 1);

@@ -49,7 +49,7 @@ test("map renders spots as accessible markers, without a runtime style-repaint f
   expect(consoleErrors).toEqual([]);
 });
 
-test("spot markers survive a theme swap (setStyle resets the GeoJSON source's live data)", async ({ page }) => {
+test("the map stays on its light palette and keeps its markers regardless of the site's dark mode (2026-08-22 feedback)", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map");
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
@@ -57,6 +57,10 @@ test("spot markers survive a theme swap (setStyle resets the GeoJSON source's li
   await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Surfspot Spot B" })).toBeVisible();
+  // The rail's `--sw-*` tokens must stay pinned to their light values even
+  // though the rest of the site is in dark mode.
+  const background = await page.locator("main.swd-public-map").evaluate((el) => getComputedStyle(el).getPropertyValue("--sw-surface").trim());
+  expect(background.toUpperCase()).toBe("#FFFFFF");
 
   await page.evaluate(() => { document.documentElement.dataset.theme = "light"; });
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
