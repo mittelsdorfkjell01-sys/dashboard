@@ -1,11 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { SearchIcon } from "../lib/icons";
 import { Wordmark } from "./ui";
 import SearchBar from "./SearchBar";
 import AccountMenu from "./AccountMenu";
-import ResultsHeader from "./ResultsHeader";
 
 /**
  * Top bar for the hero pages. By default it's transparent and absolute over the
@@ -41,8 +40,8 @@ export default function LandingHeader({
   useEffect(() => {
     if (!sticky) return;
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
-    const RANGE = 20; // px over which the bar hardens — short, so the
-    // in-between state (two logos, hero bleeding through) is barely visible
+    const RANGE = 96; // enough travel for the identity, surface and search to
+    // hand over as one continuous movement instead of a late component swap
     const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
 
     let frame = 0;
@@ -68,25 +67,19 @@ export default function LandingHeader({
     };
   }, [sticky]);
 
-  const solid = progress >= 1;
   // The bar itself goes opaque well before the content crossfade finishes, so
   // the hero (incl. its own search bar) never shows through mid-transition.
   const bgOpacity = Math.min(1, progress * 3);
-
-  // Landing only: once scrolled past the hero, swap wholesale to the results
-  // page's header (logo left, pill centred, account right, scroll-aware).
-  if (sticky && solid) return <ResultsHeader />;
 
   const innerWidth = width === "body" ? "max-w-[1570px] sm:px-8" : "max-w-[1570px] sm:px-10";
 
   return (
     <header
-      className={`${sticky ? "fixed" : "absolute"} inset-x-0 top-0 z-[1000] bg-transparent ${
-        solid ? "" : "pointer-events-none"
-      }`}
+      className={`${sticky ? "fixed" : "absolute"} pointer-events-none inset-x-0 top-0 z-[1000] bg-transparent`}
+      style={sticky ? ({ "--landing-header-progress": progress } as CSSProperties) : undefined}
     >
       {/* The hero header hardens continuously into the same opaque material as
-          ResultsHeader. At progress=1 the component swap is visually inert. */}
+          the results header while its contents move to their final positions. */}
       {sticky && (
         <div
           aria-hidden
@@ -100,19 +93,33 @@ export default function LandingHeader({
       )}
 
       <div
-        className={`relative mx-auto px-4 transition-[padding] duration-200 ${innerWidth} ${
-          sticky ? `py-5 ${solid ? "sm:py-2.5" : "sm:py-6 sm:py-8"}` : "pt-9 sm:pt-12"
+        className={`relative mx-auto px-4 ${innerWidth} ${
+          sticky
+            ? "py-5 sm:pt-[calc(2rem-var(--landing-header-progress)*0.5rem)] sm:pb-[calc(2rem-var(--landing-header-progress)*1.5rem)]"
+            : "pt-9 sm:pt-12"
         }`}
       >
         <div className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
           <div className="min-w-0 justify-self-start">
             {left ?? (
-              <span
-                className="hidden select-none text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
-                style={sticky ? { opacity: 1 - progress } : undefined}
-              >
-                Best collection of surfspots
-              </span>
+              <div className="relative flex min-h-11 items-center">
+                <span
+                  className="hidden select-none whitespace-nowrap text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
+                  style={sticky ? { opacity: 1 - progress } : undefined}
+                >
+                  Best collection of surfspots
+                </span>
+                {sticky && (
+                  <Link
+                    to="/"
+                    aria-label="surfwind data · Startseite"
+                    className="absolute left-0 inline-flex min-h-11 select-none items-center leading-none"
+                    style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
+                  >
+                    <Wordmark size="md" />
+                  </Link>
+                )}
+              </div>
             )}
           </div>
 
@@ -127,7 +134,7 @@ export default function LandingHeader({
               style={sticky ? { opacity: 1 - progress, pointerEvents: progress > 0.5 ? "none" : "auto" } : undefined}
               className={`min-h-11 min-w-0 select-none items-center leading-none transition-opacity duration-150 ${
                 mobileSpotControls ? "hidden sm:flex" : "flex"
-              } ${solid ? "sm:hidden" : "sm:flex"}`}
+              }`}
             >
               <Wordmark size="xl" />
             </Link>

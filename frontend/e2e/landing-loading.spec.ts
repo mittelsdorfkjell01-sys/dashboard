@@ -54,3 +54,35 @@ test("all spots expand in place without a second catalogue request or scroll res
   expect(after).toBeGreaterThan(before - 50);
   expect(catalogueCalls).toBe(1);
 });
+
+test("hero search remains fully visible when opened after scrolling", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes("mobile"), "Desktop hero search uses the inline panel");
+
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/spots") return route.fulfill({ json: spots });
+    if (url.pathname === "/auth/me") {
+      return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
+    }
+    return route.fulfill({ json: [] });
+  });
+
+  await page.goto("/");
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.42));
+  await page.locator("#landing-search").getByRole("button", { name: "Suche öffnen" }).click();
+
+  const stack = page.getByTestId("desktop-search-stack");
+  const panel = page.getByTestId("desktop-search-panel");
+  await expect(stack).toBeVisible();
+  await expect(panel).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Region oder Spot suchen" })).toBeFocused();
+
+  const box = await stack.boundingBox();
+  const panelBox = await panel.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(panelBox).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(23);
+  expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(viewport!.height - 23);
+});

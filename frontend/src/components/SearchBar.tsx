@@ -37,6 +37,8 @@ const SPRING = { type: "spring" as const, stiffness: 360, damping: 34, mass: 0.7
 const PANEL_TRANSITION = { duration: 0.07, ease: [0.16, 1, 0.3, 1] as const };
 const PANEL_HEIGHT = 350;
 const PANEL_GAP = 12;
+const SHELL_HEIGHT = 56;
+const VIEWPORT_GUTTER = 24;
 
 /**
  * Desktop search (Airbnb-style). Collapsed it is a single, simple bar. Tapping
@@ -112,7 +114,17 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   const openExpanded = (seg: Segment = "where") => {
     if (variant === "hero") {
       const rect = heroTriggerRef.current?.getBoundingClientRect();
-      if (rect) setHeroAnchor({ top: rect.top, left: rect.left, width: rect.width });
+      if (rect) {
+        // The hero trigger can still be visible while its original "panel above
+        // the bar" position is already outside the viewport. Keep the complete
+        // open search stack inside the viewport instead of preserving an anchor
+        // that would hide the shell (or most of the panel) behind the header.
+        const stackHeight = SHELL_HEIGHT + PANEL_GAP + PANEL_HEIGHT;
+        const preferredTop = rect.top - PANEL_HEIGHT - PANEL_GAP;
+        const maxTop = Math.max(VIEWPORT_GUTTER, window.innerHeight - stackHeight - VIEWPORT_GUTTER);
+        const top = Math.min(maxTop, Math.max(VIEWPORT_GUTTER, preferredTop));
+        setHeroAnchor({ top, left: rect.left, width: rect.width });
+      }
     }
     setOpen(seg);
     setExiting(false);
@@ -273,12 +285,13 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               onClick={collapse}
             >
               <motion.div
+                data-testid="desktop-search-stack"
                 className="relative w-[760px] max-w-full"
                 style={
                   variant === "hero" && heroAnchor
                     ? {
                         position: "absolute",
-                        top: heroAnchor.top - PANEL_HEIGHT - PANEL_GAP,
+                        top: heroAnchor.top,
                         left: heroAnchor.left,
                         width: heroAnchor.width,
                         transformOrigin: "center bottom",
@@ -383,7 +396,10 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                     >
                       {/* Every step uses the calendar's content height so the
                           shell no longer jumps vertically while switching. */}
-                      <div className="h-[350px] overflow-y-auto rounded-2xl bg-surface p-5 shadow-float">
+                      <div
+                        data-testid="desktop-search-panel"
+                        className="h-[350px] overflow-y-auto rounded-2xl bg-surface p-5 shadow-float"
+                      >
                         {open === "where" && (
                           <SearchWhere
                             spotItems={spotItems}
