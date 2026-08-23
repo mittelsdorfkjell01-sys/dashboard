@@ -430,6 +430,13 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // Chain an external signal (caller-controlled cancellation, e.g. a stale
+  // slider request) into the same controller that also enforces the timeout.
+  const externalSignal = fetchInit.signal;
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
   let resp: Response;
   try {
     resp = await fetch(`${API_BASE}${path}`, {
@@ -531,6 +538,60 @@ export interface WindClimatologyRead {
 }
 export const getWindClimatology = (id: string) =>
   request<WindClimatologyRead>(`/spots/${id}/wind-climatology`);
+
+/** Phase 5: public, read-only V3 weekly reliability contract. 404 when the
+ *  rollout flag is off, the spot isn't in the pilot allowlist, or there is
+ *  no ready active V3 run — callers should fall back to V2 in all of those
+ *  cases without distinguishing between them. */
+export interface WindClimatologyV3Week {
+  week: number;
+  date_range: { start: string; end: string };
+  sample_years: number;
+  successful_years: number;
+  reliability_percent: number | null;
+  probability_at_least_1_day: number | null;
+  probability_at_least_2_days: number | null;
+  probability_at_least_3_days: number | null;
+  median_usable_days: number | null;
+  median_session_hours: number | null;
+  p25_session_hours: number | null;
+  p75_session_hours: number | null;
+  median_longest_session: number | null;
+  quality_status: "high" | "limited" | "insufficient";
+}
+export type WindDirectionMode = "all" | "usable";
+export interface WindClimatologyV3Read {
+  status: "ready";
+  algorithm_version: string;
+  period: [number, number];
+  model: string;
+  wind_height_m: number;
+  grid_resolution_degrees: number;
+  default_window: { min_wind_kn: number; max_wind_kn: number };
+  direction: { usable_available: boolean; description: string | null; selected_mode: WindDirectionMode };
+  selection: { min_wind_kn: number; max_wind_kn: number | null; direction_mode: WindDirectionMode };
+  weeks: WindClimatologyV3Week[];
+  best_season: { start_week: number; end_week: number; start_date: string; end_date: string } | null;
+  data_quality: "high" | "limited" | "insufficient";
+  updated_at: string | null;
+  attribution: string;
+}
+export interface WindClimatologyV3Query {
+  minWindKn: number;
+  maxWindKn: number | null;
+  directionMode: WindDirectionMode;
+  signal?: AbortSignal;
+}
+export const getWindClimatologyV3 = (id: string, query: WindClimatologyV3Query) => {
+  const { minWindKn, maxWindKn, directionMode, signal } = query;
+  const params = qs({
+    min_wind_kn: minWindKn,
+    max_wind_kn: maxWindKn ?? 40,
+    open_upper: maxWindKn == null,
+    direction_mode: directionMode,
+  });
+  return request<WindClimatologyV3Read>(`/spots/${id}/wind-climatology-v3${params}`, { signal });
+};
 
 export const getSpotTides = (id: string) =>
   request<PublicTides>(`/spots/${id}/tides`);

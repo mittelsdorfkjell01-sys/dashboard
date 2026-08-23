@@ -34,7 +34,7 @@ const LocatorMap = lazy(() => import("../components/LocatorMap"));
 const SpotFlowMap = lazy(() => import("../components/SpotFlowMap"));
 const Meteogram = lazy(() => import("../components/data/Meteogram"));
 const WeatherDetailsTable = lazy(() => import("../components/data/WeatherDetailsTable"));
-const Climatology = lazy(() => import("../components/data/Climatology"));
+const WindClimatologyModule = lazy(() => import("../components/data/WindClimatologyModule"));
 
 export default function SpotDetail() {
   const { spotName } = useParams();
@@ -416,7 +416,7 @@ export default function SpotDetail() {
 
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                     <Suspense fallback={<DataModulePlaceholder height="h-40" />}>
-                      <Climatology spot={spot} />
+                      <WindClimatologyModule spot={spot} />
                     </Suspense>
                   </div>
               </div>

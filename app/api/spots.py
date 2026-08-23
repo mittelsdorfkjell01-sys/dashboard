@@ -1,6 +1,7 @@
 import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, or_, select
@@ -358,6 +359,45 @@ def get_wind_climatology(
 
     set_public_cache(response)
     return public_state(db, spot.id)
+
+
+@router.get("/{spot_reference}/wind-climatology-v3")
+def get_wind_climatology_v3(
+    spot_reference: str,
+    response: Response,
+    db: Session = Depends(get_db),
+    min_wind_kn: int = Query(15, ge=5, le=40),
+    max_wind_kn: int | None = Query(20, ge=6, le=40),
+    open_upper: bool = Query(False),
+    direction_mode: Literal["all", "usable"] = Query("all"),
+) -> dict:
+    """Public, read-only V3 weekly reliability contract.
+
+    Serves exactly one prepared variant of the active, ready V3 run, gated by
+    the wind-climatology-v3 public rollout flag/allowlist. Never triggers a
+    calculation, never queries a provider, never exposes run errors/warnings.
+    """
+    spot = _published_spot_by_reference(db, spot_reference)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+
+    from app.wind_climatology import v3_service
+
+    try:
+        payload, cache_key = v3_service.public_variant(
+            db,
+            spot.id,
+            min_wind_kn=min_wind_kn,
+            max_wind_kn=None if open_upper else max_wind_kn,
+            direction_mode=direction_mode,
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Wind climatology V3 not available for this spot")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    set_public_cache(response)
+    response.headers["ETag"] = f'"{cache_key}"'
+    return payload
 
 
 @router.get("/{spot_id}/live", response_model=LiveConditionsRead, tags=["live"])

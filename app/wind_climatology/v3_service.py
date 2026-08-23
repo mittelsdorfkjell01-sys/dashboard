@@ -10,11 +10,12 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
 
+from app.config import get_settings
 from app.models import Spot, SpotWeatherProfile, WindClimatologyCell, WindClimatologyV3Run, WindClimatologyV3Variant
 from app.wind_climatology.client import WindHistoryClient
 from app.wind_climatology.service import _cell, full_year_window, haversine_km, spot_coordinates
 from app.wind_climatology.v3_artifact import decode_cube, encode_cube
-from app.wind_climatology.v3_direction import canonical_windows
+from app.wind_climatology.v3_direction import canonical_windows, direction_label
 from app.wind_climatology.v3_engine import (
     ALGORITHM_VERSION,
     COMPLETENESS_THRESHOLD,
@@ -25,6 +26,7 @@ from app.wind_climatology.v3_engine import (
     prepare_hours,
     variant_key,
 )
+from app.wind_climatology.v3_time import week_date_range
 
 VARIANT_RANGE = {"min": 5, "max": 40, "step": 1, "open_upper": True}
 
@@ -253,3 +255,116 @@ def variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: i
     selected = decode_cube(row.payload_blob)
     key = variant_key(min_wind_kn, max_wind_kn, direction_mode)
     return {"run_id": str(run.id), "algorithm_version": run.algorithm_version, "period": [run.start_year, run.end_year], "quality": run.quality_metadata, "variant": selected, "cache_key": f"wind-climatology-v3:{run.id}:{key}", "public_effect": "none"}
+
+
+# --- Public read-only contract (Phase 5) ------------------------------------
+# Everything below serves the public spot page. It reads exactly one prepared,
+# immutable variant of the active ready run — never enqueues, never touches a
+# provider, never exposes run errors/warnings/config hashes.
+
+PUBLIC_DEFAULT_WINDOW = {"min_wind_kn": 15, "max_wind_kn": 20}
+_BEST_SEASON_RELIABILITY_THRESHOLD = 50.0
+_BEST_SEASON_MIN_WEEKS = 4
+
+
+def public_enabled(spot_id: uuid.UUID) -> bool:
+    """Whether spot_id may serve the public V3 module: global switch + optional pilot allowlist."""
+    settings = get_settings()
+    if not settings.wind_climatology_v3_public_enabled:
+        return False
+    allowlist = settings.wind_climatology_v3_public_spot_ids
+    return not allowlist or str(spot_id) in allowlist
+
+
+def _public_week(week: dict) -> dict:
+    start, end = week_date_range(week["week"])
+    return {
+        "week": week["week"],
+        "date_range": {"start": start.strftime("%m-%d"), "end": end.strftime("%m-%d")},
+        "sample_years": week["sample_years"],
+        "successful_years": week["successful_years"],
+        "reliability_percent": week["reliability_percent"],
+        "probability_at_least_1_day": week["probability_at_least_1_day"],
+        "probability_at_least_2_days": week["probability_at_least_2_days"],
+        "probability_at_least_3_days": week["probability_at_least_3_days"],
+        "median_usable_days": week["median_usable_days"],
+        "median_session_hours": week["median_session_hours"],
+        "p25_session_hours": week["p25_session_hours"],
+        "p75_session_hours": week["p75_session_hours"],
+        "median_longest_session": week["median_longest_session"],
+        "quality_status": week["quality_status"],
+    }
+
+
+def _best_season(weeks: list[dict]) -> dict | None:
+    """Longest run of consecutive weeks meeting an absolute reliability bar.
+
+    Deliberately an absolute threshold, not "best relative to this spot's own
+    weak maximum" — a poor year must not be dressed up as a good season.
+    """
+    best: tuple[int, int] | None = None
+    run_start: int | None = None
+    for index, week in enumerate(weeks):
+        qualifies = week["quality_status"] != "insufficient" and (week["reliability_percent"] or 0) >= _BEST_SEASON_RELIABILITY_THRESHOLD
+        if qualifies:
+            if run_start is None:
+                run_start = index
+            continue
+        if run_start is not None:
+            if index - run_start >= _BEST_SEASON_MIN_WEEKS and (best is None or index - run_start > best[1] - best[0] + 1):
+                best = (run_start, index - 1)
+            run_start = None
+    if run_start is not None and len(weeks) - run_start >= _BEST_SEASON_MIN_WEEKS:
+        if best is None or len(weeks) - run_start > best[1] - best[0] + 1:
+            best = (run_start, len(weeks) - 1)
+    if best is None:
+        return None
+    start_week, end_week = weeks[best[0]], weeks[best[1]]
+    return {"start_week": start_week["week"], "end_week": end_week["week"], "start_date": start_week["date_range"]["start"], "end_date": end_week["date_range"]["end"]}
+
+
+def _overall_data_quality(weeks: list[dict]) -> str:
+    statuses = {week["quality_status"] for week in weeks}
+    if statuses == {"high"}:
+        return "high"
+    if "high" in statuses or "limited" in statuses:
+        return "limited"
+    return "insufficient"
+
+
+def public_variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: str) -> tuple[dict, str]:
+    """Public weekly reliability payload for one spot/window/direction-mode selection.
+
+    Returns ``(payload, cache_key)``; the cache key is for HTTP caching (ETag)
+    only and is never embedded in the payload body.
+    """
+    if not public_enabled(spot_id):
+        raise LookupError("V3 public access not enabled for this spot")
+    windows = reviewed_direction_windows(db, spot_id)
+    if direction_mode == "usable" and not windows:
+        raise ValueError("usable direction mode requires reviewed direction windows for this spot")
+    result = variant(db, spot_id, min_wind_kn=min_wind_kn, max_wind_kn=max_wind_kn, direction_mode=direction_mode)
+    cell = db.scalar(select(WindClimatologyCell).where(WindClimatologyCell.spot_id == spot_id))
+    run = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot_id, WindClimatologyV3Run.is_active.is_(True)))
+    weeks = [_public_week(week) for week in result["variant"]["weeks"]]
+    payload = {
+        "status": "ready",
+        "algorithm_version": result["algorithm_version"],
+        "period": result["period"],
+        "model": cell.model if cell else "ERA5",
+        "wind_height_m": 10,
+        "grid_resolution_degrees": cell.resolution_deg if cell else 0.25,
+        "default_window": dict(PUBLIC_DEFAULT_WINDOW),
+        "direction": {
+            "usable_available": bool(windows),
+            "description": direction_label(windows),
+            "selected_mode": direction_mode,
+        },
+        "selection": {"min_wind_kn": min_wind_kn, "max_wind_kn": max_wind_kn, "direction_mode": direction_mode},
+        "weeks": weeks,
+        "best_season": _best_season(weeks),
+        "data_quality": _overall_data_quality(weeks),
+        "updated_at": run.activated_at if run else None,
+        "attribution": "Open-Meteo / ERA5",
+    }
+    return payload, result["cache_key"]

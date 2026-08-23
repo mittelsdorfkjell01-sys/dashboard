@@ -83,6 +83,85 @@ export function useWindClimatology(id?: string): AsyncStateReloadable<api.WindCl
   return useSwr(id ? `wind-climatology-v2:${id}` : null, () => api.getWindClimatology(id!));
 }
 
+/** Debounces a fast-changing value (e.g. a slider being dragged). The
+ *  returned value only catches up `delayMs` after the input stops changing. */
+export function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+export interface WindClimatologyV3Selection {
+  minWindKn: number;
+  maxWindKn: number | null; // null = open upper bound ("40+")
+  directionMode: api.WindDirectionMode;
+}
+
+export interface WindClimatologyV3State {
+  /** Payload for the most recently *resolved* selection — kept on screen
+   *  while a newer selection is still loading, so the chart never blanks
+   *  out mid-interaction. */
+  data: api.WindClimatologyV3Read | null;
+  /** True once the very first variant for this spot has ever loaded. */
+  ready: boolean;
+  /** A newer selection is in flight; `data` still reflects the previous one. */
+  switching: boolean;
+  error: string | null;
+  notFound: boolean;
+}
+
+const V3_DEBOUNCE_MS = 300;
+
+/** Phase 5 public V3 weekly-reliability data. Debounces the selection (slider
+ *  drags don't fire a request per pixel), caches per spot+variant via the
+ *  shared SWR store, and keeps the previous variant's data visible while a
+ *  new one loads instead of blanking the chart. `enabled=false` short-circuits
+ *  to an idle state without ever calling the API (feature-flag/V2-fallback gate). */
+export function useWindClimatologyV3(
+  spotId: string | undefined,
+  selection: WindClimatologyV3Selection,
+  enabled: boolean,
+): WindClimatologyV3State {
+  const committed = useDebouncedValue(selection, V3_DEBOUNCE_MS);
+  const key =
+    enabled && spotId
+      ? `wind-climatology-v3:${spotId}:${committed.minWindKn}:${committed.maxWindKn ?? "plus"}:${committed.directionMode}`
+      : null;
+  const swr = useSwr(key, () =>
+    api.getWindClimatologyV3(spotId!, {
+      minWindKn: committed.minWindKn,
+      maxWindKn: committed.maxWindKn,
+      directionMode: committed.directionMode,
+    }),
+  );
+
+  const [display, setDisplay] = useState<api.WindClimatologyV3Read | null>(null);
+  const [everLoaded, setEverLoaded] = useState(false);
+  useEffect(() => {
+    if (swr.data) {
+      setDisplay(swr.data);
+      setEverLoaded(true);
+    }
+  }, [swr.data]);
+  useEffect(() => {
+    if (!enabled) {
+      setDisplay(null);
+      setEverLoaded(false);
+    }
+  }, [enabled, spotId]);
+
+  return {
+    data: display,
+    ready: everLoaded,
+    switching: !!key && swr.loading && display !== null,
+    error: everLoaded ? null : swr.error,
+    notFound: !everLoaded && !!swr.error && /404|not available|not found/i.test(swr.error),
+  };
+}
+
 /** Live conditions for a spot (best-effort; failure is non-fatal). */
 export function useSpotLive(id?: string): AsyncStateReloadable<api.LiveConditionsRead> {
   return useSwr(id ? `live:${id}` : null, () => api.getSpotLive(id!));

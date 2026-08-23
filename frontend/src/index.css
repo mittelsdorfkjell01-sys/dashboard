@@ -17,6 +17,10 @@
   --sw-green: #4A8159;
   --sw-overlay-soft: rgba(14, 17, 20, 0.16);
   --sw-overlay-strong: rgba(14, 17, 20, 0.88);
+  /* Wind-climatology-V3 weekly-reliability scale (0–29 reuses --sw-line,
+     70–100 reuses --sw-teal — see tailwind.config.js `reliability.*`). */
+  --sw-reliability-sand: #D8C4A0;
+  --sw-reliability-blue: #9DC6D8;
 }
 
 html[data-theme="dark"] {
@@ -34,6 +38,8 @@ html[data-theme="dark"] {
   --sw-green: #6BA97A;
   --sw-overlay-soft: rgba(0, 0, 0, 0.42);
   --sw-overlay-strong: rgba(0, 0, 0, 0.92);
+  --sw-reliability-sand: #6B5B3F;
+  --sw-reliability-blue: #4C7A90;
 }
 
 /* Reserve the scrollbar's space at all times, so locking body scroll for a
@@ -41,6 +47,53 @@ html[data-theme="dark"] {
    nudge the page — including the fixed header — sideways. */
 html { color-scheme: light dark; scrollbar-gutter: stable; transition: background-color 200ms ease-out, color 200ms ease-out; }
 html[data-theme="dark"] { color-scheme: dark; }
+
+/* Full-width backdrop sampling is costly while mobile browser chrome and the
+   page are moving together. Touch headers use the same opaque surface without
+   changing their layout or interaction model. */
+@media (pointer: coarse) and (hover: none) {
+  [data-mobile-solid-header] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Two-handle wind-window slider (Wind Climatology V3): two overlapping native
+   range inputs share one track; only the thumb is interactive/visible per
+   input, so both handles stay independently draggable by mouse/touch/keyboard. */
+.v3-range-thumb {
+  pointer-events: none;
+  height: 44px; /* touch target, matches thumb hit area */
+  margin: 0;
+}
+.v3-range-thumb::-webkit-slider-runnable-track { background: transparent; }
+.v3-range-thumb::-moz-range-track { background: transparent; }
+.v3-range-thumb::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--sw-teal);
+  border: 3px solid var(--sw-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  margin-top: 0;
+}
+.v3-range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--sw-teal);
+  border: 3px solid var(--sw-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+.v3-range-thumb:disabled::-webkit-slider-thumb { background: var(--sw-muted); cursor: default; }
+.v3-range-thumb:disabled::-moz-range-thumb { background: var(--sw-muted); cursor: default; }
+.v3-range-thumb:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--sw-teal); outline-offset: 2px; }
+.v3-range-thumb:focus-visible::-moz-range-thumb { outline: 2px solid var(--sw-teal); outline-offset: 2px; }
 
 /* Wordmark display face ("surfwind data"). Local .otf, served from /public. */
 @font-face {

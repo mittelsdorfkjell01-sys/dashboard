@@ -35,6 +35,15 @@ export default {
         orange: "var(--sw-orange)",
         // Data accent, shared with the wind-speed scale.
         green: "var(--sw-green)",
+        // Wind-climatology-V3 weekly-reliability bar scale (low → high). The
+        // 0 band reuses `line`, the 3 band reuses `teal` — chart fills, not
+        // buttons/surfaces/links, so the teal restriction above doesn't apply.
+        reliability: {
+          0: "var(--sw-line)",
+          1: "var(--sw-reliability-sand)",
+          2: "var(--sw-reliability-blue)",
+          3: "var(--sw-teal)",
+        },
 
         // --- Admin back-office palette (independent design system) ---------
         // CSS-var-backed semantic tokens for the admin dashboard ONLY. The

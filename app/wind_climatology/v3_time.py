@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 SEASONAL_WEEK_COUNT = 52
@@ -52,3 +54,22 @@ def expected_hours_by_week(year: int, timezone_name: str) -> dict[int, int]:
         counts[seasonal_week(current)] += int((end - start).total_seconds() // 3600)
         current = following
     return counts
+
+
+@lru_cache
+def _week_bounds() -> dict[int, tuple[date, date]]:
+    days_by_week: dict[int, list[date]] = defaultdict(list)
+    current = date(_LEAP_TEMPLATE_YEAR, 1, 1)
+    while current.year == _LEAP_TEMPLATE_YEAR:
+        days_by_week[seasonal_week(current)].append(current)
+        current += timedelta(days=1)
+    return {week: (days[0], days[-1]) for week, days in days_by_week.items()}
+
+
+def week_date_range(week: int) -> tuple[date, date]:
+    """Fixed month/day span (year-independent) covered by one seasonal week.
+
+    Single source of truth for the 52-week calendar so the frontend never
+    recomputes seasonal boundaries independently.
+    """
+    return _week_bounds()[week]

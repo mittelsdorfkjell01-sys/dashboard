@@ -336,6 +336,24 @@ class Settings(BaseSettings):
     # flagged in the review panel. Case-insensitive substring match.
     banned_words: str = ""
 
+    # --- Wind climatology V3 public rollout (Phase 5) -----------------------
+    # Global switch for the public, read-only V3 weekly-reliability endpoint
+    # and frontend module. Off by default: V2 stays the visible public
+    # contract everywhere until a deployment explicitly opts in.
+    wind_climatology_v3_public_enabled: bool = False
+    # Optional pilot allowlist restricting which spots serve V3 publicly even
+    # when the switch above is on (comma-separated spot UUIDs). Empty list =>
+    # every published spot with a ready, active V3 run is eligible. This is
+    # the only sanctioned pilot mechanism; never hard-code pilot spot names.
+    wind_climatology_v3_public_spot_ids: Annotated[list[str], NoDecode] = []
+
+    @field_validator("wind_climatology_v3_public_spot_ids", mode="before")
+    @classmethod
+    def _split_v3_public_spot_ids(cls, v):
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
+
 
 @lru_cache
 def get_settings() -> Settings:
