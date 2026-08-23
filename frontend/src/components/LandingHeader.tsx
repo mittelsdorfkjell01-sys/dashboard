@@ -43,6 +43,18 @@ export default function LandingHeader({
     const RANGE = 96; // enough travel for the identity, surface and search to
     // hand over as one continuous movement instead of a late component swap
     const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
+    const nativeTouch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+
+    // Touch devices only need the two meaningful visual states. Avoid a React
+    // render and a full-width backdrop repaint for every scroll frame.
+    if (nativeTouch && sentinel && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        ([entry]) => setProgress(entry.isIntersecting ? 0 : 1),
+        { rootMargin: `-${TRIGGER_Y}px 0px 0px 0px`, threshold: 0 },
+      );
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }
 
     let frame = 0;
     const update = () => {
@@ -89,6 +101,7 @@ export default function LandingHeader({
             backdropFilter: `blur(${bgOpacity * 12}px)`,
             WebkitBackdropFilter: `blur(${bgOpacity * 12}px)`,
           }}
+          data-mobile-solid-header
         />
       )}
 

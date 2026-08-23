@@ -48,6 +48,7 @@ export default function CollapsibleSection({
   aside,
   tone = "default",
   defaultOpen = true,
+  mobileDefaultOpen,
   className = "",
   bodyClassName = "",
   children,
@@ -60,18 +61,27 @@ export default function CollapsibleSection({
   aside?: ReactNode;
   tone?: Tone;
   defaultOpen?: boolean;
+  /** Separate first-visit default on touch layouts. Stored independently so
+   collapsing a mobile form does not change the operator's desktop layout. */
+  mobileDefaultOpen?: boolean;
   className?: string;
   bodyClassName?: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(() => readStored(id, defaultOpen));
+  const mobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 1023px) and (pointer: coarse)").matches;
+  const storageKey = `${id}:${mobile ? "mobile" : "desktop"}`;
+  const [open, setOpen] = useState(() =>
+    readStored(storageKey, mobile ? mobileDefaultOpen ?? defaultOpen : defaultOpen),
+  );
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_PREFIX + id, open ? "1" : "0");
+      window.localStorage.setItem(STORAGE_PREFIX + storageKey, open ? "1" : "0");
     } catch {
       /* ignore storage failures */
     }
-  }, [id, open]);
+  }, [storageKey, open]);
 
   // The floating nav's "jump to section" dispatches this so a collapsed
   // block expands before the browser scrolls it into view — otherwise the
@@ -91,7 +101,7 @@ export default function CollapsibleSection({
   return (
     <section
       id={id}
-      className={`scroll-mt-24 rounded-lg border ${t.border} ${t.bg} sm:p-6 p-5 ${className}`}
+      className={`scroll-mt-24 rounded-lg border ${t.border} ${t.bg} p-4 sm:p-6 ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
         <button
@@ -99,7 +109,7 @@ export default function CollapsibleSection({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={bodyId}
-          className="group -m-2 flex flex-1 items-center gap-2 rounded p-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-primary"
+          className="group -m-2 flex min-h-11 flex-1 items-center gap-2 rounded p-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-admin-primary"
         >
           <svg
             viewBox="0 0 12 12"

@@ -146,7 +146,7 @@ export default function OverlayPanel({
               if (info.offset.y > 120 || info.velocity.y > 850) requestClose();
             }}
           >
-            <div className="sticky top-0 z-10 flex justify-center bg-page/95 px-5 py-3 backdrop-blur sm:px-8">
+            <div className="sticky top-0 z-10 flex justify-center bg-page px-5 py-3 sm:bg-page/95 sm:px-8 sm:backdrop-blur">
               <button
                 type="button"
                 onClick={requestClose}

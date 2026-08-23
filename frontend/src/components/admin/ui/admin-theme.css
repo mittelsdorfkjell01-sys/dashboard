@@ -245,3 +245,31 @@
   font-feature-settings: "tnum" 1, "cv01" 1;
   letter-spacing: 0;
 }
+
+/* Mobile admin is operated by touch and often for long editing sessions.
+   Increase physical targets and operative type without changing the compact
+   mouse/keyboard geometry used by the desktop back office. */
+@media (pointer: coarse) {
+  .admin-scope .admin-button-control,
+  .admin-scope .admin-mobile-menu-trigger,
+  .admin-scope [role="checkbox"] {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .admin-scope .admin-field-control {
+    height: 44px;
+    font-size: 16px; /* also prevents automatic zoom in mobile Safari */
+  }
+
+  .admin-scope .text-caption {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .admin-scope .text-label,
+  .admin-scope .text-ui {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+}

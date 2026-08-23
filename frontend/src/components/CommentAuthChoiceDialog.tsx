@@ -75,7 +75,7 @@ export default function CommentAuthChoiceDialog({
               <button
                 type="button"
                 onClick={onCancel}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 Schließen

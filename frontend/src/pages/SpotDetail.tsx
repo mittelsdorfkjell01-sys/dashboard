@@ -221,7 +221,7 @@ export default function SpotDetail() {
             <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
               <div
-                className={`spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[58px] ${SPOT_INFO_GRID}`}
+                className={`spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[58px] ${SPOT_INFO_GRID}`}
                 style={{
                   "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined,
                   "--spot-gallery-right-inset": `${galleryRightInset}px`,
@@ -251,7 +251,7 @@ export default function SpotDetail() {
                   {/* Sports are plain label + teal check (Figma Frame_9), not
                       filled pills — datengetrieben aus spot.sports. */}
                   {spot.sports && spot.sports.length > 0 && (
-                    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 sm:mt-8">
                       {spot.sports.map((s) => (
                         <span
                           key={s}
@@ -266,11 +266,11 @@ export default function SpotDetail() {
 
                   {/* The real spot description (editorial.description from the DB);
                       falls back to a gentle note when a spot has none yet. */}
-                  <p className="mt-8 max-w-[65ch] text-body leading-relaxed text-ink-soft">
+                  <p className="mt-5 max-w-[65ch] text-body leading-relaxed text-ink-soft sm:mt-8">
                     {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                   </p>
 
-                  <div className="mt-auto pt-10">
+                  <div className="mt-auto pt-6 sm:pt-10">
                     <FavoriteButton spot={spot} />
                   </div>
                 </div>
@@ -286,9 +286,9 @@ export default function SpotDetail() {
                 <aside aria-label="Spotprofil und Ausstattung" className="order-2 flex min-w-0 flex-col lg:order-3">
                   <SpotMetaGrid spot={spot} />
                   {facilities.length > 0 && (
-                    <div className="mt-10 lg:mt-12">
+                    <div className="mt-8 lg:mt-12">
                       <h2 className="text-ui font-semibold text-ink">Ausstattung</h2>
-                      <div className="mt-6">
+                      <div className="mt-4 sm:mt-6">
                         <Facilities items={facilities} variant="list" />
                       </div>
                     </div>
@@ -325,7 +325,7 @@ export default function SpotDetail() {
 
               {spotId && (
                 // 96px visible separation after the location/community group.
-                <div className="mt-24 lg:mt-[112.94px]">
+                <div className="mt-16 sm:mt-24 lg:mt-[112.94px]">
                   <SimilarSpots spotId={spotId} sport={spot.sports?.[0]} />
                 </div>
               )}

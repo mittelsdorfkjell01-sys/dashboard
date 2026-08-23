@@ -144,7 +144,7 @@ export default function SpotFlowMap({
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const reduce = useReducedMotion();
-  const inView = useInView(wrapRef, { once: true, amount: 0.3 });
+  const inView = useInView(wrapRef, { amount: 0.1 });
 
   const [streaksVisible, setStreaksVisible] = useState(false);
   const [markerVisible, setMarkerVisible] = useState(false);
@@ -196,11 +196,12 @@ export default function SpotFlowMap({
 
     let w = wrap.clientWidth || 380;
     let h = wrap.clientHeight || 320;
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const nativeTouch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+    let dpr = Math.min(window.devicePixelRatio || 1, nativeTouch ? 1.5 : 2);
     const sizeCanvas = () => {
       w = wrap.clientWidth || 380;
       h = wrap.clientHeight || 320;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, nativeTouch ? 1.5 : 2);
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
     };
@@ -358,8 +359,16 @@ export default function SpotFlowMap({
 
     let raf = 0;
     let last = performance.now();
+    const initialRect = wrap.getBoundingClientRect();
+    let canvasVisible = initialRect.bottom > 0 && initialRect.top < window.innerHeight;
+    let running = canvasVisible && !reduce && !document.hidden;
+    const minFrameMs = nativeTouch ? 1000 / 30 : 0;
 
     const draw = (now: number) => {
+      if (running && minFrameMs && now - last < minFrameMs) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -481,16 +490,36 @@ export default function SpotFlowMap({
        }
       }
 
-      raf = requestAnimationFrame(draw);
+      if (running) raf = requestAnimationFrame(draw);
     };
 
-    if (reduce) {
+    if (reduce || !running) {
       last = performance.now();
       draw(last + 16);
-      cancelAnimationFrame(raf); // one static frame only
     } else {
       raf = requestAnimationFrame(draw);
     }
+
+    const syncRunning = () => {
+      const shouldRun = canvasVisible && !reduce && !document.hidden;
+      if (shouldRun === running) return;
+      running = shouldRun;
+      cancelAnimationFrame(raf);
+      if (running) {
+        last = performance.now();
+        raf = requestAnimationFrame(draw);
+      }
+    };
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => {
+        canvasVisible = entry.isIntersecting;
+        syncRunning();
+      },
+      { threshold: 0 },
+    );
+    visibilityObserver.observe(wrap);
+    const handleVisibility = () => syncRunning();
+    document.addEventListener("visibilitychange", handleVisibility);
 
     const ro = new ResizeObserver(() => {
       sizeCanvas();
@@ -500,9 +529,11 @@ export default function SpotFlowMap({
     ro.observe(wrap);
     return () => {
       cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      visibilityObserver.disconnect();
       ro.disconnect();
     };
-  }, [effCenter, effZoom, shownWindDir, shownWindKts, shownWaveDir, coast, shownPeriod, waterType, showWind, showWaves]);
+  }, [effCenter, effZoom, shownWindDir, shownWindKts, shownWaveDir, coast, shownPeriod, waterType, showWind, showWaves, reduce]);
 
   return (
     <div
@@ -539,7 +570,7 @@ export default function SpotFlowMap({
       {showLayerSwitcher && dataScope && (
         <div className="absolute left-2.5 top-2.5 z-[540] inline-flex rounded-md border border-line bg-surface/90 p-0.5 shadow-sm backdrop-blur">
           {([{ id: "wind", label: "Wind" }, { id: "both", label: "Wind + Welle" }, { id: "wave", label: "Welle" }] as Array<{ id: MapLayer; label: string }>).map((layer) => (
-            <button key={layer.id} type="button" aria-pressed={mapLayer === layer.id} onClick={() => dataScope.setMapLayer(layer.id)} className={`rounded px-2.5 py-1 text-caption font-medium tracking-wide transition-colors ${mapLayer === layer.id ? "bg-ink text-white" : "text-muted hover:text-ink"}`}>{layer.label}</button>
+            <button key={layer.id} type="button" aria-pressed={mapLayer === layer.id} onClick={() => dataScope.setMapLayer(layer.id)} className={`min-h-11 rounded px-2.5 py-1 text-caption font-medium tracking-wide transition-colors sm:min-h-0 ${mapLayer === layer.id ? "bg-ink text-white" : "text-muted hover:text-ink"}`}>{layer.label}</button>
           ))}
         </div>
       )}

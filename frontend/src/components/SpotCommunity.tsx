@@ -642,7 +642,7 @@ function FeedPostCard({
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="Weitere Aktionen"
-                  className="grid h-8 w-8 place-items-center rounded-2xl text-label text-muted hover:bg-ink/5 hover:text-teal"
+                  className="grid h-11 w-11 place-items-center rounded-2xl text-label text-muted hover:bg-ink/5 hover:text-teal sm:h-8 sm:w-8"
                 >
                   ⋯
                 </button>
@@ -769,7 +769,7 @@ function Lightbox({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20"
+          className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <CloseIcon width={20} height={20} />
         </button>
@@ -1003,7 +1003,7 @@ export function GalleryUploadForm({
             type="button"
             onClick={() => pickFile(null)}
             aria-label="Bild entfernen"
-            className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-ink/60 text-white transition-opacity hover:opacity-80"
+            className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-full bg-ink/60 text-white transition-opacity hover:opacity-80 sm:h-8 sm:w-8"
           >
             <CloseIcon width={14} height={14} />
           </button>

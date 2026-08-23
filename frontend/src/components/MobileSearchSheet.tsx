@@ -263,7 +263,7 @@ export default function MobileSearchSheet({
               onClick={onClose}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label="Schließen"
-              className="grid h-9 w-9 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
+              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
             >
               <CloseIcon className="text-[15px]" />
             </button>

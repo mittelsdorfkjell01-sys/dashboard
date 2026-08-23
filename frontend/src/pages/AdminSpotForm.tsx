@@ -603,7 +603,7 @@ export default function AdminSpotForm() {
         className="pb-20 xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-8 xl:pb-0"
       >
         {/* Left column: editorial fields (scrolls) */}
-        <div className="min-w-0 space-y-8">
+        <div className="min-w-0 space-y-5 sm:space-y-8">
           {/* Basisdaten */}
           <CollapsibleSection id="f-basisdaten" title="Basisdaten" bodyClassName="space-y-4">
             <Field label="Name" error={fieldErrors.name}>
@@ -851,7 +851,7 @@ export default function AdminSpotForm() {
           </CollapsibleSection>
 
           {/* Ausrichtung */}
-          <CollapsibleSection id="f-ausrichtung" title="Ausrichtung" bodyClassName="space-y-4">
+          <CollapsibleSection id="f-ausrichtung" title="Ausrichtung" mobileDefaultOpen={false} bodyClassName="space-y-4">
             <Field label="Strandausrichtung (facing, 0–359)">
               <input
                 className={inputCls}
@@ -869,7 +869,7 @@ export default function AdminSpotForm() {
           </CollapsibleSection>
 
           {/* Facilities */}
-          <CollapsibleSection id="f-facilities" title="Facilities">
+          <CollapsibleSection id="f-facilities" title="Facilities" mobileDefaultOpen={false}>
             <p className="-mt-3 text-caption text-muted">
               „Unbekannt" zeigt auf der Spot-Seite einen eigenen, gedämpften Zustand — nicht
               „nicht vorhanden".
@@ -930,6 +930,7 @@ export default function AdminSpotForm() {
           <CollapsibleSection
             id="f-hero"
             title="Headerbild ausrichten"
+            mobileDefaultOpen={false}
             aside={
               isEdit && id ? (
                 <Button variant="primary" onClick={() => setPickerOpen("hero")}>
@@ -1136,6 +1137,7 @@ export default function AdminSpotForm() {
             <CollapsibleSection
               id="f-galerie"
               title="Galerie"
+              mobileDefaultOpen={false}
               aside={
                 <Button variant="primary" onClick={() => setPickerOpen("gallery")}>
                   Bild suchen
@@ -1178,7 +1180,7 @@ export default function AdminSpotForm() {
 
           {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}
           {isEdit && id && (
-            <CollapsibleSection id="f-kommentare" title="Kommentare">
+            <CollapsibleSection id="f-kommentare" title="Kommentare" mobileDefaultOpen={false}>
               <p className="-mt-3 mb-4 text-caption text-muted">
                 Alle Kommentare zu diesem Spot — Antworten stehen unter ihrem
                 Ausgangskommentar. Verborgene bleiben hier sichtbar und lassen
@@ -1190,7 +1192,7 @@ export default function AdminSpotForm() {
 
           {/* Danger zone: permanently delete the spot (edit mode only). */}
           {isEdit && id && (
-            <CollapsibleSection id="f-loeschen" title="Spot löschen" tone="danger">
+            <CollapsibleSection id="f-loeschen" title="Spot löschen" tone="danger" mobileDefaultOpen={false}>
               <p className="-mt-3 text-label text-admin-fg2">
                 Löscht diesen Spot endgültig samt aller Bewertungen, Tipps, Bilder
                 und Klimatologie. Das lässt sich nicht rückgängig machen — zum
@@ -1305,7 +1307,7 @@ export default function AdminSpotForm() {
 
       <FormNavBar />
 
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface px-4 py-3 xl:hidden sm:bg-admin-surface/95 sm:backdrop-blur">
         <AdminBackButton
           onClick={back.goBack}
           label={back.label}

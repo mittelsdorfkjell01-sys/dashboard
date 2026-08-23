@@ -375,10 +375,10 @@ export default function AdminRegionForm() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-8 xl:grid-cols-[1fr_320px]">
-        <div className="min-w-0 space-y-8">
+      <div className="mt-6 grid gap-6 sm:gap-8 xl:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-5 sm:space-y-8">
       {/* Editorial */}
-      <form onSubmit={saveFields} className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+      <form onSubmit={saveFields} className="space-y-4 rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className={label}>Name</span>
@@ -434,7 +434,7 @@ export default function AdminRegionForm() {
       </form>
 
       {/* Hero image */}
-      <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+      <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-ui font-semibold text-admin-fg">Titelbild</h2>
           <Button variant="primary" onClick={() => setPickerOpen("hero")}>
@@ -535,7 +535,7 @@ export default function AdminRegionForm() {
       </section>
 
       {/* Gallery */}
-      <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+      <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-ui font-semibold text-admin-fg">Galerie</h2>
           <Button variant="secondary" onClick={() => setPickerOpen("gallery")}>
@@ -568,7 +568,7 @@ export default function AdminRegionForm() {
       )}
 
       {/* Spots — drag from the right pool into this region */}
-      <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+      <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
         <h2 className="text-ui font-semibold text-admin-fg">Spots zuordnen</h2>
         <p className="mt-1 text-label text-muted">
           Drag &amp; Drop in beide Richtungen: nach links = dieser Region
@@ -721,7 +721,7 @@ export default function AdminRegionForm() {
       </section>
 
       {/* Danger zone: delete (only when empty). */}
-      <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-5 sm:p-6">
+      <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-4 sm:p-6">
         <h2 className="text-ui font-semibold text-admin-danger">Region löschen</h2>
         <p className="mt-1 text-label text-admin-fg2">
           {spots.length > 0
@@ -805,7 +805,7 @@ export default function AdminRegionForm() {
         }}
       />
       <UnsavedChangesDialog blocker={blocker} />
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface px-4 py-3 xl:hidden sm:bg-admin-surface/95 sm:backdrop-blur">
         <AdminBackButton
           onClick={back.goBack}
           label={back.label}

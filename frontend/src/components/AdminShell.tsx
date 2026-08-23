@@ -3,7 +3,7 @@
 // to the independent admin design system (monochrome tokens + dark mode); the
 // navigation structure, routes and behaviour are unchanged.
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { roleLabel } from "../lib/labels";
@@ -19,6 +19,7 @@ interface NavItem {
   end?: boolean;
   role?: AdminRole;
   icon: ReactNode;
+  group: "Inhalte" | "Daten & Betrieb" | "Verwaltung";
 }
 
 // 16px line icons, stroke = currentColor, for a consistent quiet look.
@@ -100,19 +101,19 @@ const I = {
 
 const NAV: NavItem[] = [
   // Frontend
-  { to: "/admin", label: "Übersicht", end: true, icon: I.overview },
-  { to: "/admin/spots", label: "Spots", icon: I.spots },
-  { to: "/admin/hero", label: "Hero", icon: I.hero },
-  { to: "/admin/regions", label: "Regionen", icon: I.regions },
-  { to: "/admin/map", label: "Karte", icon: I.map },
-  { to: "/admin/review", label: "Review", icon: I.review },
+  { to: "/admin", label: "Übersicht", end: true, icon: I.overview, group: "Inhalte" },
+  { to: "/admin/spots", label: "Spots", icon: I.spots, group: "Inhalte" },
+  { to: "/admin/hero", label: "Hero", icon: I.hero, group: "Inhalte" },
+  { to: "/admin/regions", label: "Regionen", icon: I.regions, group: "Inhalte" },
+  { to: "/admin/map", label: "Karte", icon: I.map, group: "Inhalte" },
+  { to: "/admin/review", label: "Review", icon: I.review, group: "Inhalte" },
   // Backend
-  { to: "/admin/operations", label: "Betrieb", icon: I.operations },
-  { to: "/admin/weather", label: "Wetterprofile", icon: I.weather },
-  { to: "/admin/tides", label: "Tidenkorrektur", icon: I.tides },
+  { to: "/admin/operations", label: "Betrieb", icon: I.operations, group: "Daten & Betrieb" },
+  { to: "/admin/weather", label: "Wetterprofile", icon: I.weather, group: "Daten & Betrieb" },
+  { to: "/admin/tides", label: "Tidenkorrektur", icon: I.tides, group: "Daten & Betrieb" },
   // Admin
-  { to: "/admin/users", label: "Benutzer", role: "admin", icon: I.users },
-  { to: "/admin/activity", label: "Aktivität", icon: I.activity },
+  { to: "/admin/users", label: "Benutzer", role: "admin", icon: I.users, group: "Verwaltung" },
+  { to: "/admin/activity", label: "Aktivität", icon: I.activity, group: "Verwaltung" },
 ];
 
 function sideNavClass({ isActive }: { isActive: boolean }) {
@@ -124,20 +125,47 @@ function sideNavClass({ isActive }: { isActive: boolean }) {
   ].join(" ");
 }
 
+function navItemMatches(item: NavItem, pathname: string): boolean {
+  if (item.end) return pathname === item.to;
+  if (pathname.startsWith(item.to)) return true;
+  if (item.to === "/admin/spots") return pathname.startsWith("/admin/spot/");
+  if (item.to === "/admin/regions") return pathname.startsWith("/admin/region/");
+  if (item.to === "/admin/weather") return pathname.startsWith("/admin/weather-profile/");
+  return false;
+}
+
 export default function AdminShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const mobileNavRef = useRef<HTMLElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const headerStackRef = useRef<HTMLDivElement>(null);
   const contentColRef = useRef<HTMLDivElement>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const items = NAV.filter((n) => !n.role || n.role === user?.role);
+  const activeItem = [...items]
+    .sort((a, b) => b.to.length - a.to.length)
+    .find((item) => navItemMatches(item, location.pathname)) ?? items[0];
 
   useEffect(() => {
-    mobileNavRef.current
-      ?.querySelector<HTMLElement>('[aria-current="page"]')
-      ?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!mobileMenuRef.current?.contains(event.target as Node)) setMobileMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
 
   // Exposes the sticky header stack's real rendered height as a CSS var on
   // the content column, so page-level sticky sidebars (e.g. the spot/region
@@ -200,7 +228,7 @@ export default function AdminShell() {
         {/* Content column */}
         <div ref={contentColRef} className="min-w-0 flex-1">
           <div ref={headerStackRef} className="sticky top-0 z-20">
-            <header className="flex items-center justify-between gap-4 border-b border-admin-border bg-admin-surface/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
+            <header className="flex min-h-16 items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-4 py-2 sm:bg-admin-surface/90 sm:px-8 sm:backdrop-blur-sm">
               {/* Brand — shown until the sidebar appears (lg). */}
               <Link to="/admin" className="lg:hidden">
                 <Wordmark size="sm" tag="Admin" />
@@ -211,48 +239,78 @@ export default function AdminShell() {
                 <NotificationBell />
                 {user && (
                   <>
-                    <div className="mx-0.5 hidden h-5 w-px bg-admin-border sm:block" />
-                    <span className="hidden items-center gap-2 text-label text-admin-fg sm:flex">
+                    <div className="mx-0.5 hidden h-5 w-px bg-admin-border lg:block" />
+                    <span className="hidden items-center gap-2 text-label text-admin-fg lg:flex">
                       {user.display_name}
                       <span className="rounded-full border border-admin-border bg-admin-hover px-2 py-0.5 text-caption font-medium text-admin-muted">
                         {roleLabel(user.role)}
                       </span>
                     </span>
-                    <Button variant="secondary" onClick={onLogout} className="min-h-10 lg:min-h-0">
+                    <Button variant="secondary" onClick={onLogout} className="hidden lg:inline-flex">
                       Abmelden
                     </Button>
                   </>
                 )}
+                <div ref={mobileMenuRef} className="relative lg:hidden">
+                  <button
+                    type="button"
+                    aria-expanded={mobileMenuOpen}
+                    aria-controls="admin-mobile-menu"
+                    aria-label={mobileMenuOpen ? "Dashboard-Menü schließen" : "Dashboard-Menü öffnen"}
+                    onClick={() => setMobileMenuOpen((open) => !open)}
+                    className="admin-mobile-menu-trigger inline-flex min-h-11 items-center gap-2 rounded-md border border-admin-border bg-admin-surface px-3 text-sm font-medium text-admin-fg transition-colors hover:bg-admin-hover"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
+                      {mobileMenuOpen ? (
+                        <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      ) : (
+                        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      )}
+                    </svg>
+                    <span className="hidden max-w-28 truncate sm:inline">{activeItem?.label ?? "Menü"}</span>
+                  </button>
+
+                  {mobileMenuOpen && (
+                    <div
+                      id="admin-mobile-menu"
+                      className="absolute right-0 top-[calc(100%+0.5rem)] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-admin-border bg-admin-elevated shadow-xl"
+                    >
+                      <nav aria-label="Dashboard-Navigation" className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-2">
+                        {(["Inhalte", "Daten & Betrieb", "Verwaltung"] as const).map((group) => {
+                          const groupItems = items.filter((item) => item.group === group);
+                          if (groupItems.length === 0) return null;
+                          return (
+                            <div key={group} className="mt-2 first:mt-0">
+                              <p className="px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wide text-admin-muted">{group}</p>
+                              {groupItems.map((item) => (
+                                <NavLink
+                                  key={item.to}
+                                  to={item.to}
+                                  end={item.end}
+                                  className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${isActive || navItemMatches(item, location.pathname) ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg"}`}
+                                >
+                                  <span className="grid h-5 w-5 place-items-center [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span>
+                                  {item.label}
+                                </NavLink>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </nav>
+                      {user && (
+                        <div className="flex items-center gap-3 border-t border-admin-border p-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-admin-fg">{user.display_name}</p>
+                            <p className="text-caption text-admin-muted">{roleLabel(user.role)}</p>
+                          </div>
+                          <Button variant="secondary" onClick={onLogout}>Abmelden</Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </header>
-
-            {/* Compact top nav — used below the sidebar breakpoint (tablet, half-screen, mobile). */}
-            <nav
-              ref={mobileNavRef}
-              aria-label="Dashboard-Navigation"
-              className="no-scrollbar flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain border-b border-admin-border bg-admin-surface px-4 py-2 lg:hidden"
-            >
-              {items.map((n) => (
-                <NavLink
-                  key={n.to}
-                  to={n.to}
-                  end={n.end}
-                  className={({ isActive }) =>
-                    [
-                      "flex min-h-10 shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-label font-medium transition-colors lg:min-h-0",
-                      isActive
-                        ? "bg-admin-hover text-admin-fg"
-                        : "text-admin-fg2 hover:bg-admin-hover",
-                    ].join(" ")
-                  }
-                >
-                  <span className="grid h-4 w-4 place-items-center [&_svg]:h-4 [&_svg]:w-4">
-                    {n.icon}
-                  </span>
-                  {n.label}
-                </NavLink>
-              ))}
-            </nav>
           </div>
 
           <main className="px-4 py-6 sm:px-8">

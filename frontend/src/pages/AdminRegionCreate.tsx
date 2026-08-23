@@ -104,9 +104,9 @@ export default function AdminRegionCreate() {
       <h1 className="mt-5 text-[24px] font-semibold text-admin-fg">Region anlegen</h1>
       <p className="mt-1 text-label text-admin-muted">Stammdaten, Mittelpunkt und Titelbild in einem Schritt erfassen.</p>
 
-      <form id="admin-region-create" onSubmit={submit} className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <form id="admin-region-create" onSubmit={submit} className="mt-6 grid gap-5 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
-          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+          <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
             <h2 className="text-ui font-semibold text-admin-fg">Stammdaten</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="text-label font-medium text-admin-fg">Name
@@ -126,7 +126,7 @@ export default function AdminRegionCreate() {
             </label>
           </section>
 
-          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+          <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
             <h2 className="text-ui font-semibold text-admin-fg">Mittelpunkt und Karte</h2>
             <p className="mt-1 text-caption text-admin-muted">Koordinaten eingeben oder den Pin direkt auf der Karte setzen und verschieben.</p>
             <div className="mt-4 grid grid-cols-2 gap-4">
@@ -152,13 +152,13 @@ export default function AdminRegionCreate() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+          <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
             <h2 className="text-ui font-semibold text-admin-fg">Windverfügbarkeit</h2>
             <p className="mt-2 text-label font-medium text-admin-fg2">Unbekannt</p>
             <p className="mt-1 text-caption text-admin-muted">Regionale Windverfügbarkeit wird derzeit nicht manuell gepflegt.</p>
           </section>
 
-          <section className="rounded-lg border border-admin-border bg-admin-surface p-5 sm:p-6">
+          <section className="rounded-lg border border-admin-border bg-admin-surface p-4 sm:p-6">
             <h2 className="text-ui font-semibold text-admin-fg">Titelbild</h2>
             <p className="mt-1 text-caption text-admin-muted">Optional per URL; weitere Bildquellen und Uploads stehen nach dem Anlegen im Editor bereit.</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -183,7 +183,7 @@ export default function AdminRegionCreate() {
         </aside>
       </form>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-admin-border bg-admin-surface/95 px-4 py-3 backdrop-blur xl:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t border-admin-border bg-admin-surface px-4 py-3 xl:hidden sm:bg-admin-surface/95 sm:backdrop-blur">
         <AdminBackButton onClick={back.goBack} label={back.label} text="Abbrechen" showIcon={false} className="min-h-11 flex-1 justify-center" />
         <Button type="submit" form="admin-region-create" variant="primary" disabled={busy || !name.trim()} className="min-h-11 flex-1">{busy ? "Speichern …" : "Region anlegen"}</Button>
       </div>

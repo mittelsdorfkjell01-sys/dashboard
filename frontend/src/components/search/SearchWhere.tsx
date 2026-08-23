@@ -28,7 +28,7 @@ function Row({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center rounded-lg px-2 py-1.5 text-left transition-colors ${
+      className={`flex min-h-11 items-center rounded-lg px-2 py-1.5 text-left transition-colors ${
         active ? "bg-band" : "hover:bg-band"
       }`}
     >

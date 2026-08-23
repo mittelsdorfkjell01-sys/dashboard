@@ -18,7 +18,7 @@ import { SearchIcon } from "../../../lib/icons";
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
 
 const BTN_BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-label font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "admin-button-control inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-label font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
   primary:
@@ -65,7 +65,7 @@ ButtonLink.displayName = "AdminButtonLink";
 /* thickens on activation. All colours come from admin tokens (dark-mode safe).*/
 /* ------------------------------------------------------------------------- */
 export const adminFieldClass =
-  "h-9 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary disabled:cursor-not-allowed disabled:opacity-50";
+  "admin-field-control h-9 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary disabled:cursor-not-allowed disabled:opacity-50";
 
 /** The single admin search field: always carries a placeholder and the shared
  *  field geometry, with a leading magnifier. Focus = border colour only. */

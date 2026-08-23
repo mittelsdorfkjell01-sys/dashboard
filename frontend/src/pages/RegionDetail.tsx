@@ -175,7 +175,7 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal transition-colors hover:bg-band"
+            className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-line bg-surface py-2 pl-2.5 pr-4 text-[14px] font-medium text-teal transition-colors hover:bg-band"
           >
             <ChevronDownIcon className="rotate-90 text-[18px]" />
             Zurück

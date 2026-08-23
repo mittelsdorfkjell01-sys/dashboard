@@ -126,7 +126,7 @@ export default function SortDropdown({
               {SORT_OPTIONS.map((o) => (
                 <label
                   key={o.key}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13.5px] text-ink hover:bg-teal/[0.06]"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13.5px] text-ink hover:bg-teal/[0.06]"
                 >
                   <input
                     type="radio"
@@ -223,7 +223,7 @@ export default function SortDropdown({
                 setOpen(false);
                 triggerRef.current?.focus();
               }}
-              className="px-3 py-1.5 text-[13px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+              className="min-h-11 px-3 py-1.5 text-[13px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
               Fertig
             </button>

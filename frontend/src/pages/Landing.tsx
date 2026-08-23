@@ -49,7 +49,7 @@ export default function Landing() {
           No `isolate` here — an isolated stacking context would trap the search
           bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
           hit the scrim and close instead of switching the panel. */}
-      <section className="relative flex min-h-[100dvh] flex-col overflow-hidden">
+      <section className="relative flex min-h-[92dvh] flex-col overflow-hidden sm:min-h-[100dvh]">
         <LandingHero spots={spots} />
 
         <h1 className="sr-only">
@@ -61,7 +61,7 @@ export default function Landing() {
         {/* Search — sits a bit higher in the hero. On mobile it is the search
             entry and docks into the header once scrolled (see LandingHeader);
             the inline SearchBar dropdown takes over from sm. */}
-        <div className="flex justify-center px-4 pb-40 sm:px-6 sm:pb-40">
+        <div className="flex justify-center px-4 pb-32 sm:px-6 sm:pb-40">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
             <span data-landing-header-sentinel aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px" />
             {/* Mobile pill; hidden (kept in layout) while the sheet is open. */}

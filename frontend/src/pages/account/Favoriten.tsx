@@ -63,7 +63,7 @@ export default function Favoriten() {
             type="button"
             onClick={() => removeFavorite(f.id)}
             aria-label={`${f.name} aus Favoriten entfernen`}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl text-orange transition-colors hover:bg-band"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-orange transition-colors hover:bg-band"
           >
             <HeartFilledIcon className="text-[20px]" />
           </button>

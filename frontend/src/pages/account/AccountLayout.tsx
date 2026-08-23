@@ -41,7 +41,7 @@ export default function AccountLayout() {
           <button
             type="button"
             onClick={onLogout}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-line px-3.5 py-1.5 text-[13px] font-medium text-teal transition-colors hover:bg-band"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-line px-3.5 py-1.5 text-[13px] font-medium text-teal transition-colors hover:bg-band"
           >
             <LogoutIcon className="text-[16px]" />
             Abmelden

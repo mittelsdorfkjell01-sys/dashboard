@@ -124,7 +124,7 @@ export default function CommentModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 Schließen
@@ -133,7 +133,7 @@ export default function CommentModal({
                 type="button"
                 onClick={submit}
                 disabled={busy || !text.trim()}
-                className="min-h-10 px-5 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:opacity-40 disabled:no-underline"
+                className="min-h-11 px-5 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:opacity-40 disabled:no-underline"
               >
                 {busy ? "Senden…" : "absenden"}
               </button>

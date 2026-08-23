@@ -78,12 +78,15 @@ export default function SectionBand({
   const isBleed = width === "bleed";
   const hasHeader = Boolean(heading);
   const reduce = useReducedMotion();
+  const nativeTouch =
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse) and (hover: none)").matches;
   const innerMaxWidth = maxWidth ? MAX_WIDTH_CLASS[maxWidth] : WIDTH_MAX[width];
 
   return (
     <motion.section
       id={id}
-      initial={reduce ? false : { opacity: 0, y: 24 }}
+      initial={reduce || nativeTouch ? false : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
