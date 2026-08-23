@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { WindClimatologySection, WindWindowKey } from "../../lib/api";
 import { useWindClimatology } from "../../lib/hooks";
+import { InfoIcon } from "../../lib/icons";
 import type { Spot } from "../../lib/types";
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
@@ -24,6 +25,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
   const { data, loading, error, reload } = useWindClimatology(spot.id);
   const [windowKey, setWindowKey] = useState<WindWindowKey>(() => (sessionStorage.getItem("wind-window") as WindWindowKey) || "15_20");
   const [unit, setUnit] = useState<"percent" | "hours">(() => sessionStorage.getItem("wind-unit") === "hours" ? "hours" : "percent");
+  const [infoOpen, setInfoOpen] = useState(false);
   const sections = data?.sections;
 
   const scaleMax = useMemo(() => {
@@ -43,8 +45,8 @@ export default function Climatology({ spot }: { spot: Spot }) {
   const axisTicks = [4, 3, 2, 1, 0].map((n) => Math.round((scaleMax * n) / 4));
 
   return <div className="p-4">
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div><h3 className="font-display text-lg text-ink">Windfenster im Jahresverlauf</h3><p className="text-sm text-muted">Wie häufig liegt der Wind tagsüber im gewählten Bereich?</p></div>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h3 className="font-display text-lg text-ink">Windmonate</h3>
       <div className="flex min-w-0 flex-wrap gap-2">
         <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full border border-line p-1" aria-label="Windfenster">{WINDOWS.map(([key, label]) => <button key={key} type="button" onClick={() => { setWindowKey(key); sessionStorage.setItem("wind-window", key); }} aria-pressed={windowKey === key} className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${windowKey === key ? "bg-teal text-white" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
         <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full border border-line p-1" aria-label="Einheit">{([["percent", "Prozent"], ["hours", "Stunden/Tag"]] as const).map(([key, label]) => <button key={key} type="button" onClick={() => { setUnit(key); sessionStorage.setItem("wind-unit", key); }} aria-pressed={unit === key} className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${unit === key ? "bg-teal text-white" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
@@ -60,7 +62,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
         <div className="grid grid-cols-12 gap-x-0.5 sm:gap-x-1">
           {MONTHS.map((month, monthIndex) => (
             <div key={month} className="min-w-0 overflow-hidden">
-              <div className="relative flex items-end gap-px border-b border-line px-px" style={{ height: `${CHART_HEIGHT_PX}px` }}>
+              <div className="relative flex items-end gap-0.5 border-b border-line px-px" style={{ height: `${CHART_HEIGHT_PX}px` }}>
                 {[0, 25, 50, 75].map((pct) => (
                   <span key={pct} aria-hidden="true" className="pointer-events-none absolute inset-x-0 border-t border-dashed border-line-soft" style={{ bottom: `${pct}%` }} />
                 ))}
@@ -68,7 +70,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
                   const value = metricValue(section, windowKey, unit);
                   const height = Math.max(value > 0 ? 3 : 0, (value / scaleMax) * 100);
                   const end = section.day_end === "month_end" ? "Monatsende" : section.day_end;
-                  return <button key={section.section} type="button" className="group relative z-10 flex h-full flex-1 items-end focus:outline-none focus:ring-2 focus:ring-orange" title={`${section.day_start}.–${end} ${month}: ${metricValue(section, windowKey, "percent")}% · ${metricValue(section, windowKey, "hours")} h/Tag (${data.period!.start_year}–${data.period!.end_year})`} aria-label={`${section.day_start}. bis ${end} ${month}, ${selectedLabel}: ${value} ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`}><span className="w-full rounded-t bg-teal transition-opacity group-hover:opacity-75" style={{ height: `${height}%` }}><span className="sr-only">{value}</span></span></button>;
+                  return <button key={section.section} type="button" className="group relative z-10 flex h-full flex-1 items-end focus:outline-none focus:ring-2 focus:ring-orange" title={`${section.day_start}.–${end} ${month}: ${metricValue(section, windowKey, "percent")}% · ${metricValue(section, windowKey, "hours")} h/Tag (${data.period!.start_year}–${data.period!.end_year})`} aria-label={`${section.day_start}. bis ${end} ${month}, ${selectedLabel}: ${value} ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`}><span className="mx-auto block w-2/3 rounded-t bg-teal transition-opacity group-hover:opacity-75" style={{ height: `${height}%` }}><span className="sr-only">{value}</span></span></button>;
                 })}
               </div>
               <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-[8px] font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
@@ -78,8 +80,25 @@ export default function Climatology({ spot }: { spot: Spot }) {
       </div>
     </div>
 
-    <p className="mt-3 text-xs leading-relaxed text-muted">Windrichtung und lokale Bedingungen sind nicht berücksichtigt. Die Stunden müssen nicht zusammenhängend auftreten.</p>
-    <p className="mt-2 text-xs text-muted">ERA5 · 10-Meter-Wind · {data.period?.start_year}–{data.period?.end_year} · Tageslichtstunden · ca. {data.grid?.resolution_degrees}° Raster · {data.updated_at ? new Date(data.updated_at).toLocaleDateString("de-DE") : ""} · Open-Meteo / ERA5</p>
+    <div className="mt-3 flex justify-end">
+      <button
+        type="button"
+        onClick={() => setInfoOpen((open) => !open)}
+        aria-expanded={infoOpen}
+        aria-controls="climatology-info"
+        aria-label={infoOpen ? "Methodische Hinweise ausblenden" : "Methodische Hinweise anzeigen"}
+        title={infoOpen ? "Methodische Hinweise ausblenden" : "Methodische Hinweise anzeigen"}
+        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30"
+      >
+        <InfoIcon className="h-5 w-5" />
+      </button>
+    </div>
+    {infoOpen && (
+      <div id="climatology-info">
+        <p className="text-xs leading-relaxed text-muted">Windrichtung und lokale Bedingungen sind nicht berücksichtigt. Die Stunden müssen nicht zusammenhängend auftreten.</p>
+        <p className="mt-2 text-xs text-muted">ERA5 · 10-Meter-Wind · {data.period?.start_year}–{data.period?.end_year} · Tageslichtstunden · ca. {data.grid?.resolution_degrees}° Raster · {data.updated_at ? new Date(data.updated_at).toLocaleDateString("de-DE") : ""} · Open-Meteo / ERA5</p>
+      </div>
+    )}
   </div>;
 }
 
@@ -96,16 +115,15 @@ function ClimatologyEmptyState({ state, onRetry }: {
 
   return (
     <div className="p-4" aria-live="polite">
-      <h3 className="font-display text-lg text-ink">Windfenster im Jahresverlauf</h3>
-      <p className="mt-1 text-sm text-muted">Wie häufig liegt der Wind tagsüber im gewählten Bereich?</p>
+      <h3 className="font-display text-lg text-ink">Windmonate</h3>
       <div className="mt-5 grid grid-cols-12 gap-x-0.5 sm:gap-x-1" aria-hidden="true">
         {MONTHS.map((month, i) => (
           <div key={month} className="min-w-0 overflow-hidden">
-            <div className="flex h-44 items-end gap-px border-b border-line px-px">
+            <div className="flex h-44 items-end gap-0.5 border-b border-line px-px">
               {[22, 36, 18, 29].map((height, index) => (
                 <span
                   key={index}
-                  className={`w-full rounded-t bg-line-soft ${state === "loading" ? "animate-pulse" : ""}`}
+                  className={`mx-auto block w-2/3 rounded-t bg-line-soft ${state === "loading" ? "animate-pulse" : ""}`}
                   style={{ height: `${height}%`, animationDelay: `${(i * 4 + index) * 30}ms` }}
                 />
               ))}
