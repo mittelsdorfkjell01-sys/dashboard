@@ -181,9 +181,12 @@ export const PUBLIC_MAP_PALETTE = {
 // in the design brief is the derivation, not a second spec.
 // ---------------------------------------------------------------------------
 export const PUBLIC_MAP_LAYER_RULES = {
-  country: { minzoom: 2.5, maxzoom: 10 },
+  // Country/region names deliberately stay off the initial world/continent
+  // overview (2026-08-23 feedback) — they only read once you've zoomed well
+  // past the "where in the world" view and into a specific area.
+  country: { minzoom: 7, maxzoom: 10 },
   capital: { minzoom: 3.5, maxzoom: 12 },
-  state: { minzoom: 4.5, maxzoom: 12 },
+  state: { minzoom: 8, maxzoom: 12 },
   majorCity: { minzoom: 5.5, maxzoom: 16 },
   city: { minzoom: 8, maxzoom: 17 },
   town: { minzoom: 10.5, maxzoom: 18 },

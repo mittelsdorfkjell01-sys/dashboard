@@ -58,8 +58,11 @@ describe("public map state and hierarchy", () => {
   });
 
   it("defines an earlier, coastal-atlas label hierarchy than a generic street map", () => {
-    expect(PUBLIC_MAP_LAYER_RULES.country.minzoom).toBe(2.5);
-    expect(PUBLIC_MAP_LAYER_RULES.state.minzoom).toBe(4.5);
+    // Country/state names deliberately stay off the initial world overview —
+    // they only appear once zoomed in well past a "where in the world" view
+    // (2026-08-23 feedback), unlike the rest of the (earlier-onset) hierarchy.
+    expect(PUBLIC_MAP_LAYER_RULES.country.minzoom).toBe(7);
+    expect(PUBLIC_MAP_LAYER_RULES.state.minzoom).toBe(8);
     expect(PUBLIC_MAP_LAYER_RULES.majorCity.minzoom).toBe(5.5);
     expect(PUBLIC_MAP_LAYER_RULES.city.minzoom).toBe(8);
     expect(PUBLIC_MAP_LAYER_RULES.town.minzoom).toBe(10.5);

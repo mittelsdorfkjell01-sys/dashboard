@@ -181,6 +181,18 @@ export default function MapView() {
     return () => { map.off("moveend", updateViewport); };
   }, [mapReady, updateViewport]);
 
+  // Clicking empty map background (not a spot/cluster marker — those have
+  // their own click listeners on their DOM elements, never reaching the
+  // canvas) closes whichever bottom panel is open, same as the explicit
+  // close button.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const onBackgroundClick = () => { setSelectedId(undefined); setTilesOpen(false); };
+    map.on("click", onBackgroundClick);
+    return () => { map.off("click", onBackgroundClick); };
+  }, [mapReady]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map || initialFitDone.current || withCoords.length === 0) return;
@@ -281,9 +293,18 @@ export default function MapView() {
             // moved on to a second one.
             const token = ++clusterZoomToken.current;
             const source = map.getSource(PUBLIC_SPOT_SOURCE_ID) as GeoJSONSource;
-            const zoom = await source.getClusterExpansionZoom(clusterId);
+            // Frame the cluster's actual member spots as tightly as possible
+            // (not just supercluster's generic "expansion zoom", which only
+            // guarantees the cluster *splits* — not that the resulting
+            // points are nicely centred/visible together).
+            const leaves = await source.getClusterLeaves(clusterId, count, 0);
             if (clusterZoomToken.current !== token) return;
-            map.easeTo({ center: [lng, lat], zoom: Math.min(17, zoom), duration: reducedMotion() ? 0 : 480 });
+            const bounds = new LngLatBounds();
+            for (const leaf of leaves) {
+              if (leaf.geometry.type === "Point") bounds.extend(leaf.geometry.coordinates as [number, number]);
+            }
+            if (bounds.isEmpty()) { map.easeTo({ center: [lng, lat], zoom: Math.min(17, map.getZoom() + 2), duration: reducedMotion() ? 0 : 480 }); return; }
+            map.fitBounds(bounds, { padding: 72, maxZoom: 17, duration: reducedMotion() ? 0 : 480 });
           });
         } else {
           const id = String(feature.properties?.spotId || "");
@@ -371,7 +392,7 @@ export default function MapView() {
       )}
       <div className="swd-map-controls-left pointer-events-none absolute z-20 flex flex-col items-start gap-3">
         <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-back pointer-events-auto">
-          <ChevronLeftIcon className="text-[24px]" />
+          <ChevronLeftIcon className="text-[19px]" />
         </button>
         <div className="swd-map-control-group pointer-events-auto flex flex-col overflow-hidden">
           <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control swd-map-control-stacked"><PlusIcon className="text-[17px]" /></button>

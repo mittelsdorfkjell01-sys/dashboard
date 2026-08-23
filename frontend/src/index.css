@@ -620,23 +620,24 @@ html[data-theme="dark"] { color-scheme: dark; }
 }
 .swd-map-control-stacked { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
 
-/* Back — the one filled/primary control on the map, bigger than the rest
-   (48px / 52px touch) so it reads as the main way off the page. */
+/* Back — filled/primary so it still reads as the main way off the page, but
+   sized the same as the other floating controls (40px / 44px touch), not
+   bigger (2026-08-23 feedback: it looked oversized next to zoom/list). */
 .swd-map-back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--sw-teal);
   color: #fff;
   box-shadow: 0 3px 10px rgb(15 25 25 / 18%);
   transition: background-color 160ms ease-out, transform 160ms ease-out;
 }
 @media (pointer: coarse) {
-  .swd-map-back { width: 52px; height: 52px; }
+  .swd-map-back { width: 44px; height: 44px; }
 }
 .swd-map-back:hover { background: var(--sw-teal-hover); }
 .swd-map-back:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }

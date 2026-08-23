@@ -90,13 +90,9 @@ export default function SpotCard({
           </div>
         )}
 
-        {!compact && (sports || spot.windAvailability) && (
+        {!compact && sports && (
           <div className="mt-auto pt-1">
-            <div className="flex items-baseline justify-between gap-3">
-              {sports && <span className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{sports}</span>}
-              {spot.windAvailability && <span className="shrink-0 text-[10px] text-muted">15–20 kt</span>}
-            </div>
-            {spot.windAvailability && <div className="mt-1.5 grid grid-cols-12 gap-0.5" aria-label="Monatliche Windverfügbarkeit bei 15 bis 20 Knoten">{spot.windAvailability.map((value, index) => <span key={index} title={`${index + 1}. Monat: ${value}%`} className="h-1.5 rounded-sm bg-teal" style={{ opacity: Math.max(.12, value / 100) }}><span className="sr-only">{value}%</span></span>)}</div>}
+            <span className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{sports}</span>
           </div>
         )}
       </div>
