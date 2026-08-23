@@ -774,9 +774,23 @@ html[data-theme="dark"] { color-scheme: dark; }
 .swd-map-list-title { font-size: 14px; font-weight: 600; color: var(--sw-ink); }
 .swd-map-list-empty { padding: 20px 4px; color: var(--sw-muted); font-size: 13px; }
 
-/* Two Landing-style tiles, side by side — the `list` trigger's whole point
-   is browsing without leaving the map, not a text list. */
+/* Two Landing-style tiles per row — the `list` trigger's whole point is
+   browsing without leaving the map, not a text list. */
 .swd-map-tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+
+/* Spot list — a right-side sidebar under the list button (2026-08-23
+   feedback: not the bottom sheet, which stays reserved for a single
+   selected spot's chart). Floats over the map, map stays visible/pannable
+   behind it; scrolls internally once the viewport has more spots than fit. */
+.swd-map-side-panel {
+  width: min(400px, calc(100vw - 32px));
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  border-radius: 18px;
+  background: var(--sw-surface);
+  box-shadow: 0 12px 32px rgb(15 25 25 / 16%), 0 4px 14px rgb(15 25 25 / 10%);
+  padding: 12px 14px 14px;
+}
 
 /* Wind/weather chart panel (bottom, on selection) — the "Zum Spot" link
    reads as a small filled action, distinct from the bare close control. */

@@ -20,8 +20,13 @@ const Meteogram = lazy(() => import("../components/data/Meteogram"));
 // published/unpublished spot, with immediate checks on visibility/reconnect
 // covering the "I just made a change" case without polling every 3s.
 const CATALOG_POLL_MS = 60_000;
-// The "list" trigger shows two Landing-style tiles, not a scrolling list.
-const TILE_COUNT = 2;
+// The "list" trigger opens a scrollable right-side panel of Landing-style
+// tiles (two columns) — capped so a world-view viewport with hundreds of
+// spots doesn't render an unbounded list.
+const LIST_PANEL_MAX = 30;
+// Comfortable "you've reached one specific spot" zoom — clicking a
+// non-cluster marker eases in to at least this level (never zooms out).
+const SINGLE_SPOT_ZOOM = 15;
 // Coalesce a burst of moveends (e.g. several quick pan-and-release gestures)
 // into one live-wind fetch instead of one per settle.
 const VIEWPORT_DEBOUNCE_MS = 300;
@@ -303,8 +308,11 @@ export default function MapView() {
             for (const leaf of leaves) {
               if (leaf.geometry.type === "Point") bounds.extend(leaf.geometry.coordinates as [number, number]);
             }
-            if (bounds.isEmpty()) { map.easeTo({ center: [lng, lat], zoom: Math.min(17, map.getZoom() + 2), duration: reducedMotion() ? 0 : 480 }); return; }
-            map.fitBounds(bounds, { padding: 72, maxZoom: 17, duration: reducedMotion() ? 0 : 480 });
+            // A little slower and a little less tight than a plain expansion
+            // zoom (2026-08-23 feedback) — the member spots should land
+            // comfortably inside the frame, not crammed against the edges.
+            if (bounds.isEmpty()) { map.easeTo({ center: [lng, lat], zoom: Math.min(17, map.getZoom() + 2), duration: reducedMotion() ? 0 : 650 }); return; }
+            map.fitBounds(bounds, { padding: 110, maxZoom: 17, duration: reducedMotion() ? 0 : 650 });
           });
         } else {
           const id = String(feature.properties?.spotId || "");
@@ -319,7 +327,14 @@ export default function MapView() {
           el.addEventListener("blur", () => setHoveredId((value) => value === id ? undefined : value));
           // Selecting a spot switches the bottom panel to its chart — close
           // the tile browser so the panel isn't showing two things at once.
-          el.addEventListener("click", () => { setSelectedId(id); setTilesOpen(false); });
+          // A resolved single spot (no more clustering left) also zooms in,
+          // same as a cluster click, instead of only clusters ever moving
+          // the camera (2026-08-23 feedback).
+          el.addEventListener("click", () => {
+            setSelectedId(id);
+            setTilesOpen(false);
+            map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), SINGLE_SPOT_ZOOM), duration: reducedMotion() ? 0 : 650 });
+          });
         }
         const marker = new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([lng, lat]).addTo(map);
         // MapLibre assigns the generic label "Map marker" while constructing
@@ -344,16 +359,16 @@ export default function MapView() {
     const center: [number, number] = map ? [map.getCenter().lat, map.getCenter().lng] : [40.3, 9.3];
     return sortViewportSpots(viewportSpots, center);
   }, [viewportSpots]);
-  const tileSpots = orderedSpots.slice(0, TILE_COUNT);
+  const listPanelSpots = orderedSpots.slice(0, LIST_PANEL_MAX);
   const liveIds = useMemo(() => {
-    const ids = new Set(tileSpots.map((spot) => spot.id));
+    const ids = new Set((tilesOpen ? listPanelSpots : []).map((spot) => spot.id));
     if (selectedId) ids.add(selectedId);
     return [...ids];
-  }, [selectedId, tileSpots]);
+  }, [selectedId, listPanelSpots, tilesOpen]);
   const { data: live } = useSpotsLive(liveIds);
 
   const emptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`;
-  const hasBottomPanel = Boolean(selectedSpot) || tilesOpen;
+  const hasBottomPanel = Boolean(selectedSpot);
   const regionLine = (spot: Spot) => [spot.regionName, countryName(spot.regionCountry ?? undefined)].filter(Boolean).join(" · ");
 
   return (
@@ -405,11 +420,29 @@ export default function MapView() {
           type="button"
           aria-label="Spots im Ausschnitt anzeigen"
           aria-expanded={tilesOpen}
+          aria-controls="swd-map-list-panel"
           onClick={() => { setTilesOpen((open) => !open); setSelectedId(undefined); }}
           className="swd-map-control pointer-events-auto h-10 w-10"
         >
           <ListIcon className="text-[17px]" />
         </button>
+        {tilesOpen && (
+          <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto">
+            <div className="swd-map-panel-head">
+              <p className="swd-map-list-title">Spots im Ausschnitt</p>
+              <button type="button" aria-label="Schließen" onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
+                <CloseIcon className="text-[15px]" />
+              </button>
+            </div>
+            {listPanelSpots.length === 0 ? (
+              <p role="status" className="swd-map-list-empty">{emptyLabel}</p>
+            ) : (
+              <div className="swd-map-tile-grid">
+                {listPanelSpots.map((spot) => <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />)}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <section aria-label="Kartendetails" className="swd-map-bottom-shell pointer-events-none absolute inset-x-0 bottom-0 z-10">
         {selectedSpot ? (
@@ -433,22 +466,6 @@ export default function MapView() {
                 </SpotDataScopeProvider>
               </Suspense>
             </div>
-          </div>
-        ) : tilesOpen ? (
-          <div className="swd-map-panel pointer-events-auto">
-            <div className="swd-map-panel-head">
-              <p className="swd-map-list-title">Spots im Ausschnitt</p>
-              <button type="button" aria-label="Schließen" onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
-                <CloseIcon className="text-[15px]" />
-              </button>
-            </div>
-            {tileSpots.length === 0 ? (
-              <p role="status" className="swd-map-list-empty">{emptyLabel}</p>
-            ) : (
-              <div className="swd-map-tile-grid">
-                {tileSpots.map((spot) => <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />)}
-              </div>
-            )}
           </div>
         ) : (
           <p role="status" className="swd-map-status pointer-events-auto">{emptyLabel}</p>
