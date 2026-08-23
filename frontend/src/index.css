@@ -774,22 +774,29 @@ html[data-theme="dark"] { color-scheme: dark; }
 .swd-map-list-title { font-size: 14px; font-weight: 600; color: var(--sw-ink); }
 .swd-map-list-empty { padding: 20px 4px; color: var(--sw-muted); font-size: 13px; }
 
-/* Two Landing-style tiles per row — the `list` trigger's whole point is
-   browsing without leaving the map, not a text list. */
-.swd-map-tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+/* Two Landing-style tiles per row, sized like the landing grid's own tiles
+   (2026-08-23 feedback) — 220px minimum column so wind/wave figures and
+   longer spot/region names never crowd or overlap. */
+.swd-map-tile-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 16px 20px; }
 
-/* Spot list — a right-side sidebar under the list button (2026-08-23
-   feedback: not the bottom sheet, which stays reserved for a single
-   selected spot's chart). Floats over the map, map stays visible/pannable
-   behind it; scrolls internally once the viewport has more spots than fit. */
+/* Spot list — a right-side sidebar, flush against the top and right edges
+   (2026-08-23 feedback: not offset below the list button, not the bottom
+   sheet, which stays reserved for a single selected spot's chart). Floats
+   over the map, map stays visible/pannable behind it; scrolls vertically
+   once the viewport has more spots than fit — never horizontally, the
+   width is the hard constraint tile sizing works within. */
 .swd-map-side-panel {
-  width: min(400px, calc(100vw - 32px));
-  max-height: calc(100vh - 96px);
+  top: env(safe-area-inset-top);
+  right: env(safe-area-inset-right);
+  width: min(600px, calc(100vw - 16px));
+  max-height: calc(100vh - env(safe-area-inset-top) - 16px);
   overflow-y: auto;
+  overflow-x: hidden;
   border-radius: 18px;
+  border-top-right-radius: 0;
   background: var(--sw-surface);
   box-shadow: 0 12px 32px rgb(15 25 25 / 16%), 0 4px 14px rgb(15 25 25 / 10%);
-  padding: 12px 14px 14px;
+  padding: 12px 16px 16px;
 }
 
 /* Wind/weather chart panel (bottom, on selection) — the "Zum Spot" link

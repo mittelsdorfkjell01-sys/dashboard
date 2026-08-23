@@ -26,7 +26,12 @@ const CATALOG_POLL_MS = 60_000;
 const LIST_PANEL_MAX = 30;
 // Comfortable "you've reached one specific spot" zoom — clicking a
 // non-cluster marker eases in to at least this level (never zooms out).
-const SINGLE_SPOT_ZOOM = 15;
+// Deliberately not maxed out (2026-08-23 feedback: leave a bit more of the
+// surroundings visible than a tight close-up).
+const SINGLE_SPOT_ZOOM = 13.5;
+// Cap for cluster fitBounds/fallback zoom — same "leave it a bit more
+// zoomed out" feedback applies to multi-spot clusters.
+const CLUSTER_MAX_ZOOM = 15.5;
 // Coalesce a burst of moveends (e.g. several quick pan-and-release gestures)
 // into one live-wind fetch instead of one per settle.
 const VIEWPORT_DEBOUNCE_MS = 300;
@@ -186,10 +191,13 @@ export default function MapView() {
     return () => { map.off("moveend", updateViewport); };
   }, [mapReady, updateViewport]);
 
-  // Clicking empty map background (not a spot/cluster marker — those have
-  // their own click listeners on their DOM elements, never reaching the
-  // canvas) closes whichever bottom panel is open, same as the explicit
-  // close button.
+  // Clicking empty map background closes whichever bottom panel is open,
+  // same as the explicit close button. Marker click handlers below call
+  // `stopPropagation()` — MapLibre's own "click" listener sits on the map
+  // container itself, so without that a marker click bubbles up into it
+  // too, and this handler would fire right after selecting a spot and
+  // immediately clear it again (2026-08-23 bugfix: that's why the
+  // tile/forecast never seemed to open).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -290,7 +298,8 @@ export default function MapView() {
           el.addEventListener("mouseleave", () => setHoveredClusterId((value) => value === clusterId ? undefined : value));
           el.addEventListener("focus", () => setHoveredClusterId(clusterId));
           el.addEventListener("blur", () => setHoveredClusterId((value) => value === clusterId ? undefined : value));
-          el.addEventListener("click", async () => {
+          el.addEventListener("click", async (event) => {
+            event.stopPropagation();
             map.stop();
             // A second cluster click before this promise resolves must win —
             // without this token, a slow first lookup could still land and
@@ -311,8 +320,8 @@ export default function MapView() {
             // A little slower and a little less tight than a plain expansion
             // zoom (2026-08-23 feedback) — the member spots should land
             // comfortably inside the frame, not crammed against the edges.
-            if (bounds.isEmpty()) { map.easeTo({ center: [lng, lat], zoom: Math.min(17, map.getZoom() + 2), duration: reducedMotion() ? 0 : 650 }); return; }
-            map.fitBounds(bounds, { padding: 110, maxZoom: 17, duration: reducedMotion() ? 0 : 650 });
+            if (bounds.isEmpty()) { map.easeTo({ center: [lng, lat], zoom: Math.min(CLUSTER_MAX_ZOOM, map.getZoom() + 2), duration: reducedMotion() ? 0 : 650 }); return; }
+            map.fitBounds(bounds, { padding: 110, maxZoom: CLUSTER_MAX_ZOOM, duration: reducedMotion() ? 0 : 650 });
           });
         } else {
           const id = String(feature.properties?.spotId || "");
@@ -330,7 +339,8 @@ export default function MapView() {
           // A resolved single spot (no more clustering left) also zooms in,
           // same as a cluster click, instead of only clusters ever moving
           // the camera (2026-08-23 feedback).
-          el.addEventListener("click", () => {
+          el.addEventListener("click", (event) => {
+            event.stopPropagation();
             setSelectedId(id);
             setTilesOpen(false);
             map.easeTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), SINGLE_SPOT_ZOOM), duration: reducedMotion() ? 0 : 650 });
@@ -415,22 +425,25 @@ export default function MapView() {
           <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control swd-map-control-stacked"><MinusIcon className="text-[17px]" /></button>
         </div>
       </div>
-      <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
-        <button
-          type="button"
-          aria-label="Spots im Ausschnitt anzeigen"
-          aria-expanded={tilesOpen}
-          aria-controls="swd-map-list-panel"
-          onClick={() => { setTilesOpen((open) => !open); setSelectedId(undefined); }}
-          className="swd-map-control pointer-events-auto h-10 w-10"
-        >
-          <ListIcon className="text-[17px]" />
-        </button>
-        {tilesOpen && (
-          <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto">
+      {!tilesOpen && (
+        <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
+          <button
+            type="button"
+            aria-label="Spots im Ausschnitt anzeigen"
+            aria-expanded={false}
+            aria-controls="swd-map-list-panel"
+            onClick={() => { setTilesOpen(true); setSelectedId(undefined); }}
+            className="swd-map-control pointer-events-auto h-10 w-10"
+          >
+            <ListIcon className="text-[17px]" />
+          </button>
+        </div>
+      )}
+      {tilesOpen && (
+        <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto absolute z-20">
             <div className="swd-map-panel-head">
               <p className="swd-map-list-title">Spots im Ausschnitt</p>
-              <button type="button" aria-label="Schließen" onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
+              <button type="button" aria-label="Schließen" aria-expanded={true} onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
                 <CloseIcon className="text-[15px]" />
               </button>
             </div>
@@ -443,7 +456,6 @@ export default function MapView() {
             )}
           </div>
         )}
-      </div>
       <section aria-label="Kartendetails" className="swd-map-bottom-shell pointer-events-none absolute inset-x-0 bottom-0 z-10">
         {selectedSpot ? (
           <div className="swd-map-panel pointer-events-auto">
