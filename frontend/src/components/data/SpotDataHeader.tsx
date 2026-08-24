@@ -59,8 +59,8 @@ function Toggle<T extends string>({ value, onChange, options, label, compact = f
           type="button"
           aria-pressed={value === option.id}
           onClick={() => onChange(option.id)}
-          className={`${compact ? "px-2 py-0.5 text-[10px]" : "px-3.5 py-1 text-caption"} rounded-full font-medium tracking-wide transition-colors ${
-            value === option.id ? "bg-teal text-white" : "text-muted hover:text-ink"
+          className={`${compact ? "px-3 text-label" : "px-3.5 text-label"} min-h-11 min-w-11 rounded-full font-medium tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
+            value === option.id ? "bg-ink text-surface" : "text-muted hover:text-ink"
           }`}
         >
           {option.label}

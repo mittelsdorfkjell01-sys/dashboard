@@ -369,6 +369,20 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
 }
 
+.meteogram-scroll {
+  scrollbar-color: var(--sw-muted) var(--sw-band);
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+
+.meteogram-scroll--more {
+  box-shadow: inset -18px 0 16px -18px var(--sw-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meteogram-scroll { scroll-behavior: auto !important; }
+}
+
 /* Indeterminate progress bar (media picker tab loading). A sweeping bar
    rather than a spinner, so it reads at a glance inside a slim 2px strip. */
 @keyframes admin-progress-sweep {
@@ -643,7 +657,9 @@ html[data-theme="dark"] { color-scheme: dark; }
 .swd-map-back:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
 
 /* Bare close control (results tiles / chart panel) — intentionally no
-   border, shadow or fill; the larger tap target is invisible padding. */
+   border, shadow or fill; the larger tap target is invisible padding,
+   grown to the full 44px minimum on touch input (2026-08-23 audit),
+   matching `.swd-map-control`'s own coarse-pointer treatment below. */
 .swd-map-plain-close {
   display: inline-flex;
   align-items: center;
@@ -655,6 +671,9 @@ html[data-theme="dark"] { color-scheme: dark; }
   background: transparent;
   color: var(--sw-muted);
   transition: color 140ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-plain-close { width: 44px; height: 44px; }
 }
 .swd-map-plain-close:hover { color: var(--sw-ink); }
 .swd-map-plain-close:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
@@ -762,8 +781,11 @@ html[data-theme="dark"] { color-scheme: dark; }
 
 /* Shared panel chrome (tile pair / wind chart) — a floating card, not a
    modal: no backdrop, no outside-click-to-close, the map keeps working. */
+/* Same body-width cap the spot page and landing grid use (2026-08-23
+   audit) — the panel used to be stuck at 640px, wasting most of a wide
+   desktop viewport next to the map. */
 .swd-map-panel {
-  max-width: 640px;
+  max-width: min(1200px, calc(100vw - 32px));
   margin: 0 auto;
   border-radius: 18px;
   background: var(--sw-surface);
@@ -800,7 +822,9 @@ html[data-theme="dark"] { color-scheme: dark; }
 }
 
 /* Wind/weather chart panel (bottom, on selection) — the "Zum Spot" link
-   reads as a small filled action, distinct from the bare close control. */
+   reads as a small filled action, distinct from the bare close control.
+   Grown to the 44px touch-target minimum on coarse pointers, same as
+   `.swd-map-control` above (2026-08-23 audit). */
 .swd-map-chart-cta {
   display: inline-flex;
   align-items: center;
@@ -814,8 +838,16 @@ html[data-theme="dark"] { color-scheme: dark; }
   white-space: nowrap;
   transition: background-color 140ms ease-out;
 }
+@media (pointer: coarse) {
+  .swd-map-chart-cta { height: 44px; }
+}
 .swd-map-chart-cta:hover { background: var(--sw-teal-hover); }
-.swd-map-chart-scroll { overflow-x: auto; border-radius: 12px; background: var(--sw-band); }
+/* Meteogram already isolates its own horizontal scroll to the chart column
+   (its 76px axis-label column sits outside that scroll container, see
+   Meteogram.tsx) — wrapping the whole thing in a second `overflow-x: auto`
+   here scrolled the axis labels away together with the chart (2026-08-23
+   audit). Only `overflow: hidden` for the rounded corners is needed. */
+.swd-map-chart-scroll { overflow: hidden; border-radius: 12px; background: var(--sw-band); }
 
 /* Marker popup — the selected spot's Landing-style tile, anchored to the
    marker. Desktop only: on narrow screens there isn't room to hover a card

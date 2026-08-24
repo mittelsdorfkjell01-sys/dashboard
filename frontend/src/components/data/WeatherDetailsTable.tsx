@@ -1,4 +1,5 @@
 import type { ForecastSeries, WeatherCondition } from "../../lib/api";
+import type { NormalizedForecastSeries } from "../../lib/forecastNormalization";
 
 const labels: Record<WeatherCondition, string> = {
   clear: "Klar", mainly_clear: "Überwiegend klar", partly_cloudy: "Teilweise bewölkt",
@@ -23,12 +24,12 @@ function WeatherIcon({ condition = "unknown", isDay, label }: { condition?: Weat
   </svg>;
 }
 
-export default function WeatherDetailsTable({ forecast }: { forecast: ForecastSeries }) {
+export default function WeatherDetailsTable({ forecast }: { forecast: NormalizedForecastSeries }) {
   if (!forecast.days.length) return null;
   const timezone = forecast.timezone ?? "UTC";
   const hours = forecast.days.flatMap((day) => day.hours).slice(0, 24);
   return <div className="space-y-6 px-2 pb-3">
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" tabIndex={0} role="region" aria-label="Tägliche Wettervorhersage horizontal scrollen">
       <table aria-label="Tägliche Wettervorhersage" className="min-w-[820px] w-full border-collapse text-ui tabular-nums">
         <thead><tr>{["Tag", "Wetter", "Temperatur", "Regen", "Wolken", "UV max.", "Sonne"].map((label) => <th scope="col" key={label} className="border-b border-line px-2.5 py-2 text-left text-caption font-medium uppercase tracking-wide text-muted [&:not(:first-child)]:text-right">{label}</th>)}</tr></thead>
         <tbody>{forecast.days.map((day, index) => { const s = day.summary; const condition = s.weather_condition ?? "unknown"; return <tr key={day.date} className={index === 0 ? "bg-band" : ""}>
@@ -42,11 +43,11 @@ export default function WeatherDetailsTable({ forecast }: { forecast: ForecastSe
         </tr>; })}</tbody>
       </table>
     </div>
-    {hours.length > 0 && <div className="overflow-x-auto"><table aria-label="Stündliche Wettervorhersage" className="min-w-[980px] w-full border-collapse text-ui tabular-nums">
+    {hours.length > 0 && <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" tabIndex={0} role="region" aria-label="Stündliche Wettervorhersage horizontal scrollen"><table aria-label="Stündliche Wettervorhersage" className="min-w-[980px] w-full border-collapse text-ui tabular-nums">
       <caption className="px-2.5 pb-2 text-left font-semibold text-ink">Nächste 24 Stunden</caption>
       <thead><tr>{["Zeit", "Wetter", "Temperatur", "Gefühlt", "Regen", "Wolken", "Druck", "UV", ...(forecast.availability?.marine === "available" ? ["Welle", "Meeresoberfläche"] : [])].map((label) => <th scope="col" key={label} className="border-b border-line px-2.5 py-2 text-left text-caption font-medium uppercase tracking-wide text-muted [&:not(:first-child)]:text-right">{label}</th>)}</tr></thead>
-      <tbody>{hours.map((hour) => { const condition = hour.weather_condition ?? "unknown"; return <tr key={hour.time}>
-        <th scope="row" className="border-b border-line-soft px-2.5 py-2 text-left font-medium">{new Intl.DateTimeFormat("de-DE", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: timezone }).format(new Date(hour.time))}</th>
+      <tbody>{hours.map((hour) => { const condition = hour.weather_condition ?? "unknown"; return <tr key={hour.utcKey}>
+        <th scope="row" className="border-b border-line-soft px-2.5 py-2 text-left font-medium">{formatDay(hour.localDate)} {hour.localTimeWithOffset}</th>
         <td className="border-b border-line-soft px-2.5 py-2"><span className="flex items-center justify-end gap-2"><WeatherIcon condition={condition} isDay={hour.is_day} label={labels[condition]} />{labels[condition]}</span></td>
         {[value(hour.air, " °C", 1), value(hour.apparent_temperature_c, " °C", 1), value(hour.precip, " mm", 1), value(hour.cloud_cover_pct, " %"), value(hour.pressure_msl_hpa, " hPa"), value(hour.uv_index, "", 1)].map((text, i) => <td key={i} className="border-b border-line-soft px-2.5 py-2 text-right">{text}</td>)}
         {forecast.availability?.marine === "available" && <><td className="border-b border-line-soft px-2.5 py-2 text-right">{value(hour.swell, " m", 1)} · {value(hour.period, " s", 1)}</td><td className="border-b border-line-soft px-2.5 py-2 text-right">{value(hour.sst, " °C", 1)}</td></>}

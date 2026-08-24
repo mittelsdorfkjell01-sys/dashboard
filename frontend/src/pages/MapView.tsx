@@ -5,8 +5,8 @@ import maplibregl, { LngLatBounds, type GeoJSONSource, type Map as MapLibreMap, 
 import Header from "../components/Header";
 import SpotCard from "../components/SpotCard";
 import { ChevronLeftIcon, CloseIcon, ListIcon, MinusIcon, PlusIcon } from "../lib/icons";
-import { useSpots, useSpotsLive } from "../lib/hooks";
-import { getSpotCatalogVersion, type ForecastSeries } from "../lib/api";
+import { useSpotForecast, useSpots, useSpotsLive } from "../lib/hooks";
+import { getSpotCatalogVersion } from "../lib/api";
 import type { Spot } from "../lib/types";
 import { countryName } from "../lib/flags";
 import { spotPath } from "../lib/spotRoutes";
@@ -42,13 +42,6 @@ const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)"
 
 function isVisible(map: MapLibreMap, spot: Spot): boolean {
   return Boolean(spot.coords && map.getBounds().contains([spot.coords[1], spot.coords[0]]));
-}
-
-/** No forecast data is wired up for the map's chart yet — an explicitly
- * empty series (not fabricated numbers) so Meteogram renders its normal
- * empty grid rather than fake bars. */
-function emptyForecast(spotId: string): ForecastSeries {
-  return { spot_id: spotId, model: "", generated_at: "", days: [] };
 }
 
 export default function MapView() {
@@ -234,6 +227,7 @@ export default function MapView() {
   }, [hoveredClusterId, mapReady, styleGeneration]);
 
   const selectedSpot = selectedId ? spotById.get(selectedId) : undefined;
+  const { data: selectedForecast, loading: selectedForecastLoading } = useSpotForecast(selectedSpot?.id);
 
   // The selected spot's Landing-style tile, anchored to its marker
   // (desktop only — hidden entirely on narrow screens via CSS, see
@@ -472,11 +466,18 @@ export default function MapView() {
               </div>
             </div>
             <div className="swd-map-chart-scroll">
-              <Suspense fallback={null}>
-                <SpotDataScopeProvider>
-                  <Meteogram forecast={emptyForecast(selectedSpot.id)} />
-                </SpotDataScopeProvider>
-              </Suspense>
+              {selectedForecastLoading && <div className="h-[258px] animate-pulse bg-band" />}
+              {!selectedForecastLoading && (
+                <Suspense fallback={<div className="h-[258px]" />}>
+                  {selectedForecast && selectedForecast.days.some((day) => day.hours.length > 0) ? (
+                    <SpotDataScopeProvider forecast={selectedForecast}>
+                      <Meteogram forecast={selectedForecast} compact />
+                    </SpotDataScopeProvider>
+                  ) : (
+                    <p className="flex h-[80px] items-center justify-center px-4 text-center text-caption text-muted">Vorhersage momentan nicht verfügbar.</p>
+                  )}
+                </Suspense>
+              )}
             </div>
           </div>
         ) : (

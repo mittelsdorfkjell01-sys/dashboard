@@ -11,6 +11,7 @@ import { adaptSpot, adaptSpots } from "./adapt";
 import { usePersistentSwr, useSwr, type SwrState } from "./swr";
 import { mutate } from "./swr";
 import { mergeFeed, type FeedPost } from "./communityFeed";
+import type { NormalizedForecastSeries } from "./forecastNormalization";
 
 // Kept as names for backward-compatible imports; identical shape to SwrState.
 export type AsyncState<T> = SwrState<T>;
@@ -189,8 +190,8 @@ export function useSpotsLive(
   return { data, loading: state.loading, error: state.error, reload: state.reload };
 }
 
-/** 10-day forecast for a spot (days 1–5 hourly, days 6–10 trend). */
-export function useSpotForecast(id?: string): AsyncStateReloadable<api.ForecastSeries> {
+/** Normalized 10-day forecast: days 1–5 hourly, days 6–10 trend. */
+export function useSpotForecast(id?: string): AsyncStateReloadable<NormalizedForecastSeries> {
   return useSwr(id ? `forecast:${id}` : null, () => api.getSpotForecast(id!));
 }
 

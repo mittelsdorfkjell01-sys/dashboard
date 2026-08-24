@@ -1,5 +1,4 @@
-import type { ForecastHour, ForecastSeries, LiveConditionsRead } from "../../lib/api";
-import type { Spot } from "../../lib/types";
+import type { ForecastHour, LiveConditionsRead } from "../../lib/api";
 import { formatWind, useSpotDataScope, windUnitLabel } from "../../state/SpotDataScope";
 
 type Source = ForecastHour | LiveConditionsRead["current"] | null;
@@ -14,16 +13,11 @@ const number = (source: Source, ...keys: string[]): number | null => {
   return null;
 };
 
-export default function LiveRow({ spot: _spot, forecast, live }: {
-  spot: Spot;
-  forecast?: ForecastSeries | null;
+export default function LiveRow({ live }: {
   live?: LiveConditionsRead | null;
 }) {
-  const { selectedHour, windUnit, sportMode } = useSpotDataScope();
-  const today = forecast?.days[0];
-  const source: Source = today?.hours.find((hour) => Number(hour.time.slice(11, 13)) === selectedHour)
-    ?? live?.current
-    ?? null;
+  const { selectedForecast, windUnit, sportMode } = useSpotDataScope();
+  const source: Source = selectedForecast ?? live?.current ?? null;
   const wind = number(source, "wind");
   const gust = number(source, "gust");
   const wave = number(source, "swell", "waveHeight");
@@ -54,7 +48,7 @@ export default function LiveRow({ spot: _spot, forecast, live }: {
       ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+    <div data-forecast-utc={selectedForecast?.utcKey??""} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
       {cells.map((cell) => (
         <div key={cell.label} className={`border-b border-r border-line-soft px-3 py-2.5 text-right lg:border-b-0 ${cell.priority ? "bg-gradient-to-b from-green/[0.06] to-transparent" : ""}`}>
           <p className="mb-1.5 text-left text-caption font-medium uppercase tracking-widest text-muted">{cell.label}</p>

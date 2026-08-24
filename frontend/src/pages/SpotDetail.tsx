@@ -351,7 +351,7 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            <SpotDataScopeProvider>
+            <SpotDataScopeProvider forecast={forecast}>
               <div className="mx-auto max-w-[1727px] px-4 pb-8 pt-10 sm:px-8">
                 <SpotDataHeader spot={spot} />
 
@@ -361,7 +361,7 @@ export default function SpotDetail() {
                 </section>
 
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
-                  <LiveRow spot={spot} forecast={forecast} live={live} />
+                  <LiveRow live={live} />
                 </div>
 
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">

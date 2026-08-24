@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useInView, useReducedMotion } from "framer-motion";
 import L from "leaflet";
-import type { ForecastSeries, LiveConditionsRead } from "../lib/api";
+import type { LiveConditionsRead } from "../lib/api";
+import type { NormalizedForecastSeries } from "../lib/forecastNormalization";
 import type { WaterType } from "../lib/types";
 import { useOptionalSpotDataScope, type MapLayer } from "../state/SpotDataScope";
 
@@ -99,7 +100,7 @@ export default function SpotFlowMap({
   aspect = "sm:aspect-[21/9]",
   rounded = true,
   live: _live = null,
-  forecast = null,
+  forecast: _forecast = null,
   showLayerSwitcher = false,
 }: {
   coords: [number, number];
@@ -122,20 +123,21 @@ export default function SpotFlowMap({
   /** Live reading for the top-left conditions overlay. Omitted/null → no
    *  overlay at all (never an empty card). */
   live?: LiveConditionsRead | null;
-  forecast?: ForecastSeries | null;
+  forecast?: NormalizedForecastSeries | null;
   showLayerSwitcher?: boolean;
 }) {
   const dataScope = useOptionalSpotDataScope();
   const mapLayer = dataScope?.mapLayer ?? "both";
   const showWind = mapLayer !== "wave";
   const showWaves = mapLayer !== "wind";
-  const selectedForecast = forecast?.days[0]?.hours.find(
-    (hour) => Number(hour.time.slice(11, 13)) === dataScope?.selectedHour,
-  );
-  const shownWindDir = selectedForecast?.dir ?? windDir;
-  const shownWindKts = selectedForecast?.wind ?? windKts;
-  const shownWaveDir = selectedForecast?.swell_dir ?? waveDir;
-  const shownPeriod = selectedForecast?.period ?? period;
+  const selectedForecast = dataScope?.selectedForecast ?? null;
+  const shownWindDir = selectedForecast ? selectedForecast.dir : windDir;
+  const shownWindKts = selectedForecast ? selectedForecast.wind : windKts;
+  const shownWaveDir = selectedForecast ? selectedForecast.swell_dir : waveDir;
+  const shownPeriod = selectedForecast ? selectedForecast.period : period;
+  const renderWind = showWind && shownWindDir != null && shownWindKts != null;
+  const renderWaves = showWaves && shownWaveDir != null && shownPeriod != null;
+  const safeWindDir = shownWindDir ?? 0, safeWindKts = shownWindKts ?? 0, safeWaveDir = shownWaveDir ?? 0, safePeriod = shownPeriod ?? 1;
   // Effective framing: admin's saved view wins, else default (spot-centred).
   const effZoom = zoom ?? MAP_ZOOM;
   const effLat = mapCenter?.[0] ?? coords[0];
@@ -208,12 +210,12 @@ export default function SpotFlowMap({
     sizeCanvas();
 
     // ---- Wind: parallel particles toward windTo ----
-    const windTo = (shownWindDir + 180) % 360;
+    const windTo = (safeWindDir + 180) % 360;
     const wv = { x: Math.sin(rad(windTo)), y: -Math.cos(rad(windTo)) };
-    const windSpeed = 6 + shownWindKts * 2.7; // px/sec — scales with wind (20 kts ≈ old 30)
+    const windSpeed = 6 + safeWindKts * 2.7; // px/sec — scales with wind (20 kts ≈ old 30)
     const vx = wv.x * windSpeed;
     const vy = wv.y * windSpeed;
-    const trailMax = Math.round(22 + shownWindKts * 2.4);
+    const trailMax = Math.round(22 + safeWindKts * 2.4);
     const perp = { x: -wv.y, y: wv.x }; // for the arrowheads
     // Cap raised from the original 170 for the Sprint 3 full-bleed variant —
     // at ~21:9 on a wide viewport the canvas area is several times the old
@@ -244,7 +246,7 @@ export default function SpotFlowMap({
     //      coast. The angle between the two makes the break peel down the beach.
     const diag = Math.hypot(w, h);
     const half = diag / 2;
-    const swellTravel = (shownWaveDir + 180) % 360; // bearing the waves move toward
+    const swellTravel = (safeWaveDir + 180) % 360; // bearing the waves move toward
     const travelRad = rad(swellTravel);
     const cosT = Math.cos(travelRad);
     const sinT = Math.sin(travelRad); // to map rotated crest points → screen px
@@ -254,7 +256,7 @@ export default function SpotFlowMap({
     dphi = Math.max(-70, Math.min(70, dphi));
     const sinP = Math.sin(rad(dphi));
     const cosP = Math.cos(rad(dphi));
-    const crestSpeed = 9 * shownPeriod; // px/sec along travel; spacing = 9·T²
+    const crestSpeed = 9 * safePeriod; // px/sec along travel; spacing = 9·T²
     const Dbreak = -0.13 * half; // starts breaking offshore, before the beach
     const Dshore = 0.05 * half; // the beach edge — waves stop here (no overrun)
     const sSpawn = -(half + 40) / cosP; // spawn offshore
@@ -262,7 +264,7 @@ export default function SpotFlowMap({
     const beyondShore = (s: number) => s * cosP - half * Math.abs(sinP) > Dshore;
     let crests: number[] = [];
     {
-      const stepS = Math.max(24, crestSpeed * shownPeriod);
+      const stepS = Math.max(24, crestSpeed * safePeriod);
       for (let s = sSpawn, n = 0; !beyondShore(s) && n < 60; s += stepS, n++) crests.push(s);
     }
     let acc = 0;
@@ -376,10 +378,10 @@ export default function SpotFlowMap({
 
       // Swell — crests roll along the swell direction; each point breaks when it
       // reaches the shore (onshore distance d), so an oblique crest peels.
-      if (showWaves && waterType === "swell") {
+      if (renderWaves && waterType === "swell") {
         acc += dt;
-        while (acc >= shownPeriod) {
-          acc -= shownPeriod;
+        while (acc >= safePeriod) {
+          acc -= safePeriod;
           crests.push(sSpawn);
         }
         crests = crests.map((s) => s + crestSpeed * dt).filter((s) => !beyondShore(s));
@@ -431,7 +433,7 @@ export default function SpotFlowMap({
           }
         }
         ctx.restore();
-      } else if (showWaves && waterType === "chop") {
+      } else if (renderWaves && waterType === "chop") {
         // Chop / Kabbelwasser — a rippled surface: whitecaps twinkle in place,
         // no travel and no period, just an agitated sea. A soft dark shadow
         // keeps the white caps readable on the light basemap.
@@ -455,7 +457,7 @@ export default function SpotFlowMap({
       // flat: no wave animation
 
       // Wind (screen space, parallel)
-      if (showWind) {
+      if (renderWind) {
        ctx.lineCap = "round";
        ctx.lineWidth = 1.5;
        for (const p of particles) {
@@ -533,11 +535,12 @@ export default function SpotFlowMap({
       visibilityObserver.disconnect();
       ro.disconnect();
     };
-  }, [effCenter, effZoom, shownWindDir, shownWindKts, shownWaveDir, coast, shownPeriod, waterType, showWind, showWaves, reduce]);
+  }, [effCenter, effZoom, safeWindDir, safeWindKts, safeWaveDir, coast, safePeriod, waterType, renderWind, renderWaves, reduce]);
 
   return (
     <div
       ref={wrapRef}
+      data-forecast-utc={selectedForecast?.utcKey??""}
       className={`relative w-full overflow-hidden ${showLayerSwitcher ? "aspect-video" : `aspect-[4/5] ${aspect}`} ${rounded ? "rounded-3xl" : ""}`}
     >
       <MapContainer
@@ -570,7 +573,7 @@ export default function SpotFlowMap({
       {showLayerSwitcher && dataScope && (
         <div className="absolute left-2.5 top-2.5 z-[540] inline-flex rounded-md border border-line bg-surface/90 p-0.5 shadow-sm backdrop-blur">
           {([{ id: "wind", label: "Wind" }, { id: "both", label: "Wind + Welle" }, { id: "wave", label: "Welle" }] as Array<{ id: MapLayer; label: string }>).map((layer) => (
-            <button key={layer.id} type="button" aria-pressed={mapLayer === layer.id} onClick={() => dataScope.setMapLayer(layer.id)} className={`min-h-11 rounded px-2.5 py-1 text-caption font-medium tracking-wide transition-colors sm:min-h-0 ${mapLayer === layer.id ? "bg-ink text-white" : "text-muted hover:text-ink"}`}>{layer.label}</button>
+            <button key={layer.id} type="button" aria-pressed={mapLayer === layer.id} onClick={() => dataScope.setMapLayer(layer.id)} className={`min-h-11 min-w-11 rounded px-2.5 py-1 text-label font-medium tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${mapLayer === layer.id ? "bg-ink text-surface" : "text-muted hover:text-ink"}`}>{layer.label}</button>
           ))}
         </div>
       )}

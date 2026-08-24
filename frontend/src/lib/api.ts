@@ -3,6 +3,7 @@
 // returns typed data or throws an ApiError the UI can surface.
 
 import { getAdminKey } from "./adminKey";
+import { normalizeForecast, type NormalizedForecastSeries } from "./forecastNormalization";
 import type {
   MediaEntityType,
   MediaItem,
@@ -312,6 +313,16 @@ export interface ForecastDaySummary {
   solar_state?: "normal" | "polar_day" | "polar_night" | "unavailable";
 }
 export type WeatherCondition = "clear" | "mainly_clear" | "partly_cloudy" | "overcast" | "fog" | "drizzle" | "rain" | "snow" | "rain_showers" | "snow_showers" | "thunderstorm" | "unknown";
+export interface SpreadBand {
+  low: number | null;
+  high: number | null;
+  median: number | null;
+  n: number;
+}
+export type ForecastDetail = "hourly" | "trend";
+export type ForecastConfidence = "hoch" | "mittel" | "niedrig";
+export type AvailabilityStatus = "available" | "available_stale" | "not_applicable_inland" | "unavailable_out_of_range" | "unavailable_provider" | "unknown_location_type";
+export type ForecastTimezoneStatus = { requested: string; effective: string; status: "valid" | "fallback_utc" };
 export interface ForecastHour {
   time: string;
   wind: number | null;
@@ -332,14 +343,17 @@ export interface ForecastHour {
   weather_code?: number | null;
   weather_condition?: WeatherCondition;
   is_day?: boolean | null;
+  wind_spread?: SpreadBand | null;
 }
+export type ForecastConfidenceSource = "spread" | "calendar";
 export interface ForecastDay {
   date: string;
   local_date?: string | null;
-  confidence: string;
+  confidence: ForecastConfidence;
+  confidence_source?: ForecastConfidenceSource | null;
   summary: ForecastDaySummary;
   hours: ForecastHour[];
-  detail?: "hourly" | "trend";
+  detail: ForecastDetail;
 }
 export interface ForecastSeries {
   spot_id: string;
@@ -352,7 +366,8 @@ export interface ForecastSeries {
   stale?: boolean;
   contract_version?: string | null;
   timezone?: string;
-  availability?: Record<"atmosphere" | "solar" | "marine", string>;
+  calibrated?: boolean;
+  availability?: Record<"atmosphere" | "solar" | "marine", AvailabilityStatus>;
   attributions?: Array<{ provider: string; text: string; url: string; licence: string }>;
 }
 
@@ -632,7 +647,7 @@ export const unpublishRegion = (id: string) =>
   request<Region>(`/admin/regions/${id}/unpublish`, { method: "POST" });
 
 export const getSpotForecast = (id: string, days?: number) =>
-  request<ForecastSeries>(`/spots/${id}/forecast${qs({ days })}`);
+  request<ForecastSeries>(`/spots/${id}/forecast${qs({ days })}`).then(normalizeForecast) as Promise<NormalizedForecastSeries>;
 
 export interface WeatherReferencePoint { latitude: number; longitude: number; source?: string | null; reason?: string | null }
 export interface WeatherSector { id?: string; start_deg: number; end_deg: number; speed_factor: number; direction_offset_deg: number; version: number; enabled: boolean; note?: string | null }
