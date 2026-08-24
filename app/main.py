@@ -26,7 +26,7 @@ from app.safety import RemoteWriteGuardMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 
 settings = get_settings()
-EXPECTED_DB_REVISION = "0039_wind_climatology_v3"
+EXPECTED_DB_REVISION = "0040_backfill_image_fields"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)

@@ -11,14 +11,34 @@ from app.live.client import MAX_FORECAST_DAYS
 from app.live.deps import get_cache, get_om_client
 from app.main import app
 from app.models import Spot
+from app.models.forecast_system import ForecastSnapshot
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
+
+
+def _clear_snapshots(db, *spot_ids) -> None:
+    """Deactivate any published forecast snapshot for these spots.
+
+    ``/spots/{id}/forecast`` and ``/live`` serve a published snapshot ahead of
+    computing live data (see app.forecast.publisher.active_snapshot) — a real
+    production fast path. The shared seeded spot can pick one up from an
+    unrelated test elsewhere in the same session (e.g. a cron/publish job),
+    which would silently bypass fake_live's mocked client/cache. Tests here
+    exercise the live-computation path specifically, so start from no
+    active snapshot rather than depending on nothing else in the session
+    having published one.
+    """
+    from sqlalchemy import delete
+
+    db.execute(delete(ForecastSnapshot).where(ForecastSnapshot.spot_id.in_(spot_ids)))
+    db.commit()
 
 
 @pytest.fixture
 def seeded_spot_id(db):
     seed(db)
     spot = db.scalar(select(Spot).where(Spot.slug == "tarifa-los-lances"))
+    _clear_snapshots(db, spot.id)
     return spot.id
 
 
@@ -55,6 +75,8 @@ def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):
     assert len(days) == MAX_FORECAST_DAYS
     assert days[0]["confidence"] == "hoch"
     assert days[-1]["confidence"] == "niedrig"
+    assert all(day["detail"] == "hourly" and day["hours"] for day in days[:5])
+    assert all(day["detail"] == "trend" and day["hours"] == [] for day in days[5:])
 
 
 def test_forecast_endpoint_rejects_over_horizon(client, seeded_spot_id, fake_live):
@@ -76,6 +98,7 @@ def test_live_endpoint_404_for_unknown_spot(client, fake_live):
 def seeded_spot_ids(db):
     seed(db)
     spots = db.scalars(select(Spot).order_by(Spot.name).limit(3)).all()
+    _clear_snapshots(db, *(s.id for s in spots))
     return [str(s.id) for s in spots]
 
 

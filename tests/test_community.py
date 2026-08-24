@@ -92,11 +92,20 @@ def spot_id(client):
     s = client.post("/admin/spots", json={
         "name": f"Comm Spot {suffix}", "slug": f"comm-spot-{suffix}",
         "region_id": rid, "lat": 54.41, "lon": 10.22, "sports": ["kitesurf"],
+        "water_type": ["sea"], "bottom_type": ["sand"], "level": ["beginner"],
+        "water_character": ["chop"],
+        "editorial": {"description": "Test spot for automated coverage."},
     })
     sid = s.json()["id"]
+    client.post(f"/admin/spots/{sid}/image", json={
+        "url": "https://images.example.com/hero.jpg", "source": "unsplash",
+        "license": "Unsplash License", "credit": "Test",
+    })
     # Community routes reject non-public spots — publish so the tests can
-    # exercise them. Readiness is advisory since Sprint 6.
-    client.post(f"/admin/spots/{sid}/live")
+    # exercise them. Go-live enforces editorial completeness (Aug 2026), so
+    # the fields above satisfy every required readiness gap.
+    live = client.post(f"/admin/spots/{sid}/live")
+    assert live.status_code == 200, live.text
     return sid
 
 

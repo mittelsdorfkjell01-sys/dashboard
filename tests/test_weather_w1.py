@@ -1,6 +1,9 @@
+import math
+
 from app.live.cache import InMemoryCache
 from app.live.service import get_forecast_series
 from app.live.weather_contract import Availability, marine_classification, provider_axis_utc, weather_condition
+from app.schemas.live import ForecastDaySummary, ForecastHour
 from tests.live_helpers import FakeDB, FakeOpenMeteoClient, make_forecast_response, make_spot
 
 
@@ -23,10 +26,10 @@ def test_dst_axes_are_strict_for_spring_gap_and_repeated_fall_hour():
     assert (fall[2] - fall[1]).total_seconds() == 3600
 
 
-def test_complete_weather_v2_contract_uses_nullable_fields_and_local_dates():
+def test_complete_weather_v3_contract_uses_nullable_fields_and_local_dates():
     spot = make_spot()
     result = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(data_days=10), cache=InMemoryCache())
-    assert result["contract_version"] == "weather-v2"
+    assert result["contract_version"] == "weather-v3"
     assert result["timezone"] == "UTC" and len(result["days"]) == 10
     hour = result["days"][0]["hours"][0]
     assert hour["apparent_temperature_c"] == 17
@@ -49,6 +52,36 @@ def test_invalid_individual_weather_value_becomes_null_not_zero():
     result = get_forecast_series(spot.id, 2, db=FakeDB(spot), client=InvalidClient(), cache=InMemoryCache())
     assert result["days"][0]["hours"][0]["uv_index"] is None
     assert result["days"][0]["hours"][0]["cloud_cover_pct"] is None
+
+
+def test_forecast_hour_schema_nulls_invalid_relationships_with_diagnostics():
+    hour = ForecastHour.model_validate({
+        "time": "2026-01-01T00:00:00+00:00",
+        "wind": 20,
+        "gust": 15,
+        "wind_ms": 10,
+        "gust_ms": 9,
+        "dir": 360,
+        "precip": -1,
+        "swell": math.inf,
+        "wind_spread": {"low": 15, "median": 10, "high": 20, "n": 1},
+    })
+    assert hour.wind == 20
+    assert hour.gust is None and hour.gust_ms is None and hour.dir is None and hour.precip is None and hour.swell is None
+    assert hour.wind_spread is None
+    assert {"gust:below_wind", "dir:invalid", "precip:invalid", "swell:invalid", "wind_spread:invalid"} <= set(hour.data_issues)
+
+
+def test_forecast_summary_schema_nulls_nonfinite_negative_and_contradictory_values():
+    summary = ForecastDaySummary.model_validate({
+        "wind_avg": math.nan, "wind_max": 20, "gust_max": 15,
+        "air_min": 10, "air_max": 5, "swell_max": -1,
+        "precipitation_sum_mm": math.inf, "cloud_cover_mean_pct": 101,
+    })
+    assert summary.wind_avg is None and summary.gust_max is None
+    assert summary.air_min is None and summary.air_max is None
+    assert summary.swell_max is None and summary.precipitation_sum_mm is None
+    assert summary.cloud_cover_mean_pct is None
 
 
 def test_polar_day_and_night_are_explicit_without_invented_sun_times():

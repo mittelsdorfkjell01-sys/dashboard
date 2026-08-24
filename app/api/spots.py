@@ -14,12 +14,15 @@ from app.live import service as live_service
 from app.live.cache import Cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
+from app.live.weather_contract import WEATHER_CONTRACT_VERSION
 from app.models import Spot, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
 from app.scoring import (
+    describe_week_entry,
+    score_climatology_curve,
     score_live,
 )
 from app.similarity import service as similarity_service
@@ -437,7 +440,19 @@ def get_spot_forecast(
 
     snapshot = active_snapshot(db, spot_id)
     if snapshot is not None:
-        return ForecastSeriesRead.model_validate(public_payload(snapshot))
+        snapshot_data = public_payload(snapshot)
+        snapshot_days = snapshot_data.get("days") or []
+        # weather-v3 preserves the explicit hourly/trend day discriminator.
+        if (
+            snapshot_data.get("contract_version") == WEATHER_CONTRACT_VERSION
+            and len(snapshot_days) == MAX_FORECAST_DAYS
+            and all(
+                day.get("detail") == ("hourly" if index < 5 else "trend")
+                and (index < 5 or not day.get("hours"))
+                for index, day in enumerate(snapshot_days)
+            )
+        ):
+            return ForecastSeriesRead.model_validate(snapshot_data)
     try:
         data = live_service.get_forecast_series(
             spot_id, days, db=db, client=client, cache=cache
@@ -483,6 +498,42 @@ def get_spot_badge(
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.get("/{spot_id}/season", tags=["score"])
+def get_spot_season(
+    spot_id: uuid.UUID,
+    stage: int = Query(default=2, ge=1, le=2),
+    sport: str | None = Query(default=None),
+    level: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Seasonal curve. ``stage=1`` is descriptive (no gates); ``stage=2`` scores
+    the usable-hours curve over 52 weeks."""
+    spot = get_published_spot(db, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    if not (spot.climatology and spot.climatology.get("weeks")):
+        raise HTTPException(status_code=404, detail="Spot has no climatology")
+
+    if stage == 1:
+        weeks = sorted(spot.climatology["weeks"], key=lambda w: w.get("week", 0))
+        return {
+            "stage": 1,
+            "spot_id": spot.id,
+            "window": spot.climatology.get("window"),
+            "weeks": [describe_week_entry(w) for w in weeks],
+        }
+
+    resolved_sport = sport or (spot.sports[0] if spot.sports else None)
+    if resolved_sport is None:
+        raise HTTPException(status_code=422, detail="No sport to score")
+    profile = {"level": level} if level else None
+    try:
+        result = score_climatology_curve(spot_id, profile, resolved_sport, db=db)
+    except KeyError:
+        raise HTTPException(status_code=422, detail=f"Unknown sport {resolved_sport!r}")
+    return {"stage": 2, "spot_id": spot.id, **result}
 
 
 @router.get("/{spot_id}/similar", tags=["similarity"])

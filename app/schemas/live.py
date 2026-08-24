@@ -3,8 +3,86 @@
 from __future__ import annotations
 
 import uuid
+import math
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+
+
+def _finite(value, *, minimum=None, maximum=None):
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+        return None
+    number = float(value)
+    if minimum is not None and number < minimum or maximum is not None and number > maximum:
+        return None
+    return number
+
+
+def _sanitize_conditions(data):
+    if not isinstance(data, dict):
+        return data
+    result = dict(data)
+    issues = list(result.get("data_issues") or [])
+    constraints = {
+        "wind": (0, None), "gust": (0, None), "wind_ms": (0, None), "gust_ms": (0, None),
+        "dir": (0, 359.999), "swell": (0, None), "period": (0, None),
+        "swell_dir": (0, 359.999), "precip": (0, None), "cloud_cover_pct": (0, 100),
+        "pressure_msl_hpa": (0, None), "uv_index": (0, None),
+    }
+    for field, (minimum, maximum) in constraints.items():
+        if field not in result or result[field] is None:
+            continue
+        clean = _finite(result[field], minimum=minimum, maximum=maximum)
+        if clean is None:
+            issues.append(f"{field}:invalid")
+        result[field] = clean
+    for field in ("air", "sst", "apparent_temperature_c"):
+        if field in result and result[field] is not None:
+            clean = _finite(result[field])
+            if clean is None:
+                issues.append(f"{field}:invalid")
+            result[field] = clean
+    if result.get("wind") is not None and result.get("gust") is not None and result["gust"] < result["wind"]:
+        result["gust"] = None
+        issues.append("gust:below_wind")
+    if result.get("wind_ms") is not None and result.get("gust_ms") is not None and result["gust_ms"] < result["wind_ms"]:
+        result["gust_ms"] = None
+        issues.append("gust_ms:below_wind_ms")
+    spread = result.get("wind_spread")
+    if spread is not None:
+        low = _finite(spread.get("low"), minimum=0) if isinstance(spread, dict) else None
+        median = _finite(spread.get("median"), minimum=0) if isinstance(spread, dict) else None
+        high = _finite(spread.get("high"), minimum=0) if isinstance(spread, dict) else None
+        n = spread.get("n") if isinstance(spread, dict) else None
+        if not isinstance(n, int) or isinstance(n, bool) or n < 2 or None in (low, median, high) or not low <= median <= high:
+            result["wind_spread"] = None
+            issues.append("wind_spread:invalid")
+        else:
+            result["wind_spread"] = {"low": low, "median": median, "high": high, "n": n}
+    result["data_issues"] = issues
+    return result
+
+
+def _sanitize_summary(data):
+    if not isinstance(data, dict):
+        return data
+    result = dict(data)
+    for field in ("wind_avg", "wind_max", "gust_max", "swell_max", "wind_low", "wind_high", "precipitation_sum_mm", "uv_index_max"):
+        if field in result and result[field] is not None:
+            result[field] = _finite(result[field], minimum=0)
+    for field in ("precipitation_probability_max_pct", "cloud_cover_mean_pct"):
+        if field in result and result[field] is not None:
+            result[field] = _finite(result[field], minimum=0, maximum=100)
+    for field in ("air_min", "air_max", "temperature_min_c", "temperature_max_c", "apparent_temperature_min_c", "apparent_temperature_max_c"):
+        if field in result and result[field] is not None:
+            result[field] = _finite(result[field])
+    if result.get("gust_max") is not None and result.get("wind_max") is not None and result["gust_max"] < result["wind_max"]:
+        result["gust_max"] = None
+    if result.get("air_min") is not None and result.get("air_max") is not None and result["air_min"] > result["air_max"]:
+        result["air_min"] = result["air_max"] = None
+    if result.get("wind_low") is not None and result.get("wind_high") is not None and result["wind_low"] > result["wind_high"]:
+        result["wind_low"] = result["wind_high"] = None
+    return result
 
 
 class SpreadBand(BaseModel):
@@ -18,6 +96,12 @@ class SpreadBand(BaseModel):
     high: float | None = None
     median: float | None = None
     n: int = 0
+
+    @model_validator(mode="after")
+    def valid_relationship(self):
+        if self.n < 2 or None in (self.low, self.median, self.high) or not self.low <= self.median <= self.high:
+            raise ValueError("spread requires n >= 2 and low <= median <= high")
+        return self
 
 
 class CurrentConditions(BaseModel):
@@ -34,6 +118,11 @@ class CurrentConditions(BaseModel):
     wind_spread: SpreadBand | None = None
     gust_spread: SpreadBand | None = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_values(cls, data):
+        return _sanitize_conditions(data)
+
 
 class LiveConditionsRead(BaseModel):
     spot_id: uuid.UUID
@@ -47,6 +136,8 @@ class ForecastHour(BaseModel):
     time: str
     wind: float | None = None        # consensus median
     gust: float | None = None        # consensus median
+    wind_ms: float | None = None     # canonical m/s value
+    gust_ms: float | None = None     # canonical m/s value
     dir: float | None = None
     air: float | None = None
     swell: float | None = None
@@ -62,6 +153,12 @@ class ForecastHour(BaseModel):
     weather_condition: str = "unknown"
     is_day: bool | None = None
     wind_spread: SpreadBand | None = None
+    data_issues: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_values(cls, data):
+        return _sanitize_conditions(data)
 
 
 class ForecastDaySummary(BaseModel):
@@ -88,13 +185,19 @@ class ForecastDaySummary(BaseModel):
     sunset_at: str | None = None
     solar_state: str = "unavailable"
 
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_values(cls, data):
+        return _sanitize_summary(data)
+
 
 class ForecastDay(BaseModel):
     date: str
     local_date: str | None = None
-    confidence: str  # hoch | mittel | niedrig (derived from model spread)
+    confidence: Literal["hoch", "mittel", "niedrig"]
     summary: ForecastDaySummary
     hours: list[ForecastHour]
+    detail: Literal["hourly", "trend"]
 
 
 class ForecastSeriesRead(BaseModel):

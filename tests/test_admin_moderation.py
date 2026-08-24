@@ -96,11 +96,20 @@ def spot_id(client):
     sid = client.post("/admin/spots", json={
         "name": f"Mod Spot {suffix}", "slug": f"mod-spot-{suffix}",
         "region_id": rid, "lat": 54.41, "lon": 10.22, "sports": ["kitesurf"],
+        "water_type": ["sea"], "bottom_type": ["sand"], "level": ["beginner"],
+        "water_character": ["chop"],
+        "editorial": {"description": "Test spot for automated coverage."},
     }).json()["id"]
+    client.post(f"/admin/spots/{sid}/image", json={
+        "url": "https://images.example.com/hero.jpg", "source": "unsplash",
+        "license": "Unsplash License", "credit": "Test",
+    })
     # The community routes (ratings/tips/images) reject non-public spots, so
     # every moderation test that goes through those needs the spot live.
-    # Readiness is advisory since Sprint 6 — go-live is unconditional.
-    client.post(f"/admin/spots/{sid}/live")
+    # Go-live enforces editorial completeness (Aug 2026), so the fields above
+    # satisfy every required readiness gap.
+    live = client.post(f"/admin/spots/{sid}/live")
+    assert live.status_code == 200, live.text
     return sid, rid
 
 
@@ -349,16 +358,22 @@ def test_rating_hide_removes_from_public(client, anon_client, spot_id, db):
 
 
 def test_review_queue_lists_published_tips_and_ratings(client, anon_client, spot_id):
-    """The Tips & Bewertungen tab shows all published items (not only flagged)."""
+    """The Tips & Bewertungen tab shows all published items (not only flagged).
+
+    author_name is server-controlled for anonymous posts (spoofing
+    protection — see test_anonymous_author_identity_is_server_controlled), so
+    entries are matched by their distinctive content, not a claimed name.
+    """
     sid, _ = spot_id
-    anon_client.post(f"/spots/{sid}/tips", json={"body": "Guter Tipp", "author_name": "Max"})
+    marker = uuid.uuid4().hex[:8]
+    anon_client.post(f"/spots/{sid}/tips", json={"body": f"Guter Tipp {marker}", "author_name": "Max"})
     anon_client.post(f"/spots/{sid}/ratings", json={
         "stars": 5, "skill_level": "expert", "sport": "kitesurf",
-        "conditions": "top", "author_name": "Max",
+        "conditions": f"top {marker}", "author_name": "Max",
     })
     q = client.get("/admin/review/queue").json()
-    assert any(t["author_name"] == "Max" for t in q["tips"])
-    assert any(r["author_name"] == "Max" for r in q["ratings"])
+    assert any(t["author_name"] == "Anonym" and marker in t["body"] for t in q["tips"])
+    assert any(r["author_name"] == "Anonym" and marker in r["conditions"] for r in q["ratings"])
 
 
 # --- audit actor + overview ------------------------------------------------

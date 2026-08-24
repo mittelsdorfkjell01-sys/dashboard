@@ -233,6 +233,8 @@ def test_forecast_confidence_is_spread_driven():
     # monotone non-improving as the horizon (and model disagreement) grows
     rank = {"hoch": 0, "mittel": 1, "niedrig": 2}
     assert all(rank[a] <= rank[b] for a, b in zip(confs, confs[1:]))
+    # real model disagreement backs every one of these days -> "spread" source
+    assert all(d["confidence_source"] == "spread" for d in series["days"])
     # the day band widens for the strip
     last = series["days"][-1]["summary"]
     assert last["wind_high"] > last["wind_low"]
@@ -265,5 +267,6 @@ def test_consensus_degrades_gracefully_to_single_model():
     # no spread signal -> falls back to the calendar tiers
     confs = [d["confidence"] for d in series["days"]]
     assert confs == ["hoch", "hoch", "hoch", "mittel", "mittel", "niedrig", "niedrig"]
+    assert all(d["confidence_source"] == "calendar" for d in series["days"])
     # still returns a wind value (the surviving model's) -> no spot falls out
     assert series["days"][0]["hours"][0]["wind"] is not None

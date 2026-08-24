@@ -182,10 +182,25 @@ def _create(admin, region_id, publish=False, **overrides):
         "slug": f"cat-spot-{uuid.uuid4().hex[:8]}",
         "region_id": region_id, "lat": 54.41, "lon": 10.22, "sports": ["kitesurf"],
     }
+    if publish:
+        # Go-live enforces editorial completeness — fill every required gap
+        # that this test isn't specifically exercising, unless the caller
+        # already supplied its own value for that field.
+        body.setdefault("bottom_type", ["sand"])
+        body.setdefault("level", ["beginner"])
+        body.setdefault("water_character", ["chop"])
+        body.setdefault("water_type", ["sea"])
+        body.setdefault("editorial", {"description": "Test spot for automated coverage."})
     body.update(overrides)
     resp = admin.post("/admin/spots", json=body)
     if publish and resp.status_code == 201:
-        admin.post(f"/admin/spots/{resp.json()['id']}/live")
+        sid = resp.json()["id"]
+        admin.post(f"/admin/spots/{sid}/image", json={
+            "url": "https://images.example.com/hero.jpg", "source": "unsplash",
+            "license": "Unsplash License", "credit": "Test",
+        })
+        live = admin.post(f"/admin/spots/{sid}/live")
+        assert live.status_code == 200, live.text
     return resp
 
 

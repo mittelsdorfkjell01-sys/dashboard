@@ -1,7 +1,9 @@
 # Surfwinddata Forecast-System V1
 
-Stand: 2026-08-12. Der öffentliche Vertrag umfasst zehn Tage; Tage 1–5
-enthalten Stundenwerte, Tage 6–10 ausschließlich belastbare Tagestrends.
+Stand: 2026-08-23. Der öffentliche Vertrag umfasst zehn Tage; Tage 1–5
+enthalten eindeutige UTC-Stundenwerte, Tage 6–10 ausschließlich Tagestrends.
+Seit `weather-v3` bleibt `detail: hourly | trend` im öffentlichen Schema
+erhalten; ungültige numerische Teilwerte werden als nicht verfügbar markiert.
 
 ## Datenfluss und Fallbacks
 

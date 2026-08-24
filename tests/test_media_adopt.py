@@ -227,12 +227,14 @@ def test_adopting_a_pexels_hero_copies_the_file_into_our_storage(
 
 # --- gates -----------------------------------------------------------------
 
-def test_a_too_small_photo_is_refused_for_hero(db, spot, unsplash_fetch):
-    with pytest.raises(media_adopt.AdoptError, match="3840"):
-        media_adopt.adopt(
-            db, entity_type="spot", entity_id=spot.id, role="hero",
-            provider="unsplash", external_id=SMALL_ID,
-        )
+def test_a_too_small_photo_is_adopted_for_hero_with_a_warning(db, spot, unsplash_fetch):
+    # Size is a soft gate: the operator sees the resolution and can knowingly
+    # use a smaller image — only the licence gate hard-rejects adoption.
+    outcome = media_adopt.adopt(
+        db, entity_type="spot", entity_id=spot.id, role="hero",
+        provider="unsplash", external_id=SMALL_ID,
+    )
+    assert any("3840" in w for w in outcome.warnings)
 
 
 def test_the_same_photo_is_accepted_for_the_gallery(db, spot, unsplash_fetch):

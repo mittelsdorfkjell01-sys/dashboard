@@ -11,6 +11,7 @@ data so callers can degrade gracefully when coverage is thin.
 from __future__ import annotations
 
 from statistics import median as _median
+import math
 
 # Confidence tiers, shared with the live path (German strings).
 CONFIDENCE_HIGH = "hoch"
@@ -27,7 +28,7 @@ SPREAD_WIDE_KT = 12.0   # <= -> mittel, else niedrig
 
 def _finite(values) -> list[float]:
     """Keep only real numbers (drops None / non-numeric coverage gaps)."""
-    return [float(v) for v in values if isinstance(v, (int, float)) and not isinstance(v, bool)]
+    return [float(v) for v in values if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)]
 
 
 def spread(values) -> dict | None:

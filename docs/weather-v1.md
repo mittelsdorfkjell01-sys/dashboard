@@ -7,7 +7,8 @@
 - Current values are labelled **Aktuell (berechnet)**. They are model results,
   never presented as measurements.
 - Horizon: ten days. Days 1–5 contain hourly detail; days 6–10 contain only a
-  coarse daily trend and uncertainty.
+  daily trend and uncertainty summary. Hour identity is always the full UTC
+  instant; local labels use the spot timezone.
 - V1 calculation is wind-only. Existing wave fields on the legacy `/live` and
   `/forecast` responses are a temporary compatibility facade and do not enter
   the wind calculation.

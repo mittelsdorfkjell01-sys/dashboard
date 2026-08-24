@@ -187,7 +187,7 @@ def _hour_at(block: dict, var: str, mid: str, multi: bool, idx: int):
 
 
 def _number(value) -> float | None:
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
         return float(value)
     return None
 
@@ -215,7 +215,7 @@ def _wind_consensus_at(hourly: dict, models: list[str], idx: int, lead_hours: fl
 
 
 def _knots(value_ms: float | None) -> float | None:
-    if value_ms is None:
+    if value_ms is None or not math.isfinite(value_ms) or value_ms < 0:
         return None
     return round(convert_wind_speed(value_ms, WindSpeedUnit.METRES_PER_SECOND, WindSpeedUnit.KNOTS), 1)
 
@@ -333,14 +333,11 @@ def get_live_conditions_for_spot(
         change_ms = (following.speed_ms - previous.speed_ms) / 2.0
         threshold_ms = convert_wind_speed(1.25, WindSpeedUnit.KNOTS, WindSpeedUnit.METRES_PER_SECOND)
         trend = "steigend" if change_ms > threshold_ms else "fallend" if change_ms < -threshold_ms else "stabil"
-    wind_band = None if consensus is None else {
+    wind_band = None if consensus is None or consensus.member_count < 2 else {
         "median": _knots(consensus.speed_ms), "low": _knots(consensus.low_ms),
         "high": _knots(consensus.high_ms), "n": consensus.member_count,
     }
-    gust_band = None if consensus is None or consensus.gust_ms is None else {
-        "median": _knots(consensus.gust_ms), "low": None, "high": None,
-        "n": consensus.member_count,
-    }
+    gust_band = None
     local = apply_local_physics(0.0, consensus.direction_deg, profile) if consensus and consensus.direction_deg is not None else None
     return {
         "spot_id": spot.id,
@@ -355,9 +352,9 @@ def get_live_conditions_for_spot(
         "availability": {"atmosphere": "available", "solar": "available", "marine": marine_diagnostics["status"]},
         "current": {
             "wind": _knots(consensus.speed_ms) if consensus else None,
-            "gust": _knots(consensus.gust_ms) if consensus else None,
+            "gust": _knots(consensus.gust_ms) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
             "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
-            "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None else None,
+            "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
             "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
             "air": cur_f.get("temperature_2m"),
             "sst": cur_m.get("sea_surface_temperature"),
@@ -418,7 +415,7 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
             continue
         lead_hours = max(0.0, (valid_at - reference).total_seconds() / 3600) if reference and valid_at else float(i)
         consensus = _wind_consensus_at(hourly, models, i, lead_hours, profile, calibrations)
-        wind_band = None if consensus is None else {
+        wind_band = None if consensus is None or consensus.member_count < 2 else {
             "median": _knots(consensus.speed_ms), "low": _knots(consensus.low_ms),
             "high": _knots(consensus.high_ms), "n": consensus.member_count,
         }
@@ -430,9 +427,9 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
             {
                 "time": utc_time,
                 "wind": _knots(consensus.speed_ms) if consensus else None,
-                "gust": _knots(consensus.gust_ms) if consensus else None,
+                "gust": _knots(consensus.gust_ms) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
                 "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
-                "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None else None,
+                "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
                 "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
                 "air": valid_number(air_series[i] if i < len(air_series) else None),
                 "apparent_temperature_c": valid_number(apparent_series[i] if i < len(apparent_series) else None),
@@ -455,7 +452,7 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
 
 
 def _nums(values: list) -> list[float]:
-    return [v for v in values if isinstance(v, (int, float))]
+    return [float(v) for v in values if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)]
 
 
 def _peak_wind_band(hours: list[dict]) -> tuple[float | None, float | None]:
@@ -533,11 +530,13 @@ def _daily_weather(forecast: dict, models: list[str]) -> dict[str, dict]:
     return result
 
 
-def _day_confidence(hours: list[dict], day_index: int) -> str:
-    """Confidence from the day's mean wind model-disagreement.
+def _day_confidence(hours: list[dict], day_index: int) -> tuple[str, str]:
+    """Confidence from the day's mean wind model-disagreement, plus its source.
 
     Falls back to the calendar tier when the day has no hour with >= 2 models
-    reporting (graceful degradation -- e.g. single-model coverage).
+    reporting (graceful degradation -- e.g. single-model coverage). The source
+    ("spread" vs "calendar") lets the client show when confidence is backed by
+    real model disagreement versus the coarser calendar heuristic.
     """
     widths = [
         wb["high"] - wb["low"]
@@ -545,8 +544,8 @@ def _day_confidence(hours: list[dict], day_index: int) -> str:
         if (wb := h.get("wind_spread")) and wb["n"] >= 2
     ]
     if not widths:
-        return confidence_for_day(day_index)
-    return confidence_from_spread(sum(widths) / len(widths))
+        return confidence_for_day(day_index), "calendar"
+    return confidence_from_spread(sum(widths) / len(widths)), "spread"
 
 
 def get_forecast_series(
@@ -559,8 +558,9 @@ def get_forecast_series(
 ) -> dict:
     """Daily + hourly forecast with a consensus band and per-day confidence.
 
-    Returns at most :data:`MAX_FORECAST_DAYS` days (the horizon is hard-capped);
-    days 1-5 contain hourly detail; days 6-10 contain summaries only.
+    Returns at most :data:`MAX_FORECAST_DAYS` days (the horizon is hard-capped).
+    Days 1–5 may contain hourly detail. Days 6–10 are daily trends without
+    synthetic or leaked hourly values.
     """
     client = client or default_client()
     cache = cache or default_cache()
@@ -594,17 +594,18 @@ def get_forecast_series(
         by_date.setdefault(date, []).append(h)
 
     ordered_dates = list(by_date.keys())[:days]  # hard horizon cap
-    day_records = [
-        {
+    day_records = []
+    for i, date in enumerate(ordered_dates):
+        confidence, confidence_source = _day_confidence(by_date[date], i)
+        day_records.append({
             "date": date,
             "local_date": date,
-            "confidence": _day_confidence(by_date[date], i),
+            "confidence": confidence,
+            "confidence_source": confidence_source,
             "summary": {**_day_summary(by_date[date]), **daily_weather.get(date, {})},
             "hours": by_date[date] if i < 5 else [],
             "detail": "hourly" if i < 5 else "trend",
-        }
-        for i, date in enumerate(ordered_dates)
-    ]
+        })
 
     return {
         "spot_id": spot.id,
@@ -613,6 +614,7 @@ def get_forecast_series(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "contract_version": WEATHER_CONTRACT_VERSION,
         "timezone": timezone_name,
+        "calibrated": bool(calibrations),
         "availability": {
             "atmosphere": Availability.AVAILABLE.value,
             "solar": Availability.AVAILABLE.value if daily_weather else Availability.UNAVAILABLE_PROVIDER.value,
