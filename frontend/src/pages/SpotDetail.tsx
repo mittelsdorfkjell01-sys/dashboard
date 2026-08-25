@@ -5,7 +5,7 @@ import LandingHeader from "../components/LandingHeader";
 import Facilities from "../components/Facilities";
 import SpotTabs from "../components/SpotTabs";
 import TidePanel from "../components/TidePanel";
-import WindRose from "../components/WindRose";
+import DirectionCompass from "../components/data/DirectionCompass";
 import SpotDataHeader from "../components/data/SpotDataHeader";
 import LiveRow from "../components/data/LiveRow";
 import TimeScrubber from "../components/data/TimeScrubber";
@@ -24,14 +24,13 @@ import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
-import { waterTypeFromCharacter } from "../lib/seasonView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
 import { spotPath } from "../lib/spotRoutes";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
 const LocatorMap = lazy(() => import("../components/LocatorMap"));
-const SpotFlowMap = lazy(() => import("../components/SpotFlowMap"));
+const SpotMap = lazy(() => import("../components/SpotMap"));
 const Meteogram = lazy(() => import("../components/data/Meteogram"));
 const WeatherDetailsTable = lazy(() => import("../components/data/WeatherDetailsTable"));
 const WindClimatologyModule = lazy(() => import("../components/data/WindClimatologyModule"));
@@ -149,12 +148,6 @@ export default function SpotDetail() {
 
   // All from the backend record — no synthetic data.
   const facilities = facilitiesFromMap(spot.facilities);
-  // waterCharacter is multi-select; the flow-map animation takes one cue — use
-  // the first (primary) character.
-  const waterType = waterTypeFromCharacter(spot.waterCharacter?.[0]);
-  const currentWind = live?.current.wind ?? undefined;
-  const mapCoords = spot.coords ?? [41.18, 9.32];
-  const windDir = live?.current.dir ?? spot.windDir ?? 320;
   const [regionPart, country] = spot.region.split(",").map((p) => p.trim());
 
   // Most recent posts first — the teaser tile shows the newest one, the
@@ -378,19 +371,13 @@ export default function SpotDetail() {
                 <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wind + Welle · Karte</p></div>
                 <Suspense fallback={<DataModulePlaceholder height="h-[420px]" />}>
-                  <SpotFlowMap
-                    coords={mapCoords}
-                    windDir={windDir}
-                    windKts={currentWind ?? spot.wind}
-                    waveDir={spot.waveDir ?? windDir}
-                    coast={spot.coast ?? ((spot.waveDir ?? windDir) + 180) % 360}
-                    period={live?.current.period ?? 5}
-                    waterType={waterType}
-                    zoom={spot.mapView?.zoom}
-                    mapCenter={spot.mapView?.center}
+                  <SpotMap
+                    spot={spot}
                     live={live}
                     forecast={forecast}
-                    showLayerSwitcher
+                    zoom={spot.mapView?.zoom}
+                    mapCenter={spot.mapView?.center}
+                    showModeSwitch
                     rounded={false}
                   />
                 </Suspense>
@@ -398,9 +385,8 @@ export default function SpotDetail() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="rounded-lg border border-line bg-surface p-4">
-                    <p className="text-caption font-medium uppercase tracking-wider text-muted">Windrichtung · 52 W</p>
-                    <WindRose windDir={windDir} waveDir={spot.waveDir ?? live?.current.swell_dir ?? undefined} className="mx-auto mt-2 h-52 max-w-full" />
+                  <div className="overflow-hidden rounded-lg border border-line bg-surface">
+                    <DirectionCompass live={live} />
                   </div>
                   <TidePanel spotId={spotId!} />
                 </div>

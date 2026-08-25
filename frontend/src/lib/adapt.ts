@@ -68,7 +68,9 @@ export function adaptSpot(
     heroCredit: fromImageRecord(s.image),
     heroDelivery: s.image?.delivery,
     coords,
-    windDir: s.facing ?? undefined,
+    // Redaktionelle Spot-/Strandausrichtung. Sie ist weder aktuelle
+    // Windrichtung noch die fachlich gepflegte Küstennormale.
+    facingDeg: s.facing ?? undefined,
     sports: s.sports,
     level: s.level,
     waterTypes: s.water_type,

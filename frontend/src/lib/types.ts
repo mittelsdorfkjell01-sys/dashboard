@@ -32,9 +32,8 @@ export interface Spot {
   heroCredit?: CreditSource | null;
   heroDelivery?: "hotlinked" | "hosted"; // hotlinked images resize via the provider CDN
   coords?: [number, number]; // [lat, lng]
-  windDir?: number; // degrees the wind comes FROM
-  waveDir?: number;
-  coast?: number;
+  /** Redaktioneller Orientierungswert; niemals aktuelle Wetterrichtung oder Küstennormale. */
+  facingDeg?: number;
 
   // populated from the backend
   uuid?: string;
@@ -48,7 +47,7 @@ export interface Spot {
   waterCharacter?: string[];
   style?: string[];
   facilities?: FacilityMap | null;
-  /** Admin-set preview frame for the wind/wave flow map (editorial.map_view). */
+  /** Admin-set preview frame for the wind/wave map (editorial.map_view). */
   mapView?: { center: [number, number]; zoom: number } | null;
 
   // --- tile-facing fields (SpotCard) ---------------------------------------

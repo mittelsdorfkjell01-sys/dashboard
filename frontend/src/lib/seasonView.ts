@@ -4,7 +4,7 @@
 // can hide the panel instead of inventing numbers.
 
 import type { RegionSeasonResponse } from "./api";
-import type { MonthWind, RegionMonth, WaterType } from "./types";
+import type { MonthWind, RegionMonth } from "./types";
 
 const MONTHS = ["JAN", "FEB", "MÄR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
 const MONTHS_FULL = [
@@ -31,12 +31,6 @@ function windowYears(window: unknown): number {
     if (n > 0) return n;
   }
   return 20;
-}
-
-export function waterTypeFromCharacter(wc?: string | null): WaterType {
-  if (wc === "flach" || wc === "tiefes_wasser") return "flat";
-  if (wc === "welle_klein" || wc === "welle_gross") return "swell";
-  return "chop";
 }
 
 /** Spot climatology → monthly bars of *rideable wind hours per week*, or null.

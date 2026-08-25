@@ -13,7 +13,22 @@ from app.weather.physics.limits import clamp_combined_factor, clamp_direction_ch
 def test_coastal_classification_uses_waterward_normal_and_wraps_north():
     assert coastal_class(350, 10) == "onshore"
     assert coastal_class(190, 10) == "offshore"
-    assert coastal_class(100, 10) == "crossshore"
+    assert coastal_class(100, 10) == "sideshore"
+
+
+@pytest.mark.parametrize(("direction", "expected"), [
+    (0, "onshore"), (22.5, "onshore"), (22.6, "cross_onshore"),
+    (67.5, "cross_onshore"), (67.6, "sideshore"), (112.4, "sideshore"),
+    (112.5, "cross_offshore"), (157.4, "cross_offshore"),
+    (157.5, "offshore"), (180, "offshore"), (359.9, "onshore"),
+])
+def test_coastal_classification_boundaries(direction, expected):
+    assert coastal_class(direction, 0) == expected
+
+
+def test_coastal_classification_requires_both_bearings():
+    assert coastal_class(None, 0) == "unavailable"
+    assert coastal_class(0, None) == "unavailable"
 
 
 def test_missing_profile_does_not_invent_local_correction():

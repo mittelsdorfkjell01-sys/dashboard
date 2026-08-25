@@ -27,6 +27,7 @@ from app.models import (
     SpotWeatherProfile,
     SpotWeatherSector,
     WeatherModelCalibration,
+    WeatherObservation,
     WeatherStation,
     WeatherShadowForecast,
     WeatherShadowRun,
@@ -775,9 +776,11 @@ def batch_recalculate(
 
 @router.put("/spots/{spot_id}/station")
 def put_station(
-    spot_id: uuid.UUID, body: WeatherStationIn, db: Session = Depends(get_db)
+    spot_id: uuid.UUID, body: WeatherStationIn, db: Session = Depends(get_db),
+    actor: Principal = Depends(get_actor),
 ) -> dict:
-    if db.get(Spot, spot_id) is None:
+    spot = db.get(Spot, spot_id)
+    if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     station = db.scalar(
         select(WeatherStation).where(
@@ -792,7 +795,13 @@ def put_station(
     )
     for field, value in body.model_dump().items():
         setattr(station, field, value)
+    spot_lat, spot_lon = live_service._spot_coords(spot)
+    station.distance_km = live_service.distance_km(spot_lat, spot_lon, body.latitude, body.longitude)
     db.add(station)
+    record_audit(db, spot_id, "weather_station_configured", {
+        "provider": body.provider, "provider_station_id": body.provider_station_id,
+        "distance_km": round(station.distance_km, 3), "active": body.active,
+    }, getattr(actor, "email", None) or str(actor))
     db.commit()
     db.refresh(station)
     return {"id": str(station.id), **body.model_dump()}
@@ -808,6 +817,12 @@ def get_calibration(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
             WeatherModelCalibration.spot_id == spot_id
         )
     ).all()
+    latest_observations = {}
+    for station in stations:
+        observation = db.scalar(select(WeatherObservation).where(
+            WeatherObservation.station_id == station.id
+        ).order_by(WeatherObservation.observed_at.desc()).limit(1))
+        latest_observations[station.id] = observation
     return {
         "stations": [
             {
@@ -817,6 +832,8 @@ def get_calibration(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
                 "name": s.name,
                 "distance_km": s.distance_km,
                 "active": s.active,
+                "last_observation_at": latest_observations[s.id].observed_at.isoformat() if latest_observations[s.id] else None,
+                "observation_type": "measurement" if latest_observations[s.id] else None,
             }
             for s in stations
         ],
@@ -828,9 +845,51 @@ def get_calibration(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
                 "bias_ms": r.bias_ms,
                 "mae_ms": r.mae_ms,
                 "weight_multiplier": r.weight_multiplier,
+                "active": r.sample_count >= 30,
+                "rmse_ms": None,
+                "direction_mae_deg": None,
             }
             for r in rows
         ],
+    }
+
+
+@router.get("/spots/{spot_id}/operations")
+def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    """Read model, cell, validation, job and publication state without implying inactive layers are live."""
+    spot = db.get(Spot, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    snapshot = db.scalar(select(ForecastSnapshot).where(
+        ForecastSnapshot.spot_id == spot_id, ForecastSnapshot.active.is_(True)
+    ).order_by(ForecastSnapshot.generated_at.desc()))
+    jobs = db.scalars(select(ForecastProcessingJob).where(
+        ForecastProcessingJob.spot_id == spot_id
+    ).order_by(ForecastProcessingJob.created_at.desc()).limit(20)).all()
+    calibration = get_calibration(spot_id, db)
+    marine = ((snapshot.internal or {}).get("marine") if snapshot else None) or {}
+    profile = getattr(spot, "weather_profile", None)
+    return {
+        "spot_id": str(spot_id),
+        "public_point_forecast": {"enabled": True, "path": "open_meteo_transition", "observation_type": "forecast"},
+        "wind_cell": marine.get("requested_coordinate"),
+        "marine_cell": marine.get("used_coordinate"),
+        "marine_grid_distance_km": marine.get("grid_distance_km"),
+        "coastal_normal_deg": getattr(profile, "coastal_normal_deg", None),
+        "geometry_version": getattr(profile, "physics_version", None),
+        "bathymetry": None,
+        "calibration": calibration,
+        "active_snapshot": None if snapshot is None else {
+            "id": str(snapshot.id), "generated_at": snapshot.generated_at.isoformat(),
+            "valid_until": snapshot.valid_until.isoformat(), "stale": snapshot.valid_until < datetime.now(timezone.utc),
+            "quality_level": snapshot.quality_level, "fallback_status": snapshot.fallback_status,
+        },
+        "jobs": [_job_view(job) for job in jobs],
+        "layers": {
+            "wind_field": {"public": False, "reason": "No gridded provider publication configured"},
+            "wave_field": {"public": False, "reason": "Copernicus credentials/licence and ingestion decision required"},
+            "nearshore": {"public": False, "reason": "Bathymetry and holdout validation gates not passed"},
+        },
     }
 
 

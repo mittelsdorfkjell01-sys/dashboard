@@ -598,6 +598,32 @@ html[data-theme="dark"] { color-scheme: dark; }
   --sw-green: #4A8159;
 }
 
+/* Same `--map-*` scope as `.swd-public-map`, for the single-spot map module
+   embedded inline on the spot page (not full-viewport, so no height rule
+   here) — lets it reuse `.swd-map-control`/`.swd-map-legend`/
+   `.swd-map-mode-switch`/`.swd-map-error` unchanged. */
+.swd-spot-map {
+  --map-control-edge: 12px;
+  --map-surface: #FFFDF8;
+  --map-spot: #126B70;
+  --map-selection: #F06F4F;
+  --map-label: #233638;
+  --map-label-soft: #6C7A82;
+  --map-line: #D2CEC2;
+  --sw-page: #F7F7F7;
+  --sw-band: #F5F3F0;
+  --sw-surface: #FFFFFF;
+  --sw-ink: #241C17;
+  --sw-ink-soft: #3D332C;
+  --sw-muted: #6B625B;
+  --sw-line: #E6E1DA;
+  --sw-line-soft: #F0EDE7;
+  --sw-teal: #1C4E63;
+  --sw-teal-hover: #163E4F;
+  --sw-orange: #B45309;
+  --sw-green: #4A8159;
+}
+
 /* Controls — 40px desktop / 44px touch, warm floating surface, no blur.
    Two independent floating stacks: `-left` (back + zoom) and the plain
    `.swd-map-controls` (list), mirrored left/right at the same top offset. */
@@ -758,6 +784,72 @@ html[data-theme="dark"] { color-scheme: dark; }
   pointer-events: none;
   background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sw-page) 55%, transparent) 55%, color-mix(in srgb, var(--sw-page) 80%, transparent));
 }
+/* Mode switch (Wind / Wellen / Brandung) — same floating pill-group
+   language as `.swd-map-control`, but a segmented control rather than
+   separate buttons. Brandung stays in the DOM, permanently `disabled`,
+   with its reason on `title` — never hidden, so visitors can see the
+   capability is planned rather than missing (see
+   docs/map-redesign-backend-gaps.md). */
+.swd-map-mode-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--map-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+}
+.swd-map-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: 600 12px/1 "Poppins", system-ui, sans-serif;
+  color: var(--map-label-soft);
+  background: transparent;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+@media (pointer: coarse) { .swd-map-mode-pill { min-height: 44px; } }
+.swd-map-mode-pill[aria-pressed="true"] { background: var(--sw-ink); color: #fff; }
+.swd-map-mode-pill:disabled { opacity: 0.5; cursor: not-allowed; }
+.swd-map-mode-pill:not(:disabled):hover { color: var(--map-label); }
+.swd-map-mode-pill:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+
+/* Legend — bottom-left floating card, mode-aware. Mirrors WindScaleLegend's
+   swatch approach but as a compact gradient strip (map chrome, not a chart
+   footer) so it reads at a glance without competing with the marker dots. */
+.swd-map-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  color: var(--map-label);
+}
+.swd-map-legend-title {
+  font: 600 10px/1 "Poppins", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--map-label-soft);
+}
+.swd-map-legend-scale { display: flex; gap: 1px; border-radius: 6px; overflow: hidden; }
+.swd-map-legend-scale span { flex: 1; height: 8px; }
+.swd-map-legend-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--map-label-soft);
+  font-variant-numeric: tabular-nums;
+}
+.swd-map-legend-note { font-size: 10px; color: var(--map-label-soft); }
+
 .swd-map-status {
   width: max-content;
   max-width: calc(100vw - 40px);

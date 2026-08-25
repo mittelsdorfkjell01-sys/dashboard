@@ -56,6 +56,16 @@ describe("adaptSpot", () => {
     expect(s.facilities).toEqual({ parking: { available: true } });
   });
 
+  it("maps `facing` only to the explicit editorial orientation field", () => {
+    const s = adaptSpot(summary({ facing: 220 }), region);
+    expect(s.facingDeg).toBe(220);
+  });
+
+  it("leaves both unset when facing is null, rather than inventing a bearing", () => {
+    const s = adaptSpot(summary({ facing: null }), region);
+    expect(s.facingDeg).toBeUndefined();
+  });
+
   it("leaves image empty when none is set (branded fallback, no picsum)", () => {
     const s = adaptSpot(summary({ image: null }), region);
     expect(s.image).toBe("");

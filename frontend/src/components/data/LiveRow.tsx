@@ -17,7 +17,16 @@ export default function LiveRow({ live }: {
   live?: LiveConditionsRead | null;
 }) {
   const { selectedForecast, windUnit, sportMode } = useSpotDataScope();
-  const source: Source = selectedForecast ?? live?.current ?? null;
+  // Keep the row on exactly the same data kind as DirectionCompass/SpotMap.
+  // A station measurement contains wind only; missing weather fields remain
+  // missing instead of being silently borrowed from the model nowcast.
+  const measurementSource: Source = !selectedForecast && live?.measurement ? {
+    wind: live.measurement.wind_speed_ms == null ? null : live.measurement.wind_speed_ms / 0.514444,
+    gust: live.measurement.wind_gust_ms == null ? null : live.measurement.wind_gust_ms / 0.514444,
+    dir: live.measurement.wind_direction_from_deg,
+    air: null, sst: null, swell: null, period: null, swell_dir: null,
+  } : null;
+  const source: Source = selectedForecast ?? measurementSource ?? live?.current ?? null;
   const wind = number(source, "wind");
   const gust = number(source, "gust");
   const wave = number(source, "swell", "waveHeight");

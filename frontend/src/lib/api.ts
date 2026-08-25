@@ -276,6 +276,28 @@ export interface CurrentConditions {
   swell: number | null;
   period: number | null;
   swell_dir: number | null;
+  coastal_normal_deg?: number | null;
+  coastal_classification?: CoastalClassification | null;
+  wave_coastal_classification?: CoastalClassification | null;
+}
+
+export type CoastalClassification = "onshore" | "cross_onshore" | "sideshore" | "cross_offshore" | "offshore" | "unavailable";
+
+// A real station reading, distinct from `current` (the model nowcast) — see
+// app/schemas/live.py MeasurementRead. Speeds are m/s (station-native unit),
+// not knots like the rest of the app; convert at the display site.
+export interface LiveMeasurement {
+  observation_type: "measurement";
+  station_id: string;
+  provider: string;
+  provider_station_id: string;
+  observed_at: string;
+  age_seconds: number;
+  distance_km: number | null;
+  wind_speed_ms: number | null;
+  wind_gust_ms: number | null;
+  wind_direction_from_deg: number | null;
+  quality: number | null;
 }
 
 export interface LiveConditionsRead {
@@ -286,7 +308,15 @@ export interface LiveConditionsRead {
   resolution?: "15min" | "hourly";
   trend?: "steigend" | "stabil" | "fallend" | null;
   quality_tier?: "coordinates" | "coastal" | "extended" | "advanced";
-  coastal_classification?: "onshore" | "crossshore" | "offshore" | null;
+  coastal_classification?: CoastalClassification | null;
+  coastal_normal_deg?: number | null;
+  observation_type?: "nowcast";
+  provenance?: { provider: string; model?: string | null; valid_at: string; spot_timezone: string; stale: boolean; quality_tier: string } | null;
+  // Nearest active station's latest reading, when one exists for this spot —
+  // absent (not fabricated) otherwise. Never render this as if it were
+  // `current` (the nowcast): a real measurement and a model estimate must
+  // look visibly different (see the map redesign brief).
+  measurement?: LiveMeasurement | null;
   current: CurrentConditions;
 }
 
@@ -344,6 +374,12 @@ export interface ForecastHour {
   weather_condition?: WeatherCondition;
   is_day?: boolean | null;
   wind_spread?: SpreadBand | null;
+  observation_type?: "forecast";
+  coastal_normal_deg?: number | null;
+  coastal_classification?: CoastalClassification | null;
+  wave_coastal_classification?: CoastalClassification | null;
+  quality_tier?: string | null;
+  stale?: boolean;
 }
 export type ForecastConfidenceSource = "spread" | "calendar";
 export interface ForecastDay {
@@ -528,7 +564,7 @@ export const getSpots = (params: SpotQuery = {}) =>
   request<SpotSummary[]>(`/spots${qs(params as Record<string, unknown>)}`);
 
 export const getSpotCatalogVersion = () =>
-  request<{ version: string }>("/spots/version", { cache: "no-store" });
+  request<{ version: string }>("/spots/version");
 
 /** "aktuelle Top Spots": published spots ranked by this week's wind forecast,
  *  today's conditions and popularity. Stable per day, rotates daily. */

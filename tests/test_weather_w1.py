@@ -4,6 +4,7 @@ from app.live.cache import InMemoryCache
 from app.live.service import get_forecast_series
 from app.live.weather_contract import Availability, marine_classification, provider_axis_utc, weather_condition
 from app.schemas.live import ForecastDaySummary, ForecastHour
+from app.models.weather_profile import SpotWeatherProfile
 from tests.live_helpers import FakeDB, FakeOpenMeteoClient, make_forecast_response, make_spot
 
 
@@ -26,10 +27,10 @@ def test_dst_axes_are_strict_for_spring_gap_and_repeated_fall_hour():
     assert (fall[2] - fall[1]).total_seconds() == 3600
 
 
-def test_complete_weather_v3_contract_uses_nullable_fields_and_local_dates():
+def test_complete_weather_v4_contract_uses_nullable_fields_and_local_dates():
     spot = make_spot()
     result = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(data_days=10), cache=InMemoryCache())
-    assert result["contract_version"] == "weather-v3"
+    assert result["contract_version"] == "weather-v4"
     assert result["timezone"] == "UTC" and len(result["days"]) == 10
     hour = result["days"][0]["hours"][0]
     assert hour["apparent_temperature_c"] == 17
@@ -38,6 +39,34 @@ def test_complete_weather_v3_contract_uses_nullable_fields_and_local_dates():
     summary = result["days"][0]["summary"]
     assert summary["temperature_min_c"] == 14 and summary["temperature_max_c"] == 24
     assert summary["precipitation_sum_mm"] == 1.2 and summary["solar_state"] == "normal"
+
+
+def test_forecast_direction_metadata_uses_weather_profile_never_facing():
+    spot = make_spot()
+    spot.facing = 123
+    spot.weather_profile = SpotWeatherProfile(
+        spot_id=spot.id, active=True, quality_tier="coastal", timezone="UTC",
+        elevation_m=2, coastal_normal_deg=0, physics_version="wind-v1", sectors=[],
+    )
+    result = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(data_days=1), cache=InMemoryCache())
+    hour = result["days"][0]["hours"][0]
+    assert hour["coastal_normal_deg"] == 0
+    assert hour["coastal_classification"] == "onshore"
+    assert hour["wave_coastal_classification"] in {"onshore", "cross_onshore", "sideshore", "cross_offshore", "offshore", "unavailable"}
+    spot.facing = 300
+    repeated = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(data_days=1), cache=InMemoryCache())
+    assert repeated["days"][0]["hours"][0]["coastal_classification"] == hour["coastal_classification"]
+
+
+def test_forecast_schema_preserves_direction_metadata():
+    serialized = ForecastHour(
+        time="2026-08-24T14:00:00+00:00", dir=0, coastal_normal_deg=359.9,
+        coastal_classification="onshore", wave_coastal_classification="sideshore",
+        quality_tier="coastal", stale=True,
+    ).model_dump()
+    assert serialized["coastal_normal_deg"] == 359.9
+    assert serialized["coastal_classification"] == "onshore"
+    assert serialized["stale"] is True
 
 
 def test_invalid_individual_weather_value_becomes_null_not_zero():

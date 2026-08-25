@@ -1,8 +1,25 @@
 import type { GeoJSONSource, GeoJSONSourceSpecification, LayerSpecification, FilterSpecification, Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import type { Spot } from "./types";
 import { haversineKm } from "./mapLinks";
+import { WIND_BINS } from "./windScale";
+import { WAVE_BINS } from "./waveScale";
 
 export type PublicMapTheme = "light" | "dark";
+
+// Wind and wave are the two data-backed marker modes on the overview map.
+// Brandung has no backend layer yet (no nearshore engine — see
+// docs/map-redesign-backend-gaps.md) so it is not a selectable mode here;
+// the mode switch UI still lists it, permanently disabled with a reason.
+export type PublicMapMode = "wind" | "waves";
+
+/** Per-spot live reading used to color markers for the active mode. Both
+ *  values are independently nullable — a spot can have live wind but no
+ *  marine data (inland) or vice versa; `null` always means "no data", never
+ *  a fabricated 0. */
+export interface PublicSpotLiveValue {
+  windKt: number | null;
+  waveM: number | null;
+}
 
 // A single keyless CARTO Voyager vector style for both themes — the palette
 // below repaints it, so Surfwinddata never runs its own tile pipeline.
@@ -40,11 +57,17 @@ export interface PublicSpotProperties {
   country: string;
   image: string;
   windKt: number | null;
+  // Live readings for the active marker-color mode. Distinct from `windKt`
+  // above, which is the spot's typical/climatological value (tile display) —
+  // these are "right now" (or the map's cache of it), and absent (`null`)
+  // whenever no live reading exists, never backfilled from the typical value.
+  liveWindKt: number | null;
+  liveWaveM: number | null;
 }
 
 export type PublicSpotFeatureCollection = GeoJSON.FeatureCollection<GeoJSON.Point, PublicSpotProperties>;
 
-export function spotsToGeoJson(spots: Spot[]): PublicSpotFeatureCollection {
+export function spotsToGeoJson(spots: Spot[], live?: Map<string, PublicSpotLiveValue>): PublicSpotFeatureCollection {
   return {
     type: "FeatureCollection",
     features: spots.flatMap((spot) => spot.coords ? [{
@@ -59,6 +82,8 @@ export function spotsToGeoJson(spots: Spot[]): PublicSpotFeatureCollection {
         country: spot.regionCountry || "",
         image: spot.image || "",
         windKt: spot.typicalWindKt ?? null,
+        liveWindKt: live?.get(spot.id)?.windKt ?? null,
+        liveWaveM: live?.get(spot.id)?.waveM ?? null,
       },
     }] : []),
   };
@@ -75,12 +100,30 @@ export function publicSpotSource(): GeoJSONSourceSpecification {
   };
 }
 
-/** The spot/cluster marker stack, pre-coloured for `theme` — a compact,
- *  restrained system: no droplets, no permanent sport icon, no multi-ring
- *  selection halo. Diameters: 18–20px normal spots, 22–24px on hover/focus,
- *  30/34/38px clusters (small/medium/large). */
-export function publicSpotLayers(theme: PublicMapTheme): LayerSpecification[] {
+/** Marker fill for the active mode: a `step` expression over the spot's
+ *  live wind/wave reading, using the same bins as the chart legend
+ *  (windScale.ts / waveScale.ts) — one source of truth for "what color is
+ *  18 kt" everywhere in the app. A spot with no live value for this mode
+ *  (`null`) falls back to the theme's neutral marker color, never a
+ *  fabricated reading. */
+export function spotColorExpression(mode: PublicMapMode, theme: PublicMapTheme): unknown[] {
   const t = PUBLIC_MAP_PALETTE[theme];
+  const bins = mode === "wind" ? WIND_BINS : WAVE_BINS;
+  const field = mode === "wind" ? "liveWindKt" : "liveWaveM";
+  const steps: (string | number)[] = [];
+  bins.forEach((bin, i) => { if (i > 0) steps.push(bin.min, bin.hex); });
+  return ["case", ["==", ["get", field], null], t.spot, ["step", ["get", field], bins[0].hex, ...steps]];
+}
+
+/** The spot/cluster marker stack, pre-coloured for `theme` and `mode` — a
+ *  compact, restrained system: no droplets, no permanent sport icon, no
+ *  multi-ring selection halo. Diameters: 18–20px normal spots, 22–24px on
+ *  hover/focus, 30/34/38px clusters (small/medium/large). Clusters keep the
+ *  neutral theme color regardless of mode — averaging live values across an
+ *  arbitrary group of spots into one color would misrepresent them. */
+export function publicSpotLayers(theme: PublicMapTheme, mode: PublicMapMode = "wind"): LayerSpecification[] {
+  const t = PUBLIC_MAP_PALETTE[theme];
+  const spotColor = spotColorExpression(mode, theme) as unknown as string;
   return [
     {
       id: PUBLIC_SPOT_LAYER_IDS.shadow, type: "circle", source: PUBLIC_SPOT_SOURCE_ID,
@@ -113,12 +156,12 @@ export function publicSpotLayers(theme: PublicMapTheme): LayerSpecification[] {
       id: PUBLIC_SPOT_LAYER_IDS.points, type: "circle", source: PUBLIC_SPOT_SOURCE_ID, filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 8.5, 8, 9, 14, 9.5],
-        "circle-color": t.spot, "circle-stroke-color": t.floating, "circle-stroke-width": 2,
+        "circle-color": spotColor, "circle-stroke-color": t.floating, "circle-stroke-width": 2,
       },
     },
     {
       id: PUBLIC_SPOT_LAYER_IDS.hover, type: "circle", source: PUBLIC_SPOT_SOURCE_ID, filter: ["==", ["get", "spotId"], ""],
-      paint: { "circle-radius": 11, "circle-color": t.spot, "circle-stroke-color": t.selection, "circle-stroke-width": 2 },
+      paint: { "circle-radius": 11, "circle-color": spotColor, "circle-stroke-color": t.selection, "circle-stroke-width": 2 },
     },
     {
       id: PUBLIC_SPOT_LAYER_IDS.selectedRing, type: "circle", source: PUBLIC_SPOT_SOURCE_ID, filter: ["==", ["get", "spotId"], ""],
@@ -126,7 +169,7 @@ export function publicSpotLayers(theme: PublicMapTheme): LayerSpecification[] {
     },
     {
       id: PUBLIC_SPOT_LAYER_IDS.selected, type: "circle", source: PUBLIC_SPOT_SOURCE_ID, filter: ["==", ["get", "spotId"], ""],
-      paint: { "circle-radius": 10, "circle-color": t.spot, "circle-stroke-color": t.selection, "circle-stroke-width": 2.5 },
+      paint: { "circle-radius": 10, "circle-color": spotColor, "circle-stroke-color": t.selection, "circle-stroke-width": 2.5 },
     },
     {
       id: PUBLIC_SPOT_LAYER_IDS.names, type: "symbol", source: PUBLIC_SPOT_SOURCE_ID,
@@ -137,8 +180,17 @@ export function publicSpotLayers(theme: PublicMapTheme): LayerSpecification[] {
   ];
 }
 
-export function setPublicSpotData(map: MapLibreMap, spots: Spot[]): void {
-  (map.getSource(PUBLIC_SPOT_SOURCE_ID) as GeoJSONSource | undefined)?.setData(spotsToGeoJson(spots));
+export function setPublicSpotData(map: MapLibreMap, spots: Spot[], live?: Map<string, PublicSpotLiveValue>): void {
+  (map.getSource(PUBLIC_SPOT_SOURCE_ID) as GeoJSONSource | undefined)?.setData(spotsToGeoJson(spots, live));
+}
+
+/** Swap the marker fill to the given mode's live-data expression, in place
+ *  (no full style reload — just the three data-driven layers). */
+export function setPublicSpotMode(map: MapLibreMap, mode: PublicMapMode, theme: PublicMapTheme): void {
+  const expr = spotColorExpression(mode, theme);
+  for (const id of [PUBLIC_SPOT_LAYER_IDS.points, PUBLIC_SPOT_LAYER_IDS.hover, PUBLIC_SPOT_LAYER_IDS.selected]) {
+    if (map.getLayer(id)) map.setPaintProperty(id, "circle-color", expr);
+  }
 }
 
 export function setPublicSpotSelection(map: MapLibreMap, hovered?: string, selected?: string): void {
@@ -344,7 +396,9 @@ export async function fetchPublicMapStyle(theme: PublicMapTheme): Promise<StyleS
   return buildPublicMapStyle(base, theme);
 }
 
-export interface PublicMapUrlState { center: [number, number]; zoom: number; spot?: string }
+export interface PublicMapUrlState { center: [number, number]; zoom: number; spot?: string; mode?: PublicMapMode }
+
+const VALID_MODES = new Set<PublicMapMode>(["wind", "waves"]);
 
 export function parsePublicMapUrl(search: string): PublicMapUrlState | null {
   const q = new URLSearchParams(search);
@@ -352,15 +406,20 @@ export function parsePublicMapUrl(search: string): PublicMapUrlState | null {
   const lon = Number(q.get("lon"));
   const zoom = Number(q.get("z"));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(zoom) || lat < -85 || lat > 85 || lon < -180 || lon > 180 || zoom < 1 || zoom > 18) return null;
-  return { center: [lon, lat], zoom, spot: q.get("spot") || undefined };
+  const rawMode = q.get("mode");
+  const mode = VALID_MODES.has(rawMode as PublicMapMode) ? (rawMode as PublicMapMode) : undefined;
+  return { center: [lon, lat], zoom, spot: q.get("spot") || undefined, mode };
 }
 
-export function publicMapSearch(center: [number, number], zoom: number, spot?: string, current = ""): string {
+export function publicMapSearch(center: [number, number], zoom: number, spot?: string, current = "", mode?: PublicMapMode): string {
   const q = new URLSearchParams(current);
   q.set("lat", center[1].toFixed(5));
   q.set("lon", center[0].toFixed(5));
   q.set("z", zoom.toFixed(2));
   if (spot) q.set("spot", spot); else q.delete("spot");
+  // "wind" is the default — leave it out of the URL so an unmodified map
+  // link stays as short as before this mode existed.
+  if (mode && mode !== "wind") q.set("mode", mode); else q.delete("mode");
   return `?${q.toString()}`;
 }
 

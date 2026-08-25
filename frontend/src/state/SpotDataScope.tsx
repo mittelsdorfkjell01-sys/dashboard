@@ -3,7 +3,11 @@ import { closestForecastUtc, forecastHours, selectedForecastHour, type Normalize
 
 export type SportMode = "wind" | "surf";
 export type WindUnit = "kts" | "ms";
-export type MapLayer = "wind" | "both" | "wave";
+// "waves" colors by primary swell — see docs/map-redesign-backend-gaps.md
+// for why total-wave/wind-sea decomposition isn't offered as its own layer
+// yet. No "both" mode: the redesign shows one focused layer at a time
+// rather than all animation simultaneously (see the map redesign brief).
+export type MapLayer = "wind" | "waves";
 
 type SpotDataScopeValue = {
   selectedAtUtc: string | null;
@@ -11,6 +15,8 @@ type SpotDataScopeValue = {
   selectedForecast: NormalizedForecastHour | null;
   availableForecasts: NormalizedForecastHour[];
   forecastTimezone: string;
+  forecastStale: boolean;
+  forecastModel: string | null;
   sportMode: SportMode;
   setSportMode: (mode: SportMode) => void;
   windUnit: WindUnit;
@@ -36,7 +42,7 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
   const [windUnit, setWindUnitState] = useState<WindUnit>(() =>
     storedChoice("sw-wind-unit", ["kts", "ms"], "kts"),
   );
-  const [mapLayer, setMapLayer] = useState<MapLayer>("both");
+  const [mapLayer, setMapLayer] = useState<MapLayer>("wind");
 
   useEffect(() => {
     setSelectedAtUtc((current) => {
@@ -57,6 +63,8 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
     selectedForecast,
     availableForecasts,
     forecastTimezone: forecast?.timezone ?? "UTC",
+    forecastStale: forecast?.stale === true,
+    forecastModel: forecast?.model ?? null,
     sportMode,
     setSportMode: (mode) => {
       setSportModeState(mode);
@@ -69,7 +77,7 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
     },
     mapLayer,
     setMapLayer,
-  }), [availableForecasts, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, windUnit]);
+  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, windUnit]);
 
   return <SpotDataContext.Provider value={value}>{children}</SpotDataContext.Provider>;
 }

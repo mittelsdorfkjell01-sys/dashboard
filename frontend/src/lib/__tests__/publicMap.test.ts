@@ -14,8 +14,10 @@ import {
   publicSpotLayers,
   publicSpotSource,
   setPublicClusterHover,
+  setPublicSpotMode,
   setPublicSpotSelection,
   sortViewportSpots,
+  spotColorExpression,
   spotCountLabel,
   spotsToGeoJson,
 } from "../publicMap";
@@ -143,11 +145,18 @@ describe("marker geometry", () => {
     expect(selected["circle-stroke-color"]).toBe(PUBLIC_MAP_PALETTE.light.selection);
   });
 
-  it("colors the marker stack per theme at build time (no shared mutable state)", () => {
-    const lightPoints = publicSpotLayers("light").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!.paint as any;
-    const darkPoints = publicSpotLayers("dark").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!.paint as any;
-    expect(lightPoints["circle-color"]).toBe(PUBLIC_MAP_PALETTE.light.spot);
-    expect(darkPoints["circle-color"]).toBe(PUBLIC_MAP_PALETTE.dark.spot);
+  it("colors the marker stack per theme+mode at build time (no shared mutable state)", () => {
+    const lightPoints = publicSpotLayers("light", "wind").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!.paint as any;
+    const darkPoints = publicSpotLayers("dark", "wind").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.points)!.paint as any;
+    // Neutral fallback (no live value) differs per theme even though the
+    // expression shape is identical.
+    expect(lightPoints["circle-color"][2]).toBe(PUBLIC_MAP_PALETTE.light.spot);
+    expect(darkPoints["circle-color"][2]).toBe(PUBLIC_MAP_PALETTE.dark.spot);
+  });
+
+  it("clusters never encode a live value — always the neutral theme color", () => {
+    const clusters = publicSpotLayers("light", "waves").find((l) => l.id === PUBLIC_SPOT_LAYER_IDS.clusters)!.paint as any;
+    expect(clusters["circle-color"]).toBe(PUBLIC_MAP_PALETTE.light.spot);
   });
 
   it("gates the collision-driven name layer at the local/regional zoom, not street level", () => {
@@ -244,13 +253,77 @@ describe("public spot GeoJSON", () => {
   it("uses stable ids and lng/lat coordinates without admin fields", () => {
     const input = { ...spot("spot-1", "Almanarre", [43.08, 6.15]), slug: "almanarre", regionName: "Provence", regionCountry: "FR", typicalWindKt: 22, description: "not exported" };
     const data = spotsToGeoJson([input]);
-    expect(data.features[0]).toMatchObject({ id: "spot-1", geometry: { coordinates: [6.15, 43.08] }, properties: { spotId: "spot-1", slug: "almanarre", name: "Almanarre", region: "Provence", country: "FR", windKt: 22 } });
+    expect(data.features[0]).toMatchObject({ id: "spot-1", geometry: { coordinates: [6.15, 43.08] }, properties: { spotId: "spot-1", slug: "almanarre", name: "Almanarre", region: "Provence", country: "FR", windKt: 22, liveWindKt: null, liveWaveM: null } });
     expect(data.features[0].properties).not.toHaveProperty("description");
   });
 
   it("omits entries without public coordinates", () => {
     const withoutCoords = { ...spot("draft", "Ohne Lage", [0, 0]), coords: undefined };
     expect(spotsToGeoJson([withoutCoords]).features).toHaveLength(0);
+  });
+
+  it("merges live readings by spot id, never backfilling from the typical value", () => {
+    const input = { ...spot("spot-1", "Almanarre", [43.08, 6.15]), typicalWindKt: 22 };
+    const live = new Map([["spot-1", { windKt: 18, waveM: 1.2 }]]);
+    const withLive = spotsToGeoJson([input], live).features[0].properties;
+    expect(withLive.liveWindKt).toBe(18);
+    expect(withLive.liveWaveM).toBe(1.2);
+    expect(withLive.windKt).toBe(22); // typical value untouched
+
+    const noEntry = spotsToGeoJson([input], new Map()).features[0].properties;
+    expect(noEntry.liveWindKt).toBeNull();
+    expect(noEntry.liveWaveM).toBeNull();
+  });
+});
+
+describe("marker mode — wind/wave live-data coloring", () => {
+  it("falls back to the neutral theme color when a spot has no live value for the active mode", () => {
+    const expr = spotColorExpression("wind", "light") as any;
+    expect(expr[0]).toBe("case");
+    expect(expr[1]).toEqual(["==", ["get", "liveWindKt"], null]);
+    expect(expr[2]).toBe(PUBLIC_MAP_PALETTE.light.spot);
+  });
+
+  it("steps through the exact windScale.ts bins for wind mode", () => {
+    const expr = spotColorExpression("wind", "light") as any;
+    const step = expr[3];
+    expect(step[0]).toBe("step");
+    expect(step[1]).toEqual(["get", "liveWindKt"]);
+    expect(step[2]).toBe("#A9B7C2"); // WIND_BINS[0]
+    expect(step).toContain("#4A8159"); // green bin present
+  });
+
+  it("steps through the exact waveScale.ts bins for waves mode, using a different field", () => {
+    const expr = spotColorExpression("waves", "light") as any;
+    const step = expr[3];
+    expect(step[1]).toEqual(["get", "liveWaveM"]);
+    expect(step[2]).toBe("#C9DDE2"); // WAVE_BINS[0]
+    expect(step).toContain("#1C4E63"); // teal bin present
+  });
+
+  it("wind and wave expressions never share a step color (visually distinct systems)", () => {
+    const windColors = (spotColorExpression("wind", "light") as any)[3].filter((_: unknown, i: number) => i >= 2 && i % 2 === 0);
+    const waveColors = (spotColorExpression("waves", "light") as any)[3].filter((_: unknown, i: number) => i >= 2 && i % 2 === 0);
+    for (const c of waveColors) expect(windColors).not.toContain(c);
+  });
+
+  it("setPublicSpotMode swaps circle-color on points/hover/selected only, leaving clusters untouched", () => {
+    const calls: [string, string, unknown][] = [];
+    const map = {
+      getLayer: () => ({}),
+      setPaintProperty: (id: string, prop: string, value: unknown) => calls.push([id, prop, value]),
+    } as any;
+    setPublicSpotMode(map, "waves", "light");
+    const touchedLayers = calls.map(([id]) => id);
+    expect(touchedLayers).toEqual([PUBLIC_SPOT_LAYER_IDS.points, PUBLIC_SPOT_LAYER_IDS.hover, PUBLIC_SPOT_LAYER_IDS.selected]);
+    expect(touchedLayers).not.toContain(PUBLIC_SPOT_LAYER_IDS.clusters);
+    expect(calls.every(([, prop]) => prop === "circle-color")).toBe(true);
+  });
+
+  it("setPublicSpotMode skips a layer that isn't present on the map yet", () => {
+    const map = { getLayer: () => undefined, setPaintProperty: vi.fn() } as any;
+    expect(() => setPublicSpotMode(map, "wind", "light")).not.toThrow();
+    expect(map.setPaintProperty).not.toHaveBeenCalled();
   });
 });
 

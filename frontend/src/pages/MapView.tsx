@@ -11,7 +11,9 @@ import type { Spot } from "../lib/types";
 import { countryName } from "../lib/flags";
 import { spotPath } from "../lib/spotRoutes";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
-import { fetchPublicMapStyle, parsePublicMapUrl, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotSelection, sortViewportSpots, spotCountLabel } from "../lib/publicMap";
+import { fetchPublicMapStyle, parsePublicMapUrl, PUBLIC_SPOT_LAYER_IDS, PUBLIC_SPOT_SOURCE_ID, publicMapSearch, setPublicClusterHover, setPublicSpotData, setPublicSpotMode, setPublicSpotSelection, sortViewportSpots, spotCountLabel, type PublicMapMode, type PublicSpotLiveValue } from "../lib/publicMap";
+import MapModeSwitch from "../components/MapModeSwitch";
+import MapLegend from "../components/MapLegend";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const Meteogram = lazy(() => import("../components/data/Meteogram"));
@@ -61,15 +63,24 @@ export default function MapView() {
   const [styleGeneration, setStyleGeneration] = useState(0);
   const [viewportIds, setViewportIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => parsePublicMapUrl(window.location.search)?.spot);
+  const [mode, setMode] = useState<PublicMapMode>(() => parsePublicMapUrl(window.location.search)?.mode ?? "wind");
   const [hoveredId, setHoveredId] = useState<string>();
   const [hoveredClusterId, setHoveredClusterId] = useState<number>();
   const [tilesOpen, setTilesOpen] = useState(false);
   const [popupContainer, setPopupContainer] = useState<HTMLDivElement | null>(null);
   const [catalogVersion, setCatalogVersion] = useState<string>();
+  const [catalogReady, setCatalogReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
   const versionRequest = useRef<Promise<void> | null>(null);
-  const { data: spots } = useSpots({ limit: 500, catalog_version: catalogVersion });
+  // Wait for the tiny version request before loading the large catalogue. This
+  // avoids an unversioned 500-row request immediately followed by a second,
+  // versioned request during every cold map visit. On a version-check failure
+  // we still fall back to the ordinary catalogue URL.
+  const { data: spots } = useSpots(
+    { limit: 500, catalog_version: catalogVersion },
+    catalogReady,
+  );
 
   // `location.key === "default"` means this tab has no entry to go back to
   // (deep link, reload, new tab) — fall back to the homepage instead of
@@ -87,7 +98,10 @@ export default function MapView() {
         const { version } = await getSpotCatalogVersion();
         if (!cancelled && version !== knownVersion.current) { knownVersion.current = version; setCatalogVersion(version); }
       } catch { /* Retain the current catalogue after transient failures. */ }
-      finally { versionRequest.current = null; }
+      finally {
+        if (!cancelled) setCatalogReady(true);
+        versionRequest.current = null;
+      }
       })();
       return versionRequest.current;
     };
@@ -119,13 +133,13 @@ export default function MapView() {
     const zoom = map.getZoom();
     // URL sync stays immediate (cheap, and a stale-by-300ms URL during a pan
     // is harmless); only the live-data-triggering viewport commit is debounced.
-    const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search);
+    const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search, mode);
     window.history.replaceState(null, "", `${window.location.pathname}${search}${window.location.hash}`);
     window.clearTimeout(viewportTimer.current);
     viewportTimer.current = window.setTimeout(() => {
       setViewportIds(withCoords.filter((spot) => isVisible(map, spot)).map((spot) => spot.id));
     }, VIEWPORT_DEBOUNCE_MS);
-  }, [selectedId, withCoords]);
+  }, [selectedId, withCoords, mode]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -208,11 +222,30 @@ export default function MapView() {
     map.fitBounds(bounds, { padding: { top: 100, right: 52, bottom: window.innerWidth < 640 ? 270 : 240, left: 52 }, maxZoom: 7, duration: reducedMotion() ? 0 : 480 });
   }, [mapReady, withCoords]);
 
+  // Live wind/wave readings for every currently-visible spot, so markers can
+  // encode real "right now" values instead of the climatological
+  // `typicalWindKt`. Bounded by the viewport (clustering already keeps the
+  // rendered-marker count small at any zoom), batched ≤20 ids/request by
+  // useSpotsLive. A spot with no live reading for the active field keeps the
+  // neutral marker color (see spotColorExpression) rather than a guess.
+  const { data: viewportLive } = useSpotsLive(viewportIds);
+  const liveValues = useMemo(() => {
+    const map = new Map<string, PublicSpotLiveValue>();
+    viewportLive?.forEach((reading, id) => map.set(id, { windKt: reading.current?.wind ?? null, waveM: reading.current?.swell ?? null }));
+    return map;
+  }, [viewportLive]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
-    setPublicSpotData(map, withCoords);
-  }, [mapReady, styleGeneration, withCoords]);
+    setPublicSpotData(map, withCoords, liveValues);
+  }, [mapReady, styleGeneration, withCoords, liveValues]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    setPublicSpotMode(map, mode, "light");
+  }, [mapReady, mode, styleGeneration]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -418,7 +451,13 @@ export default function MapView() {
           <span className="mx-2 h-px bg-line" />
           <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut({ duration: reducedMotion() ? 0 : 210 })} className="swd-map-control swd-map-control-stacked"><MinusIcon className="text-[17px]" /></button>
         </div>
+        <div className="pointer-events-auto"><MapModeSwitch mode={mode} onChange={setMode} /></div>
       </div>
+      {!hasBottomPanel && (
+        <div className="pointer-events-none absolute z-20" style={{ left: "var(--map-control-edge)", bottom: "max(20px, env(safe-area-inset-bottom))" }}>
+          <div className="pointer-events-auto"><MapLegend mode={mode} /></div>
+        </div>
+      )}
       {!tilesOpen && (
         <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
           <button

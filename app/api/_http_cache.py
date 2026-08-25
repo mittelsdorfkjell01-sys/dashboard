@@ -30,6 +30,18 @@ TOP_SPOTS_CACHE_CONTROL = (
     "public, max-age=300, s-maxage=21600, stale-while-revalidate=86400"
 )
 
+# The public map attaches the catalogue version (count + latest updated_at) to
+# its spot-list URL.  A versioned URL is immutable: an editorial change produces
+# a different URL, so the old response can safely stay at the edge for a day.
+# The cheap version token itself is cached only briefly, bounding publication
+# delay while preventing every open map tab from querying Postgres each minute.
+MAP_CATALOG_CACHE_CONTROL = (
+    "public, max-age=60, s-maxage=86400, stale-while-revalidate=604800"
+)
+CATALOG_VERSION_CACHE_CONTROL = (
+    "public, max-age=15, s-maxage=60, stale-while-revalidate=60"
+)
+
 
 def set_public_cache(response: Response) -> None:
     """Mark ``response`` edge-cacheable for the public near-static reads."""
@@ -39,3 +51,13 @@ def set_public_cache(response: Response) -> None:
 def set_top_spots_cache(response: Response) -> None:
     """Cache the daily featured ranking more aggressively than edited content."""
     response.headers["Cache-Control"] = TOP_SPOTS_CACHE_CONTROL
+
+
+def set_map_catalog_cache(response: Response) -> None:
+    """Cache one immutable, version-addressed public map catalogue."""
+    response.headers["Cache-Control"] = MAP_CATALOG_CACHE_CONTROL
+
+
+def set_catalog_version_cache(response: Response) -> None:
+    """Briefly edge-cache the public map's inexpensive change token."""
+    response.headers["Cache-Control"] = CATALOG_VERSION_CACHE_CONTROL

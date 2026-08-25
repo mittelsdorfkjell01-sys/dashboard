@@ -5,9 +5,14 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session, defer, selectinload
+from sqlalchemy.orm import Session, defer, load_only, noload, selectinload
 
-from app.api._http_cache import set_public_cache, set_top_spots_cache
+from app.api._http_cache import (
+    set_catalog_version_cache,
+    set_map_catalog_cache,
+    set_public_cache,
+    set_top_spots_cache,
+)
 from app.db.session import get_db
 from app.discovery import service as discovery
 from app.live import service as live_service
@@ -121,7 +126,27 @@ def list_spots(
             defer(Spot.climatology),
             defer(Spot.overrides),
             defer(Spot.era5_cell),
+            load_only(
+                Spot.id,
+                Spot.slug,
+                Spot.name,
+                Spot.region_id,
+                Spot.location,
+                Spot.sports,
+                Spot.water_type,
+                Spot.bottom_type,
+                Spot.level,
+                Spot.water_character,
+                Spot.style,
+                Spot.facilities,
+                Spot.status,
+                Spot.confidence,
+                Spot.facing,
+                Spot.editorial,
+                Spot.image,
+            ),
             selectinload(Spot.region),
+            noload(Spot.weather_profile),
         )
         .order_by(Spot.name)
     )
@@ -142,7 +167,7 @@ def list_spots(
 
     rows = db.scalars(stmt).all()
     if catalog_version:
-        response.headers["Cache-Control"] = "no-store"
+        set_map_catalog_cache(response)
     else:
         set_public_cache(response)
     return _safe_summaries(rows, db)
@@ -159,7 +184,7 @@ def spot_catalog_version(
             Spot.status == PUBLISHED
         )
     ).one()
-    response.headers["Cache-Control"] = "no-store"
+    set_catalog_version_cache(response)
     latest_token = latest.isoformat() if latest is not None else "none"
     return {"version": f"{count}:{latest_token}"}
 

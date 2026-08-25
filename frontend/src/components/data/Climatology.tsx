@@ -8,9 +8,15 @@ const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", 
 const WINDOWS: [WindWindowKey, string][] = [["10_15", "10–15 kt"], ["15_20", "15–20 kt"], ["20_30", "20–30 kt"], ["30_plus", "30+ kt"]];
 const CHART_HEIGHT_PX = 176; // h-44
 
-function metricValue(section: WindClimatologySection, windowKey: WindWindowKey, unit: "percent" | "hours") {
+export function metricValue(section: WindClimatologySection, windowKey: WindWindowKey, unit: "percent" | "hours"): number | null {
   const metric = section.windows[windowKey];
-  return unit === "percent" ? metric.percent : metric.hours_per_day;
+  const value = unit === "percent" ? metric?.percent : metric?.hours_per_day;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function storedWindow(): WindWindowKey {
+  const value = sessionStorage.getItem("wind-window");
+  return WINDOWS.some(([key]) => key === value) ? value as WindWindowKey : "15_20";
 }
 
 /** Rounds a scale ceiling up to a "nice" step (5/10/25/50/100 family) so axis
@@ -23,14 +29,14 @@ function niceCeiling(value: number, unit: "percent" | "hours"): number {
 
 export default function Climatology({ spot }: { spot: Spot }) {
   const { data, loading, error, reload } = useWindClimatology(spot.id);
-  const [windowKey, setWindowKey] = useState<WindWindowKey>(() => (sessionStorage.getItem("wind-window") as WindWindowKey) || "15_20");
+  const [windowKey, setWindowKey] = useState<WindWindowKey>(storedWindow);
   const [unit, setUnit] = useState<"percent" | "hours">(() => sessionStorage.getItem("wind-unit") === "hours" ? "hours" : "percent");
   const [infoOpen, setInfoOpen] = useState(false);
   const sections = data?.sections;
 
   const scaleMax = useMemo(() => {
     if (!sections) return unit === "percent" ? 100 : 24;
-    const peak = Math.max(0, ...sections.map((s) => metricValue(s, windowKey, unit)));
+    const peak = Math.max(0, ...sections.map((s) => metricValue(s, windowKey, unit) ?? 0));
     // ~15% headroom above the tallest bar, rounded to a round tick value —
     // the scale tracks the data instead of a fixed 100%/24h ceiling that
     // leaves most of the chart empty for typical wind-window values.
@@ -43,6 +49,8 @@ export default function Climatology({ spot }: { spot: Spot }) {
 
   const selectedLabel = WINDOWS.find(([key]) => key === windowKey)![1];
   const axisTicks = [4, 3, 2, 1, 0].map((n) => Math.round((scaleMax * n) / 4));
+  const selectedValues = sections.map((section) => metricValue(section, windowKey, unit));
+  const hasPositiveValue = selectedValues.some((value) => value != null && value > 0);
 
   return <div className="p-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -68,9 +76,20 @@ export default function Climatology({ spot }: { spot: Spot }) {
                 ))}
                 {sections.slice(monthIndex * 4, monthIndex * 4 + 4).map((section) => {
                   const value = metricValue(section, windowKey, unit);
-                  const height = Math.max(value > 0 ? 3 : 0, (value / scaleMax) * 100);
+                  const height = value == null ? 0 : Math.max(value > 0 ? 3 : 0, (value / scaleMax) * 100);
                   const end = section.day_end === "month_end" ? "Monatsende" : section.day_end;
-                  return <button key={section.section} type="button" className="group relative z-10 flex h-full flex-1 items-end focus:outline-none focus:ring-2 focus:ring-orange" title={`${section.day_start}.–${end} ${month}: ${metricValue(section, windowKey, "percent")}% · ${metricValue(section, windowKey, "hours")} h/Tag (${data.period!.start_year}–${data.period!.end_year})`} aria-label={`${section.day_start}. bis ${end} ${month}, ${selectedLabel}: ${value} ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`}><span className="mx-auto block w-2/3 rounded-t bg-teal transition-opacity group-hover:opacity-75" style={{ height: `${height}%` }}><span className="sr-only">{value}</span></span></button>;
+                  const percent = metricValue(section, windowKey, "percent");
+                  const hours = metricValue(section, windowKey, "hours");
+                  const valueLabel = value == null ? "keine Daten" : `${value} ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`;
+                  return <button key={section.section} type="button" className="group relative z-10 flex h-full flex-1 items-end focus:outline-none focus:ring-2 focus:ring-orange" title={`${section.day_start}.–${end} ${month}: ${percent ?? "–"}% · ${hours ?? "–"} h/Tag (${data.period!.start_year}–${data.period!.end_year})`} aria-label={`${section.day_start}. bis ${end} ${month}, ${selectedLabel}: ${valueLabel}`}>
+                    {value == null ? (
+                      <span aria-hidden="true" className="mx-auto mb-px block h-0.5 w-2/3 rounded bg-line" />
+                    ) : value === 0 ? (
+                      <span aria-hidden="true" className="mx-auto mb-px block h-0.5 w-2/3 rounded bg-teal/55" />
+                    ) : (
+                      <span className="mx-auto block w-2/3 rounded-t bg-teal transition-opacity group-hover:opacity-75" style={{ height: `${height}%` }}><span className="sr-only">{value}</span></span>
+                    )}
+                  </button>;
                 })}
               </div>
               <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-[8px] font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
@@ -79,6 +98,12 @@ export default function Climatology({ spot }: { spot: Spot }) {
         </div>
       </div>
     </div>
+
+    {!hasPositiveValue && (
+      <p className="mt-3 text-sm text-muted" role="status">
+        Für {selectedLabel} wurden im gewählten Zeitraum keine Windstunden ermittelt. Die Nulllinien zeigen vollständige Abschnitte mit dem Wert 0.
+      </p>
+    )}
 
     <div className="mt-3 flex justify-end">
       <button

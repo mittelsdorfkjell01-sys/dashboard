@@ -63,7 +63,8 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     assert body["models"] == []
     assert set(body["current"]) == {
         "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
-        "wind_spread", "gust_spread", "wind_ms", "gust_ms",
+        "wind_spread", "gust_spread", "wind_ms", "gust_ms", "waves",
+        "coastal_normal_deg", "coastal_classification", "wave_coastal_classification",
     }
     assert body["current"]["wind_spread"]["n"] >= 3
 

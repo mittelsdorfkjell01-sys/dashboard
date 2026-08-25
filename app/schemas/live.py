@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 import math
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -104,6 +105,90 @@ class SpreadBand(BaseModel):
         return self
 
 
+ObservationType = Literal["measurement", "nowcast", "forecast"]
+AvailabilityStatus = Literal[
+    "available", "available_stale", "not_applicable_inland",
+    "unavailable_out_of_range", "unavailable_provider", "unknown_location_type",
+]
+
+
+class CoordinateRead(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+
+class ValueProvenance(BaseModel):
+    """Canonical provenance shared by point weather values (weather-v4)."""
+
+    observation_type: ObservationType
+    source: str
+    provider: str
+    model: str | None = None
+    model_family: str | None = None
+    model_run: datetime | None = None
+    issued_at: datetime
+    valid_at: datetime
+    spot_timezone: str = "UTC"
+    requested_coordinate: CoordinateRead
+    used_coordinate: CoordinateRead | None = None
+    grid_distance_km: float | None = Field(default=None, ge=0)
+    spatial_resolution_km: float | None = Field(default=None, gt=0)
+    temporal_resolution_minutes: int | None = Field(default=None, gt=0)
+    age_seconds: int = Field(ge=0)
+    stale: bool = False
+    availability: AvailabilityStatus = "available"
+    quality_tier: str
+    attribution: list[dict] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def timezone_aware(self):
+        for value in (self.model_run, self.issued_at, self.valid_at):
+            if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+                raise ValueError("canonical weather timestamps must be timezone-aware")
+        return self
+
+
+class WaveComponentRead(BaseModel):
+    """One physical wave component. Directions are meteorological FROM bearings."""
+
+    significant_height_m: float | None = Field(default=None, ge=0)
+    mean_period_s: float | None = Field(default=None, ge=0)
+    peak_period_s: float | None = Field(default=None, ge=0)
+    mean_direction_from_deg: float | None = Field(default=None, ge=0, lt=360)
+    peak_direction_from_deg: float | None = Field(default=None, ge=0, lt=360)
+    source: str | None = None
+    quality_tier: str | None = None
+
+
+class WaveComponentsRead(BaseModel):
+    total_wave: WaveComponentRead | None = None
+    wind_sea: WaveComponentRead | None = None
+    primary_swell: WaveComponentRead | None = None
+    secondary_swell: WaveComponentRead | None = None
+    phase_speed_ms: float | None = None
+    group_speed_ms: float | None = None
+
+
+class MeasurementRead(BaseModel):
+    observation_type: Literal["measurement"] = "measurement"
+    station_id: uuid.UUID
+    provider: str
+    provider_station_id: str
+    observed_at: datetime
+    age_seconds: int = Field(ge=0)
+    distance_km: float | None = Field(default=None, ge=0)
+    wind_speed_ms: float | None = Field(default=None, ge=0)
+    wind_gust_ms: float | None = Field(default=None, ge=0)
+    wind_direction_from_deg: float | None = Field(default=None, ge=0, lt=360)
+    quality: int | None = None
+
+    @model_validator(mode="after")
+    def aware_observation(self):
+        if self.observed_at.tzinfo is None or self.observed_at.utcoffset() is None:
+            raise ValueError("measurement observed_at must be timezone-aware")
+        return self
+
+
 class CurrentConditions(BaseModel):
     wind: float | None = None       # knots (consensus median)
     gust: float | None = None       # knots (consensus median)
@@ -117,6 +202,10 @@ class CurrentConditions(BaseModel):
     swell_dir: float | None = None  # degrees
     wind_spread: SpreadBand | None = None
     gust_spread: SpreadBand | None = None
+    waves: WaveComponentsRead | None = None
+    coastal_normal_deg: float | None = Field(default=None, ge=0, lt=360)
+    coastal_classification: str | None = None
+    wave_coastal_classification: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -129,6 +218,16 @@ class LiveConditionsRead(BaseModel):
     model: str                       # primary/home model (back-compat label)
     models: list[str] = []           # full consensus set that was fetched
     time: str | None = None
+    observation_type: ObservationType = "nowcast"
+    calculated: bool = True
+    resolution: str | None = None
+    trend: Literal["steigend", "fallend", "stabil"] | None = None
+    quality_tier: str = "coordinates"
+    coastal_classification: str | None = None
+    coastal_normal_deg: float | None = Field(default=None, ge=0, lt=360)
+    availability: dict[str, str] = Field(default_factory=dict)
+    provenance: ValueProvenance | None = None
+    measurement: MeasurementRead | None = None
     current: CurrentConditions
 
 
@@ -154,6 +253,14 @@ class ForecastHour(BaseModel):
     is_day: bool | None = None
     wind_spread: SpreadBand | None = None
     data_issues: list[str] = Field(default_factory=list)
+    observation_type: Literal["forecast"] = "forecast"
+    waves: WaveComponentsRead | None = None
+    provenance: ValueProvenance | None = None
+    coastal_normal_deg: float | None = Field(default=None, ge=0, lt=360)
+    coastal_classification: str | None = None
+    wave_coastal_classification: str | None = None
+    quality_tier: str | None = None
+    stale: bool = False
 
     @model_validator(mode="before")
     @classmethod
@@ -168,6 +275,8 @@ class ForecastDaySummary(BaseModel):
     air_min: float | None = None
     air_max: float | None = None
     swell_max: float | None = None
+    total_wave_max: float | None = None
+    primary_swell_max: float | None = None
     wind_low: float | None = None    # model-spread band around the day's peak wind
     wind_high: float | None = None
     local_date: str | None = None
@@ -198,6 +307,7 @@ class ForecastDay(BaseModel):
     summary: ForecastDaySummary
     hours: list[ForecastHour]
     detail: Literal["hourly", "trend"]
+    confidence_source: Literal["spread", "calendar"] | None = None
 
 
 class ForecastSeriesRead(BaseModel):
@@ -214,3 +324,5 @@ class ForecastSeriesRead(BaseModel):
     contract_version: str | None = None
     timezone: str = "UTC"
     availability: dict[str, str] = {}
+    calibrated: bool = False
+    observation_type: Literal["forecast"] = "forecast"

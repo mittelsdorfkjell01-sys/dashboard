@@ -852,7 +852,7 @@ export default function AdminSpotForm() {
 
           {/* Ausrichtung */}
           <CollapsibleSection id="f-ausrichtung" title="Ausrichtung" mobileDefaultOpen={false} bodyClassName="space-y-4">
-            <Field label="Strandausrichtung (facing, 0–359)">
+            <Field label="Spot-/Strandausrichtung (0–359°)" hint="Redaktioneller Orientierungswert des Spots. Keine aktuelle Windrichtung und keine Küstennormale.">
               <input
                 className={inputCls}
                 value={facing}

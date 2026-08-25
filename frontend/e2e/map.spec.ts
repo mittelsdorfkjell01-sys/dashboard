@@ -132,3 +132,45 @@ test("back navigation falls back to the homepage when there is no history entry"
   await page.getByRole("button", { name: "Zurück" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("mode switch defaults to Wind, Brandung stays visible but disabled with a reason", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/map");
+  const windPill = page.getByRole("button", { name: "Wind", exact: true });
+  const wavesPill = page.getByRole("button", { name: "Wellen", exact: true });
+  const surfPill = page.getByRole("button", { name: "Brandung", exact: true });
+  await expect(windPill).toHaveAttribute("aria-pressed", "true");
+  await expect(wavesPill).toHaveAttribute("aria-pressed", "false");
+  await expect(surfPill).toBeDisabled();
+  await expect(surfPill).toHaveAttribute("title", /Nearshore/);
+});
+
+test("switching to Wellen updates the pressed state, the legend and the URL, without touching an open spot panel", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/map");
+  await expect(page.getByText("Wind (kt)")).toBeVisible();
+
+  await page.getByRole("button", { name: "Wellen", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Wellen", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Swell (Primärwelle)")).toBeVisible();
+  await expect(page).toHaveURL(/mode=waves/);
+
+  await page.getByRole("button", { name: "Wind", exact: true }).click();
+  await expect(page.getByText("Wind (kt)")).toBeVisible();
+  // "wind" is the default — switching back removes the param rather than
+  // writing "mode=wind" (see publicMapSearch).
+  await expect(page).not.toHaveURL(/mode=/);
+});
+
+test("the legend hides once a spot's chart panel is open, so it never overlaps the panel", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/map?lat=54&lon=10&z=9");
+  await expect(page.getByText("Wind (kt)")).toBeVisible();
+
+  await page.getByRole("button", { name: "Surfspot Spot A" }).click();
+  await expect(page.locator(".swd-map-panel").getByText("Spot A", { exact: true })).toBeVisible();
+  await expect(page.getByText("Wind (kt)")).toBeHidden();
+
+  await page.getByRole("button", { name: "Schließen" }).click();
+  await expect(page.getByText("Wind (kt)")).toBeVisible();
+});

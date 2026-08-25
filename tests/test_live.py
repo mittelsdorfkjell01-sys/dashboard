@@ -105,7 +105,8 @@ def test_live_conditions_shape_and_model():
     cur = out["current"]
     assert set(cur) == {
         "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
-        "wind_spread", "gust_spread", "wind_ms", "gust_ms",
+        "wind_spread", "gust_spread", "wind_ms", "gust_ms", "waves",
+        "coastal_normal_deg", "coastal_classification", "wave_coastal_classification",
     }
     assert cur["wind"] == 19.4  # 10 m/s consensus exposed as compatibility knots
     assert cur["sst"] == 20.0

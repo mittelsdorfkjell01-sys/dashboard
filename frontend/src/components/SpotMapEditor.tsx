@@ -1,14 +1,16 @@
-// Position + frame editor for the admin spot form. It renders the SAME base map
-// as the public Daten-tab flow map (SpotFlowMap): identical CARTO
-// `voyager_nolabels` tiles, the same 4/5→21/9 aspect, the same 256px Leaflet
-// zoom, the same orange pin and the same default framing (centre = pin,
-// zoom = 14.5). So what an operator frames here is exactly the excerpt visitors
-// see on the Daten page — pin and cut-out match, and reopening the form shows
-// precisely what was saved.
+// Position + frame editor for the admin spot form. Still Leaflet-based (the
+// public Daten-tab map moved to MapLibre — see components/SpotMap.tsx —
+// but this editor wasn't in scope for that migration). Kept in visual/frame
+// parity by hand: same CARTO Voyager look, the same 4/5→21/9 aspect, the
+// same orange pin and the same default zoom (14.5, both libraries use the
+// same tile-pyramid convention so the number means the same thing in
+// either). So what an operator frames here is still the excerpt visitors
+// see on the Daten page — pin and cut-out match, and reopening the form
+// shows precisely what was saved.
 //
 //   1) Position picker — click the map or drag the pin to set the spot's lat/lon.
 //   2) Frame — pan/zoom sets the excerpt (centre + zoom) stored in
-//      editorial.map_view and consumed by SpotFlowMap.
+//      editorial.map_view and consumed by SpotMap.
 //
 // Locking prevents a stray click/scroll from nudging a finished spot.
 
@@ -19,7 +21,7 @@ import L from "leaflet";
 export interface MapView {
   /** [lat, lon] — matches editorial.map_view.center. */
   center: [number, number];
-  /** Leaflet (256px) zoom — matches editorial.map_view.zoom + SpotFlowMap. */
+  /** Leaflet (256px) zoom — matches editorial.map_view.zoom + SpotMap. */
   zoom: number;
 }
 
@@ -36,7 +38,7 @@ const pinIcon = L.divIcon({
 });
 
 const DEFAULT_CENTER: [number, number] = [54.4, 10.2];
-const DEFAULT_ZOOM = 14.5; // = SpotFlowMap's MAP_ZOOM, so un-framed spots match.
+const DEFAULT_ZOOM = 14.5; // = SpotMap's MAP_ZOOM, so un-framed spots match.
 
 function round(n: number, dp = 5): number {
   const f = 10 ** dp;
@@ -143,7 +145,7 @@ export default function SpotMapEditor({
   // move it; unlocked for a fresh spot that still needs a position.
   const [locked, setLocked] = useState(hasPin);
 
-  // Initial view (mount only): saved frame → pin → default. Matches SpotFlowMap's
+  // Initial view (mount only): saved frame → pin → default. Matches SpotMap's
   // default (centre = pin, zoom = 14.5) so an un-framed spot already lines up.
   const initial = useMemo<MapView>(
     () => ({

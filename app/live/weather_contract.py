@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-WEATHER_CONTRACT_VERSION = "weather-v3"
+WEATHER_CONTRACT_VERSION = "weather-v4"
 WMO_MAPPING_VERSION = "wmo-v1"
 
 

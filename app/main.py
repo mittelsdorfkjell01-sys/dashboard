@@ -19,6 +19,7 @@ from app.api import (
     regions,
     search,
     spots,
+    weather_fields,
 )
 from app.config import get_settings
 from app.csrf import CSRFMiddleware
@@ -99,6 +100,7 @@ if settings.media_backend == "local":
 
 # Public + community endpoints — served by every deployment.
 app.include_router(spots.router)
+app.include_router(weather_fields.router)
 app.include_router(regions.router)
 app.include_router(search.router)
 app.include_router(community.router)

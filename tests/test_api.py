@@ -50,7 +50,7 @@ def test_list_spots_structure_and_coords(client):
 def test_spot_catalog_version_changes_with_public_markers(client, db):
     before = client.get("/spots/version")
     assert before.status_code == 200
-    assert before.headers["cache-control"] == "no-store"
+    assert "s-maxage=60" in before.headers["cache-control"]
 
     region = db.scalar(select(Region).where(Region.slug == "tarifa"))
     spot = Spot(
@@ -72,10 +72,10 @@ def test_spot_catalog_version_changes_with_public_markers(client, db):
         db.commit()
 
 
-def test_live_map_catalogue_bypasses_public_edge_cache(client):
+def test_live_map_catalogue_is_cached_by_immutable_version(client):
     response = client.get("/spots", params={"limit": 500, "catalog_version": "test"})
     assert response.status_code == 200
-    assert response.headers["cache-control"] == "no-store"
+    assert "s-maxage=86400" in response.headers["cache-control"]
 
 
 def test_get_spot_by_id(client):
