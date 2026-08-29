@@ -102,7 +102,7 @@ export default function RegionDetail() {
   if (error) {
     return (
       <div className="relative min-h-screen bg-page">
-        <LandingHeader />
+        <LandingHeader onLight />
         <div className="mx-auto max-w-[1570px] px-4 pt-32 sm:px-8">
           <ErrorBanner
             message={error}
@@ -119,7 +119,7 @@ export default function RegionDetail() {
   if (!region || !backendRegion) {
     return (
       <div className="relative min-h-screen bg-page">
-        <LandingHeader />
+        <LandingHeader onLight />
         <div className="grid min-h-screen place-items-center px-6 text-center">
           <div>
             <h1 className="text-2xl font-semibold text-ink">Region nicht gefunden</h1>

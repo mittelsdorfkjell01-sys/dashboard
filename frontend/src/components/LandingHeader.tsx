@@ -20,6 +20,7 @@ export default function LandingHeader({
   sticky = false,
   mobileSpotControls = false,
   onMobileSearch,
+  onLight = false,
 }: {
   left?: ReactNode;
   /** `"body"` snaps the bar to the 1180px content column (spot page). */
@@ -31,6 +32,10 @@ export default function LandingHeader({
   /** Landing only: once scrolled, a compact search pill docks into the header
    *  (mobile), replacing the wordmark next to the menu. Tapping it fires this. */
   onMobileSearch?: () => void;
+  /** The bar sits on the light page instead of the dark hero (legal, 404,
+   *  error/not-found states). Switches the white hero tagline to a readable
+   *  ink token so it doesn't vanish and fail colour contrast. */
+  onLight?: boolean;
 }) {
   // 0 (top of hero) → 1 (fully solid). Driven continuously off scroll, not a
   // single on/off flip, so the mobile bar hardens gradually over the last
@@ -117,7 +122,9 @@ export default function LandingHeader({
             {left ?? (
               <div className="relative flex min-h-11 items-center">
                 <span
-                  className="hidden select-none whitespace-nowrap text-caption font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
+                  className={`hidden select-none whitespace-nowrap text-caption font-medium uppercase tracking-[0.14em] sm:block ${
+                    onLight ? "text-ink-soft" : "text-white/90"
+                  }`}
                   style={sticky ? { opacity: 1 - progress } : undefined}
                 >
                   Best collection of surfspots

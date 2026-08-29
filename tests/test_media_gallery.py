@@ -331,6 +331,10 @@ def test_worklist_flags_a_dead_source(db, client, spot):
 
 def test_worklist_flags_a_duplicate_photo_used_on_two_spots(db, client):
     a, b = db.scalars(select(Spot).limit(2)).all()
+    # These are seed spots shared with later modules (the DB is session-wide);
+    # restore their images and drop the usage rows so we don't break the seed's
+    # placeholder assertions downstream — see the _blank_image helpers elsewhere.
+    original_a, original_b = a.image, b.image
     image = build_image(
         url="https://img/dup.jpg", source="unsplash", license="Unsplash License",
         credit="Jo", provider="unsplash", external_id="dup-1", delivery="hotlinked",
@@ -342,9 +346,14 @@ def test_worklist_flags_a_duplicate_photo_used_on_two_spots(db, client):
     ])
     db.commit()
 
-    resp = client.get("/admin/spots", params={"media": "duplicate", "limit": 500})
-    ids = {i["id"] for i in resp.json()["items"]}
-    assert {str(a.id), str(b.id)} <= ids
+    try:
+        resp = client.get("/admin/spots", params={"media": "duplicate", "limit": 500})
+        ids = {i["id"] for i in resp.json()["items"]}
+        assert {str(a.id), str(b.id)} <= ids
+    finally:
+        a.image, b.image = original_a, original_b
+        db.execute(delete(MediaUsage).where(MediaUsage.external_id == "dup-1"))
+        db.commit()
 
 
 def test_placeholder_seed_image_counts_as_no_hero_not_unverified(client, spot):

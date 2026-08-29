@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 export default function NotFound() {
   return (
     <div className="relative flex min-h-screen flex-col bg-page">
-      <LandingHeader />
+      <LandingHeader onLight />
       <main className="grid flex-1 place-items-center px-6 pt-32 text-center">
         <div>
           <p className="text-label font-semibold uppercase tracking-[0.18em] text-teal">

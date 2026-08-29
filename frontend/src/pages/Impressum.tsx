@@ -14,7 +14,7 @@ const legal = {
 export default function Impressum() {
   return (
     <div className="relative min-h-screen bg-page">
-      <LandingHeader />
+      <LandingHeader onLight />
       <main className="mx-auto max-w-[760px] px-4 pb-24 pt-32 sm:px-8">
         <h1 className="text-sz-32 font-semibold text-ink">Impressum</h1>
         <div className="mt-6 space-y-4 text-body leading-relaxed text-ink-soft">

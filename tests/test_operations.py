@@ -14,9 +14,10 @@ def test_error_category_classification():
 
 def test_operations_summary_shape(db):
     summary = operations_summary(db)
-    assert set(summary) == {"freshness", "queue_depth", "job_status", "recent_jobs", "public_update"}
+    assert set(summary) == {"freshness", "queue_depth", "job_status", "recent_jobs", "public_update", "weather"}
     assert set(summary["freshness"]) == {"missing", "stale", "current", "failed"}
     assert isinstance(summary["queue_depth"], int)
     assert isinstance(summary["job_status"], dict)
     assert isinstance(summary["recent_jobs"], list)
     assert "climatology_cron" in summary["public_update"]
+    assert {"forecast_coverage", "station_coverage", "provider_failures"} <= set(summary["weather"])
