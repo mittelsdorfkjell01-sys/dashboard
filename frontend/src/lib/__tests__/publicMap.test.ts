@@ -33,9 +33,12 @@ describe("public map URL state", () => {
     expect(parsePublicMapUrl("?lat=999&lon=x&z=99")).toBeNull();
   });
 
-  it("parses a valid mode and ignores an unknown one", () => {
-    expect(parsePublicMapUrl("?lat=36&lon=-5&z=8&mode=waves")?.mode).toBe("waves");
-    expect(parsePublicMapUrl("?lat=36&lon=-5&z=8&mode=nonsense")?.mode).toBeUndefined();
+  it("ignores obsolete overview mode parameters", () => {
+    expect(parsePublicMapUrl("?lat=36&lon=-5&z=8&mode=waves")).toEqual({
+      center: [-5, 36],
+      zoom: 8,
+      spot: undefined,
+    });
   });
 
   it("serializes map state without dropping unrelated query values", () => {
@@ -43,9 +46,8 @@ describe("public map URL state", () => {
     expect(publicMapSearch([8, 40], 6, "a")).toContain("spot=a");
   });
 
-  it("keeps the default wind mode out of the URL but serializes waves", () => {
-    expect(publicMapSearch([8, 40], 6, undefined, "", "wind")).not.toContain("mode=");
-    expect(publicMapSearch([8, 40], 6, undefined, "", "waves")).toContain("mode=waves");
+  it("removes obsolete overview mode parameters from shared URLs", () => {
+    expect(publicMapSearch([8, 40], 6, undefined, "?mode=waves")).not.toContain("mode=");
   });
 });
 

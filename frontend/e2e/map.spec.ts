@@ -1,21 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-const CARTO_STYLE_URL = "https://tiles.basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
-
-// A minimal-but-valid style document — enough for MapLibre to construct the
-// map without any real tile/glyph network traffic. `buildPublicMapStyle`
-// tolerates every one of its target layers being absent (see
-// lib/__tests__/publicMap.test.ts), so this deliberately carries none.
-const MINIMAL_STYLE = {
-  version: 8,
-  sources: {},
-  // MapLibre rejects any symbol layer with `text-field` (our own appended
-  // cluster-count/name layers included) unless the style declares `glyphs` —
-  // this doesn't need to resolve for the map to load; glyph tiles are
-  // fetched lazily when text actually needs to render.
-  glyphs: "https://fonts.example.test/{fontstack}/{range}.pbf",
-  layers: [{ id: "background", type: "background", paint: { "background-color": "#ffffff" } }],
-};
+const TRANSPARENT_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
 
 const spots = [
   { id: "00000000-0000-4000-8000-000000000001", slug: "spot-a", name: "Spot A", region_id: null, region_name: "Region A", region_country: "DE", location: { lat: 54, lon: 10 }, sports: ["kitesurf"], image: null, facing: null, water_type: [], bottom_type: [], level: [], water_character: [], style: [], facilities: null, best_months: null, typical_wind_kt: 18, typical_wave_height_m: null },
@@ -31,10 +19,12 @@ async function mockBackend(page: import("@playwright/test").Page) {
     if (url.pathname === "/auth/me") return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     return route.fulfill({ json: [] });
   });
-  await page.route(CARTO_STYLE_URL, (route) => route.fulfill({ json: MINIMAL_STYLE }));
+  await page.route(/https:\/\/[a-d]\.basemaps\.cartocdn\.com\/.*\.png(?:\?.*)?$/, (route) =>
+    route.fulfill({ body: TRANSPARENT_PNG, contentType: "image/png" }),
+  );
 }
 
-test("map renders spots as accessible markers, without a runtime style-repaint flash", async ({ page }) => {
+test("map loads Leaflet layout and renders spots as accessible markers", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   await mockBackend(page);
@@ -43,9 +33,12 @@ test("map renders spots as accessible markers, without a runtime style-repaint f
   await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Surfspot Spot B" })).toBeVisible();
 
-  // The container only becomes visible once `load` fires on the pre-colored
-  // style — by the time the markers are visible, the map itself must be too.
-  await expect(page.locator(".swd-public-map > div[role='region'] > div").first()).toHaveCSS("opacity", "1");
+  const map = page.locator(".swd-public-map .leaflet-container");
+  await expect(map).toBeVisible();
+  await expect(page.locator(".swd-map-canvas")).toHaveCSS("opacity", "1");
+  // This rule comes from Leaflet's base stylesheet. Without the global import,
+  // panes and tiles fall into normal document flow on direct /map visits.
+  await expect(map.locator(".leaflet-map-pane")).toHaveCSS("position", "absolute");
   expect(consoleErrors).toEqual([]);
 });
 
@@ -73,7 +66,7 @@ test("the list trigger shows two Landing-style tiles inline, not a text list or 
 
   const trigger = page.getByRole("button", { name: "Spots im Ausschnitt anzeigen" });
   await trigger.click();
-  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(trigger).toBeHidden();
 
   const panel = page.locator(".swd-map-tile-grid");
   await expect(panel).toBeVisible();
@@ -83,12 +76,11 @@ test("the list trigger shows two Landing-style tiles inline, not a text list or 
   // No modal/dialog role and no dark scrim — the map underneath must stay
   // interactive (still pannable) while the panel is open.
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  const mapCanvas = page.locator(".maplibregl-canvas");
-  await expect(mapCanvas).toBeVisible();
+  await expect(page.locator(".swd-public-map .leaflet-container")).toBeVisible();
 
   await page.getByRole("button", { name: "Schließen" }).click();
   await expect(panel).toBeHidden();
-  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("button", { name: "Spots im Ausschnitt anzeigen" })).toHaveAttribute("aria-expanded", "false");
 });
 
 test("selecting a marker shows its chart panel with a plain-X close and a link to the full spot page", async ({ page }) => {
@@ -133,44 +125,13 @@ test("back navigation falls back to the homepage when there is no history entry"
   await expect(page).toHaveURL(/\/$/);
 });
 
-test("mode switch defaults to Wind, Brandung stays visible but disabled with a reason", async ({ page }) => {
+test("overview omits mode controls, legend and the bottom empty hint", async ({ page }) => {
   await mockBackend(page);
-  await page.goto("/map");
-  const windPill = page.getByRole("button", { name: "Wind", exact: true });
-  const wavesPill = page.getByRole("button", { name: "Wellen", exact: true });
-  const surfPill = page.getByRole("button", { name: "Brandung", exact: true });
-  await expect(windPill).toHaveAttribute("aria-pressed", "true");
-  await expect(wavesPill).toHaveAttribute("aria-pressed", "false");
-  await expect(surfPill).toBeDisabled();
-  await expect(surfPill).toHaveAttribute("title", /Nearshore/);
-});
-
-test("switching to Wellen updates the pressed state, the legend and the URL, without touching an open spot panel", async ({ page }) => {
-  await mockBackend(page);
-  await page.goto("/map");
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
-
-  await page.getByRole("button", { name: "Wellen", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Wellen", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("Swell (Primärwelle)")).toBeVisible();
-  await expect(page).toHaveURL(/mode=waves/);
-
-  await page.getByRole("button", { name: "Wind", exact: true }).click();
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
-  // "wind" is the default — switching back removes the param rather than
-  // writing "mode=wind" (see publicMapSearch).
+  await page.goto("/map?lat=0&lon=-150&z=10&mode=waves");
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await expect(page.getByRole("group", { name: "Kartenmodus" })).toHaveCount(0);
+  await expect(page.locator(".swd-map-legend")).toHaveCount(0);
+  await expect(page.locator(".swd-map-status")).toHaveCount(0);
+  await expect(page.getByText("Keine Spots in diesem Kartenausschnitt", { exact: true })).toHaveCount(0);
   await expect(page).not.toHaveURL(/mode=/);
-});
-
-test("the legend hides once a spot's chart panel is open, so it never overlaps the panel", async ({ page }) => {
-  await mockBackend(page);
-  await page.goto("/map?lat=54&lon=10&z=9");
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
-
-  await page.getByRole("button", { name: "Surfspot Spot A" }).click();
-  await expect(page.locator(".swd-map-panel").getByText("Spot A", { exact: true })).toBeVisible();
-  await expect(page.getByText("Wind (kt)")).toBeHidden();
-
-  await page.getByRole("button", { name: "Schließen" }).click();
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
 });

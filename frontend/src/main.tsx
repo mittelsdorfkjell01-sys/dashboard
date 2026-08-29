@@ -7,6 +7,7 @@ import {
   RouterProvider,
   type RouteObject,
 } from "react-router-dom";
+import "leaflet/dist/leaflet.css";
 import "./index.css";
 import { LenisProvider } from "./lib/lenis";
 import ScrollManager from "./components/ScrollManager";

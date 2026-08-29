@@ -12,9 +12,18 @@ import type { Spot } from "../lib/types";
 import { countryName } from "../lib/flags";
 import { spotPath } from "../lib/spotRoutes";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
-import { parsePublicMapUrl, publicMapSearch, PUBLIC_SPOT_CLUSTER_MAX_ZOOM, PUBLIC_SPOT_CLUSTER_RADIUS, spotDotColor, spotFeatures, sortViewportSpots, spotCountLabel, type PublicMapMode, type PublicSpotLiveValue, type PublicSpotProperties } from "../lib/publicMap";
-import MapModeSwitch from "../components/MapModeSwitch";
-import MapLegend from "../components/MapLegend";
+import {
+  parsePublicMapUrl,
+  publicMapSearch,
+  PUBLIC_SPOT_CLUSTER_MAX_ZOOM,
+  PUBLIC_SPOT_CLUSTER_RADIUS,
+  spotDotColor,
+  spotFeatures,
+  sortViewportSpots,
+  spotCountLabel,
+  type PublicSpotLiveValue,
+  type PublicSpotProperties,
+} from "../lib/publicMap";
 import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_POSITRON } from "../lib/basemaps";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
@@ -62,14 +71,12 @@ export default function MapView() {
   const [viewportIds, setViewportIds] = useState<string[]>([]);
   const [viewportZoom, setViewportZoom] = useState(3);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => parsePublicMapUrl(window.location.search)?.spot);
-  const [mode, setMode] = useState<PublicMapMode>(() => parsePublicMapUrl(window.location.search)?.mode ?? "wind");
   const [tilesOpen, setTilesOpen] = useState(false);
   const [popupContainer, setPopupContainer] = useState<HTMLDivElement | null>(null);
   const [catalogVersion, setCatalogVersion] = useState<string>();
   const [catalogReady, setCatalogReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
-  const versionRequest = useRef<Promise<void> | null>(null);
   const { data: spots } = useSpots(
     { limit: 500, catalog_version: catalogVersion },
     catalogReady,
@@ -82,20 +89,25 @@ export default function MapView() {
   useEffect(() => {
     let cancelled = false;
     let timer: number | undefined;
+    let versionRequest: Promise<void> | null = null;
     const checkVersion = async () => {
       if (document.visibilityState === "hidden") return;
-      if (versionRequest.current) return versionRequest.current;
-      versionRequest.current = (async () => {
-      try {
-        const { version } = await getSpotCatalogVersion();
-        if (!cancelled && version !== knownVersion.current) { knownVersion.current = version; setCatalogVersion(version); }
-      } catch { /* Retain the current catalogue after transient failures. */ }
-      finally {
-        if (!cancelled) setCatalogReady(true);
-        versionRequest.current = null;
-      }
+      if (versionRequest) return versionRequest;
+      versionRequest = (async () => {
+        try {
+          const { version } = await getSpotCatalogVersion();
+          if (!cancelled && version !== knownVersion.current) {
+            knownVersion.current = version;
+            setCatalogVersion(version);
+          }
+        } catch {
+          /* Retain the current catalogue after transient failures. */
+        } finally {
+          if (!cancelled) setCatalogReady(true);
+          versionRequest = null;
+        }
       })();
-      return versionRequest.current;
+      return versionRequest;
     };
     const schedule = () => {
       if (cancelled) return;
@@ -125,7 +137,7 @@ export default function MapView() {
     const zoom = map.getZoom();
     // URL sync stays immediate; only the live-data-triggering viewport commit
     // is debounced.
-    const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search, mode);
+    const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search);
     window.history.replaceState(null, "", `${window.location.pathname}${search}${window.location.hash}`);
     window.clearTimeout(viewportTimer.current);
     viewportTimer.current = window.setTimeout(() => {
@@ -133,7 +145,7 @@ export default function MapView() {
       setViewportZoom(zoom);
       setViewportIds(withCoords.filter((spot) => bounds.contains([spot.coords[0], spot.coords[1]])).map((spot) => spot.id));
     }, VIEWPORT_DEBOUNCE_MS);
-  }, [selectedId, withCoords, mode]);
+  }, [selectedId, withCoords]);
 
   // --- map construction -----------------------------------------------------
   useEffect(() => {
@@ -163,8 +175,12 @@ export default function MapView() {
     // Background click closes whichever bottom panel is open (marker clicks call
     // stopPropagation via Leaflet's own layer events, so they don't bubble here).
     map.on("click", () => { setSelectedId(undefined); setTilesOpen(false); });
-    requestAnimationFrame(() => { map.invalidateSize(); setMapReady(true); });
+    const readyFrame = requestAnimationFrame(() => {
+      map.invalidateSize();
+      setMapReady(true);
+    });
     return () => {
+      cancelAnimationFrame(readyFrame);
       window.clearTimeout(viewportTimer.current);
       map.remove();
       mapRef.current = null;
@@ -190,7 +206,7 @@ export default function MapView() {
     map.fitBounds(bounds, { paddingTopLeft: [52, 100], paddingBottomRight: [52, window.innerWidth < 640 ? 270 : 240], maxZoom: 7, animate: !reducedMotion() });
   }, [mapReady, withCoords]);
 
-  // Live wind/wave readings for currently-visible spots → marker colours.
+  // Live wind readings for currently-visible spots → marker colours.
   const markerLiveIds = useMemo(
     () => viewportZoom >= LIVE_VALUES_MIN_ZOOM ? viewportIds.slice(0, LIVE_VALUES_MAX_SPOTS) : [],
     [viewportIds, viewportZoom],
@@ -215,7 +231,7 @@ export default function MapView() {
 
   const clusterZoomToken = useRef(0);
   // Render the visible clusters/points as Leaflet markers. Re-runs on every map
-  // move and whenever selection / live colours / mode change.
+  // move and whenever selection or live colours change.
   const renderMarkers = useCallback(() => {
     const map = mapRef.current;
     const layer = markersLayer.current;
@@ -247,7 +263,7 @@ export default function MapView() {
         const spot = spotById.get(props.spotId);
         if (!spot) continue;
         const selected = props.spotId === selectedId;
-        const color = spotDotColor(mode, liveValues.get(props.spotId));
+        const color = spotDotColor("wind", liveValues.get(props.spotId));
         const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot" style="background:${color}"></span>`, iconSize: [30, 30], iconAnchor: [15, 15] });
         const marker = L.marker([lat, lng], { icon, keyboard: true });
         marker.on("add", () => {
@@ -265,7 +281,7 @@ export default function MapView() {
         layer.addLayer(marker);
       }
     }
-  }, [selectedId, spotById, liveValues, mode]);
+  }, [selectedId, spotById, liveValues]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -309,16 +325,17 @@ export default function MapView() {
   }, [selectedId, listPanelSpots, tilesOpen]);
   const { data: live } = useSpotsLive(liveIds);
 
-  const emptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`;
-  const hasBottomPanel = Boolean(selectedSpot);
+  const listEmptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`;
   const regionLine = (spot: Spot) => [spot.regionName, countryName(spot.regionCountry ?? undefined)].filter(Boolean).join(" · ");
 
   return (
-    <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${hasBottomPanel ? "has-bottom-panel" : ""}`} aria-labelledby="public-map-title">
+    <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${selectedSpot ? "has-bottom-panel" : ""}`} aria-labelledby="public-map-title">
       <Header />
       <h1 id="public-map-title" className="sr-only">Spot-Karte</h1>
       <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" className="absolute inset-0">
-        <div ref={containerRef} className={`h-full w-full transition-opacity duration-300 ${mapReady ? "opacity-100" : "opacity-0"}`} />
+        <div className={`swd-map-canvas h-full w-full transition-opacity duration-300 ${mapReady ? "opacity-100" : "opacity-0"}`}>
+          <div ref={containerRef} className="h-full w-full" />
+        </div>
       </div>
       {popupContainer && selectedSpot && createPortal(
         <div className="w-[176px]"><SpotCard spot={selectedSpot} live={live?.get(selectedSpot.id)} /></div>,
@@ -339,13 +356,7 @@ export default function MapView() {
           <span className="mx-2 h-px bg-line" />
           <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut()} className="swd-map-control swd-map-control-stacked"><MinusIcon className="text-sz-17" /></button>
         </div>
-        <div className="pointer-events-auto"><MapModeSwitch mode={mode} onChange={setMode} /></div>
       </div>
-      {!hasBottomPanel && (
-        <div className="pointer-events-none absolute z-20" style={{ left: "var(--map-control-edge)", bottom: "max(20px, env(safe-area-inset-bottom))" }}>
-          <div className="pointer-events-auto"><MapLegend mode={mode} /></div>
-        </div>
-      )}
       {!tilesOpen && (
         <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
           <button
@@ -369,7 +380,7 @@ export default function MapView() {
               </button>
             </div>
             {listPanelSpots.length === 0 ? (
-              <p role="status" className="swd-map-list-empty">{emptyLabel}</p>
+              <p role="status" className="swd-map-list-empty">{listEmptyLabel}</p>
             ) : (
               <div className="swd-map-tile-grid">
                 {listPanelSpots.map((spot) => <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />)}
@@ -377,8 +388,8 @@ export default function MapView() {
             )}
           </div>
         )}
-      <section aria-label="Kartendetails" className="swd-map-bottom-shell pointer-events-none absolute inset-x-0 bottom-0 z-10">
-        {selectedSpot ? (
+      {selectedSpot && (
+        <section aria-label="Kartendetails" className="swd-map-bottom-shell pointer-events-none absolute inset-x-0 bottom-0 z-10">
           <div className="swd-map-panel pointer-events-auto">
             <div className="swd-map-panel-head">
               <div className="min-w-0">
@@ -407,10 +418,8 @@ export default function MapView() {
               )}
             </div>
           </div>
-        ) : (
-          <p role="status" className="swd-map-status pointer-events-auto">{emptyLabel}</p>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   );
 }

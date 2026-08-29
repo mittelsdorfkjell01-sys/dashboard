@@ -1,14 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-const CARTO_STYLE_URL = "https://tiles.basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 const SPOT_ID = "00000000-0000-4000-8000-000000000010";
-
-const MINIMAL_STYLE = {
-  version: 8,
-  sources: {},
-  glyphs: "https://fonts.example.test/{fontstack}/{range}.pbf",
-  layers: [{ id: "background", type: "background", paint: { "background-color": "#ffffff" } }],
-};
+const TRANSPARENT_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
 
 const spotDetail = (overrides: Record<string, unknown> = {}) => ({
   id: SPOT_ID, slug: "spot-map-test", name: "Spot Map Test",
@@ -42,7 +38,9 @@ async function mockBackend(page: import("@playwright/test").Page, spot = spotDet
     if (url.pathname === "/account/favorites" || url.pathname === "/account/submissions") return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     return route.fulfill({ json: [] });
   });
-  await page.route(CARTO_STYLE_URL, (route) => route.fulfill({ json: MINIMAL_STYLE }));
+  await page.route(/https:\/\/[a-d]\.basemaps\.cartocdn\.com\/.*\.png(?:\?.*)?$/, (route) =>
+    route.fulfill({ body: TRANSPARENT_PNG, contentType: "image/png" }),
+  );
 }
 
 test("spot map renders with real coordinates, mode switch and legend", async ({ page }) => {
@@ -52,7 +50,7 @@ test("spot map renders with real coordinates, mode switch and legend", async ({ 
   const modeSwitch = page.getByRole("group", { name: "Kartenmodus" });
   await expect(modeSwitch.getByRole("button", { name: "Wind", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Wind (kt)")).toBeVisible();
-  await expect(page.locator(".maplibregl-canvas")).toBeVisible();
+  await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
 
   // Nowcast badge shown (no forecast hour scrubbed, no station measurement mocked).
   await expect(page.getByText("Nowcast").first()).toBeVisible();
@@ -68,23 +66,13 @@ test("switching to Wellen recolors the legend without a page reload", async ({ p
   await expect(page.getByText("Swell (Primärwelle)")).toBeVisible();
 });
 
-test("coastal orientation toggle is offered only with a weather-profile coastal normal", async ({ page }) => {
-  await mockBackend(page);
-  await page.goto(`/spot/spot-map-test/daten`);
-
-  const compass = page.getByRole("button", { name: /Küstenausrichtung|Nordausrichtung/ });
-  await expect(compass).toBeVisible();
-  await compass.click();
-  await expect(compass).toHaveAttribute("aria-pressed", /true|false/);
-});
-
 test("a spot without coordinates shows an explanatory state instead of an empty map", async ({ page }) => {
   const spot = spotDetail({ location: null });
   await mockBackend(page, spot);
   await page.goto(`/spot/spot-map-test/daten`);
 
   await expect(page.getByText("Für diesen Spot sind keine Koordinaten hinterlegt")).toBeVisible();
-  await expect(page.locator(".maplibregl-canvas")).toHaveCount(0);
+  await expect(page.locator(".swd-spot-map .leaflet-container")).toHaveCount(0);
 });
 
 test("spot facing never creates a coastal-orientation toggle", async ({ page }) => {
@@ -92,6 +80,6 @@ test("spot facing never creates a coastal-orientation toggle", async ({ page }) 
   await mockBackend(page, spot, null);
   await page.goto(`/spot/spot-map-test/daten`);
 
-  await expect(page.locator(".maplibregl-canvas")).toBeVisible();
+  await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
   await expect(page.getByRole("button", { name: /Küstenausrichtung|Nordausrichtung/ })).toHaveCount(0);
 });

@@ -3,10 +3,8 @@ import { haversineKm } from "./mapLinks";
 import { windColor } from "./windScale";
 import { waveColor } from "./waveScale";
 
-// Wind and wave are the two data-backed marker modes on the overview map.
-// Brandung has no backend layer yet (no nearshore engine — see
-// docs/map-redesign-backend-gaps.md) so it is not a selectable mode here;
-// the mode switch UI still lists it, permanently disabled with a reason.
+// Wind and wave remain available to embedded spot maps. The public overview
+// intentionally uses wind only and exposes no mode control.
 export type PublicMapMode = "wind" | "waves";
 
 /** Per-spot live reading used to color markers for the active mode. Both
@@ -55,9 +53,7 @@ export function spotFeatures(spots: Spot[]): PublicSpotFeature[] {
 export const PUBLIC_SPOT_CLUSTER_RADIUS = 44;
 export const PUBLIC_SPOT_CLUSTER_MAX_ZOOM = 9;
 
-export interface PublicMapUrlState { center: [number, number]; zoom: number; spot?: string; mode?: PublicMapMode }
-
-const VALID_MODES = new Set<PublicMapMode>(["wind", "waves"]);
+export interface PublicMapUrlState { center: [number, number]; zoom: number; spot?: string }
 
 export function parsePublicMapUrl(search: string): PublicMapUrlState | null {
   const q = new URLSearchParams(search);
@@ -65,20 +61,17 @@ export function parsePublicMapUrl(search: string): PublicMapUrlState | null {
   const lon = Number(q.get("lon"));
   const zoom = Number(q.get("z"));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(zoom) || lat < -85 || lat > 85 || lon < -180 || lon > 180 || zoom < 1 || zoom > 18) return null;
-  const rawMode = q.get("mode");
-  const mode = VALID_MODES.has(rawMode as PublicMapMode) ? (rawMode as PublicMapMode) : undefined;
-  return { center: [lon, lat], zoom, spot: q.get("spot") || undefined, mode };
+  return { center: [lon, lat], zoom, spot: q.get("spot") || undefined };
 }
 
-export function publicMapSearch(center: [number, number], zoom: number, spot?: string, current = "", mode?: PublicMapMode): string {
+export function publicMapSearch(center: [number, number], zoom: number, spot?: string, current = ""): string {
   const q = new URLSearchParams(current);
   q.set("lat", center[1].toFixed(5));
   q.set("lon", center[0].toFixed(5));
   q.set("z", zoom.toFixed(2));
   if (spot) q.set("spot", spot); else q.delete("spot");
-  // "wind" is the default — leave it out of the URL so an unmodified map
-  // link stays as short as before this mode existed.
-  if (mode && mode !== "wind") q.set("mode", mode); else q.delete("mode");
+  // Remove legacy mode parameters now that the overview has one fixed layer.
+  q.delete("mode");
   return `?${q.toString()}`;
 }
 

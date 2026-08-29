@@ -903,18 +903,6 @@ html[data-theme="dark"] { color-scheme: dark; }
 }
 .swd-map-legend-note { font-size: 10px; color: var(--map-label-soft); }
 
-.swd-map-status {
-  width: max-content;
-  max-width: calc(100vw - 40px);
-  margin: 0 auto;
-  border: 1px solid var(--sw-line);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sw-surface) 96%, transparent);
-  padding: 9px 14px;
-  color: var(--sw-ink);
-  font-size: 12px;
-  box-shadow: 0 2px 10px rgb(36 28 23 / 10%);
-}
 .swd-public-map .leaflet-bottom.leaflet-right {
   right: max(12px, env(safe-area-inset-right));
   bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
