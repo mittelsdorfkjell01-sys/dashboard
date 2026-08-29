@@ -14,6 +14,7 @@ import {
   type SpotRead,
 } from "../lib/api";
 import { countryName } from "../lib/flags";
+import { responsiveImageAttributes } from "../lib/heroSource";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import { Badge, Button } from "../components/admin/ui";
 
@@ -22,7 +23,13 @@ type HeroSpot = Pick<AdminSpotSummary, "id" | "name" | "region_name" | "region_c
 /** object-position for the desktop tile preview, from the stored focal point. */
 function focalStyle(spot: HeroSpot): React.CSSProperties {
   const f = spot.image?.focal;
-  return f ? { objectPosition: `${f.x}% ${f.y}%` } : {};
+  const rotation = Math.max(-5, Math.min(5, spot.image?.rotation ?? 0));
+  return {
+    objectPosition: f ? `${f.x}% ${f.y}%` : undefined,
+    transform: rotation
+      ? `rotate(${rotation}deg) scale(${1 + Math.abs(rotation) * 0.04})`
+      : undefined,
+  };
 }
 
 export default function AdminHero() {
@@ -127,9 +134,14 @@ export default function AdminHero() {
                     className="block aspect-video w-full"
                   >
                     <img
-                      src={resolveMediaUrl(spot.image?.url)}
+                      {...responsiveImageAttributes(
+                        resolveMediaUrl(spot.image?.url),
+                        spot.image?.width,
+                        "(max-width: 639px) 50vw, 25vw",
+                      )}
                       alt=""
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                       style={focalStyle(spot)}
                     />
@@ -213,7 +225,7 @@ function MobileCropDialog({
       aria-label={`Mobiler Ausschnitt · ${spot.name}`}
     >
       <div
-        className="w-full max-w-[420px] overflow-hidden rounded-xl border border-admin-border bg-admin-surface shadow-xl"
+        className="w-full max-w-[420px] overflow-hidden rounded-xl border border-admin-border bg-admin-surface shadow-admin-dialog"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 border-b border-admin-border px-5 py-4">
@@ -234,6 +246,7 @@ function MobileCropDialog({
         <div className="px-5 py-4">
           <ImageFocalEditor
             url={spot.image?.url ?? ""}
+            width={spot.image?.width}
             focal={focal}
             aspect="9 / 16"
             onSave={async (x, y) => {

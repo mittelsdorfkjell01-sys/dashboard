@@ -39,22 +39,22 @@ export default function Field({
 
   return (
     <label className="block min-w-0">
-      <span className="text-[13px] font-medium text-ink">
+      <span className="text-label font-medium text-ink">
         {label}
         {required && (
-          <span className="ml-0.5 text-red-600" aria-hidden="true">
+          <span className="ml-0.5 text-danger" aria-hidden="true">
             *
           </span>
         )}
       </span>
       <div className="mt-1.5 min-h-10">{control}</div>
       {hint && !error && (
-        <p id={hintId} className="mt-1 text-[12px] text-muted">
+        <p id={hintId} className="mt-1 text-caption text-muted">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errId} role="alert" className="mt-1 text-[12px] font-medium text-red-600">
+        <p id={errId} role="alert" className="mt-1 text-caption font-medium text-danger">
           {error}
         </p>
       )}

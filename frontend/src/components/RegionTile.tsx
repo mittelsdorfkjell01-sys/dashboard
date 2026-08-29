@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import SpotImage from "./SpotImage";
-import { usableMediaUrl } from "../lib/api";
+import { usableMediaUrl, type ImageRecord } from "../lib/api";
 import { countryName } from "../lib/flags";
 import { sportLabel } from "../lib/labels";
 
@@ -26,13 +26,14 @@ export default function RegionTile({
   slug: string;
   name: string;
   country?: string | null;
-  image?: string | null;
+  image?: string | ImageRecord | null;
   /** Published spots in the region (region.spot_count). */
   spotCount?: number | null;
   /** Unique sports across the region's published spots (region.sports). */
   sports?: string[] | null;
 }) {
-  const usable = usableMediaUrl(image);
+  const imageRecord = typeof image === "string" ? null : image;
+  const usable = usableMediaUrl(typeof image === "string" ? image : image?.url);
   const to = slug ? `/region/${slug}` : "#";
   const geography = countryName(country ?? undefined) || country || "";
   const sportsLine = (sports ?? []).map(sportLabel).join(" · ");
@@ -43,7 +44,15 @@ export default function RegionTile({
       className="swd-mobile-deferred-card group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl">
-        <SpotImage src={usable} name={name} region={geography || undefined} compact />
+        <SpotImage
+          src={usable}
+          name={name}
+          region={geography || undefined}
+          width={imageRecord?.width}
+          focal={imageRecord?.focal}
+          rotation={imageRecord?.rotation}
+          compact
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-0 pt-1.5 sm:pt-2">
@@ -56,10 +65,10 @@ export default function RegionTile({
           )}
         </div>
 
-        {geography && <p className="truncate text-[11px] text-muted sm:text-caption">{geography}</p>}
+        {geography && <p className="truncate text-sz-11 text-muted sm:text-caption">{geography}</p>}
 
         {sportsLine && (
-          <p className="mt-auto truncate pt-1 text-[11px] text-muted sm:text-caption">{sportsLine}</p>
+          <p className="mt-auto truncate pt-1 text-sz-11 text-muted sm:text-caption">{sportsLine}</p>
         )}
       </div>
     </Link>

@@ -32,7 +32,7 @@ function Row({
         active ? "bg-band" : "hover:bg-band"
       }`}
     >
-      <span className="truncate text-[15px] text-ink">{label}</span>
+      <span className="truncate text-body text-ink">{label}</span>
     </button>
   );
 }
@@ -55,7 +55,7 @@ export default function SearchWhere({
     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
       {/* Spots left */}
       <div>
-        <h3 className="mb-2 text-[13px] font-medium text-muted">Spots</h3>
+        <h3 className="mb-2 text-label font-medium text-muted">Spots</h3>
         {spotItems.length ? (
           <div className="flex flex-col gap-0.5">
             {spotItems.map((it, i) => (
@@ -68,13 +68,13 @@ export default function SearchWhere({
             ))}
           </div>
         ) : (
-          <p className="text-[13px] text-muted">Keine Spots gefunden.</p>
+          <p className="text-label text-muted">Keine Spots gefunden.</p>
         )}
       </div>
 
       {/* Regionen right */}
       <div>
-        <h3 className="mb-2 text-[13px] font-medium text-muted">Regionen</h3>
+        <h3 className="mb-2 text-label font-medium text-muted">Regionen</h3>
         {regionItems.length ? (
           <div className="flex flex-col gap-0.5">
             {regionItems.map((it, i) => (
@@ -87,7 +87,7 @@ export default function SearchWhere({
             ))}
           </div>
         ) : (
-          <p className="text-[13px] text-muted">Keine Regionen gefunden.</p>
+          <p className="text-label text-muted">Keine Regionen gefunden.</p>
         )}
       </div>
     </div>

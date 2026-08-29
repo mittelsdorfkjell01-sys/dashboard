@@ -1,6 +1,7 @@
 import { useState, type RefObject } from "react";
 import { resolveMediaUrl, type CommunityImage } from "../lib/api";
 import { ChevronLeftIcon, ChevronRightIcon } from "../lib/icons";
+import { responsiveImageAttributes } from "../lib/heroSource";
 
 /**
  * The Info tab's portrait gallery tile (Figma Frame_9). A single big image
@@ -27,10 +28,15 @@ export default function SpotGalleryTile({
       {photo && (
         <img
           key={photo.id}
-          src={resolveMediaUrl(photo.url)}
+          {...responsiveImageAttributes(
+            resolveMediaUrl(photo.url),
+            photo.width,
+            "(max-width: 639px) 100vw, (max-width: 1023px) 60vw, 40vw",
+          )}
           alt={photo.credit ?? ""}
           className="h-full w-full object-cover object-center"
           loading="lazy"
+          decoding="async"
         />
       )}
 

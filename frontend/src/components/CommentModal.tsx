@@ -118,7 +118,7 @@ export default function CommentModal({
               placeholder="verfasse einen Kommentar…"
               className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10`}
             />
-            {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
+            {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
 
             <div className="mt-5 flex items-center justify-end gap-3">
               <button

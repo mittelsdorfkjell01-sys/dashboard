@@ -43,9 +43,9 @@ export default function ResultsHeader() {
             type="button"
             onClick={() => setMobileSearchOpen(true)}
             aria-label="Suche öffnen"
-            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-sm active:scale-[0.97] sm:hidden"
+            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-card active:scale-[0.97] sm:hidden"
           >
-            <SearchIcon className="text-[18px]" />
+            <SearchIcon className="text-sz-18" />
           </button>
 
           <div className="justify-self-end">

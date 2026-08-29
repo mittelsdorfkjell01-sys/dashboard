@@ -127,7 +127,7 @@ export default function TideAdminPanel({ spotId }: {
     return (
       <>
         <p className="text-label text-admin-fg2">Gezeiten werden geladen.</p>
-        {error && <p className="mt-2 text-label text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-label text-admin-danger">{error}</p>}
       </>
     );
   }

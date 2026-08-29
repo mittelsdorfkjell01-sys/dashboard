@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { heroManifest } from "../heroManifest";
-import { hotlinkSrcSet, objectPosition } from "../lib/heroSource";
+import { hostedSrcSet, hotlinkSrcSet, objectPosition } from "../lib/heroSource";
 
 /** Below this breakpoint the mobile focal (if set) applies. Matches Tailwind's
  *  `sm` — the same break at which the region hero switches to a portrait crop
@@ -53,8 +53,10 @@ export default function HeroImage({
   focal,
   focalMobile,
   rotation = 0,
+  width,
   delivery,
   provider,
+  priority = true,
 }: {
   src: string;
   fallbackSrc?: string;
@@ -67,11 +69,15 @@ export default function HeroImage({
   focalMobile?: { x: number; y: number } | null;
   /** Subtle horizon correction; extra scale prevents exposed frame corners. */
   rotation?: number;
+  /** Stored pixel width, used to describe generated hosted variants. */
+  width?: number | null;
   /** How the bytes are served. `hotlinked` images stay on the provider's CDN
    *  (an Unsplash API condition) and are resized with its own parameters. */
   delivery?: "hotlinked" | "hosted";
   /** Provider slug — decides which CDN parameter dialect applies. */
   provider?: string | null;
+  /** Reserve high network priority for the one image that can become LCP. */
+  priority?: boolean;
 }) {
   const isMobile = useMobileViewport();
   const activeFocal = isMobile && focalMobile ? focalMobile : focal;
@@ -93,15 +99,18 @@ export default function HeroImage({
   // Hotlinked: no local variants exist, but the provider's CDN resizes for us,
   // so the browser still downloads a right-sized file instead of a 6000px original.
   const cdnSrcSet = delivery === "hotlinked" ? hotlinkSrcSet(src, provider) : undefined;
-  if (cdnSrcSet) {
+  const storedSrcSet = delivery !== "hotlinked" ? hostedSrcSet(src, width) : undefined;
+  const dynamicSrcSet = cdnSrcSet ?? storedSrcSet;
+  if (dynamicSrcSet) {
     return (
       <img
         src={src}
-        srcSet={cdnSrcSet}
+        srcSet={dynamicSrcSet}
         sizes="100vw"
         alt={alt}
-        loading="eager"
-        fetchPriority="high"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "low"}
+        decoding="async"
         className={className}
         style={style}
         onError={onError}
@@ -110,7 +119,7 @@ export default function HeroImage({
   }
 
   if (!entry) {
-    return <img src={src} alt={alt} loading="eager" fetchPriority="high" className={className} style={style} onError={onError} />;
+    return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "low"} decoding="async" className={className} style={style} onError={onError} />;
   }
 
   const key = keyFromSrc(src);
@@ -124,7 +133,7 @@ export default function HeroImage({
           srcSet={entry.widths.map((w) => `/${key}-${w}.${fmt} ${w}w`).join(", ")}
         />
       ))}
-      <img src={entry.fallback} alt={alt} loading="eager" fetchPriority="high" className={className} style={style} onError={onError} />
+      <img src={entry.fallback} alt={alt} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "low"} decoding="async" className={className} style={style} onError={onError} />
     </picture>
   );
 }

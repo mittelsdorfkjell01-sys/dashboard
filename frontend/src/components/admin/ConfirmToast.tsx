@@ -55,7 +55,7 @@ export default function ConfirmToast({
             title="Bestätigen"
             className="grid h-8 w-8 place-items-center rounded-lg bg-admin-primary text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
           >
-            <span aria-hidden className="text-[16px] leading-none">✓</span>
+            <span aria-hidden className="text-sz-16 leading-none">✓</span>
           </button>
           <button
             type="button"
@@ -65,7 +65,7 @@ export default function ConfirmToast({
             title="Abbrechen"
             className="grid h-8 w-8 place-items-center rounded-lg border border-admin-border bg-admin-surface text-admin-fg2 transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-50"
           >
-            <span aria-hidden className="text-[13px] leading-none">✕</span>
+            <span aria-hidden className="text-label leading-none">✕</span>
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type RefObject } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState, type RefObject } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { WindClimatologyV3Read, WindClimatologyV3Week, WindDirectionMode } from "../../lib/api";
 import { usePersistedState, useWindClimatologyV3, type WindClimatologyV3Selection } from "../../lib/hooks";
@@ -195,6 +195,12 @@ function V3Panel({
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
   const liveRegionRef = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const isPreset = PRESETS.some(([, min, max]) => min === selection.minWindKn && max === selection.maxWindKn);
+  // Custom controls (slider + direction filter) start collapsed once a preset
+  // is active — presets are the primary path. A non-preset selection (e.g.
+  // from a shared link) opens them so the active value stays visible.
+  const [customOpen, setCustomOpen] = useState(!isPreset);
+  const customControlsId = useId();
 
   // Announce completed variant switches only — not every slider tick.
   useEffect(() => {
@@ -229,52 +235,64 @@ function V3Panel({
         {formatWindWindow(data.selection.min_wind_kn, data.selection.max_wind_kn)} · {directionSummary} · {data.period[0]}–{data.period[1]}
       </p>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-data-label font-medium uppercase tracking-wider text-muted">Windfenster</span>
-            <span className="text-data-value font-semibold text-ink">{formatWindWindow(selection.minWindKn, selection.maxWindKn)}</span>
-          </div>
-          <div className="mt-2 max-w-md">
-            <WindWindowSlider
-              minWindKn={selection.minWindKn}
-              maxWindKn={selection.maxWindKn}
-              onChange={(minWindKn, maxWindKn) => onSelectionChange({ ...selection, minWindKn, maxWindKn })}
-            />
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {PRESETS.map(([label, min, max]) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => onSelectionChange({ ...selection, minWindKn: min, maxWindKn: max })}
-                aria-pressed={selection.minWindKn === min && selection.maxWindKn === max}
-                className={`min-h-[44px] rounded-full border px-3 py-1 text-label ${selection.minWindKn === min && selection.maxWindKn === max ? "border-teal bg-teal text-white" : "border-line text-muted hover:border-line-soft"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      <div className="mt-4">
+        <span className="text-data-label font-medium uppercase tracking-wider text-muted">Windfenster</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {PRESETS.map(([label, min, max]) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => onSelectionChange({ ...selection, minWindKn: min, maxWindKn: max })}
+              aria-pressed={selection.minWindKn === min && selection.maxWindKn === max}
+              className={`min-h-[44px] rounded-full border px-3 py-1 text-label ${selection.minWindKn === min && selection.maxWindKn === max ? "border-teal bg-teal text-white" : "border-line text-muted hover:border-line-soft"}`}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-expanded={customOpen}
+            aria-controls={customControlsId}
+            onClick={() => setCustomOpen((open) => !open)}
+            className="ml-1 min-h-[44px] rounded-full border border-line px-3 py-1 text-label text-muted hover:border-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+          >
+            Anpassen {customOpen ? "▴" : "▾"}
+          </button>
         </div>
 
-        <div className="sm:min-w-[220px]">
-          <span className="text-data-label font-medium uppercase tracking-wider text-muted">Windrichtung</span>
-          <label className="mt-2 flex min-h-[44px] items-center gap-2 text-data-value text-ink-soft">
-            <input
-              type="checkbox"
-              checked={data.direction.selected_mode === "usable"}
-              disabled={!data.direction.usable_available}
-              onChange={(e) => onSelectionChange({ ...selection, directionMode: e.target.checked ? "usable" : "all" })}
-              className="h-4 w-4"
-            />
-            Passende Windrichtung berücksichtigen
-          </label>
-          {data.direction.usable_available ? (
-            <p className="mt-1 text-data-caption text-muted">Freigegeben: {data.direction.description}</p>
-          ) : (
-            <p className="mt-1 text-data-caption text-muted">Für diesen Spot sind noch keine geprüften Windrichtungen hinterlegt.</p>
-          )}
-        </div>
+        {customOpen && (
+          <div id={customControlsId} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
+            <div>
+              <span className="text-data-label font-medium uppercase tracking-wider text-muted">Genaues Fenster</span>
+              <div className="mt-2 max-w-md">
+                <WindWindowSlider
+                  minWindKn={selection.minWindKn}
+                  maxWindKn={selection.maxWindKn}
+                  onChange={(minWindKn, maxWindKn) => onSelectionChange({ ...selection, minWindKn, maxWindKn })}
+                />
+              </div>
+            </div>
+
+            <div className="sm:min-w-[220px]">
+              <span className="text-data-label font-medium uppercase tracking-wider text-muted">Windrichtung</span>
+              <label className="mt-2 flex min-h-[44px] items-center gap-2 text-data-value text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={data.direction.selected_mode === "usable"}
+                  disabled={!data.direction.usable_available}
+                  onChange={(e) => onSelectionChange({ ...selection, directionMode: e.target.checked ? "usable" : "all" })}
+                  className="h-4 w-4"
+                />
+                Passende Windrichtung berücksichtigen
+              </label>
+              {data.direction.usable_available ? (
+                <p className="mt-1 text-data-caption text-muted">Freigegeben: {data.direction.description}</p>
+              ) : (
+                <p className="mt-1 text-data-caption text-muted">Für diesen Spot sind noch keine geprüften Windrichtungen hinterlegt.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className={`mt-6 transition-opacity ${switching ? "opacity-60" : ""}`}>

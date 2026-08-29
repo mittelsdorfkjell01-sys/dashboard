@@ -18,13 +18,13 @@ export default function ErrorFallback({
         <a href="/" aria-label="surfwind data — Startseite" className="mb-6 inline-block">
           <Wordmark size="lg" />
         </a>
-        <h1 className="text-[22px] font-semibold text-ink">{title}</h1>
-        <p className="mx-auto mt-2 max-w-sm text-[14px] text-muted">{detail}</p>
+        <h1 className="text-sz-22 font-semibold text-ink">{title}</h1>
+        <p className="mx-auto mt-2 max-w-sm text-ui text-muted">{detail}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Button onClick={() => window.location.reload()}>Neu laden</Button>
           <a
             href="/"
-            className="inline-flex items-center px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+            className="inline-flex items-center px-4 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
             Zur Startseite
           </a>

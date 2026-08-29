@@ -37,7 +37,7 @@ export default function SpotCommentsPanel({ spotId }: { spotId: string }) {
     }
   };
 
-  if (error && !tips) return <p className="text-label text-red-600">{error}</p>;
+  if (error && !tips) return <p className="text-label text-admin-danger">{error}</p>;
   if (!tips) return <p className="text-label text-muted">Kommentare werden geladen…</p>;
   if (tips.length === 0)
     return <p className="text-label text-muted">Noch keine Kommentare.</p>;
@@ -46,7 +46,7 @@ export default function SpotCommentsPanel({ spotId }: { spotId: string }) {
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-label text-red-600">{error}</p>}
+      {error && <p className="text-label text-admin-danger">{error}</p>}
       {threads.map(({ root, replies }) => (
         <div key={root.id} className="rounded-lg border border-line bg-white p-3">
           <Comment tip={root} busy={busyId === root.id} onAct={act} />

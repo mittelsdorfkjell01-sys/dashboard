@@ -232,13 +232,13 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           type="button"
           onClick={() => openExpanded()}
           aria-label="Suche öffnen"
-          className={`flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-[14px] font-medium text-ink shadow-sm transition-shadow hover:shadow-float ${
+          className={`flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
           <span className="truncate">{summary || "Suchen"}</span>
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-teal text-white">
-            <SearchIcon className="text-[14px]" />
+            <SearchIcon className="text-ui" />
           </span>
         </motion.button>
       ) : (
@@ -247,19 +247,19 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           type="button"
           onClick={() => openExpanded()}
           aria-label="Suche öffnen"
-          className={`flex h-14 w-full items-center gap-3 rounded-2xl border border-line bg-surface p-1 pl-5 text-left shadow-float transition-shadow hover:shadow-lg ${
+          className={`flex h-14 w-full items-center gap-3 rounded-2xl border border-line bg-surface p-1 pl-5 text-left shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
           <span
-            className={`flex-1 truncate text-[15px] ${
+            className={`flex-1 truncate text-body ${
               summary ? "font-medium text-ink" : "text-muted"
             }`}
           >
             {summary || "Jetzt suchen"}
           </span>
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-teal text-white">
-            <SearchIcon className="text-[18px]" />
+            <SearchIcon className="text-sz-18" />
           </span>
         </button>
       )}
@@ -331,7 +331,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           transition={reduce ? { duration: 0.05 } : PANEL_TRANSITION}
                         />
                       )}
-                      <span className="relative z-10 text-[12px] font-semibold leading-tight text-teal">Wohin?</span>
+                      <span className="relative z-10 text-caption font-semibold leading-tight text-teal">Wohin?</span>
                       <input
                         ref={whereInputRef}
                         value={val.whereText}
@@ -345,7 +345,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                         placeholder="Region oder Spot suchen"
                         aria-label="Region oder Spot suchen"
                         aria-expanded={open === "where"}
-                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-[13px] leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
+                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-label leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                       />
                     </label>
 
@@ -373,7 +373,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       aria-label="Suchen"
                       className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
                     >
-                      <SearchIcon className="text-[18px]" />
+                      <SearchIcon className="text-sz-18" />
                     </button>
                   </motion.div>
 
@@ -471,8 +471,8 @@ function SegmentButton({
           transition={reduceMotion ? { duration: 0.05 } : PANEL_TRANSITION}
         />
       )}
-      <span className="relative z-10 text-[12px] font-semibold leading-tight text-teal">{label}</span>
-      <span className={`relative z-10 truncate text-[13px] leading-tight ${value ? "text-ink" : "text-muted"}`}>
+      <span className="relative z-10 text-caption font-semibold leading-tight text-teal">{label}</span>
+      <span className={`relative z-10 truncate text-label leading-tight ${value ? "text-ink" : "text-muted"}`}>
         {value || placeholder}
       </span>
     </button>
@@ -499,8 +499,8 @@ function SportPicker({
             aria-pressed={isOn}
             className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
           >
-            <Icon className="shrink-0 text-[26px] text-ink" />
-            <span className="flex-1 text-[16px] font-medium text-ink">{sportLabel(sport)}</span>
+            <Icon className="shrink-0 text-sz-26 text-ink" />
+            <span className="flex-1 text-sz-16 font-medium text-ink">{sportLabel(sport)}</span>
             <span
               className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
                 isOn ? "border-teal" : "border-line"

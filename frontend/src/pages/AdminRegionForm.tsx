@@ -25,11 +25,11 @@ import {
   type SpotSummary,
 } from "../lib/api";
 import { validateHeroFile } from "../components/ImageUpload";
+import { responsiveImageAttributes } from "../lib/heroSource";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
-import { Input, Textarea } from "../components/ui";
-import { Badge, Button } from "../components/admin/ui";
+import { Badge, Button, Input, SearchInput, Textarea } from "../components/admin/ui";
 import AdminBackButton, {
   useAdminBackNavigation,
 } from "../components/admin/AdminBackButton";
@@ -444,8 +444,14 @@ export default function AdminRegionForm() {
         <div className="mt-3 flex flex-wrap items-start gap-4">
           {region.image?.url ? (
             <img
-              src={resolveMediaUrl(region.image.url)}
+              {...responsiveImageAttributes(
+                resolveMediaUrl(region.image.url),
+                region.image.width,
+                "160px",
+              )}
               alt=""
+              loading="lazy"
+              decoding="async"
               className="h-24 w-40 rounded-lg object-cover"
             />
           ) : (
@@ -502,6 +508,7 @@ export default function AdminRegionForm() {
               <div className="mt-1.5">
                 <ImageFocalEditor
                   url={region.image.url}
+                  width={region.image.width}
                   focal={region.image.focal}
                   aspect="21 / 9"
                   onSave={async (x, y) => {
@@ -520,6 +527,7 @@ export default function AdminRegionForm() {
               <div className="mt-1.5">
                 <ImageFocalEditor
                   url={region.image.url}
+                  width={region.image.width}
                   focal={region.image.focal_mobile ?? region.image.focal}
                   aspect="16 / 9"
                   onSave={async (x, y) => {
@@ -666,7 +674,7 @@ export default function AdminRegionForm() {
               if (sid && spots.some((s) => s.id === sid)) void unassign(sid);
             }}
             className={`rounded-2xl border p-3 transition-colors ${
-              dragOverRight ? "border-red-400 bg-red-50/50" : "border-line bg-white"
+              dragOverRight ? "border-admin-danger-border bg-admin-danger-bg" : "border-line bg-white"
             }`}
           >
             <div className="flex items-center justify-between gap-2 px-1">
@@ -682,11 +690,10 @@ export default function AdminRegionForm() {
                 </button>
               )}
             </div>
-            <Input
+            <SearchInput
               className="mt-2"
               value={spotSearch}
               onChange={(e) => setSpotSearch(e.target.value)}
-              placeholder="Suchen …"
             />
             <div className="mt-2 max-h-[360px] space-y-2 overflow-auto">
               {otherSpots

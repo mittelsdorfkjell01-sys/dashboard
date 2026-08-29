@@ -76,7 +76,7 @@ export const SearchInput = forwardRef<
   <div className={`relative ${className}`}>
     <SearchIcon
       aria-hidden
-      className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-admin-faint"
+      className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sz-16 text-admin-faint"
     />
     <input
       ref={ref}
@@ -88,6 +88,25 @@ export const SearchInput = forwardRef<
   </div>
 ));
 SearchInput.displayName = "AdminSearchInput";
+
+/** Plain single-line admin text field (name/URL/credit-style inputs). Same
+ *  geometry and focus behaviour as `SearchInput`, without the magnifier. */
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  ({ type = "text", className = "", ...props }, ref) => (
+    <input ref={ref} type={type} className={`${adminFieldClass} w-full ${className}`} {...props} />
+  )
+);
+Input.displayName = "AdminInput";
+
+/** Plain multi-line admin text field. Same field token as `Input`, sized by
+ *  the caller via `className` (e.g. `min-h-[120px] resize-y`). */
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  import("react").TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className = "", ...props }, ref) => (
+  <textarea ref={ref} className={`${adminFieldClass} h-auto w-full py-2 ${className}`} {...props} />
+));
+Textarea.displayName = "AdminTextarea";
 
 /* ------------------------------------------------------------------------- */
 /* Page header — screen-reader title plus optional right-aligned actions.    */

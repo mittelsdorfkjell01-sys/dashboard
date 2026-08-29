@@ -28,6 +28,7 @@ import { SPORT_LABELS } from "../lib/labels";
 import PromptDialog from "../components/ui/PromptDialog";
 import { PageHeader, Badge, Button } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { responsiveImageAttributes } from "../lib/heroSource";
 import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
@@ -205,7 +206,7 @@ export default function AdminReview() {
             ) : (
               queue.hero_candidates.map((i) => (
                 <Card key={i.id}>
-                  <ImagePreview url={i.url} credit={i.credit} spotId={i.spot_id} />
+                  <ImagePreview url={i.url} width={i.width} credit={i.credit} spotId={i.spot_id} />
                   <Actions>
                     <Approve busy={busy} onClick={() => act(() => approveImage(i.id))}>
                       Als Hero freigeben
@@ -231,7 +232,7 @@ export default function AdminReview() {
             ) : (
               queue.pending_gallery_images.map((i) => (
                 <Card key={i.id}>
-                  <ImagePreview url={i.url} credit={i.credit} spotId={i.spot_id} />
+                  <ImagePreview url={i.url} width={i.width} credit={i.credit} spotId={i.spot_id} />
                   <Actions>
                     <Approve busy={busy} onClick={() => act(() => approveImage(i.id))}>
                       Freigeben
@@ -259,6 +260,7 @@ export default function AdminReview() {
                 <Card key={i.id}>
                   <ImagePreview
                     url={i.url}
+                    width={i.width}
                     credit={i.credit}
                     spotId={i.spot_id}
                     badge={`${i.report_count} Meldung(en)`}
@@ -456,7 +458,7 @@ function SubmissionCard({
                     onChange={(e) => setLat(e.target.value)}
                     placeholder="54.41"
                     className={`w-full rounded-lg border bg-white px-2 py-1.5 text-label text-ink ${
-                      lat && !latOk ? "border-red-300" : "border-line"
+                      lat && !latOk ? "border-admin-danger-border" : "border-line"
                     }`}
                   />
                 </label>
@@ -468,7 +470,7 @@ function SubmissionCard({
                     onChange={(e) => setLon(e.target.value)}
                     placeholder="10.22"
                     className={`w-full rounded-lg border bg-white px-2 py-1.5 text-label text-ink ${
-                      lon && !lonOk ? "border-red-300" : "border-line"
+                      lon && !lonOk ? "border-admin-danger-border" : "border-line"
                     }`}
                   />
                 </label>
@@ -558,11 +560,13 @@ function Neutral({ busy, onClick, children }: { busy: boolean; onClick: () => vo
 }
 function ImagePreview({
   url,
+  width,
   credit,
   spotId,
   badge,
 }: {
   url: string;
+  width: number | null;
   credit: string | null;
   spotId: string;
   badge?: string;
@@ -572,8 +576,10 @@ function ImagePreview({
   return (
     <div className="flex min-w-0 items-start gap-3">
       <img
-        src={resolveMediaUrl(url)}
+        {...responsiveImageAttributes(resolveMediaUrl(url), width, "128px")}
         alt=""
+        loading="lazy"
+        decoding="async"
         className="h-20 w-32 shrink-0 rounded-lg object-cover"
       />
       <div className="min-w-0 text-label">

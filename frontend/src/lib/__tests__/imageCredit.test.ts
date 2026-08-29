@@ -11,6 +11,7 @@ import {
   CARD_CDN_WIDTHS,
   CDN_WIDTHS,
   cardHotlinkSrcSet,
+  hostedSrcSet,
   hotlinkSrcSet,
   objectPosition,
   unsplashSized,
@@ -172,6 +173,35 @@ describe("hotlinked delivery", () => {
   it("gives up rather than guessing another CDN's parameter names", () => {
     expect(hotlinkSrcSet("https://images.pexels.com/p.jpg", "pexels")).toBeUndefined();
     expect(hotlinkSrcSet("https://example.com/p.jpg", null)).toBeUndefined();
+  });
+});
+
+describe("hosted responsive delivery", () => {
+  it("uses only adaptive derivatives declared in the URL", () => {
+    const url = "/media/images/ab/hash-responsive-480_1280.avif";
+    const srcset = hostedSrcSet(url, 1600);
+    expect(srcset).toContain("hash-responsive-480_1280-w480.avif 480w");
+    expect(srcset).toContain("hash-responsive-480_1280-w1280.avif 1280w");
+    expect(srcset).not.toContain("w768.avif");
+  });
+
+  it("uses the canonical source when no derivative saves enough bytes", () => {
+    expect(hostedSrcSet("/media/images/ab/hash-responsive-none.avif", 1600)).toBeUndefined();
+  });
+
+  it("uses only derivatives that exist below the canonical width", () => {
+    const url = "/media/spots/1/hero-v-responsive.avif";
+    const srcset = hostedSrcSet(url, 1600);
+    expect(srcset).toContain("hero-v-responsive-w480.avif 480w");
+    expect(srcset).toContain("hero-v-responsive-w768.avif 768w");
+    expect(srcset).toContain("hero-v-responsive-w1280.avif 1280w");
+    expect(srcset).toContain(`${url} 1600w`);
+    expect(srcset).not.toContain("w1920.avif");
+  });
+
+  it("keeps legacy single-file uploads as a safe fallback", () => {
+    expect(hostedSrcSet("/media/spots/1/hero-old.webp", 1600)).toBeUndefined();
+    expect(hostedSrcSet("/media/spots/1/hero-v-responsive.webp", null)).toBeUndefined();
   });
 });
 

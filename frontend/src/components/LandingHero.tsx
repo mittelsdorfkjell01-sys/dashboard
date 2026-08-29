@@ -98,6 +98,9 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
                 provider={s.heroCredit?.provider}
                 focal={s.heroFocal}
                 focalMobile={s.heroFocalMobile}
+                rotation={s.heroRotation}
+                width={s.heroWidth}
+                priority={active}
                 className="absolute inset-0 h-full w-full object-cover"
               />
             </motion.div>
@@ -115,11 +118,11 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           <Link
             to={spotPath(current)}
             aria-label={`Zum Spot ${current.name}`}
-            className="group pointer-events-auto inline-flex min-h-11 max-w-[70vw] items-center gap-1.5 rounded-xl border border-white/25 bg-black/55 py-1.5 pl-2.5 pr-2 text-white shadow-lg transition-colors hover:bg-black/65 sm:min-h-0 sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
+            className="group pointer-events-auto inline-flex min-h-11 max-w-[70vw] items-center gap-1.5 rounded-xl border border-white/25 bg-black/55 py-1.5 pl-2.5 pr-2 text-white shadow-float transition-colors hover:bg-black/65 sm:min-h-0 sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
           >
-            <PinIcon className="shrink-0 text-[13px]" />
-            <span className="min-w-0 truncate text-[12px] font-medium">{current.name}</span>
-            <ChevronRightIcon className="shrink-0 text-[13px] transition-transform group-hover:translate-x-0.5" />
+            <PinIcon className="shrink-0 text-label" />
+            <span className="min-w-0 truncate text-caption font-medium">{current.name}</span>
+            <ChevronRightIcon className="shrink-0 text-label transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>

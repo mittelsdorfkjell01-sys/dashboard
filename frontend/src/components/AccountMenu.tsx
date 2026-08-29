@@ -45,7 +45,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
   };
 
   const linkClass =
-    "flex min-h-11 items-center px-3 text-[14px] font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70";
+    "flex min-h-11 items-center px-3 text-ui font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70";
 
   return (
     <div ref={ref} className="relative">
@@ -57,9 +57,9 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
         aria-label="Kontomenü"
         className={`flex h-11 w-11 items-center justify-center p-0 text-ink transition-opacity hover:opacity-60 sm:w-auto sm:gap-2.5 sm:px-2 ${bareOnMobile ? "max-sm:justify-end" : ""}`}
       >
-        <MenuIcon className="text-[20px]" />
+        <MenuIcon className="text-sz-20" />
         <span className="hidden h-7 w-7 place-items-center sm:grid">
-          <UserIcon className="text-[16px]" />
+          <UserIcon className="text-sz-16" />
         </span>
       </button>
 
@@ -77,10 +77,10 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
             {user ? (
               <>
                 <div className="px-3 pb-2 pt-1">
-                  <p className="truncate text-[14px] font-semibold text-ink">
+                  <p className="truncate text-ui font-semibold text-ink">
                     {user.displayName}
                   </p>
-                  <p className="truncate text-[12px] text-muted">{user.email}</p>
+                  <p className="truncate text-caption text-muted">{user.email}</p>
                 </div>
                 <div className="mt-2">
                   {ACCOUNT_LINKS.map((item) => (
@@ -100,7 +100,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
                     type="button"
                     role="menuitem"
                     onClick={onLogout}
-                    className="flex min-h-11 w-full items-center px-3 text-left text-[14px] font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+                    className="flex min-h-11 w-full items-center px-3 text-left text-ui font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
                   >
                     Abmelden
                   </button>

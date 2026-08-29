@@ -18,7 +18,7 @@ export default function RequireAuth({
 
   if (loading) {
     return (
-      <div className="grid min-h-[50vh] place-items-center text-[14px] text-muted">
+      <div className="grid min-h-[50vh] place-items-center text-ui text-muted">
         Lädt…
       </div>
     );
@@ -28,12 +28,12 @@ export default function RequireAuth({
     return (
       <div role="alert" className="mx-auto grid min-h-[50vh] max-w-md place-items-center p-6 text-center">
         <div>
-          <p className="text-[15px] font-medium text-ink">Dashboard nicht erreichbar</p>
-          <p className="mt-2 text-[13px] text-muted">{error}</p>
+          <p className="text-body font-medium text-ink">Dashboard nicht erreichbar</p>
+          <p className="mt-2 text-label text-muted">{error}</p>
           <button
             type="button"
             onClick={() => void refresh()}
-            className="mt-4 min-h-11 px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+            className="mt-4 min-h-11 px-4 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
             Erneut versuchen
           </button>
@@ -55,8 +55,8 @@ export default function RequireAuth({
   if (role && user.role !== role) {
     return (
       <div className="mx-auto max-w-md p-10 text-center">
-        <p className="text-[15px] font-medium text-ink">Keine Berechtigung</p>
-        <p className="mt-2 text-[13px] text-muted">
+        <p className="text-body font-medium text-ink">Keine Berechtigung</p>
+        <p className="mt-2 text-label text-muted">
           Dieser Bereich ist Administrator:innen vorbehalten.
         </p>
       </div>

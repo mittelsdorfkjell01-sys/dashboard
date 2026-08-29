@@ -7,7 +7,6 @@ import {
   RouterProvider,
   type RouteObject,
 } from "react-router-dom";
-import "leaflet/dist/leaflet.css";
 import "./index.css";
 import { LenisProvider } from "./lib/lenis";
 import ScrollManager from "./components/ScrollManager";
@@ -36,7 +35,7 @@ const MeineSpots = React.lazy(() => import("./pages/account/MeineSpots"));
 const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
 
 function RouteFallback() {
-  return <div role="status" className="grid min-h-[40vh] place-items-center text-[14px] text-muted">Lädt…</div>;
+  return <div role="status" className="grid min-h-[40vh] place-items-center text-ui text-muted">Lädt…</div>;
 }
 
 // A deploy replaces every hashed chunk file; a tab left open across that

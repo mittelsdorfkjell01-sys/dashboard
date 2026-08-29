@@ -22,7 +22,7 @@ export default function ThemeToggle({ menuItem = false }: { menuItem?: boolean }
       aria-label={label}
       className={
         menuItem
-          ? "flex min-h-11 w-full items-center justify-between px-3 text-[14px] font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+          ? "flex min-h-11 w-full items-center justify-between px-3 text-ui font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           : "inline-flex h-11 w-11 items-center justify-center text-ink transition-opacity hover:opacity-60"
       }
     >

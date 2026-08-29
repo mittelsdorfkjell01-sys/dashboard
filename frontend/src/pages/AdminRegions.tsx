@@ -58,7 +58,7 @@ export default function AdminRegions() {
         title="Regionen"
         actions={
           <ButtonLink variant="primary" to="/admin/region/new" state={editorState}>
-            <PlusIcon className="text-[16px]" /> Region anlegen
+            <PlusIcon className="text-sz-16" /> Region anlegen
           </ButtonLink>
         }
       />
@@ -95,7 +95,7 @@ export default function AdminRegions() {
               {q ? `Keine Region für „${q}“ gefunden.` : "Noch keine Regionen vorhanden."}
             </p>
             <ButtonLink variant="primary" className="mt-4" to="/admin/region/new" state={editorState}>
-              <PlusIcon className="text-[16px]" /> Region anlegen
+              <PlusIcon className="text-sz-16" /> Region anlegen
             </ButtonLink>
           </div>
         ) : (

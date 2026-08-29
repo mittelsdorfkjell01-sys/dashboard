@@ -55,7 +55,7 @@ export function WhenToggle({
           type="button"
           onClick={() => onChange(t)}
           aria-pressed={tab === t}
-          className="relative rounded-full px-4 py-1 text-[12px] font-medium"
+          className="relative rounded-full px-4 py-1 text-caption font-medium"
         >
           {tab === t && (
             <motion.span
@@ -128,10 +128,10 @@ function DateCalendar({
     <div>
       {months.map(({ year, month0 }) => (
         <div key={`${year}-${month0}`} className="mb-5">
-          <p className="mb-1.5 px-1 text-[15px] font-semibold text-ink">
+          <p className="mb-1.5 px-1 text-body font-semibold text-ink">
             {MONTHS_FULL[month0]} {year}
           </p>
-          <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted">
+          <div className="grid grid-cols-7 text-center text-sz-11 font-medium text-muted">
             {WEEKDAYS.map((w) => (
               <span key={w} className="pb-1">
                 {w}
@@ -152,7 +152,7 @@ function DateCalendar({
                       disabled={isPast}
                       whileTap={isPast ? undefined : { scale: 0.85 }}
                       onClick={() => onPick(iso)}
-                      className={`grid h-8 w-8 place-items-center rounded-full text-[13px] transition-colors ${
+                      className={`grid h-8 w-8 place-items-center rounded-full text-label transition-colors ${
                         isSelected
                           ? "bg-teal font-semibold text-white"
                           : isPast
@@ -189,7 +189,7 @@ function FlexPicker({
   };
 
   const chip = (active: boolean) =>
-    `rounded-2xl border px-4 py-2.5 text-[14px] font-medium transition-colors ${
+    `rounded-2xl border px-4 py-2.5 text-ui font-medium transition-colors ${
       active
         ? "border-teal bg-teal text-white"
         : "border-line text-ink hover:bg-band"
@@ -197,7 +197,7 @@ function FlexPicker({
 
   return (
     <div>
-      <p className="text-[13px] font-medium text-muted">Monat</p>
+      <p className="text-label font-medium text-muted">Monat</p>
       <div className="mt-2 grid grid-cols-4 gap-2">
         {MONTHS_ABBR.map((label, i) => {
           const m = i + 1;
@@ -216,7 +216,7 @@ function FlexPicker({
         })}
       </div>
 
-      <p className="mt-4 text-[13px] font-medium text-muted">Zeitspanne</p>
+      <p className="mt-4 text-label font-medium text-muted">Zeitspanne</p>
       <div className="mt-2 space-y-2">
         <motion.button
           type="button"

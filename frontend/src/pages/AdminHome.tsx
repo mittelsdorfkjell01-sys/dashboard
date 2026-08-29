@@ -253,7 +253,7 @@ function Tile({
       {/* Counters are secondary: kept deliberately quiet (smaller numerals) so
           the prioritised task list above wins the squint test. */}
       <div
-        className={`admin-mono text-[20px] font-semibold leading-none ${
+        className={`admin-mono text-sz-20 font-semibold leading-none ${
           accent === "green" ? "text-admin-success" : "text-admin-fg2"
         }`}
       >

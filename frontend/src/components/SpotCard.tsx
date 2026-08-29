@@ -56,7 +56,15 @@ export default function SpotCard({
       className="swd-mobile-deferred-card group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
       <div className={`relative overflow-hidden rounded-2xl ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>
-        <SpotImage src={spot.image} name={spot.name} region={spot.region} compact />
+        <SpotImage
+          src={spot.image}
+          name={spot.name}
+          region={spot.region}
+          width={spot.heroWidth}
+          focal={spot.heroFocal}
+          rotation={spot.heroRotation}
+          compact
+        />
       </div>
 
       <div className={`flex flex-1 flex-col ${compact ? "gap-0 pt-1.5" : "gap-0 pt-1.5 sm:pt-2"}`}>
@@ -77,12 +85,12 @@ export default function SpotCard({
         </div>
 
         {mapRail && regionLine && (
-          <p className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{regionLine}</p>
+          <p className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{regionLine}</p>
         )}
 
         {!compact && (
           <div className="flex items-baseline justify-between gap-3">
-            {regionLine && <p className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{regionLine}</p>}
+            {regionLine && <p className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{regionLine}</p>}
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
               <span className="text-label font-semibold text-ink">{waveValue ?? "—"}</span>
               <span className="text-caption text-ink-soft">m</span>
@@ -92,7 +100,7 @@ export default function SpotCard({
 
         {!compact && sports && (
           <div className="mt-auto pt-1">
-            <span className="min-w-0 truncate text-[11px] text-muted sm:text-caption">{sports}</span>
+            <span className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{sports}</span>
           </div>
         )}
       </div>

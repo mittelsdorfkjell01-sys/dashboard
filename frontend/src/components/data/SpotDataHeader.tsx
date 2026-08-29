@@ -8,7 +8,7 @@ export default function SpotDataHeader({ spot }: { spot: Spot }) {
   const region = spot.region.split(",")[0]?.trim() || spot.region;
 
   return (
-    <div className="grid gap-3 py-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+    <div className="grid gap-3 py-3 sm:grid-cols-[1fr_auto] sm:items-center">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-baseline gap-2.5">
           <h1 className="text-title font-semibold tracking-tight text-ink">{spot.name}</h1>
@@ -25,13 +25,17 @@ export default function SpotDataHeader({ spot }: { spot: Spot }) {
           </div>
         )}
       </div>
-      <Toggle
-        value={sportMode}
-        onChange={setSportMode}
-        options={[{ id: "wind", label: "Wind" }, { id: "surf", label: "Surf" }]}
-        label="Sportmodus"
-      />
-      <div className="sm:justify-self-end">
+      {/* One grouped control instead of two equally-weighted toggles — both
+          compact, so they read as a secondary setting next to the data
+          rather than competing with it (audit P1). */}
+      <div className="flex flex-wrap items-center gap-2 sm:justify-self-end">
+        <Toggle
+          compact
+          value={sportMode}
+          onChange={setSportMode}
+          options={[{ id: "wind", label: "Wind" }, { id: "surf", label: "Surf" }]}
+          label="Sportmodus"
+        />
         <Toggle
           compact
           value={windUnit}

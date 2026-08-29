@@ -4,11 +4,13 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { resolveMediaUrl } from "../lib/api";
+import { responsiveImageAttributes } from "../lib/heroSource";
 
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 
 export default function ImageFocalEditor({
   url,
+  width,
   focal,
   onSave,
   aspect = "16 / 6",
@@ -17,6 +19,7 @@ export default function ImageFocalEditor({
   showRotationControl = false,
 }: {
   url: string;
+  width?: number | null;
   focal?: { x: number; y: number } | null;
   onSave: (x: number, y: number) => Promise<void>;
   aspect?: string;
@@ -155,8 +158,9 @@ export default function ImageFocalEditor({
         style={{ aspectRatio: aspect }}
       >
         <img
-          src={resolveMediaUrl(url)}
+          {...responsiveImageAttributes(resolveMediaUrl(url), width, "100vw")}
           alt=""
+          decoding="async"
           draggable={false}
           className="h-full w-full select-none object-cover"
           style={{
@@ -172,7 +176,7 @@ export default function ImageFocalEditor({
           <div className="absolute top-2/3 left-0 h-px w-full bg-white/60" />
         </div>
       </div>
-      <p className="mt-1.5 text-[12px] text-muted">
+      <p className="mt-1.5 text-caption text-muted">
         Bild ziehen, um den sichtbaren Ausschnitt zu wählen.{" "}
         {busy ? "Speichern…" : saved ? "✓ Gespeichert" : ""}
       </p>

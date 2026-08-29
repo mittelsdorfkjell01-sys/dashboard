@@ -127,9 +127,9 @@ export default function SearchWhen({
                 aria-label="Vorheriger Monat"
                 className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
               >
-                <ChevL className="text-[18px]" />
+                <ChevL className="text-sz-18" />
               </button>
-              <span className="text-[14px] font-semibold text-ink">
+              <span className="text-ui font-semibold text-ink">
                 {MONTHS_LONG[mm.m]} {mm.y}
               </span>
               <button
@@ -138,12 +138,12 @@ export default function SearchWhen({
                 aria-label="Nächster Monat"
                 className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
               >
-                <ChevR className="text-[18px]" />
+                <ChevR className="text-sz-18" />
               </button>
             </div>
             <div className="grid grid-cols-7 gap-y-0.5">
               {WEEKDAYS.map((w) => (
-                <span key={w} className="pb-1 text-center text-[11px] font-medium text-muted">
+                <span key={w} className="pb-1 text-center text-sz-11 font-medium text-muted">
                   {w}
                 </span>
               ))}
@@ -153,7 +153,7 @@ export default function SearchWhen({
                     key={i}
                     type="button"
                     onClick={() => clickDay(d)}
-                    className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-[13px] transition-colors ${
+                    className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-label transition-colors ${
                       isEdge(d)
                         ? "bg-teal text-white"
                         : inRange(d)
@@ -176,17 +176,17 @@ export default function SearchWhen({
 
   // ── flexibel: month grid + duration, full width ──────────────────────────
   const monthChip = (active: boolean) =>
-    `flex h-10 items-center justify-center rounded-xl border px-2 text-[13px] font-medium transition-colors ${
+    `flex h-10 items-center justify-center rounded-xl border px-2 text-label font-medium transition-colors ${
       active ? "border-teal bg-teal/10 text-teal" : "border-line text-ink hover:border-teal"
     }`;
   const durChip = (active: boolean) =>
-    `flex h-10 items-center justify-center rounded-full border px-5 text-[13px] font-medium transition-colors ${
+    `flex h-10 items-center justify-center rounded-full border px-5 text-label font-medium transition-colors ${
       active ? "border-teal bg-teal/10 text-teal" : "border-line text-ink hover:border-teal"
     }`;
 
   return (
     <div>
-      <p className="mb-2 text-[13px] font-medium text-muted">Monat</p>
+      <p className="mb-2 text-label font-medium text-muted">Monat</p>
       <div className="grid grid-cols-6 gap-2">
         {MONTHS_SHORT.map((mon, i) => (
           <button key={mon} type="button" onClick={() => pickMonth(i + 1)} className={monthChip(selMonth === i + 1)}>
@@ -195,7 +195,7 @@ export default function SearchWhen({
         ))}
       </div>
 
-      <p className="mb-2 mt-5 text-[13px] font-medium text-muted">Zeitspanne</p>
+      <p className="mb-2 mt-5 text-label font-medium text-muted">Zeitspanne</p>
       <div className="flex flex-wrap gap-2">
         {(
           [

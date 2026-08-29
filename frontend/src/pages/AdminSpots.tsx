@@ -155,7 +155,7 @@ export default function AdminSpots() {
         title="Spots"
         actions={
           <ButtonLink variant="primary" to="/admin/spot/new" state={editorState}>
-            <PlusIcon className="text-[16px]" /> Spot anlegen
+            <PlusIcon className="text-sz-16" /> Spot anlegen
           </ButtonLink>
         }
       />

@@ -106,7 +106,7 @@ export default function NotificationBell() {
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-admin-primary px-1 text-[10px] font-semibold leading-[16px] text-admin-primary-fg">
+          <span className="absolute -right-1 -top-1 grid min-w-[16px] place-items-center rounded-full bg-admin-primary px-1 text-sz-10 font-semibold leading-[16px] text-admin-primary-fg">
             {unread > 99 ? "99+" : unread}
           </span>
         )}

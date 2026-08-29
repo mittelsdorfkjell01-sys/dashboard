@@ -273,7 +273,7 @@ export default function AdminShell() {
                   {mobileMenuOpen && (
                     <div
                       id="admin-mobile-menu"
-                      className="absolute right-0 top-[calc(100%+0.5rem)] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-admin-border bg-admin-elevated shadow-xl"
+                      className="absolute right-0 top-[calc(100%+0.5rem)] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-admin-border bg-admin-elevated shadow-admin-pop"
                     >
                       <nav aria-label="Dashboard-Navigation" className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-2">
                         {(["Inhalte", "Daten & Betrieb", "Verwaltung"] as const).map((group) => {

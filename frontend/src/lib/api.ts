@@ -298,6 +298,26 @@ export interface LiveMeasurement {
   wind_gust_ms: number | null;
   wind_direction_from_deg: number | null;
   quality: number | null;
+  station_name?: string | null;
+  stale?: boolean;
+  provenance?: WeatherProvenance | null;
+}
+
+export type WeatherSourceType = "measurement" | "model_nowcast" | "forecast";
+export interface WeatherProvenance {
+  contract_version: "weather-v5";
+  source_type: WeatherSourceType;
+  observation_type: "measurement" | "nowcast" | "forecast";
+  source: string; provider: string;
+  observation_at?: string | null; valid_at?: string | null;
+  captured_at: string; calculated_at?: string | null;
+  model_run_at?: string | null;
+  model_run_quality: "exact" | "provider-reported" | "capture-time-only" | "unknown";
+  age_seconds?: number | null; stale: boolean;
+  temporal_resolution_minutes?: number | null; grid_distance_km?: number | null;
+  availability: AvailabilityStatus; quality_tier: string;
+  uncertainty: "determined" | "limited" | "not_determined";
+  data_issues: string[]; spot_timezone: string;
 }
 
 export interface LiveConditionsRead {
@@ -311,7 +331,8 @@ export interface LiveConditionsRead {
   coastal_classification?: CoastalClassification | null;
   coastal_normal_deg?: number | null;
   observation_type?: "nowcast";
-  provenance?: { provider: string; model?: string | null; valid_at: string; spot_timezone: string; stale: boolean; quality_tier: string } | null;
+  provenance?: WeatherProvenance | null;
+  sources?: { wind: WeatherProvenance; air: WeatherProvenance; marine: WeatherProvenance } | null;
   // Nearest active station's latest reading, when one exists for this spot —
   // absent (not fabricated) otherwise. Never render this as if it were
   // `current` (the nowcast): a real measurement and a model estimate must
@@ -380,6 +401,7 @@ export interface ForecastHour {
   wave_coastal_classification?: CoastalClassification | null;
   quality_tier?: string | null;
   stale?: boolean;
+  provenance?: WeatherProvenance | null;
 }
 export type ForecastConfidenceSource = "spread" | "calendar";
 export interface ForecastDay {
@@ -999,6 +1021,8 @@ export interface ReviewImage {
   credit: string | null;
   status: string;
   report_count: number;
+  width: number | null;
+  height: number | null;
   created_at: string;
 }
 export interface ReviewTip {

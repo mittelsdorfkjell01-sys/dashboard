@@ -99,7 +99,7 @@ export default function SectionBand({
       >
         {hasHeader && (
           <div className={align === "center" ? "text-center" : ""}>
-            <h2 className="text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h2>
+            <h2 className="text-sz-28 font-semibold leading-tight text-balance text-ink sm:text-sz-32">{heading}</h2>
           </div>
         )}
         {hasHeader && children != null ? <div className="mt-8">{children}</div> : children}

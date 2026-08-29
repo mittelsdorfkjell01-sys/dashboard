@@ -33,8 +33,21 @@ export default {
         // Attention color — wordmark, map markers, the live-status pulse, the
         // best-season highlight. Never a button, never a link, never body text.
         orange: "var(--sw-orange)",
-        // Data accent, shared with the wind-speed scale.
+        // Data accent, shared with the wind-speed scale. NOT a status colour
+        // — see `danger`/`success` below for error/confirmation text.
         green: "var(--sw-green)",
+        // Status tokens — the only allowed source for error/success colour
+        // on the public site. Admin has its own equivalents (admin-danger/
+        // admin-success); never mix the two systems.
+        danger: {
+          DEFAULT: "var(--sw-danger)",
+          bg: "var(--sw-danger-bg)",
+          border: "var(--sw-danger-border)",
+        },
+        success: {
+          DEFAULT: "var(--sw-success)",
+          bg: "var(--sw-success-bg)",
+        },
         // Wind-climatology-V3 weekly-reliability bar scale (low → high). The
         // 0 band reuses `line`, the 3 band reuses `teal` — chart fills, not
         // buttons/surfaces/links, so the teal restriction above doesn't apply.
@@ -89,15 +102,22 @@ export default {
         display: ["MADE Mountain", "Poppins", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        // The only shadow left in the app — the spot page's header card,
-        // where it stands in for the divider rule the card doesn't have.
-        // Every other surface separates with a hairline (`border-line`)
-        // instead. Two layers: a tighter, darker near-shadow to ground the
-        // card + a soft wide one for ambient depth.
+        // The only two shadows allowed on the PUBLIC site (admin has its own
+        // pair below). `float` originally stood in for the spot page header
+        // card's missing divider rule; every other public surface separates
+        // with a hairline (`border-line`) instead. Two layers: a tighter,
+        // darker near-shadow to ground the card + a soft wide one for
+        // ambient depth.
         float: "0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30)",
         // Soft, subtle elevation for a white surface that reads as raised
         // (the Info-tab comment box, the auth-choice dialog).
         card: "0 12px 34px -18px rgba(36, 28, 23, 0.20)",
+        // Admin's own elevation pair (independent design system, dark-only —
+        // see admin-theme.css `--a-shadow-*`). Popovers/dropdowns/tooltips
+        // get `admin-pop`, real modal dialogs get `admin-dialog`; never the
+        // generic shadow-sm/md/lg/xl utilities in admin UI.
+        "admin-pop": "var(--a-shadow-pop)",
+        "admin-dialog": "var(--a-shadow-dialog)",
       },
       borderRadius: {
         // Corner radius unified to a crisp 8px across cards/tiles/overlays
@@ -115,6 +135,33 @@ export default {
         label: "0.8125rem", // 13px — control labels, chips, buttons (sm)
         ui: "0.875rem", // 14px — default control/body-UI text
         body: "0.9375rem", // 15px — reading copy
+        // Font-size-only steps filling the gaps between the named ramp above
+        // and the role-specific tokens below (title/lede/prose/etc. also set
+        // line-height, so they're not safe substitutes for a plain px value
+        // outside their documented role). Mechanical 1:1 migration of every
+        // remaining `text-[Npx]` call site — every value here matches what
+        // was previously hard-coded exactly, so adopting them is visually a
+        // no-op. Deliberately numeric rather than semantic: unlike
+        // caption/label/ui/body, nobody has yet audited what each of these
+        // call sites actually means, so a named role would be a guess. Treat
+        // this as a holding scale — rename entries into real roles (or fold
+        // them into an existing token) as that understanding builds up.
+        "sz-8": "0.5rem", // 8px
+        "sz-10": "0.625rem", // 10px
+        "sz-11": "0.6875rem", // 11px
+        "sz-16": "1rem", // 16px
+        "sz-17": "1.0625rem", // 17px
+        "sz-18": "1.125rem", // 18px
+        "sz-19": "1.1875rem", // 19px
+        "sz-20": "1.25rem", // 20px
+        "sz-22": "1.375rem", // 22px
+        "sz-24": "1.5rem", // 24px
+        "sz-26": "1.625rem", // 26px
+        "sz-28": "1.75rem", // 28px
+        "sz-30": "1.875rem", // 30px
+        "sz-32": "2rem", // 32px
+        "sz-34": "2.125rem", // 34px
+        "sz-58": "3.625rem", // 58px
         title: ["1.375rem", { lineHeight: "1.25", letterSpacing: "0" }], // 22px — module/panel titles
         stat: ["clamp(3rem, 5vw, 4.25rem)", { lineHeight: "0.85", letterSpacing: "0" }], // big live numbers
         // Editorial display scale — fluid hero/section titles (travel-journal).

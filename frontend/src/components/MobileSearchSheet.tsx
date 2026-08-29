@@ -265,9 +265,9 @@ export default function MobileSearchSheet({
               aria-label="Schließen"
               className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
             >
-              <CloseIcon className="text-[15px]" />
+              <CloseIcon className="text-body" />
             </button>
-            <span className="text-[15px] font-semibold text-ink">Suchen</span>
+            <span className="text-body font-semibold text-ink">Suchen</span>
           </div>
 
           {/* Tiles — top-aligned; content sizes to itself and the whole area
@@ -301,7 +301,7 @@ export default function MobileSearchSheet({
                   }
                   placeholder="Region oder Spot suchen"
                   aria-label="Region oder Spot suchen"
-                  className="search-plain w-full border-0 bg-transparent text-[16px] text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
+                  className="search-plain w-full border-0 bg-transparent text-sz-16 text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                 />
                 <div className="mt-3">
                   {items.length ? (
@@ -316,17 +316,17 @@ export default function MobileSearchSheet({
                         >
                           <span className="flex w-7 shrink-0 justify-center text-ink">
                             {it.kind === "spot" ? (
-                              <PinIcon className="text-[22px]" />
+                              <PinIcon className="text-sz-22" />
                             ) : (
-                              <MapIcon className="text-[22px]" />
+                              <MapIcon className="text-sz-22" />
                             )}
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-[16px] font-medium text-ink">
+                            <span className="block truncate text-sz-16 font-medium text-ink">
                               {it.label}
                             </span>
                             {it.subtitle && (
-                              <span className="block truncate text-[13px] text-muted">
+                              <span className="block truncate text-label text-muted">
                                 {it.subtitle}
                               </span>
                             )}
@@ -335,7 +335,7 @@ export default function MobileSearchSheet({
                       ))}
                     </div>
                   ) : (
-                    <p className="px-1.5 py-2 text-[14px] text-muted">Keine Treffer.</p>
+                    <p className="px-1.5 py-2 text-ui text-muted">Keine Treffer.</p>
                   )}
                 </div>
               </Section>
@@ -391,8 +391,8 @@ export default function MobileSearchSheet({
                         aria-pressed={selected}
                         className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
                       >
-                        <Icon className="shrink-0 text-[26px] text-ink" />
-                        <span className="flex-1 text-[16px] font-medium text-ink">
+                        <Icon className="shrink-0 text-sz-26 text-ink" />
+                        <span className="flex-1 text-sz-16 font-medium text-ink">
                           {sportLabel(sport)}
                         </span>
                         <span
@@ -424,7 +424,7 @@ export default function MobileSearchSheet({
               <button
                 type="button"
                 onClick={reset}
-                className="min-h-11 px-2 text-[15px] font-semibold text-ink underline underline-offset-4 transition-opacity hover:opacity-70"
+                className="min-h-11 px-2 text-body font-semibold text-ink underline underline-offset-4 transition-opacity hover:opacity-70"
               >
                 Alles löschen
               </button>
@@ -432,9 +432,9 @@ export default function MobileSearchSheet({
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={submit}
-                className="inline-flex min-h-12 items-center gap-2 rounded-full bg-teal px-6 text-[15px] font-medium text-white transition-colors hover:bg-teal-hover"
+                className="inline-flex min-h-12 items-center gap-2 rounded-full bg-teal px-6 text-body font-medium text-white transition-colors hover:bg-teal-hover"
               >
-                <SearchIcon className="text-[18px]" />
+                <SearchIcon className="text-sz-18" />
                 Suchen
               </motion.button>
             </div>
@@ -480,14 +480,14 @@ function Section({
           className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
         >
           <span
-            className={`shrink-0 text-[16px] font-semibold transition-colors ${
+            className={`shrink-0 text-sz-16 font-semibold transition-colors ${
               open ? "text-teal" : "text-ink"
             }`}
           >
             {label}
           </span>
           {!open && (
-            <span className="min-w-0 truncate text-[15px] text-muted">
+            <span className="min-w-0 truncate text-body text-muted">
               {value || placeholder}
             </span>
           )}

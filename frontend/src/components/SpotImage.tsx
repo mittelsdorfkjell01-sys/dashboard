@@ -1,4 +1,4 @@
-import { cardHotlinkSrcSet, unsplashSized } from "../lib/heroSource";
+import { cardHotlinkSrcSet, hostedSrcSet, objectPosition, unsplashSized } from "../lib/heroSource";
 
 /**
  * A spot's image with a branded fallback. When `src` is empty (a seed spot with
@@ -12,25 +12,39 @@ export default function SpotImage({
   region,
   className = "",
   compact = false,
+  width,
+  focal,
+  rotation = 0,
 }: {
   src?: string;
   name: string;
   region?: string;
   className?: string;
+  width?: number | null;
+  focal?: { x: number; y: number } | null;
+  rotation?: number;
   /** Smaller type for tight cards (map popup / strip). */
   compact?: boolean;
 }) {
   if (src) {
-    const srcSet = cardHotlinkSrcSet(src);
+    const hotlinked = cardHotlinkSrcSet(src);
+    const srcSet = hotlinked ?? hostedSrcSet(src, width);
+    const safeRotation = Math.max(-5, Math.min(5, rotation));
     return (
       <img
-        src={srcSet ? unsplashSized(src, 640) : src}
+        src={hotlinked ? unsplashSized(src, 640) : src}
         srcSet={srcSet}
         sizes={srcSet ? "(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw" : undefined}
         alt={name}
         loading="lazy"
         decoding="async"
         className={`h-full w-full object-cover ${className}`}
+        style={{
+          objectPosition: objectPosition(focal),
+          transform: safeRotation
+            ? `rotate(${safeRotation}deg) scale(${1 + Math.abs(safeRotation) * 0.04})`
+            : undefined,
+        }}
       />
     );
   }
@@ -42,7 +56,7 @@ export default function SpotImage({
     >
       <span
         className={`font-semibold leading-tight text-ink-soft ${
-          compact ? "text-[13px]" : "text-[15px]"
+          compact ? "text-label" : "text-body"
         }`}
       >
         {name}
@@ -50,7 +64,7 @@ export default function SpotImage({
       {region && (
         <span
           className={`leading-tight text-muted ${
-            compact ? "text-[10px]" : "text-[11px]"
+            compact ? "text-sz-10" : "text-sz-11"
           }`}
         >
           {region}

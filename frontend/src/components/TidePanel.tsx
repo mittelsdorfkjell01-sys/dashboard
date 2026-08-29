@@ -29,6 +29,46 @@ function EventTime({ event, timezone, prominent = false }: {
   );
 }
 
+// Cosine-eased interpolation between consecutive high/low events — the tide
+// curve's real shape (two highs, two lows a day), not a straight ramp. There
+// is no height reading from the API (events carry only time), so the curve
+// is a relative rhythm (0 = low, 1 = high), not an absolute-height chart.
+function buildTideCurve(events: PublicTideEvent[], now: Date) {
+  const sorted = [...events].sort((a, b) => +new Date(a.time) - +new Date(b.time));
+  if (sorted.length < 2) return null;
+
+  const xs = sorted.map((e) => +new Date(e.time));
+  const x0 = xs[0], x1 = xs[xs.length - 1];
+  const span = Math.max(1, x1 - x0);
+  const yFor = (e: PublicTideEvent) => (e.event_type === "high" ? 0 : 1); // SVG y: 0 = top = high
+
+  const points: [number, number][] = [];
+  const STEPS = 10;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const [xa, ya] = [xs[i], yFor(sorted[i])];
+    const [xb, yb] = [xs[i + 1], yFor(sorted[i + 1])];
+    for (let s = i === 0 ? 0 : 1; s <= STEPS; s++) {
+      const t = s / STEPS;
+      const eased = (1 - Math.cos(t * Math.PI)) / 2;
+      points.push([xa + (xb - xa) * t, ya + (yb - ya) * eased]);
+    }
+  }
+
+  const toXY = ([x, y]: [number, number]): [number, number] => [((x - x0) / span) * 100, 10 + y * 80];
+  const path = points.map(toXY).map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+
+  const nowMs = Math.min(x1, Math.max(x0, now.getTime()));
+  let seg = 0;
+  while (seg < sorted.length - 2 && xs[seg + 1] < nowMs) seg++;
+  const [xa, ya] = [xs[seg], yFor(sorted[seg])];
+  const [xb, yb] = [xs[seg + 1], yFor(sorted[seg + 1])];
+  const t = xb === xa ? 0 : Math.min(1, Math.max(0, (nowMs - xa) / (xb - xa)));
+  const eased = (1 - Math.cos(t * Math.PI)) / 2;
+  const [nowX, nowY] = toXY([xa + (xb - xa) * t, ya + (yb - ya) * eased]);
+
+  return { path, nowX, nowY };
+}
+
 export default function TidePanel({ spotId }: { spotId: string }) {
   const [data, setData] = useState<PublicTides | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,55 +93,59 @@ export default function TidePanel({ spotId }: { spotId: string }) {
     low: data?.events.find((item) => item.event_type === "low"),
   }), [data]);
 
-  if (loading) return <div className="min-h-48 animate-pulse rounded-lg border border-line bg-band" aria-label="Gezeiten werden geladen" />;
+  const curve = useMemo(() => (data ? buildTideCurve(data.events, new Date()) : null), [data]);
+
+  if (loading) return <div className="h-48 animate-pulse bg-band" role="status" aria-label="Gezeiten werden geladen" />;
   if (!data?.available || !data.timezone) return null;
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-4">
+    <div>
       <p className="mb-4 text-caption font-medium uppercase tracking-wider text-muted">Gezeiten · 24 h</p>
-      <div className="grid gap-5">
-      <div className="min-w-0">
-        <div className="flex items-center justify-between gap-4 border-b border-line pb-3">
-          <div>
-            <p className="text-caption uppercase text-muted">Aktuelle Tide</p>
-            <p className="mt-1 text-ui font-semibold text-ink">{PHASE_LABELS[data.phase]}</p>
-          </div>
-          {data.cycle_position !== null && data.phase !== "high" && data.phase !== "low" && (
-            <div
-              className="h-1.5 w-24 overflow-hidden bg-line"
-              role="progressbar"
-              aria-label="Position im Tidezyklus"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(data.cycle_position * 100)}
-            >
-              <div className="h-full bg-teal" style={{ width: `${Math.round(data.cycle_position * 100)}%` }} />
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-4 border-b border-line pb-3">
+            <div>
+              <p className="text-caption uppercase text-muted">Aktuelle Tide</p>
+              <p className="mt-1 text-ui font-semibold text-ink">{PHASE_LABELS[data.phase]}</p>
             </div>
+          </div>
+
+          {curve && (
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="mt-3 h-20 w-full"
+              role="img"
+              aria-label={`Gezeitenrhythmus, aktuell ${PHASE_LABELS[data.phase].toLowerCase()}. Werte relativ, keine absolute Höhe.`}
+            >
+              <path d={curve.path} fill="none" stroke="var(--sw-teal)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+              <circle cx={curve.nowX} cy={curve.nowY} r={2.2} fill="var(--sw-surface)" stroke="var(--sw-teal)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+            </svg>
           )}
-        </div>
-        <div className="grid gap-5 py-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          {next.high && <EventTime event={next.high} timezone={data.timezone} prominent />}
-          {next.low && <EventTime event={next.low} timezone={data.timezone} prominent />}
-        </div>
-        <p className="text-caption leading-relaxed text-muted">
-          Astronomische Prognose, ungefähr und gegebenenfalls lokal korrigiert. Wetter, Sturmflut, Abfluss und Strömung können abweichen.
-        </p>
-        <p className="mt-2 text-caption text-muted">Berechnet mit FES2022, bereitgestellt durch AVISO+ und CNES.</p>
-      </div>
-      <div className="min-w-0 border-t border-line pt-3 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-        <p className="mb-3 text-caption font-medium uppercase text-muted">Nächste Ereignisse</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {data.events.slice(0, 6).map((event) => (
-            <EventTime key={event.id} event={event} timezone={data.timezone!} />
-          ))}
-        </div>
-        {data.last_calculated_at && (
-          <p className="mt-4 text-caption text-muted">
-            Zuletzt berechnet: {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: data.timezone }).format(new Date(data.last_calculated_at))}
+
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            {next.high && <EventTime event={next.high} timezone={data.timezone} prominent />}
+            {next.low && <EventTime event={next.low} timezone={data.timezone} prominent />}
+          </div>
+          <p className="mt-4 text-caption leading-relaxed text-muted">
+            Astronomische Prognose, ungefähr und gegebenenfalls lokal korrigiert. Wetter, Sturmflut, Abfluss und Strömung können abweichen.
           </p>
-        )}
-        {data.message && <p className="mt-2 text-caption text-amber-700">{data.message}</p>}
-      </div>
+          <p className="mt-2 text-caption text-muted">Berechnet mit FES2022, bereitgestellt durch AVISO+ und CNES.</p>
+        </div>
+        <div className="min-w-0 border-t border-line pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+          <p className="mb-3 text-caption font-medium uppercase text-muted">Nächste Ereignisse</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {data.events.slice(0, 6).map((event) => (
+              <EventTime key={event.id} event={event} timezone={data.timezone!} />
+            ))}
+          </div>
+          {data.last_calculated_at && (
+            <p className="mt-4 text-caption text-muted">
+              Zuletzt berechnet: {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: data.timezone }).format(new Date(data.last_calculated_at))}
+            </p>
+          )}
+          {data.message && <p className="mt-2 text-caption text-amber-700">{data.message}</p>}
+        </div>
       </div>
     </div>
   );

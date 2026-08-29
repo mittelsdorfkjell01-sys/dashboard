@@ -27,6 +27,13 @@ export default function LiveRow({ live }: {
     air: null, sst: null, swell: null, period: null, swell_dir: null,
   } : null;
   const source: Source = selectedForecast ?? measurementSource ?? live?.current ?? null;
+  const provenance = selectedForecast?.provenance ?? live?.sources?.wind ?? live?.provenance ?? null;
+  const sourceLabel = selectedForecast ? "Ausgewählte Forecaststunde"
+    : provenance?.source_type === "measurement" ? "Stationsmessung" : "Aktuell · berechnet";
+  const validAt = selectedForecast?.time ?? provenance?.valid_at ?? live?.time ?? null;
+  const ageLabel = provenance?.age_seconds == null ? "Alter unbekannt"
+    : provenance.age_seconds < 60 ? "vor weniger als 1 Minute"
+    : `vor ${Math.floor(provenance.age_seconds / 60)} Minuten`;
   const wind = number(source, "wind");
   const gust = number(source, "gust");
   const wave = number(source, "swell", "waveHeight");
@@ -57,7 +64,20 @@ export default function LiveRow({ live }: {
       ];
 
   return (
-    <div data-forecast-utc={selectedForecast?.utcKey??""} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+    <section aria-label="Wetterwerte und Herkunft">
+      <div className="flex flex-wrap items-start justify-between gap-2 px-3 py-3 text-label">
+        <div>
+          <p className="font-semibold text-ink">{sourceLabel}</p>
+          <p className="mt-0.5 text-muted">{validAt ? new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" }).format(new Date(validAt)) : "Datenzeit unbekannt"}{!selectedForecast && ` · ${ageLabel}`}</p>
+        </div>
+        <details className="max-w-prose text-muted">
+          <summary className="cursor-pointer font-medium text-teal underline-offset-4 hover:underline">Herkunft erklären</summary>
+          <p className="mt-2">{provenance?.provider ?? "Surfwinddata"}. Modelllaufzeit: {provenance?.model_run_at ? "bekannt" : "nicht vom Provider gemeldet"}. Wind, Luft und Marinewerte können unterschiedliche Quellen haben.</p>
+          {live?.measurement && !selectedForecast && <p className="mt-2">Station {live.measurement.station_name ?? live.measurement.provider_station_id} · {live.measurement.distance_km == null ? "Entfernung unbekannt" : `${live.measurement.distance_km.toFixed(1)} km vom Spot`}. Die Station steht nicht zwingend direkt am Spot.</p>}
+        </details>
+      </div>
+      {(provenance?.stale || selectedForecast?.stale) && <p role="alert" className="border-y border-warning/40 bg-warning/10 px-3 py-2 text-label font-medium text-ink">Diese Daten sind veraltet. Bitte nutze sie nicht als aktuelle Lageeinschätzung.</p>}
+    <div data-forecast-utc={selectedForecast?.utcKey??""} data-source-type={provenance?.source_type ?? "unknown"} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
       {cells.map((cell) => (
         <div key={cell.label} className={`border-b border-r border-line-soft px-3 py-2.5 text-right lg:border-b-0 ${cell.priority ? "bg-gradient-to-b from-green/[0.06] to-transparent" : ""}`}>
           <p className="mb-1.5 text-left text-caption font-medium uppercase tracking-widest text-muted">{cell.label}</p>
@@ -66,6 +86,7 @@ export default function LiveRow({ live }: {
         </div>
       ))}
     </div>
+    </section>
   );
 }
 

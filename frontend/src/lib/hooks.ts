@@ -40,6 +40,8 @@ export function useSpots(
   return {
     data,
     loading: spots.loading,
+    refreshing: spots.refreshing,
+    stale: spots.stale,
     error: spots.error,
     reload: spots.reload,
   };
@@ -60,6 +62,8 @@ export function useTopSpots(limit = 5): AsyncStateReloadable<Spot[]> {
   return {
     data,
     loading: spots.loading,
+    refreshing: spots.refreshing,
+    stale: spots.stale,
     error: spots.error,
     reload: spots.reload,
   };
@@ -75,6 +79,8 @@ export function useSpot(id?: string): AsyncStateReloadable<Spot> {
   return {
     data,
     loading: spot.loading,
+    refreshing: spot.refreshing,
+    stale: spot.stale,
     error: spot.error,
     reload: spot.reload,
   };
@@ -165,7 +171,11 @@ export function useWindClimatologyV3(
 
 /** Live conditions for a spot (best-effort; failure is non-fatal). */
 export function useSpotLive(id?: string): AsyncStateReloadable<api.LiveConditionsRead> {
-  return useSwr(id ? `live:${id}` : null, () => api.getSpotLive(id!));
+  const enabled = import.meta.env.VITE_WEATHER_POLLING_ENABLED === "true";
+  return useSwr(id ? `live:${id}` : null, () => api.getSpotLive(id!), enabled ? {
+    refreshIntervalMs: 5 * 60_000, jitterRatio: 0.15,
+    refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 10 * 60_000,
+  } : {});
 }
 
 /** Batch live conditions for several spots → Map by spot_id. One request per
@@ -187,12 +197,16 @@ export function useSpotsLive(
     () => (state.data ? new Map(state.data.map((d) => [d.spot_id, d])) : null),
     [state.data]
   );
-  return { data, loading: state.loading, error: state.error, reload: state.reload };
+  return { data, loading: state.loading, refreshing: state.refreshing, stale: state.stale, error: state.error, reload: state.reload };
 }
 
 /** Normalized 10-day forecast: days 1–5 hourly, days 6–10 trend. */
 export function useSpotForecast(id?: string): AsyncStateReloadable<NormalizedForecastSeries> {
-  return useSwr(id ? `forecast:${id}` : null, () => api.getSpotForecast(id!));
+  const enabled = import.meta.env.VITE_WEATHER_POLLING_ENABLED === "true";
+  return useSwr(id ? `forecast:${id}` : null, () => api.getSpotForecast(id!), enabled ? {
+    refreshIntervalMs: 45 * 60_000, jitterRatio: 0.15,
+    refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 60 * 60_000,
+  } : {});
 }
 
 /** Region season aggregate (52 weeks). Best-effort. */

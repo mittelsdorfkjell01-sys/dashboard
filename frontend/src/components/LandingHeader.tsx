@@ -117,7 +117,7 @@ export default function LandingHeader({
             {left ?? (
               <div className="relative flex min-h-11 items-center">
                 <span
-                  className="hidden select-none whitespace-nowrap text-[12px] font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
+                  className="hidden select-none whitespace-nowrap text-caption font-medium uppercase tracking-[0.14em] text-white/90 sm:block"
                   style={sticky ? { opacity: 1 - progress } : undefined}
                 >
                   Best collection of surfspots
@@ -172,9 +172,9 @@ export default function LandingHeader({
               onClick={onMobileSearch}
               aria-label="Suche öffnen"
               style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
-              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-sm transition-opacity duration-150 sm:hidden"
+              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-card transition-opacity duration-150 sm:hidden"
             >
-              <SearchIcon className="text-[18px]" />
+              <SearchIcon className="text-sz-18" />
             </button>
           )}
 
@@ -182,7 +182,7 @@ export default function LandingHeader({
             {INCLUDE_ADMIN && (
               <Link
                 to="/admin/spot/new"
-                className="hidden text-[16px] font-medium text-teal transition-colors hover:text-teal-hover sm:block"
+                className="hidden text-sz-16 font-medium text-teal transition-colors hover:text-teal-hover sm:block"
               >
                 Füge Spots hinzu
               </Link>

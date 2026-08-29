@@ -1,6 +1,5 @@
 import type { RegionInfo, Spot } from "../lib/types";
 import RegionTile from "./RegionTile";
-import { resolveMediaUrl } from "../lib/api";
 import { useRegions, useSpots } from "../lib/hooks";
 
 /**
@@ -53,8 +52,8 @@ export default function SimilarRegions({
   return (
     <section>
       <div className="mb-6 border-b border-line/70 pb-4">
-        <h2 className="text-[20px] font-semibold text-ink sm:text-[24px]">Ähnliche Regionen</h2>
-        <p className="mt-1 text-[14px] text-muted">
+        <h2 className="text-sz-20 font-semibold text-ink sm:text-sz-24">Ähnliche Regionen</h2>
+        <p className="mt-1 text-ui text-muted">
           Vergleichbare Reviere nach Charakter und Windstärke
         </p>
       </div>
@@ -66,7 +65,13 @@ export default function SimilarRegions({
             slug={r.slug}
             name={r.name}
             country={r.country}
-            image={resolveMediaUrl(r.image?.url) ?? (list[0]?.image || undefined)}
+            image={r.image ?? (list[0]?.image ? {
+              url: list[0].image,
+              width: list[0].heroWidth,
+              focal: list[0].heroFocal ?? undefined,
+              focal_mobile: list[0].heroFocalMobile,
+              rotation: list[0].heroRotation,
+            } : undefined)}
             spotCount={r.spot_count}
             sports={r.sports}
           />

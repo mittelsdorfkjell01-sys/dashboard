@@ -121,7 +121,7 @@ function FieldRow({
       <dt className="flex items-center gap-2 text-caption text-muted">
         {label}
         {changed && (
-          <span className="rounded-full bg-green/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green">
+          <span className="rounded-full bg-green/15 px-1.5 py-0.5 text-sz-10 font-semibold uppercase tracking-wide text-green">
             geändert
           </span>
         )}
@@ -197,7 +197,7 @@ export default function ActivityPreview({
         {loading ? (
           <p className="py-6 text-center text-label text-muted">Lädt…</p>
         ) : error ? (
-          <p className="py-6 text-center text-label text-red-600">{error}</p>
+          <p className="py-6 text-center text-label text-admin-danger">{error}</p>
         ) : spot ? (
           <>
             {SECTIONS.map((section) => (

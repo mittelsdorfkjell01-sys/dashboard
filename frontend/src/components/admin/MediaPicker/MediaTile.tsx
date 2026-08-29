@@ -57,7 +57,7 @@ export default function MediaTile({
           <span
             key={badge.label}
             title={badge.title}
-            className={`rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight ${
+            className={`rounded px-1.5 py-0.5 text-sz-11 font-medium leading-tight ${
               TONE[badge.tone] ?? TONE.neutral
             }`}
           >

@@ -15,6 +15,7 @@ import {
 } from "../../lib/api";
 import type { MediaEntityType } from "../../lib/mediaPicker";
 import { moveItem, removalNeedsConfirmation } from "../../lib/gallery";
+import { responsiveImageAttributes } from "../../lib/heroSource";
 import Modal from "../ui/Modal";
 import { Button } from "./ui";
 
@@ -120,8 +121,14 @@ export default function GalleryManager({
               className="group relative cursor-grab overflow-hidden rounded-lg border border-admin-border bg-admin-bg active:cursor-grabbing"
             >
               <img
-                src={resolveMediaUrl(image.url)}
+                {...responsiveImageAttributes(
+                  resolveMediaUrl(image.url),
+                  image.width,
+                  "(max-width: 639px) 50vw, 25vw",
+                )}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="aspect-[4/3] w-full object-cover"
               />
               <div className="absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
@@ -130,7 +137,7 @@ export default function GalleryManager({
                   disabled={busyId === image.id}
                   onClick={() => void promote(image)}
                   title="Als Hero übernehmen"
-                  className="rounded bg-white/90 px-2 py-1 text-[11px] font-medium text-black hover:bg-white disabled:opacity-50"
+                  className="rounded bg-white/90 px-2 py-1 text-sz-11 font-medium text-black hover:bg-white disabled:opacity-50"
                 >
                   Als Hero
                 </button>
@@ -141,7 +148,7 @@ export default function GalleryManager({
                     removalNeedsConfirmation(image) ? setConfirmRemove(image) : void remove(image)
                   }
                   title="Entfernen"
-                  className="rounded bg-white/90 px-2 py-1 text-[11px] font-medium text-black hover:bg-white disabled:opacity-50"
+                  className="rounded bg-white/90 px-2 py-1 text-sz-11 font-medium text-black hover:bg-white disabled:opacity-50"
                 >
                   Entfernen
                 </button>

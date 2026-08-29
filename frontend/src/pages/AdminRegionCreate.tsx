@@ -101,7 +101,7 @@ export default function AdminRegionCreate() {
   return (
     <div className="w-full pb-20 xl:pb-0">
       <AdminBackButton onClick={back.goBack} label={back.label} />
-      <h1 className="mt-5 text-[24px] font-semibold text-admin-fg">Region anlegen</h1>
+      <h1 className="mt-5 text-sz-24 font-semibold text-admin-fg">Region anlegen</h1>
       <p className="mt-1 text-label text-admin-muted">Stammdaten, Mittelpunkt und Titelbild in einem Schritt erfassen.</p>
 
       <form id="admin-region-create" onSubmit={submit} className="mt-6 grid gap-5 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">

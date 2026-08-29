@@ -9,10 +9,10 @@ type WordmarkSize = "sm" | "md" | "lg" | "xl";
  * `.wordmark` base class). `tag` renders a small suffix pill, e.g. "Admin".
  */
 const SIZE: Record<WordmarkSize, { brand: string; data: string }> = {
-  sm: { brand: "text-[18px]", data: "text-[10px]" },
-  md: { brand: "text-[26px] sm:text-[30px]", data: "text-[13px] sm:text-[15px]" },
-  lg: { brand: "text-[32px]", data: "text-[16px]" },
-  xl: { brand: "text-[34px] sm:text-[58px]", data: "text-[16px] sm:text-[28px]" },
+  sm: { brand: "text-sz-18", data: "text-sz-10" },
+  md: { brand: "text-sz-26 sm:text-sz-30", data: "text-label sm:text-body" },
+  lg: { brand: "text-sz-32", data: "text-sz-16" },
+  xl: { brand: "text-sz-34 sm:text-sz-58", data: "text-sz-16 sm:text-sz-28" },
 };
 
 export default function Wordmark({
@@ -32,7 +32,7 @@ export default function Wordmark({
         data
       </span>
       {tag && (
-        <span className="ml-2 self-center rounded-2xl bg-ink/5 px-2 py-0.5 text-[11px] font-medium text-muted">
+        <span className="ml-2 self-center rounded-2xl bg-ink/5 px-2 py-0.5 text-sz-11 font-medium text-muted">
           {tag}
         </span>
       )}

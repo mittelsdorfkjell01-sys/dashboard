@@ -239,7 +239,7 @@ export default function AdminUsers() {
         actions={
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setCreateOpen(true)}>
-              <PlusIcon className="text-[16px]" /> Benutzer anlegen
+              <PlusIcon className="text-sz-16" /> Benutzer anlegen
             </Button>
           </div>
         }
@@ -520,7 +520,7 @@ function CreateUserForm({
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <h2 id="create-user-title" className="text-[18px] font-semibold text-admin-fg">
+      <h2 id="create-user-title" className="text-sz-18 font-semibold text-admin-fg">
         Benutzer anlegen
       </h2>
       <p className="rounded-md border border-admin-info-bg bg-admin-info-bg px-3 py-2 text-label text-admin-info">

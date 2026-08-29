@@ -60,7 +60,7 @@ export function revalidate<T>(
       // Keep stale data on a background failure; only surface an error when
       // there is nothing cached to show.
       if (cur && cur.data !== undefined) {
-        storeEntry(key, { data: cur.data, ts: cur.ts });
+        storeEntry(key, { data: cur.data, error: errMessage(err), ts: cur.ts });
       } else {
         storeEntry(key, { error: errMessage(err), ts: Date.now() });
       }
@@ -68,6 +68,7 @@ export function revalidate<T>(
     .finally(() => notify(key));
 
   storeEntry(key, { ...(existing ?? {}), inflight });
+  notify(key);
   return inflight;
 }
 
@@ -94,9 +95,23 @@ export function mutate<T>(key: string, update: (current: T | undefined) => T) {
 export interface SwrState<T> {
   data: T | null;
   loading: boolean;
+  refreshing: boolean;
+  stale: boolean;
   error: string | null;
   reload: () => void;
 }
+
+export interface SwrOptions {
+  maxAgeMs?: number;
+  refreshIntervalMs?: number;
+  jitterRatio?: number;
+  refreshOnFocus?: boolean;
+  refreshOnReconnect?: boolean;
+}
+
+export const shouldRefreshWeather = (visibility: DocumentVisibilityState) => visibility === "visible";
+export const refreshDelay = (intervalMs: number, jitterRatio = 0.1, random = Math.random) =>
+  intervalMs + intervalMs * jitterRatio * random();
 
 interface PersistentEnvelope<T> {
   version: 1;
@@ -168,7 +183,8 @@ function persistPublicData<T>(options: PersistentSwrOptions, data: T) {
  */
 export function useSwr<T>(
   key: string | null,
-  fetcher: () => Promise<T>
+  fetcher: () => Promise<T>,
+  options: SwrOptions = {},
 ): SwrState<T> {
   const [, force] = useReducer((n: number) => n + 1, 0);
 
@@ -188,12 +204,36 @@ export function useSwr<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
+  useEffect(() => {
+    if (!key) return;
+    const refresh = () => { if (shouldRefreshWeather(document.visibilityState)) void revalidate(key, fetcher); };
+    const onVisibility = () => { if (document.visibilityState === "visible") refresh(); };
+    if (options.refreshOnFocus) window.addEventListener("focus", refresh);
+    if (options.refreshOnReconnect) window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      if (!options.refreshIntervalMs) return;
+      timer = setTimeout(() => { refresh(); schedule(); }, refreshDelay(options.refreshIntervalMs, options.jitterRatio));
+    };
+    schedule();
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, options.refreshIntervalMs, options.jitterRatio, options.refreshOnFocus, options.refreshOnReconnect]);
+
   const entry = key ? (store.get(key) as Entry<T> | undefined) : undefined;
-  const expired = !!entry?.ts && Date.now() - entry.ts > MAX_AGE_MS;
+  const expired = !!entry?.ts && Date.now() - entry.ts > (options.maxAgeMs ?? MAX_AGE_MS);
   const hasData = !!entry && entry.data !== undefined;
   return {
-    data: hasData && !expired ? (entry!.data as T) : null,
-    loading: !!key && (!hasData || expired) && !entry?.error,
+    data: hasData ? (entry!.data as T) : null,
+    loading: !!key && !hasData && !entry?.error,
+    refreshing: !!entry?.inflight && hasData,
+    stale: hasData && expired,
     error: entry?.error ?? null,
     reload: () => {
       if (key) void revalidate(key, fetcher);

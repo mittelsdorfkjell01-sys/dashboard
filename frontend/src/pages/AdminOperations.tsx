@@ -165,7 +165,7 @@ export default function AdminOperations() {
                 className="rounded-lg border border-admin-border bg-admin-surface p-4"
               >
                 <Badge tone={tone}>{label}</Badge>
-                <div className="admin-mono mt-2 text-[20px] font-semibold">
+                <div className="admin-mono mt-2 text-sz-20 font-semibold">
                   {value}
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function AdminOperations() {
             className="rounded-lg border border-admin-border bg-admin-surface p-4"
           >
             <Badge tone={t.tone}>{t.label}</Badge>
-            <div className="admin-mono mt-2 text-[20px] font-semibold leading-none text-admin-fg">
+            <div className="admin-mono mt-2 text-sz-20 font-semibold leading-none text-admin-fg">
               {t.value}
             </div>
           </div>

@@ -93,7 +93,7 @@ export default function InlineTipComposer({
             maxLength={4000}
             placeholder="Kommentar hinzufügen …"
             aria-label="Kommentar hinzufügen"
-            className="h-11 w-full rounded-xl border border-line bg-page py-2 pl-4 pr-12 text-[16px] text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 sm:text-label"
+            className="h-11 w-full rounded-xl border border-line bg-page py-2 pl-4 pr-12 text-sz-16 text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 sm:text-label"
           />
           {text.trim() && (
             <button
@@ -114,7 +114,7 @@ export default function InlineTipComposer({
             </button>
           )}
         </div>
-        {error && <p role="alert" className="mt-2 text-caption text-red-600">{error}</p>}
+        {error && <p role="alert" className="mt-2 text-caption text-danger">{error}</p>}
         <CommentAuthChoiceDialog
           open={authOpen}
           onAnonymous={() => {
@@ -149,7 +149,7 @@ export default function InlineTipComposer({
         maxLength={4000}
         className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
       />
-      {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
       <div className="mt-2 flex items-center justify-between gap-3">
         {onCancel ? (
           <button

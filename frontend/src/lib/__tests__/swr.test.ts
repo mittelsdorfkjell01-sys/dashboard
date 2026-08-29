@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { revalidate, peek, __resetCache, hydratePersistent } from "../swr";
+import { revalidate, peek, __resetCache, hydratePersistent, refreshDelay, shouldRefreshWeather } from "../swr";
 
 beforeEach(() => __resetCache());
 
@@ -24,7 +24,7 @@ describe("swr cache", () => {
       throw new Error("x");
     });
     expect(peek<number>("k")?.data).toBe(1); // stale data kept
-    expect(peek("k")?.error).toBeUndefined(); // transient error not surfaced
+    expect(peek("k")?.error).toBeTruthy(); // error is separate from retained data
   });
 
   it("dedupes concurrent requests for the same key", async () => {
@@ -48,6 +48,15 @@ describe("swr cache", () => {
     await revalidate("k", fetcher);
     expect(calls).toBe(2);
     expect(peek<number>("k")?.data).toBe(2);
+  });
+});
+
+describe("weather refresh policy", () => {
+  it("pauses hidden tabs and adds bounded positive jitter", () => {
+    expect(shouldRefreshWeather("hidden")).toBe(false);
+    expect(shouldRefreshWeather("visible")).toBe(true);
+    expect(refreshDelay(300_000, 0.15, () => 0)).toBe(300_000);
+    expect(refreshDelay(300_000, 0.15, () => 1)).toBe(345_000);
   });
 });
 

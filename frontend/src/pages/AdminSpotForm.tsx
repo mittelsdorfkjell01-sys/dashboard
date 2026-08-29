@@ -955,6 +955,7 @@ export default function AdminSpotForm() {
                       <div className="mt-1.5">
                         <ImageFocalEditor
                           url={currentImage.url}
+                          width={currentImage.width}
                           focal={currentImage.focal}
                           rotation={currentImage.rotation ?? 0}
                           aspect="21 / 9"
@@ -977,6 +978,7 @@ export default function AdminSpotForm() {
                       <div className="mt-1.5">
                         <ImageFocalEditor
                           url={currentImage.url}
+                          width={currentImage.width}
                           focal={currentImage.focal_mobile ?? currentImage.focal}
                           rotation={currentImage.rotation ?? 0}
                           aspect="16 / 9"
@@ -1332,7 +1334,7 @@ export default function AdminSpotForm() {
             >
               <span aria-hidden="true">•••</span>
             </summary>
-            <div className="absolute bottom-full right-0 mb-2 w-52 rounded-lg border border-admin-border bg-admin-elevated p-1.5 shadow-lg">
+            <div className="absolute bottom-full right-0 mb-2 w-52 rounded-lg border border-admin-border bg-admin-elevated p-1.5 shadow-admin-pop">
               <button
                 type="button"
                 disabled={submitting}

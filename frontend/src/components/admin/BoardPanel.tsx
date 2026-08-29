@@ -92,7 +92,7 @@ export default function BoardPanel() {
   return (
     <div ref={boardRef}>
       {error && (
-        <div role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-label font-medium text-red-700">
+        <div role="alert" className="mb-4 rounded-lg bg-admin-danger-bg px-3 py-2 text-label font-medium text-admin-danger">
           {error}
         </div>
       )}
@@ -450,14 +450,14 @@ function TaskDialog({
         <Textarea
           ref={bodyRef}
           id="new-task-body"
-          className="min-h-[180px] resize-y font-mono text-[13px] leading-6"
+          className="min-h-[180px] resize-y font-mono text-label leading-6"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={onBodyKeyDown}
           placeholder="Beschreibung hinzufügen …"
         />
         </Field>
-        {saveError && <p role="alert" className="mt-2 text-caption text-red-700">{saveError}</p>}
+        {saveError && <p role="alert" className="mt-2 text-caption text-admin-danger">{saveError}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-line bg-band/40 px-5 py-3">
           <Button type="button" variant="ghost" onClick={close} disabled={busy}>

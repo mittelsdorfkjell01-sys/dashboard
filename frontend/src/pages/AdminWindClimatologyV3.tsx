@@ -21,7 +21,7 @@ export function DirectionCompass({selected,onChange}:{selected:number[];onChange
         return <button key={name} type="button" aria-pressed={active} aria-label={`${name}, Wind aus ${start} bis ${end} Grad, ${active?"ausgewählt":"nicht ausgewählt"}`}
           onClick={() => onChange(active?selected.filter(x=>x!==index):[...selected,index].sort((a,b)=>a-b))}
           className={`min-h-11 rounded-md border px-2 py-2 text-label font-semibold transition-colors ${active?"border-admin-primary bg-admin-primary-bg text-admin-primary":"border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover"}`}>
-          {name}<span className="block text-[10px] font-normal opacity-80">{start}–{end}°</span>
+          {name}<span className="block text-sz-10 font-normal opacity-80">{start}–{end}°</span>
         </button>})}
     </div>
     <p className="mt-3 text-caption text-admin-muted">Ausgewählt: {selected.length ? selected.map(i=>NAMES[i]).join(", ") : "Keine"}. Windrichtung bedeutet die Richtung, aus der der Wind kommt.</p>
@@ -37,7 +37,7 @@ export function WeekChart({data,min,max,mode}:{data:V3Variant;min:number;max:num
       {weeks.map((w,i) => { const value=w.reliability_percent ?? 0; return <div key={i} className="group relative flex h-full min-w-0 flex-1 items-end">
         <div tabIndex={0} role="img" aria-label={`Saisonwoche ${i+1}: ${w.reliability_percent == null?"keine veröffentlichbare Zuverlässigkeit":`${w.reliability_percent} Prozent`}`}
           className="w-full bg-admin-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-fg" style={{height:`${Math.max(0,Math.min(100,value))}%`}} />
-        <div className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden w-56 rounded-md bg-admin-elevated p-3 text-caption shadow-lg group-hover:block group-focus-within:block ${i<4?"left-0":i>47?"right-0":"left-1/2 -translate-x-1/2"}`}>
+        <div className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden w-56 rounded-md bg-admin-elevated p-3 text-caption shadow-admin-pop group-hover:block group-focus-within:block ${i<4?"left-0":i>47?"right-0":"left-1/2 -translate-x-1/2"}`}>
           <strong>Woche {i+1}</strong><br/>{min}–{max??"40+"} kt · {mode==="all"?"alle":"passende"} Richtungen<br/>
           Zuverlässigkeit: {w.reliability_percent??"—"}%<br/>Jahre: {w.successful_years}/{w.sample_years}<br/>
           Median Windtage: {w.median_usable_days??"—"}<br/>Median Sessionstunden: {w.median_session_hours??"—"}<br/>
@@ -45,7 +45,7 @@ export function WeekChart({data,min,max,mode}:{data:V3Variant;min:number;max:num
         </div>
       </div>})}
     </div>
-    <div className="mt-1 flex justify-between text-[10px] text-admin-muted"><span>Jan</span><span>Apr</span><span>Jul</span><span>Okt</span><span>Dez</span></div>
+    <div className="mt-1 flex justify-between text-sz-10 text-admin-muted"><span>Jan</span><span>Apr</span><span>Jul</span><span>Okt</span><span>Dez</span></div>
   </figure>;
 }
 

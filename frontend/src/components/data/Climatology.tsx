@@ -92,7 +92,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
                   </button>;
                 })}
               </div>
-              <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-[8px] font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
+              <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-sz-8 font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
             </div>
           ))}
         </div>
@@ -153,7 +153,7 @@ function ClimatologyEmptyState({ state, onRetry }: {
                 />
               ))}
             </div>
-            <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-[8px] font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
+            <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-sz-8 font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
           </div>
         ))}
       </div>

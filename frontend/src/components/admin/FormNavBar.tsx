@@ -249,7 +249,7 @@ export default function FormNavBar() {
           aria-modal="false"
           aria-label="Abschnittsmenü"
           id={MENU_ID}
-          className="fixed bottom-24 left-1/2 z-[1001] w-[min(92vw,340px)] -translate-x-1/2 rounded-xl border border-admin-border bg-admin-surface p-2 shadow-xl"
+          className="fixed bottom-24 left-1/2 z-[1001] w-[min(92vw,340px)] -translate-x-1/2 rounded-xl border border-admin-border bg-admin-surface p-2 shadow-admin-pop"
         >
           <div className="flex items-center justify-between gap-2 px-2 py-1">
             <span className="text-caption font-semibold uppercase tracking-wide text-admin-muted">
@@ -287,7 +287,7 @@ export default function FormNavBar() {
           aria-modal="false"
           aria-label="Suche"
           id={SEARCH_ID}
-          className="fixed bottom-24 left-1/2 z-[1001] flex w-[min(92vw,420px)] -translate-x-1/2 items-center gap-2 rounded-full border border-admin-border bg-admin-surface px-3 py-1.5 shadow-xl"
+          className="fixed bottom-24 left-1/2 z-[1001] flex w-[min(92vw,420px)] -translate-x-1/2 items-center gap-2 rounded-full border border-admin-border bg-admin-surface px-3 py-1.5 shadow-admin-pop"
         >
           <IconSearch />
           <input
@@ -339,7 +339,7 @@ export default function FormNavBar() {
       )}
 
       <div className="pointer-events-none fixed bottom-6 left-0 right-0 z-[1000] flex justify-center px-4">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-admin-border bg-admin-surface p-1 shadow-lg">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-admin-border bg-admin-surface p-1 shadow-admin-pop">
           <button
             type="button"
             onClick={() => setMode(mode === "menu" ? "closed" : "menu")}
