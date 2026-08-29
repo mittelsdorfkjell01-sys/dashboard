@@ -92,7 +92,7 @@ export default function ImageUpload({
   return (
     <div className="rounded-2xl bg-[#F1F5FA] p-6">
       {/* Disclaimer */}
-      <div className="rounded-xl bg-ink/5 p-4 text-[13px] leading-relaxed text-ink-soft">
+      <div className="rounded-xl bg-ink/5 p-4 text-label leading-relaxed text-ink-soft">
         <p className="font-semibold text-ink">Anforderungen an das Header-Bild</p>
         <ul className="mt-2 space-y-1">
           <li>• Mindestbreite <strong>{HERO_REQ.minWidth} px</strong> (für Retina-/4K-Displays, damit nichts hochskaliert wird)</li>
@@ -127,27 +127,27 @@ export default function ImageUpload({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-teal/30 bg-white px-4 py-8 text-center transition-colors hover:border-teal/50 hover:bg-teal/[0.04]"
+          className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-teal/30 bg-surface px-4 py-8 text-center transition-colors hover:border-teal/50 hover:bg-teal/[0.04]"
         >
-          <span className="text-[14px] font-medium text-teal">Bild auswählen</span>
-          <span className="text-[12px] text-muted">JPG/PNG · min. {HERO_REQ.minWidth}px breit</span>
+          <span className="text-ui font-medium text-teal">Bild auswählen</span>
+          <span className="text-caption text-muted">JPG/PNG · min. {HERO_REQ.minWidth}px breit</span>
         </button>
       </div>
 
       {/* Feedback */}
       {result && !result.ok && !isAccepted(result) && (
-        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
+        <p className="mt-3 rounded-lg bg-danger-bg px-3 py-2 text-label font-medium text-danger">
           ✕ {result.reason}
         </p>
       )}
       {result && !result.ok && isAccepted(result) && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] font-medium text-amber-700">
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-label font-medium text-amber-700">
           ⚠ {result.reason} Das Bild wird verwendet, kann auf großen Bildschirmen
           aber unscharf wirken.
         </p>
       )}
       {result?.ok && (
-        <p className="mt-3 rounded-lg bg-green/10 px-3 py-2 text-[13px] font-medium text-green">
+        <p className="mt-3 rounded-lg bg-green/10 px-3 py-2 text-label font-medium text-green">
           ✓ {fileName} · {result.width}×{result.height} px — Anforderung erfüllt
         </p>
       )}

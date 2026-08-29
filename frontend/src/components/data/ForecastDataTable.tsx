@@ -10,7 +10,7 @@ const spread=(hour:NormalizedForecastHour,unit:WindUnit)=>hour.wind_spread?.n&&h
 
 export default function ForecastDataTable({model,windUnit}:{model:MeteogramModel;windUnit:WindUnit}){
   const confidence=new Map(model.dayGroups.map((day)=>[day.date,day.confidence]));
-  return <div className="max-h-[70vh] overflow-auto rounded-md border border-line" tabIndex={0} aria-label="Forecast-Tabelle horizontal und vertikal scrollen">
+  return <div className="max-h-[70vh] overflow-auto rounded-lg border border-line" tabIndex={0} aria-label="Forecast-Tabelle horizontal und vertikal scrollen">
     <table className="w-full min-w-[1180px] border-collapse text-left text-label text-ink">
       <caption className="sticky left-0 bg-band px-4 py-3 text-left text-ui font-semibold">Vollständige Stundenprognose in Spot-Ortszeit</caption>
       <thead className="sticky top-0 z-10 bg-surface"><tr>{["Lokales Datum","Lokale Uhrzeit","Wetterzustand","Niederschlag","Temperatur","Mittelwind","Böe","Modellspanne","Windrichtung","Wellenhöhe","Periode","Sicherheit","Datenverfügbarkeit"].map((label)=><th key={label} scope="col" className="whitespace-nowrap border-b border-line px-3 py-3 font-semibold">{label}</th>)}</tr></thead>

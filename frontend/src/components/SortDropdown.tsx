@@ -98,12 +98,12 @@ export default function SortDropdown({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-[15px] text-ink transition-colors hover:text-teal"
+        className="flex items-center gap-2 text-body text-ink transition-colors hover:text-teal"
       >
-        <SortIcon className="text-[18px]" />
+        <SortIcon className="text-sz-18" />
         Sortieren & Filtern
         {count > 0 && (
-          <span className="grid h-5 min-w-5 place-items-center rounded-2xl bg-ink px-1.5 text-[11px] font-semibold text-white">
+          <span className="grid h-5 min-w-5 place-items-center rounded-2xl bg-ink px-1.5 text-sz-11 font-semibold text-white">
             {count}
           </span>
         )}
@@ -115,11 +115,11 @@ export default function SortDropdown({
           id={panelId}
           role="dialog"
           aria-label="Sortieren und filtern"
-          className="absolute right-0 z-30 mt-3 w-[300px] rounded-2xl bg-white p-5 ring-1 ring-line"
+          className="absolute right-0 z-30 mt-3 w-[300px] rounded-2xl bg-surface p-5 ring-1 ring-line"
         >
           {/* Sortierung */}
           <fieldset>
-            <legend className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+            <legend className="text-caption font-semibold uppercase tracking-wide text-muted">
               Sortierung
             </legend>
             <div className="mt-2 space-y-1">
@@ -143,7 +143,7 @@ export default function SortDropdown({
 
           {/* Level */}
           <fieldset className="mt-4">
-            <legend className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+            <legend className="text-caption font-semibold uppercase tracking-wide text-muted">
               Level
             </legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -157,7 +157,7 @@ export default function SortDropdown({
 
           {/* Wasserart */}
           <fieldset className="mt-4">
-            <legend className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+            <legend className="text-caption font-semibold uppercase tracking-wide text-muted">
               Wasserart
             </legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -175,7 +175,7 @@ export default function SortDropdown({
 
           {/* Fahrstil (Mehrfachauswahl) */}
           <fieldset className="mt-4">
-            <legend className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+            <legend className="text-caption font-semibold uppercase tracking-wide text-muted">
               Fahrstil
             </legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -192,7 +192,7 @@ export default function SortDropdown({
           </fieldset>
 
           <fieldset className="mt-4">
-            <legend className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+            <legend className="text-caption font-semibold uppercase tracking-wide text-muted">
               Untergrund
             </legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -213,7 +213,7 @@ export default function SortDropdown({
               type="button"
               onClick={() => onChange(emptyFilters())}
               disabled={count === 0}
-              className="text-[13px] font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
+              className="text-label font-medium text-ink underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
             >
               Zurücksetzen
             </button>
@@ -223,7 +223,7 @@ export default function SortDropdown({
                 setOpen(false);
                 triggerRef.current?.focus();
               }}
-              className="min-h-11 px-3 py-1.5 text-[13px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+              className="min-h-11 px-3 py-1.5 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
               Fertig
             </button>

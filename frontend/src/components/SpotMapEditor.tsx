@@ -16,7 +16,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { cartoTileUrl, CARTO_VOYAGER_NOLABELS } from "../lib/basemaps";
 
 export interface MapView {
   /** [lat, lon] — matches editorial.map_view.center. */
@@ -175,7 +177,7 @@ export default function SpotMapEditor({
           className="h-full w-full"
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+            url={cartoTileUrl(CARTO_VOYAGER_NOLABELS)}
             subdomains="abcd"
           />
           <InvalidateSize />
@@ -202,7 +204,7 @@ export default function SpotMapEditor({
         <button
           type="button"
           onClick={() => setLocked((v) => !v)}
-          className={`absolute right-2 top-2 z-[500] rounded-md border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+          className={`absolute right-2 top-2 z-[500] rounded-md border px-3 py-1.5 text-caption font-medium transition-colors ${
             locked
               ? "border-admin-primary bg-admin-primary text-admin-primary-fg hover:bg-admin-primary-hover"
               : "border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg"
@@ -211,7 +213,7 @@ export default function SpotMapEditor({
           {locked ? "🔒 Fixiert — Bearbeiten" : "✓ Fixieren"}
         </button>
       </div>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12px] text-admin-muted">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-caption text-admin-muted">
         <span>
           {locked
             ? 'Fixiert: Position & Ausschnitt sind gesperrt. „Bearbeiten" zum Ändern.'

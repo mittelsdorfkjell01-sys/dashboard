@@ -33,7 +33,7 @@ export default function AccountLayout() {
   return (
     <div className="min-h-screen bg-band">
       {/* brand bar */}
-      <header className="border-b border-line bg-white">
+      <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3.5 sm:px-8">
           <Link to="/" aria-label="surfwind data — Startseite" className="select-none">
             <Wordmark size="sm" />
@@ -41,17 +41,17 @@ export default function AccountLayout() {
           <button
             type="button"
             onClick={onLogout}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-line px-3.5 py-1.5 text-[13px] font-medium text-teal transition-colors hover:bg-band"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-line px-3.5 py-1.5 text-label font-medium text-teal transition-colors hover:bg-band"
           >
-            <LogoutIcon className="text-[16px]" />
+            <LogoutIcon className="text-sz-16" />
             Abmelden
           </button>
         </div>
       </header>
 
       <main className="mx-auto max-w-[1000px] px-4 py-8 sm:px-8 sm:py-12">
-        <h1 className="text-[26px] font-semibold text-ink">Mein Konto</h1>
-        <p className="mt-1 text-[14px] text-muted">
+        <h1 className="text-sz-32 font-semibold text-ink">Mein Konto</h1>
+        <p className="mt-1 text-ui text-muted">
           Angemeldet als <span className="font-medium text-ink">{user.email}</span>
         </p>
 
@@ -62,14 +62,14 @@ export default function AccountLayout() {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2 text-[14px] font-medium transition-colors ${
+                `inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2 text-ui font-medium transition-colors ${
                   isActive
                     ? "bg-teal text-white"
-                    : "bg-white text-ink ring-1 ring-line hover:bg-teal/5"
+                    : "bg-surface text-ink ring-1 ring-line hover:bg-teal/5"
                 }`
               }
             >
-              <Icon className="text-[16px]" />
+              <Icon className="text-sz-16" />
               {label}
             </NavLink>
           ))}

@@ -21,6 +21,14 @@
      70–100 reuses --sw-teal — see tailwind.config.js `reliability.*`). */
   --sw-reliability-sand: #D8C4A0;
   --sw-reliability-blue: #9DC6D8;
+  /* Status tokens — the only place error/success colour is allowed to come
+     from. Kept separate from `--sw-green` (a data accent, not a status
+     colour) so the two roles never fight over one variable. */
+  --sw-danger: #B91C1C;
+  --sw-danger-bg: #FEF2F2;
+  --sw-danger-border: #FCA5A5;
+  --sw-success: #15803D;
+  --sw-success-bg: #F0FDF4;
 }
 
 html[data-theme="dark"] {
@@ -40,6 +48,11 @@ html[data-theme="dark"] {
   --sw-overlay-strong: rgba(0, 0, 0, 0.92);
   --sw-reliability-sand: #6B5B3F;
   --sw-reliability-blue: #4C7A90;
+  --sw-danger: #F87171;
+  --sw-danger-bg: #2A1414;
+  --sw-danger-border: #7F1D1D;
+  --sw-success: #4ADE80;
+  --sw-success-bg: #142A1B;
 }
 
 /* Reserve the scrollbar's space at all times, so locking body scroll for a
@@ -514,22 +527,25 @@ html[data-theme="dark"] { color-scheme: dark; }
   font-weight: 700;
 }
 
-/* Colour wash over the CARTO Voyager basemap: water leans light blue,
-   land leans light green. Applies only to map tiles, so the pins, labels
-   overlay and controls keep their own colours. */
+/* Colour wash over the CARTO Voyager basemap on the search/region maps:
+   water leans light blue, land leans light green. The public overview and
+   spot-detail maps use the clean Positron basemap instead and opt out below,
+   so their Airbnb-style light palette is never tinted. */
 .leaflet-tile {
   filter: hue-rotate(22deg) saturate(1.35);
 }
+.swd-public-map .leaflet-tile,
+.swd-spot-map .leaflet-tile {
+  filter: none;
+}
 
-/* Keep aerial detail, but pull it into the sand/petrol/olive UI palette.
-   The filter targets only MapLibre's canvas; marker, controls and attribution
-   remain crisp and retain their accessible contrast. */
-.swd-locator-map .maplibregl-canvas {
+/* Keep aerial detail on the locator, but pull it into the UI palette. */
+.swd-locator-map .leaflet-tile {
   filter: saturate(.9) brightness(1.04) contrast(.94);
 }
 
 @media (max-width: 639px) {
-  .swd-locator-map .maplibregl-ctrl-bottom-right {
+  .swd-locator-map .leaflet-bottom {
     bottom: max(0px, env(safe-area-inset-bottom));
   }
 }
@@ -709,14 +725,51 @@ html[data-theme="dark"] { color-scheme: dark; }
    for hover, focus AND the always-visible selected label). The visible dot
    itself is drawn by the GL circle layers in lib/publicMap.ts, kept small
    (18–20px) and separate from this larger, invisible touch target. */
+/* Leaflet positions the marker root absolutely and sizes it from iconSize, so
+   this must NOT set `position` (that would override Leaflet's placement). The
+   ::after capsule anchors to this absolutely-positioned root. */
 .swd-map-a11y-marker {
-  position: relative;
-  width: 30px;
-  height: 30px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
+}
+/* The visible spot dot inside the (larger, transparent) hit target. Colour is
+   set inline from the wind/wave scale; the ring turns to the selection colour
+   when the spot is the active one. */
+.swd-map-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 6px;
+  border-radius: 999px;
+  border: 2px solid var(--map-surface, #fffdf8);
+  box-shadow: 0 1px 4px rgb(15 25 25 / 35%);
+  transition: transform 140ms ease-out;
+}
+.swd-map-a11y-marker:is(:hover, :focus-visible) .swd-map-dot { transform: scale(1.15); }
+.swd-map-a11y-marker.is-selected .swd-map-dot {
+  border-color: var(--map-selection, #f06f4f);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--map-selection, #f06f4f) 85%, transparent), 0 1px 4px rgb(15 25 25 / 35%);
+}
+/* Cluster bubble — neutral spot colour with a count, never data-coloured
+   (averaging live values across an arbitrary group would misrepresent them). */
+.swd-map-cluster-icon:focus-visible { outline: 2px solid var(--map-selection, #f06f4f); outline-offset: 2px; }
+.swd-map-cluster {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 2px solid var(--map-surface, #fffdf8);
+  background: var(--map-spot, #126b70);
+  color: #fff;
+  font: 700 12px/1 "Poppins", system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgb(15 25 25 / 28%);
+  cursor: pointer;
+}
+.swd-map-cluster-icon:is(:hover, :focus-visible) .swd-map-cluster {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--map-selection, #f06f4f) 55%, transparent), 0 2px 8px rgb(15 25 25 / 28%);
 }
 .swd-map-a11y-marker:focus-visible {
   outline: 2px solid var(--map-selection);
@@ -862,14 +915,13 @@ html[data-theme="dark"] { color-scheme: dark; }
   font-size: 12px;
   box-shadow: 0 2px 10px rgb(36 28 23 / 10%);
 }
-.swd-public-map .maplibregl-ctrl-bottom-right {
+.swd-public-map .leaflet-bottom.leaflet-right {
   right: max(12px, env(safe-area-inset-right));
   bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
 }
-.swd-public-map.has-bottom-panel .maplibregl-ctrl-bottom-right { bottom: max(360px, calc(344px + env(safe-area-inset-bottom))); }
-.swd-public-map .maplibregl-ctrl-attrib { background: var(--sw-surface) !important; color: var(--sw-ink-soft); }
-.swd-public-map .maplibregl-ctrl-attrib-inner { color: var(--sw-ink-soft) !important; }
-.swd-public-map .maplibregl-ctrl-attrib a { color: var(--sw-ink) !important; }
+.swd-public-map.has-bottom-panel .leaflet-bottom.leaflet-right { bottom: max(360px, calc(344px + env(safe-area-inset-bottom))); }
+.swd-public-map .leaflet-control-attribution { background: var(--sw-surface) !important; color: var(--sw-ink-soft); }
+.swd-public-map .leaflet-control-attribution a { color: var(--sw-ink) !important; }
 
 /* Shared panel chrome (tile pair / wind chart) — a floating card, not a
    modal: no backdrop, no outside-click-to-close, the map keeps working. */
@@ -945,21 +997,22 @@ html[data-theme="dark"] { color-scheme: dark; }
    marker. Desktop only: on narrow screens there isn't room to hover a card
    next to a marker without it running off-edge, so the bottom chart panel's
    "Zum Spot" link is the mobile path to the spot page instead. */
-.swd-map-popup .maplibregl-popup-content {
+.swd-map-popup .leaflet-popup-content-wrapper {
   padding: 8px;
   border-radius: 16px;
   background: var(--sw-surface);
   box-shadow: 0 10px 28px rgb(15 25 25 / 20%);
-  width: 190px;
 }
-.swd-map-popup .maplibregl-popup-tip { display: none; }
+.swd-map-popup .leaflet-popup-content { margin: 0; width: 190px !important; }
+.swd-map-popup .leaflet-popup-tip { display: none; }
+.swd-map-popup .leaflet-popup-close-button { display: none; }
 @media (max-width: 767px) {
   .swd-map-popup { display: none !important; }
 }
 
 @media (max-width: 639px) {
   .swd-map-panel { max-width: none; }
-  .swd-public-map .maplibregl-ctrl-bottom-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
+  .swd-public-map .leaflet-bottom.leaflet-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
 }
 @media (prefers-reduced-motion: reduce) {
   .swd-map-a11y-marker::after, .swd-map-control, .swd-map-back, .swd-map-plain-close { transition-duration: 1ms; }

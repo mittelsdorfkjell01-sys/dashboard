@@ -60,7 +60,7 @@ export default function Auth() {
         <Wordmark size="lg" />
       </Link>
 
-      <div className="w-full max-w-[420px] rounded-3xl border border-line bg-white p-6 sm:p-8">
+      <div className="w-full max-w-[420px] rounded-3xl border border-line bg-surface p-6 sm:p-8">
         <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl bg-band p-1">
           {(["login", "register"] as Mode[]).map((m) => (
             <button
@@ -68,9 +68,9 @@ export default function Auth() {
               type="button"
               onClick={() => switchMode(m)}
               aria-pressed={mode === m}
-              className={`rounded-2xl py-2 text-[14px] font-semibold transition-colors ${
+              className={`rounded-2xl py-2 text-ui font-semibold transition-colors ${
                 mode === m
-                  ? "bg-white text-teal"
+                  ? "bg-surface text-teal"
                   : "text-muted hover:text-teal"
               }`}
             >
@@ -79,10 +79,10 @@ export default function Auth() {
           ))}
         </div>
 
-        <h1 className="mb-1 text-[22px] font-semibold text-ink">
+        <h1 className="mb-1 text-sz-32 font-semibold text-ink">
           {mode === "login" ? "Willkommen zurück" : "Konto erstellen"}
         </h1>
-        <p className="mb-6 text-[14px] text-muted">
+        <p className="mb-6 text-ui text-muted">
           {mode === "login"
             ? "Melde dich an, um Favoriten und eigene Spots zu verwalten."
             : "Speichere Lieblings-Spots und reiche eigene ein."}
@@ -121,12 +121,12 @@ export default function Auth() {
           </Field>
 
           {error && (
-            <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">
+            <p role="alert" className="rounded-xl bg-danger-bg px-3 py-2 text-label font-medium text-danger">
               {error}
             </p>
           )}
           {notice && (
-            <p role="status" className="rounded-xl bg-green-50 px-3 py-2 text-[13px] font-medium text-green-700">
+            <p role="status" className="rounded-xl bg-success-bg px-3 py-2 text-label font-medium text-success">
               {notice}
             </p>
           )}
@@ -136,7 +136,7 @@ export default function Auth() {
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-[13px] text-muted">
+        <p className="mt-5 text-center text-label text-muted">
           {mode === "login" ? "Noch kein Konto? " : "Schon registriert? "}
           <button
             type="button"

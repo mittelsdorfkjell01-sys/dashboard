@@ -47,22 +47,22 @@ export default function Profil() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col gap-5 rounded-2xl border border-line bg-white p-6 sm:flex-row sm:items-center">
-        <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-teal text-[26px] font-bold text-white">
+      <section className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-6 sm:flex-row sm:items-center">
+        <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-teal text-sz-26 font-bold text-white">
           {initials}
         </span>
         <div className="min-w-0">
-          <h2 className="truncate text-[22px] font-semibold text-ink">
+          <h2 className="truncate text-sz-22 font-semibold text-ink">
             {user.displayName}
           </h2>
-          <p className="truncate text-[14px] text-muted">{user.email}</p>
-          <p className="mt-1 text-[13px] text-muted">
+          <p className="truncate text-ui text-muted">{user.email}</p>
+          <p className="mt-1 text-label text-muted">
             Mitglied seit {memberSince}
           </p>
         </div>
         <Link
           to="/konto/einstellungen"
-          className="shrink-0 px-4 py-2 text-[14px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 sm:ml-auto"
+          className="shrink-0 px-4 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 sm:ml-auto"
         >
           Profil bearbeiten
         </Link>
@@ -71,13 +71,13 @@ export default function Profil() {
       <div className="grid grid-cols-2 gap-4">
         <StatCard
           to="/konto/favoriten"
-          icon={<HeartIcon className="text-[20px]" />}
+          icon={<HeartIcon className="text-sz-20" />}
           value={counts.fav}
           label="Favoriten"
         />
         <StatCard
           to="/konto/spots"
-          icon={<GridIcon className="text-[20px]" />}
+          icon={<GridIcon className="text-sz-20" />}
           value={counts.subs}
           label="Hinzugefügte Spots"
         />
@@ -100,16 +100,16 @@ function StatCard({
   return (
     <Link
       to={to}
-      className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 transition-transform hover:-translate-y-0.5"
+      className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-5 transition-transform hover:-translate-y-0.5"
     >
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-band text-teal">
         {icon}
       </span>
       <span>
-        <span className="block text-[24px] font-bold leading-none text-ink">
+        <span className="block text-sz-24 font-bold leading-none text-ink">
           {value}
         </span>
-        <span className="mt-1 block text-[13px] text-muted">{label}</span>
+        <span className="mt-1 block text-label text-muted">{label}</span>
       </span>
     </Link>
   );

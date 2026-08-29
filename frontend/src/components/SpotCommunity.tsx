@@ -24,6 +24,7 @@ import { ChevronDownIcon, CloseIcon } from "../lib/icons";
 import { Button, Input, Select, Textarea } from "./ui";
 import { useCommunityFeed, usePersistedState } from "../lib/hooks";
 import { coloredTileUrl } from "../lib/mapLinks";
+import { responsiveImageAttributes } from "../lib/heroSource";
 import {
   avatarColor,
   encodeVisitDate,
@@ -129,10 +130,15 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
             className="relative aspect-[4/5] overflow-hidden rounded-xl"
           >
             <img
-              src={resolveMediaUrl(big.url)}
+              {...responsiveImageAttributes(
+                resolveMediaUrl(big.url),
+                big.width,
+                "(max-width: 639px) 100vw, 40vw",
+              )}
               alt={big.credit ?? ""}
               className="h-full w-full object-cover"
               loading="lazy"
+              decoding="async"
             />
             {big.source === "wikimedia_commons" && <CommonsBadge />}
           </button>
@@ -153,10 +159,15 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
                     className="relative aspect-square overflow-hidden rounded-xl"
                   >
                     <img
-                      src={resolveMediaUrl(img.url)}
+                      {...responsiveImageAttributes(
+                        resolveMediaUrl(img.url),
+                        img.width,
+                        "(max-width: 639px) 33vw, 14vw",
+                      )}
                       alt={img.credit ?? ""}
                       className="h-full w-full object-cover"
                       loading="lazy"
+                      decoding="async"
                     />
                     {isLast && extra > 0 && (
                       <span className="absolute inset-0 flex items-center justify-center bg-ink/60 text-body font-semibold text-white">
@@ -329,7 +340,7 @@ function Composer({
   };
 
   return (
-    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-3xl border border-line bg-white p-4 sm:p-5">
+    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-3xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-body font-medium text-ink">Wie war's am {spotName}?</p>
         <div className="flex gap-1">
@@ -429,7 +440,7 @@ function Composer({
 
           <Honeypot value={website} onChange={setWebsite} />
           {error && (
-            <p role="alert" className="text-label text-red-600">
+            <p role="alert" className="text-label text-danger">
               {error}
             </p>
           )}
@@ -480,7 +491,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
     <div>
       {!loading && posts.length === 0 ? (
         <>
-          <div className="rounded-3xl border border-dashed border-line bg-white px-6 py-8 text-center">
+          <div className="rounded-3xl border border-dashed border-line bg-surface px-6 py-8 text-center">
             <p className="text-body font-medium text-ink">Sei der Erste, der von hier berichtet.</p>
             <p className="mx-auto mt-2 max-w-[46ch] text-caption text-muted">
               Hilfreiche Beiträge nennen Bedingungen, Level und was andere vor Ort wissen sollten.
@@ -529,7 +540,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
       )}
 
       {error && (
-        <p role="alert" className="mt-4 text-label text-red-600">
+        <p role="alert" className="mt-4 text-label text-danger">
           {error}
         </p>
       )}
@@ -572,7 +583,7 @@ function FeedPostCard({
   }, [menuOpen]);
 
   return (
-    <article className="rounded-3xl border border-line bg-white p-4 sm:p-5">
+    <article className="rounded-3xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
@@ -607,10 +618,15 @@ function FeedPostCard({
 
           {post.photo && (
             <img
-              src={resolveMediaUrl(post.photo.url)}
+              {...responsiveImageAttributes(
+                resolveMediaUrl(post.photo.url),
+                post.photo.width,
+                "(max-width: 639px) 100vw, 50vw",
+              )}
               alt={post.photo.credit ?? ""}
               className="mt-3 max-h-96 w-full rounded-2xl object-cover"
               loading="lazy"
+              decoding="async"
             />
           )}
 
@@ -649,7 +665,7 @@ function FeedPostCard({
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-xl border border-line bg-white p-1"
+                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-xl border border-line bg-surface p-1"
                   >
                     <button
                       type="button"
@@ -805,9 +821,14 @@ function Lightbox({
       <figure className="max-w-[92vw]" onClick={(e) => e.stopPropagation()}>
         <div className="relative">
           <img
-            src={resolveMediaUrl(img.url)}
+            {...responsiveImageAttributes(
+              resolveMediaUrl(img.url),
+              img.width,
+              "100vw",
+            )}
             alt={img.credit ?? ""}
             className="max-h-[80vh] max-w-[92vw] rounded-2xl object-contain"
+            decoding="async"
           />
           {img.source === "wikimedia_commons" && <CommonsBadge />}
         </div>
@@ -891,7 +912,7 @@ function ReportDialog({
             className="mt-2"
             rows={2}
           />
-          {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
+          {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
           <Button type="button" disabled={busy} onClick={submit} className="mt-3">
             {busy ? "Senden…" : "Melden"}
           </Button>
@@ -1052,7 +1073,7 @@ export function GalleryUploadForm({
         </pre>
       )}
       <Honeypot value={website} onChange={setWebsite} />
-      {error && <p role="alert" className="mt-3 text-label text-red-600">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-label text-danger">{error}</p>}
       {notice && <p role="status" className="mt-3 text-label text-green">{notice}</p>}
       <Button type="submit" disabled={busy || !file || !accepted} className="mt-4">
         {busy ? "Hochladen…" : "Hochladen"}
@@ -1169,7 +1190,7 @@ function HeroCandidateForm({
         </pre>
       )}
       <Honeypot value={website} onChange={setWebsite} />
-      {error && <p role="alert" className="mt-2 text-label text-red-600">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
       {notice && <p role="status" className="mt-2 text-label text-green">{notice}</p>}
       <Button type="submit" disabled={busy || !file || !accepted} className="mt-3">
         {busy ? "Hochladen…" : "Vorschlagen"}

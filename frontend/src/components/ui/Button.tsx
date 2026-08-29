@@ -5,13 +5,19 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md";
 
 const BASE =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
+// One filled primary style (Ink), used for every genuine main action (form
+// submits, confirm dialogs, reload). Ink/surface are tokens, so the button
+// inverts correctly in dark mode (light fill, dark text) and never relies on the
+// restricted teal/orange accents. `ghost` preserves the old text-link look for
+// buttons that are really links; `danger` keeps orange as an accent outline
+// (never a fill) per the accent rules.
 const VARIANT: Record<Variant, string> = {
-  primary: "",
-  secondary: "",
-  ghost: "",
-  danger: "",
+  primary: "bg-ink text-surface hover:bg-ink-soft",
+  secondary: "border border-line bg-surface text-ink hover:bg-band",
+  ghost: "text-ink hover:underline hover:underline-offset-4 hover:opacity-70",
+  danger: "border border-orange text-orange hover:bg-orange/10",
 };
 
 const SIZE: Record<Size, string> = {

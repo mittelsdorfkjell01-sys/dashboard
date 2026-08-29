@@ -87,14 +87,14 @@ export default function Landing() {
         {/* aktuelle Top Spots — title left, map button right, now on white. */}
         <div className="mx-auto w-full max-w-[1570px] pt-10">
           <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
-            <h2 className="text-[22px] font-semibold text-ink">aktuelle Top Spots</h2>
+            <h2 className="text-sz-22 font-semibold text-ink">Aktuelle Top Spots</h2>
             <Link
               to="/map"
               state={{ from }}
               aria-label="Karte öffnen"
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-[15px] font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
-              <MapIcon className="text-[18px]" />
+              <MapIcon className="text-sz-18" />
               <span className="hidden sm:inline">Karte</span>
             </Link>
           </div>
@@ -102,8 +102,8 @@ export default function Landing() {
         </div>
 
         <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">
-          <h2 className="text-[22px] font-semibold text-ink">Alle Spots entdecken</h2>
-          <p className="mt-1 text-[15px] text-muted">
+          <h2 className="text-sz-22 font-semibold text-ink">Alle Spots entdecken</h2>
+          <p className="mt-1 text-body text-muted">
             Stöbere durch die ganze Sammlung · Regionen, Windspots und Wellenspots.
           </p>
 

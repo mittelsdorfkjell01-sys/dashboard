@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import L, { type Map as LeafletMap } from "leaflet";
+import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import ResultsHeader from "../components/ResultsHeader";
 import Footer from "../components/Footer";
 import SpotCard from "../components/SpotCard";
@@ -40,12 +42,12 @@ const pinIcon = L.divIcon({
 function ResultHead({ heading }: { heading: string }) {
   return (
     <>
-      <nav className="text-[11px] font-medium text-muted">
+      <nav className="text-sz-11 font-medium text-muted">
         <Link to="/" className="hover:underline">Übersicht</Link>
         <span className="mx-1.5 text-muted">›</span>
         <span className="text-ink">Suche</span>
       </nav>
-      <h1 className="mt-2 text-[28px] font-semibold leading-tight text-balance text-ink sm:text-[32px]">{heading}</h1>
+      <h1 className="mt-2 text-sz-32 font-semibold leading-tight text-balance text-ink">{heading}</h1>
     </>
   );
 }
@@ -89,7 +91,7 @@ function RegionRow({
 }: {
   title: string;
   subtitle?: string;
-  regions: { slug: string; name: string; country?: string | null; image?: string | null; spotCount?: number | null; sports?: string[] | null }[];
+  regions: { slug: string; name: string; country?: string | null; image?: string | api.ImageRecord | null; spotCount?: number | null; sports?: string[] | null }[];
 }) {
   if (regions.length === 0) return null;
   return (
@@ -150,7 +152,7 @@ function ResultsMap({
         <Recenter center={center} zoom={zoom} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          url={cartoTileUrl(CARTO_VOYAGER)}
           subdomains="abcd"
         />
         {withCoords.map((spot) => (
@@ -168,11 +170,11 @@ function ResultsMap({
           past the sticky map). */}
       <div className={`pointer-events-none absolute right-3 z-[600] flex flex-col overflow-hidden rounded-2xl border border-line bg-white ${topInset ? "top-20" : "top-3"}`}>
         <button type="button" aria-label="Vergrößern" onClick={() => map?.zoomIn()} className="pointer-events-auto grid h-10 w-10 place-items-center text-teal transition-colors hover:bg-line/40">
-          <PlusIcon className="text-[18px]" />
+          <PlusIcon className="text-sz-18" />
         </button>
         <span className="mx-2 h-px bg-line" />
         <button type="button" aria-label="Verkleinern" onClick={() => map?.zoomOut()} className="pointer-events-auto grid h-10 w-10 place-items-center text-teal transition-colors hover:bg-line/40">
-          <MinusIcon className="text-[18px]" />
+          <MinusIcon className="text-sz-18" />
         </button>
       </div>
     </div>
@@ -234,9 +236,9 @@ function SplitView({
           <button
             type="button"
             onClick={() => setShowMap(true)}
-            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-1.5 rounded-xl bg-teal px-4 py-2 text-[14px] font-semibold text-white shadow-float lg:hidden"
+            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-1.5 rounded-xl bg-teal px-4 py-2 text-ui font-semibold text-white shadow-float lg:hidden"
           >
-            Karte <MapIcon className="text-[15px]" />
+            Karte <MapIcon className="text-body" />
           </button>
 
           {showMap && (
@@ -248,7 +250,7 @@ function SplitView({
                 aria-label="Zurück"
                 className="absolute right-4 top-4 z-[1100] grid h-11 w-11 place-items-center rounded-2xl border border-line bg-white text-teal shadow-card"
               >
-                <ChevronLeftIcon className="text-[20px]" />
+                <ChevronLeftIcon className="text-sz-20" />
               </button>
             </div>
           )}
@@ -266,7 +268,7 @@ interface SimilarSpotApi {
   sports?: string[];
   region?: string | null;
   region_country?: string | null;
-  image?: { url?: string | null } | null;
+  image?: api.ImageRecord | null;
   wind?: number | null;
   wave_height?: number | null;
 }
@@ -283,6 +285,11 @@ function similarToSpot(item: SimilarSpotApi): Spot {
     typicalWaveHeightM: item.wave_height ?? null,
     tags: [],
     image: resolveMediaUrl(item.image?.url) ?? "",
+    hero: resolveMediaUrl(item.image?.url),
+    heroFocal: item.image?.focal ?? null,
+    heroFocalMobile: item.image?.focal_mobile ?? null,
+    heroRotation: item.image?.rotation ?? 0,
+    heroWidth: item.image?.width ?? null,
     sports: item.sports,
   };
 }
@@ -468,7 +475,7 @@ export default function SearchResults() {
           slug: r.slug,
           name: r.name,
           country: meta?.country ?? null,
-          image: resolveMediaUrl(meta?.image?.url),
+          image: meta?.image,
           spotCount: meta?.spot_count ?? null,
           sports: meta?.sports ?? null,
         };
@@ -572,7 +579,7 @@ function BestRegionsRow({
           slug: r.slug ?? m?.slug ?? "",
           name: r.name ?? m?.name ?? r.slug ?? "",
           country: m?.country ?? null,
-          image: resolveMediaUrl(m?.image?.url),
+          image: m?.image,
           spotCount: m?.spot_count ?? null,
           sports: m?.sports ?? null,
         };
@@ -612,7 +619,7 @@ function DiscoveryRegions() {
           slug: r.slug ?? m?.slug ?? "",
           name: r.name ?? m?.name ?? r.slug ?? "",
           country: m?.country ?? null,
-          image: resolveMediaUrl(m?.image?.url),
+          image: m?.image,
           spotCount: m?.spot_count ?? null,
           sports: m?.sports ?? null,
         };

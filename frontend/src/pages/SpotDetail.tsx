@@ -6,6 +6,7 @@ import Facilities from "../components/Facilities";
 import SpotTabs from "../components/SpotTabs";
 import TidePanel from "../components/TidePanel";
 import DirectionCompass from "../components/data/DirectionCompass";
+import SunArc from "../components/data/SunArc";
 import SpotDataHeader from "../components/data/SpotDataHeader";
 import LiveRow from "../components/data/LiveRow";
 import TimeScrubber from "../components/data/TimeScrubber";
@@ -130,7 +131,7 @@ export default function SpotDetail() {
 
   if (error || !spot) {
     return (
-      <div className="grid min-h-screen place-items-center bg-white px-6 text-center">
+      <div className="grid min-h-screen place-items-center bg-page px-6 text-center">
         <div>
           <h1 className="text-2xl font-semibold text-ink">Spot nicht gefunden</h1>
           {error && (
@@ -187,6 +188,7 @@ export default function SpotDetail() {
           focal={spot.heroFocal}
           focalMobile={spot.heroFocalMobile}
           rotation={spot.heroRotation}
+          imageWidth={spot.heroWidth}
           alt={spot.name}
           credit={spot.heroCredit}
           delivery={spot.heroDelivery}
@@ -239,7 +241,7 @@ export default function SpotDetail() {
                       {country && <span>{country}</span>}
                     </p>
                   )}
-                  <h1 className="mt-3 text-[28px] font-semibold leading-[1.12] text-balance text-ink sm:text-[30px]">{spot.name}</h1>
+                  <h1 className="mt-3 text-sz-28 font-semibold leading-[1.12] text-balance text-ink sm:text-sz-30">{spot.name}</h1>
 
                   {/* Sports are plain label + teal check (Figma Frame_9), not
                       filled pills — datengetrieben aus spot.sports. */}
@@ -353,11 +355,11 @@ export default function SpotDetail() {
                   {forecast?.attributions && forecast.attributions.length > 0 && <details className="relative"><summary className="cursor-pointer font-medium text-teal">Quellen</summary><div className="mt-2 max-w-prose space-y-1 sm:absolute sm:right-0 sm:z-10 sm:w-80 sm:rounded-lg sm:border sm:border-line sm:bg-surface sm:p-3">{forecast.attributions.map((source) => <p key={source.provider}><a className="underline" href={source.url} target="_blank" rel="noreferrer">{source.text}</a> · {source.licence}</p>)}</div></details>}
                 </section>
 
-                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 border-t border-line">
                   <LiveRow live={live} />
                 </div>
 
-                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 border-t border-line">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Meteogramm · 10 Tage</p></div>
                   {forecastLoading && <div className="h-[280px] animate-pulse bg-band" />}
                   {!forecastLoading && forecast && forecast.days.length > 0 && (
@@ -368,7 +370,7 @@ export default function SpotDetail() {
                   {!forecastLoading && (!forecast || forecast.days.length === 0) && <EmptyState message={forecastError ? "Vorhersage momentan nicht verfügbar." : "Keine Vorhersage-Daten."} />}
                 </div>
 
-                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 border-t border-line">
                   <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wind + Welle · Karte</p></div>
                 <Suspense fallback={<DataModulePlaceholder height="h-[420px]" />}>
                   <SpotMap
@@ -384,15 +386,22 @@ export default function SpotDetail() {
                   <TimeScrubber />
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 grid grid-cols-1 gap-6 border-t border-line pt-6 md:grid-cols-2 md:gap-x-10 md:gap-y-0">
+                  <div className="md:border-r md:border-line md:pr-10">
                     <DirectionCompass live={live} />
                   </div>
-                  <TidePanel spotId={spotId!} />
+                  {spot.coords && (
+                    <div className="mt-6 md:mt-0">
+                      <SunArc lat={spot.coords[0]} lng={spot.coords[1]} />
+                    </div>
+                  )}
+                  <div className="mt-6 md:col-span-2 md:mt-6 md:border-t md:border-line md:pt-6">
+                    <TidePanel spotId={spotId!} />
+                  </div>
                 </div>
 
                 {forecast && forecast.days.length > 0 && (
-                  <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
+                  <div className="mt-6 border-t border-line">
                     <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 10 Tage</p></div>
                     <Suspense fallback={<DataModulePlaceholder height="h-64" />}>
                       <WeatherDetailsTable forecast={forecast} />
@@ -400,7 +409,7 @@ export default function SpotDetail() {
                   </div>
                 )}
 
-                <div className="mt-6 overflow-hidden rounded-lg border border-line bg-surface">
+                <div className="mt-6 border-t border-line">
                     <Suspense fallback={<DataModulePlaceholder height="h-40" />}>
                       <WindClimatologyModule spot={spot} />
                     </Suspense>

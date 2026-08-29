@@ -6,7 +6,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import Supercluster from "supercluster";
 import { ApiError, archiveSpot, getAdminMapSpots, type AdminMapSpot } from "../lib/api";
 import { statusLabel } from "../lib/labels";
@@ -196,7 +198,7 @@ export default function AdminMap() {
           <MapUrlState onViewport={loadViewport} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            url={cartoTileUrl(CARTO_VOYAGER)}
             subdomains="abcd"
           />
           {clusteredSpots.map((feature) => {

@@ -26,11 +26,11 @@ const STATUS: Record<SubmissionStatus, Badge> = {
   },
   merged: {
     label: "Übernommen",
-    cls: "bg-green-100 text-green-800",
+    cls: "bg-success-bg text-success",
   },
   rejected: {
     label: "Abgelehnt",
-    cls: "bg-red-100 text-red-700",
+    cls: "bg-danger-bg text-danger",
   },
 };
 
@@ -71,7 +71,7 @@ export default function MeineSpots() {
     <div className="space-y-6">
       <div className="flex justify-end">
         <Button onClick={() => setOpen(true)}>
-          <PlusCircleIcon className="text-[18px]" /> Spot vorschlagen
+          <PlusCircleIcon className="text-sz-18" /> Spot vorschlagen
         </Button>
       </div>
       <Modal
@@ -80,11 +80,11 @@ export default function MeineSpots() {
         labelledBy="suggest-spot-title"
       >
         <form onSubmit={onSubmit} className="space-y-4">
-          <h2 id="suggest-spot-title" className="text-[18px] font-semibold text-ink">
+          <h2 id="suggest-spot-title" className="text-sz-18 font-semibold text-ink">
             Spot vorschlagen
           </h2>
           <div>
-            <label htmlFor="suggest-spot-name" className="text-[13px] font-medium text-ink">
+            <label htmlFor="suggest-spot-name" className="text-label font-medium text-ink">
               Name des Spots
             </label>
           <Input
@@ -94,11 +94,11 @@ export default function MeineSpots() {
             placeholder="Name des Spots, z. B. „Fehmarn Wulfener Hals“"
             className="mt-1 w-full"
           />
-            <p className="mt-1 text-[12px] text-muted">
+            <p className="mt-1 text-caption text-muted">
               Der Vorschlag wird vor einer Veröffentlichung redaktionell geprüft.
             </p>
           </div>
-          {error && <p role="alert" className="text-[13px] font-medium text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-label font-medium text-danger">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"
@@ -127,7 +127,7 @@ export default function MeineSpots() {
       />
 
       {subs.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-line px-6 py-10 text-center text-[14px] text-muted">
+        <p className="rounded-2xl border border-dashed border-line px-6 py-10 text-center text-ui text-muted">
           Du hast noch keine Spots eingereicht.
         </p>
       ) : (
@@ -137,13 +137,13 @@ export default function MeineSpots() {
             return (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-white p-4"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-4"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-[15px] font-medium text-ink">
+                  <span className="block truncate text-body font-medium text-ink">
                     {s.name}
                   </span>
-                  <span className="block text-[12px] text-muted">
+                  <span className="block text-caption text-muted">
                     Eingereicht am{" "}
                     {new Date(s.createdAt).toLocaleDateString("de-DE", {
                       day: "numeric",
@@ -153,7 +153,7 @@ export default function MeineSpots() {
                   </span>
                 </span>
                 <span
-                  className={`shrink-0 rounded-2xl px-2.5 py-1 text-[11px] font-semibold ${st.cls}`}
+                  className={`shrink-0 rounded-2xl px-2.5 py-1 text-sz-11 font-semibold ${st.cls}`}
                 >
                   {st.label}
                 </span>

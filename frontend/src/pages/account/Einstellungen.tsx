@@ -31,8 +31,8 @@ import {
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-line bg-white p-5 sm:p-6">
-      <h2 className="mb-4 text-[16px] font-semibold text-ink">{title}</h2>
+    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <h2 className="mb-4 text-sz-16 font-semibold text-ink">{title}</h2>
       {children}
     </section>
   );
@@ -42,8 +42,8 @@ function Note({ kind, children }: { kind: "ok" | "err"; children: ReactNode }) {
   return (
     <p
       role={kind === "err" ? "alert" : "status"}
-      className={`mt-3 text-[13px] font-medium ${
-        kind === "ok" ? "text-green-700" : "text-red-600"
+      className={`mt-3 text-label font-medium ${
+        kind === "ok" ? "text-success" : "text-danger"
       }`}
     >
       {children}
@@ -237,10 +237,10 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
       >
         <form onSubmit={remove} className="space-y-4">
           <div>
-            <h2 id="delete-account-title" className="text-[18px] font-semibold text-ink">
+            <h2 id="delete-account-title" className="text-sz-18 font-semibold text-ink">
               Konto endgültig löschen
             </h2>
-            <p id="delete-account-description" className="mt-2 text-[14px] text-muted">
+            <p id="delete-account-description" className="mt-2 text-ui text-muted">
               Favoriten werden gelöscht. Veröffentlichte Beiträge bleiben anonymisiert erhalten.
             </p>
           </div>
@@ -252,7 +252,7 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
               autoComplete="current-password"
             />
           </Field>
-          {error && <p role="alert" className="text-[13px] text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-label text-danger">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={close} disabled={busy}>
               Abbrechen
@@ -293,7 +293,7 @@ function UnitSelect<T extends string>({
 }) {
   return (
     <label className="block">
-      <span className="text-[13px] font-medium text-ink">{label}</span>
+      <span className="text-label font-medium text-ink">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
@@ -333,7 +333,7 @@ function UnitsSection() {
           options={TEMP_UNIT_LABELS}
         />
       </div>
-      <div className="mt-4 rounded-xl bg-band px-4 py-3 text-[13px] text-ink">
+      <div className="mt-4 rounded-xl bg-band px-4 py-3 text-label text-ink">
         Vorschau: Wind {formatWind(18, units.wind)} · Welle {formatWave(1.2, units.wave)} ·
         Wasser {formatTemp(17, units.temp)}
       </div>

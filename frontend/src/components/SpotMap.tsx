@@ -1,19 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
+import L from "leaflet";
 import type { LiveConditionsRead } from "../lib/api";
 import type { NormalizedForecastSeries } from "../lib/forecastNormalization";
 import { useOptionalSpotDataScope } from "../state/SpotDataScope";
-import { fetchPublicMapStyle, setPublicSpotData, setPublicSpotMode, type PublicMapMode, type PublicSpotLiveValue } from "../lib/publicMap";
+import { spotDotColor, type PublicMapMode } from "../lib/publicMap";
 import { windColor } from "../lib/windScale";
 import { waveColor } from "../lib/waveScale";
 import { currentReading, OBSERVATION_BADGE } from "../lib/spotMapReading";
 import MapModeSwitch from "./MapModeSwitch";
 import MapLegend from "./MapLegend";
+import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_POSITRON } from "../lib/basemaps";
 import type { Spot } from "../lib/types";
-import "maplibre-gl/dist/maplibre-gl.css";
 
-const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Positron (CARTO light) raster basemap — clean, desaturated, Airbnb-style.
+const TILE_URL = cartoTileUrl(CARTO_POSITRON);
+const TILE_ATTRIBUTION = CARTO_ATTRIBUTION;
 const SPOT_MAP_ZOOM = 14.5; // matches SpotMapEditor's DEFAULT_ZOOM, so an un-framed spot lines up with what an admin sees while framing it
+
+function dotIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    html: `<span class="swd-map-dot" style="background:${color}"></span>`,
+    className: "swd-map-dot-icon",
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  });
+}
 
 export default function SpotMap({
   spot,
@@ -40,86 +51,59 @@ export default function SpotMap({
   const dataScope = useOptionalSpotDataScope();
   const mode: PublicMapMode = dataScope?.mapLayer ?? "wind";
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const [mapReady, setMapReady] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const [mapError, setMapError] = useState(false);
   const reading = currentReading(live, dataScope?.selectedForecast ?? null);
-  const [northUp, setNorthUp] = useState(reading?.coastalNormalDeg == null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current || !spot.coords) return;
     const container = containerRef.current;
-    let cancelled = false;
-    void (async () => {
-      let style;
-      try {
-        style = await fetchPublicMapStyle("light");
-      } catch (err) {
-        console.error("Spot map: failed to load base style", err);
-        if (!cancelled) setMapError(true);
-        return;
-      }
-      if (cancelled || !spot.coords) return;
-      let map: MapLibreMap;
-      try {
-        const center = mapCenter ?? spot.coords;
-        map = new maplibregl.Map({
-          container,
-          style,
-          center: [center[1], center[0]],
-          zoom: zoom ?? SPOT_MAP_ZOOM,
-          // Coastal orientation by default when the spot has a real coast
-          // bearing on file — never derived from wind/wave direction. Falls
-          // back to north-up when no coast bearing is set.
-          bearing: reading?.coastalNormalDeg ?? 0,
-          minZoom: 6, maxZoom: 16, pitch: 0, pitchWithRotate: false,
-          renderWorldCopies: false, attributionControl: false,
-        });
-      } catch (err) {
-        console.error("Spot map: failed to construct MapLibre map", err);
-        setMapError(true);
-        return;
-      }
-      mapRef.current = map;
-      map.touchPitch.disable();
-      map.scrollZoom.disable();
-      map.dragPan.disable();
-      map.dragRotate.disable();
-      map.doubleClickZoom.disable();
-      map.touchZoomRotate.disable();
-      map.keyboard.disable();
-      map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-      map.on("load", () => { setMapError(false); setMapReady(true); });
-      map.on("error", (event) => { console.error("Spot map: MapLibre runtime error", event.error); if (!map.isStyleLoaded()) setMapError(true); });
-    })();
+    const center = mapCenter ?? spot.coords;
+    let map: L.Map;
+    try {
+      map = L.map(container, {
+        center: [center[0], center[1]],
+        zoom: zoom ?? SPOT_MAP_ZOOM,
+        minZoom: 6,
+        maxZoom: 16,
+        zoomControl: false,
+        attributionControl: true,
+        // Static preview: no interaction at all.
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        touchZoom: false,
+        keyboard: false,
+        boxZoom: false,
+      });
+      L.tileLayer(TILE_URL, { subdomains: "abcd", attribution: TILE_ATTRIBUTION, maxZoom: 20, detectRetina: true }).addTo(map);
+    } catch (err) {
+      console.error("Spot map: failed to construct Leaflet map", err);
+      setMapError(true);
+      return;
+    }
+    mapRef.current = map;
+    requestAnimationFrame(() => map.invalidateSize());
     return () => {
-      cancelled = true;
-      const map = mapRef.current;
-      if (map) { map.remove(); mapRef.current = null; }
+      map.remove();
+      mapRef.current = null;
+      markerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- spot identity change remounts the page, not this effect
   }, []);
 
+  // Marker + its colour follow the active mode and the current reading.
   useEffect(() => {
     const map = mapRef.current;
-    if (!mapReady || !map || !spot.coords) return;
-    const live: Map<string, PublicSpotLiveValue> = new Map([[spot.id, { windKt: reading?.windKt ?? null, waveM: reading?.waveM ?? null }]]);
-    setPublicSpotData(map, [spot], live);
-  }, [mapReady, spot, reading?.windKt, reading?.waveM]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!mapReady || !map) return;
-    setPublicSpotMode(map, mode, "light");
-  }, [mapReady, mode]);
-
-  const toggleOrientation = () => {
-    const map = mapRef.current;
-    if (!map || reading?.coastalNormalDeg == null) return;
-    const next = !northUp;
-    setNorthUp(next);
-    map.easeTo({ bearing: next ? 0 : reading.coastalNormalDeg, duration: reducedMotion() ? 0 : 400 });
-  };
+    if (!map || !spot.coords) return;
+    const color = spotDotColor(mode, { windKt: reading?.windKt ?? null, waveM: reading?.waveM ?? null });
+    if (markerRef.current) {
+      markerRef.current.setIcon(dotIcon(color));
+    } else {
+      markerRef.current = L.marker([spot.coords[0], spot.coords[1]], { icon: dotIcon(color), keyboard: false, interactive: false }).addTo(map);
+    }
+  }, [spot, mode, reading?.windKt, reading?.waveM]);
 
   if (!spot.coords) {
     return (
@@ -133,7 +117,7 @@ export default function SpotMap({
 
   return (
     <div data-forecast-utc={reading?.type === "forecast" ? dataScope?.selectedForecast?.utcKey ?? "" : ""} data-observation-type={reading?.type ?? "unavailable"} className={`swd-spot-map relative w-full overflow-hidden ${aspect} aspect-[4/5] ${rounded ? "rounded-3xl" : ""}`}>
-      <div ref={containerRef} className={`h-full w-full transition-opacity duration-300 ${mapReady ? "opacity-100" : "opacity-0"}`} />
+      <div ref={containerRef} className="h-full w-full" />
 
       {mapError && (
         <div role="status" className="swd-map-error absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
@@ -147,29 +131,13 @@ export default function SpotMap({
         </div>
       )}
 
-      {reading?.coastalNormalDeg != null && (
-        <button
-          type="button"
-          onClick={toggleOrientation}
-          aria-pressed={!northUp}
-          aria-label={northUp ? "Zur Küstenausrichtung wechseln" : "Zur Nordausrichtung wechseln"}
-          className="swd-map-control pointer-events-auto absolute right-3 top-3 z-20 flex-col gap-0.5 text-[10px] font-semibold"
-        >
-          <svg width="14" height="14" viewBox="0 0 18 18" style={{ transform: `rotate(${northUp ? 0 : reading.coastalNormalDeg}deg)` }}>
-            <path d="M9 1 L11.5 9 L9 17 L6.5 9 Z" fill="none" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M9 1 L11.5 9 L9 9 Z" fill="currentColor" />
-          </svg>
-          {northUp ? "N" : "Küste"}
-        </button>
-      )}
-
       <div className="pointer-events-none absolute bottom-3 left-3 z-20">
         <div className="pointer-events-auto"><MapLegend mode={mode} /></div>
       </div>
 
       {reading && (
-        <div className="swd-spot-map-header pointer-events-none absolute right-3 top-14 z-20 flex flex-col items-end gap-1">
-          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3 py-1.5 text-label text-ink shadow-sm">
+        <div className="swd-spot-map-header pointer-events-none absolute right-3 top-3 z-20 flex flex-col items-end gap-1">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3 py-1.5 text-label text-ink shadow-card">
             <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: swatch }} />
             <span className="font-semibold">{OBSERVATION_BADGE[reading.type]}</span>
             <span className="text-muted">{reading.label.split(" · ")[1]}</span>

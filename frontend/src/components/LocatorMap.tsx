@@ -1,62 +1,39 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, {
-  type Map as MlMap,
-  type StyleSpecification,
-} from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import L from "leaflet";
 import { mapLinkProps } from "../lib/mapLinks";
 import { LinkIcon } from "../lib/icons";
 
-const KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined;
-
 // Aerial imagery mirrors the reference: daylight coastline and naturally blue
-// water. Esri World Imagery is the keyless fallback, so production never drops
-// back to a street map when a MapTiler key is unavailable.
-// filtered POIs), which needs VITE_MAPTILER_KEY. When that key isn't set (e.g.
-// the env var isn't configured on the deploy), fall back to keyless CARTO raster
-// tiles so the map still works — just without the terrain/POI styling — instead
-// of showing a raw configuration error to visitors.
-const RASTER_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    basemap: {
-      type: "raster",
-      tiles: [
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-      attribution:
-        'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-    },
-  },
-  layers: [{ id: "basemap", type: "raster", source: "basemap" }],
-};
+// water. Esri World Imagery is keyless, so production never drops back to a
+// street map. Note the {z}/{y}/{x} order (y before x) — Esri's ArcGIS tile
+// scheme, not Leaflet's default {z}/{x}/{y}.
+const AERIAL_TILE_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const AERIAL_ATTRIBUTION =
+  'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community';
 
-// Orange teardrop pin (same look as the old Leaflet marker).
+// Orange teardrop pin (unchanged look from the previous marker).
 const PIN_SVG = `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
   <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z" fill="#E0823C" stroke="#ffffff" stroke-width="1.4"/>
   <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
 </svg>`;
 
-/** Interaction handlers toggled by the click-to-activate flow. Rotation stays
- *  off so the slight-3D tilt/bearing never gets knocked askew. */
-function interactionHandlers(map: MlMap) {
-  return [map.dragPan, map.scrollZoom, map.doubleClickZoom, map.touchZoomRotate, map.keyboard, map.boxZoom];
+/** Interaction handlers toggled by the click-to-activate flow. */
+function interactionHandlers(map: L.Map) {
+  return [map.dragging, map.scrollWheelZoom, map.doubleClickZoom, map.touchZoom, map.keyboard, map.boxZoom];
 }
 
 /**
- * "Lage" — MapLibre GL locator map on MapTiler vector tiles (Figma Frame_9).
- * Terrain relief + a slight 3D tilt; labels are filtered to just place names
- * and the Gastro / Camping / Parkplatz POI classes plus the orange spot pin.
- * Interaction is click-to-activate (starts locked → first click enables
- * pan/zoom → a plain click locks it again), so page scroll is never hijacked
- * and hovering the map changes nothing.
+ * "Lage" — Leaflet locator map on keyless Esri aerial imagery (Figma Frame_9),
+ * flat top-down view with the orange spot pin. Interaction is click-to-activate
+ * (starts locked → first click enables pan/zoom → a plain click locks it
+ * again), so page scroll is never hijacked and hovering the map changes nothing.
  */
 export default function LocatorMap({ coords }: { coords: [number, number] }) {
   const [lat, lng] = coords;
   const link = mapLinkProps(lat, lng);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MlMap | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const [active, setActive] = useState(false);
   const [ready, setReady] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
@@ -64,61 +41,39 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
-    let map: MlMap;
+    let map: L.Map;
     try {
-      map = new maplibregl.Map({
-        container,
-        style: KEY
-          ? `https://api.maptiler.com/maps/satellite/style.json?key=${KEY}`
-          : RASTER_STYLE,
-        center: [lng, lat],
-        zoom: 12.5,
-        pitch: 0, // flat top-down view
-        attributionControl: { compact: true },
+      map = L.map(container, {
+        center: [lat, lng],
+        zoom: 13,
+        minZoom: 3,
+        maxZoom: 18,
+        zoomControl: false,
+        attributionControl: true,
+        zoomSnap: 0.5,
       });
+      L.tileLayer(AERIAL_TILE_URL, { attribution: AERIAL_ATTRIBUTION, maxZoom: 19, detectRetina: false }).addTo(map);
     } catch (error) {
       console.error("Unable to initialise locator map:", error);
       setUnavailable(true);
       return;
     }
     mapRef.current = map;
-    map.dragRotate.disable();
-    map.touchPitch.disable();
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
+    const icon = L.divIcon({ html: PIN_SVG, className: "swd-locator-pin", iconSize: [30, 38], iconAnchor: [15, 38] });
+    L.marker([lat, lng], { icon, keyboard: false, interactive: false }).addTo(map);
+
     // The page matches this map's height to the responsive gallery after the
-    // first render. MapLibre does not reliably redraw for a parent-only resize,
-    // which can leave its old canvas height as a grey strip at the bottom.
-    // Resize the renderer only; this does not change the map's layout box.
+    // first render; Leaflet must be told to re-measure its container.
     let resizeFrame = 0;
     const resizeObserver = new ResizeObserver(() => {
       cancelAnimationFrame(resizeFrame);
-      resizeFrame = requestAnimationFrame(() => map.resize());
+      resizeFrame = requestAnimationFrame(() => map.invalidateSize());
     });
     resizeObserver.observe(container);
 
-    map.on("load", () => {
-      map.resize();
-      // MapLibre's official compact attribution sometimes opens itself when
-      // its text fits. Mobile deliberately starts collapsed behind the
-      // library-provided info control; the complete legal copy remains one
-      // tap away and the native <details> keeps touch + keyboard behaviour.
-      if (window.matchMedia("(max-width: 639px)").matches) {
-        const attribution = container.querySelector<HTMLDetailsElement>(".maplibregl-ctrl-attrib");
-        const toggle = attribution?.querySelector<HTMLElement>(".maplibregl-ctrl-attrib-button");
-        attribution?.removeAttribute("open");
-        attribution?.classList.remove("maplibregl-compact-show");
-        if (toggle) {
-          toggle.setAttribute("aria-label", "Kartenhinweise anzeigen");
-          toggle.setAttribute("title", "Kartenhinweise anzeigen");
-        }
-      }
-      const el = document.createElement("div");
-      el.innerHTML = PIN_SVG;
-      el.setAttribute("role", "img");
-      new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
-      setReady(true);
-    });
+    requestAnimationFrame(() => { map.invalidateSize(); setReady(true); });
 
     return () => {
       resizeObserver.disconnect();
@@ -169,9 +124,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
 
   return (
     // data-lenis-prevent stops the wheel from also scrolling the surrounding
-    // page while MapLibre is consuming it to zoom the map. Do NOT stop wheel
-    // in the capture phase — that would kill MapLibre's own wheel-to-zoom
-    // handler before it fires.
+    // page while Leaflet is consuming it to zoom the map.
     <div
       data-lenis-prevent
       className="swd-locator-map relative h-[360px] overflow-hidden bg-band sm:h-[440px] lg:h-full"

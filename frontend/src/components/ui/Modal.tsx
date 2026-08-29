@@ -64,7 +64,7 @@ export default function Modal({
   labelledBy,
   describedBy,
   children,
-  cardClassName = "max-w-md rounded-lg bg-white p-6",
+  cardClassName = "max-w-md rounded-lg bg-surface p-6",
 }: {
   open: boolean;
   onClose: () => void;
