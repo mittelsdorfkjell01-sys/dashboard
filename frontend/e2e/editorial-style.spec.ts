@@ -87,7 +87,10 @@ test("saved dark mode is applied before the results route renders", async ({ pag
   expect(pageBackground.toLowerCase()).toBe("#0e1114");
 });
 
-test("search is the filled-action exception and loads regions on demand", async ({ page }) => {
+test("search is the filled-action exception and loads regions on demand", async ({ page }, testInfo) => {
+  // Desktop landing docks the inline SearchBar panel; mobile uses the separate
+  // MobileSearchTrigger/Sheet, covered elsewhere.
+  test.skip(testInfo.project.name.includes("mobile"), "Desktop hero search uses the inline panel");
   let regionCalls = 0;
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
