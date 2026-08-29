@@ -18,7 +18,7 @@ async function mockApi(page: Page) {
     const url = new URL(route.request().url());
     // The legacy reference resolves once, then the page canonicalizes to the
     // public display-name URL without losing the already-supported old link.
-    if (["/spots/test", "/spots/Laboe"].includes(url.pathname)) {
+    if (["/spots/test", "/spots/laboe", "/spots/Laboe"].includes(url.pathname)) {
       return route.fulfill({ json: spot });
     }
     if (url.pathname === "/regions/r1") return route.fulfill({ json: {

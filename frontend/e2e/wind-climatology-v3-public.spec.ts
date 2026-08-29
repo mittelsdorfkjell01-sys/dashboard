@@ -69,7 +69,7 @@ function v3Payload(overrides: Partial<{ minWindKn: number; maxWindKn: number | n
 async function baseRoutes(page: Page, opts: { v3: "ready" | "404"; usableAvailable?: boolean }) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
-    if (["/spots/test", "/spots/Laboe"].includes(url.pathname)) return route.fulfill({ json: spot });
+    if (["/spots/test", "/spots/laboe", "/spots/Laboe"].includes(url.pathname)) return route.fulfill({ json: spot });
     if (url.pathname === "/regions/r1") return route.fulfill({ json: region });
     if (url.pathname === "/spots/test/live") return route.fulfill({ status: 404, json: { detail: "none" } });
     if (url.pathname === "/spots/test/forecast") return route.fulfill({ json: { spot_id: "test", model: "test", generated_at: "2026-08-06T08:00:00Z", days: [] } });
@@ -114,9 +114,13 @@ test("changing the preset updates the URL and the selection summary", async ({ p
 test("turning off the direction filter switches to alle Richtungen", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
+  // The direction filter lives inside the collapsible "Anpassen" panel.
+  await page.getByRole("button", { name: /Anpassen/ }).click();
   const toggle = page.getByLabel("Passende Windrichtung berücksichtigen");
   await expect(toggle).toBeChecked();
-  await toggle.uncheck();
+  // Controlled checkbox: its state only flips once the re-fetch resolves, so
+  // click and wait on the resulting summary rather than uncheck()'s eager check.
+  await toggle.click();
   await expect(page.getByText("15–20 kt · alle Richtungen · 2006–2025")).toBeVisible();
   await expect(page).toHaveURL(/wind_dir=all/);
 });
@@ -125,6 +129,8 @@ test("a spot without reviewed directions disables the filter and shows the expla
   await baseRoutes(page, { v3: "ready", usableAvailable: false });
   await page.goto("/spot/test/daten");
   await expect(page.getByText("15–20 kt · alle Richtungen · 2006–2025")).toBeVisible();
+  // The direction filter lives inside the collapsible "Anpassen" panel.
+  await page.getByRole("button", { name: /Anpassen/ }).click();
   await expect(page.getByLabel("Passende Windrichtung berücksichtigen")).toBeDisabled();
   await expect(page.getByText("Für diesen Spot sind noch keine geprüften Windrichtungen hinterlegt.")).toBeVisible();
 });
@@ -135,13 +141,13 @@ test("selecting a week shows its detail values below the chart", async ({ page }
   const bar = page.locator('[data-week="30"]');
   await bar.click();
   await expect(page.getByText("Wochendetail")).toBeVisible();
-  await expect(page.getByText("70%", { exact: true })).toBeVisible();
+  await expect(page.getByText("70%", { exact: true }).first()).toBeVisible();
 });
 
 test("a spot without an active V3 run falls back to the V2 climatology view", async ({ page }) => {
   await baseRoutes(page, { v3: "404" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("Windfenster im Jahresverlauf")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Windmonate" })).toBeVisible();
   await expect(page.getByText("Wann ist regelmäßig Wind?")).not.toBeVisible();
 });
 
