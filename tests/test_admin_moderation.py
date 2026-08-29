@@ -262,6 +262,22 @@ def test_hero_approve_writes_spot_image(client, anon_client, spot_id, db):
     assert _audit_count(db, "image", "image_approve") >= 1
 
 
+def test_removing_a_published_hero_clears_the_spot_image(client, anon_client, spot_id, db):
+    sid, _ = spot_id
+    img_id = anon_client.post(
+        f"/spots/{sid}/images",
+        files={"file": ("h.jpg", _img_bytes(3840, 2100), "image/jpeg")},
+        data={"kind": "hero_candidate", "license_accept": "true", "credit": "Kai"},
+    ).json()["id"]
+    assert client.post(f"/admin/images/{img_id}/approve").status_code == 200
+
+    removed = client.post(f"/admin/images/{img_id}/remove", json={})
+    assert removed.status_code == 200, removed.text
+    db.expire_all()
+    assert db.get(Spot, uuid.UUID(sid)).image is None
+    assert db.get(SpotImage, uuid.UUID(img_id)).status == "removed"
+
+
 def test_gallery_approve_makes_it_public_without_touching_spot_image(client, anon_client, spot_id, db):
     """A pending gallery photo (standalone upload form, review=true) approves
     via the same endpoint as hero candidates, but just flips its own status —

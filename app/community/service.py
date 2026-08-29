@@ -404,7 +404,10 @@ def list_images(db: Session, spot_id) -> list[SpotImage]:
                 SpotImage.spot_id == spot_id,
                 SpotImage.status.in_(VISIBLE_IMAGE_STATUS),
             )
-            .order_by(SpotImage.created_at.desc())
+            .order_by(
+                SpotImage.position.asc().nullslast(),
+                SpotImage.created_at.desc(),
+            )
         ).all()
     )
 

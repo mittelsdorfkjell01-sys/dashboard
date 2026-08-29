@@ -41,9 +41,10 @@ def _image(value) -> dict | None:
     the writer used to pass ``image=`` for regions and silently omit it for
     spots, so seeded spots never got one.
     """
-    from app.media.image_object import upgrade_legacy
+    from app.media.image_object import compact_image, upgrade_legacy
 
-    return upgrade_legacy(value)
+    upgraded = upgrade_legacy(value)
+    return compact_image(upgraded) if upgraded is not None else None
 
 
 def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:

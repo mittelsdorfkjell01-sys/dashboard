@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
+from sqlalchemy.orm import load_only, noload
 
 from app.forecast import CONSENSUS_VERSION, PHYSICS_VERSION
 from app.forecast.geoprofile import ensure_profile
@@ -11,11 +12,13 @@ from app.forecast.registry import public_attributions
 from app.live import service as legacy
 from app.live.cache import default_cache
 from app.live.client import default_client
+from app.live.public_cache import set_public_forecast
 from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
 from app.schemas.live import ForecastSeriesRead
 from app.live.weather_contract import WEATHER_CONTRACT_VERSION
 
 ACTIVE = ("queued", "processing")
+MAX_PUBLIC_STALE = timedelta(hours=12)
 
 
 def job_key(spot_id, *, profile: bool, reason: str, coordinates_hash: str = "unknown", bucket: str | None = None) -> str:
@@ -28,7 +31,11 @@ def job_key(spot_id, *, profile: bool, reason: str, coordinates_hash: str = "unk
 def enqueue(
     db, spot_id, *, requested_by=None, rebuild_profile=False, reason="automatic"
 ):
-    spot = db.get(Spot, spot_id)
+    spot = db.scalar(
+        select(Spot)
+        .where(Spot.id == spot_id)
+        .options(load_only(Spot.id, Spot.location), noload(Spot.weather_profile))
+    )
     coordinates_hash = "missing"
     if spot is not None:
         from geoalchemy2.shape import to_shape
@@ -88,9 +95,18 @@ def run_job(db, job_id, *, client=None, cache=None):
     job.progress = 5
     db.commit()
     try:
-        spot = db.get(Spot, job.spot_id)
+        spot = db.scalar(
+            select(Spot)
+            .where(Spot.id == job.spot_id)
+            .options(
+                load_only(Spot.id, Spot.location, Spot.status),
+                noload(Spot.weather_profile),
+            )
+        )
         if not spot:
             raise LookupError("spot not found")
+        target_spot_id = spot.id
+        target_spot_is_public = spot.status == "published"
         profile = ensure_profile(
             db,
             spot,
@@ -101,12 +117,13 @@ def run_job(db, job_id, *, client=None, cache=None):
         db.commit()
         # Stable migration source. Direct adapters run in shadow until their
         # run completeness gates pass; a failed shadow source never reaches here.
+        cache_backend = cache or default_cache()
         payload = legacy.get_forecast_series(
-            spot.id,
+            target_spot_id,
             10,
             db=db,
             client=client or default_client(),
-            cache=cache or default_cache(),
+            cache=cache_backend,
         )
         internal_weather = dict(payload.pop("internal", {}))
         payload["model"] = "surfwinddata"
@@ -117,7 +134,7 @@ def run_job(db, job_id, *, client=None, cache=None):
             "automatic" if profile.profile.get("corrections_enabled") else "baseline"
         )
         snapshot = ForecastSnapshot(
-            spot_id=spot.id,
+            spot_id=target_spot_id,
             generated_at=generated,
             valid_until=generated + timedelta(hours=3),
             consensus_version=CONSENSUS_VERSION,
@@ -138,7 +155,7 @@ def run_job(db, job_id, *, client=None, cache=None):
         db.add(snapshot)
         db.flush()
         newer = db.scalar(select(ForecastSnapshot).where(
-            ForecastSnapshot.spot_id == spot.id,
+            ForecastSnapshot.spot_id == target_spot_id,
             ForecastSnapshot.active.is_(True),
             ForecastSnapshot.generated_at > generated,
         ).with_for_update())
@@ -150,7 +167,7 @@ def run_job(db, job_id, *, client=None, cache=None):
         db.execute(
             update(ForecastSnapshot)
             .where(
-                ForecastSnapshot.spot_id == spot.id,
+                ForecastSnapshot.spot_id == target_spot_id,
                 ForecastSnapshot.active.is_(True),
                 ForecastSnapshot.id != snapshot.id,
             )
@@ -169,7 +186,21 @@ def run_job(db, job_id, *, client=None, cache=None):
             "horizons": internal_weather.get("horizons", {}),
             "marine_grid_distance_km": (internal_weather.get("marine") or {}).get("grid_distance_km"),
         }
+        cached_public_payload = public_payload(snapshot)
+        cached_spot_id = target_spot_id
+        cached_spot_is_public = target_spot_is_public
+        cached_valid_until = snapshot.valid_until
         db.commit()
+        # Publish only after the active snapshot transaction succeeds. The
+        # cache helper fails open, so Redis cannot turn a successful DB publish
+        # into a failed generation job.
+        if cached_spot_is_public:
+            set_public_forecast(
+                cache_backend,
+                cached_spot_id,
+                cached_public_payload,
+                valid_until=cached_valid_until,
+            )
         return job
     except Exception as exc:
         db.rollback()
@@ -187,8 +218,12 @@ def active_snapshot(db, spot_id, *, allow_stale=True):
         .where(ForecastSnapshot.spot_id == spot_id, ForecastSnapshot.active.is_(True))
         .order_by(ForecastSnapshot.generated_at.desc())
     )
-    if row and (allow_stale or row.valid_until >= datetime.now(timezone.utc)):
-        return row
+    if row:
+        now = datetime.now(timezone.utc)
+        if row.valid_until >= now:
+            return row
+        if allow_stale and row.valid_until >= now - MAX_PUBLIC_STALE:
+            return row
     return None
 
 
@@ -201,4 +236,9 @@ def public_payload(snapshot):
     data["confidence_note"] = "Berechneter Forecast mit modellabhängiger Unsicherheit."
     data["attributions"] = snapshot.attributions
     data["stale"] = snapshot.valid_until < datetime.now(timezone.utc)
+    if data["stale"]:
+        data["availability"] = {
+            key: "available_stale" if value == "available" else value
+            for key, value in (data.get("availability") or {}).items()
+        }
     return data

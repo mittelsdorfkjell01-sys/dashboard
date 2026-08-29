@@ -21,6 +21,8 @@ from app.models.ugc import (
     ImageReport,
 )
 from app.models.media import MediaProviderBudget, MediaSearchCache, MediaUsage
+from app.models.media_archive import SpotImageArchive
+from app.models.media_gc import MediaGarbageCandidate, MediaGcState
 from app.models.moderation_audit import ModerationAudit
 from app.models.team_note import TeamNote
 from app.models.board_task import BoardTask
@@ -80,6 +82,9 @@ __all__ = [
     "MediaUsage",
     "MediaSearchCache",
     "MediaProviderBudget",
+    "SpotImageArchive",
+    "MediaGarbageCandidate",
+    "MediaGcState",
     "ModerationAudit",
     "TeamNote",
     "BoardTask",

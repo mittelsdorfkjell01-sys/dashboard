@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from app.weather.providers.common import ObservationStation, WindObservation
+from app.weather.providers.common import NormalizedObservation, ObservationStation, normalize_observation
 
 DMI_BASE = "https://opendataapi.dmi.dk/v2/metObs/collections"
 
@@ -38,11 +38,11 @@ def fetch_stations(*, timeout: float = 20.0) -> list[ObservationStation]:
     return list(by_id.values())
 
 
-def fetch_recent(station_id: str, *, period: str = "latest-day", timeout: float = 20.0) -> list[WindObservation]:
+def fetch_recent(station_id: str, *, period: str = "latest-day", timeout: float = 20.0) -> list[NormalizedObservation]:
     payload = _get("observation/items", {
         "stationId": str(station_id), "period": period, "limit": 1000,
     }, timeout=timeout)
-    grouped: dict[datetime, dict[str, float]] = {}
+    grouped: dict[datetime, dict[str, object]] = {}
     for feature in payload.get("features") or []:
         props = feature.get("properties") or {}
         parameter = props.get("parameterId")
@@ -50,10 +50,14 @@ def fetch_recent(station_id: str, *, period: str = "latest-day", timeout: float 
             continue
         try:
             stamp = datetime.fromisoformat(str(props["observed"]).replace("Z", "+00:00")).astimezone(timezone.utc)
-            grouped.setdefault(stamp, {})[parameter] = float(props["value"])
+            values = grouped.setdefault(stamp, {})
+            values[parameter] = float(props["value"])
+            if props.get("quality") is not None: values["quality"] = props["quality"]
         except (KeyError, TypeError, ValueError):
             continue
     return [
-        WindObservation(stamp, values["wind_speed"], values.get("wind_dir"), values.get("wind_max"))
+        normalize_observation(provider="dmi", station_id=station_id, observed_at=stamp,
+                              wind_speed_ms=values["wind_speed"], wind_direction_deg=values.get("wind_dir"),
+                              wind_gust_ms=values.get("wind_max"), provider_quality=values.get("quality"))
         for stamp, values in sorted(grouped.items()) if values.get("wind_speed", -1) >= 0
     ]

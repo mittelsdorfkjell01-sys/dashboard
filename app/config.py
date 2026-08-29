@@ -217,6 +217,14 @@ class Settings(BaseSettings):
 
     # TTL (seconds) for cached Open-Meteo live/forecast responses (30-60 min band).
     live_cache_ttl: int = 1800
+    weather_nowcast_cache_ttl: int = 300
+    weather_marine_current_cache_ttl: int = 900
+    weather_forecast_cache_ttl: int = 2700
+    # Fully assembled public responses. These avoid Postgres reads on cache hits;
+    # forecast entries are additionally capped to the snapshot's valid_until.
+    weather_public_live_cache_ttl: int = 300
+    weather_public_forecast_cache_ttl: int = 10_800
+    weather_polling_enabled: bool = False
     # Strict no-budget limits for direct-source shadow processing.
     forecast_job_batch_size: int = 3
     forecast_provider_daily_bytes: int = 250_000_000
@@ -300,6 +308,13 @@ class Settings(BaseSettings):
     # Minimum password length enforced on registration / change (mirrors the FE).
     app_password_min_length: int = 12
     ugc_personal_data_retention_days: int = 90
+    # Terminal image rows remain available to daily moderation first, then move
+    # into a compressed, privacy-reduced evidence table in bounded batches.
+    image_archive_retention_days: int = 180
+    image_archive_batch_size: int = 250
+    media_gc_grace_hours: int = 24
+    media_gc_batch_size: int = 100
+    media_blob_scan_batch_size: int = 250
 
     # Contact address surfaced by the take-down / image-report flow (Sprint C).
     takedown_contact_email: str | None = None

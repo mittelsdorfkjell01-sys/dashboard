@@ -3,7 +3,7 @@
 Every decision writes a :class:`app.models.ModerationAudit` row (actor = the
 logged-in admin/curator's email) and commits. Approvals reuse the existing admin
 write path — submissions become **draft** spots via ``admin_spots.create_spot``;
-hero candidates are promoted via ``admin_spots.manage_spot_image`` — so nothing
+hero candidates are promoted via the shared gallery lifecycle — so nothing
 goes live without passing the normal readiness/go-live flow.
 """
 
@@ -16,7 +16,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin import spots as admin_spots
-from app.media import IMAGE_LICENSE_VERSION
+from app.media import gallery as media_gallery
+from app.media.lifecycle import mark_row_retired, purge_if_unreferenced
 from app.models import (
     ImageReport,
     LocalTip,
@@ -154,6 +155,7 @@ def _image_view(i: SpotImage) -> dict:
     return {
         "id": str(i.id), "spot_id": str(i.spot_id), "url": i.url, "kind": i.kind,
         "credit": i.credit, "status": i.status, "report_count": i.report_count,
+        "width": i.width, "height": i.height,
         "created_at": i.created_at.isoformat(),
     }
 
@@ -342,24 +344,13 @@ def approve_hero_image(db: Session, image_id, *, actor: str) -> SpotImage:
     img = _get_image(db, image_id)
     if img.status != "pending":
         raise ValueError(f"hero image cannot be approved from {img.status}")
-    admin_spots.manage_spot_image(
-        img.spot_id,
-        {
-            "url": img.url,
-            "source": "user_upload",
-            "license": img.license_version or IMAGE_LICENSE_VERSION,
-            "credit": (img.credit or "Community").strip() or "Community",
-            # The uploader's photo lives in our own storage; provenance is the
-            # consent record on this row, not an external provider.
-            "provider": "community",
-            "delivery": "hosted",
-            "width": img.width,
-            "height": img.height,
-            "role": "hero",
-        },
-        db=db, actor=actor,
-    )
-    img.status = "published_hero"
+    # The gallery path owns the symmetric swap: it reuses an existing row for
+    # the outgoing hero and guarantees there is only one published_hero row.
+    if not img.credit:
+        img.credit = "Community"
+        db.flush()
+    media_gallery.promote_to_hero(db, image_id)
+    img = _get_image(db, image_id)
     img.reviewed_by = actor
     img.reviewed_at = _now()
     record_moderation(
@@ -375,7 +366,8 @@ def reject_image(db: Session, image_id, *, actor: str, note: str | None = None) 
     img = _get_image(db, image_id)
     if img.status != "pending":
         raise ValueError(f"image cannot be rejected from {img.status}")
-    img.status = "rejected"
+    url = img.url
+    mark_row_retired(db, img, status="rejected")
     img.reviewed_by = actor
     img.reviewed_at = _now()
     record_moderation(
@@ -384,6 +376,7 @@ def reject_image(db: Session, image_id, *, actor: str, note: str | None = None) 
     )
     db.commit()
     db.refresh(img)
+    purge_if_unreferenced(db, url, exclude_image_id=img.id)
     return img
 
 
@@ -391,7 +384,8 @@ def remove_image(db: Session, image_id, *, actor: str, note: str | None = None) 
     img = _get_image(db, image_id)
     if img.status not in ("approved", "published_hero"):
         raise ValueError(f"image cannot be removed from {img.status}")
-    img.status = "removed"
+    url = img.url
+    mark_row_retired(db, img, status="removed")
     img.reviewed_by = actor
     img.reviewed_at = _now()
     record_moderation(
@@ -400,6 +394,7 @@ def remove_image(db: Session, image_id, *, actor: str, note: str | None = None) 
     )
     db.commit()
     db.refresh(img)
+    purge_if_unreferenced(db, url, exclude_image_id=img.id)
     return img
 
 

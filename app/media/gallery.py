@@ -16,7 +16,8 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.media.image_object import build_image, upgrade_legacy
+from app.media.image_object import build_image, is_placeholder, upgrade_legacy
+from app.media.lifecycle import mark_row_retired, purge_if_unreferenced
 from app.models import Region, Spot, SpotImage
 
 VISIBLE = ("approved", "published_hero", "pending")
@@ -35,7 +36,10 @@ def _entity_column(entity_type: str):
 
 
 def _load_entity(db: Session, entity_type: str, entity_id) -> Any:
-    entity = db.get(Spot if entity_type == "spot" else Region, entity_id)
+    model = Spot if entity_type == "spot" else Region
+    entity = db.scalar(
+        select(model).where(model.id == entity_id).with_for_update()
+    )
     if entity is None:
         raise LookupError(f"unknown {entity_type} {entity_id}")
     return entity
@@ -111,9 +115,10 @@ def remove(db: Session, image_id) -> None:
     row = db.get(SpotImage, image_id)
     if row is None:
         raise LookupError(f"unknown image {image_id}")
-    row.status = "removed"
-    row.position = None
+    url = row.url
+    mark_row_retired(db, row, status="removed")
     db.commit()
+    purge_if_unreferenced(db, url, exclude_image_id=row.id)
 
 
 def promote_to_hero(db: Session, image_id) -> dict:
@@ -125,6 +130,8 @@ def promote_to_hero(db: Session, image_id) -> dict:
     row = db.get(SpotImage, image_id)
     if row is None:
         raise LookupError(f"unknown image {image_id}")
+    if row.status not in VISIBLE:
+        raise GalleryError(f"Bild kann aus Status {row.status} nicht veröffentlicht werden.")
     entity_type = "spot" if row.spot_id else "region"
     entity_id = row.spot_id or row.region_id
     entity = _load_entity(db, entity_type, entity_id)
@@ -139,7 +146,7 @@ def promote_to_hero(db: Session, image_id) -> dict:
     image = build_image(
         url=row.url,
         source=row.source or (row.provider or "unknown"),
-        license=row.license_name or "unbekannt",
+        license=row.license_name or row.license_version or "unbekannt",
         license_url=row.license_url,
         credit=row.credit,
         credit_url=row.credit_url,
@@ -154,37 +161,52 @@ def promote_to_hero(db: Session, image_id) -> dict:
         role="hero",
     )
 
+    from app.media.adopt import _gallery_row, _record_usage
+
     previous = upgrade_legacy(entity.image)
-    if previous and previous.get("url") and previous["url"] != image["url"]:
-        highest = max((r.position or 0) for r in list_gallery(db, entity_type, entity_id))
-        db.add(
-            SpotImage(
-                spot_id=entity_id if entity_type == "spot" else None,
-                region_id=entity_id if entity_type == "region" else None,
-                url=previous["url"],
-                kind="gallery",
-                width=previous.get("width"),
-                height=previous.get("height"),
-                source=previous.get("source") or "unknown",
-                provider=previous.get("provider"),
-                external_id=previous.get("external_id"),
-                delivery=previous.get("delivery") or "hosted",
-                credit=previous.get("credit"),
-                credit_url=previous.get("credit_url"),
-                license_name=previous.get("license"),
-                license_url=previous.get("license_url"),
-                source_url=previous.get("source_page"),
-                geo_verified=bool(previous.get("geo_verified")),
-                position=highest + 1,
-                status="approved",
-            )
+    if (
+        previous
+        and previous.get("url")
+        and previous["url"] != image["url"]
+        and not is_placeholder(previous)
+    ):
+        _gallery_row(
+            db,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            image=previous,
         )
+        if previous.get("provider") and previous.get("external_id"):
+            _record_usage(
+                db,
+                provider=previous["provider"],
+                external_id=previous["external_id"],
+                entity_type=entity_type,
+                entity_id=entity_id,
+                role="gallery",
+            )
+
+    # A single entity has exactly one current hero row. This also repairs
+    # legacy duplicate states the next time an operator promotes an image.
+    column = _entity_column(entity_type)
+    next_position = max(
+        (item.position or 0) for item in list_gallery(db, entity_type, entity_id)
+    ) + 1
+    for other in db.scalars(
+        select(SpotImage).where(
+            column == entity_id,
+            SpotImage.status == "published_hero",
+            SpotImage.id != row.id,
+        )
+    ).all():
+        other.status = "approved"
+        if other.position is None:
+            other.position = next_position
+            next_position += 1
 
     entity.image = image
     row.status = "published_hero"
     row.position = None
-
-    from app.media.adopt import _record_usage
 
     if row.provider and row.external_id:
         _record_usage(

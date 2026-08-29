@@ -41,6 +41,8 @@ class OpenMeteoClient(Protocol):
     def fetch_forecast(self, lat: float, lon: float, models: str, days: int) -> dict: ...
 
     def fetch_marine(self, lat: float, lon: float, days: int) -> dict: ...
+    def fetch_nowcast(self, lat: float, lon: float, models: str) -> dict: ...
+    def fetch_current_marine(self, lat: float, lon: float) -> dict: ...
 
 
 class HttpOpenMeteoClient:
@@ -108,6 +110,16 @@ class HttpOpenMeteoClient:
             },
         )
 
+    def fetch_nowcast(self, lat: float, lon: float, models: str) -> dict:
+        """Small atmospheric current/minutely request; no ten-day daily payload."""
+        return self._get(FORECAST_URL, {
+            "latitude": lat, "longitude": lon,
+            "minutely_15": FORECAST_MINUTELY_15,
+            "current": "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m",
+            "hourly": FORECAST_MINUTELY_15, "forecast_hours": 3,
+            "models": models, "wind_speed_unit": "ms", "timezone": "auto",
+        })
+
     def fetch_marine(
         self, lat: float, lon: float, days: int = MAX_FORECAST_DAYS
     ) -> dict:
@@ -124,6 +136,14 @@ class HttpOpenMeteoClient:
                 "cell_selection": "sea",
             },
         )
+
+    def fetch_current_marine(self, lat: float, lon: float) -> dict:
+        """Small current marine request with a short alignment horizon."""
+        return self._get(MARINE_URL, {
+            "latitude": lat, "longitude": lon, "current": MARINE_HOURLY,
+            "hourly": MARINE_HOURLY, "forecast_hours": 3,
+            "timezone": "GMT", "cell_selection": "sea",
+        })
 
 
 _default_client: HttpOpenMeteoClient | None = None

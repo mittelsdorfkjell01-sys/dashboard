@@ -1,80 +1,63 @@
-# Applies pending Alembic migrations to the production Neon database.
-#
-# Why: Vercel deliberately does NOT run migrations (alembic is excluded from the
-# serverless function deps to stay under the size limit — see api/requirements.txt).
-# Without this, a deploy that adds a migration leaves prod on the old schema and
-# admin endpoints 500 (e.g. /admin/overview when a queried column is missing).
-#
-# This runs only after Vercel reports a successful production deployment (and on
-# manual dispatch). A failed build therefore leaves the old application and its
-# compatible schema together instead of migrating the DB underneath old code.
-#
-# Setup (one-time): GitHub → repo → Settings → Secrets and variables → Actions →
-# New repository secret:
-#   Name:  DIRECT_DATABASE_URL
-#   Value: postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
-#          (the DIRECT / non-pooled Neon URL — NOT the -pooler one. The app
-#           normalizes the driver to postgresql+psycopg automatically.)
-
-name: Migrate production DB
+name: Production database recovery
 
 on:
-  deployment_status:
-  workflow_dispatch: {} # allow running it by hand from the Actions tab
+  workflow_dispatch:
+    inputs:
+      backup_confirmed:
+        description: "Type BACKUP CONFIRMED after verifying a restorable recovery point"
+        required: true
+        type: string
 
-# Never let two migration runs overlap.
+permissions:
+  contents: read
+
 concurrency:
-  group: migrate-prod
+  group: production-database-recovery
   cancel-in-progress: false
 
 jobs:
   migrate:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.deployment_status.state == 'success' &&
-       github.event.deployment.environment == 'Production')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.deployment.sha || github.sha }}
+      - name: Require explicit backup confirmation
+        env:
+          BACKUP_CONFIRMED: ${{ inputs.backup_confirmed }}
+        run: test "$BACKUP_CONFIRMED" = "BACKUP CONFIRMED"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements-migrate.txt
 
-      - name: Install dependencies
-        run: pip install -r requirements-migrate.txt
+      - name: Install migration dependencies
+        run: pip install --disable-pip-version-check -r requirements-migrate.txt
 
-      - name: Back up catalogue media state
+      - name: Check connections, current schema, and target
+        env:
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          POOLED_DATABASE_URL: ${{ secrets.POOLED_DATABASE_URL }}
+        run: python -m scripts.production_readiness database
+
+      - name: Migrate to the application target
         env:
           DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-        run: python -m scripts.export_catalog_backup "catalog-before-${GITHUB_RUN_ID}.json.gz"
+        run: python -m alembic upgrade head
 
-      - name: Upload catalogue backup
-        uses: actions/upload-artifact@v4
-        with:
-          name: catalog-before-${{ github.run_id }}
-          path: catalog-before-${{ github.run_id }}.json.gz
-          retention-days: 90
-          if-no-files-found: error
-
-      - name: alembic upgrade head
+      - name: Verify target through direct and pooled connections
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-        run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "::error::DIRECT_DATABASE_URL secret is not set — add it in repo Settings → Secrets → Actions."
-            exit 1
-          fi
-          python -m alembic upgrade head
-          echo "Current revision after upgrade:"
-          python -m alembic current
+          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          POOLED_DATABASE_URL: ${{ secrets.POOLED_DATABASE_URL }}
+        run: python -m scripts.production_readiness database --require-target
 
-      - name: Verify Blob and database media links
+      - name: Readiness and minimal public API smoke tests
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
-        run: python -m scripts.verify_media_integrity
+          PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_API_BASE_URL }}
+        run: python -m scripts.production_readiness api-smoke

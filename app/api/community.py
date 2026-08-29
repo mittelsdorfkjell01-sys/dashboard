@@ -29,7 +29,7 @@ from app.community.security import check_honeypot, ip_hash
 from app.config import get_settings
 from app.db.session import get_db
 from app.account.deps import current_account, optional_account
-from app.models import AppUser
+from app.models import AppUser, LocalTip, SpotImage, SpotRating
 from app.media import (
     GALLERY_MAX_BYTES,
     GALLERY_OUT_MAX_WIDTH,
@@ -38,18 +38,23 @@ from app.media import (
     HERO_OUT_MAX_WIDTH,
     HERO_OUT_QUALITY,
     HeroImageError,
+    PartialImageSetError,
     IMAGE_LICENSE_VERSION,
-    delete_url,
     license_terms,
-    reencode_image,
+    reencode_image_set,
     read_upload_limited,
-    save_spot_image,
+    save_spot_image_set,
     validate_gallery_image,
     validate_hero_image,
 )
+from app.media.gc import (
+    acquire_image_set_lock,
+    register_media_reference,
+    schedule_media_gc,
+)
+from app.media.lifecycle import purge_if_unreferenced
 
 MAX_GALLERY_PER_SPOT = 15
-from app.models import LocalTip, SpotImage, SpotRating
 
 router = APIRouter(tags=["community"])
 
@@ -345,14 +350,14 @@ async def post_image(
         # heavy upload is accepted but only a small optimised file is stored.
         if kind == "hero_candidate":
             await run_in_threadpool(validate_hero_image, data, file.content_type)
-            out, ext, width, height = await run_in_threadpool(
-                reencode_image,
+            encoded = await run_in_threadpool(
+                reencode_image_set,
                 data, max_width=HERO_OUT_MAX_WIDTH, quality=HERO_OUT_QUALITY
             )
         else:
             await run_in_threadpool(validate_gallery_image, data, file.content_type)
-            out, ext, width, height = await run_in_threadpool(
-                reencode_image,
+            encoded = await run_in_threadpool(
+                reencode_image_set,
                 data, max_width=GALLERY_OUT_MAX_WIDTH, quality=GALLERY_OUT_QUALITY
             )
     except HeroImageError as exc:
@@ -360,11 +365,21 @@ async def post_image(
 
     settings = get_settings()
     image_id = uuid.uuid4()
-    url = await run_in_threadpool(
-        save_spot_image,
-        spot_id, image_id, out, ext,
-        media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
-    )
+    acquire_image_set_lock(db, encoded)
+    try:
+        url = await run_in_threadpool(
+            save_spot_image_set,
+            spot_id, image_id, encoded,
+            media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
+        )
+    except PartialImageSetError as exc:
+        db.rollback()
+        schedule_media_gc(db, exc.canonical_url)
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    register_media_reference(db, url)
     # gallery = post-moderation (visible now) unless the uploader explicitly
     # asked for review (the standalone "add a photo" form, decoupled from the
     # rating/tip composer); hero_candidate always awaits approval.
@@ -372,16 +387,14 @@ async def post_image(
     try:
         image = service.create_image_record(
             db, spot_id,
-            url=url, kind=kind, width=width, height=height, status=status,
+            url=url, kind=kind, width=encoded.width, height=encoded.height, status=status,
             license_version=IMAGE_LICENSE_VERSION,
             license_accepted_at=datetime.now(timezone.utc),
             credit=credit, ip_hash=ip_hash(request),
         )
     except Exception:
         db.rollback()
-        delete_url(
-            url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix
-        )
+        purge_if_unreferenced(db, url)
         raise
     return ImageOut.of(image)
 

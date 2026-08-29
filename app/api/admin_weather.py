@@ -348,6 +348,14 @@ class WeatherStationIn(BaseModel):
     longitude: float = Field(ge=-180, le=180)
     distance_km: float | None = Field(default=None, ge=0, le=100)
     active: bool = True
+    elevation_m: float | None = None
+    setting_class: Literal["coastal", "inland", "unknown"] = "unknown"
+    exposure_status: Literal["passed", "limited", "failed", "unknown"] = "unknown"
+    representativeness_status: Literal["passed", "failed", "unreviewed"] = "unreviewed"
+    recommended: bool = False
+    approved: bool = False
+    blocked: bool = False
+    decision_reason: str | None = Field(default=None, max_length=500)
 
 
 def _missing(body: WeatherProfileIn) -> list[str]:
@@ -832,6 +840,10 @@ def get_calibration(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
                 "name": s.name,
                 "distance_km": s.distance_km,
                 "active": s.active,
+                "recommended": s.recommended, "approved": s.approved, "blocked": s.blocked,
+                "setting_class": s.setting_class, "exposure_status": s.exposure_status,
+                "representativeness_status": s.representativeness_status,
+                "decision_reason": s.decision_reason, "last_import_at": s.last_import_at.isoformat() if s.last_import_at else None,
                 "last_observation_at": latest_observations[s.id].observed_at.isoformat() if latest_observations[s.id] else None,
                 "observation_type": "measurement" if latest_observations[s.id] else None,
             }
@@ -897,7 +909,7 @@ def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -
 def auto_station(
     spot_id: uuid.UUID,
     provider: Literal["dwd", "dmi"] = "dwd",
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db), actor: Principal = Depends(get_actor),
 ) -> dict:
     """Select the nearest wind-capable official station; an operator still sees the choice."""
     from app.config import get_settings
@@ -932,7 +944,15 @@ def auto_station(
         selected.longitude,
     )
     station.distance_km, station.active = round(distance, 3), True
+    station.elevation_m = selected.elevation_m
+    station.recommended = True
+    station.approved = False
+    station.representativeness_status = "unreviewed"
     db.add(station)
+    record_audit(db, spot_id, "weather_station_recommended", {
+        "provider": provider, "provider_station_id": selected.station_id,
+        "distance_km": round(distance, 3), "approved": False,
+    }, getattr(actor, "email", None) or str(actor))
     db.commit()
     return {
         "selected": {

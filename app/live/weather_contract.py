@@ -7,7 +7,11 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-WEATHER_CONTRACT_VERSION = "weather-v4"
+WEATHER_CONTRACT_VERSION = "weather-v5"
+MODEL_NOWCAST_STALE_SECONDS = 15 * 60
+MEASUREMENT_STALE_SECONDS = 30 * 60
+ATMOSPHERE_FORECAST_STALE_SECONDS = 3 * 60 * 60
+MARINE_FORECAST_STALE_SECONDS = 6 * 60 * 60
 WMO_MAPPING_VERSION = "wmo-v1"
 
 
@@ -64,6 +68,19 @@ def provider_time_utc(value: str | None, timezone_name: str) -> datetime | None:
         return parsed.astimezone(timezone.utc)
     except (ValueError, ZoneInfoNotFoundError):
         return None
+
+
+def age_seconds(value: datetime | None, *, now: datetime | None = None) -> int | None:
+    """Age of a real timestamp. Unknown and future instants stay explicit."""
+    if value is None:
+        return None
+    reference = now or datetime.now(timezone.utc)
+    return max(0, int((reference - value.astimezone(timezone.utc)).total_seconds()))
+
+
+def is_stale(*ages: int | None, threshold_seconds: int) -> bool:
+    known = [age for age in ages if age is not None]
+    return not known or max(known) > threshold_seconds
 
 
 def provider_axis_utc(values: list, timezone_name: str) -> list[datetime | None]:

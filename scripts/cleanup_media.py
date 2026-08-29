@@ -1,7 +1,8 @@
-"""Find or delete local media files that are no longer referenced by the DB.
+"""Find or enqueue local media files that are no longer referenced by the DB.
 
 The command is dry-run by default. Objects newer than the grace period are
-left alone so it can safely overlap an in-flight upload.
+left alone so it can safely overlap an in-flight upload. ``--delete`` retains
+its historical name but now uses the race-safe persistent deletion queue.
 """
 
 from __future__ import annotations
@@ -19,6 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import get_settings
 from app.db.session import SessionLocal
+from app.media.gc import schedule_media_gc
+from app.media.lifecycle import ACTIVE_ROW_STATUSES
+from app.media.storage import canonical_image_url, responsive_variant_urls
 from app.models import Region, Spot, SpotImage
 
 
@@ -34,24 +38,33 @@ def _local_key(url: str | None, prefix: str) -> str | None:
 
 def referenced_keys(prefix: str) -> set[str]:
     keys: set[str] = set()
+
+    def add_image_set(url: str | None) -> None:
+        for candidate in [url, *responsive_variant_urls(url)]:
+            if key := _local_key(candidate, prefix):
+                keys.add(key)
+
     with SessionLocal() as db:
         for image in db.scalars(select(Spot.image)).all():
             url = image.get("url") if isinstance(image, dict) else None
-            if key := _local_key(url, prefix):
-                keys.add(key)
+            add_image_set(url)
         for image in db.scalars(select(Region.image)).all():
             url = image.get("url") if isinstance(image, dict) else None
-            if key := _local_key(url, prefix):
-                keys.add(key)
-        for url in db.scalars(select(SpotImage.url)).all():
-            if key := _local_key(url, prefix):
-                keys.add(key)
+            add_image_set(url)
+        for url in db.scalars(
+            select(SpotImage.url).where(SpotImage.status.in_(ACTIVE_ROW_STATUSES))
+        ).all():
+            add_image_set(url)
     return keys
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--delete", action="store_true", help="delete orphaned files")
+    parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="enqueue orphaned files for locked, retryable deletion",
+    )
     parser.add_argument("--grace-hours", type=float, default=24.0)
     args = parser.parse_args()
 
@@ -71,11 +84,31 @@ def main() -> int:
         and str(path.relative_to(root)) not in referenced
         and path.stat().st_mtime <= cutoff
     ]
+    canonical_urls = {
+        canonical_image_url(
+            f"{settings.media_url_prefix.rstrip('/')}/"
+            f"{path.relative_to(root).as_posix()}"
+        )
+        for path in orphans
+    }
     for path in orphans:
-        print(f"{'DELETE' if args.delete else 'ORPHAN'} {path}")
-        if args.delete:
-            path.unlink(missing_ok=True)
-    print(f"{len(orphans)} orphaned file(s); delete={args.delete}")
+        print(f"{'QUEUE' if args.delete else 'ORPHAN'} {path}")
+    queued = 0
+    if args.delete:
+        with SessionLocal() as db:
+            for url in sorted(canonical_urls):
+                queued += int(
+                    schedule_media_gc(
+                        db,
+                        url,
+                        delete_set=True,
+                        grace_hours=max(1, round(args.grace_hours)),
+                    )
+                )
+    print(
+        f"{len(orphans)} orphaned file(s) in {len(canonical_urls)} set(s); "
+        f"queued={queued}"
+    )
     return 0
 
 

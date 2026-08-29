@@ -16,6 +16,12 @@ def test_scheduler_contract_is_post_only_and_bounded():
     assert "--max-time 30" in workflow
     assert "secrets.WEATHER_SHADOW_CRON_SECRET" in workflow
     assert "vars.WEATHER_SHADOW_ENDPOINT" in workflow
+    assert "vars.WEATHER_SHADOW_ENABLED" in workflow
+    assert "secrets.NEON_API_KEY" in workflow
+    assert "vars.NEON_PROJECT_ID" in workflow
+    assert "secrets.REDIS_URL" in workflow
+    assert "python -m scripts.neon_transfer_guard" in workflow
+    assert workflow.count("steps.neon_quota.outputs.allow_shadow == 'true'") == 4
 
 
 def test_scheduler_does_not_embed_an_authorization_value():

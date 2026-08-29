@@ -336,6 +336,21 @@ def test_upload_reencodes_to_avif_or_webp(anon_client, spot_id):
     assert up.json()["url"].rsplit(".", 1)[-1] in ("avif", "webp")
 
 
+def test_public_gallery_uses_the_curated_position_order(anon_client, spot_id, db):
+    from app.models import SpotImage
+
+    first = _upload(anon_client, spot_id, _img_bytes(1600, 1000), kind="gallery")
+    second = _upload(anon_client, spot_id, _img_bytes(1600, 1000), kind="gallery")
+    first_row = db.get(SpotImage, uuid.UUID(first.json()["id"]))
+    second_row = db.get(SpotImage, uuid.UUID(second.json()["id"]))
+    first_row.position = 2
+    second_row.position = 1
+    db.commit()
+
+    visible = anon_client.get(f"/spots/{spot_id}/images").json()["items"]
+    assert [item["id"] for item in visible[:2]] == [second.json()["id"], first.json()["id"]]
+
+
 def test_gallery_limit_enforced(anon_client, spot_id, db):
     from datetime import datetime, timezone
 

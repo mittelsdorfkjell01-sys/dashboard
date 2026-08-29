@@ -334,8 +334,12 @@ def delete_region(region_id, *, db: Session) -> None:
         raise ValueError(
             f"Region hat noch {count} Spot(s) — bitte zuerst verschieben oder löschen."
         )
+    from app.media.lifecycle import collect_entity_urls, purge_entity_urls
+
+    media_urls = collect_entity_urls(db, "region", region_id)
     db.delete(region)
     db.commit()
+    purge_entity_urls(db, media_urls)
 
 
 def set_region_image(region_id, image: dict, *, db: Session) -> Any:
@@ -353,11 +357,15 @@ def set_region_image(region_id, image: dict, *, db: Session) -> Any:
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
+    from app.media.lifecycle import demote_published_hero_rows
+
     payload = {key: image.get(key) for key in CANONICAL_KEYS}
     payload["source"] = payload.get("source") or "manual"
     payload["license"] = payload.get("license") or "own"
     payload["provider"] = payload.get("provider") or "manual"
-    region.image = build_image(**payload)
+    next_image = build_image(**payload)
+    demote_published_hero_rows(db, "region", region.id, keep_url=next_image["url"])
+    region.image = next_image
     db.commit()
     db.refresh(region)
     return region

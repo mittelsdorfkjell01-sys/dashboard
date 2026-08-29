@@ -20,7 +20,7 @@ import math
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only, selectinload
 
 from app.config import get_settings
 from app.live.cache import Cache, cache_key, default_cache
@@ -32,7 +32,7 @@ from app.live.consensus import (
     confidence_from_spread,
 )
 from app.live.models import consensus_models, select_model
-from app.models import Spot, WeatherObservation, WeatherStation
+from app.models import Spot, SpotWeatherProfile, WeatherObservation, WeatherStation
 from app.weather.consensus import WindMember, calculate_wind_consensus
 from app.weather.units import WindSpeedUnit, convert_wind_speed
 from app.weather.physics import apply_local_physics
@@ -41,8 +41,10 @@ from app.weather.vectors import uv_to_wind, wind_to_uv
 from app.weather.profiles import resolve_weather_profile
 from app.weather.verification import lead_bucket, load_calibrations, store_forecast_samples
 from app.weather.shadow import physics_shadow
+from app.weather.observations import public_measurement
 from app.live.weather_contract import (
-    Availability, WEATHER_CONTRACT_VERSION, WMO_MAPPING_VERSION, distance_km,
+    Availability, MODEL_NOWCAST_STALE_SECONDS, WEATHER_CONTRACT_VERSION,
+    WMO_MAPPING_VERSION, age_seconds, distance_km, is_stale,
     marine_classification, provider_axis_utc, provider_time_utc, provider_timezone, valid_number,
     weather_condition,
 )
@@ -84,10 +86,66 @@ def _spot_coords(spot: Spot) -> tuple[float, float]:
 
 
 def _load_spot(db: Session, spot_id) -> Spot:
-    spot = db.get(Spot, spot_id)
+    # Pure unit-test doubles expose only ``get``. Real sessions fetch exactly the
+    # weather fields instead of transferring the editorial/image JSON columns.
+    if not hasattr(db, "scalar"):
+        spot = db.get(Spot, spot_id)
+    else:
+        spot = db.scalar(
+            select(Spot)
+            .where(Spot.id == spot_id)
+            .options(
+                load_only(Spot.id, Spot.location, Spot.model_pref, Spot.water_type),
+                selectinload(Spot.weather_profile).load_only(
+                    SpotWeatherProfile.active,
+                    SpotWeatherProfile.timezone,
+                    SpotWeatherProfile.elevation_m,
+                    SpotWeatherProfile.coastal_normal_deg,
+                    SpotWeatherProfile.quality_tier,
+                    SpotWeatherProfile.physics_version,
+                ),
+            )
+        )
     if spot is None:
         raise LookupError(f"unknown spot {spot_id}")
     return spot
+
+
+def _forecast_sample_issued_at(forecast: dict) -> datetime:
+    """Stable identity for all samples derived from one provider cache capture."""
+    return _parse_provider_time(forecast.get("_cache_captured_at")) or datetime.now(
+        timezone.utc
+    )
+
+
+def _store_forecast_samples_once(
+    db,
+    spot_id,
+    forecast: dict,
+    models: list[str],
+    issued_at: datetime,
+    cache: Cache,
+) -> int:
+    """Run verification persistence once for each provider-cache capture."""
+    marker = (
+        f"weather:{WEATHER_CONTRACT_VERSION}:forecast-samples:"
+        f"{spot_id}:{issued_at.isoformat()}"
+    )
+    try:
+        if cache.get(marker) is not None:
+            return 0
+    except Exception:
+        pass
+    stored = store_forecast_samples(db, spot_id, forecast, models, issued_at)
+    try:
+        cache.set(
+            marker,
+            {"complete": True, "stored": stored},
+            get_settings().weather_forecast_cache_ttl,
+        )
+    except Exception:
+        pass
+    return stored
 
 
 def _model_set(lat: float, lon: float, pref: str | None) -> tuple[str, list[str]]:
@@ -119,30 +177,46 @@ def _cached_forecast(
     if hit is not None:
         return hit
     data = client.fetch_forecast(lat, lon, models_csv, MAX_FORECAST_DAYS)
-    cache.set(key, data, get_settings().live_cache_ttl)
+    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
+    cache.set(key, data, get_settings().weather_forecast_cache_ttl)
+    return data
+
+
+def _cached_nowcast(lat, lon, models_csv, *, client, cache) -> dict:
+    key = cache_key(models_csv, lat, lon, "atmosphere_nowcast_v1")
+    hit = cache.get(key)
+    if hit is not None:
+        return hit
+    fetch = getattr(client, "fetch_nowcast", None)
+    data = fetch(lat, lon, models_csv) if fetch else client.fetch_forecast(lat, lon, models_csv, 1)
+    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
+    cache.set(key, data, get_settings().weather_nowcast_cache_ttl)
     return data
 
 
 def _cached_marine(
-    lat: float, lon: float, *, client: OpenMeteoClient, cache: Cache
+    lat: float, lon: float, *, client: OpenMeteoClient, cache: Cache, current_only: bool = False
 ) -> dict:
     # Marine model is independent of the atmospheric model -> fixed key segment.
-    key = cache_key("marine", lat, lon, "marine")
+    key = cache_key("marine", lat, lon, "marine_current_v1" if current_only else "marine_forecast_v1")
     hit = cache.get(key)
     if hit is not None:
         return hit
-    data = client.fetch_marine(lat, lon, MAX_FORECAST_DAYS)
-    cache.set(key, data, get_settings().live_cache_ttl)
+    fetch = getattr(client, "fetch_current_marine", None) if current_only else None
+    data = fetch(lat, lon) if fetch else client.fetch_marine(lat, lon, MAX_FORECAST_DAYS)
+    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
+    ttl = get_settings().weather_marine_current_cache_ttl if current_only else get_settings().weather_forecast_cache_ttl
+    cache.set(key, data, ttl)
     return data
 
 
-def _marine_for_spot(spot, lat: float, lon: float, *, client, cache):
+def _marine_for_spot(spot, lat: float, lon: float, *, client, cache, current_only=False):
     eligibility = marine_classification(spot)
     diagnostics = {"status": eligibility.value, "requested_coordinate": {"latitude": lat, "longitude": lon}}
     if eligibility is not Availability.AVAILABLE:
         return {}, diagnostics
     try:
-        marine = _cached_marine(lat, lon, client=client, cache=cache)
+        marine = _cached_marine(lat, lon, client=client, cache=cache, current_only=current_only)
     except Exception as exc:
         diagnostics.update(status=Availability.UNAVAILABLE_PROVIDER.value, error_class=type(exc).__name__)
         return {}, diagnostics
@@ -297,6 +371,15 @@ def get_live_conditions(
     spot = _load_spot(db, spot_id)
     result = get_live_conditions_for_spot(spot, client=client, cache=cache)
     result["measurement"] = _latest_measurement(db, spot.id)
+    measurement = result["measurement"]
+    if measurement:
+        current = result["current"]
+        current.update({
+            "wind_ms": measurement["wind_speed_ms"], "gust_ms": measurement["wind_gust_ms"],
+            "wind": _knots(measurement["wind_speed_ms"]), "gust": _knots(measurement["wind_gust_ms"]),
+            "dir": measurement["wind_direction_from_deg"],
+        })
+        result["sources"]["wind"] = measurement["provenance"]
     return result
 
 
@@ -316,6 +399,9 @@ def _latest_measurement(db, spot_id) -> dict | None:
         return None
     now = datetime.now(timezone.utc)
     observed = observation.observed_at.astimezone(timezone.utc)
+    eligible, _reasons = public_measurement(station, observation, now=now)
+    if not eligible:
+        return None
     return {
         "observation_type": "measurement", "station_id": str(station.id),
         "provider": station.provider, "provider_station_id": station.provider_station_id,
@@ -323,6 +409,17 @@ def _latest_measurement(db, spot_id) -> dict | None:
         "distance_km": station.distance_km, "wind_speed_ms": observation.wind_speed_ms,
         "wind_gust_ms": observation.wind_gust_ms, "wind_direction_from_deg": observation.wind_direction_deg,
         "quality": observation.quality,
+        "station_name": station.name, "stale": False,
+        "provenance": {
+            "source_type": "measurement", "observation_type": "measurement",
+            "source": "station", "provider": station.provider.upper(),
+            "observation_at": observed, "valid_at": observed,
+            "captured_at": observation.fetched_at or observation.created_at,
+            "model_run_quality": "unknown", "age_seconds": max(0, int((now-observed).total_seconds())),
+            "stale": False, "availability": "available", "quality_tier": "quality_checked_station",
+            "spot_timezone": "UTC", "requested_coordinate": {"latitude": station.latitude, "longitude": station.longitude},
+            "grid_distance_km": station.distance_km, "uncertainty": "limited", "data_issues": observation.data_issues or [],
+        },
     }
 
 
@@ -342,12 +439,12 @@ def get_live_conditions_for_spot(
     lat, lon = _spot_coords(spot)
     profile = resolve_weather_profile(getattr(spot, "weather_profile", None))
     primary_model, models = _model_set(lat, lon, spot.model_pref)
-    fc = _cached_forecast(
-        lat, lon, primary_model, ",".join(models), client=client, cache=cache
-    )
-    mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache)
+    fc = _cached_nowcast(lat, lon, ",".join(models), client=client, cache=cache)
+    mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache, current_only=True)
     cur_f = fc.get("current") or {}
     cur_m = mar.get("current") or {}
+    captured_at = _parse_provider_time(fc.get("_cache_captured_at")) or datetime.now(timezone.utc)
+    marine_captured_at = _parse_provider_time(mar.get("_cache_captured_at")) if mar else None
 
     # Open-Meteo returns the `current` block UNSUFFIXED even for multi-model
     # requests (only `hourly` carries per-model suffixes), so read the
@@ -357,7 +454,13 @@ def get_live_conditions_for_spot(
     idx = _hour_index(hourly.get("time") or [], cur_f.get("time"))
     consensus, resolution, calculated_time = _current_consensus(fc, models, profile)
     calculated_instant = provider_time_utc(calculated_time, provider_timezone(fc))
-    canonical_time = calculated_instant.isoformat() if calculated_instant else datetime.now(timezone.utc).isoformat()
+    canonical_time = calculated_instant.isoformat() if calculated_instant else None
+    atmosphere_valid_at = provider_time_utc(cur_f.get("time"), provider_timezone(fc)) or calculated_instant
+    marine_valid_at = provider_time_utc(cur_m.get("time"), provider_timezone(mar)) if mar else None
+    atmosphere_age = age_seconds(atmosphere_valid_at, now=captured_at)
+    marine_age = age_seconds(marine_valid_at, now=datetime.now(timezone.utc))
+    atmosphere_stale = is_stale(atmosphere_age, 0, threshold_seconds=MODEL_NOWCAST_STALE_SECONDS)
+    marine_stale = is_stale(marine_age, 0, threshold_seconds=MODEL_NOWCAST_STALE_SECONDS * 2)
     previous = _wind_consensus_at(hourly, models, max(0, idx - 1), 0.0, profile)
     following = _wind_consensus_at(hourly, models, min(len(hourly.get("time") or []) - 1, idx + 1), 1.0, profile)
     trend = None
@@ -376,7 +479,7 @@ def get_live_conditions_for_spot(
         "spot_id": spot.id,
         "model": primary_model,
         "models": models,
-        "time": canonical_time,
+        "time": canonical_time,  # deprecated: valid time of the headline wind value
         "observation_type": "nowcast",
         "calculated": True,
         "resolution": resolution,
@@ -386,18 +489,65 @@ def get_live_conditions_for_spot(
         "coastal_normal_deg": coastal_normal,
         "availability": {"atmosphere": "available", "solar": "available", "marine": marine_diagnostics["status"]},
         "provenance": {
-            "observation_type": "nowcast", "source": "model", "provider": "Open-Meteo",
-            "model": primary_model, "model_family": "multi-model-consensus",
-            "model_run": None, "issued_at": datetime.now(timezone.utc).isoformat(),
-            "valid_at": canonical_time,
+            "source_type": "model_nowcast", "observation_type": "nowcast",
+            "source": "model", "provider": "Surfwinddata · Open-Meteo",
+            "model": None, "model_family": None,
+            "model_run": None, "model_run_at": None, "model_run_quality": "capture-time-only",
+            "issued_at": None, "observation_at": None,
+            "valid_at": atmosphere_valid_at,
+            "captured_at": captured_at, "calculated_at": captured_at,
             "spot_timezone": provider_timezone(fc),
             "requested_coordinate": {"latitude": lat, "longitude": lon},
             "used_coordinate": marine_diagnostics.get("used_coordinate"),
             "grid_distance_km": marine_diagnostics.get("grid_distance_km"),
             "spatial_resolution_km": None, "temporal_resolution_minutes": 15,
-            "age_seconds": 0, "stale": False, "availability": "available",
+            "age_seconds": atmosphere_age, "stale": atmosphere_stale,
+            "availability": "available_stale" if atmosphere_stale else "available",
             "quality_tier": local.quality_tier if local else "coordinates",
-            "attribution": [],
+            "attribution": [{"provider": "Open-Meteo", "text": "Modelldaten via Open-Meteo"}],
+            "uncertainty": "determined" if wind_band else "not_determined",
+            "data_issues": [] if atmosphere_valid_at else ["valid_at:unknown"],
+        },
+        "sources": {
+            "wind": {
+                "source_type": "model_nowcast", "observation_type": "nowcast", "source": "model",
+                "provider": "Surfwinddata · Open-Meteo", "model_run_quality": "capture-time-only",
+                "valid_at": atmosphere_valid_at, "captured_at": captured_at,
+                "calculated_at": captured_at, "spot_timezone": provider_timezone(fc),
+                "requested_coordinate": {"latitude": lat, "longitude": lon},
+                "temporal_resolution_minutes": 15 if resolution == "15min" else 60,
+                "age_seconds": atmosphere_age, "stale": atmosphere_stale,
+                "availability": "available_stale" if atmosphere_stale else "available",
+                "quality_tier": local.quality_tier if local else "coordinates",
+                "uncertainty": "determined" if wind_band else "not_determined",
+                "data_issues": [] if atmosphere_valid_at else ["valid_at:unknown"],
+            },
+            "air": {
+                "source_type": "model_nowcast", "observation_type": "nowcast", "source": "model",
+                "provider": "Open-Meteo", "model_run_quality": "capture-time-only",
+                "valid_at": atmosphere_valid_at, "captured_at": captured_at,
+                "spot_timezone": provider_timezone(fc),
+                "requested_coordinate": {"latitude": lat, "longitude": lon},
+                "temporal_resolution_minutes": 15 if resolution == "15min" else 60,
+                "age_seconds": atmosphere_age, "stale": atmosphere_stale,
+                "availability": "available_stale" if atmosphere_stale else "available",
+                "quality_tier": "provider_point", "uncertainty": "not_determined",
+                "data_issues": [] if atmosphere_valid_at else ["valid_at:unknown"],
+            },
+            "marine": {
+                "source_type": "model_nowcast", "observation_type": "nowcast", "source": "model",
+                "provider": "Open-Meteo Marine", "model_run_quality": "capture-time-only",
+                "valid_at": marine_valid_at, "captured_at": marine_captured_at or captured_at,
+                "spot_timezone": provider_timezone(mar) if mar else "UTC",
+                "requested_coordinate": {"latitude": lat, "longitude": lon},
+                "used_coordinate": marine_diagnostics.get("used_coordinate"),
+                "grid_distance_km": marine_diagnostics.get("grid_distance_km"),
+                "temporal_resolution_minutes": 60, "age_seconds": marine_age,
+                "stale": marine_stale,
+                "availability": "available_stale" if marine_stale and mar else marine_diagnostics["status"],
+                "quality_tier": "provider_point", "uncertainty": "not_determined",
+                "data_issues": [] if marine_valid_at or not mar else ["valid_at:unknown"],
+            },
         },
         "measurement": None,
         "current": {
@@ -406,7 +556,7 @@ def get_live_conditions_for_spot(
             "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
             "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
             "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
-            "air": cur_f.get("temperature_2m"),
+            "air": valid_number(cur_f.get("temperature_2m"), minimum=-90, maximum=60),
             "sst": cur_m.get("sea_surface_temperature"),
             "swell": cur_m.get("swell_wave_height"),
             "period": cur_m.get("swell_wave_period"),
@@ -416,14 +566,14 @@ def get_live_conditions_for_spot(
             "wave_coastal_classification": coastal_class(cur_m.get("swell_wave_direction"), coastal_normal),
             "waves": {
                 "total_wave": {
-                    "significant_height_m": valid_number(cur_m.get("wave_height"), minimum=0),
-                    "mean_period_s": valid_number(cur_m.get("wave_period"), minimum=0),
+                    "significant_height_m": valid_number(cur_m.get("wave_height"), minimum=0, maximum=30),
+                    "mean_period_s": valid_number(cur_m.get("wave_period"), minimum=0.5, maximum=35),
                     "mean_direction_from_deg": valid_number(cur_m.get("wave_direction"), minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
                 "primary_swell": {
-                    "significant_height_m": valid_number(cur_m.get("swell_wave_height"), minimum=0),
-                    "mean_period_s": valid_number(cur_m.get("swell_wave_period"), minimum=0),
+                    "significant_height_m": valid_number(cur_m.get("swell_wave_height"), minimum=0, maximum=30),
+                    "mean_period_s": valid_number(cur_m.get("swell_wave_period"), minimum=0.5, maximum=35),
                     "mean_direction_from_deg": valid_number(cur_m.get("swell_wave_direction"), minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
@@ -451,24 +601,24 @@ def _index_marine_hours(marine: dict) -> dict[str, dict]:
         by_time[instant.isoformat()] = {
             # Deprecated compatibility fields retain their physical meaning:
             # they contain primary swell only, never total-wave values.
-            "swell": valid_number(swell_height[i] if i < len(swell_height) else None, minimum=0),
-            "period": valid_number(swell_period[i] if i < len(swell_period) else None, minimum=0),
+            "swell": valid_number(swell_height[i] if i < len(swell_height) else None, minimum=0, maximum=30),
+            "period": valid_number(swell_period[i] if i < len(swell_period) else None, minimum=0.5, maximum=35),
             "swell_dir": valid_number(swell_direction[i] if i < len(swell_direction) else None, minimum=0, maximum=359.999),
             "waves": {
                 "total_wave": {
-                    "significant_height_m": valid_number(total_height[i] if i < len(total_height) else None, minimum=0),
-                    "mean_period_s": valid_number(total_period[i] if i < len(total_period) else None, minimum=0),
+                    "significant_height_m": valid_number(total_height[i] if i < len(total_height) else None, minimum=0, maximum=30),
+                    "mean_period_s": valid_number(total_period[i] if i < len(total_period) else None, minimum=0.5, maximum=35),
                     "mean_direction_from_deg": valid_number(total_direction[i] if i < len(total_direction) else None, minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
                 "primary_swell": {
-                    "significant_height_m": valid_number(swell_height[i] if i < len(swell_height) else None, minimum=0),
-                    "mean_period_s": valid_number(swell_period[i] if i < len(swell_period) else None, minimum=0),
+                    "significant_height_m": valid_number(swell_height[i] if i < len(swell_height) else None, minimum=0, maximum=30),
+                    "mean_period_s": valid_number(swell_period[i] if i < len(swell_period) else None, minimum=0.5, maximum=35),
                     "mean_direction_from_deg": valid_number(swell_direction[i] if i < len(swell_direction) else None, minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
             },
-            "sst": valid_number(sst[i] if i < len(sst) else None),
+            "sst": valid_number(sst[i] if i < len(sst) else None, minimum=-5, maximum=45),
         }
     return by_time
 
@@ -519,11 +669,11 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
                 "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
                 "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
                 "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
-                "air": valid_number(air_series[i] if i < len(air_series) else None),
-                "apparent_temperature_c": valid_number(apparent_series[i] if i < len(apparent_series) else None),
-                "precip": valid_number(precip_series[i] if i < len(precip_series) else None, minimum=0),
+                "air": valid_number(air_series[i] if i < len(air_series) else None, minimum=-90, maximum=60),
+                "apparent_temperature_c": valid_number(apparent_series[i] if i < len(apparent_series) else None, minimum=-100, maximum=70),
+                "precip": valid_number(precip_series[i] if i < len(precip_series) else None, minimum=0, maximum=500),
                 "cloud_cover_pct": valid_number(cloud_series[i] if i < len(cloud_series) else None, minimum=0, maximum=100),
-                "pressure_msl_hpa": valid_number(pressure_series[i] if i < len(pressure_series) else None, minimum=0),
+                "pressure_msl_hpa": valid_number(pressure_series[i] if i < len(pressure_series) else None, minimum=800, maximum=1100),
                 "uv_index": valid_number(uv_series[i] if i < len(uv_series) else None, minimum=0),
                 "weather_code": code,
                 "weather_condition": weather_condition(code),
@@ -589,7 +739,11 @@ def _daily_weather(forecast: dict, models: list[str]) -> dict[str, dict]:
     dates = daily.get("time") or []
     primary, multi = (models[0] if models else None), len(models) > 1
     def col(name):
-        return _column(daily, name, primary, multi) if primary else (daily.get(name) or [])
+        # Open-Meteo daily aggregates are commonly unsuffixed even when hourly
+        # model members are suffixed. Prefer the explicit member column but do
+        # not discard a valid public daily field merely because it is shared.
+        member = _column(daily, name, primary, multi) if primary else []
+        return member or (daily.get(name) or [])
     columns = {name: col(name) for name in (
         "temperature_2m_min", "temperature_2m_max", "apparent_temperature_min",
         "apparent_temperature_max", "precipitation_sum", "uv_index_max", "weather_code",
@@ -673,9 +827,12 @@ def get_forecast_series(
     )
     mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache)
     resolved_profile = resolve_weather_profile(getattr(spot, "weather_profile", None))
-    issued_at = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    # Open-Meteo does not reliably expose a run time for every selected model.
+    # The cache capture is the stable sample identity: repeated requests for the
+    # same provider payload therefore hit the verification uniqueness key.
+    issued_at = _forecast_sample_issued_at(fc)
     calibrations = load_calibrations(db, spot.id)
-    store_forecast_samples(db, spot.id, fc, models, issued_at)
+    _store_forecast_samples_once(db, spot.id, fc, models, issued_at, cache)
     hours = _merge_hours(fc, mar, models, resolved_profile, calibrations)
 
     instants = [h["time"] for h in hours]
@@ -709,15 +866,21 @@ def get_forecast_series(
     marine_used = marine_diagnostics.get("used_coordinate")
     for hour in hours:
         hour["provenance"] = {
-            "observation_type": "forecast", "source": "model", "provider": "Open-Meteo",
-            "model": primary_model, "model_family": "multi-model-consensus", "model_run": None,
-            "issued_at": issued_at.isoformat(), "valid_at": hour["time"], "spot_timezone": timezone_name,
+            "source_type": "forecast", "observation_type": "forecast",
+            "source": "model", "provider": "Surfwinddata Forecast · Open-Meteo",
+            "model": None, "model_family": None, "model_run": None,
+            "model_run_at": None, "model_run_quality": "capture-time-only",
+            "issued_at": None, "observation_at": None,
+            "valid_at": hour["time"], "captured_at": generated_at,
+            "calculated_at": generated_at, "spot_timezone": timezone_name,
             "requested_coordinate": {"latitude": lat, "longitude": lon},
             "used_coordinate": marine_used, "grid_distance_km": marine_diagnostics.get("grid_distance_km"),
             "spatial_resolution_km": None, "temporal_resolution_minutes": 60,
-            "age_seconds": max(0, int((generated_at - issued_at).total_seconds())), "stale": False,
+            "age_seconds": 0, "stale": False,
             "availability": Availability.AVAILABLE.value, "quality_tier": resolved_profile.quality_tier if resolved_profile else "coordinates",
-            "attribution": [],
+            "attribution": [{"provider": "Open-Meteo", "text": "Vorhersagedaten via Open-Meteo"}],
+            "uncertainty": "determined" if hour.get("wind_spread") else "not_determined",
+            "data_issues": hour.get("data_issues", []),
         }
 
     return {

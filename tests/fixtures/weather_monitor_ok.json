@@ -1,0 +1,11 @@
+{
+  "liveness": "ok",
+  "readiness": "ok",
+  "schema": "ok",
+  "catalog_version": "ok",
+  "canary_contract": "ok",
+  "weather": {"atmosphere_max_age_seconds": 600, "marine_max_age_seconds": 1200, "stale_ratio": 0},
+  "providers": {"dwd": "fixture-only", "dmi": "fixture-only"},
+  "budget": {"used": 0, "limit": 10000},
+  "forecast_cycle": {"status": "fixture-only"}
+}

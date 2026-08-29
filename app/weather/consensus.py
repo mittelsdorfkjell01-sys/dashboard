@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 from app.weather.catalog import family_for
 from app.weather.vectors import weighted_vector_mean
@@ -31,7 +32,17 @@ class WindConsensus:
 def calculate_wind_consensus(
     members: list[WindMember], lead_hours: float, *, multipliers: dict[str, float] | None = None
 ) -> WindConsensus | None:
-    valid = [m for m in members if m.speed_ms >= 0]
+    # Invalid provider values must not enter vector maths. A single valid model
+    # remains an explicitly low-confidence fallback; it is never a consensus.
+    valid = []
+    for member in members:
+        if not (math.isfinite(member.speed_ms) and 0 <= member.speed_ms <= 75
+                and math.isfinite(member.direction_deg) and 0 <= member.direction_deg < 360):
+            continue
+        gust = member.gust_ms
+        if gust is not None and not (math.isfinite(gust) and 0 <= gust <= 100):
+            gust = None
+        valid.append(WindMember(member.model_id, member.speed_ms, member.direction_deg, gust))
     if not valid:
         return None
     weights = normalized_model_weights(

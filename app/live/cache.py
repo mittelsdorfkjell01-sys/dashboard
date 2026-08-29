@@ -19,6 +19,7 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 
 DEFAULT_TTL_SECONDS = 900  # 15 min
+CACHE_ENVELOPE_VERSION = 1
 
 
 def cache_key(model: str, lat: float, lon: float, var: str) -> str:
@@ -56,15 +57,15 @@ class RedisCache:
         try:
             raw = self._r.get(key)
         except Exception as exc:  # redis.RedisError + socket errors
-            logger.warning("live cache get failed (%s) — treating as miss", exc)
+            logger.warning("live cache get failed (%s) — treating as miss", type(exc).__name__)
             return None
-        return json.loads(raw) if raw is not None else None
+        return _unpack(json.loads(raw)) if raw is not None else None
 
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         try:
-            self._r.set(key, json.dumps(value), ex=ttl)
+            self._r.set(key, json.dumps(_pack(value)), ex=ttl)
         except Exception as exc:  # redis.RedisError + socket errors
-            logger.warning("live cache set failed (%s) — skipping cache", exc)
+            logger.warning("live cache set failed (%s) — skipping cache", type(exc).__name__)
 
 
 class InMemoryCache:
@@ -84,13 +85,45 @@ class InMemoryCache:
             if expires_at <= self._clock():
                 self._store.pop(key, None)
                 return None
-            return value
+            return _unpack(value, expose_capture=key == "weather" or key.startswith(("om:", "weather:", "public:")))
 
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         if ttl <= 0:
             return
         with self._lock:
-            self._store[key] = (self._clock() + ttl, value)
+            self._store[key] = (self._clock() + ttl, _pack(value))
+
+
+def _pack(value: Any) -> dict[str, Any]:
+    from datetime import datetime, timezone
+    return {"version": CACHE_ENVELOPE_VERSION, "captured_at": datetime.now(timezone.utc).isoformat(), "payload": value}
+
+
+def _unpack(value: Any, *, expose_capture: bool = True) -> Any:
+    if not isinstance(value, dict) or value.get("version") != CACHE_ENVELOPE_VERSION or "payload" not in value:
+        return value
+    payload = value["payload"]
+    if expose_capture and isinstance(payload, dict):
+        payload = dict(payload)
+        # Provider fetchers stamp the payload before the first caller sees it.
+        # Preserve that exact instant on later hits so one cache capture maps to
+        # one verification-sample identity.
+        payload.setdefault("_cache_captured_at", value.get("captured_at"))
+    return payload
+
+
+class FailOpenCache:
+    """Shared Redis first, bounded process memory as an outage fallback."""
+    def __init__(self, primary: Cache, fallback: Cache) -> None:
+        self.primary, self.fallback = primary, fallback
+
+    def get(self, key: str) -> Any | None:
+        value = self.primary.get(key)
+        return value if value is not None else self.fallback.get(key)
+
+    def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
+        self.primary.set(key, value, ttl)
+        self.fallback.set(key, value, ttl)
 
 
 _default_cache: Cache | None = None
@@ -99,9 +132,7 @@ _default_cache: Cache | None = None
 def default_cache() -> Cache:
     global _default_cache
     if _default_cache is None:
-        # Product requirement: live weather must never survive a backend
-        # restart. Redis remains available for unrelated application features.
-        _default_cache = InMemoryCache()
+        _default_cache = FailOpenCache(RedisCache(), InMemoryCache())
     return _default_cache
 
 

@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import func, select
 
-from app.media.image_object import CANONICAL_KEYS, is_placeholder
+from app.media.image_object import CANONICAL_KEYS, is_placeholder, upgrade_legacy
 from app.models import Region, Spot
 from app.seed.seed import seed
 
@@ -71,8 +71,10 @@ def test_every_seeded_spot_has_an_image(db):
 def test_seeded_images_use_the_canonical_schema(db):
     spot = db.scalar(select(Spot).where(Spot.slug == "tarifa-los-lances"))
     region = db.scalar(select(Region).where(Region.slug == "tarifa"))
-    assert set(spot.image) == set(CANONICAL_KEYS)
-    assert set(region.image) == set(CANONICAL_KEYS)
+    assert set(upgrade_legacy(spot.image)) == set(CANONICAL_KEYS)
+    assert set(upgrade_legacy(region.image)) == set(CANONICAL_KEYS)
+    assert "hero_reel" not in spot.image
+    assert "delivery" not in region.image
 
 
 def test_seeded_images_are_marked_as_placeholders(db):

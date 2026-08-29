@@ -5,8 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -23,6 +23,17 @@ class WeatherStation(Base, TimestampMixin):
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     distance_km: Mapped[float | None] = mapped_column(Float)
+    elevation_m: Mapped[float | None] = mapped_column(Float)
+    elevation_difference_m: Mapped[float | None] = mapped_column(Float)
+    setting_class: Mapped[str] = mapped_column(String(20), nullable=False, server_default="unknown")
+    exposure_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="unknown")
+    representativeness_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="unreviewed")
+    recommended: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    blocked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    decision_reason: Mapped[str | None] = mapped_column(Text)
+    last_import_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_observation_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
 
     __table_args__ = (
@@ -42,6 +53,10 @@ class WeatherObservation(Base):
     wind_gust_ms: Mapped[float | None] = mapped_column(Float)
     wind_direction_deg: Mapped[float | None] = mapped_column(Float)
     quality: Mapped[int | None] = mapped_column(Integer)
+    provider_quality: Mapped[str | None] = mapped_column(String(80))
+    fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    import_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="accepted")
+    data_issues: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (
@@ -82,6 +97,11 @@ class WeatherModelCalibration(Base, TimestampMixin):
     bias_ms: Mapped[float] = mapped_column(Float, nullable=False)
     mae_ms: Mapped[float] = mapped_column(Float, nullable=False)
     weight_multiplier: Mapped[float] = mapped_column(Float, nullable=False)
+    decision_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="legacy_active")
+    decision_version: Mapped[str | None] = mapped_column(String(32))
+    decision_reason: Mapped[str | None] = mapped_column(Text)
+    decision_metrics: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
         UniqueConstraint("spot_id", "model_id", "lead_bucket", name="uq_weather_calibration"),

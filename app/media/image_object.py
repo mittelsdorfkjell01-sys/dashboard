@@ -2,7 +2,8 @@
 
 Every write path — the admin URL form, the hero upload, the community
 hero-candidate promotion, the seed and (from Sprint 2 on) the media picker —
-builds its image object here, so a stored object always has the same keys.
+builds its image object here. Stored JSON is sparse; readers can use
+``upgrade_legacy`` whenever they need the complete logical shape.
 Before this module each caller assembled its own dict and
 ``manage_spot_image`` truncated the result back to four fields, which silently
 dropped a previously chosen focal point and left nowhere to record where a photo
@@ -57,7 +58,9 @@ RIGHTS_FIELDS = ("url", "source", "license", "credit")
 
 CENTER_FOCAL: dict[str, float] = {"x": 50.0, "y": 50.0}
 
-# Every key a canonical image object carries, in a stable order.
+# Every logical key a canonical image object understands, in a stable order.
+# Stored JSONB is sparse: defaults and nulls are reconstructed by
+# ``upgrade_legacy`` when an editing path needs the full logical shape.
 CANONICAL_KEYS = (
     "url",
     "source",
@@ -89,6 +92,17 @@ CANONICAL_KEYS = (
 )
 
 SOURCE_STATUSES = frozenset({"ok", "dead"})
+
+COMPACT_DEFAULTS = {
+    "provider": "unknown",
+    "delivery": "hosted",
+    "focal": CENTER_FOCAL,
+    "rotation": 0.0,
+    "geo_verified": False,
+    "role": "hero",
+    "hero_reel": False,
+}
+_MISSING = object()
 
 # Seed fixtures point at this unreachable host on purpose, so the frontend
 # renders its designed no-image state instead of a broken <img>. Mirrors
@@ -157,6 +171,15 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def compact_image(image: dict) -> dict:
+    """Drop reconstructable defaults and null values before JSONB storage."""
+    return {
+        key: value
+        for key, value in image.items()
+        if value is not None and COMPACT_DEFAULTS.get(key, _MISSING) != value
+    }
+
+
 def build_image(
     *,
     url: str,
@@ -184,8 +207,8 @@ def build_image(
     """Assemble a canonical image object, or raise :class:`ImageObjectError`.
 
     The four rights fields are mandatory — an image nobody can attribute is
-    unusable regardless of where it came from. Everything else is optional and
-    stored as ``None`` when unknown; nothing is invented.
+    unusable regardless of where it came from. Optional nulls and conservative
+    defaults are omitted from storage; ``upgrade_legacy`` reconstructs them.
     """
     values = {
         "url": _clean(url),
@@ -213,7 +236,7 @@ def build_image(
     if source_status is not None and source_status not in SOURCE_STATUSES:
         raise ImageObjectError(f"unknown source status: {source_status!r}")
 
-    return {
+    return compact_image({
         "url": values["url"],
         "source": values["source"],
         "license": values["license"],
@@ -239,7 +262,7 @@ def build_image(
         "hero_reel": bool(hero_reel),
         "source_status": source_status,
         "source_checked_at": _clean(source_checked_at),
-    }
+    })
 
 
 def upgrade_legacy(image: Any) -> dict | None:

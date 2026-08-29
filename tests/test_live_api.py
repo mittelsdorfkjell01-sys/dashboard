@@ -4,16 +4,19 @@ via FastAPI dependency overrides. DB-gated (skips when the test DB is down)."""
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import select
+from fastapi import Response
+from sqlalchemy import event, select
 
 from app.live.cache import InMemoryCache
 from app.live.client import MAX_FORECAST_DAYS
 from app.live.deps import get_cache, get_om_client
+from app.db.session import engine
 from app.main import app
 from app.models import Spot
 from app.models.forecast_system import ForecastSnapshot
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
+from app.api.spots import get_spot_forecast, get_spot_live
 
 
 def _clear_snapshots(db, *spot_ids) -> None:
@@ -57,6 +60,7 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     resp = client.get(f"/spots/{seeded_spot_id}/live")
     assert resp.status_code == 200
     body = resp.json()
+    assert "s-maxage=300" in resp.headers["cache-control"]
     assert body["model"]
     # Public product boundary: the Surfwinddata result never exposes raw model
     # membership. Model diagnostics remain admin-only.
@@ -69,10 +73,54 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     assert body["current"]["wind_spread"]["n"] >= 3
 
 
+def test_public_live_cache_hit_does_not_touch_database():
+    import uuid
+    spot_id = uuid.uuid4()
+    cache = InMemoryCache()
+    cache.set(f"public:weather-v5:live:{spot_id}", {
+        "spot_id": str(spot_id), "model": "surfwinddata", "time": None, "current": {}
+    }, 60)
+    class NoDb:
+        def __getattr__(self, name):
+            raise AssertionError(f"database touched: {name}")
+    response = Response()
+    result = get_spot_live(
+        spot_id, response=response, db=NoDb(), client=object(), cache=cache
+    )
+    assert result.spot_id == spot_id
+    assert "s-maxage=300" in response.headers["cache-control"]
+
+
+def test_public_forecast_cache_hit_does_not_touch_database():
+    import uuid
+    spot_id = uuid.uuid4()
+    cache = InMemoryCache()
+    cache.set(f"public:weather-v5:forecast:{spot_id}", {
+        "spot_id": str(spot_id), "model": "surfwinddata",
+        "generated_at": "2026-08-26T00:00:00Z", "days": [],
+        "_fresh_until": "2026-08-26T03:00:00Z",
+    }, 60)
+    class NoDb:
+        def __getattr__(self, name):
+            raise AssertionError(f"database touched: {name}")
+    response = Response()
+    result = get_spot_forecast(
+        spot_id,
+        response=response,
+        db=NoDb(),
+        days=10,
+        client=object(),
+        cache=cache,
+    )
+    assert result.spot_id == spot_id
+    assert "s-maxage=1800" in response.headers["cache-control"]
+
+
 def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):
     resp = client.get(f"/spots/{seeded_spot_id}/forecast")
     assert resp.status_code == 200
     days = resp.json()["days"]
+    assert "s-maxage=1800" in resp.headers["cache-control"]
     assert len(days) == MAX_FORECAST_DAYS
     assert days[0]["confidence"] == "hoch"
     assert days[-1]["confidence"] == "niedrig"
@@ -83,6 +131,15 @@ def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):
 def test_forecast_endpoint_rejects_over_horizon(client, seeded_spot_id, fake_live):
     resp = client.get(f"/spots/{seeded_spot_id}/forecast?days=11")
     assert resp.status_code == 422
+
+
+def test_forecast_cache_keeps_full_horizon_after_short_request(
+    client, seeded_spot_id, fake_live
+):
+    short = client.get(f"/spots/{seeded_spot_id}/forecast?days=3")
+    full = client.get(f"/spots/{seeded_spot_id}/forecast?days=10")
+    assert len(short.json()["days"]) == 3
+    assert len(full.json()["days"]) == MAX_FORECAST_DAYS
 
 
 def test_live_endpoint_404_for_unknown_spot(client, fake_live):
@@ -108,11 +165,40 @@ def test_live_batch_returns_all_requested(client, seeded_spot_ids, fake_live):
     resp = client.get("/spots/live", params={"ids": ",".join(want)})
     assert resp.status_code == 200
     body = resp.json()
+    assert "s-maxage=300" in resp.headers["cache-control"]
     assert isinstance(body, list)
     assert {item["spot_id"] for item in body} == set(want)
     for item in body:
         assert item["model"]
         assert "wind" in item["current"]
+
+
+def test_live_batch_does_not_select_wide_spot_json(
+    client, seeded_spot_ids, fake_live
+):
+    statements = []
+
+    def capture(_connection, _cursor, statement, _parameters, _context, _many):
+        if "FROM spots" in statement and "spots.id IN" in statement:
+            statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        response = client.get("/spots/live", params={"ids": seeded_spot_ids[0]})
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+
+    assert response.status_code == 200
+    assert statements
+    selected_columns = statements[0].split("FROM spots", 1)[0]
+    assert "spots.location" in selected_columns
+    for wide_column in (
+        "spots.image",
+        "spots.editorial",
+        "spots.climatology",
+        "spots.overrides",
+    ):
+        assert wide_column not in selected_columns
 
 
 def test_live_batch_precedes_uuid_route(client, seeded_spot_ids, fake_live):

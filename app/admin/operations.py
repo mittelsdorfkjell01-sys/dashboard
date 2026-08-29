@@ -9,11 +9,50 @@ new pipeline.
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from datetime import datetime, timezone
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin.era5_worker import climatology_summary, count_queued
-from app.models import Era5Job, Spot
+from app.models import (
+    Era5Job, ForecastProcessingJob, ForecastSnapshot, Spot,
+    WeatherModelCalibration, WeatherObservation, WeatherStation,
+)
+
+
+def weather_operations(db: Session) -> dict:
+    """DB-only operational evidence; no provider calls and no secret values."""
+    now = datetime.now(timezone.utc)
+    published = db.scalar(select(func.count()).select_from(Spot).where(Spot.status == "published")) or 0
+    covered = db.scalar(select(func.count(func.distinct(ForecastSnapshot.spot_id))).where(ForecastSnapshot.active.is_(True))) or 0
+    approved = db.scalar(select(func.count()).select_from(WeatherStation).where(
+        WeatherStation.active.is_(True), WeatherStation.approved.is_(True),
+        WeatherStation.blocked.is_(False))) or 0
+    latest_observation = db.scalar(select(func.max(WeatherObservation.observed_at)))
+    latest_snapshot = db.scalar(select(func.max(ForecastSnapshot.generated_at)).where(ForecastSnapshot.active.is_(True)))
+    stale_snapshots = db.scalar(select(func.count()).select_from(ForecastSnapshot).where(
+        ForecastSnapshot.active.is_(True), ForecastSnapshot.valid_until < now)) or 0
+    provider_failures = db.scalar(select(func.count()).select_from(ForecastProcessingJob).where(
+        ForecastProcessingJob.status == "failed")) or 0
+    calibrations = dict(db.execute(select(
+        WeatherModelCalibration.decision_status, func.count()
+    ).group_by(WeatherModelCalibration.decision_status)).all())
+    return {
+        "last_successful_forecast_at": latest_snapshot.isoformat() if latest_snapshot else None,
+        "forecast_coverage": {"covered": covered, "published": published,
+                              "ratio": round(covered / published, 4) if published else None},
+        "station_coverage": {"approved_active": approved, "published": published,
+                             "ratio": round(approved / published, 4) if published else None},
+        "oldest_or_latest_evidence": {
+            "latest_observation_at": latest_observation.isoformat() if latest_observation else None,
+            "latest_snapshot_at": latest_snapshot.isoformat() if latest_snapshot else None,
+        },
+        "stale_spots": stale_snapshots,
+        "provider_failures": provider_failures,
+        "budget": {"status": "runtime_only", "used": None},
+        "calibrations": calibrations,
+        "slo": "pending_evidence",
+    }
 
 
 def _error_category(error: str | None) -> str | None:
@@ -92,4 +131,5 @@ def operations_summary(db: Session) -> dict:
             "climatology_cron": "halbjährlich am 1. Februar und 1. August",
             "edge_cache": "Öffentliche Listen/Detail ≤ 10 s; Top-Spots bis 6 h (Edge-Cache).",
         },
+        "weather": weather_operations(db),
     }

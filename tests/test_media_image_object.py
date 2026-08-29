@@ -31,13 +31,13 @@ FULL_RIGHTS = {
 
 # --- build_image -----------------------------------------------------------
 
-def test_build_image_fills_every_canonical_key():
+def test_build_image_stores_only_rights_and_non_default_values():
     image = build_image(**FULL_RIGHTS)
-    assert set(image) == set(CANONICAL_KEYS)
+    assert image == FULL_RIGHTS
 
 
 def test_build_image_defaults_are_conservative():
-    image = build_image(**FULL_RIGHTS)
+    image = upgrade_legacy(build_image(**FULL_RIGHTS))
     assert image["provider"] == "unknown"
     assert image["delivery"] == "hosted"
     assert image["role"] == "hero"
@@ -69,7 +69,9 @@ def test_build_image_rejects_unknown_enums():
 def test_build_image_treats_none_enums_as_unspecified():
     """Callers pass ``{k: payload.get(k) for k in CANONICAL_KEYS}``, so an
     absent enum arrives as None rather than not at all."""
-    image = build_image(**FULL_RIGHTS, provider=None, delivery=None, role=None)
+    image = upgrade_legacy(
+        build_image(**FULL_RIGHTS, provider=None, delivery=None, role=None)
+    )
     assert (image["provider"], image["delivery"], image["role"]) == (
         "unknown", "hosted", "hero",
     )
@@ -78,7 +80,7 @@ def test_build_image_treats_none_enums_as_unspecified():
 def test_source_health_defaults_to_unchecked():
     """None means "never checked" and must stay distinguishable from "alive" —
     the Sprint 6 "Quelle tot" filter depends on that difference."""
-    image = build_image(**FULL_RIGHTS)
+    image = upgrade_legacy(build_image(**FULL_RIGHTS))
     assert image["source_status"] is None
     assert image["source_checked_at"] is None
 
@@ -90,7 +92,7 @@ def test_build_image_rejects_an_unknown_source_status():
 
 def test_build_image_drops_nonsense_dimensions():
     image = build_image(**FULL_RIGHTS, width=0, height="tall")
-    assert image["width"] is None and image["height"] is None
+    assert "width" not in image and "height" not in image
 
 
 # --- focal points ----------------------------------------------------------
@@ -112,13 +114,14 @@ def test_focal_pair_in_zero_to_one_is_scaled_not_stored_raw():
 
 
 def test_missing_focal_is_dead_centre():
-    assert build_image(**FULL_RIGHTS, focal=None)["focal"] == CENTER_FOCAL
+    image = upgrade_legacy(build_image(**FULL_RIGHTS, focal=None))
+    assert image["focal"] == CENTER_FOCAL
 
 
 def test_rotation_is_clamped_and_legacy_images_default_to_level():
     assert normalize_rotation(8.24) == 5.0
     assert normalize_rotation(-2.26) == -2.3
-    assert build_image(**FULL_RIGHTS)["rotation"] == 0.0
+    assert "rotation" not in build_image(**FULL_RIGHTS)
     assert upgrade_legacy(FULL_RIGHTS)["rotation"] == 0.0
 
 

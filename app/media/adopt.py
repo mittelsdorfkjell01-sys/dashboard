@@ -14,9 +14,8 @@ Two delivery paths, decided by the provider and never by the caller:
 * **Everyone else** — the file is copied into our own storage and re-encoded,
   so the hero does not depend on a third party staying up.
 
-Multi-width derivatives and the blur placeholder are deliberately *not* here:
-the repo has single-width re-encoding only, and ``HeroImage``'s srcset path is
-wired to build-time assets. Building that properly is its own piece of work.
+Hosted images are copied, orientation-normalised and stored with deterministic
+responsive derivatives. Hotlinked Unsplash images keep using its CDN resizing.
 """
 
 from __future__ import annotations
@@ -30,16 +29,23 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.media import budget as budget_store
-from app.media import storage
 from app.media.hero import (
     GALLERY_OUT_MAX_WIDTH,
     GALLERY_OUT_QUALITY,
     HERO_OUT_MAX_WIDTH,
     HERO_OUT_QUALITY,
     HeroImageError,
-    reencode_image,
+    PartialImageSetError,
+    reencode_image_set,
+    save_responsive_image,
 )
-from app.media.image_object import build_image, normalize_focal, utc_now_iso
+from app.media.gc import (
+    acquire_image_set_lock,
+    register_media_reference,
+    schedule_media_gc,
+)
+from app.media.image_object import build_image, is_placeholder, normalize_focal, utc_now_iso
+from app.media.lifecycle import demote_published_hero_rows, purge_if_unreferenced
 from app.media.normalize import MediaResult, adoptable, gallery_eligible, hero_eligible
 from app.media.providers import get_provider
 from app.media.providers.base import ProviderError, head_status
@@ -198,7 +204,9 @@ def _check_duplicates(
     return [f"Dieses Foto wird bereits verwendet bei {names}."]
 
 
-def _store_locally(result: MediaResult, *, entity_type: str, entity_id, role: str) -> dict:
+def _store_locally(
+    db: Session, result: MediaResult, *, entity_type: str, entity_id, role: str
+) -> dict:
     """Download, re-encode and store the file; returns the stored url + size."""
     from app.media.providers.base import download_bytes
 
@@ -208,24 +216,39 @@ def _store_locally(result: MediaResult, *, entity_type: str, entity_id, role: st
 
     try:
         data = download_bytes(result.full_url)
-        out, ext, width, height = reencode_image(data, max_width=max_width, quality=quality)
+        encoded = reencode_image_set(data, max_width=max_width, quality=quality)
     except ProviderError as exc:
         raise AdoptError(f"Bild konnte nicht geladen werden: {exc}")
     except HeroImageError as exc:
         raise AdoptError(str(exc))
 
-    key = f"{entity_type}s/{entity_id}/{role}-{uuid.uuid4().hex}.{ext}"
-    url = storage.put(
-        key,
-        out,
-        ext,
-        media_dir=settings.media_dir,
-        url_prefix=settings.media_url_prefix,
-    )
-    return {"url": url, "width": width, "height": height, "delivery": "hosted"}
+    acquire_image_set_lock(db, encoded)
+    try:
+        url = save_responsive_image(
+            None,
+            encoded,
+            media_dir=settings.media_dir,
+            url_prefix=settings.media_url_prefix,
+        )
+    except PartialImageSetError as exc:
+        db.rollback()
+        schedule_media_gc(db, exc.canonical_url)
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    register_media_reference(db, url)
+    return {
+        "url": url,
+        "width": encoded.width,
+        "height": encoded.height,
+        "delivery": "hosted",
+    }
 
 
-def _prepare_file(result: MediaResult, *, entity_type: str, entity_id, role: str) -> dict:
+def _prepare_file(
+    db: Session, result: MediaResult, *, entity_type: str, entity_id, role: str
+) -> dict:
     """Either hotlink (Unsplash) or copy into our storage (everyone else)."""
     if result.delivery == "hotlinked":
         if result.provider == unsplash_module.ADAPTER.name:
@@ -242,7 +265,9 @@ def _prepare_file(result: MediaResult, *, entity_type: str, entity_id, role: str
             "height": result.height,
             "delivery": "hotlinked",
         }
-    return _store_locally(result, entity_type=entity_type, entity_id=entity_id, role=role)
+    return _store_locally(
+        db, result, entity_type=entity_type, entity_id=entity_id, role=role
+    )
 
 
 def _next_position(db: Session, entity_type: str, entity_id) -> int:
@@ -262,6 +287,32 @@ def _gallery_row(
     status: str = "approved",
 ) -> SpotImage:
     """Store an image object as a gallery row for either entity type."""
+    column = (
+        SpotImage.spot_id if entity_type == "spot" else SpotImage.region_id
+    )
+    matches = list(
+        db.scalars(
+            select(SpotImage).where(
+                column == entity_id,
+                SpotImage.url == image["url"],
+                SpotImage.status.in_(("pending", "approved", "published_hero")),
+            )
+        ).all()
+    )
+    if matches:
+        row = next((item for item in matches if item.status == "published_hero"), matches[0])
+        row.kind = "gallery"
+        row.status = status
+        if row.position is None:
+            row.position = _next_position(db, entity_type, entity_id)
+        # Retain one provenance row and retire pre-existing duplicates. Their
+        # metadata stays available for moderation/audit, but only one is live.
+        for duplicate in matches:
+            if duplicate.id != row.id:
+                duplicate.status = "removed"
+                duplicate.position = None
+        return row
+
     # SpotImage.source is VARCHAR(30) — the free-form display origin, but pre-
     # media-picker rows sometimes carried a full URL there. Guard both sides:
     # prefer the machine provider slug (always short and canonical) and, if the
@@ -354,28 +405,51 @@ def adopt(
         # unverified location for a verified one.
         warnings.append("Ortsbezug ungeprüft.")
 
-    stored = _prepare_file(result, entity_type=entity_type, entity_id=entity.id, role=role)
-
-    image = build_image(
-        url=stored["url"],
-        source=result.provider.title(),
-        license=result.license.name,
-        license_url=result.license.url,
-        credit=result.credit.name,
-        credit_url=result.credit.url,
-        provider=result.provider,
-        external_id=result.external_id,
-        source_page=result.source_page,
-        retrieved_at=utc_now_iso(),
-        delivery=stored["delivery"],
-        focal=normalize_focal(focal["x"], focal["y"]) if focal else None,
-        width=stored["width"],
-        height=stored["height"],
-        geo_verified=result.geo_verified,
-        role=role,
-        source_status="ok",
-        source_checked_at=utc_now_iso(),
+    stored = _prepare_file(
+        db, result, entity_type=entity_type, entity_id=entity.id, role=role
     )
+
+    try:
+        image = build_image(
+            url=stored["url"],
+            source=result.provider.title(),
+            license=result.license.name,
+            license_url=result.license.url,
+            credit=result.credit.name,
+            credit_url=result.credit.url,
+            provider=result.provider,
+            external_id=result.external_id,
+            source_page=result.source_page,
+            retrieved_at=utc_now_iso(),
+            delivery=stored["delivery"],
+            focal=normalize_focal(focal["x"], focal["y"]) if focal else None,
+            width=stored["width"],
+            height=stored["height"],
+            geo_verified=result.geo_verified,
+            role=role,
+            source_status="ok",
+            source_checked_at=utc_now_iso(),
+        )
+    except Exception:
+        if stored["delivery"] == "hosted":
+            purge_if_unreferenced(db, stored["url"])
+        raise
+
+    # Serialize the short catalogue swap, but do not hold the row lock during
+    # provider I/O or image encoding. populate_existing ensures a concurrent
+    # promotion that committed while we downloaded becomes our real previous
+    # hero instead of the stale identity-map value loaded above.
+    model = Spot if entity_type == "spot" else Region
+    entity = db.scalar(
+        select(model)
+        .where(model.id == entity.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if entity is None:
+        if stored["delivery"] == "hosted":
+            purge_if_unreferenced(db, stored["url"])
+        raise LookupError(f"unknown {entity_type} {entity_id}")
 
     outcome = AdoptResult(
         entity_type=entity_type, entity_id=entity.id, role=role, warnings=warnings
@@ -383,7 +457,12 @@ def adopt(
 
     if role == "hero":
         previous = entity.image if isinstance(entity.image, dict) else None
-        if previous and previous.get("url") and previous["url"] != image["url"]:
+        if (
+            previous
+            and previous.get("url")
+            and previous["url"] != image["url"]
+            and not is_placeholder(previous)
+        ):
             # The old hero is demoted, not deleted: someone chose it once, and a
             # replacement is not a judgement that it was worthless.
             _gallery_row(
@@ -399,6 +478,9 @@ def adopt(
                     role="gallery",
                 )
             outcome.demoted_hero = True
+        demote_published_hero_rows(
+            db, entity_type, entity.id, keep_url=image["url"]
+        )
         entity.image = image
         outcome.image = image
     else:
@@ -417,7 +499,13 @@ def adopt(
         entity_id=entity.id,
         role=role,
     )
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        if stored["delivery"] == "hosted":
+            purge_if_unreferenced(db, stored["url"])
+        raise
     return outcome
 
 

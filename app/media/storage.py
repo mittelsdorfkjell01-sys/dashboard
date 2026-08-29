@@ -16,10 +16,16 @@ against a real ``BLOB_READ_WRITE_TOKEN`` on a deploy — it is inert in local mo
 from __future__ import annotations
 
 import os
+import re
 import tempfile
+import uuid
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from app.config import get_settings
+
+RESPONSIVE_IMAGE_WIDTHS = (480, 768, 1280, 1920)
+RESPONSIVE_IMAGE_MARKER = "-responsive"
 
 _CONTENT_TYPE = {
     "jpg": "image/jpeg",
@@ -30,6 +36,7 @@ _CONTENT_TYPE = {
 }
 
 _BLOB_API = "https://blob.vercel-storage.com"
+_BLOB_CURRENT_API = "https://vercel.com/api/blob"
 
 
 def put(key: str, data: bytes, ext: str, *, media_dir: str, url_prefix: str) -> str:
@@ -77,7 +84,22 @@ def delete_url(url: str | None, *, media_dir: str, url_prefix: str) -> None:
         return
     settings = get_settings()
     if settings.media_backend == "blob":
-        if url.startswith("https://"):
+        parsed = urlparse(url)
+        configured_base = getattr(settings, "blob_public_base", None)
+        owned = bool(
+            parsed.scheme == "https"
+            and (
+                (
+                    parsed.hostname
+                    and parsed.hostname.endswith(".blob.vercel-storage.com")
+                )
+                or (
+                    configured_base
+                    and url.startswith(f"{configured_base.rstrip('/')}/")
+                )
+            )
+        )
+        if owned:
             _blob_delete_url(url)
         return
 
@@ -96,6 +118,182 @@ def delete_url(url: str | None, *, media_dir: str, url_prefix: str) -> None:
         os.remove(path)
     except FileNotFoundError:
         pass
+
+
+def is_owned_url(url: str | None) -> bool:
+    """Whether ``url`` belongs to the configured local/Blob media backend."""
+    if not url:
+        return False
+    settings = get_settings()
+    parsed = urlparse(url)
+    if settings.media_backend == "blob":
+        configured_base = getattr(settings, "blob_public_base", None)
+        return bool(
+            parsed.scheme == "https"
+            and (
+                (parsed.hostname and parsed.hostname.endswith(".blob.vercel-storage.com"))
+                or (
+                    configured_base
+                    and url.startswith(f"{configured_base.rstrip('/')}/")
+                )
+            )
+        )
+    prefix = f"{settings.media_url_prefix.rstrip('/')}/"
+    return not parsed.scheme and not parsed.netloc and parsed.path.startswith(prefix)
+
+
+def object_exists(url: str) -> bool:
+    """Check an owned object while its lifecycle advisory lock is held."""
+    if not is_owned_url(url):
+        return False
+    settings = get_settings()
+    parsed = urlparse(url)
+    if settings.media_backend == "blob":
+        import httpx
+
+        try:
+            response = httpx.head(url, follow_redirects=True, timeout=15.0)
+            if response.status_code == 404:
+                return False
+            response.raise_for_status()
+            return True
+        except httpx.HTTPError as exc:
+            raise RuntimeError(
+                f"Vercel Blob existence check failed: {type(exc).__name__}: {exc}"
+            ) from exc
+
+    prefix = f"{settings.media_url_prefix.rstrip('/')}/"
+    key = parsed.path[len(prefix):]
+    root = os.path.realpath(settings.media_dir)
+    path = os.path.realpath(os.path.join(root, *key.split("/")))
+    return os.path.commonpath((root, path)) == root and os.path.isfile(path)
+
+
+def responsive_variant_urls(url: str | None) -> list[str]:
+    """Return deterministic derivative URLs for a responsive hosted image.
+
+    Old uploads do not carry the marker and therefore safely return no
+    derivatives. Query strings/fragments are retained for completeness.
+    """
+    if not url:
+        return []
+    parsed = urlparse(url)
+    stem, separator, extension = parsed.path.rpartition(".")
+    if not separator:
+        return []
+    marker_at = stem.rfind(RESPONSIVE_IMAGE_MARKER)
+    if marker_at < 0:
+        return []
+    suffix = stem[marker_at + len(RESPONSIVE_IMAGE_MARKER):]
+    if not suffix:
+        # Legacy sets predate the explicit width token.
+        widths = RESPONSIVE_IMAGE_WIDTHS
+    elif suffix == "-none":
+        widths = ()
+    elif re.fullmatch(r"-(?:[1-9]\d*)(?:_[1-9]\d*)*", suffix):
+        widths = tuple(int(value) for value in suffix[1:].split("_"))
+    else:
+        return []
+    urls: list[str] = []
+    for width in widths:
+        variant_path = f"{stem}-w{width}.{extension}"
+        urls.append(parsed._replace(path=variant_path).geturl())
+    return urls
+
+
+def delete_image_set(url: str | None, *, media_dir: str, url_prefix: str) -> None:
+    """Best-effort removal of a canonical image and all generated variants."""
+    delete_url(url, media_dir=media_dir, url_prefix=url_prefix)
+    for variant_url in responsive_variant_urls(url):
+        delete_url(variant_url, media_dir=media_dir, url_prefix=url_prefix)
+
+
+def canonical_image_url(url: str) -> str:
+    """Map a responsive derivative URL back to its canonical main object."""
+    parsed = urlparse(url)
+    stem, separator, extension = parsed.path.rpartition(".")
+    if not separator or RESPONSIVE_IMAGE_MARKER not in stem:
+        return url
+    canonical_stem = re.sub(r"-w[1-9]\d*$", "", stem)
+    path = f"{canonical_stem}.{extension}"
+    return parsed._replace(path=path).geturl()
+
+
+def delete_candidate_strict(
+    url: str,
+    *,
+    delete_set: bool,
+    media_dir: str,
+    url_prefix: str,
+) -> None:
+    """Delete one queued object/set and surface provider errors for retry."""
+    urls = [url, *responsive_variant_urls(url)] if delete_set else [url]
+    if get_settings().media_backend == "blob":
+        _blob_delete_urls_strict(urls)
+        return
+    for candidate in urls:
+        parsed = urlparse(candidate)
+        prefix = f"{url_prefix.rstrip('/')}/"
+        if parsed.scheme or parsed.netloc or not parsed.path.startswith(prefix):
+            continue
+        key = parsed.path[len(prefix):]
+        root = os.path.realpath(media_dir)
+        path = os.path.realpath(os.path.join(root, *key.split("/")))
+        if os.path.commonpath((root, path)) != root:
+            raise ValueError("media deletion path escaped storage root")
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+
+def _blob_api_headers(token: str) -> dict[str, str]:
+    return {
+        "authorization": f"Bearer {token}",
+        "x-api-version": "11",
+        "x-api-blob-request-id": str(uuid.uuid4()),
+    }
+
+
+def list_blob_objects(
+    *, prefix: str, limit: int, cursor: str | None = None
+) -> dict:
+    """List one official Vercel Blob page without the heavyweight full SDK."""
+    import httpx
+
+    token = get_settings().blob_read_write_token
+    if not token:
+        raise RuntimeError("BLOB_READ_WRITE_TOKEN is not set (media_backend=blob)")
+    params = {"prefix": prefix, "limit": max(1, min(1000, limit))}
+    if cursor:
+        params["cursor"] = cursor
+    response = httpx.get(
+        _BLOB_CURRENT_API,
+        headers=_blob_api_headers(token),
+        params=params,
+        timeout=30.0,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    items = []
+    for blob in payload.get("blobs", []):
+        uploaded = str(blob["uploadedAt"]).replace("Z", "+00:00")
+        uploaded_at = datetime.fromisoformat(uploaded)
+        if uploaded_at.tzinfo is None:
+            uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
+        items.append(
+            {
+                "url": blob["url"],
+                "pathname": blob["pathname"],
+                "size": int(blob["size"]),
+                "uploaded_at": uploaded_at,
+            }
+        )
+    return {
+        "items": items,
+        "cursor": payload.get("cursor"),
+        "has_more": bool(payload.get("hasMore")),
+    }
 
 
 # --- Vercel Blob REST backend ----------------------------------------------
@@ -135,8 +333,6 @@ def _blob_put(key: str, data: bytes, ext: str) -> str:
 
 
 def _blob_delete(key: str) -> None:
-    import httpx
-
     settings = get_settings()
     token = settings.blob_read_write_token
     if not token:
@@ -151,21 +347,34 @@ def _blob_delete(key: str) -> None:
 
 
 def _blob_delete_url(url: str) -> None:
+    try:
+        _blob_delete_urls_strict([url])
+    except Exception:
+        pass
+
+
+def _blob_delete_urls_strict(urls: list[str]) -> None:
     import httpx
 
     token = get_settings().blob_read_write_token
     if not token:
+        raise RuntimeError("BLOB_READ_WRITE_TOKEN is not set (media_backend=blob)")
+    owned = [url for url in dict.fromkeys(urls) if is_owned_url(url)]
+    if not owned:
         return
+    headers = {
+        **_blob_api_headers(token),
+        "content-type": "application/json",
+    }
     try:
         response = httpx.post(
-            f"{_BLOB_API}/delete",
-            headers={
-                "authorization": f"Bearer {token}",
-                "content-type": "application/json",
-            },
-            json={"urls": [url]},
-            timeout=15.0,
+            f"{_BLOB_CURRENT_API}/delete",
+            headers=headers,
+            json={"urls": owned},
+            timeout=30.0,
         )
         response.raise_for_status()
-    except Exception:
-        pass
+    except httpx.HTTPError as exc:
+        raise RuntimeError(
+            f"Vercel Blob delete failed: {type(exc).__name__}: {exc}"
+        ) from exc

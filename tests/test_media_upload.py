@@ -117,7 +117,8 @@ def test_upload_valid_sets_image_record(admin, spot_id):
     img = resp.json()["image"]
     assert img["source"] == "upload" and img["license"] == "own"
     assert img["credit"] == "Jo"
-    assert img["url"].startswith("/media/spots/")
+    assert img["url"].startswith("/media/images/")
+    assert "-responsive-" in img["url"]
 
 
 def test_upload_below_min_accepted_for_admin(admin, spot_id):
@@ -125,7 +126,7 @@ def test_upload_below_min_accepted_for_admin(admin, spot_id):
     # shows a blur warning); the server mirrors that and stores it.
     resp = _upload(admin, spot_id, _img_bytes(1000, 700))
     assert resp.status_code == 200, resp.text
-    assert resp.json()["image"]["url"].startswith("/media/spots/")
+    assert resp.json()["image"]["url"].startswith("/media/images/")
 
 
 def test_upload_portrait_still_rejected(admin, spot_id):

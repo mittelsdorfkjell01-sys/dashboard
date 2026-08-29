@@ -289,6 +289,11 @@ class SpotImage(Base, TimestampMixin):
         Index("ix_image_spot_status", "spot_id", "status"),
         Index("ix_image_region_status", "region_id", "status"),
         Index("ix_image_app_user", "app_user_id"),
+        Index(
+            "ix_image_terminal_retention",
+            "updated_at",
+            postgresql_where=text("status IN ('rejected', 'removed')"),
+        ),
     )
 
 

@@ -56,9 +56,9 @@ def maintain_climatology(
 ) -> dict:
     """Queue stale snapshots and process a bounded daily batch.
 
-    Also sweeps expired media-search cache entries and old budget buckets — a
-    cheap DELETE that rides along on the existing schedule, so the media picker
-    needs no cron of its own.
+    Also sweeps expired media-search cache/budget rows and archives a bounded
+    batch of old terminal image cases, so media maintenance needs no second
+    scheduled endpoint.
     """
     from app.media.budget import sweep_expired
     result = {}
@@ -67,6 +67,37 @@ def maintain_climatology(
     except Exception as exc:  # never let housekeeping fail the climatology run
         db.rollback()
         result["media"] = {"error": f"{type(exc).__name__}: {exc}"}
+    try:
+        from app.media.archive import archive_retired_images
+
+        settings = get_settings()
+        result["media_archive"] = archive_retired_images(
+            db,
+            retention_days=settings.image_archive_retention_days,
+            limit=settings.image_archive_batch_size,
+        )
+    except Exception as exc:
+        db.rollback()
+        result["media_archive"] = {"error": f"{type(exc).__name__}: {exc}"}
+    result["media_gc"] = {}
+    try:
+        from app.media.gc import audit_blob_orphans
+
+        result["media_gc"]["audit"] = audit_blob_orphans(db)
+    except Exception as exc:
+        db.rollback()
+        result["media_gc"]["audit"] = {
+            "error": f"{type(exc).__name__}: {exc}"
+        }
+    try:
+        from app.media.gc import collect_media_garbage
+
+        result["media_gc"]["collect"] = collect_media_garbage(db)
+    except Exception as exc:
+        db.rollback()
+        result["media_gc"]["collect"] = {
+            "error": f"{type(exc).__name__}: {exc}"
+        }
     try:
         from datetime import datetime, timezone
         from app.forecast.publisher import enqueue, run_job

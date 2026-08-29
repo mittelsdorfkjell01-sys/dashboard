@@ -120,32 +120,50 @@ class CoordinateRead(BaseModel):
 class ValueProvenance(BaseModel):
     """Canonical provenance shared by point weather values (weather-v4)."""
 
-    observation_type: ObservationType
+    contract_version: Literal["weather-v5"] = "weather-v5"
+    source_type: Literal["measurement", "model_nowcast", "forecast"]
+    observation_type: ObservationType  # temporary compatibility alias
     source: str
     provider: str
     model: str | None = None
     model_family: str | None = None
-    model_run: datetime | None = None
-    issued_at: datetime
-    valid_at: datetime
+    observation_at: datetime | None = None
+    valid_at: datetime | None = None
+    captured_at: datetime
+    calculated_at: datetime | None = None
+    model_run_at: datetime | None = None
+    model_run_quality: Literal["exact", "provider-reported", "capture-time-only", "unknown"] = "unknown"
+    model_run: datetime | None = None  # deprecated alias
+    issued_at: datetime | None = None  # deprecated; never synthesized as model run
     spot_timezone: str = "UTC"
     requested_coordinate: CoordinateRead
     used_coordinate: CoordinateRead | None = None
     grid_distance_km: float | None = Field(default=None, ge=0)
     spatial_resolution_km: float | None = Field(default=None, gt=0)
     temporal_resolution_minutes: int | None = Field(default=None, gt=0)
-    age_seconds: int = Field(ge=0)
+    age_seconds: int | None = Field(default=None, ge=0)
     stale: bool = False
     availability: AvailabilityStatus = "available"
     quality_tier: str
     attribution: list[dict] = Field(default_factory=list)
+    uncertainty: Literal["determined", "limited", "not_determined"] = "not_determined"
+    data_issues: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def timezone_aware(self):
-        for value in (self.model_run, self.issued_at, self.valid_at):
+        for value in (
+            self.observation_at, self.valid_at, self.captured_at,
+            self.calculated_at, self.model_run_at, self.model_run, self.issued_at,
+        ):
             if value is not None and (value.tzinfo is None or value.utcoffset() is None):
                 raise ValueError("canonical weather timestamps must be timezone-aware")
         return self
+
+
+class CurrentSourceMap(BaseModel):
+    wind: ValueProvenance
+    air: ValueProvenance
+    marine: ValueProvenance
 
 
 class WaveComponentRead(BaseModel):
@@ -181,6 +199,9 @@ class MeasurementRead(BaseModel):
     wind_gust_ms: float | None = Field(default=None, ge=0)
     wind_direction_from_deg: float | None = Field(default=None, ge=0, lt=360)
     quality: int | None = None
+    station_name: str | None = None
+    stale: bool = False
+    provenance: ValueProvenance | None = None
 
     @model_validator(mode="after")
     def aware_observation(self):
@@ -256,6 +277,7 @@ class ForecastHour(BaseModel):
     observation_type: Literal["forecast"] = "forecast"
     waves: WaveComponentsRead | None = None
     provenance: ValueProvenance | None = None
+    sources: CurrentSourceMap | None = None
     coastal_normal_deg: float | None = Field(default=None, ge=0, lt=360)
     coastal_classification: str | None = None
     wave_coastal_classification: str | None = None

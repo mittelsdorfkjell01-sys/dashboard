@@ -354,8 +354,12 @@ def manage_spot_image(
     being cut back to four fields. The rights fields url/source/license/credit
     remain mandatory.
     """
+    from app.media.lifecycle import demote_published_hero_rows
+
     spot = _load(db, spot_id)
-    spot.image = build_image(**{k: image.get(k) for k in CANONICAL_KEYS})
+    next_image = build_image(**{k: image.get(k) for k in CANONICAL_KEYS})
+    demote_published_hero_rows(db, "spot", spot.id, keep_url=next_image["url"])
+    spot.image = next_image
     record_audit(db, spot.id, "image", {"url": spot.image["url"]}, actor)
     db.commit()
     db.refresh(spot)
@@ -556,9 +560,13 @@ def delete_spot(spot_id, *, db: Session, actor: str | None = "admin") -> None:
     """Permanently delete a spot. Dependent rows (ratings, tips, images, ERA5
     jobs, audits, favourites, watches …) are removed by the database's
     ON DELETE CASCADE / SET NULL rules. Irreversible — the caller confirms."""
+    from app.media.lifecycle import collect_entity_urls, purge_entity_urls
+
     spot = _load(db, spot_id)  # raises LookupError if unknown
+    media_urls = collect_entity_urls(db, "spot", spot_id)
     db.delete(spot)
     db.commit()
+    purge_entity_urls(db, media_urls)
 
 
 def set_finish_rank(

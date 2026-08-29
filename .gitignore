@@ -5,6 +5,18 @@ __pycache__/
 .venv*/
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+**/__pycache__/
+
+# Generated compiler/build metadata
+frontend/tsconfig.tsbuildinfo
+frontend/dist/
+
+# Local agent runtime output (instructions/configuration stay trackable)
+.codex-log/
+.codex/*.log
+.codex/*.err.log
+.codex/*-request-review.txt
 
 # Env — never commit real secrets. Only the *.example templates are tracked.
 .env

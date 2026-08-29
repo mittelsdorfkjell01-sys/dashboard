@@ -140,6 +140,16 @@ def test_remove_unknown_image_is_a_lookup_error(db):
         media_gallery.remove(db, uuid.uuid4())
 
 
+def test_removing_the_current_hero_also_clears_the_entity_image(db, spot):
+    row = _gallery_row(db, spot, entity_type="spot")
+    media_gallery.promote_to_hero(db, row.id)
+    media_gallery.remove(db, row.id)
+    db.refresh(spot)
+    db.refresh(row)
+    assert spot.image is None
+    assert row.status == "removed"
+
+
 # --- promotion -----------------------------------------------------------------
 
 def test_promoting_a_gallery_image_becomes_the_hero(db, spot):
@@ -168,6 +178,66 @@ def test_promoting_demotes_the_previous_hero_into_the_gallery(db, spot):
     ).first()
     assert demoted is not None and demoted.kind == "gallery"
     assert spot.image["url"] == row.url
+
+
+def test_promoting_does_not_turn_a_seed_placeholder_into_a_gallery_item(db, spot):
+    from app.media.image_object import placeholder_image
+
+    placeholder = placeholder_image("temporary", kind="spot")
+    spot.image = placeholder
+    db.commit()
+    selected = _gallery_row(db, spot, entity_type="spot")
+
+    media_gallery.promote_to_hero(db, selected.id)
+
+    assert db.scalar(
+        select(SpotImage.id).where(
+            SpotImage.spot_id == spot.id,
+            SpotImage.url == placeholder["url"],
+        )
+    ) is None
+
+
+def test_promoting_reuses_an_existing_row_for_the_outgoing_hero(db, spot):
+    previous = _gallery_row(db, spot, entity_type="spot")
+    spot.image = build_image(
+        url=previous.url,
+        source="unsplash",
+        license="Unsplash License",
+        credit="Old Credit",
+        provider="unsplash",
+        delivery="hotlinked",
+    )
+    db.commit()
+    selected = _gallery_row(db, spot, entity_type="spot")
+
+    media_gallery.promote_to_hero(db, selected.id)
+
+    matching = db.scalars(
+        select(SpotImage).where(
+            SpotImage.spot_id == spot.id,
+            SpotImage.url == previous.url,
+            SpotImage.status.in_(("approved", "published_hero")),
+        )
+    ).all()
+    assert [item.id for item in matching] == [previous.id]
+
+
+def test_repeated_promotions_do_not_duplicate_gallery_rows(db, spot):
+    first = _gallery_row(db, spot, entity_type="spot")
+    second = _gallery_row(db, spot, entity_type="spot")
+    media_gallery.promote_to_hero(db, first.id)
+    media_gallery.promote_to_hero(db, second.id)
+    media_gallery.promote_to_hero(db, first.id)
+
+    rows = db.scalars(
+        select(SpotImage).where(
+            SpotImage.spot_id == spot.id,
+            SpotImage.status.in_(("approved", "published_hero")),
+        )
+    ).all()
+    assert {item.id for item in rows} == {first.id, second.id}
+    assert sum(item.status == "published_hero" for item in rows) == 1
 
 
 def test_promoting_without_a_credit_is_refused(db, spot):

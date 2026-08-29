@@ -17,6 +17,8 @@ EXPECTED_TABLES = {
     "media_usage",
     "media_search_cache",
     "media_provider_budget",
+    "media_garbage_candidates",
+    "media_gc_state",
 }
 
 
@@ -171,8 +173,7 @@ def test_migration_0027_down_and_up(db):
 
 
 def test_migration_0027_upgrades_legacy_image_objects(db):
-    """A four-field image object is padded to the canonical shape, and the
-    values it already had are not touched."""
+    """Legacy values survive normalization and later sparse compaction."""
     import json
     import uuid
     from pathlib import Path
@@ -180,7 +181,7 @@ def test_migration_0027_upgrades_legacy_image_objects(db):
     from alembic import command
     from alembic.config import Config
 
-    from app.media.image_object import CANONICAL_KEYS
+    from app.media.image_object import CANONICAL_KEYS, upgrade_legacy
 
     slug = f"legacy-image-{uuid.uuid4().hex[:8]}"
     region_id = db.execute(text("SELECT id FROM regions LIMIT 1")).scalar()
@@ -220,12 +221,13 @@ def test_migration_0027_upgrades_legacy_image_objects(db):
     image = db.execute(
         text("SELECT image FROM spots WHERE slug = :slug"), {"slug": slug}
     ).scalar()
-    assert set(image) == set(CANONICAL_KEYS)
-    assert image["provider"] == "unknown"
-    assert image["delivery"] == "hosted"
+    logical = upgrade_legacy(image)
+    assert set(logical) == set(CANONICAL_KEYS)
+    assert logical["provider"] == "unknown"
+    assert logical["delivery"] == "hosted"
     assert image["credit"] == "Jo"          # existing values win
     assert image["focal"] == {"x": 20, "y": 80}
-    assert image["license_url"] is None     # unknown stays unknown
+    assert "license_url" not in image       # unknown is reconstructable
 
     db.execute(text("DELETE FROM spots WHERE slug = :slug"), {"slug": slug})
     db.commit()

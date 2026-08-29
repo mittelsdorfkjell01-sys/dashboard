@@ -8,6 +8,8 @@ from app.live.cache import InMemoryCache, cache_key
 from app.live.client import MAX_FORECAST_DAYS
 from app.live.models import AROME, BEST_MATCH, ICON_D2, ICON_EU, select_model
 from app.live.service import (
+    _forecast_sample_issued_at,
+    _store_forecast_samples_once,
     confidence_for_day,
     get_forecast_series,
     get_live_conditions,
@@ -58,11 +60,48 @@ def test_redis_cache_fails_open_when_redis_is_down():
     cache.set("om:x", {"a": 1}, ttl=10)  # swallowed, no raise
 
 
-def test_default_weather_cache_is_volatile_process_memory():
+def test_cache_envelope_preserves_capture_time():
+    cache = InMemoryCache()
+    cache.set("weather", {"value": 1}, ttl=10)
+    hit = cache.get("weather")
+    assert hit["value"] == 1
+    assert hit["_cache_captured_at"].endswith("+00:00")
+
+
+def test_cache_envelope_does_not_replace_provider_capture_time():
+    captured = "2026-08-29T10:15:30.123456+00:00"
+    cache = InMemoryCache()
+    cache.set("weather", {"_cache_captured_at": captured}, ttl=10)
+    assert cache.get("weather")["_cache_captured_at"] == captured
+
+
+def test_forecast_sample_identity_uses_cache_capture_time():
+    captured = "2026-08-29T10:15:30.123456+00:00"
+    assert _forecast_sample_issued_at({"_cache_captured_at": captured}).isoformat() == captured
+
+
+def test_forecast_samples_are_processed_once_per_cache_capture(monkeypatch):
+    calls = []
+
+    def fake_store(db, spot_id, forecast, models, issued_at):
+        calls.append(issued_at)
+        return 12
+
+    monkeypatch.setattr("app.live.service.store_forecast_samples", fake_store)
+    cache = InMemoryCache()
+    raw = {"_cache_captured_at": "2026-08-29T10:15:30+00:00"}
+    issued_at = _forecast_sample_issued_at(raw)
+    spot = make_spot()
+    assert _store_forecast_samples_once(None, spot.id, raw, ["icon"], issued_at, cache) == 12
+    assert _store_forecast_samples_once(None, spot.id, raw, ["icon"], issued_at, cache) == 0
+    assert calls == [issued_at]
+
+
+def test_default_weather_cache_is_redis_first_with_memory_fallback():
     import app.live.cache as cache_module
 
     cache_module._default_cache = None
-    assert isinstance(cache_module.default_cache(), InMemoryCache)
+    assert isinstance(cache_module.default_cache(), cache_module.FailOpenCache)
 
 
 # --- confidence staffing ---------------------------------------------------
@@ -90,10 +129,10 @@ def test_second_call_hits_cache_no_http():
     assert client.forecast_calls == 1
     assert client.marine_calls == 1
 
-    # forecast reuses the same cached forecast+marine entries -> still no calls
+    # The full forecast is intentionally a separate provider/cache path.
     get_forecast_series(spot.id, db=db, client=client, cache=cache)
-    assert client.forecast_calls == 1
-    assert client.marine_calls == 1
+    assert client.forecast_calls == 2
+    assert client.marine_calls == 2
 
 
 def test_live_conditions_shape_and_model():

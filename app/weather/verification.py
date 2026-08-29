@@ -5,14 +5,19 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from statistics import median
+from statistics import mean, median
+import math
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.models import WeatherForecastSample, WeatherModelCalibration, WeatherObservation, WeatherStation
 
-MIN_CALIBRATION_SAMPLES = 30
+# 30 samples can cover only five hours at a ten-minute cadence and is too easy
+# to overfit. Sixty is still deliberately modest for local preparation; an
+# activation additionally needs a chronological holdout improvement.
+MIN_CALIBRATION_SAMPLES = 60
+CALIBRATION_DECISION_VERSION = "holdout-v1"
 
 
 def lead_bucket(hours: float) -> str:
@@ -31,6 +36,99 @@ class CalibrationStats:
     weight_multiplier: float
 
 
+@dataclass(frozen=True)
+class VerificationMetrics:
+    sample_count: int
+    wind_mae_ms: float
+    wind_bias_ms: float
+    direction_mae_deg: float | None
+    gust_mae_ms: float | None
+
+
+@dataclass(frozen=True)
+class CalibrationDecision:
+    approved: bool
+    version: str
+    reason: str
+    training_count: int
+    holdout_count: int
+    baseline_mae_ms: float | None
+    calibrated_mae_ms: float | None
+
+
+@dataclass(frozen=True)
+class BenchmarkMetrics:
+    spot_id: str
+    model_family: str
+    lead_bucket: str
+    candidate: VerificationMetrics
+    single_model: VerificationMetrics | None
+    uncalibrated_consensus: VerificationMetrics | None
+    persistence: VerificationMetrics | None
+
+
+def circular_error_deg(predicted: float, observed: float) -> float:
+    return abs((float(predicted) - float(observed) + 180.0) % 360.0 - 180.0)
+
+
+def verification_metrics(rows: list[dict]) -> VerificationMetrics | None:
+    clean = [row for row in rows if all(math.isfinite(float(row[key])) for key in ("wind_pred", "wind_obs"))]
+    if not clean:
+        return None
+    errors = [float(row["wind_pred"]) - float(row["wind_obs"]) for row in clean]
+    direction = [circular_error_deg(row["direction_pred"], row["direction_obs"])
+                 for row in clean if row.get("direction_pred") is not None and row.get("direction_obs") is not None]
+    gust = [abs(float(row["gust_pred"]) - float(row["gust_obs"]))
+            for row in clean if row.get("gust_pred") is not None and row.get("gust_obs") is not None]
+    return VerificationMetrics(len(clean), round(mean(abs(v) for v in errors), 3), round(mean(errors), 3),
+                               round(mean(direction), 3) if direction else None,
+                               round(mean(gust), 3) if gust else None)
+
+
+def evaluate_calibration_holdout(rows: list[dict], *, holdout_fraction: float = 0.25) -> CalibrationDecision:
+    """Chronological split; approve only a speed improvement without direction regression."""
+    ordered = sorted(rows, key=lambda row: row["valid_at"])
+    split = max(1, int(len(ordered) * (1 - holdout_fraction)))
+    training, holdout = ordered[:split], ordered[split:]
+    if len(training) < MIN_CALIBRATION_SAMPLES or len(holdout) < 20:
+        return CalibrationDecision(False, CALIBRATION_DECISION_VERSION, "insufficient_samples",
+                                   len(training), len(holdout), None, None)
+    baseline = verification_metrics(holdout)
+    calibrated_rows = [{
+        **row,
+        "wind_pred": row["wind_calibrated"],
+        "direction_pred": row.get("direction_calibrated", row.get("direction_pred")),
+    } for row in holdout]
+    calibrated = verification_metrics(calibrated_rows)
+    if baseline is None or calibrated is None:
+        return CalibrationDecision(False, CALIBRATION_DECISION_VERSION, "invalid_holdout", len(training), len(holdout), None, None)
+    direction_regressed = (calibrated.direction_mae_deg is not None and baseline.direction_mae_deg is not None
+                           and calibrated.direction_mae_deg > baseline.direction_mae_deg + 1.0)
+    approved = calibrated.wind_mae_ms < baseline.wind_mae_ms and not direction_regressed
+    reason = "holdout_improved" if approved else ("direction_regressed" if direction_regressed else "holdout_not_improved")
+    return CalibrationDecision(approved, CALIBRATION_DECISION_VERSION, reason, len(training), len(holdout),
+                               baseline.wind_mae_ms, calibrated.wind_mae_ms)
+
+
+def grouped_benchmarks(rows: list[dict]) -> list[BenchmarkMetrics]:
+    """Compare candidate, single-model, raw consensus and persistence by cohort."""
+    grouped: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    for row in rows:
+        key = (str(row["spot_id"]), str(row["model_family"]), lead_bucket(float(row["lead_hours"])))
+        grouped[key].append(row)
+    output = []
+    for (spot_id, family, bucket), values in sorted(grouped.items()):
+        def metrics_for(column: str) -> VerificationMetrics | None:
+            subset = [{**row, "wind_pred": row[column]} for row in values if row.get(column) is not None]
+            return verification_metrics(subset)
+        candidate = metrics_for("wind_pred")
+        if candidate is not None:
+            output.append(BenchmarkMetrics(
+                spot_id, family, bucket, candidate, metrics_for("single_model_pred"),
+                metrics_for("uncalibrated_consensus_pred"), metrics_for("persistence_pred")))
+    return output
+
+
 def calibration_stats(errors: list[float], peer_mae: float | None = None) -> CalibrationStats | None:
     """Robust stats for errors defined as forecast minus observation."""
     clean = [float(value) for value in errors if isinstance(value, (int, float))]
@@ -47,7 +145,9 @@ def load_calibrations(db, spot_id) -> dict[tuple[str, str], WeatherModelCalibrat
     if not hasattr(db, "scalars"):
         return {}
     rows = db.scalars(select(WeatherModelCalibration).where(WeatherModelCalibration.spot_id == spot_id)).all()
-    return {(row.model_id, row.lead_bucket): row for row in rows if row.sample_count >= MIN_CALIBRATION_SAMPLES}
+    return {(row.model_id, row.lead_bucket): row for row in rows
+            if row.sample_count >= MIN_CALIBRATION_SAMPLES
+            and getattr(row, "decision_status", "legacy_active") in {"active", "legacy_active"}}
 
 
 def store_forecast_samples(db, spot_id, raw: dict, models: list[str], issued_at: datetime) -> int:
@@ -117,10 +217,16 @@ def recompute_calibrations(db, *, lookback_days: int = 90) -> int:
                 spot_id=station.spot_id, model_id=model_id, lead_bucket=bucket,
                 sample_count=stats.sample_count, bias_ms=stats.bias_ms, mae_ms=stats.mae_ms,
                 weight_multiplier=stats.weight_multiplier,
+                decision_status="pending_review", decision_version=CALIBRATION_DECISION_VERSION,
+                decision_reason="holdout_evaluation_required",
+                decision_metrics={"training_samples": stats.sample_count},
             ).on_conflict_do_update(
                 constraint="uq_weather_calibration",
                 set_={"sample_count": stats.sample_count, "bias_ms": stats.bias_ms,
                       "mae_ms": stats.mae_ms, "weight_multiplier": stats.weight_multiplier,
+                      "decision_status": "pending_review", "decision_version": CALIBRATION_DECISION_VERSION,
+                      "decision_reason": "holdout_evaluation_required",
+                      "decision_metrics": {"training_samples": stats.sample_count},
                       "updated_at": datetime.now(timezone.utc)},
             )
             db.execute(stmt)

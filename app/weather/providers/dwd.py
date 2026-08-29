@@ -5,26 +5,17 @@ from __future__ import annotations
 import csv
 import io
 import zipfile
-from dataclasses import dataclass
 from datetime import datetime, timezone
 import re
 
 import httpx
-from app.weather.providers.common import ObservationStation
+from app.weather.providers.common import NormalizedObservation, ObservationStation, normalize_observation
 
 DWD_NOW = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/now"
 DWD_STATIONS = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/recent/zehn_min_ff_Beschreibung_Stationen.txt"
 
 
-@dataclass(frozen=True)
-class DwdObservation:
-    observed_at: datetime
-    wind_speed_ms: float
-    wind_direction_deg: float | None
-    quality: int | None
-
-
-def parse_now_zip(payload: bytes) -> list[DwdObservation]:
+def parse_now_zip(payload: bytes, *, station_id: str | None = None, fetched_at=None) -> list[NormalizedObservation]:
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
         name = next((n for n in archive.namelist() if "produkt_zehn_min_ff" in n.lower()), None)
         if name is None:
@@ -40,18 +31,22 @@ def parse_now_zip(payload: bytes) -> list[DwdObservation]:
             observed = datetime.strptime(clean["MESS_DATUM"], "%Y%m%d%H%M").replace(tzinfo=timezone.utc)
             direction_raw = float(clean.get("DD_10", "-999"))
             quality_raw = clean.get("QN", clean.get("QN_3", ""))
-            rows.append(DwdObservation(observed, speed, direction_raw % 360 if direction_raw >= 0 else None,
-                                       int(quality_raw) if quality_raw.lstrip("-").isdigit() else None))
+            sid = station_id or clean.get("STATIONS_ID") or clean.get("STATION_ID") or "unknown"
+            rows.append(normalize_observation(
+                provider="dwd", station_id=sid, observed_at=observed,
+                wind_speed_ms=speed, wind_direction_deg=direction_raw if direction_raw >= 0 else None,
+                wind_gust_ms=None, provider_quality=quality_raw or None, fetched_at=fetched_at,
+            ))
         except (KeyError, ValueError):
             continue
     return rows
 
 
-def fetch_now(station_id: str, *, timeout: float = 15.0) -> list[DwdObservation]:
+def fetch_now(station_id: str, *, timeout: float = 15.0) -> list[NormalizedObservation]:
     station = str(station_id).strip().zfill(5)
     response = httpx.get(f"{DWD_NOW}/10minutenwerte_wind_{station}_now.zip", timeout=timeout)
     response.raise_for_status()
-    return parse_now_zip(response.content)
+    return parse_now_zip(response.content, station_id=station)
 
 
 _STATION_LINE = re.compile(

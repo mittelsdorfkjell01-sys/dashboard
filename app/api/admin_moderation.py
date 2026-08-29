@@ -58,6 +58,17 @@ def review_queue(db: Session = Depends(get_db)) -> dict:
     return moderation.review_queue(db)
 
 
+@router.get("/media/archive/{image_id}")
+def image_archive(image_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    """Retrieve the checksum-verified evidence for an archived image case."""
+    from app.media.archive import archive_view
+
+    result = archive_view(db, image_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Bildarchiv-Eintrag nicht gefunden.")
+    return result
+
+
 # --- submissions -----------------------------------------------------------
 
 @router.post("/submissions/{submission_id}/approve", status_code=201)

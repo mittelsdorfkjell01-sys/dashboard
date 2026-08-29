@@ -1,5 +1,6 @@
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Literal
 
@@ -9,6 +10,8 @@ from sqlalchemy.orm import Session, defer, load_only, noload, selectinload
 
 from app.api._http_cache import (
     set_catalog_version_cache,
+    set_forecast_cache,
+    set_live_cache,
     set_map_catalog_cache,
     set_public_cache,
     set_top_spots_cache,
@@ -19,10 +22,16 @@ from app.live import service as live_service
 from app.live.cache import Cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
+from app.live.public_cache import (
+    get_public_forecast,
+    get_public_live,
+    set_public_forecast,
+    set_public_live,
+)
 from app.live.weather_contract import WEATHER_CONTRACT_VERSION
-from app.models import Spot, WindClimatologyRun
+from app.models import Spot, SpotWeatherProfile, WindClimatologyRun
 from app.names import normalize_name, slugify
-from app.public_catalog import PUBLISHED, get_published_spot
+from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
 from app.scoring import (
@@ -256,6 +265,7 @@ def list_top_spots(
 
 @router.get("/live", response_model=list[LiveConditionsRead], tags=["live"])
 def get_spots_live_batch(
+    response: Response,
     ids: str = Query(..., description="Comma-separated spot UUIDs (max 20)"),
     db: Session = Depends(get_db),
     client: OpenMeteoClient = Depends(get_om_client),
@@ -269,6 +279,7 @@ def get_spots_live_batch(
     batch; duplicates are de-duplicated; the count is capped to keep per-request
     work bounded. Each item carries its ``spot_id`` so the client can map results.
     """
+    set_live_cache(response)
     tokens = [t.strip() for t in ids.split(",") if t.strip()]
     if not tokens:
         return []
@@ -287,12 +298,37 @@ def get_spots_live_batch(
             continue
         parsed.append(spot_id)
 
+    results: dict[uuid.UUID, LiveConditionsRead] = {}
+    missing: list[uuid.UUID] = []
+    for spot_id in parsed:
+        cached = get_public_live(cache, spot_id)
+        if cached is None:
+            missing.append(spot_id)
+            continue
+        try:
+            results[spot_id] = LiveConditionsRead.model_validate(cached)
+        except Exception:
+            logger.warning("discarding invalid public live cache for spot %s", spot_id)
+            missing.append(spot_id)
+
     rows = list(
-        db.scalars(select(Spot).where(Spot.id.in_(parsed), Spot.status == PUBLISHED))
-    )
+        db.scalars(
+            select(Spot)
+            .where(Spot.id.in_(missing), Spot.status == PUBLISHED)
+            .options(
+                load_only(Spot.id, Spot.location, Spot.model_pref, Spot.water_type),
+                selectinload(Spot.weather_profile).load_only(
+                    SpotWeatherProfile.active,
+                    SpotWeatherProfile.timezone,
+                    SpotWeatherProfile.elevation_m,
+                    SpotWeatherProfile.coastal_normal_deg,
+                    SpotWeatherProfile.quality_tier,
+                ),
+            )
+        )
+    ) if missing else []
     by_id = {spot.id: spot for spot in rows}
     ordered = [by_id[spot_id] for spot_id in parsed if spot_id in by_id]
-    results: dict[uuid.UUID, LiveConditionsRead] = {}
     with ThreadPoolExecutor(max_workers=min(4, len(ordered) or 1)) as pool:
         futures = {
             pool.submit(
@@ -308,10 +344,13 @@ def get_spots_live_batch(
                 data = dict(future.result())
                 data["model"] = "surfwinddata"
                 data["models"] = []
-                results[futures[future]] = LiveConditionsRead.model_validate(data)
+                spot_id = futures[future]
+                result = LiveConditionsRead.model_validate(data)
+                results[spot_id] = result
+                set_public_live(cache, spot_id, result.model_dump(mode="json"))
             except Exception:
                 logger.exception("live batch failed for spot %s", futures[future])
-    return [results[spot.id] for spot in ordered if spot.id in results]
+    return [results[spot_id] for spot_id in parsed if spot_id in results]
 
 
 def _published_spot_by_reference(db: Session, reference: str) -> Spot | None:
@@ -431,12 +470,17 @@ def get_wind_climatology_v3(
 @router.get("/{spot_id}/live", response_model=LiveConditionsRead, tags=["live"])
 def get_spot_live(
     spot_id: uuid.UUID,
+    response: Response,
     db: Session = Depends(get_db),
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),
 ) -> LiveConditionsRead:
     """Current conditions for a spot (Open-Meteo, cached). Not persisted."""
-    if get_published_spot(db, spot_id) is None:
+    set_live_cache(response)
+    cached = get_public_live(cache, spot_id)
+    if cached is not None:
+        return LiveConditionsRead.model_validate(cached)
+    if not published_spot_exists(db, spot_id):
         raise HTTPException(status_code=404, detail="Spot not found")
     try:
         data = live_service.get_live_conditions(
@@ -447,19 +491,27 @@ def get_spot_live(
     data = dict(data)
     data["model"] = "surfwinddata"
     data["models"] = []
-    return LiveConditionsRead.model_validate(data)
+    result = LiveConditionsRead.model_validate(data)
+    set_public_live(cache, spot_id, result.model_dump(mode="json"))
+    return result
 
 
 @router.get("/{spot_id}/forecast", response_model=ForecastSeriesRead, tags=["live"])
 def get_spot_forecast(
     spot_id: uuid.UUID,
+    response: Response,
     db: Session = Depends(get_db),
     days: int = Query(default=MAX_FORECAST_DAYS, ge=1, le=MAX_FORECAST_DAYS),
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),
 ) -> ForecastSeriesRead:
     """Surfwinddata 10-day forecast: days 1–5 hourly, days 6–10 trend."""
-    if get_published_spot(db, spot_id) is None:
+    set_forecast_cache(response)
+    cached = get_public_forecast(cache, spot_id)
+    if cached is not None:
+        cached["days"] = list(cached.get("days") or [])[:days]
+        return ForecastSeriesRead.model_validate(cached)
+    if not published_spot_exists(db, spot_id):
         raise HTTPException(status_code=404, detail="Spot not found")
     from app.forecast.publisher import active_snapshot, public_payload
 
@@ -477,10 +529,16 @@ def get_spot_forecast(
                 for index, day in enumerate(snapshot_days)
             )
         ):
-            return ForecastSeriesRead.model_validate(snapshot_data)
+            full_result = ForecastSeriesRead.model_validate(snapshot_data)
+            stored = full_result.model_dump(mode="json")
+            set_public_forecast(
+                cache, spot_id, stored, valid_until=snapshot.valid_until
+            )
+            stored["days"] = stored["days"][:days]
+            return ForecastSeriesRead.model_validate(stored)
     try:
         data = live_service.get_forecast_series(
-            spot_id, days, db=db, client=client, cache=cache
+            spot_id, MAX_FORECAST_DAYS, db=db, client=client, cache=cache
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
@@ -497,7 +555,12 @@ def get_spot_forecast(
             "licence": "CC BY 4.0",
         }
     ]
-    return ForecastSeriesRead.model_validate(data)
+    result = ForecastSeriesRead.model_validate(data)
+    stored = result.model_dump(mode="json")
+    valid_until = datetime.now(timezone.utc) + timedelta(hours=3)
+    set_public_forecast(cache, spot_id, stored, valid_until=valid_until)
+    stored["days"] = stored["days"][:days]
+    return ForecastSeriesRead.model_validate(stored)
 
 
 @router.get("/{spot_id}/badge", tags=["score"])

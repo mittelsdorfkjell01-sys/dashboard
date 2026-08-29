@@ -18,6 +18,15 @@ def get_published_spot(db: Session, spot_id) -> Spot | None:
     )
 
 
+def published_spot_exists(db: Session, spot_id) -> bool:
+    """Check public visibility without transferring a complete spot row."""
+    return db.scalar(
+        select(Spot.id)
+        .where(Spot.id == spot_id, Spot.status == PUBLISHED)
+        .limit(1)
+    ) is not None
+
+
 def get_published_region(db: Session, region_id) -> Region | None:
     return db.scalar(
         select(Region).where(Region.id == region_id, Region.status == PUBLISHED)

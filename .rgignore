@@ -1,0 +1,23 @@
+# Runtime, generated and downloaded content is not part of normal code search.
+data/
+reports/
+backups/
+screens/
+.agents/
+.claude/
+.codex/
+.impeccable/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+frontend/dist/
+frontend/exports/
+frontend/hero-src/
+frontend/tsconfig.tsbuildinfo
+
+# Large delivered media: address an exact path when an image task needs it.
+frontend/public/**/*.jpg
+frontend/public/**/*.jpeg
+frontend/public/**/*.png
+frontend/public/**/*.webp
+frontend/public/**/*.avif

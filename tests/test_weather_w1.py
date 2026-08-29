@@ -27,10 +27,10 @@ def test_dst_axes_are_strict_for_spring_gap_and_repeated_fall_hour():
     assert (fall[2] - fall[1]).total_seconds() == 3600
 
 
-def test_complete_weather_v4_contract_uses_nullable_fields_and_local_dates():
+def test_complete_weather_v5_contract_uses_nullable_fields_and_local_dates():
     spot = make_spot()
     result = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(data_days=10), cache=InMemoryCache())
-    assert result["contract_version"] == "weather-v4"
+    assert result["contract_version"] == "weather-v5"
     assert result["timezone"] == "UTC" and len(result["days"]) == 10
     hour = result["days"][0]["hours"][0]
     assert hour["apparent_temperature_c"] == 17

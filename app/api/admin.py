@@ -44,12 +44,19 @@ from app.media import (
     HERO_MAX_BYTES,
     HERO_OUT_MAX_WIDTH,
     HeroImageError,
-    delete_url,
-    reencode_image,
+    PartialImageSetError,
+    reencode_image_set,
     read_upload_limited,
-    save_hero_image,
+    save_hero_image_set,
+    save_region_hero_image_set,
     validate_hero_image,
 )
+from app.media.gc import (
+    acquire_image_set_lock,
+    register_media_reference,
+    schedule_media_gc,
+)
+from app.media.lifecycle import purge_if_unreferenced
 from app.models import Region, Spot
 from app.schemas import RegionRead, SpotRead, SpotSummary
 from app.schemas.admin import (
@@ -441,14 +448,26 @@ def set_image(
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
 ):
+    existing = db.get(Spot, spot_id)
+    old_url = (
+        existing.image.get("url")
+        if existing is not None and isinstance(existing.image, dict)
+        else None
+    )
     try:
+        next_image = body.to_image()
+        next_image["url"] = register_media_reference(
+            db, next_image["url"], require_exists=True
+        )
         spot = admin_spots.manage_spot_image(
-            spot_id, body.to_image(), db=db, actor=actor
+            spot_id, next_image, db=db, actor=actor
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    if old_url != spot.image.get("url"):
+        purge_if_unreferenced(db, old_url)
     return SpotRead.from_orm_spot(spot)
 
 
@@ -501,19 +520,29 @@ async def upload_image(
         await run_in_threadpool(
             validate_hero_image, data, file.content_type, allow_below_min=True
         )
-        out, ext, width, height = await run_in_threadpool(
-            reencode_image, data, max_width=HERO_OUT_MAX_WIDTH
+        encoded = await run_in_threadpool(
+            reencode_image_set, data, max_width=HERO_OUT_MAX_WIDTH
         )
     except HeroImageError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
     settings = get_settings()
     old_url = (spot.image or {}).get("url") if isinstance(spot.image, dict) else None
-    url = await run_in_threadpool(
-        save_hero_image,
-        spot_id, out, ext,
-        media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
-    )
+    acquire_image_set_lock(db, encoded)
+    try:
+        url = await run_in_threadpool(
+            save_hero_image_set,
+            spot_id, encoded,
+            media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
+        )
+    except PartialImageSetError as exc:
+        db.rollback()
+        schedule_media_gc(db, exc.canonical_url)
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    register_media_reference(db, url)
     try:
         spot = admin_spots.manage_spot_image(
             spot_id,
@@ -526,18 +555,18 @@ async def upload_image(
                 "delivery": "hosted",
                 # Dimensions of the stored derivative, not of the original the
                 # operator picked — those are what the crop actually works with.
-                "width": width,
-                "height": height,
+                "width": encoded.width,
+                "height": encoded.height,
                 "role": "hero",
             },
             db=db, actor=actor,
         )
     except Exception:
         db.rollback()
-        delete_url(url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
+        purge_if_unreferenced(db, url)
         raise
     if old_url != url:
-        delete_url(old_url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
+        purge_if_unreferenced(db, old_url)
     return SpotRead.from_orm_spot(spot)
 
 
@@ -1081,12 +1110,24 @@ def set_region_image(
     region_id: uuid.UUID, body: RegionImageRequest, db: Session = Depends(get_db)
 ):
     """Set the region hero image manually (by URL + credit)."""
+    existing = db.get(Region, region_id)
+    old_url = (
+        existing.image.get("url")
+        if existing is not None and isinstance(existing.image, dict)
+        else None
+    )
     try:
-        region = admin_regions.set_region_image(region_id, body.to_image(), db=db)
+        next_image = body.to_image()
+        next_image["url"] = register_media_reference(
+            db, next_image["url"], require_exists=True
+        )
+        region = admin_regions.set_region_image(region_id, next_image, db=db)
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    if old_url != region.image.get("url"):
+        purge_if_unreferenced(db, old_url)
     return RegionRead.from_orm_region(region)
 
 
@@ -1137,21 +1178,29 @@ async def upload_region_image(
     try:
         data = await read_upload_limited(file, HERO_MAX_BYTES)
         await run_in_threadpool(validate_hero_image, data, file.content_type)
-        out, ext, width, height = await run_in_threadpool(
-            reencode_image, data, max_width=HERO_OUT_MAX_WIDTH
+        encoded = await run_in_threadpool(
+            reencode_image_set, data, max_width=HERO_OUT_MAX_WIDTH
         )
     except HeroImageError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
     settings = get_settings()
-    from app.media import save_region_hero_image
-
     old_url = (region.image or {}).get("url") if isinstance(region.image, dict) else None
-    url = await run_in_threadpool(
-        save_region_hero_image,
-        region_id, out, ext,
-        media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
-    )
+    acquire_image_set_lock(db, encoded)
+    try:
+        url = await run_in_threadpool(
+            save_region_hero_image_set,
+            region_id, encoded,
+            media_dir=settings.media_dir, url_prefix=settings.media_url_prefix,
+        )
+    except PartialImageSetError as exc:
+        db.rollback()
+        schedule_media_gc(db, exc.canonical_url)
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    register_media_reference(db, url)
     try:
         region = admin_regions.set_region_image(
             region_id,
@@ -1162,18 +1211,18 @@ async def upload_region_image(
                 "credit": credit.strip(),
                 "provider": "upload",
                 "delivery": "hosted",
-                "width": width,
-                "height": height,
+                "width": encoded.width,
+                "height": encoded.height,
                 "role": "hero",
             },
             db=db,
         )
     except Exception:
         db.rollback()
-        delete_url(url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
+        purge_if_unreferenced(db, url)
         raise
     if old_url != url:
-        delete_url(old_url, media_dir=settings.media_dir, url_prefix=settings.media_url_prefix)
+        purge_if_unreferenced(db, old_url)
     return RegionRead.from_orm_region(region)
 
 

@@ -9,18 +9,20 @@ them without invoking the Python function or waking Neon — so a first page ope
 window lapses the edge returns the slightly stale copy instantly and refreshes in
 the background, so no visitor ever waits on the cold function.
 
-Only used on the public read path; live/forecast stay uncached (time-sensitive),
-and the /admin* write endpoints never set this.
+Only used on the public read path. Live and forecast use shorter dedicated
+windows, and the /admin* write endpoints never set these headers.
 """
 
 from fastapi import Response
 
-# 10s fresh at the edge, then served stale for up to 5 min while it revalidates
-# in the background. Short enough that an admin editing a spot (focal point,
-# attribution, gallery, publish) sees the change on the public site within
-# ~10s, long enough to still absorb bursty landing-page reads without
-# hammering the origin.
-PUBLIC_CACHE_CONTROL = "public, s-maxage=10, stale-while-revalidate=300"
+# Public catalogue/editorial reads are far more frequent than writes. Keep a
+# short browser cache, a six-hour edge copy and serve that copy for up to a day
+# while Vercel refreshes it. This protects cold/new-device visits from both
+# serverless cold starts and brief database outages, while editorial changes
+# still reach the edge without requiring every visitor to wake Postgres.
+PUBLIC_CACHE_CONTROL = (
+    "public, max-age=300, s-maxage=21600, stale-while-revalidate=86400"
+)
 
 # The featured ranking is deliberately stable for a UTC day. Keep it at the
 # edge for six hours and allow yesterday's result while Vercel refreshes it in
@@ -42,6 +44,16 @@ CATALOG_VERSION_CACHE_CONTROL = (
     "public, max-age=15, s-maxage=60, stale-while-revalidate=60"
 )
 
+# Current conditions may be shared for five minutes. Forecast snapshots are
+# published every three hours; browsers revalidate earlier while the edge can
+# absorb repeated visits for 30 minutes and serve stale during a DB incident.
+LIVE_CACHE_CONTROL = (
+    "public, max-age=60, s-maxage=300, stale-while-revalidate=300"
+)
+FORECAST_CACHE_CONTROL = (
+    "public, max-age=300, s-maxage=1800, stale-while-revalidate=10800"
+)
+
 
 def set_public_cache(response: Response) -> None:
     """Mark ``response`` edge-cacheable for the public near-static reads."""
@@ -61,3 +73,13 @@ def set_map_catalog_cache(response: Response) -> None:
 def set_catalog_version_cache(response: Response) -> None:
     """Briefly edge-cache the public map's inexpensive change token."""
     response.headers["Cache-Control"] = CATALOG_VERSION_CACHE_CONTROL
+
+
+def set_live_cache(response: Response) -> None:
+    """Edge-cache assembled current conditions for five minutes."""
+    response.headers["Cache-Control"] = LIVE_CACHE_CONTROL
+
+
+def set_forecast_cache(response: Response) -> None:
+    """Edge-cache one published forecast without changing its validity."""
+    response.headers["Cache-Control"] = FORECAST_CACHE_CONTROL

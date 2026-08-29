@@ -3,7 +3,6 @@ import os
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
 
 from app.api import (
     account,
@@ -25,9 +24,9 @@ from app.config import get_settings
 from app.csrf import CSRFMiddleware
 from app.safety import RemoteWriteGuardMiddleware
 from app.security_headers import SecurityHeadersMiddleware
+from app.health import check_database, check_redis
 
 settings = get_settings()
-EXPECTED_DB_REVISION = "0040_backfill_image_fields"
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -56,7 +55,7 @@ def _bootstrap_admin_user() -> None:
         finally:
             db.close()
     except Exception as exc:  # never let bootstrap crash startup
-        print(f"[bootstrap] skipped ({type(exc).__name__}: {exc})")
+        print(f"[bootstrap] skipped ({type(exc).__name__})")
 
 
 @app.on_event("startup")
@@ -74,7 +73,7 @@ def _start_featured_warmup() -> None:
             run_in_background(interval=cfg.featured_warmup_interval)
             print("[warmup] featured Top-Spots warm-up thread started")
     except Exception as exc:  # never let the warm-up crash startup
-        print(f"[warmup] skipped ({type(exc).__name__}: {exc})")
+        print(f"[warmup] skipped ({type(exc).__name__})")
 
 
 # Let the browser SPA (Vite dev server, and any configured origins) call the API.
@@ -121,57 +120,58 @@ if settings.enable_admin_api:
     app.include_router(cron.router)
 
 
-def _check_db() -> tuple[bool, bool]:
-    """Check connectivity and that the deployed code matches the DB schema."""
-    try:
-        from app.db.session import engine
-
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-            try:
-                revision = conn.execute(
-                    text("SELECT version_num FROM alembic_version")
-                ).scalar()
-            except Exception:
-                return True, False
-            return True, revision == EXPECTED_DB_REVISION
-    except Exception:
-        return False, False
-
-
-def _check_redis() -> bool:
-    try:
-        import redis
-
-        client = redis.Redis.from_url(
-            settings.redis_url, socket_connect_timeout=1, socket_timeout=1
-        )
-        return bool(client.ping())
-    except Exception:
-        return False
-
-
-@app.get("/health", tags=["meta"])
-def health(response: Response) -> dict[str, str]:
-    """Liveness + dependency readiness with a separate status per dependency.
+def _readiness(response: Response) -> dict[str, object]:
+    """Dependency readiness with a separate status per dependency.
 
     Redis is a non-critical cache: if it is down the API still serves (status
     ``degraded``, HTTP 200) so an uptime check / the proxy does not confuse a
     broken cache with a broken server. A dead DB or mismatched schema is fatal
     and returns HTTP 503.
     """
-    db_ok, schema_ok = _check_db()
-    redis_ok = _check_redis()
-    if db_ok and schema_ok and redis_ok:
+    from app.db.session import engine
+
+    database = check_database(engine)
+    redis_ok, redis_error = check_redis(settings.redis_url)
+    ready = database.db == "ok" and database.schema == "ok"
+    if ready and redis_ok:
         status = "ok"
-    elif db_ok and schema_ok:
+    elif ready:
         status = "degraded"
     else:
         status = "error"
         response.status_code = 503
-    return {
+    payload: dict[str, object] = {
         "status": status,
-        "db": "ok" if db_ok else "down",
-        "schema": "ok" if schema_ok else "outdated",
+        "db": database.db,
+        "schema": database.schema,
         "redis": "ok" if redis_ok else "down",
     }
+    diagnostics = {
+        key: value
+        for key, value in {
+            "db_error": database.db_error,
+            "schema_error": database.schema_error,
+            "redis_error": redis_error,
+        }.items()
+        if value is not None
+    }
+    if diagnostics:
+        payload["diagnostics"] = diagnostics
+    return payload
+
+
+@app.get("/health/live", tags=["meta"])
+def liveness() -> dict[str, str]:
+    """Confirm only that the API process can serve requests."""
+    return {"status": "ok"}
+
+
+@app.get("/health/ready", tags=["meta"])
+def readiness(response: Response) -> dict[str, object]:
+    return _readiness(response)
+
+
+@app.get("/health", tags=["meta"])
+def health(response: Response) -> dict[str, object]:
+    """Backward-compatible readiness response for existing external checks."""
+    return _readiness(response)
