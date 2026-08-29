@@ -71,7 +71,13 @@ test("admin overview is accessible and protects a dirty task dialog", async ({ p
   );
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/admin/spots");
-  await page.getByRole("link", { name: "Übersicht" }).first().click();
+  // At this width the sidebar collapses behind the dashboard menu, so open it
+  // before reaching for the "Übersicht" entry.
+  await page.getByRole("button", { name: "Dashboard-Menü öffnen" }).click();
+  await page
+    .getByRole("navigation", { name: "Dashboard-Navigation" })
+    .getByRole("link", { name: "Übersicht" })
+    .click();
   await expect(page.getByRole("heading", { level: 1, name: "Übersicht" })).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -116,8 +122,9 @@ test("admin overview is accessible and protects a dirty task dialog", async ({ p
   await unsavedDialog.getByRole("button", { name: "Abbrechen" }).click();
   await expect(page).toHaveURL(/\/admin$/);
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("heading", { name: "Aufgabe verwerfen?" })).toBeVisible();
-  await page.getByRole("button", { name: "Verwerfen" }).click();
+  const discardDialog = page.getByRole("dialog", { name: "Aufgabe verwerfen?" });
+  await expect(discardDialog).toBeVisible();
+  await discardDialog.getByRole("button", { name: "Verwerfen" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
