@@ -209,12 +209,6 @@ function V3Panel({
     }
   }, [data, switching]);
 
-  useEffect(() => {
-    const el = scroller.current?.querySelector<HTMLElement>(`[data-week="${currentWeek}"]`);
-    el?.scrollIntoView({ inline: "center", block: "nearest" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const week = data.weeks.find((w) => w.week === selectedWeek) ?? null;
   const monthGroups = groupByMonth(data.weeks);
   const directionSummary = data.direction.selected_mode === "usable" ? "passende Richtung" : "alle Richtungen";
@@ -326,32 +320,115 @@ export function WeekChart({
   if (weeks.length !== 52) {
     return <p role="alert" className="text-sm text-muted">Unerwartete Anzahl Wochen ({weeks.length}) — Darstellung übersprungen.</p>;
   }
+  const selectedIndex = Math.max(0, weeks.findIndex((week) => week.week === selectedWeek));
+  const selected = weeks[selectedIndex];
+  const selectedLabel = selected.reliability_percent == null
+    ? `${formatDateRange(selected)}: keine ausreichende Datenbasis`
+    : `${formatDateRange(selected)}: ${selected.reliability_percent}% Zuverlässigkeit`;
+
+  const selectIndex = (index: number) => {
+    const bounded = Math.min(weeks.length - 1, Math.max(0, index));
+    onSelect(weeks[bounded].week);
+  };
+
   return (
     <div>
-      <div className="flex text-data-caption text-muted">
-        <span>100 %</span>
-        <span className="ml-auto">Chance auf mindestens zwei brauchbare Windtage</span>
+      <div className="flex justify-end text-data-caption text-muted">
+        <span>Chance auf mindestens zwei brauchbare Windtage</span>
       </div>
-      <div ref={scrollerRef} className="mt-1 flex gap-px overflow-x-auto pb-2" role="group" aria-label="52 Wochen Windzuverlässigkeit, Januar bis Dezember">
-        {monthGroups.map((group, monthIndex) => (
-          <div key={monthIndex} className="flex shrink-0 flex-col border-r border-line-soft pr-px last:border-r-0">
-            <div className="flex h-40 items-end gap-px">
-              {group.map((week) => (
-                <WeekBar key={week.week} week={week} isCurrent={week.week === currentWeek} isSelected={week.week === selectedWeek} onSelect={onSelect} />
+      <div className="mt-2 flex gap-2">
+        <div aria-hidden="true" className="flex h-40 w-8 shrink-0 flex-col justify-between text-right text-data-caption leading-none text-muted">
+          {[100, 75, 50, 25, 0].map((value) => <span key={value}>{value}%</span>)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div
+            ref={scrollerRef}
+            role="slider"
+            tabIndex={0}
+            aria-label="52 Wochen Windzuverlässigkeit, Januar bis Dezember"
+            aria-valuemin={1}
+            aria-valuemax={52}
+            aria-valuenow={selected.week}
+            aria-valuetext={selectedLabel}
+            className="relative h-40 cursor-crosshair border-b border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+                event.preventDefault();
+                selectIndex(selectedIndex - 1);
+              } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+                event.preventDefault();
+                selectIndex(selectedIndex + 1);
+              } else if (event.key === "Home") {
+                event.preventDefault();
+                selectIndex(0);
+              } else if (event.key === "End") {
+                event.preventDefault();
+                selectIndex(weeks.length - 1);
+              }
+            }}
+            onClick={(event) => {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              if (bounds.width <= 0) return;
+              const position = Math.min(0.999999, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+              selectIndex(Math.floor(position * weeks.length));
+            }}
+          >
+            {[25, 50, 75].map((value) => (
+              <span key={value} aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-0 border-t border-dashed border-line-soft" style={{ bottom: `${value}%` }} />
+            ))}
+            <div aria-hidden="true" className="relative z-10 flex h-full items-end">
+              {monthGroups.map((group, monthIndex) => (
+                <div
+                  key={monthIndex}
+                  className="flex h-full min-w-0 items-end gap-px border-r border-line-soft pr-px last:border-r-0"
+                  style={{ flexBasis: 0, flexGrow: group.length }}
+                >
+                  {group.map((week) => (
+                    <WeekBar key={week.week} week={week} isCurrent={week.week === currentWeek} isSelected={week.week === selectedWeek} />
+                  ))}
+                </div>
               ))}
             </div>
-            <p className="mt-1 w-full text-center text-data-caption uppercase tracking-wider text-muted">{MONTHS[monthIndex].slice(0, 3)}</p>
           </div>
-        ))}
+          <div aria-hidden="true" className="mt-1 flex">
+            {monthGroups.map((group, monthIndex) => (
+              <span
+                key={MONTHS[monthIndex]}
+                className="min-w-0 text-center text-sz-10 uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider"
+                style={{ flexBasis: 0, flexGrow: group.length }}
+              >
+                {MONTHS[monthIndex].slice(0, 3)}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="flex justify-between text-data-caption text-muted">
-        <span>0 %</span><span>25 %</span><span>50 %</span><span>75 %</span><span>100 %</span>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-data-caption text-muted" aria-label="Legende Windzuverlässigkeit">
+        {[
+          ["bg-reliability-0", "0–29 %"],
+          ["bg-reliability-1", "30–49 %"],
+          ["bg-reliability-2", "50–69 %"],
+          ["bg-reliability-3", "70–100 %"],
+        ].map(([tone, label]) => (
+          <span key={label} className="inline-flex items-center gap-1.5">
+            <span aria-hidden="true" className={`h-2.5 w-2.5 rounded-sm ${tone}`} />
+            {label}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-2.5 w-2.5 border-t border-dashed border-muted" />
+          Keine Daten
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-orange" />
+          Aktuelle Woche
+        </span>
       </div>
     </div>
   );
 }
 
-export function WeekBar({ week, isCurrent, isSelected, onSelect }: { week: WindClimatologyV3Week; isCurrent: boolean; isSelected: boolean; onSelect: (week: number) => void }) {
+export function WeekBar({ week, isCurrent, isSelected }: { week: WindClimatologyV3Week; isCurrent: boolean; isSelected: boolean }) {
   const missing = week.reliability_percent == null;
   const height = missing ? 0 : week.reliability_percent!;
   const band = reliabilityBand(week.reliability_percent);
@@ -361,22 +438,20 @@ export function WeekBar({ week, isCurrent, isSelected, onSelect }: { week: WindC
     : `${dateLabel}: ${week.reliability_percent}% Zuverlässigkeit, ${week.successful_years} von ${week.sample_years} Jahren erfolgreich`;
 
   return (
-    <button
-      type="button"
+    <span
       data-week={week.week}
-      onClick={() => onSelect(week.week)}
-      aria-pressed={isSelected}
       title={label}
-      aria-label={label}
-      className={`group relative flex h-full w-[10px] min-w-[10px] items-end justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-teal sm:w-3 ${isSelected ? "ring-2 ring-teal ring-offset-1" : ""}`}
+      className={`relative flex h-full min-w-0 flex-1 items-end justify-center ${isSelected ? "ring-2 ring-inset ring-teal" : ""}`}
     >
       {isCurrent && <span aria-hidden="true" className="absolute -top-1 h-1 w-1 rounded-full bg-orange" />}
       {missing ? (
-        <span aria-hidden="true" className="mb-0.5 h-[2px] w-full rounded bg-line" />
+        <span aria-hidden="true" className="mb-0.5 w-full border-t border-dashed border-muted" />
+      ) : height === 0 ? (
+        <span aria-hidden="true" className="mb-0.5 h-[2px] w-full rounded bg-reliability-0" />
       ) : (
-        <span aria-hidden="true" className={`w-full rounded-t transition-opacity group-hover:opacity-80 ${BAND_CLASSES[band]}`} style={{ height: `${height}%` }} />
+        <span aria-hidden="true" className={`w-full rounded-t ${BAND_CLASSES[band]}`} style={{ height: `${height}%` }} />
       )}
-    </button>
+    </span>
   );
 }
 

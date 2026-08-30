@@ -30,6 +30,8 @@ function week(index: number, reliability: number | null) {
     sample_years: 19,
     successful_years: reliability == null ? 0 : Math.round((reliability / 100) * 19),
     reliability_percent: reliability,
+    reliability_low_percent: reliability == null ? null : Math.max(0, reliability - 20),
+    reliability_high_percent: reliability == null ? null : Math.min(100, reliability + 20),
     probability_at_least_1_day: reliability,
     probability_at_least_2_days: reliability,
     probability_at_least_3_days: reliability,
@@ -141,7 +143,7 @@ test("selecting a week shows its detail values below the chart", async ({ page }
   const bar = page.locator('[data-week="30"]');
   await bar.click();
   await expect(page.getByText("Wochendetail")).toBeVisible();
-  await expect(page.getByText("70%", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Zuverlässigkeit", { exact: true }).locator("..").getByText("70%", { exact: true })).toBeVisible();
 });
 
 test("a spot without an active V3 run falls back to the V2 climatology view", async ({ page }) => {
@@ -151,13 +153,26 @@ test("a spot without an active V3 run falls back to the V2 climatology view", as
   await expect(page.getByText("Wann ist regelmäßig Wind?")).not.toBeVisible();
 });
 
-test("mobile: chart scrolls horizontally and the page itself never scrolls sideways", async ({ page }) => {
+test("mobile: chart keeps the complete year visible and the page never scrolls sideways", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
   await expect(page.getByText("Wann ist regelmäßig Wind?")).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+test("chart supports keyboard week selection without 52 tab stops", async ({ page }) => {
+  await baseRoutes(page, { v3: "ready" });
+  await page.goto("/spot/test/daten");
+  const chart = page.getByRole("slider", { name: /52 Wochen Windzuverlässigkeit/ });
+  await expect(chart).toBeVisible();
+  await chart.focus();
+  await page.keyboard.press("Home");
+  await expect(chart).toHaveAttribute("aria-valuenow", "1");
+  await page.keyboard.press("ArrowRight");
+  await expect(chart).toHaveAttribute("aria-valuenow", "2");
+  await expect(page.locator('[data-week][tabindex]')).toHaveCount(0);
 });
 
 test("V3 module has no serious/critical accessibility violations", async ({ page }) => {

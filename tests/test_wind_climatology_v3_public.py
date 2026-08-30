@@ -153,6 +153,7 @@ def test_default_window_returns_exactly_52_weeks_and_public_shape(anon_client, d
     assert week_one["week"] == 1
     assert set(week_one) == {
         "week", "date_range", "sample_years", "successful_years", "reliability_percent",
+        "reliability_low_percent", "reliability_high_percent",
         "probability_at_least_1_day", "probability_at_least_2_days", "probability_at_least_3_days",
         "median_usable_days", "median_session_hours", "p25_session_hours", "p75_session_hours",
         "median_longest_session", "quality_status",
@@ -301,3 +302,21 @@ def test_best_season_reports_longest_reliable_run(anon_client, db, v3_spot, monk
     assert season is not None
     assert season["start_week"] == 20
     assert season["end_week"] == 35
+
+
+def test_best_season_wraps_across_december_and_january(anon_client, db, v3_spot, monkeypatch):
+    spot, cell = v3_spot
+    weeks = _default_weeks(reliability=20.0, successful_years=4, quality="limited")
+    for week in weeks[:8] + weeks[48:]:
+        week["reliability_percent"] = 70.0
+        week["successful_years"] = 14
+        week["quality_status"] = "high"
+    _add_active_run(db, spot, cell, variants={(15, 20, "all"): weeks})
+    _enable_public(monkeypatch)
+
+    season = anon_client.get(f"/spots/{spot.id}/wind-climatology-v3").json()["best_season"]
+
+    assert season["start_week"] == 49
+    assert season["end_week"] == 8
+    assert season["start_date"].startswith("12-")
+    assert season["end_date"].startswith("02-")

@@ -15,7 +15,7 @@ from app.era5.solar import daylight_mask
 from app.wind_climatology.v3_direction import canonical_windows, direction_matches
 from app.wind_climatology.v3_time import expected_hours_by_week, seasonal_week, utc_datetime
 
-ALGORITHM_VERSION = "wind-climatology-v3.0"
+ALGORITHM_VERSION = "wind-climatology-v3.1"
 SESSION_HOURS = 3
 SUCCESSFUL_DAYS = 2
 COMPLETENESS_THRESHOLD = 0.95
@@ -101,11 +101,24 @@ def _quality(sample_years: int) -> str:
     return "insufficient"
 
 
+def wilson_interval(successes: int, samples: int, z: float = 1.96) -> tuple[float, float] | None:
+    """95% Wilson score interval for a historical success share, in percent."""
+    if samples <= 0 or successes < 0 or successes > samples:
+        return None
+    share = successes / samples
+    denominator = 1 + z * z / samples
+    centre = (share + z * z / (2 * samples)) / denominator
+    margin = z * np.sqrt(share * (1 - share) / samples + z * z / (4 * samples * samples)) / denominator
+    return round(max(0.0, centre - margin) * 100, 2), round(min(1.0, centre + margin) * 100, 2)
+
+
 def prepare_context(hours: list[Hour], *, start_year: int, end_year: int, timezone_name: str) -> AggregationContext:
     grouped: dict[tuple[int, int], list[Hour]] = defaultdict(list)
     for hour in hours:
         if start_year <= hour.local.year <= end_year:
-            grouped[(hour.local.year, seasonal_week(hour.local.date()))].append(hour)
+            week = seasonal_week(hour.local.date())
+            if week is not None:
+                grouped[(hour.local.year, week)].append(hour)
     expected = {(year, week): count for year in range(start_year, end_year + 1) for week, count in expected_hours_by_week(year, timezone_name).items()}
     return AggregationContext(grouped, expected, start_year, end_year)
 
@@ -141,12 +154,20 @@ def _aggregate_context(context: AggregationContext, *, min_wind_kn: int, max_win
         longest = [row["longest_session"] for row in samples]
         quality = _quality(sample_years)
         reliable = quality != "insufficient"
-        probability = lambda threshold: round(sum(value >= threshold for value in days) / sample_years * 100, 2) if sample_years and reliable else None
+        interval = wilson_interval(successful_years, sample_years) if reliable else None
+
+        def probability(threshold: int) -> float | None:
+            if not sample_years or not reliable:
+                return None
+            return round(sum(value >= threshold for value in days) / sample_years * 100, 2)
+
         weeks.append({
             "week": week,
             "sample_years": sample_years,
             "successful_years": successful_years,
             "reliability_percent": round(successful_years / sample_years * 100, 2) if sample_years and reliable else None,
+            "reliability_low_percent": interval[0] if interval else None,
+            "reliability_high_percent": interval[1] if interval else None,
             "probability_at_least_1_day": probability(1),
             "probability_at_least_2_days": probability(2),
             "probability_at_least_3_days": probability(3),

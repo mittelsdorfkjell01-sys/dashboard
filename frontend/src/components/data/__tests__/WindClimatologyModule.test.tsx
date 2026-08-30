@@ -21,6 +21,8 @@ function week(index: number, overrides: Partial<WindClimatologyV3Week> = {}): Wi
     sample_years: 19,
     successful_years: 10,
     reliability_percent: index === 0 ? 0 : 55,
+    reliability_low_percent: 34,
+    reliability_high_percent: 74,
     probability_at_least_1_day: 80,
     probability_at_least_2_days: 55,
     probability_at_least_3_days: 20,
@@ -83,6 +85,9 @@ describe("WeekChart", () => {
       <WeekChart weeks={weeks52} monthGroups={groupByMonth(weeks52)} currentWeek={1} selectedWeek={2} onSelect={() => undefined} scrollerRef={{ current: null }} />,
     );
     expect((html.match(/data-week=/g) ?? []).length).toBe(52);
+    expect(html).toContain('role="slider"');
+    expect(html).toContain("0–29 %");
+    expect(html).toContain("Aktuelle Woche");
   });
 
   it("flags a payload that does not contain exactly 52 weeks instead of rendering a malformed chart", () => {
@@ -95,21 +100,22 @@ describe("WeekChart", () => {
 });
 
 describe("WeekBar", () => {
-  it("renders a real zero as an invisible (height:0) bar, not as missing data", () => {
-    const html = renderToStaticMarkup(<WeekBar week={week(0, { reliability_percent: 0 })} isCurrent={false} isSelected={false} onSelect={() => undefined} />);
-    expect(html).toContain("height:0%");
-    expect(html).not.toContain("keine ausreichende Datenbasis");
+  it("renders a real zero as a solid baseline, not as missing data", () => {
+    const html = renderToStaticMarkup(<WeekBar week={week(0, { reliability_percent: 0 })} isCurrent={false} isSelected={false} />);
+    expect(html).toContain("bg-reliability-0");
+    expect(html).not.toContain("border-dashed");
   });
 
   it("renders insufficient-quality (null) weeks as a distinct missing-data marker, never as a zero bar", () => {
-    const html = renderToStaticMarkup(<WeekBar week={week(0, { reliability_percent: null, quality_status: "insufficient" })} isCurrent={false} isSelected={false} onSelect={() => undefined} />);
-    expect(html).toContain("keine ausreichende Datenbasis");
-    expect(html).not.toContain("height:0%");
+    const html = renderToStaticMarkup(<WeekBar week={week(0, { reliability_percent: null, quality_status: "insufficient" })} isCurrent={false} isSelected={false} />);
+    expect(html).toContain("border-dashed");
+    expect(html).not.toContain("bg-reliability-0");
   });
 
-  it("marks the selected week via aria-pressed", () => {
-    const html = renderToStaticMarkup(<WeekBar week={week(3)} isCurrent={false} isSelected onSelect={() => undefined} />);
-    expect(html).toContain('aria-pressed="true"');
+  it("marks the selected week without turning every bar into a tab stop", () => {
+    const html = renderToStaticMarkup(<WeekBar week={week(3)} isCurrent={false} isSelected />);
+    expect(html).toContain("ring-inset");
+    expect(html).not.toContain("tabindex");
   });
 });
 

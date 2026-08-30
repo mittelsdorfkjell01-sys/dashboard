@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -7,9 +8,9 @@ import pytest
 
 from app.wind_climatology.v3_artifact import decode_cube, encode_cube
 from app.wind_climatology.v3_direction import canonical_windows, direction_matches
-from app.wind_climatology.v3_engine import Hour, _sessions, aggregate_variant, variant_specs
-from app.wind_climatology.v3_time import expected_hours_by_week, seasonal_week
-from app.wind_climatology.v3_service import _config, _hash, error_category, state_label
+from app.wind_climatology.v3_engine import Hour, _sessions, aggregate_variant, variant_specs, wilson_interval
+from app.wind_climatology.v3_time import expected_hours_by_week, seasonal_week, week_date_range
+from app.wind_climatology.v3_service import _best_season, _config, _hash, error_category, state_label
 
 
 def hour(at: datetime, speed=16.0, direction=0.0, daylight=True) -> Hour:
@@ -88,16 +89,49 @@ def test_dst_uses_real_utc_continuity_without_artificial_gap():
     assert _sessions(rows) == [3]
 
 
-def test_seasonal_week_is_complete_stable_and_ungloothed():
+def test_seasonal_week_windows_are_stable_and_exactly_seven_days():
     for year in (2023, 2024):
         current, seen = date(year, 1, 1), []
         while current.year == year:
             seen.append(seasonal_week(current))
             current += timedelta(days=1)
         assert len(seen) == 365 + (year == 2024)
-        assert set(seen) == set(range(1, 53))
+        assert set(seen) - {None} == set(range(1, 53))
+        assert set(Counter(seen).values()) >= {7}
+        assert all(Counter(seen)[week] == 7 for week in range(1, 53))
+        assert Counter(seen)[None] == 1 + (year == 2024)
     assert seasonal_week(date(2023, 3, 1)) == seasonal_week(date(2024, 3, 1))
-    assert sum(expected_hours_by_week(2024, "Europe/Berlin").values()) == 366 * 24
+    assert seasonal_week(date(2024, 2, 29)) is None
+    assert seasonal_week(date(2023, 3, 4)) == seasonal_week(date(2024, 3, 4))
+    assert all((end - start).days == 6 for start, end in map(week_date_range, range(1, 53)))
+    expected = expected_hours_by_week(2024, "Europe/Berlin")
+    assert set(expected) == set(range(1, 53))
+    assert set(expected.values()) <= {167, 168, 169}
+
+
+def test_reliability_uses_wilson_interval_without_false_precision():
+    assert wilson_interval(10, 20) == (29.93, 70.07)
+    assert wilson_interval(0, 0) is None
+
+
+def test_best_season_wraps_across_new_year():
+    weeks = []
+    for week in range(1, 53):
+        start, end = week_date_range(week)
+        in_wrapped_season = week >= 49 or week <= 8
+        weeks.append(
+            {
+                "week": week,
+                "date_range": {"start": start.isoformat(), "end": end.isoformat()},
+                "reliability_percent": 85 if in_wrapped_season else 40,
+                "successful_years": 17 if in_wrapped_season else 8,
+                "sample_years": 20,
+                "quality_status": "high",
+            }
+        )
+    season = _best_season(weeks)
+    assert season is not None
+    assert (season["start_week"], season["end_week"]) == (49, 8)
 
 
 def test_missing_values_and_hours_reduce_completeness_not_calm_wind():
@@ -114,6 +148,8 @@ def test_fewer_than_fifteen_years_suppresses_reliability():
     result = aggregate_variant(rows, start_year=2006, end_year=2025)
     assert result["weeks"][0]["sample_years"] == 14
     assert result["weeks"][0]["reliability_percent"] is None
+    assert result["weeks"][0]["reliability_low_percent"] is None
+    assert result["weeks"][0]["reliability_high_percent"] is None
     assert result["weeks"][0]["quality_status"] == "insufficient"
 
 

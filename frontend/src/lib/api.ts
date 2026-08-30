@@ -622,6 +622,8 @@ export interface WindClimatologyV3Week {
   sample_years: number;
   successful_years: number;
   reliability_percent: number | null;
+  reliability_low_percent: number | null;
+  reliability_high_percent: number | null;
   probability_at_least_1_day: number | null;
   probability_at_least_2_days: number | null;
   probability_at_least_3_days: number | null;

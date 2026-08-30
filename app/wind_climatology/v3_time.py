@@ -1,29 +1,54 @@
-"""DST-safe local-day and stable 52-seasonal-week helpers for V3."""
+"""DST-safe local-day and comparable seven-day seasonal windows for V3."""
 
 from __future__ import annotations
 
-from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 SEASONAL_WEEK_COUNT = 52
-_LEAP_TEMPLATE_YEAR = 2000
+SEASONAL_WEEK_DAYS = 7
+_TEMPLATE_YEAR = 2001  # Common year: stable month/day anchors after February.
+_TEMPLATE_START = date(_TEMPLATE_YEAR, 1, 1)
 
 
 def seasonal_day_index(value: date) -> int:
-    """Return the date's fixed 0..365 position in a leap-year template.
+    """Return the date's stable common-year position.
 
-    Month/day, rather than the current year's ordinal, is mapped into the fixed
-    leap template.  February 29 owns its own position and never shifts dates in
-    March through December between leap and common years.
+    February 29 shares February 28's position.  Public V3 no longer partitions
+    all 365/366 dates into uneven buckets; it samples 52 comparable seven-day
+    windows instead, so this helper is retained only as a stable seasonal index.
     """
-    return date(_LEAP_TEMPLATE_YEAR, value.month, value.day).timetuple().tm_yday - 1
+    day = 28 if value.month == 2 and value.day == 29 else value.day
+    return (date(_TEMPLATE_YEAR, value.month, day) - _TEMPLATE_START).days
 
 
-def seasonal_week(value: date) -> int:
-    """Map every calendar date to one stable, one-based seasonal week (1..52)."""
-    return min(SEASONAL_WEEK_COUNT, seasonal_day_index(value) * SEASONAL_WEEK_COUNT // 366 + 1)
+@lru_cache
+def _week_bounds() -> dict[int, tuple[date, date]]:
+    """Return 52 non-overlapping, exactly seven-day reference windows.
+
+    The anchors follow the common-year calendar (Jan 1–7, Jan 8–14, …,
+    Dec 24–30).  December 31 and February 29 are deliberately not assigned:
+    omitting a tiny, explicit share is preferable to giving two chart bars an
+    eighth day and a systematically higher chance of satisfying the two-day
+    success rule.
+    """
+    bounds: dict[int, tuple[date, date]] = {}
+    for week in range(1, SEASONAL_WEEK_COUNT + 1):
+        template_start = _TEMPLATE_START + timedelta(days=(week - 1) * SEASONAL_WEEK_DAYS)
+        start = template_start
+        bounds[week] = (start, start + timedelta(days=SEASONAL_WEEK_DAYS - 1))
+    return bounds
+
+
+def seasonal_week(value: date) -> int | None:
+    """Return the comparable V3 window containing ``value``, if represented."""
+    if (value.month, value.day) == (2, 29):
+        return None
+    index = seasonal_day_index(value)
+    if index >= SEASONAL_WEEK_COUNT * SEASONAL_WEEK_DAYS:
+        return None
+    return index // SEASONAL_WEEK_DAYS + 1
 
 
 def utc_datetime(value: str | int | float | datetime) -> datetime:
@@ -43,33 +68,27 @@ def local_datetime(value: str | int | float | datetime, timezone_name: str) -> d
 
 
 def expected_hours_by_week(year: int, timezone_name: str) -> dict[int, int]:
-    """Real UTC hours belonging to each local seasonal week, including DST."""
+    """Real UTC hours in each seven-local-day window, including DST."""
     tz = ZoneInfo(timezone_name)
-    counts = {week: 0 for week in range(1, 53)}
+    counts = {week: 0 for week in range(1, SEASONAL_WEEK_COUNT + 1)}
     current = date(year, 1, 1)
     while current.year == year:
-        following = current + timedelta(days=1)
-        start = datetime.combine(current, datetime.min.time(), tzinfo=tz).astimezone(timezone.utc)
-        end = datetime.combine(following, datetime.min.time(), tzinfo=tz).astimezone(timezone.utc)
-        counts[seasonal_week(current)] += int((end - start).total_seconds() // 3600)
-        current = following
+        week = seasonal_week(current)
+        if week is not None:
+            following = current + timedelta(days=1)
+            start = datetime.combine(current, datetime.min.time(), tzinfo=tz).astimezone(timezone.utc)
+            end = datetime.combine(following, datetime.min.time(), tzinfo=tz).astimezone(timezone.utc)
+            counts[week] += int((end - start).total_seconds() // 3600)
+        current += timedelta(days=1)
     return counts
 
 
-@lru_cache
-def _week_bounds() -> dict[int, tuple[date, date]]:
-    days_by_week: dict[int, list[date]] = defaultdict(list)
-    current = date(_LEAP_TEMPLATE_YEAR, 1, 1)
-    while current.year == _LEAP_TEMPLATE_YEAR:
-        days_by_week[seasonal_week(current)].append(current)
-        current += timedelta(days=1)
-    return {week: (days[0], days[-1]) for week, days in days_by_week.items()}
-
-
 def week_date_range(week: int) -> tuple[date, date]:
-    """Fixed month/day span (year-independent) covered by one seasonal week.
+    """Fixed seven-day month/day span covered by one seasonal chart week.
 
     Single source of truth for the 52-week calendar so the frontend never
     recomputes seasonal boundaries independently.
     """
+    if week not in range(1, SEASONAL_WEEK_COUNT + 1):
+        raise ValueError("seasonal week must be between 1 and 52")
     return _week_bounds()[week]

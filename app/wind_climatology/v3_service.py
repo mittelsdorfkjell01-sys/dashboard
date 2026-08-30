@@ -25,6 +25,7 @@ from app.wind_climatology.v3_engine import (
     build_variant_cube,
     prepare_hours,
     variant_key,
+    wilson_interval,
 )
 from app.wind_climatology.v3_time import week_date_range
 
@@ -278,12 +279,15 @@ def public_enabled(spot_id: uuid.UUID) -> bool:
 
 def _public_week(week: dict) -> dict:
     start, end = week_date_range(week["week"])
+    interval = wilson_interval(week["successful_years"], week["sample_years"])
     return {
         "week": week["week"],
         "date_range": {"start": start.strftime("%m-%d"), "end": end.strftime("%m-%d")},
         "sample_years": week["sample_years"],
         "successful_years": week["successful_years"],
         "reliability_percent": week["reliability_percent"],
+        "reliability_low_percent": week.get("reliability_low_percent", interval[0] if interval else None),
+        "reliability_high_percent": week.get("reliability_high_percent", interval[1] if interval else None),
         "probability_at_least_1_day": week["probability_at_least_1_day"],
         "probability_at_least_2_days": week["probability_at_least_2_days"],
         "probability_at_least_3_days": week["probability_at_least_3_days"],
@@ -297,29 +301,55 @@ def _public_week(week: dict) -> dict:
 
 
 def _best_season(weeks: list[dict]) -> dict | None:
-    """Longest run of consecutive weeks meeting an absolute reliability bar.
+    """Strongest circular run of weeks meeting an absolute reliability bar.
 
     Deliberately an absolute threshold, not "best relative to this spot's own
     weak maximum" — a poor year must not be dressed up as a good season.
     """
-    best: tuple[int, int] | None = None
-    run_start: int | None = None
-    for index, week in enumerate(weeks):
-        qualifies = week["quality_status"] != "insufficient" and (week["reliability_percent"] or 0) >= _BEST_SEASON_RELIABILITY_THRESHOLD
-        if qualifies:
-            if run_start is None:
-                run_start = index
-            continue
-        if run_start is not None:
-            if index - run_start >= _BEST_SEASON_MIN_WEEKS and (best is None or index - run_start > best[1] - best[0] + 1):
-                best = (run_start, index - 1)
-            run_start = None
-    if run_start is not None and len(weeks) - run_start >= _BEST_SEASON_MIN_WEEKS:
-        if best is None or len(weeks) - run_start > best[1] - best[0] + 1:
-            best = (run_start, len(weeks) - 1)
-    if best is None:
+    if not weeks:
         return None
-    start_week, end_week = weeks[best[0]], weeks[best[1]]
+    qualifies = [
+        week["quality_status"] != "insufficient"
+        and (week["reliability_percent"] or 0) >= _BEST_SEASON_RELIABILITY_THRESHOLD
+        for week in weeks
+    ]
+    if not any(qualifies):
+        return None
+    if all(qualifies):
+        candidates = [(0, len(weeks))]
+    else:
+        first_gap = qualifies.index(False)
+        candidates: list[tuple[int, int]] = []
+        run_start: int | None = None
+        run_length = 0
+        for offset in range(1, len(weeks) + 1):
+            index = (first_gap + offset) % len(weeks)
+            if qualifies[index]:
+                if run_start is None:
+                    run_start = index
+                run_length += 1
+            elif run_start is not None:
+                candidates.append((run_start, run_length))
+                run_start, run_length = None, 0
+        if run_start is not None:
+            candidates.append((run_start, run_length))
+
+    candidates = [candidate for candidate in candidates if candidate[1] >= _BEST_SEASON_MIN_WEEKS]
+    if not candidates:
+        return None
+
+    def candidate_score(candidate: tuple[int, int]) -> tuple[float, int]:
+        start, length = candidate
+        selected = [weeks[(start + offset) % len(weeks)] for offset in range(length)]
+        lower_bounds = []
+        for week in selected:
+            interval = wilson_interval(week["successful_years"], week["sample_years"])
+            lower_bounds.append(week.get("reliability_low_percent", interval[0] if interval else 0.0) or 0.0)
+        return sum(lower_bounds) / len(lower_bounds), length
+
+    start_index, length = max(candidates, key=candidate_score)
+    end_index = (start_index + length - 1) % len(weeks)
+    start_week, end_week = weeks[start_index], weeks[end_index]
     return {"start_week": start_week["week"], "end_week": end_week["week"], "start_date": start_week["date_range"]["start"], "end_date": end_week["date_range"]["end"]}
 
 
@@ -346,6 +376,8 @@ def public_variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_win
     result = variant(db, spot_id, min_wind_kn=min_wind_kn, max_wind_kn=max_wind_kn, direction_mode=direction_mode)
     cell = db.scalar(select(WindClimatologyCell).where(WindClimatologyCell.spot_id == spot_id))
     run = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot_id, WindClimatologyV3Run.is_active.is_(True)))
+    if run is None or run.algorithm_version != ALGORITHM_VERSION:
+        raise LookupError("no active V3 run for the current algorithm")
     weeks = [_public_week(week) for week in result["variant"]["weeks"]]
     payload = {
         "status": "ready",
