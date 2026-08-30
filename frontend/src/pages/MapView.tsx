@@ -64,6 +64,10 @@ export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayer = useRef<L.LayerGroup | null>(null);
+  // Keyed cache of live markers (`c:<clusterId>` / `p:<spotId>` → marker + a
+  // signature of its visual state) so a pan/zoom reuses unchanged markers
+  // instead of clearing and rebuilding the whole layer each move.
+  const markerCache = useRef<Map<string, { marker: L.Marker; sig: string }>>(new Map());
   const indexRef = useRef<Supercluster<PublicSpotProperties> | null>(null);
   const popupRef = useRef<L.Popup | null>(null);
   const initialFitDone = useRef(Boolean(parsePublicMapUrl(window.location.search)));
@@ -161,10 +165,25 @@ export default function MapView() {
         maxZoom: 17,
         zoomControl: false,
         attributionControl: true,
+        // Fine zoom snapping keeps fitBounds/cluster easing from clamping to
+        // whole levels; a gentler wheel ratio + debounce turns scroll-zoom from
+        // steppy jumps into a smooth glide.
         zoomSnap: 0.25,
+        wheelPxPerZoomLevel: 120,
+        wheelDebounceTime: 30,
         worldCopyJump: false,
       });
-      L.tileLayer(TILE_URL, { subdomains: "abcd", attribution: TILE_ATTRIBUTION, maxZoom: 20, detectRetina: true }).addTo(map);
+      L.tileLayer(TILE_URL, {
+        subdomains: "abcd",
+        attribution: TILE_ATTRIBUTION,
+        maxZoom: 20,
+        detectRetina: true,
+        // Don't re-request tiles on every intermediate frame of a zoom (avoids
+        // the grey "reload" flash on zoom-out); keep a larger ring of
+        // off-screen tiles so panning reveals cached tiles instead of blanks.
+        updateWhenZooming: false,
+        keepBuffer: 4,
+      }).addTo(map);
     } catch (err) {
       console.error("Public map: failed to construct Leaflet map", err);
       setMapError(true);
@@ -185,6 +204,7 @@ export default function MapView() {
       map.remove();
       mapRef.current = null;
       markersLayer.current = null;
+      markerCache.current.clear();
       popupRef.current = null;
     };
   }, []);
@@ -237,49 +257,77 @@ export default function MapView() {
     const layer = markersLayer.current;
     const index = indexRef.current;
     if (!map || !layer || !index) return;
-    layer.clearLayers();
+    const cache = markerCache.current;
     const b = map.getBounds();
     const clusters = index.getClusters([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], Math.round(map.getZoom())) as ClusterOrPoint[];
+    // Diff the desired feature set against the live markers: keep any whose
+    // visual signature is unchanged, (re)build only what actually differs, and
+    // drop what's no longer in view. Avoids the full clear→rebuild flicker.
+    const alive = new Set<string>();
     for (const feature of clusters) {
       const [lng, lat] = feature.geometry.coordinates;
       const props = feature.properties as Supercluster.ClusterProperties & PublicSpotProperties;
+      const key = props.cluster ? `c:${props.cluster_id}` : `p:${props.spotId}`;
+      let sig: string;
+      let build: () => L.Marker;
       if (props.cluster) {
         const count = props.point_count;
-        const size = count < 10 ? 30 : count < 50 ? 34 : 38;
-        const icon = L.divIcon({ className: "swd-map-cluster-icon", html: `<span class="swd-map-cluster" style="width:${size}px;height:${size}px">${count}</span>`, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
-        const marker = L.marker([lat, lng], { icon, keyboard: true });
-        marker.on("add", () => marker.getElement()?.setAttribute("aria-label", `Cluster mit ${count} Surfspots. Aktivieren zum Vergrößern.`));
-        marker.on("click", async () => {
-          map.stop?.();
-          const token = ++clusterZoomToken.current;
-          const leaves = index.getLeaves(props.cluster_id, Infinity) as Supercluster.PointFeature<PublicSpotProperties>[];
-          if (clusterZoomToken.current !== token) return;
-          const bounds = L.latLngBounds(leaves.map((leaf) => [leaf.geometry.coordinates[1], leaf.geometry.coordinates[0]] as [number, number]));
-          if (!bounds.isValid()) { map.setView([lat, lng], Math.min(CLUSTER_MAX_ZOOM, map.getZoom() + 2), { animate: !reducedMotion() }); return; }
-          map.fitBounds(bounds, { padding: [110, 110], maxZoom: CLUSTER_MAX_ZOOM, animate: !reducedMotion() });
-        });
-        layer.addLayer(marker);
+        // Cluster ids/centroids are per-zoom, so a moved centroid at the same id
+        // must still rebuild — fold rounded position into the signature.
+        sig = `${count}@${lat.toFixed(4)},${lng.toFixed(4)}`;
+        build = () => {
+          const size = count < 10 ? 30 : count < 50 ? 34 : 38;
+          const icon = L.divIcon({ className: "swd-map-cluster-icon", html: `<span class="swd-map-cluster" style="width:${size}px;height:${size}px">${count}</span>`, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+          const marker = L.marker([lat, lng], { icon, keyboard: true });
+          marker.on("add", () => marker.getElement()?.setAttribute("aria-label", `Cluster mit ${count} Surfspots. Aktivieren zum Vergrößern.`));
+          marker.on("click", async () => {
+            map.stop?.();
+            const token = ++clusterZoomToken.current;
+            const leaves = index.getLeaves(props.cluster_id, Infinity) as Supercluster.PointFeature<PublicSpotProperties>[];
+            if (clusterZoomToken.current !== token) return;
+            const bounds = L.latLngBounds(leaves.map((leaf) => [leaf.geometry.coordinates[1], leaf.geometry.coordinates[0]] as [number, number]));
+            if (!bounds.isValid()) { map.setView([lat, lng], Math.min(CLUSTER_MAX_ZOOM, map.getZoom() + 2), { animate: !reducedMotion() }); return; }
+            map.fitBounds(bounds, { padding: [110, 110], maxZoom: CLUSTER_MAX_ZOOM, animate: !reducedMotion() });
+          });
+          return marker;
+        };
       } else {
         const spot = spotById.get(props.spotId);
         if (!spot) continue;
         const selected = props.spotId === selectedId;
         const color = spotDotColor("wind", liveValues.get(props.spotId));
-        const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot" style="background:${color}"></span>`, iconSize: [30, 30], iconAnchor: [15, 15] });
-        const marker = L.marker([lat, lng], { icon, keyboard: true });
-        marker.on("add", () => {
-          const el = marker.getElement();
-          if (!el) return;
-          el.setAttribute("aria-label", `Surfspot ${spot.name}`);
-          el.setAttribute("data-tooltip", spot.name);
-          el.setAttribute("aria-pressed", String(selected));
-        });
-        marker.on("click", () => {
-          setSelectedId(props.spotId);
-          setTilesOpen(false);
-          map.setView([lat, lng], Math.max(map.getZoom(), SINGLE_SPOT_ZOOM), { animate: !reducedMotion() });
-        });
-        layer.addLayer(marker);
+        sig = `${selected ? "s" : ""}:${color}`;
+        build = () => {
+          const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot" style="background:${color}"></span>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+          const marker = L.marker([lat, lng], { icon, keyboard: true });
+          marker.on("add", () => {
+            const el = marker.getElement();
+            if (!el) return;
+            el.setAttribute("aria-label", `Surfspot ${spot.name}`);
+            el.setAttribute("data-tooltip", spot.name);
+            el.setAttribute("aria-pressed", String(selected));
+          });
+          marker.on("click", () => {
+            setSelectedId(props.spotId);
+            setTilesOpen(false);
+            map.setView([lat, lng], Math.max(map.getZoom(), SINGLE_SPOT_ZOOM), { animate: !reducedMotion() });
+          });
+          return marker;
+        };
       }
+      alive.add(key);
+      const existing = cache.get(key);
+      if (existing && existing.sig === sig) continue; // unchanged → leave in place
+      if (existing) layer.removeLayer(existing.marker);
+      const marker = build();
+      layer.addLayer(marker);
+      cache.set(key, { marker, sig });
+    }
+    // Remove markers that dropped out of view / the feature set.
+    for (const [key, entry] of cache) {
+      if (alive.has(key)) continue;
+      layer.removeLayer(entry.marker);
+      cache.delete(key);
     }
   }, [selectedId, spotById, liveValues]);
 
