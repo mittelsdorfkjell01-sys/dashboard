@@ -1,0 +1,25 @@
+/* Scoped dark palette for the spot Daten page. The Figma Daten screen
+   (Frame 67) is a dark weather-instrument surface regardless of the site's
+   light/dark theme, so this redeclares the same tokens as
+   html[data-theme="dark"] on a wrapper element — every Tailwind color utility
+   (bg-page, text-ink, border-line, …) inside then resolves to the dark values.
+   The page ground is pushed a shade past the global dark theme to match the
+   near-black Figma canvas. Kept in its own file (imported by DatenPage) so the
+   Daten rebuild stays isolated from index.css. */
+.daten-dark {
+  --sw-page: #0A0C0E;
+  --sw-band: #14181C;
+  --sw-surface: #12161A;
+  --sw-ink: #F3F0EA;
+  --sw-ink-soft: #C7BFB6;
+  --sw-muted: #8A8F96;
+  --sw-line: #23282E;
+  --sw-line-soft: #1B1F24;
+  --sw-teal: #5FA8C8;
+  --sw-teal-hover: #78B7D2;
+  --sw-orange: #E7883A;
+  --sw-green: #6BA97A;
+  color-scheme: dark;
+  background: var(--sw-page);
+  color: var(--sw-ink);
+}

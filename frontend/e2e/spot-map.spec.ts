@@ -43,27 +43,14 @@ async function mockBackend(page: import("@playwright/test").Page, spot = spotDet
   );
 }
 
-test("spot map renders with real coordinates, mode switch and legend", async ({ page }) => {
+test("spot map renders with real coordinates and legend", async ({ page }) => {
+  // The Daten-page rebuild (Figma Frame 67) shows a static map preview with no
+  // layer mode-switch, so this only asserts the map + legend render.
   await mockBackend(page);
   await page.goto(`/spot/spot-map-test/daten`);
 
-  const modeSwitch = page.getByRole("group", { name: "Kartenmodus" });
-  await expect(modeSwitch.getByRole("button", { name: "Wind", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Wind (kt)")).toBeVisible();
   await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
-
-  // Nowcast badge shown (no forecast hour scrubbed, no station measurement mocked).
-  await expect(page.getByText("Nowcast").first()).toBeVisible();
-});
-
-test("switching to Wellen recolors the legend without a page reload", async ({ page }) => {
-  await mockBackend(page);
-  await page.goto(`/spot/spot-map-test/daten`);
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
-
-  const modeSwitch = page.getByRole("group", { name: "Kartenmodus" });
-  await modeSwitch.getByRole("button", { name: "Wellen", exact: true }).click();
-  await expect(page.getByText("Swell (Primärwelle)")).toBeVisible();
 });
 
 test("a spot without coordinates shows an explanatory state instead of an empty map", async ({ page }) => {

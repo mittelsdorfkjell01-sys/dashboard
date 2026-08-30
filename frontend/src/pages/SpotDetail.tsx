@@ -4,12 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
 import Facilities from "../components/Facilities";
 import SpotTabs from "../components/SpotTabs";
-import TidePanel from "../components/TidePanel";
-import DirectionCompass from "../components/data/DirectionCompass";
-import SunArc from "../components/data/SunArc";
-import SpotDataHeader from "../components/data/SpotDataHeader";
-import LiveRow from "../components/data/LiveRow";
-import TimeScrubber from "../components/data/TimeScrubber";
+import DatenPage from "../components/data/daten/DatenPage";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
@@ -18,7 +13,7 @@ import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotMetaGrid from "../components/SpotMetaGrid";
 import { EditorialHero, SectionBand } from "../components/editorial";
-import { ErrorBanner, EmptyState } from "../components/AsyncStates";
+import { ErrorBanner } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
@@ -26,15 +21,10 @@ import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
-import { SpotDataScopeProvider } from "../state/SpotDataScope";
 import { spotPath } from "../lib/spotRoutes";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
 const LocatorMap = lazy(() => import("../components/LocatorMap"));
-const SpotMap = lazy(() => import("../components/SpotMap"));
-const Meteogram = lazy(() => import("../components/data/Meteogram"));
-const WeatherDetailsTable = lazy(() => import("../components/data/WeatherDetailsTable"));
-const WindClimatologyModule = lazy(() => import("../components/data/WindClimatologyModule"));
 
 export default function SpotDetail() {
   const { spotName } = useParams();
@@ -199,7 +189,13 @@ export default function SpotDetail() {
             touch targets. The established compact desktop composition starts
             at lg; the full-bleed hero remains outside this wrapper. */}
         <div className="[zoom:1] lg:[zoom:0.85]">
-        {tabs.length > 0 && <SpotTabs tabs={tabs} />}
+        {/* On the Daten tab the shared tab strip is scoped dark so it meets the
+            dark instrument page below with no light seam (Figma Frame 67). */}
+        {tabs.length > 0 && (
+          <div className={activeTab === "daten" ? "daten-dark" : undefined}>
+            <SpotTabs tabs={tabs} />
+          </div>
+        )}
 
         <AnimatePresence initial={false} custom={tabDirection}>
           {activeTab === "info" && (
@@ -346,76 +342,13 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            <SpotDataScopeProvider forecast={forecast}>
-              <div className="mx-auto max-w-[1727px] px-4 pb-8 pt-10 sm:px-8">
-                <SpotDataHeader spot={spot} />
-
-                <section aria-label="Forecast-Information" className="mt-3 flex flex-wrap items-center justify-between gap-3 border-y border-line py-3 text-label text-muted">
-                  <div><strong className="font-semibold text-ink">{forecast?.product ?? "Surfwinddata Forecast"}</strong>{forecast?.updated_at && <span> · Aktualisiert {new Date(forecast.updated_at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}</span>}{forecast?.stale && <span> · Letzter verfügbarer Stand</span>}</div>
-                  {forecast?.attributions && forecast.attributions.length > 0 && <details className="relative"><summary className="cursor-pointer font-medium text-teal">Quellen</summary><div className="mt-2 max-w-prose space-y-1 sm:absolute sm:right-0 sm:z-10 sm:w-80 sm:rounded-lg sm:border sm:border-line sm:bg-surface sm:p-3">{forecast.attributions.map((source) => <p key={source.provider}><a className="underline" href={source.url} target="_blank" rel="noreferrer">{source.text}</a> · {source.licence}</p>)}</div></details>}
-                </section>
-
-                <div className="mt-6 border-t border-line">
-                  <LiveRow live={live} />
-                </div>
-
-                <div className="mt-6 border-t border-line">
-                  <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Meteogramm · 10 Tage</p></div>
-                  {forecastLoading && <div className="h-[280px] animate-pulse bg-band" />}
-                  {!forecastLoading && forecast && forecast.days.length > 0 && (
-                    <Suspense fallback={<DataModulePlaceholder height="h-[280px]" />}>
-                      <Meteogram forecast={forecast} />
-                    </Suspense>
-                  )}
-                  {!forecastLoading && (!forecast || forecast.days.length === 0) && <EmptyState message={forecastError ? "Vorhersage momentan nicht verfügbar." : "Keine Vorhersage-Daten."} />}
-                </div>
-
-                <div className="mt-6 border-t border-line">
-                  <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wind + Welle · Karte</p></div>
-                <Suspense fallback={<DataModulePlaceholder height="h-[420px]" />}>
-                  <SpotMap
-                    spot={spot}
-                    live={live}
-                    forecast={forecast}
-                    zoom={spot.mapView?.zoom}
-                    mapCenter={spot.mapView?.center}
-                    showModeSwitch
-                    rounded={false}
-                  />
-                </Suspense>
-                  <TimeScrubber />
-                </div>
-
-                <div className="mt-6 grid grid-cols-1 gap-6 border-t border-line pt-6 md:grid-cols-2 md:gap-x-10 md:gap-y-0">
-                  <div className="md:border-r md:border-line md:pr-10">
-                    <DirectionCompass live={live} />
-                  </div>
-                  {spot.coords && (
-                    <div className="mt-6 md:mt-0">
-                      <SunArc lat={spot.coords[0]} lng={spot.coords[1]} />
-                    </div>
-                  )}
-                  <div className="mt-6 md:col-span-2 md:mt-6 md:border-t md:border-line md:pt-6">
-                    <TidePanel spotId={spotId!} />
-                  </div>
-                </div>
-
-                {forecast && forecast.days.length > 0 && (
-                  <div className="mt-6 border-t border-line">
-                    <div className="px-4 py-2.5"><p className="text-caption font-medium uppercase tracking-wider text-muted">Wetter-Details · 10 Tage</p></div>
-                    <Suspense fallback={<DataModulePlaceholder height="h-64" />}>
-                      <WeatherDetailsTable forecast={forecast} />
-                    </Suspense>
-                  </div>
-                )}
-
-                <div className="mt-6 border-t border-line">
-                    <Suspense fallback={<DataModulePlaceholder height="h-40" />}>
-                      <WindClimatologyModule spot={spot} />
-                    </Suspense>
-                  </div>
-              </div>
-            </SpotDataScopeProvider>
+            <DatenPage
+              spot={spot}
+              live={live}
+              forecast={forecast}
+              forecastLoading={forecastLoading}
+              forecastError={forecastError}
+            />
             </motion.div>
           )}
         </AnimatePresence>
@@ -429,10 +362,6 @@ export default function SpotDetail() {
 
 function MapPlaceholder() {
   return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse bg-band sm:h-[440px] lg:h-full" />;
-}
-
-function DataModulePlaceholder({ height }: { height: string }) {
-  return <div role="status" aria-label="Datenansicht wird geladen" className={`${height} animate-pulse bg-band`} />;
 }
 
 class LocatorMapBoundary extends Component<
