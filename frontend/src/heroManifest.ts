@@ -7,8 +7,25 @@ export interface HeroVariant {
 
 export const heroManifest: Record<string, HeroVariant> =
 {
+  "hero-laboe": {
+    "widths": [
+      640,
+      960,
+      1280,
+      1920,
+      2250
+    ],
+    "formats": [
+      "avif",
+      "webp",
+      "jpg"
+    ],
+    "fallback": "/hero-laboe-1920.jpg"
+  },
   "hero-surfwind": {
     "widths": [
+      640,
+      960,
       1280,
       1920,
       2560,
@@ -21,21 +38,10 @@ export const heroManifest: Record<string, HeroVariant> =
     ],
     "fallback": "/hero-surfwind-1920.jpg"
   },
-  "hero-laboe": {
-    "widths": [
-      1280,
-      1920,
-      2250
-    ],
-    "formats": [
-      "avif",
-      "webp",
-      "jpg"
-    ],
-    "fallback": "/hero-laboe-1920.jpg"
-  },
   "hero-welle": {
     "widths": [
+      640,
+      960,
       1280,
       1920,
       2560,
@@ -50,6 +56,8 @@ export const heroManifest: Record<string, HeroVariant> =
   },
   "hero-wind": {
     "widths": [
+      640,
+      960,
       1280,
       1920,
       2560,

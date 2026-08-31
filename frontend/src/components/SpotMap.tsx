@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "../map.css";
 import type { LiveConditionsRead } from "../lib/api";
 import type { NormalizedForecastSeries } from "../lib/forecastNormalization";
 import { useOptionalSpotDataScope } from "../state/SpotDataScope";
@@ -77,7 +79,7 @@ export default function SpotMap({
         keyboard: false,
         boxZoom: false,
       });
-      L.tileLayer(TILE_URL, { subdomains: "abcd", attribution: TILE_ATTRIBUTION, maxZoom: 20, detectRetina: true }).addTo(map);
+      L.tileLayer(TILE_URL, { subdomains: "a", attribution: TILE_ATTRIBUTION, maxZoom: 20, detectRetina: false }).addTo(map);
     } catch (err) {
       console.error("Spot map: failed to construct Leaflet map", err);
       setMapError(true);

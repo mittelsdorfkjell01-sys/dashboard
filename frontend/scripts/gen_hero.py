@@ -32,11 +32,11 @@ OUT_DIR = HERE.parent / "public"
 MANIFEST = HERE.parent / "src" / "heroManifest.ts"
 
 MAX_WIDTH = 3840
-LADDER = [1280, 1920, 2560, 3840]
+LADDER = [640, 960, 1280, 1920, 2560, 3840]
 SRC_EXT = {".jpg", ".jpeg", ".png"}
 
 # Quality per format (visually close, very different byte cost).
-AVIF_Q, WEBP_Q, JPEG_Q = 55, 82, 85
+AVIF_Q, WEBP_Q, JPEG_Q = 45, 78, 82
 # Formats in <picture> preference order (best first).
 FORMATS = (["avif"] if HAS_AVIF else []) + ["webp", "jpg"]
 

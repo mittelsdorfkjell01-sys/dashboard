@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "../map.css";
 import L, { type Map as LeafletMap } from "leaflet";
 import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import ResultsHeader from "../components/ResultsHeader";

@@ -1,5 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 
+const DESKTOP_QUERY = "(min-width: 640px)";
+
+/** Tracks the same breakpoint used by Tailwind's `sm` utilities. It lets
+ * code-split desktop controls stay completely out of mobile's JS path. */
+export function useDesktopViewport(): boolean {
+  const [desktop, setDesktop] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(DESKTOP_QUERY).matches,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia(DESKTOP_QUERY);
+    const update = () => setDesktop(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return desktop;
+}
+
 /**
  * Hides once the user scrolls down past a small threshold, reappears the
  * moment they scroll up — the familiar mobile-browser-chrome pattern. Always

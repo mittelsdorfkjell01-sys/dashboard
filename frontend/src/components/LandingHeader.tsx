@@ -1,10 +1,12 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { SearchIcon } from "../lib/icons";
 import { Wordmark } from "./ui";
-import SearchBar from "./SearchBar";
 import AccountMenu from "./AccountMenu";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
+
+const SearchBar = lazy(() => import("./SearchBar"));
 
 /**
  * Top bar for the hero pages. By default it's transparent and absolute over the
@@ -31,7 +33,7 @@ export default function LandingHeader({
   mobileSpotControls?: boolean;
   /** Landing only: once scrolled, a compact search pill docks into the header
    *  (mobile), replacing the wordmark next to the menu. Tapping it fires this. */
-  onMobileSearch?: () => void;
+  onMobileSearch?: (trigger: HTMLButtonElement) => void;
   /** The bar sits on the light page instead of the dark hero (legal, 404,
    *  error/not-found states). Switches the white hero tagline to a readable
    *  ink token so it doesn't vanish and fail colour contrast. */
@@ -42,6 +44,7 @@ export default function LandingHeader({
   // RANGE px before the trigger — by the time it hits 1 and swaps over to
   // ResultsHeader, it already looks identical, so the swap itself is invisible.
   const [progress, setProgress] = useState(0);
+  const desktop = useDesktopViewport();
   useEffect(() => {
     if (!sticky) return;
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
@@ -132,7 +135,6 @@ export default function LandingHeader({
                 {sticky && (
                   <Link
                     to="/"
-                    aria-label="surfwind data · Startseite"
                     className="absolute left-0 inline-flex min-h-11 select-none items-center leading-none"
                     style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
                   >
@@ -150,7 +152,6 @@ export default function LandingHeader({
           <div className="relative col-start-2 flex min-h-11 min-w-0 items-center justify-center justify-self-center">
             <Link
               to="/"
-              aria-label="surfwind data · Startseite"
               style={sticky ? { opacity: 1 - progress, pointerEvents: progress > 0.5 ? "none" : "auto" } : undefined}
               className={`min-h-11 min-w-0 select-none items-center leading-none transition-opacity duration-150 ${
                 mobileSpotControls ? "hidden sm:flex" : "flex"
@@ -161,12 +162,14 @@ export default function LandingHeader({
 
             {/* Desktop: the compact search takes over continuously as the hero
                 identity recedes, matching ResultsHeader at the hand-off. */}
-            {sticky && (
+            {sticky && desktop && progress > 0 && (
               <div
                 className="absolute hidden sm:block"
                 style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
               >
-                <SearchBar variant="pill" />
+                <Suspense fallback={<div aria-hidden className="h-10 w-48 rounded-2xl bg-surface shadow-card" />}>
+                  <SearchBar variant="pill" />
+                </Suspense>
               </div>
             )}
           </div>
@@ -176,7 +179,7 @@ export default function LandingHeader({
           {onMobileSearch && (
             <button
               type="button"
-              onClick={onMobileSearch}
+              onClick={(event) => onMobileSearch(event.currentTarget)}
               aria-label="Suche öffnen"
               style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
               className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-card transition-opacity duration-150 sm:hidden"

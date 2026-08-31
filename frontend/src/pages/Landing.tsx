@@ -1,15 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import LandingHeader from "../components/LandingHeader";
 import LandingHero from "../components/LandingHero";
-import SearchBar from "../components/SearchBar";
 import MobileSearchTrigger from "../components/MobileSearchTrigger";
-import MobileSearchSheet from "../components/MobileSearchSheet";
 import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
 import { useSpots } from "../lib/hooks";
 import { MapIcon } from "../lib/icons";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
+
+const SearchBar = lazy(() => import("../components/SearchBar"));
+const MobileSearchSheet = lazy(() => import("../components/MobileSearchSheet"));
 
 /**
  * "surfwind data" landing. Two parts that flow into each other on scroll:
@@ -30,7 +32,14 @@ export default function Landing() {
   // opening: the visitor stays exactly where they were and, on close, keeps
   // scrolling from that same point.
   const [searchOpen, setSearchOpen] = useState(false);
-  const openSearch = () => setSearchOpen(true);
+  const [mobileSearchLoaded, setMobileSearchLoaded] = useState(false);
+  const mobileSearchTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const desktopSearch = useDesktopViewport();
+  const openSearch = (trigger: HTMLButtonElement) => {
+    mobileSearchTriggerRef.current = trigger;
+    setMobileSearchLoaded(true);
+    setSearchOpen(true);
+  };
   // Fetch the lightweight catalogue once. Changing the request key from 20 to
   // 100 used to temporarily unmount the entire grid while the second request
   // ran; the page height collapsed and clamped the visitor's scroll position
@@ -69,16 +78,25 @@ export default function Landing() {
               <MobileSearchTrigger onClick={openSearch} />
             </div>
             <div className="hidden sm:block">
-              <SearchBar />
+              {desktopSearch && (
+                <Suspense fallback={<div aria-hidden className="h-14 w-full rounded-2xl bg-surface/90 shadow-float" />}>
+                  <SearchBar />
+                </Suspense>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      <MobileSearchSheet
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-      />
+      {mobileSearchLoaded && (
+        <Suspense fallback={null}>
+          <MobileSearchSheet
+            open={searchOpen}
+            onClose={() => setSearchOpen(false)}
+            returnFocusRef={mobileSearchTriggerRef}
+          />
+        </Suspense>
+      )}
 
       {/* 2 — Extended white section: aktuelle Top Spots (moved here onto the
           white background) + all spots as Airbnb-style cards. The rounded sheet

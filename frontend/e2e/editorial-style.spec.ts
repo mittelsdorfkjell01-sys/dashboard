@@ -114,7 +114,7 @@ test("search is the filled-action exception and loads regions on demand", async 
   // entry beside "Aktuelle Top Spots" stays a ghost link.
   const heroSearch = page
     .locator("#landing-search")
-    .getByRole("button", { name: "Suche öffnen" });
+    .getByRole("button", { name: "Jetzt suchen" });
   await expect(heroSearch).toBeVisible();
 
   const mapBackground = await page

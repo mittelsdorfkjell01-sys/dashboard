@@ -15,7 +15,7 @@ export default function ErrorFallback({
   return (
     <div className="grid min-h-screen place-items-center bg-band px-6 text-center">
       <div>
-        <a href="/" aria-label="surfwind data — Startseite" className="mb-6 inline-block">
+        <a href="/" className="mb-6 inline-block">
           <Wordmark size="lg" />
         </a>
         <h1 className="text-sz-22 font-semibold text-ink">{title}</h1>

@@ -35,7 +35,7 @@ export default function AccountLayout() {
       {/* brand bar */}
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3.5 sm:px-8">
-          <Link to="/" aria-label="surfwind data — Startseite" className="select-none">
+          <Link to="/" className="select-none">
             <Wordmark size="sm" />
           </Link>
           <button

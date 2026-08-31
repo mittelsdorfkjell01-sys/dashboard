@@ -69,7 +69,7 @@ test("hero search remains fully visible when opened after scrolling", async ({ p
 
   await page.goto("/");
   await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.42));
-  await page.locator("#landing-search").getByRole("button", { name: "Suche öffnen" }).click();
+  await page.locator("#landing-search").getByRole("button", { name: "Jetzt suchen" }).click();
 
   const stack = page.getByTestId("desktop-search-stack");
   const panel = page.getByTestId("desktop-search-panel");
@@ -85,4 +85,31 @@ test("hero search remains fully visible when opened after scrolling", async ({ p
   expect(viewport).not.toBeNull();
   expect(box!.y).toBeGreaterThanOrEqual(23);
   expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(viewport!.height - 23);
+});
+
+test("mobile search contains focus and returns it to its trigger", async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes("mobile"), "Mobile search uses the full-screen sheet");
+
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/spots") return route.fulfill({ json: spots });
+    if (url.pathname === "/auth/me") {
+      return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
+    }
+    return route.fulfill({ json: [] });
+  });
+
+  await page.goto("/");
+  const trigger = page.locator("#landing-search").getByRole("button", { name: "Jetzt suchen" });
+  await trigger.click();
+
+  const dialog = page.getByRole("dialog", { name: "Suche" });
+  const close = dialog.getByRole("button", { name: "Schließen" });
+  await expect(close).toBeFocused();
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(dialog.getByRole("button", { name: "Suchen", exact: true })).toBeFocused();
+
+  await close.click();
+  await expect(trigger).toBeFocused();
 });

@@ -1,0 +1,584 @@
+/* --- Spot map flow animations --- */
+
+/* Wind streaks drift along the (rotated) local Y = wind travel direction. */
+@keyframes swd-wind {
+  0% { transform: translateY(58px); opacity: 0; }
+  18% { opacity: 0.95; }
+  82% { opacity: 0.95; }
+  100% { transform: translateY(-64px); opacity: 0; }
+}
+/* Short, quick, jittery bob → choppy / Kabbelwasser. */
+@keyframes swd-chop {
+  0%, 100% { transform: translateY(0) scaleX(1); opacity: 0.85; }
+  50% { transform: translateY(-2.5px) scaleX(0.82); opacity: 1; }
+}
+/* Long, slow lateral roll → clean swell. */
+@keyframes swd-swell {
+  0% { transform: translateX(-7px); opacity: 0.5; }
+  50% { opacity: 0.95; }
+  100% { transform: translateX(7px); opacity: 0.5; }
+}
+/* Faint shimmer → flat water. */
+@keyframes swd-flat {
+  0%, 100% { opacity: 0.28; }
+  50% { opacity: 0.6; }
+}
+
+.swd-wind-streak { animation: swd-wind 2.4s linear infinite; }
+.swd-wave-chop { animation: swd-chop 0.85s ease-in-out infinite; }
+.swd-wave-swell { animation: swd-swell 3.4s ease-in-out infinite; }
+.swd-wave-flat { animation: swd-flat 2.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .swd-wind-streak,
+  .swd-wave-chop,
+  .swd-wave-swell,
+  .swd-wave-flat {
+    animation: none;
+  }
+}
+
+/* Spot-map marker drop-in with a slight overshoot, the last beat of the
+   Sprint 3 entrance sequence (zoom → streaks fade in → this). */
+@keyframes swd-marker-drop {
+  0% { transform: translateY(-36px); opacity: 0; }
+  60% { transform: translateY(6px); opacity: 1; }
+  80% { transform: translateY(-2px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.swd-marker-drop {
+  animation: swd-marker-drop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swd-marker-drop {
+    animation: none;
+  }
+}
+
+/* LocatorMap: a barely-perceptible "breathing" zoom on the satellite tiles
+   (the difference between a live map and a screenshot) and a pulsing ring
+   around the spot marker — not a pin, not a blink, not a bounce. */
+@keyframes swd-locator-drift {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.swd-locator-drift {
+  animation: swd-locator-drift 30s ease-in-out infinite;
+}
+
+@keyframes swd-locator-pulse {
+  0% { transform: scale(1); opacity: 0.35; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.swd-locator-pulse {
+  animation: swd-locator-pulse 3s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swd-locator-drift,
+  .swd-locator-pulse {
+    animation: none;
+  }
+}
+
+/* --- Leaflet look tweaks to match the mock --- */
+.leaflet-container {
+  font-family: "Poppins", system-ui, sans-serif;
+  /* Neutral light tone that matches the tinted basemap while tiles load */
+  background: #dfeaea;
+}
+
+.swd-admin-cluster {
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #1e6e7e;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Colour wash over the CARTO Voyager basemap on the search/region maps:
+   water leans light blue, land leans light green. The public overview and
+   spot-detail maps use the clean Positron basemap instead and opt out below,
+   so their Airbnb-style light palette is never tinted. */
+.leaflet-tile {
+  filter: hue-rotate(22deg) saturate(1.35);
+}
+.swd-public-map .leaflet-tile,
+.swd-spot-map .leaflet-tile {
+  filter: none;
+}
+
+/* Keep aerial detail on the locator, but pull it into the UI palette. */
+.swd-locator-map .leaflet-tile {
+  filter: saturate(.9) brightness(1.04) contrast(.94);
+}
+
+@media (max-width: 639px) {
+  .swd-locator-map .leaflet-bottom {
+    bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Scale bar on LocatorMap — the default Leaflet control, restyled to sit
+   quietly on top of a photo instead of looking like browser chrome. */
+.swd-locator-map .leaflet-control-scale-line {
+  border-color: rgba(255, 255, 255, 0.8);
+  border-width: 0 2px 2px;
+  background: rgba(36, 28, 23, 0.45);
+  color: #fff;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: 10px;
+  padding: 1px 4px;
+  backdrop-filter: blur(2px);
+}
+
+/* Hide leaflet default popup chrome; we render our own card */
+.spot-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 1rem;
+}
+.spot-popup .leaflet-popup-content {
+  margin: 0;
+}
+.spot-popup .leaflet-popup-tip-container {
+  display: none;
+}
+.spot-popup .leaflet-popup-close-button {
+  display: none;
+}
+
+/* Public map — isolated from the admin, region and search-result maps.
+   A coastal-atlas palette (Komoot clarity + Airbnb lightness + a restrained
+   maritime accent) lives here as CSS custom properties, mirroring the GL
+   paint values in lib/publicMap.ts's PUBLIC_MAP_PALETTE.
+   Deliberately always light (2026-08-22 feedback: the map should never
+   switch to the dark palette, even when the rest of the site is in dark
+   mode) — so this re-pins every `--sw-*` site token to its light value
+   too, overriding `html[data-theme="dark"]` for everything reused here
+   (rail cards, results list, error banner, controls). */
+.swd-public-map {
+  height: 100vh;
+  height: 100dvh;
+  background: #BFE3F5;
+  --map-control-edge: max(20px, env(safe-area-inset-right));
+  --map-surface: #FFFDF8;
+  --map-spot: #126B70;
+  --map-selection: #F06F4F;
+  --map-label: #233638;
+  --map-label-soft: #6C7A82;
+  --map-line: #D2CEC2;
+  --sw-page: #F7F7F7;
+  --sw-band: #F5F3F0;
+  --sw-surface: #FFFFFF;
+  --sw-ink: #241C17;
+  --sw-ink-soft: #3D332C;
+  --sw-muted: #6B625B;
+  --sw-line: #E6E1DA;
+  --sw-line-soft: #F0EDE7;
+  --sw-teal: #1C4E63;
+  --sw-teal-hover: #163E4F;
+  --sw-orange: #B45309;
+  --sw-green: #4A8159;
+}
+
+/* Same `--map-*` scope as `.swd-public-map`, for the single-spot map module
+   embedded inline on the spot page (not full-viewport, so no height rule
+   here) — lets it reuse `.swd-map-control`/`.swd-map-legend`/
+   `.swd-map-mode-switch`/`.swd-map-error` unchanged. */
+.swd-spot-map {
+  --map-control-edge: 12px;
+  --map-surface: #FFFDF8;
+  --map-spot: #126B70;
+  --map-selection: #F06F4F;
+  --map-label: #233638;
+  --map-label-soft: #6C7A82;
+  --map-line: #D2CEC2;
+  --sw-page: #F7F7F7;
+  --sw-band: #F5F3F0;
+  --sw-surface: #FFFFFF;
+  --sw-ink: #241C17;
+  --sw-ink-soft: #3D332C;
+  --sw-muted: #6B625B;
+  --sw-line: #E6E1DA;
+  --sw-line-soft: #F0EDE7;
+  --sw-teal: #1C4E63;
+  --sw-teal-hover: #163E4F;
+  --sw-orange: #B45309;
+  --sw-green: #4A8159;
+}
+
+/* Controls — 40px desktop / 44px touch, warm floating surface, no blur.
+   Two independent floating stacks: `-left` (back + zoom) and the plain
+   `.swd-map-controls` (list), mirrored left/right at the same top offset. */
+.swd-map-controls,
+.swd-map-controls-left {
+  top: max(20px, env(safe-area-inset-top));
+}
+.swd-map-controls { right: var(--map-control-edge); }
+.swd-map-controls-left { left: var(--map-control-edge); }
+.swd-map-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  min-width: 40px;
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  color: var(--map-spot);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  transition: color 160ms ease-out, background-color 160ms ease-out, transform 160ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-control { height: 44px; min-width: 44px; }
+}
+.swd-map-control:hover { color: var(--map-selection); }
+.swd-map-control:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+.swd-map-control-group {
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+}
+.swd-map-control-stacked { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+
+/* Back — filled/primary so it still reads as the main way off the page, but
+   sized the same as the other floating controls (40px / 44px touch), not
+   bigger (2026-08-23 feedback: it looked oversized next to zoom/list). */
+.swd-map-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sw-teal);
+  color: #fff;
+  box-shadow: 0 3px 10px rgb(15 25 25 / 18%);
+  transition: background-color 160ms ease-out, transform 160ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-back { width: 44px; height: 44px; }
+}
+.swd-map-back:hover { background: var(--sw-teal-hover); }
+.swd-map-back:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+
+/* Bare close control (results tiles / chart panel) — intentionally no
+   border, shadow or fill; the larger tap target is invisible padding,
+   grown to the full 44px minimum on touch input (2026-08-23 audit),
+   matching `.swd-map-control`'s own coarse-pointer treatment below. */
+.swd-map-plain-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sw-muted);
+  transition: color 140ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-plain-close { width: 44px; height: 44px; }
+}
+.swd-map-plain-close:hover { color: var(--sw-ink); }
+.swd-map-plain-close:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+
+/* Accessible hit-target sitting over each GL marker/cluster — carries the
+   real click/hover/focus handling and, via ::after, the name capsule (used
+   for hover, focus AND the always-visible selected label). The visible dot
+   itself is drawn by the GL circle layers in lib/publicMap.ts, kept small
+   (18–20px) and separate from this larger, invisible touch target. */
+/* Leaflet positions the marker root absolutely and sizes it from iconSize, so
+   this must NOT set `position` (that would override Leaflet's placement). The
+   ::after capsule anchors to this absolutely-positioned root. */
+.swd-map-a11y-marker {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+/* The visible spot dot inside the (larger, transparent) hit target. Colour is
+   set inline from the wind/wave scale; the ring turns to the selection colour
+   when the spot is the active one. */
+.swd-map-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border-radius: 999px;
+  border: 2px solid var(--map-surface, #fffdf8);
+  box-shadow: 0 1px 4px rgb(15 25 25 / 35%);
+  transition: transform 140ms ease-out;
+}
+.swd-map-a11y-marker:is(:hover, :focus-visible) .swd-map-dot { transform: scale(1.15); }
+.swd-map-a11y-marker.is-selected .swd-map-dot {
+  border-color: var(--map-selection, #f06f4f);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--map-selection, #f06f4f) 85%, transparent), 0 1px 4px rgb(15 25 25 / 35%);
+}
+/* Cluster bubble — neutral spot colour with a count, never data-coloured
+   (averaging live values across an arbitrary group would misrepresent them). */
+.swd-map-cluster-icon { display: grid; place-items: center; }
+.swd-map-cluster-icon:focus-visible { outline: 2px solid var(--map-selection, #f06f4f); outline-offset: 2px; }
+.swd-map-cluster {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 2px solid var(--map-surface, #fffdf8);
+  background: var(--map-spot, #126b70);
+  color: #fff;
+  font: 700 12px/1 "Poppins", system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgb(15 25 25 / 28%);
+  cursor: pointer;
+}
+.swd-map-cluster-icon:is(:hover, :focus-visible) .swd-map-cluster {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--map-selection, #f06f4f) 55%, transparent), 0 2px 8px rgb(15 25 25 / 28%);
+}
+.swd-map-a11y-marker:focus-visible {
+  outline: 2px solid var(--map-selection);
+  outline-offset: 2px;
+}
+.swd-map-a11y-marker::after {
+  position: absolute;
+  bottom: 26px;
+  left: 50%;
+  max-width: 150px;
+  overflow: hidden;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--map-surface);
+  color: var(--map-label);
+  content: attr(data-tooltip);
+  font: 600 11px/1.3 "Poppins", system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(15 25 25 / 16%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 3px);
+  transition: opacity 160ms ease-out, transform 160ms ease-out;
+}
+.swd-map-a11y-marker[data-tooltip]:is(:hover, :focus-visible)::after { opacity: 1; transform: translate(-50%, 0); }
+/* Selected spot: the name capsule stays up regardless of hover/focus. */
+.swd-map-a11y-marker[data-tooltip][aria-pressed="true"]::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  border: 1px solid color-mix(in srgb, var(--map-selection) 55%, transparent);
+}
+
+.swd-map-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100% - 40px);
+  border-radius: 10px;
+  background: var(--sw-surface);
+  padding: 10px 12px;
+  color: var(--sw-ink);
+  font-size: 12px;
+  box-shadow: 0 3px 14px rgb(36 28 23 / 13%);
+}
+.swd-map-error button { min-height: 44px; color: var(--sw-teal); font-weight: 600; }
+
+/* Bottom shell — a soft gradient stands in for a solid panel behind the
+   tiles/chart, never a dark scrim (the map must stay visible and pannable
+   underneath at all times). Positioning (absolute/inset-x-0/bottom-0) stays
+   on the Tailwind classes in MapView.tsx; that `position: absolute` already
+   gives the `::before` below a positioning context, so this rule must not
+   also set `position` — doing so here would win the cascade (this file
+   loads after Tailwind's utilities) and silently turn the shell into a
+   `relative` box, unpinning it from the bottom of the map. */
+.swd-map-bottom-shell {
+  padding: 34px max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-bottom));
+}
+.swd-map-bottom-shell::before {
+  content: "";
+  position: absolute;
+  inset: -48px 0 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--sw-page) 55%, transparent) 55%, color-mix(in srgb, var(--sw-page) 80%, transparent));
+}
+/* Mode switch (Wind / Wellen / Brandung) — same floating pill-group
+   language as `.swd-map-control`, but a segmented control rather than
+   separate buttons. Brandung stays in the DOM, permanently `disabled`,
+   with its reason on `title` — never hidden, so visitors can see the
+   capability is planned rather than missing (see
+   docs/map-redesign-backend-gaps.md). */
+.swd-map-mode-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--map-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+}
+.swd-map-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: 600 12px/1 "Poppins", system-ui, sans-serif;
+  color: var(--map-label-soft);
+  background: transparent;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+@media (pointer: coarse) { .swd-map-mode-pill { min-height: 44px; } }
+.swd-map-mode-pill[aria-pressed="true"] { background: var(--sw-ink); color: #fff; }
+.swd-map-mode-pill:disabled { opacity: 0.5; cursor: not-allowed; }
+.swd-map-mode-pill:not(:disabled):hover { color: var(--map-label); }
+.swd-map-mode-pill:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+
+/* Legend — bottom-left floating card, mode-aware. Mirrors WindScaleLegend's
+   swatch approach but as a compact gradient strip (map chrome, not a chart
+   footer) so it reads at a glance without competing with the marker dots. */
+.swd-map-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  color: var(--map-label);
+}
+.swd-map-legend-title {
+  font: 600 10px/1 "Poppins", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--map-label-soft);
+}
+.swd-map-legend-scale { display: flex; gap: 1px; border-radius: 6px; overflow: hidden; }
+.swd-map-legend-scale span { flex: 1; height: 8px; }
+.swd-map-legend-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--map-label-soft);
+  font-variant-numeric: tabular-nums;
+}
+.swd-map-legend-note { font-size: 10px; color: var(--map-label-soft); }
+
+.swd-public-map .leaflet-bottom.leaflet-right {
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(72px, calc(56px + env(safe-area-inset-bottom)));
+}
+.swd-public-map.has-bottom-panel .leaflet-bottom.leaflet-right { bottom: max(360px, calc(344px + env(safe-area-inset-bottom))); }
+.swd-public-map .leaflet-control-attribution { background: var(--sw-surface) !important; color: var(--sw-ink-soft); }
+.swd-public-map .leaflet-control-attribution a { color: var(--sw-ink) !important; }
+
+/* Shared panel chrome (tile pair / wind chart) — a floating card, not a
+   modal: no backdrop, no outside-click-to-close, the map keeps working. */
+/* Same body-width cap the spot page and landing grid use (2026-08-23
+   audit) — the panel used to be stuck at 640px, wasting most of a wide
+   desktop viewport next to the map. */
+.swd-map-panel {
+  max-width: min(1200px, calc(100vw - 32px));
+  margin: 0 auto;
+  border-radius: 18px;
+  background: var(--sw-surface);
+  box-shadow: 0 -6px 24px rgb(15 25 25 / 14%), 0 4px 16px rgb(15 25 25 / 10%);
+  padding: 12px 14px 14px;
+}
+.swd-map-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.swd-map-list-title { font-size: 14px; font-weight: 600; color: var(--sw-ink); }
+.swd-map-list-empty { padding: 20px 4px; color: var(--sw-muted); font-size: 13px; }
+
+/* Two Landing-style tiles per row, sized like the landing grid's own tiles
+   (2026-08-23 feedback) — 220px minimum column so wind/wave figures and
+   longer spot/region names never crowd or overlap. */
+.swd-map-tile-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 16px 20px; }
+
+/* Spot list — a right-side sidebar, flush against the top and right edges
+   (2026-08-23 feedback: not offset below the list button, not the bottom
+   sheet, which stays reserved for a single selected spot's chart). Floats
+   over the map, map stays visible/pannable behind it; scrolls vertically
+   once the viewport has more spots than fit — never horizontally, the
+   width is the hard constraint tile sizing works within. */
+.swd-map-side-panel {
+  top: env(safe-area-inset-top);
+  right: env(safe-area-inset-right);
+  width: min(600px, calc(100vw - 16px));
+  max-height: calc(100vh - env(safe-area-inset-top) - 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 18px;
+  border-top-right-radius: 0;
+  background: var(--sw-surface);
+  box-shadow: 0 12px 32px rgb(15 25 25 / 16%), 0 4px 14px rgb(15 25 25 / 10%);
+  padding: 12px 16px 16px;
+}
+
+/* Wind/weather chart panel (bottom, on selection) — the "Zum Spot" link
+   reads as a small filled action, distinct from the bare close control.
+   Grown to the 44px touch-target minimum on coarse pointers, same as
+   `.swd-map-control` above (2026-08-23 audit). */
+.swd-map-chart-cta {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--sw-teal);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 140ms ease-out;
+}
+@media (pointer: coarse) {
+  .swd-map-chart-cta { height: 44px; }
+}
+.swd-map-chart-cta:hover { background: var(--sw-teal-hover); }
+/* Meteogram already isolates its own horizontal scroll to the chart column
+   (its 76px axis-label column sits outside that scroll container, see
+   Meteogram.tsx) — wrapping the whole thing in a second `overflow-x: auto`
+   here scrolled the axis labels away together with the chart (2026-08-23
+   audit). Only `overflow: hidden` for the rounded corners is needed. */
+.swd-map-chart-scroll { overflow: hidden; border-radius: 12px; background: var(--sw-band); }
+
+/* Marker popup — the selected spot's Landing-style tile, anchored to the
+   marker. Desktop only: on narrow screens there isn't room to hover a card
+   next to a marker without it running off-edge, so the bottom chart panel's
+   "Zum Spot" link is the mobile path to the spot page instead. */
+.swd-map-popup .leaflet-popup-content-wrapper {
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--sw-surface);
+  box-shadow: 0 10px 28px rgb(15 25 25 / 20%);
+}
+.swd-map-popup .leaflet-popup-content { margin: 0; width: 190px !important; }
+.swd-map-popup .leaflet-popup-tip { display: none; }
+.swd-map-popup .leaflet-popup-close-button { display: none; }
+@media (max-width: 767px) {
+  .swd-map-popup { display: none !important; }
+}
+
+@media (max-width: 639px) {
+  .swd-map-panel { max-width: none; }
+  .swd-public-map .leaflet-bottom.leaflet-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-map-a11y-marker::after, .swd-map-control, .swd-map-back, .swd-map-plain-close { transition-duration: 1ms; }
+}

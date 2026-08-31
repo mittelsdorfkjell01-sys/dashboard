@@ -1,7 +1,9 @@
-import { useState } from "react";
-import SearchBar from "./SearchBar";
+import { lazy, Suspense, useRef, useState } from "react";
 import MobileSearchTrigger from "./MobileSearchTrigger";
-import MobileSearchSheet from "./MobileSearchSheet";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
+
+const SearchBar = lazy(() => import("./SearchBar"));
+const MobileSearchSheet = lazy(() => import("./MobileSearchSheet"));
 
 /**
  * The /map page's own top bar: just the centred search — the same search
@@ -12,6 +14,14 @@ import MobileSearchSheet from "./MobileSearchSheet";
  */
 export default function Header() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileSearchLoaded, setMobileSearchLoaded] = useState(false);
+  const mobileSearchTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const desktop = useDesktopViewport();
+  const openMobileSearch = (trigger: HTMLButtonElement) => {
+    mobileSearchTriggerRef.current = trigger;
+    setMobileSearchLoaded(true);
+    setMobileSearchOpen(true);
+  };
 
   return (
     <>
@@ -27,16 +37,28 @@ export default function Header() {
                   on the right, both pinned to the viewport edge outside
                   this bar's own layout. */}
               <div className="w-[calc(100vw-176px)] sm:hidden">
-                <MobileSearchTrigger onClick={() => setMobileSearchOpen(true)} label="Ort, Region oder Spot" compact />
+                <MobileSearchTrigger onClick={openMobileSearch} label="Ort, Region oder Spot" compact />
               </div>
               <div className="hidden sm:block">
-                <SearchBar variant="pill" />
+                {desktop && (
+                  <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-2xl bg-surface shadow-card" />}>
+                    <SearchBar variant="pill" />
+                  </Suspense>
+                )}
               </div>
             </div>
           </div>
         </div>
       </header>
-      <MobileSearchSheet open={mobileSearchOpen} onClose={() => setMobileSearchOpen(false)} />
+      {mobileSearchLoaded && (
+        <Suspense fallback={null}>
+          <MobileSearchSheet
+            open={mobileSearchOpen}
+            onClose={() => setMobileSearchOpen(false)}
+            returnFocusRef={mobileSearchTriggerRef}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

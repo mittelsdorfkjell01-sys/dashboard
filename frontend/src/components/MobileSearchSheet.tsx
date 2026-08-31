@@ -74,9 +74,13 @@ interface WhereRowItem {
 export default function MobileSearchSheet({
   open,
   onClose,
+  returnFocusRef,
 }: {
   open: boolean;
   onClose: () => void;
+  /** Explicit opener, because tapping a control does not focus it in every
+   * mobile browser and `document.activeElement` can therefore be the body. */
+  returnFocusRef?: { current: HTMLElement | null };
   /** Viewport-y of the collapsed pill, so the sheet grows out of it (Airbnb). */
   originY?: number | null;
 }) {
@@ -86,21 +90,51 @@ export default function MobileSearchSheet({
   // Which accordion section is expanded (null = all collapsed to equal tiles).
   const [section, setSection] = useState<Section>(null);
   const [whenTab, setWhenTab] = useState<WhenTab>("date");
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // Lock body scroll while open; Esc closes.
+  // Lock body scroll while open; move focus into the modal, contain keyboard
+  // navigation, support Esc, and return focus to the control that opened it.
   useEffect(() => {
     if (!open) return;
+    previousFocusRef.current = returnFocusRef?.current
+      ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const dialog = document.getElementById("mobile-search-dialog");
+      const focusable = dialog?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) {
+        e.preventDefault();
+        dialog?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus({ preventScroll: true }));
     return () => {
+      window.cancelAnimationFrame(frame);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose]);
+  }, [open, onClose, returnFocusRef]);
 
   // Opening always starts a fresh search, fully collapsed (equal-size tiles).
   useEffect(() => {
@@ -219,14 +253,21 @@ export default function MobileSearchSheet({
   }, [open, section]);
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence
+      onExitComplete={() => {
+        const previous = previousFocusRef.current;
+        if (previous?.isConnected) previous.focus({ preventScroll: true });
+      }}
+    >
       {open && (
         <motion.div
+          id="mobile-search-dialog"
           key="sheet"
           className="fixed inset-0 z-[1300] flex flex-col bg-page"
           role="dialog"
           aria-modal="true"
           aria-label="Suche"
+          tabIndex={-1}
           initial={reduce ? { opacity: 0 } : { y: "100%" }}
           animate={reduce ? { opacity: 1 } : { y: 0 }}
           exit={reduce ? { opacity: 0 } : { y: "100%" }}
@@ -259,6 +300,7 @@ export default function MobileSearchSheet({
             onPointerDown={(e) => dragControls.start(e)}
           >
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onClose}
               onPointerDown={(e) => e.stopPropagation()}

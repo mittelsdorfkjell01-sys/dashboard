@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "../map.css";
 import { mapLinkProps } from "../lib/mapLinks";
 import { LinkIcon } from "../lib/icons";
 

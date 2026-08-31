@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "../map.css";
 import Supercluster from "supercluster";
 import Header from "../components/Header";
 import SpotCard from "../components/SpotCard";
@@ -174,10 +176,10 @@ export default function MapView() {
         worldCopyJump: false,
       });
       L.tileLayer(TILE_URL, {
-        subdomains: "abcd",
+        subdomains: "a",
         attribution: TILE_ATTRIBUTION,
         maxZoom: 20,
-        detectRetina: true,
+        detectRetina: false,
         // Don't re-request tiles on every intermediate frame of a zoom (avoids
         // the grey "reload" flash on zoom-out); keep a larger ring of
         // off-screen tiles so panning reveals cached tiles instead of blanks.
@@ -277,7 +279,7 @@ export default function MapView() {
         sig = `${count}@${lat.toFixed(4)},${lng.toFixed(4)}`;
         build = () => {
           const size = count < 10 ? 30 : count < 50 ? 34 : 38;
-          const icon = L.divIcon({ className: "swd-map-cluster-icon", html: `<span class="swd-map-cluster" style="width:${size}px;height:${size}px">${count}</span>`, iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+          const icon = L.divIcon({ className: "swd-map-cluster-icon", html: `<span class="swd-map-cluster" style="width:${size}px;height:${size}px">${count}</span>`, iconSize: [44, 44], iconAnchor: [22, 22] });
           const marker = L.marker([lat, lng], { icon, keyboard: true });
           marker.on("add", () => marker.getElement()?.setAttribute("aria-label", `Cluster mit ${count} Surfspots. Aktivieren zum Vergrößern.`));
           marker.on("click", async () => {
@@ -298,7 +300,7 @@ export default function MapView() {
         const color = spotDotColor("wind", liveValues.get(props.spotId));
         sig = `${selected ? "s" : ""}:${color}`;
         build = () => {
-          const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot" style="background:${color}"></span>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+          const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot" style="background:${color}"></span>`, iconSize: [44, 44], iconAnchor: [22, 22] });
           const marker = L.marker([lat, lng], { icon, keyboard: true });
           marker.on("add", () => {
             const el = marker.getElement();

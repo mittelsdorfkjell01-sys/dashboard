@@ -29,6 +29,15 @@ const MIME: Record<string, string> = {
   jpg: "image/jpeg",
 };
 
+/** React 18 does not expose the standards-based lowercase attribute in its
+ * JSX typings. A spread keeps the emitted DOM attribute correct and avoids the
+ * development warning from React's legacy camel-cased prop path. */
+function fetchPriorityAttribute(priority: boolean) {
+  return { fetchpriority: priority ? "high" : "low" } as {
+    fetchpriority: "high" | "low";
+  };
+}
+
 /** "/hero-welle.jpg" | "/hero-welle-1920.jpg" → "hero-welle" (manifest key). */
 function keyFromSrc(src: string): string {
   const file = src.split("/").pop() ?? "";
@@ -109,7 +118,7 @@ export default function HeroImage({
         sizes="100vw"
         alt={alt}
         loading={priority ? "eager" : "lazy"}
-        fetchPriority={priority ? "high" : "low"}
+        {...fetchPriorityAttribute(priority)}
         decoding="async"
         className={className}
         style={style}
@@ -119,7 +128,7 @@ export default function HeroImage({
   }
 
   if (!entry) {
-    return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "low"} decoding="async" className={className} style={style} onError={onError} />;
+    return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={className} style={style} onError={onError} />;
   }
 
   const key = keyFromSrc(src);
@@ -133,7 +142,7 @@ export default function HeroImage({
           srcSet={entry.widths.map((w) => `/${key}-${w}.${fmt} ${w}w`).join(", ")}
         />
       ))}
-      <img src={entry.fallback} alt={alt} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "low"} decoding="async" className={className} style={style} onError={onError} />
+      <img src={entry.fallback} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={className} style={style} onError={onError} />
     </picture>
   );
 }

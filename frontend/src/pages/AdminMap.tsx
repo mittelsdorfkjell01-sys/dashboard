@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "../map.css";
 import L from "leaflet";
 import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import Supercluster from "supercluster";

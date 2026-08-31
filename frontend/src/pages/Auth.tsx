@@ -56,7 +56,7 @@ export default function Auth() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-band px-4 py-12">
-      <Link to="/" aria-label="surfwind data — Startseite" className="mb-8 select-none">
+      <Link to="/" className="mb-8 select-none">
         <Wordmark size="lg" />
       </Link>
 
@@ -68,7 +68,7 @@ export default function Auth() {
               type="button"
               onClick={() => switchMode(m)}
               aria-pressed={mode === m}
-              className={`rounded-2xl py-2 text-ui font-semibold transition-colors ${
+              className={`min-h-11 rounded-2xl py-2 text-ui font-semibold transition-colors ${
                 mode === m
                   ? "bg-surface text-teal"
                   : "text-muted hover:text-teal"
@@ -141,7 +141,7 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => switchMode(mode === "login" ? "register" : "login")}
-            className="font-semibold text-teal hover:underline"
+            className="inline-flex min-h-11 items-center font-semibold text-teal hover:underline"
           >
             {mode === "login" ? "Jetzt registrieren" : "Zur Anmeldung"}
           </button>

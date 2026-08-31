@@ -18,6 +18,9 @@ export const CARTO_ATTRIBUTION =
 /** XYZ tile-URL template for a CARTO raster style, with the API key appended
  *  when one is configured. */
 export function cartoTileUrl(style: string): string {
-  const base = `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
+  // Pin a single CDN host so the document-level preconnect is always reused.
+  // Standard-resolution tiles avoid Leaflet's extra 2x request on high-DPR
+  // phones; CSS still scales them cleanly while cutting the raster payload.
+  const base = `https://a.basemaps.cartocdn.com/${style}/{z}/{x}/{y}.png`;
   return CARTO_KEY ? `${base}?key=${CARTO_KEY}` : base;
 }

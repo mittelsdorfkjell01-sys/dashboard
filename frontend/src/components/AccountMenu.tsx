@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MenuIcon, UserIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import ThemeToggle from "./ThemeToggle";
@@ -22,7 +21,6 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -63,15 +61,10 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
         </span>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
+      {open && (
+          <div
             role="menu"
             aria-label="Konto"
-            initial={{ opacity: 0, y: reduce ? 0 : -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: reduce ? 0 : -6 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
             className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-2xl bg-surface p-2"
           >
             {user ? (
@@ -141,9 +134,8 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
                 </Link>
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
     </div>
   );
 }

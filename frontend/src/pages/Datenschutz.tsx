@@ -13,7 +13,7 @@ export default function Datenschutz() {
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
       <main className="mx-auto max-w-[760px] px-4 pb-24 pt-32 sm:px-8">
-        <h1 className="text-sz-32 font-semibold text-ink">Datenschutzerklärung</h1>
+        <h1 className="break-words text-sz-28 font-semibold leading-tight text-ink [hyphens:auto] sm:text-sz-32">Datenschutzerklärung</h1>
         <div className="mt-6 space-y-4 text-body leading-relaxed text-ink-soft">
           <h2 className="text-sz-16 font-semibold text-ink">Verantwortliche Stelle</h2>
           <p>

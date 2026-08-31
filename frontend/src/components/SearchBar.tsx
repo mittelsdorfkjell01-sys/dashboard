@@ -231,7 +231,6 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           layoutId={reduce ? undefined : "search-shell"}
           type="button"
           onClick={() => openExpanded()}
-          aria-label="Suche öffnen"
           className={`flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
@@ -246,7 +245,6 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           ref={heroTriggerRef}
           type="button"
           onClick={() => openExpanded()}
-          aria-label="Suche öffnen"
           className={`flex h-14 w-full items-center gap-3 rounded-2xl border border-line bg-surface p-1 pl-5 text-left shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}

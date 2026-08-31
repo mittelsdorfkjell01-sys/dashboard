@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
 import { ChevronRightIcon, PinIcon } from "../lib/icons";
@@ -22,7 +21,14 @@ const ADVANCE_MS = 60000;
  * (e.g. a fresh seed database).
  */
 export default function LandingHero({ spots }: { spots: Spot[] }) {
-  const reduce = useReducedMotion();
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduce(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   // Only spots with a real uploaded hero make good full-screen backgrounds;
   // the branded fallback field is for tiles, not a 100vh photo. Prefer the
   // photos an operator curated into the reel (admin Hero tab, image.hero_reel);
@@ -84,12 +90,11 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           return (
             // Static background: only a cross-fade between slides, no motion
             // on the image itself (no Ken Burns zoom/pan).
-            <motion.div
+            <div
               key={s.id}
-              className="absolute inset-0"
-              initial={false}
-              animate={{ opacity: active ? 1 : 0 }}
-              transition={{ duration: reduce ? 0.2 : 1.2, ease: "easeInOut" }}
+              className={`absolute inset-0 transition-opacity ease-in-out ${
+                active ? "opacity-100" : "opacity-0"
+              } ${reduce ? "duration-200" : "duration-[1200ms]"}`}
             >
               <HeroImage
                 src={s.hero!}
@@ -103,7 +108,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
                 priority={active}
                 className="absolute inset-0 h-full w-full object-cover"
               />
-            </motion.div>
+            </div>
           );
         })}
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(30,110,126,0.35)]" />

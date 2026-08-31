@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { SunIcon, MoonIcon } from "../lib/icons";
 import { applyTheme, resolveInitialTheme, type Theme } from "../lib/theme";
 
 export default function ThemeToggle({ menuItem = false }: { menuItem?: boolean }) {
   const [theme, setTheme] = useState<Theme>(resolveInitialTheme);
-  const reduce = useReducedMotion();
 
   useEffect(() => {
     applyTheme(theme);
@@ -28,22 +26,12 @@ export default function ThemeToggle({ menuItem = false }: { menuItem?: boolean }
     >
       {menuItem && <span>{visibleLabel}</span>}
       <span className="relative grid h-5 w-5 place-items-center" aria-hidden>
-        <AnimatePresence initial={false} mode="wait">
-          <motion.span
-            key={theme}
-            initial={reduce ? false : { opacity: 0, rotate: -35, scale: 0.72 }}
-            animate={{ opacity: 1, rotate: 0, scale: 1 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, rotate: 35, scale: 0.72 }}
-            transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
-            className="absolute grid place-items-center"
-          >
-            {theme === "light" ? (
-              <MoonIcon width={18} height={18} />
-            ) : (
-              <SunIcon width={18} height={18} />
-            )}
-          </motion.span>
-        </AnimatePresence>
+        <span className={`absolute grid place-items-center transition-[opacity,transform] duration-200 motion-reduce:transition-none ${theme === "light" ? "scale-100 rotate-0 opacity-100" : "scale-75 rotate-[35deg] opacity-0"}`}>
+          <MoonIcon width={18} height={18} />
+        </span>
+        <span className={`absolute grid place-items-center transition-[opacity,transform] duration-200 motion-reduce:transition-none ${theme === "dark" ? "scale-100 rotate-0 opacity-100" : "scale-75 -rotate-[35deg] opacity-0"}`}>
+          <SunIcon width={18} height={18} />
+        </span>
       </span>
     </button>
   );
