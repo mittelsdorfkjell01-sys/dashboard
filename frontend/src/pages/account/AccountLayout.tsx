@@ -41,7 +41,7 @@ export default function AccountLayout() {
           <button
             type="button"
             onClick={onLogout}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-line px-3.5 py-1.5 text-label font-medium text-teal transition-colors hover:bg-band"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-[14px] border border-line px-3.5 py-1.5 text-label font-medium text-teal transition-colors hover:bg-band"
           >
             <LogoutIcon className="text-sz-16" />
             Abmelden
@@ -62,7 +62,7 @@ export default function AccountLayout() {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2 text-ui font-medium transition-colors ${
+                `inline-flex shrink-0 items-center gap-2 rounded-[14px] px-4 py-2 text-ui font-medium transition-colors ${
                   isActive
                     ? "bg-teal text-white"
                     : "bg-surface text-ink ring-1 ring-line hover:bg-teal/5"

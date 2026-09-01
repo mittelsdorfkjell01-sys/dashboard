@@ -31,7 +31,7 @@ import {
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+    <section className="rounded-[14px] border border-line bg-surface p-5 sm:p-6">
       <h2 className="mb-4 text-sz-16 font-semibold text-ink">{title}</h2>
       {children}
     </section>
@@ -333,7 +333,7 @@ function UnitsSection() {
           options={TEMP_UNIT_LABELS}
         />
       </div>
-      <div className="mt-4 rounded-xl bg-band px-4 py-3 text-label text-ink">
+      <div className="mt-4 rounded-[14px] bg-band px-4 py-3 text-label text-ink">
         Vorschau: Wind {formatWind(18, units.wind)} · Welle {formatWave(1.2, units.wave)} ·
         Wasser {formatTemp(17, units.temp)}
       </div>

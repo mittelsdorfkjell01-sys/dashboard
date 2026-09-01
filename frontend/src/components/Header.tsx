@@ -41,7 +41,7 @@ export default function Header() {
               </div>
               <div className="hidden sm:block">
                 {desktop && (
-                  <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-2xl bg-surface shadow-card" />}>
+                  <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-[14px] bg-surface shadow-card" />}>
                     <SearchBar variant="pill" />
                   </Suspense>
                 )}

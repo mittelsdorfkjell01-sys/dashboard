@@ -125,7 +125,7 @@ export default function SearchWhen({
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, -1))}
                 aria-label="Vorheriger Monat"
-                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
+                className={`grid h-7 w-7 place-items-center rounded-[14px] text-ink transition-colors hover:bg-band ${idx === 0 ? "" : "invisible"}`}
               >
                 <ChevL className="text-sz-18" />
               </button>
@@ -136,7 +136,7 @@ export default function SearchWhen({
                 type="button"
                 onClick={() => setAnchor(addMonth(anchor, 1))}
                 aria-label="Nächster Monat"
-                className={`grid h-7 w-7 place-items-center rounded-lg text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
+                className={`grid h-7 w-7 place-items-center rounded-[14px] text-ink transition-colors hover:bg-band ${idx === months.length - 1 ? "" : "invisible"}`}
               >
                 <ChevR className="text-sz-18" />
               </button>
@@ -176,7 +176,7 @@ export default function SearchWhen({
 
   // ── flexibel: month grid + duration, full width ──────────────────────────
   const monthChip = (active: boolean) =>
-    `flex h-10 items-center justify-center rounded-xl border px-2 text-label font-medium transition-colors ${
+    `flex h-10 items-center justify-center rounded-[14px] border px-2 text-label font-medium transition-colors ${
       active ? "border-teal bg-teal/10 text-teal" : "border-line text-ink hover:border-teal"
     }`;
   const durChip = (active: boolean) =>

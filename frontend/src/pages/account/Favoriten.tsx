@@ -21,8 +21,8 @@ export default function Favoriten() {
 
   if (favs.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-surface px-6 py-14 text-center">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-band text-teal">
+      <div className="rounded-[14px] border border-dashed border-line bg-surface px-6 py-14 text-center">
+        <span className="mx-auto grid h-14 w-14 place-items-center rounded-[14px] bg-band text-teal">
           <HeartFilledIcon className="text-sz-24" />
         </span>
         <h2 className="mt-4 text-sz-17 font-semibold text-ink">
@@ -47,7 +47,7 @@ export default function Favoriten() {
       {favs.map((f) => (
         <li
           key={f.id}
-          className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5"
+          className="flex items-center gap-3 rounded-[14px] border border-line bg-surface p-3.5"
         >
           <Link to={spotPath(f)} className="min-w-0 flex-1">
             <span className="block truncate text-body font-semibold text-ink">
@@ -63,7 +63,7 @@ export default function Favoriten() {
             type="button"
             onClick={() => removeFavorite(f.id)}
             aria-label={`${f.name} aus Favoriten entfernen`}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-orange transition-colors hover:bg-band"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-orange transition-colors hover:bg-band"
           >
             <HeartFilledIcon className="text-sz-20" />
           </button>

@@ -91,7 +91,7 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
  *  get confused for one another. */
 function CommonsBadge({ compact = false }: { compact?: boolean }) {
   return (
-    <span className="absolute bottom-1.5 left-1.5 rounded-2xl bg-ink px-2 py-0.5 text-caption font-medium text-white">
+    <span className="absolute bottom-1.5 left-1.5 rounded-[14px] bg-ink px-2 py-0.5 text-caption font-medium text-white">
       {compact ? "Commons" : "Aus Wikimedia Commons"}
     </span>
   );
@@ -127,7 +127,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
             type="button"
             onClick={() => setLightboxIndex(0)}
             aria-label={`Bild vergrößern${big.credit ? ` — ${big.credit}` : ""}`}
-            className="relative aspect-[4/5] overflow-hidden rounded-xl"
+            className="relative aspect-[4/5] overflow-hidden rounded-[14px]"
           >
             <img
               {...responsiveImageAttributes(
@@ -156,7 +156,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
                         ? `Alle ${photos.length} Bilder ansehen`
                         : `Bild vergrößern${img.credit ? ` — ${img.credit}` : ""}`
                     }
-                    className="relative aspect-square overflow-hidden rounded-xl"
+                    className="relative aspect-square overflow-hidden rounded-[14px]"
                   >
                     <img
                       {...responsiveImageAttributes(
@@ -242,7 +242,7 @@ function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd
   const bg = coords ? coloredTileUrl(coords[0], coords[1], 15) : null;
   return (
     <div
-      className="relative aspect-[4/5] overflow-hidden rounded-xl bg-band bg-cover bg-center"
+      className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-band bg-cover bg-center"
       style={bg ? { backgroundImage: `url(${bg})` } : undefined}
     >
       <div className="absolute inset-0 bg-ink/55" />
@@ -340,7 +340,7 @@ function Composer({
   };
 
   return (
-    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-3xl border border-line bg-surface p-4 sm:p-5">
+    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-[14px] border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-body font-medium text-ink">Wie war's am {spotName}?</p>
         <div className="flex gap-1">
@@ -432,7 +432,7 @@ function Composer({
               </label>
             )}
             {showTerms && terms && (
-              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-band p-3 text-caption text-ink-soft">
+              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
                 {terms.terms}
               </pre>
             )}
@@ -491,7 +491,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
     <div>
       {!loading && posts.length === 0 ? (
         <>
-          <div className="rounded-3xl border border-dashed border-line bg-surface px-6 py-8 text-center">
+          <div className="rounded-[14px] border border-dashed border-line bg-surface px-6 py-8 text-center">
             <p className="text-body font-medium text-ink">Sei der Erste, der von hier berichtet.</p>
             <p className="mx-auto mt-2 max-w-[46ch] text-caption text-muted">
               Hilfreiche Beiträge nennen Bedingungen, Level und was andere vor Ort wissen sollten.
@@ -512,7 +512,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
                     type="button"
                     onClick={() => setSort(s)}
                     aria-pressed={sort === s}
-                    className={`rounded-2xl px-3 py-1.5 font-medium transition-colors ${
+                    className={`rounded-[14px] px-3 py-1.5 font-medium transition-colors ${
                       sort === s ? "bg-teal text-white" : "text-muted hover:text-teal"
                     }`}
                   >
@@ -583,7 +583,7 @@ function FeedPostCard({
   }, [menuOpen]);
 
   return (
-    <article className="rounded-3xl border border-line bg-surface p-4 sm:p-5">
+    <article className="rounded-[14px] border border-line bg-surface p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
@@ -597,12 +597,12 @@ function FeedPostCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-body font-semibold text-ink">{post.authorName}</span>
             {post.skillLevel && (
-              <span className="rounded-2xl bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
+              <span className="rounded-[14px] bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
                 {levelLabel(post.skillLevel)}
               </span>
             )}
             {post.sport && (
-              <span className="rounded-2xl bg-teal/10 px-2 py-0.5 text-caption font-medium text-teal">
+              <span className="rounded-[14px] bg-teal/10 px-2 py-0.5 text-caption font-medium text-teal">
                 {sportLabel(post.sport)}
               </span>
             )}
@@ -624,7 +624,7 @@ function FeedPostCard({
                 "(max-width: 639px) 100vw, 50vw",
               )}
               alt={post.photo.credit ?? ""}
-              className="mt-3 max-h-96 w-full rounded-2xl object-cover"
+              className="mt-3 max-h-96 w-full rounded-[14px] object-cover"
               loading="lazy"
               decoding="async"
             />
@@ -641,7 +641,7 @@ function FeedPostCard({
               onClick={onHelpful}
               disabled={voted}
               aria-pressed={voted}
-              className={`inline-flex items-center gap-1.5 rounded-2xl border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
+              className={`inline-flex items-center gap-1.5 rounded-[14px] border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
                 voted
                   ? "border-green/30 bg-green/10 text-green"
                   : "border-line text-muted hover:text-teal"
@@ -658,14 +658,14 @@ function FeedPostCard({
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   aria-label="Weitere Aktionen"
-                  className="grid h-11 w-11 place-items-center rounded-2xl text-label text-muted hover:bg-ink/5 hover:text-teal sm:h-8 sm:w-8"
+                  className="grid h-11 w-11 place-items-center rounded-[14px] text-label text-muted hover:bg-ink/5 hover:text-teal sm:h-8 sm:w-8"
                 >
                   ⋯
                 </button>
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-xl border border-line bg-surface p-1"
+                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-[14px] border border-line bg-surface p-1"
                   >
                     <button
                       type="button"
@@ -674,7 +674,7 @@ function FeedPostCard({
                         setMenuOpen(false);
                         onReport(post.reportImageId!);
                       }}
-                      className="block w-full rounded-lg px-3 py-2 text-left text-label text-ink hover:bg-band"
+                      className="block w-full rounded-[14px] px-3 py-2 text-left text-label text-ink hover:bg-band"
                     >
                       Melden
                     </button>
@@ -777,7 +777,7 @@ function Lightbox({
             e.stopPropagation();
             onReport(img.id);
           }}
-          className="rounded-2xl bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
+          className="rounded-[14px] bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
         >
           Melden
         </button>
@@ -785,7 +785,7 @@ function Lightbox({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20"
+          className="grid h-11 w-11 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <CloseIcon width={20} height={20} />
         </button>
@@ -800,7 +800,7 @@ function Lightbox({
               go(-1);
             }}
             aria-label="Vorheriges Bild"
-            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
+            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
           >
             <ChevronDownIcon width={20} height={20} className="rotate-90" />
           </button>
@@ -811,7 +811,7 @@ function Lightbox({
               go(1);
             }}
             aria-label="Nächstes Bild"
-            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
+            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
           >
             <ChevronDownIcon width={20} height={20} className="-rotate-90" />
           </button>
@@ -827,7 +827,7 @@ function Lightbox({
               "100vw",
             )}
             alt={img.credit ?? ""}
-            className="max-h-[80vh] max-w-[92vw] rounded-2xl object-contain"
+            className="max-h-[80vh] max-w-[92vw] rounded-[14px] object-contain"
             decoding="async"
           />
           {img.source === "wikimedia_commons" && <CommonsBadge />}
@@ -886,7 +886,7 @@ function ReportDialog({
   };
 
   return (
-    <div className="mt-4 rounded-3xl border border-line bg-band p-4">
+    <div className="mt-4 rounded-[14px] border border-line bg-band p-4">
       <div className="flex items-center justify-between">
         <p className="text-ui font-medium text-ink">Bild melden</p>
         <button type="button" onClick={onClose} className="text-label text-muted hover:text-teal">
@@ -992,7 +992,7 @@ export function GalleryUploadForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 rounded-3xl border border-line p-5 sm:p-6">
+    <form onSubmit={submit} className="mt-6 rounded-[14px] border border-line p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-title font-semibold text-ink">Bild hinzufügen</p>
@@ -1018,7 +1018,7 @@ export function GalleryUploadForm({
       />
 
       {preview ? (
-        <div className="relative mt-4 overflow-hidden rounded-2xl bg-band">
+        <div className="relative mt-4 overflow-hidden rounded-[14px] bg-band">
           <img src={preview} alt="" className="aspect-[4/3] w-full object-cover" />
           <button
             type="button"
@@ -1033,7 +1033,7 @@ export function GalleryUploadForm({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line px-4 py-10 text-center transition-colors hover:border-ink/30 hover:bg-band/40"
+          className="mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-line px-4 py-10 text-center transition-colors hover:border-ink/30 hover:bg-band/40"
         >
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
             <rect x="3" y="5" width="18" height="14" rx="2.5" />
@@ -1068,7 +1068,7 @@ export function GalleryUploadForm({
         </span>
       </label>
       {showTerms && terms && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-band p-3 text-caption text-ink-soft">
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
           {terms.terms}
         </pre>
       )}
@@ -1147,7 +1147,7 @@ function HeroCandidateForm({
   };
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-3xl bg-ink/5 p-4">
+    <form onSubmit={submit} className="mt-4 rounded-[14px] bg-ink/5 p-4">
       <div className="flex items-center justify-between">
         <p className="text-ui font-medium text-ink">Titelbild vorschlagen</p>
         <button type="button" onClick={onCancel} className="text-label text-muted hover:text-teal">
@@ -1185,7 +1185,7 @@ function HeroCandidateForm({
         </span>
       </label>
       {showTerms && terms && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-band p-3 text-caption text-ink-soft">
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
           {terms.terms}
         </pre>
       )}

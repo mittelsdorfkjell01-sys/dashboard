@@ -93,7 +93,7 @@ export default function InlineTipComposer({
             maxLength={4000}
             placeholder="Kommentar hinzufügen …"
             aria-label="Kommentar hinzufügen"
-            className="h-11 w-full rounded-xl border border-line bg-page py-2 pl-4 pr-12 text-sz-16 text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 sm:text-label"
+            className="h-11 w-full rounded-[14px] border border-line bg-page py-2 pl-4 pr-12 text-sz-16 text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10 sm:text-label"
           />
           {text.trim() && (
             <button
@@ -101,7 +101,7 @@ export default function InlineTipComposer({
               onClick={onSend}
               disabled={busy}
               aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
-              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-lg text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40"
+              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-[14px] text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40"
             >
               {busy ? (
                 <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-teal/25 border-t-teal" />
@@ -137,7 +137,7 @@ export default function InlineTipComposer({
       {!parentId && !compact && (
         <div className="mb-3">
           <label htmlFor="inline-comment-title" className="text-label font-medium text-ink">Überschrift <span className="text-muted">(optional)</span></label>
-          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-2xl border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10" />
+          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-[14px] border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10" />
           <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
         </div>
       )}
@@ -147,7 +147,7 @@ export default function InlineTipComposer({
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
         maxLength={4000}
-        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-[14px] border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
       />
       {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
       <div className="mt-2 flex items-center justify-between gap-3">

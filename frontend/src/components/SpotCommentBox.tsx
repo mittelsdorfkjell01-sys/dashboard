@@ -67,4 +67,4 @@ function CommentRow({ post, compact = false }: { post: FeedPost; compact?: boole
   </div>;
 }
 
-function CommentSkeleton() { return <div role="status" aria-live="polite" className="space-y-7 py-2"><span className="sr-only">Kommentare werden geladen</span><div aria-hidden className="h-16 animate-pulse rounded-2xl bg-band"/><div aria-hidden className="h-16 animate-pulse rounded-2xl bg-band"/><div aria-hidden className="h-16 animate-pulse rounded-2xl bg-band"/></div>; }
+function CommentSkeleton() { return <div role="status" aria-live="polite" className="space-y-7 py-2"><span className="sr-only">Kommentare werden geladen</span><div aria-hidden className="h-16 animate-pulse rounded-[14px] bg-band"/><div aria-hidden className="h-16 animate-pulse rounded-[14px] bg-band"/><div aria-hidden className="h-16 animate-pulse rounded-[14px] bg-band"/></div>; }

@@ -127,7 +127,7 @@ export default function MeineSpots() {
       />
 
       {subs.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-line px-6 py-10 text-center text-ui text-muted">
+        <p className="rounded-[14px] border border-dashed border-line px-6 py-10 text-center text-ui text-muted">
           Du hast noch keine Spots eingereicht.
         </p>
       ) : (
@@ -137,7 +137,7 @@ export default function MeineSpots() {
             return (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-4"
+                className="flex items-center justify-between gap-3 rounded-[14px] border border-line bg-surface p-4"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-body font-medium text-ink">
@@ -153,7 +153,7 @@ export default function MeineSpots() {
                   </span>
                 </span>
                 <span
-                  className={`shrink-0 rounded-2xl px-2.5 py-1 text-sz-11 font-semibold ${st.cls}`}
+                  className={`shrink-0 rounded-[14px] px-2.5 py-1 text-sz-11 font-semibold ${st.cls}`}
                 >
                   {st.label}
                 </span>

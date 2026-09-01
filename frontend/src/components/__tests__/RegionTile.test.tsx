@@ -55,6 +55,6 @@ describe("RegionTile", () => {
   it("frames the image the same way SpotCard does", () => {
     const html = render();
     expect(html).toContain("aspect-video");
-    expect(html).toContain("rounded-2xl");
+    expect(html).toContain("rounded-[14px]");
   });
 });

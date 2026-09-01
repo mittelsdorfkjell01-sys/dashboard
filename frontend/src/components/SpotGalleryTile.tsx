@@ -50,7 +50,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(-1)}
             aria-label="Vorheriges Bild"
-            className="grid h-11 w-11 place-items-center rounded-2xl bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
+            className="grid h-11 w-11 place-items-center rounded-[14px] bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
           >
             <ChevronLeftIcon width={18} height={18} />
           </button>
@@ -58,7 +58,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(1)}
             aria-label="Nächstes Bild"
-            className="grid h-11 w-11 place-items-center rounded-2xl bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
+            className="grid h-11 w-11 place-items-center rounded-[14px] bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
           >
             <ChevronRightIcon width={18} height={18} />
           </button>

@@ -123,7 +123,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           <Link
             to={spotPath(current)}
             aria-label={`Zum Spot ${current.name}`}
-            className="group pointer-events-auto inline-flex min-h-11 max-w-[70vw] items-center gap-1.5 rounded-xl border border-white/25 bg-black/55 py-1.5 pl-2.5 pr-2 text-white shadow-float transition-colors hover:bg-black/65 sm:min-h-0 sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
+            className="group pointer-events-auto inline-flex min-h-11 max-w-[70vw] items-center gap-1.5 rounded-[14px] border border-white/25 bg-black/55 py-1.5 pl-2.5 pr-2 text-white shadow-float transition-colors hover:bg-black/65 sm:min-h-0 sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
           >
             <PinIcon className="shrink-0 text-label" />
             <span className="min-w-0 truncate text-caption font-medium">{current.name}</span>

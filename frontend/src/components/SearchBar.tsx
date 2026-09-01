@@ -231,12 +231,12 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           layoutId={reduce ? undefined : "search-shell"}
           type="button"
           onClick={() => openExpanded()}
-          className={`flex max-w-full items-center gap-2.5 rounded-2xl border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
+          className={`flex max-w-full items-center gap-2.5 rounded-[14px] border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
           <span className="truncate">{summary || "Suchen"}</span>
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-teal text-white">
+          <span className="grid h-7 w-7 shrink-0 place-items-center text-ink">
             <SearchIcon className="text-ui" />
           </span>
         </motion.button>
@@ -245,7 +245,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           ref={heroTriggerRef}
           type="button"
           onClick={() => openExpanded()}
-          className={`flex h-14 w-full items-center gap-3 rounded-2xl border border-line bg-surface p-1 pl-5 text-left shadow-float ${
+          className={`flex h-14 w-full items-center gap-3 rounded-[14px] border border-line bg-surface p-1 pl-5 text-left shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
@@ -256,7 +256,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           >
             {summary || "Jetzt suchen"}
           </span>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-teal text-white">
+          <span className="grid h-12 w-12 shrink-0 place-items-center text-ink">
             <SearchIcon className="text-sz-18" />
           </span>
         </button>
@@ -310,22 +310,22 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                 }}
               >
                 <div className="relative">
-                  {/* Segmented bar — same radius as the tiles (rounded-2xl). The
+                  {/* Segmented bar — same radius as the tiles (rounded-[14px]). The
                       shared layoutId (pill trigger only) makes this grow out of
                       the header pill instead of fading in mid-page. */}
                   <motion.div
                     layoutId={variant === "pill" && !reduce ? "search-shell" : undefined}
-                    className="flex h-14 items-stretch gap-1 rounded-2xl bg-surface p-1 shadow-float"
+                    className="flex h-14 items-stretch gap-1 rounded-[14px] bg-surface p-1 shadow-float"
                   >
                     {/* Wohin? — the Tippleiste lives in the bar. */}
                     <label
                       onClick={() => setOpen("where")}
-                      className="relative flex h-12 flex-1 cursor-text flex-col items-start justify-center rounded-xl px-5 py-0 transition-colors hover:bg-band/60"
+                      className="relative flex h-12 flex-1 cursor-text flex-col items-start justify-center rounded-[14px] px-5 py-0 transition-colors hover:bg-band/60"
                     >
                       {open === "where" && (
                         <motion.span
                           layoutId={reduce ? undefined : "search-seg"}
-                          className="absolute inset-0 rounded-xl bg-band"
+                          className="absolute inset-0 rounded-[14px] bg-band"
                           transition={reduce ? { duration: 0.05 } : PANEL_TRANSITION}
                         />
                       )}
@@ -369,7 +369,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       type="button"
                       onClick={submit}
                       aria-label="Suchen"
-                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal text-white transition-colors hover:bg-teal-hover"
+                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center text-ink transition-colors hover:text-teal"
                     >
                       <SearchIcon className="text-sz-18" />
                     </button>
@@ -396,7 +396,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           shell no longer jumps vertically while switching. */}
                       <div
                         data-testid="desktop-search-panel"
-                        className="h-[350px] overflow-y-auto rounded-2xl bg-surface p-5 shadow-float"
+                        className="h-[350px] overflow-y-auto rounded-[14px] bg-surface p-5 shadow-float"
                       >
                         {open === "where" && (
                           <SearchWhere
@@ -460,12 +460,12 @@ function SegmentButton({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className="relative flex h-12 flex-1 flex-col items-start justify-center rounded-xl px-5 py-0 text-left transition-colors hover:bg-band/60"
+      className="relative flex h-12 flex-1 flex-col items-start justify-center rounded-[14px] px-5 py-0 text-left transition-colors hover:bg-band/60"
     >
       {active && (
         <motion.span
           layoutId={reduceMotion ? undefined : "search-seg"}
-          className="absolute inset-0 rounded-xl bg-band"
+          className="absolute inset-0 rounded-[14px] bg-band"
           transition={reduceMotion ? { duration: 0.05 } : PANEL_TRANSITION}
         />
       )}
@@ -495,7 +495,7 @@ function SportPicker({
             type="button"
             onClick={() => onToggle(sport)}
             aria-pressed={isOn}
-            className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
+            className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
           >
             <Icon className="shrink-0 text-sz-26 text-ink" />
             <span className="flex-1 text-sz-16 font-medium text-ink">{sportLabel(sport)}</span>

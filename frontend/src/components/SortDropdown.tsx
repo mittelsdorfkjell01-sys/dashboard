@@ -103,7 +103,7 @@ export default function SortDropdown({
         <SortIcon className="text-sz-18" />
         Sortieren & Filtern
         {count > 0 && (
-          <span className="grid h-5 min-w-5 place-items-center rounded-2xl bg-ink px-1.5 text-sz-11 font-semibold text-white">
+          <span className="grid h-5 min-w-5 place-items-center rounded-[14px] bg-ink px-1.5 text-sz-11 font-semibold text-white">
             {count}
           </span>
         )}
@@ -115,7 +115,7 @@ export default function SortDropdown({
           id={panelId}
           role="dialog"
           aria-label="Sortieren und filtern"
-          className="absolute right-0 z-30 mt-3 w-[300px] rounded-2xl bg-surface p-5 ring-1 ring-line"
+          className="absolute right-0 z-30 mt-3 w-[300px] rounded-[14px] bg-surface p-5 ring-1 ring-line"
         >
           {/* Sortierung */}
           <fieldset>
@@ -126,7 +126,7 @@ export default function SortDropdown({
               {SORT_OPTIONS.map((o) => (
                 <label
                   key={o.key}
-                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13.5px] text-ink hover:bg-teal/[0.06]"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-[14px] px-2 py-1.5 text-[13.5px] text-ink hover:bg-teal/[0.06]"
                 >
                   <input
                     type="radio"

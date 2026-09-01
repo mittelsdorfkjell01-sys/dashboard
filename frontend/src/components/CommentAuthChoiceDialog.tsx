@@ -52,7 +52,7 @@ export default function CommentAuthChoiceDialog({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="w-full max-w-[520px] rounded-3xl border border-line bg-surface p-6 shadow-float sm:p-7"
+            className="w-full max-w-[520px] rounded-[14px] border border-line bg-surface p-6 shadow-float sm:p-7"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -75,7 +75,7 @@ export default function CommentAuthChoiceDialog({
               <button
                 type="button"
                 onClick={onCancel}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 Schließen
@@ -106,7 +106,7 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex h-full min-h-[150px] flex-col items-start rounded-2xl border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${primary ? "border-teal/40 bg-teal/5 hover:bg-teal/10" : "border-line bg-page hover:border-teal/40 hover:bg-band"}`}
+      className={`group flex h-full min-h-[150px] flex-col items-start rounded-[14px] border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${primary ? "border-teal/40 bg-teal/5 hover:bg-teal/10" : "border-line bg-page hover:border-teal/40 hover:bg-band"}`}
     >
       <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-teal">{icon}</span>
       <span className="mt-3 min-w-0">

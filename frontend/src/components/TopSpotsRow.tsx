@@ -13,7 +13,7 @@ function RowSkeleton() {
     <div className={GRID}>
       {Array.from({ length: MAX_TILES }).map((_, i) => (
         <div key={i}>
-          <div className="aspect-video animate-pulse rounded-2xl bg-band" />
+          <div className="aspect-video animate-pulse rounded-[14px] bg-band" />
           <div className="space-y-2 pt-3">
             <div className="h-2 w-1/3 animate-pulse rounded bg-band" />
             <div className="h-3.5 w-2/3 animate-pulse rounded bg-band" />

@@ -354,7 +354,7 @@ export default function MobileSearchSheet({
                           type="button"
                           whileTap={{ scale: 0.98 }}
                           onClick={() => pickWhere(it)}
-                          className="flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
+                          className="flex items-center gap-3 rounded-[14px] px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
                         >
                           <span className="flex w-7 shrink-0 justify-center text-ink">
                             {it.kind === "spot" ? (
@@ -431,7 +431,7 @@ export default function MobileSearchSheet({
                           }))
                         }
                         aria-pressed={selected}
-                        className="flex items-center gap-4 rounded-xl px-1.5 py-3 text-left transition-colors hover:bg-band"
+                        className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
                       >
                         <Icon className="shrink-0 text-sz-26 text-ink" />
                         <span className="flex-1 text-sz-16 font-medium text-ink">
@@ -513,7 +513,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-3xl bg-surface shadow-float">
+    <div className="overflow-hidden rounded-[14px] bg-surface shadow-float">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <button
           type="button"

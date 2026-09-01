@@ -167,7 +167,7 @@ export default function LandingHeader({
                 className="absolute hidden sm:block"
                 style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
               >
-                <Suspense fallback={<div aria-hidden className="h-10 w-48 rounded-2xl bg-surface shadow-card" />}>
+                <Suspense fallback={<div aria-hidden className="h-10 w-48 rounded-[14px] bg-surface shadow-card" />}>
                   <SearchBar variant="pill" />
                 </Suspense>
               </div>
@@ -182,7 +182,7 @@ export default function LandingHeader({
               onClick={(event) => onMobileSearch(event.currentTarget)}
               aria-label="Suche öffnen"
               style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
-              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-card transition-opacity duration-150 sm:hidden"
+              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[14px] bg-teal text-white shadow-card transition-opacity duration-150 sm:hidden"
             >
               <SearchIcon className="text-sz-18" />
             </button>

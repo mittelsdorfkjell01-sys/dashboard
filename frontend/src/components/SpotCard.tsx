@@ -53,9 +53,9 @@ export default function SpotCard({
   return (
     <Link
       to={spotPath(spot)}
-      className="swd-mobile-deferred-card group flex h-full flex-col rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+      className="swd-mobile-deferred-card group flex h-full flex-col rounded-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
     >
-      <div className={`relative overflow-hidden rounded-2xl ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>
+      <div className={`relative overflow-hidden rounded-[14px] ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>
         <SpotImage
           src={spot.image}
           name={spot.name}

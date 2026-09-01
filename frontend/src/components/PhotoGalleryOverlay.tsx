@@ -162,7 +162,7 @@ function JustifiedGallery({
                 type="button"
                 onClick={() => onOpen(index)}
                 style={{ width: tile.width, height: tile.height }}
-                className="group relative shrink-0 overflow-hidden rounded-2xl bg-band"
+                className="group relative shrink-0 overflow-hidden rounded-[14px] bg-band"
               >
                 <img
                   {...responsiveImageAttributes(
@@ -186,8 +186,8 @@ function JustifiedGallery({
 
 function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="mt-8 grid place-items-center rounded-3xl border border-dashed border-line bg-band/40 px-5 py-12 text-center sm:py-14">
-      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl border border-line bg-surface text-teal">
+    <div className="mt-8 grid place-items-center rounded-[14px] border border-dashed border-line bg-band/40 px-5 py-12 text-center sm:py-14">
+      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-[14px] border border-line bg-surface text-teal">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2.5" />
           <circle cx="8.5" cy="10" r="1.6" />
@@ -277,7 +277,7 @@ function Lightbox({
             type="button"
             onClick={onClose}
             aria-label="Schließen"
-            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
+            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
           >
             <CloseIcon width={20} height={20} />
           </button>
@@ -288,7 +288,7 @@ function Lightbox({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(-1); }}
                 aria-label="Vorheriges Bild"
-                className="absolute left-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
+                className="absolute left-3 grid h-12 w-12 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
               >
                 <ChevronLeftIcon width={22} height={22} />
               </button>
@@ -296,7 +296,7 @@ function Lightbox({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(1); }}
                 aria-label="Nächstes Bild"
-                className="absolute right-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
+                className="absolute right-3 grid h-12 w-12 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
               >
                 <ChevronRightIcon width={22} height={22} />
               </button>
@@ -312,7 +312,7 @@ function Lightbox({
             )}
             alt={photo.credit ?? ""}
             decoding="async"
-            className="max-h-full max-w-full rounded-lg object-contain"
+            className="max-h-full max-w-full rounded-[14px] object-contain"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}

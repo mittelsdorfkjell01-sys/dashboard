@@ -189,7 +189,7 @@ function FlexPicker({
   };
 
   const chip = (active: boolean) =>
-    `rounded-2xl border px-4 py-2.5 text-ui font-medium transition-colors ${
+    `rounded-[14px] border px-4 py-2.5 text-ui font-medium transition-colors ${
       active
         ? "border-teal bg-teal text-white"
         : "border-line text-ink hover:bg-band"

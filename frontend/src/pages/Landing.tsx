@@ -79,7 +79,7 @@ export default function Landing() {
             </div>
             <div className="hidden sm:block">
               {desktopSearch && (
-                <Suspense fallback={<div aria-hidden className="h-14 w-full rounded-2xl bg-surface/90 shadow-float" />}>
+                <Suspense fallback={<div aria-hidden className="h-14 w-full rounded-[14px] bg-surface/90 shadow-float" />}>
                   <SearchBar />
                 </Suspense>
               )}

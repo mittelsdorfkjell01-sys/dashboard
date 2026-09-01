@@ -43,7 +43,7 @@ export default function ResultsHeader() {
 
           <div className="hidden min-w-0 justify-center sm:flex">
             {desktop && (
-              <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-2xl bg-surface shadow-card" />}>
+              <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-[14px] bg-surface shadow-card" />}>
                 <SearchBar variant="pill" />
               </Suspense>
             )}
@@ -56,7 +56,7 @@ export default function ResultsHeader() {
             type="button"
             onClick={(event) => openMobileSearch(event.currentTarget)}
             aria-label="Suche öffnen"
-            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl bg-teal text-white shadow-card active:scale-[0.97] sm:hidden"
+            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] sm:hidden"
           >
             <SearchIcon className="text-sz-18" />
           </button>

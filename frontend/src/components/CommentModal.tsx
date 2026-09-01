@@ -79,7 +79,7 @@ export default function CommentModal({
             role="dialog"
             aria-modal="true"
             aria-label="Kommentar verfassen"
-            className="w-full max-w-[520px] rounded-3xl border border-line bg-surface p-6 shadow-float sm:p-7"
+            className="w-full max-w-[520px] rounded-[14px] border border-line bg-surface p-6 shadow-float sm:p-7"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -106,7 +106,7 @@ export default function CommentModal({
                   maxLength={120}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Worum geht es?"
-                  className="mt-2 min-h-11 w-full rounded-2xl border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+                  className="mt-2 min-h-11 w-full rounded-[14px] border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
                 />
                 <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
               </div>
@@ -116,7 +116,7 @@ export default function CommentModal({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="verfasse einen Kommentar…"
-              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-2xl border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10`}
+              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-[14px] border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10`}
             />
             {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
 
@@ -124,7 +124,7 @@ export default function CommentModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 Schließen

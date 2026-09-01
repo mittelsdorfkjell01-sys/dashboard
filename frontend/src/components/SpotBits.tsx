@@ -21,7 +21,7 @@ const tagStyles: Record<Tag["kind"], string> = {
 export function TagPill({ tag }: { tag: Tag }) {
   return (
     <span
-      className={`inline-flex items-center rounded-2xl px-2 py-0.5 text-sz-10 font-medium leading-none ${tagStyles[tag.kind]}`}
+      className={`inline-flex items-center rounded-[14px] px-2 py-0.5 text-sz-10 font-medium leading-none ${tagStyles[tag.kind]}`}
     >
       {tag.label}
     </span>

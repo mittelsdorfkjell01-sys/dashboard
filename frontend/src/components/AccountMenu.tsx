@@ -65,7 +65,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
           <div
             role="menu"
             aria-label="Konto"
-            className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-2xl bg-surface p-2"
+            className="absolute right-0 top-[calc(100%+10px)] w-60 rounded-[14px] bg-surface p-2"
           >
             {user ? (
               <>

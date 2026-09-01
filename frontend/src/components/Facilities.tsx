@@ -41,7 +41,7 @@ export default function Facilities({
           return (
             <div key={f.kind} className="flex flex-col items-center gap-1.5">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-lg bg-band ${
+                className={`flex h-8 w-8 items-center justify-center rounded-[14px] bg-band ${
                   absent ? "opacity-40" : unknown ? "opacity-30" : ""
                 }`}
               >
@@ -125,7 +125,7 @@ export default function Facilities({
         return (
           <div key={f.kind}>
             <span
-              className={`grid h-11 w-11 place-items-center rounded-2xl bg-ink/[0.04] text-ink ${
+              className={`grid h-11 w-11 place-items-center rounded-[14px] bg-ink/[0.04] text-ink ${
                 absent ? "opacity-40" : unknown ? "opacity-30" : ""
               }`}
             >

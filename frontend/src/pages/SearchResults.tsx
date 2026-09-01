@@ -169,7 +169,7 @@ function ResultsMap({
 
       {/* Zoom controls (scroll-wheel zoom is off so the page keeps scrolling
           past the sticky map). */}
-      <div className={`pointer-events-none absolute right-3 z-[600] flex flex-col overflow-hidden rounded-2xl border border-line bg-white ${topInset ? "top-20" : "top-3"}`}>
+      <div className={`pointer-events-none absolute right-3 z-[600] flex flex-col overflow-hidden rounded-[14px] border border-line bg-white ${topInset ? "top-20" : "top-3"}`}>
         <button type="button" aria-label="Vergrößern" onClick={() => map?.zoomIn()} className="pointer-events-auto grid h-10 w-10 place-items-center text-teal transition-colors hover:bg-line/40">
           <PlusIcon className="text-sz-18" />
         </button>
@@ -224,7 +224,7 @@ function SplitView({
           <div className="hidden lg:block">
             {/* The map enters already docked beneath the persistent header and
                 remains there while the independent result column scrolls. */}
-            <div className="sticky top-24 h-[calc(100vh-7.5rem)] min-h-[420px] max-h-[720px] overflow-hidden rounded-3xl border border-line" data-lenis-prevent>
+            <div className="sticky top-24 h-[calc(100vh-7.5rem)] min-h-[420px] max-h-[720px] overflow-hidden rounded-[14px] border border-line" data-lenis-prevent>
               <ResultsMap spots={mapSpots} center={center} zoom={zoom} live={live} />
             </div>
           </div>
@@ -237,7 +237,7 @@ function SplitView({
           <button
             type="button"
             onClick={() => setShowMap(true)}
-            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-1.5 rounded-xl bg-teal px-4 py-2 text-ui font-semibold text-white shadow-float lg:hidden"
+            className="fixed bottom-6 left-1/2 z-[700] flex -translate-x-1/2 items-center gap-1.5 rounded-[14px] bg-teal px-4 py-2 text-ui font-semibold text-white shadow-float lg:hidden"
           >
             Karte <MapIcon className="text-body" />
           </button>
@@ -249,7 +249,7 @@ function SplitView({
                 type="button"
                 onClick={() => setShowMap(false)}
                 aria-label="Zurück"
-                className="absolute right-4 top-4 z-[1100] grid h-11 w-11 place-items-center rounded-2xl border border-line bg-white text-teal shadow-card"
+                className="absolute right-4 top-4 z-[1100] grid h-11 w-11 place-items-center rounded-[14px] border border-line bg-white text-teal shadow-card"
               >
                 <ChevronLeftIcon className="text-sz-20" />
               </button>
@@ -644,7 +644,7 @@ function BestWeeksList({ data, place }: { data: api.BestWeeksResponse; place: st
         {weeks.map((w) => {
           const isBest = w.week === best;
           return (
-            <li key={w.week} className="flex items-center gap-4 rounded-2xl border border-line bg-surface px-4 py-3">
+            <li key={w.week} className="flex items-center gap-4 rounded-[14px] border border-line bg-surface px-4 py-3">
               <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
               <span className="h-2 flex-1 overflow-hidden rounded-full bg-line">
                 <span className={`block h-full rounded-full ${isBest ? "bg-orange" : "bg-teal"}`} style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }} />

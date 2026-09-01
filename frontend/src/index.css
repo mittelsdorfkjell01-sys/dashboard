@@ -248,9 +248,9 @@ html[data-theme="dark"] { color-scheme: dark; }
     text-underline-offset: 4px;
   }
 
-  /* 8px radius — matches the header buttons (rounded-2xl/3xl are both 8px). */
+  /* 14px radius — matches the app-wide corner radius. */
   .spot-media-frame {
-    border-radius: 0.5rem;
+    border-radius: 0.875rem;
   }
 
   .spot-gallery-compact > div {

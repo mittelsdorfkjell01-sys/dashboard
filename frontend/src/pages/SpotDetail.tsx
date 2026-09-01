@@ -162,7 +162,7 @@ export default function SpotDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center gap-1.5 bg-transparent p-0 text-ui font-medium text-white transition-colors hover:text-white/80 sm:h-auto sm:w-auto sm:justify-start sm:rounded-2xl sm:bg-teal sm:py-2 sm:pl-2.5 sm:pr-4 sm:hover:bg-teal-hover sm:hover:text-white"
+            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center gap-1.5 bg-transparent p-0 text-ui font-medium text-white transition-colors hover:text-white/80 sm:h-auto sm:w-auto sm:justify-start sm:rounded-[14px] sm:bg-teal sm:py-2 sm:pl-2.5 sm:pr-4 sm:hover:bg-teal-hover sm:hover:text-white"
           >
             <ChevronDownIcon width={18} height={18} className="rotate-90" />
             <span className="hidden sm:inline">Zurück</span>

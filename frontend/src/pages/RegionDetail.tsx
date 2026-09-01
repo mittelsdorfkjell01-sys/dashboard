@@ -190,7 +190,7 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-line bg-surface py-2 pl-2.5 pr-4 text-ui font-medium text-teal transition-colors hover:bg-band"
+            className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-[14px] border border-line bg-surface py-2 pl-2.5 pr-4 text-ui font-medium text-teal transition-colors hover:bg-band"
           >
             <ChevronDownIcon className="rotate-90 text-sz-18" />
             Zurück
@@ -254,7 +254,7 @@ export default function RegionDetail() {
         {/* Auf der Karte */}
         {withCoords.length > 0 && (
           <SectionBand tone="band" heading="Auf der Karte">
-            <div className="overflow-hidden rounded-3xl border border-line">
+            <div className="overflow-hidden rounded-[14px] border border-line">
               <MapContainer
                 center={region.center}
                 zoom={7}

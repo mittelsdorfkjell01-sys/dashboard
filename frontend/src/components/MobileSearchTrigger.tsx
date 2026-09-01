@@ -19,7 +19,7 @@ export default function MobileSearchTrigger({
     <button
       type="button"
       onClick={(event) => onClick(event.currentTarget)}
-      className={`flex min-h-11 w-full items-center justify-center gap-2.5 rounded-2xl border border-line bg-surface text-ink shadow-float transition-transform active:scale-[0.99] ${compact ? "px-4 py-2.5" : "px-6 py-4"}`}
+      className={`flex min-h-11 w-full items-center justify-center gap-2.5 rounded-[14px] border border-line bg-surface text-ink shadow-float transition-transform active:scale-[0.99] ${compact ? "px-4 py-2.5" : "px-6 py-4"}`}
     >
       <SearchIcon className={`shrink-0 ${compact ? "text-sz-16" : "text-sz-20"}`} />
       <span className={`font-medium ${compact ? "text-label" : "text-body"}`}>{label}</span>
