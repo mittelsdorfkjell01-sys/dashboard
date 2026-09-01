@@ -107,9 +107,9 @@ describe("forecast validation", () => {
 
   it("sanitizes non-finite, negative and contradictory daily summaries",()=>{
     const input=baseDay("2026-01-01",[],"trend");
-    input.summary={...input.summary,wind_avg:Number.NaN,wind_max:20,gust_max:15,swell_max:-1,air_min:10,air_max:5,precipitation_sum_mm:Number.POSITIVE_INFINITY};
+    input.summary={...input.summary,wind_avg:Number.NaN,wind_max:20,gust_max:15,swell_max:-1,air_min:10,air_max:5,precipitation_sum_mm:Number.POSITIVE_INFINITY,sunshine_duration_hours:25};
     const normalized=normalizeForecast(series("UTC",[input]));
-    expect(normalized.days[0].summary).toMatchObject({wind_avg:null,gust_max:null,swell_max:null,air_min:null,air_max:null,precipitation_sum_mm:null});
+    expect(normalized.days[0].summary).toMatchObject({wind_avg:null,gust_max:null,swell_max:null,air_min:null,air_max:null,precipitation_sum_mm:null,sunshine_duration_hours:null});
     expect(normalized.diagnostics.some((item)=>item.code==="gust_below_wind")).toBe(true);
   });
 

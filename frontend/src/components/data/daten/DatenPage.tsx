@@ -59,7 +59,7 @@ export default function DatenPage({
 
           {/* 1) Meteogram — waves, weather, temperature, wind, direction, time. */}
           <section aria-label="Meteogramm" className="mt-10">
-            {forecastLoading && <div className="h-[360px] animate-pulse rounded bg-band" />}
+            {forecastLoading && <MeteogramSkeleton />}
             {!forecastLoading && hasForecast && <MeteoChart forecast={forecast!} />}
             {!forecastLoading && !hasForecast && (
               <EmptyState message={forecastError ? "Vorhersage momentan nicht verfügbar." : "Keine Vorhersage-Daten."} />
@@ -101,5 +101,57 @@ export default function DatenPage({
         </div>
       </div>
     </SpotDataScopeProvider>
+  );
+}
+
+// Loading placeholder that mirrors the meteogram's instrument structure (row-
+// label gutter + wave bars, a temperature line and wind bars) rather than a
+// single block, so the skeleton reads as "this chart is loading". Kept quiet:
+// faint hairline-toned shapes, one gentle pulse, no glow (per the instrument
+// aesthetic). Deterministic bar heights so it doesn't reflow between frames.
+function MeteogramSkeleton() {
+  const cols = 18;
+  const waveH = (i: number) => 6 + ((i * 7) % 5) * 3; // 6–18px
+  const windH = (i: number) => 26 + ((i * 5) % 8) * 8; // 26–82px
+  return (
+    <div className="flex min-w-0 animate-pulse gap-3" role="status" aria-label="Meteogramm wird geladen">
+      <div className="shrink-0 select-none pt-1 text-data-caption uppercase tracking-[0.14em] text-muted/40">
+        {["WELLE", "WETTER", "TEMP.", "WIND", "RICHT.", "ZEIT"].map((label, i) => (
+          <div key={label} className="flex items-center" style={{ height: [40, 58, 108, 134, 26, 22][i] }}>
+            {label}
+          </div>
+        ))}
+      </div>
+      <div className="min-w-0 flex-1 overflow-hidden">
+        {/* WELLE — short bars hanging from the top. */}
+        <div className="flex h-10 items-start gap-3">
+          {Array.from({ length: cols }).map((_, i) => (
+            <span key={i} className="w-[22px] rounded-[4px] bg-line" style={{ height: waveH(i) }} />
+          ))}
+        </div>
+        {/* WETTER — glyph placeholders. */}
+        <div className="flex h-[58px] items-center gap-3">
+          {Array.from({ length: cols }).map((_, i) => (
+            <span key={i} className="h-[22px] w-[22px] rounded-full bg-line-soft" />
+          ))}
+        </div>
+        {/* TEMP — a faint curve stand-in. */}
+        <div className="flex h-[108px] items-center">
+          <span className="h-px w-full bg-line" />
+        </div>
+        {/* WIND — bars rising from the baseline. */}
+        <div className="flex h-[134px] items-end gap-3">
+          {Array.from({ length: cols }).map((_, i) => (
+            <span key={i} className="w-[22px] rounded-[5px] bg-line" style={{ height: windH(i) }} />
+          ))}
+        </div>
+        {/* RICHT + ZEIT — axis ticks (combined height of both label rows). */}
+        <div className="flex h-[48px] items-center gap-3">
+          {Array.from({ length: cols }).map((_, i) => (
+            <span key={i} className="h-3 w-[22px] rounded-sm bg-line-soft" />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

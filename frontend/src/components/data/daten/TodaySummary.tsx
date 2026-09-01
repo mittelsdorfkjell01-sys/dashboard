@@ -43,14 +43,20 @@ export default function TodaySummary({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <span className="font-semibold leading-none tracking-tight text-ink" style={{ fontSize: 56 }}>
-          {current == null ? "–" : Math.round(current)}
-          <span className="align-top text-sz-28">C</span>
+        <span className="font-semibold leading-none tracking-tight text-ink tabular-nums" style={{ fontSize: 56 }}>
+          {current == null ? (
+            <span className="text-muted">—</span>
+          ) : (
+            <>
+              {Math.round(current)}
+              <span className="align-top text-sz-28 text-muted">C</span>
+            </>
+          )}
         </span>
         <WeatherGlyph condition={condition} size={30} />
         <span className="flex items-center gap-3 text-ui text-muted">
-          <span className="tabular-nums">↑ {hi == null ? "–" : Math.round(hi)}C</span>
-          <span className="tabular-nums">↓ {lo == null ? "–" : Math.round(lo)}C</span>
+          <span className="tabular-nums">↑ {hi == null ? "—" : Math.round(hi)}C</span>
+          <span className="tabular-nums">↓ {lo == null ? "—" : Math.round(lo)}C</span>
         </span>
       </div>
 
@@ -162,10 +168,10 @@ function DayTempArea({
           </g>
         ) : null,
       )}
-      <path d={geom.area} fill="var(--sw-ink)" opacity={0.08} />
-      <path d={geom.line} fill="none" stroke="var(--sw-ink-soft)" strokeWidth={2} strokeLinejoin="round" />
+      <path d={geom.area} fill="var(--sw-data-temp)" opacity={0.1} />
+      <path d={geom.line} fill="none" stroke="var(--sw-data-temp)" strokeWidth={2} strokeLinejoin="round" />
       {selIdx >= 0 && (
-        <circle cx={geom.x(selIdx)} cy={geom.y(hours[selIdx].air as number)} r={6} fill="var(--sw-surface)" stroke="var(--sw-ink)" strokeWidth={2.5} />
+        <circle cx={geom.x(selIdx)} cy={geom.y(hours[selIdx].air as number)} r={6} fill="var(--sw-surface)" stroke="var(--sw-data-temp)" strokeWidth={2.5} />
       )}
     </svg>
   );

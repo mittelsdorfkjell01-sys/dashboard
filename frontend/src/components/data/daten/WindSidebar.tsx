@@ -60,13 +60,16 @@ export default function WindSidebar({
   const classification = snapshot?.windCoastalClassification;
   const classLabel = classification && classification !== "unavailable" ? CLASS_LABEL[classification] : null;
 
-  const metrics: Array<[string, string]> = [
-    ["WIND", wind == null ? "–" : `${formatWind(wind, windUnit)} ${windUnitLabel(windUnit)}`],
-    ["WELLE", wave == null ? "–" : `${wave.toFixed(1)} m`],
-    ["UV INDEX", uv == null ? "–" : String(Math.round(uv))],
-    ["SONNE", sunHours == null ? "–" : `${Math.round(sunHours)} STD`],
-    ["GEFÜHLT", apparent == null ? "–" : `${Math.round(apparent)} C`],
-    ["REGEN", rain == null ? "–" : `${rain.toFixed(1)} mm`],
+  // Value/unit split so the reading dominates and the unit reads as quiet
+  // metadata (brief: "Der Messwert ist immer wichtiger als seine Einheit").
+  // `value: null` renders an em-dash placeholder for a single missing reading.
+  const metrics: Array<{ label: string; value: string | null; unit?: string }> = [
+    { label: "WIND", value: wind == null ? null : formatWind(wind, windUnit), unit: windUnitLabel(windUnit) },
+    { label: "WELLE", value: wave == null ? null : wave.toFixed(1), unit: "m" },
+    { label: "UV INDEX", value: uv == null ? null : String(Math.round(uv)) },
+    { label: "SONNE", value: sunHours == null ? null : String(Math.round(sunHours)), unit: "STD" },
+    { label: "GEFÜHLT", value: apparent == null ? null : String(Math.round(apparent)), unit: "C" },
+    { label: "REGEN", value: rain == null ? null : rain.toFixed(1), unit: "mm" },
   ];
 
   return (
@@ -74,17 +77,26 @@ export default function WindSidebar({
       <p className="border-b border-line pb-3 text-caption tabular-nums text-muted">{stamp}</p>
 
       <dl className="mt-5 grid grid-cols-2 gap-x-10 gap-y-6">
-        {metrics.map(([label, value]) => (
+        {metrics.map(({ label, value, unit }) => (
           <div key={label}>
             <dt className="text-caption uppercase tracking-[0.12em] text-muted">{label}</dt>
-            <dd className="mt-1.5 text-sz-24 font-semibold tabular-nums text-ink">{value}</dd>
+            <dd className="mt-1.5 flex items-baseline gap-1 text-sz-24 font-semibold tabular-nums text-ink">
+              {value == null ? (
+                <span className="text-muted">—</span>
+              ) : (
+                <>
+                  <span>{value}</span>
+                  {unit && <span className="text-caption font-normal text-muted">{unit}</span>}
+                </>
+              )}
+            </dd>
           </div>
         ))}
       </dl>
 
       <div className="mt-10">
         <p className="text-sz-24 font-semibold text-ink">
-          {dir == null ? "Richtung –" : `Aus ${degreesToCompass(dir)}`}
+          {dir == null ? "Richtung —" : `Aus ${degreesToCompass(dir)}`}
         </p>
         {dir != null && <p className="mt-1 text-caption tabular-nums text-muted">{Math.round(dir)} Grad</p>}
         {classLabel && <p className="mt-0.5 text-caption text-muted">{classLabel}</p>}

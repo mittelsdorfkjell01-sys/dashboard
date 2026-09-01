@@ -27,8 +27,8 @@ export default function ForecastGrid({ forecast }: { forecast: NormalizedForecas
             <p className="text-ui tabular-nums text-ink">{label}</p>
             <WeatherGlyph condition={day.summary.weather_condition} size={44} />
             <p className="text-ui tabular-nums">
-              <span className="text-ink">{hi == null ? "–" : Math.round(hi)}C</span>{" "}
-              <span className="text-[#4F97D8]">{lo == null ? "–" : Math.round(lo)}C</span>
+              <span className="text-ink">{hi == null ? "—" : Math.round(hi)}C</span>{" "}
+              <span className="text-muted">{lo == null ? "—" : Math.round(lo)}C</span>
             </p>
           </div>
         );

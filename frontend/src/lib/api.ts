@@ -305,7 +305,7 @@ export interface LiveMeasurement {
 
 export type WeatherSourceType = "measurement" | "model_nowcast" | "forecast";
 export interface WeatherProvenance {
-  contract_version: "weather-v5";
+  contract_version: "weather-v6";
   source_type: WeatherSourceType;
   observation_type: "measurement" | "nowcast" | "forecast";
   source: string; provider: string;
@@ -357,6 +357,7 @@ export interface ForecastDaySummary {
   precipitation_probability_max_pct?: number | null;
   cloud_cover_mean_pct?: number | null;
   uv_index_max?: number | null;
+  sunshine_duration_hours?: number | null;
   weather_code?: number | null;
   weather_condition?: WeatherCondition;
   sunrise_at?: string | null;

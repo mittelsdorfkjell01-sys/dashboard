@@ -139,9 +139,12 @@ function localParts(instant: Date, timezone: string) {
 
 function normalizeSummary(summary: ForecastDay["summary"], path: string, diagnostics: ForecastDiagnostic[]): ForecastDay["summary"] {
   const result = { ...summary } as ForecastDay["summary"] & Record<string,unknown>;
-  const nonNegative = ["wind_avg","wind_max","gust_max","swell_max","precipitation_sum_mm","precipitation_probability_max_pct","cloud_cover_mean_pct","uv_index_max"];
+  const nonNegative = ["wind_avg","wind_max","gust_max","swell_max","precipitation_sum_mm","precipitation_probability_max_pct","cloud_cover_mean_pct","uv_index_max","sunshine_duration_hours"];
   for (const key of nonNegative) {
-    if (key in result) result[key] = numeric(result[key], `${path}.${key}`, diagnostics, { minimum: 0, maximum: key.endsWith("_pct") ? 100 : undefined });
+    if (key in result) result[key] = numeric(result[key], `${path}.${key}`, diagnostics, {
+      minimum: 0,
+      maximum: key.endsWith("_pct") ? 100 : key === "sunshine_duration_hours" ? 24 : undefined,
+    });
   }
   for (const key of ["air_min","air_max","temperature_min_c","temperature_max_c","apparent_temperature_min_c","apparent_temperature_max_c"]) {
     if (key in result) result[key] = numeric(result[key], `${path}.${key}`, diagnostics);

@@ -19,6 +19,22 @@
   --sw-teal-hover: #78B7D2;
   --sw-orange: #E7883A;
   --sw-green: #6BA97A;
+  /* Wind-climatology (Windmonate) reliability scale, mid bands. Redeclared to
+     their dark values so the chart's low→high scale stays correct on the dark
+     instrument canvas even when the SITE theme is light (bands 0/3 already
+     resolve via --sw-line / --sw-teal above; without these two, bands 1/2 fell
+     back to the light-theme pastels). */
+  --sw-reliability-sand: #6B5B3F;
+  --sw-reliability-blue: #4C7A90;
+  /* Semantic data-encoding accents (Swiss Marine Instrument palette). Each
+     variable is one physical quantity in one colour family, used everywhere
+     that quantity is drawn on the Daten tab so wave/temperature/rain stay
+     instantly distinguishable. Wind is deliberately absent: it keeps the
+     shared speed-graduated windScale (a Beaufort-style encoding) rather than
+     collapsing to a single hue, which would erase the speed information. */
+  --sw-data-swell: #9B87C9; /* waves / swell — muted violet */
+  --sw-data-temp: #D7A35D;  /* air temperature — muted amber */
+  --sw-data-rain: #6FA8DC;  /* precipitation — cool light blue */
   color-scheme: dark;
   background: var(--sw-page);
   color: var(--sw-ink);

@@ -22,7 +22,7 @@ export default function WeatherGlyph({
 }) {
   const sun = "#E7A33A";
   const cloud = "var(--sw-ink)";
-  const rain = "#4F97D8";
+  const rain = "var(--sw-data-rain)";
   const snow = "#8FC4E6";
   const bolt = "#E7A33A";
   const stroke = 1.6;
