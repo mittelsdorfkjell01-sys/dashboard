@@ -627,16 +627,26 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
     hourly = forecast.get("hourly") or {}
     times = hourly.get("time") or []
     multi = len(models) > 1
-    src = models[0] if models else None  # dir/air from the primary model
 
-    air_series = _column(hourly, "temperature_2m", src, multi) if src else []
-    precip_series = _column(hourly, "precipitation", src, multi) if src else []
-    apparent_series = _column(hourly, "apparent_temperature", src, multi) if src else []
-    cloud_series = _column(hourly, "cloud_cover", src, multi) if src else []
-    pressure_series = _column(hourly, "pressure_msl", src, multi) if src else []
-    uv_series = _column(hourly, "uv_index", src, multi) if src else []
-    code_series = _column(hourly, "weather_code", src, multi) if src else []
-    day_series = _column(hourly, "is_day", src, multi) if src else []
+    def candidate_columns(name: str) -> list[list]:
+        candidates: list[list] = []
+        if multi:
+            for model in models:
+                member = hourly.get(f"{name}_{model}")
+                if isinstance(member, list):
+                    candidates.append(member)
+        shared = hourly.get(name)
+        if isinstance(shared, list):
+            candidates.append(shared)
+        return candidates
+
+    weather_columns = {
+        name: candidate_columns(name)
+        for name in (
+            "temperature_2m", "precipitation", "apparent_temperature",
+            "cloud_cover", "pressure_msl", "uv_index", "weather_code", "is_day",
+        )
+    }
     marine_by_time = _index_marine_hours(marine)
     timezone_name = provider_timezone(forecast)
     reference = provider_time_utc((forecast.get("current") or {}).get("time"), timezone_name)
@@ -647,6 +657,14 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
     for i, valid_at in enumerate(provider_axis_utc(times, timezone_name)):
         if valid_at is None:
             continue
+
+        def value_at(name: str, **bounds):
+            for values in weather_columns[name]:
+                value = valid_number(values[i] if i < len(values) else None, **bounds)
+                if value is not None:
+                    return value
+            return None
+
         # Open-Meteo includes elapsed hours of the current day. They must not
         # influence a forward-looking daily summary or learned lead-time weight.
         if reference and valid_at and valid_at < reference.replace(minute=0, second=0, microsecond=0):
@@ -659,8 +677,9 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
         }
         utc_time = valid_at.isoformat()
         m = marine_by_time.get(utc_time, {})
-        code = code_series[i] if i < len(code_series) else None
-        code = int(code) if isinstance(code, (int, float)) and not isinstance(code, bool) else None
+        code_value = value_at("weather_code", minimum=0)
+        code = int(code_value) if code_value is not None else None
+        is_day = value_at("is_day", minimum=0, maximum=1)
         hours.append(
             {
                 "time": utc_time,
@@ -669,15 +688,15 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
                 "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
                 "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
                 "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
-                "air": valid_number(air_series[i] if i < len(air_series) else None, minimum=-90, maximum=60),
-                "apparent_temperature_c": valid_number(apparent_series[i] if i < len(apparent_series) else None, minimum=-100, maximum=70),
-                "precip": valid_number(precip_series[i] if i < len(precip_series) else None, minimum=0, maximum=500),
-                "cloud_cover_pct": valid_number(cloud_series[i] if i < len(cloud_series) else None, minimum=0, maximum=100),
-                "pressure_msl_hpa": valid_number(pressure_series[i] if i < len(pressure_series) else None, minimum=800, maximum=1100),
-                "uv_index": valid_number(uv_series[i] if i < len(uv_series) else None, minimum=0),
+                "air": value_at("temperature_2m", minimum=-90, maximum=60),
+                "apparent_temperature_c": value_at("apparent_temperature", minimum=-100, maximum=70),
+                "precip": value_at("precipitation", minimum=0, maximum=500),
+                "cloud_cover_pct": value_at("cloud_cover", minimum=0, maximum=100),
+                "pressure_msl_hpa": value_at("pressure_msl", minimum=800, maximum=1100),
+                "uv_index": value_at("uv_index", minimum=0),
                 "weather_code": code,
                 "weather_condition": weather_condition(code),
-                "is_day": bool(day_series[i]) if i < len(day_series) and day_series[i] in (0, 1, False, True) else None,
+                "is_day": bool(is_day) if is_day is not None else None,
                 "swell": m.get("swell"),
                 "period": m.get("period"),
                 "swell_dir": m.get("swell_dir"),
@@ -737,35 +756,57 @@ def _day_summary(hours: list[dict]) -> dict:
 def _daily_weather(forecast: dict, models: list[str]) -> dict[str, dict]:
     daily = forecast.get("daily") or {}
     dates = daily.get("time") or []
-    primary, multi = (models[0] if models else None), len(models) > 1
-    def col(name):
-        # Open-Meteo daily aggregates are commonly unsuffixed even when hourly
-        # model members are suffixed. Prefer the explicit member column but do
-        # not discard a valid public daily field merely because it is shared.
-        member = _column(daily, name, primary, multi) if primary else []
-        return member or (daily.get(name) or [])
-    columns = {name: col(name) for name in (
+    multi = len(models) > 1
+
+    def candidate_columns(name: str) -> list[list]:
+        """Return member columns in model priority order plus a shared column.
+
+        Regional models commonly stop before day ten while global members in
+        the same Open-Meteo response continue. Selection therefore happens per
+        day and field, not once for the whole column.
+        """
+        candidates: list[list] = []
+        if multi:
+            for model in models:
+                member = daily.get(f"{name}_{model}")
+                if isinstance(member, list):
+                    candidates.append(member)
+        shared = daily.get(name)
+        if isinstance(shared, list):
+            candidates.append(shared)
+        return candidates
+
+    columns = {name: candidate_columns(name) for name in (
         "temperature_2m_min", "temperature_2m_max", "apparent_temperature_min",
         "apparent_temperature_max", "precipitation_sum", "uv_index_max", "weather_code",
         "sunrise", "sunset", "daylight_duration", "cloud_cover_mean",
-        "precipitation_probability_max",
+        "precipitation_probability_max", "sunshine_duration",
     )}
     timezone_name = provider_timezone(forecast)
     result = {}
     for i, local_date in enumerate(dates):
         def at(name, **bounds):
-            values = columns[name]
-            return valid_number(values[i] if i < len(values) else None, **bounds)
+            for values in columns[name]:
+                value = valid_number(values[i] if i < len(values) else None, **bounds)
+                if value is not None:
+                    return value
+            return None
+
+        def instant_at(name):
+            for values in columns[name]:
+                raw = values[i] if i < len(values) else None
+                if instant := provider_time_utc(raw, timezone_name):
+                    return instant
+            return None
+
         minimum, maximum = at("temperature_2m_min"), at("temperature_2m_max")
         if minimum is not None and maximum is not None and minimum > maximum:
             minimum = maximum = None
-        code_value = columns["weather_code"][i] if i < len(columns["weather_code"]) else None
-        code = int(code_value) if isinstance(code_value, (int, float)) and not isinstance(code_value, bool) else None
-        sunrise_raw = columns["sunrise"][i] if i < len(columns["sunrise"]) else None
-        sunset_raw = columns["sunset"][i] if i < len(columns["sunset"]) else None
-        sunrise = provider_time_utc(sunrise_raw, timezone_name)
-        sunset = provider_time_utc(sunset_raw, timezone_name)
-        daylight = at("daylight_duration", minimum=0)
+        code_value = at("weather_code", minimum=0)
+        code = int(code_value) if code_value is not None else None
+        sunrise, sunset = instant_at("sunrise"), instant_at("sunset")
+        daylight = at("daylight_duration", minimum=0, maximum=86400)
+        sunshine = at("sunshine_duration", minimum=0, maximum=86400)
         solar_state = "normal" if sunrise and sunset else "polar_day" if daylight is not None and daylight >= 86399 else "polar_night" if daylight == 0 else "unavailable"
         result[str(local_date)] = {
             "local_date": str(local_date), "temperature_min_c": minimum,
@@ -776,6 +817,7 @@ def _daily_weather(forecast: dict, models: list[str]) -> dict[str, dict]:
             "cloud_cover_mean_pct": at("cloud_cover_mean", minimum=0, maximum=100),
             "uv_index_max": at("uv_index_max", minimum=0), "weather_code": code,
             "weather_condition": weather_condition(code),
+            "sunshine_duration_hours": round(sunshine / 3600, 1) if sunshine is not None else None,
             "sunrise_at": sunrise.isoformat() if sunrise else None,
             "sunset_at": sunset.isoformat() if sunset else None, "solar_state": solar_state,
         }

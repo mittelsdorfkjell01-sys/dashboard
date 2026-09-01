@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-WEATHER_CONTRACT_VERSION = "weather-v5"
+WEATHER_CONTRACT_VERSION = "weather-v6"
 MODEL_NOWCAST_STALE_SECONDS = 15 * 60
 MEASUREMENT_STALE_SECONDS = 30 * 60
 ATMOSPHERE_FORECAST_STALE_SECONDS = 3 * 60 * 60

@@ -77,7 +77,7 @@ def test_public_live_cache_hit_does_not_touch_database():
     import uuid
     spot_id = uuid.uuid4()
     cache = InMemoryCache()
-    cache.set(f"public:weather-v5:live:{spot_id}", {
+    cache.set(f"public:weather-v6:live:{spot_id}", {
         "spot_id": str(spot_id), "model": "surfwinddata", "time": None, "current": {}
     }, 60)
     class NoDb:
@@ -95,7 +95,7 @@ def test_public_forecast_cache_hit_does_not_touch_database():
     import uuid
     spot_id = uuid.uuid4()
     cache = InMemoryCache()
-    cache.set(f"public:weather-v5:forecast:{spot_id}", {
+    cache.set(f"public:weather-v6:forecast:{spot_id}", {
         "spot_id": str(spot_id), "model": "surfwinddata",
         "generated_at": "2026-08-26T00:00:00Z", "days": [],
         "_fresh_until": "2026-08-26T03:00:00Z",

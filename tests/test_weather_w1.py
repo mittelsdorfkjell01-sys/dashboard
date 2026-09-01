@@ -27,10 +27,10 @@ def test_dst_axes_are_strict_for_spring_gap_and_repeated_fall_hour():
     assert (fall[2] - fall[1]).total_seconds() == 3600
 
 
-def test_complete_weather_v5_contract_uses_nullable_fields_and_local_dates():
+def test_complete_weather_v6_contract_uses_nullable_fields_and_local_dates():
     spot = make_spot()
     result = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(data_days=10), cache=InMemoryCache())
-    assert result["contract_version"] == "weather-v5"
+    assert result["contract_version"] == "weather-v6"
     assert result["timezone"] == "UTC" and len(result["days"]) == 10
     hour = result["days"][0]["hours"][0]
     assert hour["apparent_temperature_c"] == 17
@@ -39,6 +39,53 @@ def test_complete_weather_v5_contract_uses_nullable_fields_and_local_dates():
     summary = result["days"][0]["summary"]
     assert summary["temperature_min_c"] == 14 and summary["temperature_max_c"] == 24
     assert summary["precipitation_sum_mm"] == 1.2 and summary["solar_state"] == "normal"
+    assert summary["sunshine_duration_hours"] == 8.0
+
+
+def test_daily_weather_falls_back_per_field_after_regional_model_horizon():
+    class PartialRegionalClient(FakeOpenMeteoClient):
+        def fetch_forecast(self, lat, lon, models, days=10):
+            payload = super().fetch_forecast(lat, lon, models, days)
+            members = [member for member in models.split(",") if member]
+            primary = members[0]
+            daily = payload["daily"]
+            for field in (
+                "temperature_2m_min", "temperature_2m_max",
+                "apparent_temperature_min", "apparent_temperature_max",
+                "precipitation_sum", "weather_code", "sunshine_duration",
+            ):
+                values = list(daily[f"{field}_{primary}"])
+                daily[f"{field}_{primary}"] = values[:2] + [None] * (len(values) - 2)
+            for member in members:
+                if member != "ncep_gfs_global":
+                    daily[f"uv_index_max_{member}"] = [None] * len(daily["time"])
+                    payload["hourly"][f"uv_index_{member}"] = [None] * len(payload["hourly"]["time"])
+            return payload
+
+    spot = make_spot()
+    result = get_forecast_series(
+        spot.id,
+        days=10,
+        db=FakeDB(spot),
+        client=PartialRegionalClient(data_days=10),
+        cache=InMemoryCache(),
+    )
+
+    assert len(result["days"]) == 10
+    for day in result["days"]:
+        summary = day["summary"]
+        assert summary["temperature_min_c"] is not None
+        assert summary["temperature_max_c"] is not None
+        assert summary["apparent_temperature_min_c"] is not None
+        assert summary["apparent_temperature_max_c"] is not None
+        assert summary["precipitation_sum_mm"] is not None
+        assert summary["uv_index_max"] is not None
+        assert summary["sunshine_duration_hours"] is not None
+    assert all(
+        hour["uv_index"] is not None
+        for day in result["days"][:5]
+        for hour in day["hours"]
+    )
 
 
 def test_forecast_direction_metadata_uses_weather_profile_never_facing():

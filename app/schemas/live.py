@@ -71,6 +71,10 @@ def _sanitize_summary(data):
     for field in ("wind_avg", "wind_max", "gust_max", "swell_max", "wind_low", "wind_high", "precipitation_sum_mm", "uv_index_max"):
         if field in result and result[field] is not None:
             result[field] = _finite(result[field], minimum=0)
+    if result.get("sunshine_duration_hours") is not None:
+        result["sunshine_duration_hours"] = _finite(
+            result["sunshine_duration_hours"], minimum=0, maximum=24
+        )
     for field in ("precipitation_probability_max_pct", "cloud_cover_mean_pct"):
         if field in result and result[field] is not None:
             result[field] = _finite(result[field], minimum=0, maximum=100)
@@ -120,7 +124,7 @@ class CoordinateRead(BaseModel):
 class ValueProvenance(BaseModel):
     """Canonical provenance shared by point weather values (weather-v4)."""
 
-    contract_version: Literal["weather-v5"] = "weather-v5"
+    contract_version: Literal["weather-v6"] = "weather-v6"
     source_type: Literal["measurement", "model_nowcast", "forecast"]
     observation_type: ObservationType  # temporary compatibility alias
     source: str
@@ -310,6 +314,7 @@ class ForecastDaySummary(BaseModel):
     precipitation_probability_max_pct: float | None = None
     cloud_cover_mean_pct: float | None = None
     uv_index_max: float | None = None
+    sunshine_duration_hours: float | None = None
     weather_code: int | None = None
     weather_condition: str = "unknown"
     sunrise_at: str | None = None

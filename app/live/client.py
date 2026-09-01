@@ -24,7 +24,8 @@ FORECAST_HOURLY = (
 FORECAST_DAILY = (
     "temperature_2m_min,temperature_2m_max,apparent_temperature_min,"
     "apparent_temperature_max,precipitation_sum,precipitation_probability_max,"
-    "cloud_cover_mean,weather_code,sunrise,sunset,daylight_duration,uv_index_max"
+    "cloud_cover_mean,weather_code,sunrise,sunset,daylight_duration,uv_index_max,"
+    "sunshine_duration"
 )
 FORECAST_MINUTELY_15 = "wind_speed_10m,wind_gusts_10m,wind_direction_10m"
 MARINE_HOURLY = (

@@ -68,6 +68,7 @@ def _daily(days: list[str]) -> dict:
         "precipitation_probability_max": [30.0] * len(days), "cloud_cover_mean": [45.0] * len(days),
         "weather_code": [2] * len(days), "sunrise": [f"{d}T05:30" for d in days],
         "sunset": [f"{d}T20:30" for d in days], "daylight_duration": [54000.0] * len(days),
+        "sunshine_duration": [28800.0] * len(days),
         "uv_index_max": [7.0] * len(days),
     }
 
