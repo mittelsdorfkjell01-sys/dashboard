@@ -26,7 +26,7 @@ export default function ScrollManager() {
     // Spot-detail tabs are two real routes, but visually they are one page.
     // Their links opt out of the normal route reset so the viewport remains
     // at exactly the height from which the visitor switched tabs.
-    if (navigationType !== "POP" && state?.preserveScroll) return;
+    if (navigationType !== "POP" && typeof state?.preserveScroll === "number") return;
 
     if (hash) {
       const el = document.querySelector(hash);

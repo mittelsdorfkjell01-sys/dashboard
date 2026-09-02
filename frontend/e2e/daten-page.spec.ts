@@ -67,6 +67,30 @@ test("Meteogramm-Auswahl per Pointer aktualisiert die geteilte Auswahl", async (
   await expect(page.getByText(/Ausgewählt 2026-08-24/)).toBeAttached();
 });
 
+test("Info und Daten behalten beim Tabwechsel dieselbe Scrollhöhe", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+
+  await page.mouse.wheel(0, 480);
+  await page.waitForTimeout(1200);
+  const infoScrollY = await page.evaluate(() => window.scrollY);
+  expect(infoScrollY).toBeGreaterThan(0);
+  await page.getByRole("tab", { name: "Daten" }).click();
+  await expect(page).toHaveURL(/\/spot\/laboe\/daten$/);
+  await expect(page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" })).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.scrollY)).toBe(infoScrollY);
+
+  const datenScrollY = await page.evaluate(() => window.scrollY);
+  await page.getByRole("tab", { name: "Info" }).click();
+  await expect(page).toHaveURL(/\/spot\/laboe\/info$/);
+  await expect(page.getByRole("heading", { name: "Alcyons" })).toHaveCount(1);
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.scrollY)).toBe(datenScrollY);
+});
+
 test("Daten-Seite ist axe-konform (mobil)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await mockApi(page);

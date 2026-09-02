@@ -1,5 +1,5 @@
-import { useRef, type KeyboardEvent } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useRef, type KeyboardEvent, type MouseEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export interface SpotTab {
@@ -23,6 +23,7 @@ export interface SpotTab {
  */
 export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const activeIndex = Math.max(
     0,
     tabs.findIndex((t) => t.href === pathname)
@@ -34,6 +35,13 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
     e.preventDefault();
     const next = e.key === "ArrowRight" ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
     tabRefs.current[next]?.focus();
+  };
+
+  const onClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
+    const opensAnotherContext = e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+    if (opensAnotherContext) return;
+    e.preventDefault();
+    navigate(href, { state: { preserveScroll: window.scrollY } });
   };
 
   return (
@@ -54,7 +62,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               to={tab.href}
-              state={{ preserveScroll: true }}
+              onClick={(e) => onClick(e, tab.href)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className="relative flex h-12 min-w-[140px] items-center justify-center px-4 text-label"
             >
