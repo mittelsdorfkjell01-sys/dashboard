@@ -12,7 +12,7 @@ export const WIND_BINS: WindBin[] = [
   { min: 5, max: 10, hex: "#7C9BB6" },
   { min: 10, max: 15, hex: "#3F7F9B" },
   { min: 15, max: 20, hex: "#4A8159" }, // = green
-  { min: 20, max: 25, hex: "#8C9150" },
+  { min: 20, max: 25, hex: "#E3C341" },
   { min: 25, max: 30, hex: "#E0823C" }, // = orange
   { min: 30, max: 35, hex: "#C55E3C" },
   { min: 35, max: 40, hex: "#9C3E30" },

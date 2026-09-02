@@ -20,11 +20,11 @@ const WETTER_ROW_H = WELLE_WETTER_GAP + GLYPH + 16;
 const TEMP_H = 108; // temperature band height — more room for the curve
 const ROW_LABELS = ["WELLE", "WETTER", "TEMP.", "WIND", "RICHT.", "ZEIT"] as const;
 
-function darken(hex: string, factor = 0.62): string {
+function fade(hex: string, alpha = 0.3): string {
   const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
   if (!m) return hex;
-  const [r, g, b] = [m[1], m[2], m[3]].map((h) => Math.round(parseInt(h, 16) * factor));
-  return `rgb(${r}, ${g}, ${b})`;
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 /**
@@ -227,7 +227,8 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
             )}
           </div>
 
-          {/* WIND — coloured bars with a darker gust cap. */}
+          {/* WIND — coloured bars; the gust cap is the same hue at 30% opacity,
+              not a darker shade (Figma Frame 67, Group 66). */}
           <Row h={BAR_H + 16} align="end">
             {slots.map((s, i) => {
               const wind = s.wind;
@@ -238,9 +239,9 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
               return (
                 <Cell key={i} align="end">
                   <span className="mb-1 leading-none text-muted" style={{ fontSize: 10 }}>{Math.round(wind)}</span>
-                  <span className="relative w-[22px] rounded-[5px]" style={{ height: gustH, background: darken(windColor(gust)) }}>
+                  <span className="relative w-[37px] rounded-[9px]" style={{ height: gustH, background: fade(windColor(gust)) }}>
                     <span
-                      className="absolute inset-x-0 bottom-0 rounded-[5px]"
+                      className="absolute inset-x-0 bottom-0 rounded-[9px]"
                       style={{ height: windH, background: windColor(wind) }}
                     />
                   </span>
