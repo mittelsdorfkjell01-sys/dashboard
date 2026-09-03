@@ -41,7 +41,10 @@ export default function DatenPage({
   return (
     <SpotDataScopeProvider forecast={forecast}>
       <div className="daten-dark min-h-screen">
-        <div className="mx-auto max-w-[1340px] px-5 pb-24 pt-10 sm:px-8">
+        {/* max-w inflated by 1/0.85 to counteract the parent's lg:zoom-0.85
+            (see SpotDetail.tsx) — visually this matches the landing page's
+            spot-tile container (max-w-[1570px], unzoomed). */}
+        <div className="mx-auto max-w-[1847px] px-5 pb-24 pt-10 sm:px-8">
           {/* Location + sport (Figma: "Alcyons" / "Surfen"). */}
           <header>
             <h1 className="text-sz-24 font-semibold tracking-tight text-ink">{spot.name}</h1>
@@ -58,7 +61,11 @@ export default function DatenPage({
           </header>
 
           {/* 1) Meteogram — waves, weather, temperature, wind, direction, time. */}
-          <section aria-label="Meteogramm" className="mt-10">
+          <section
+            id="spot-meteogramm"
+            aria-label="Meteogramm"
+            className="mt-10 scroll-mt-6"
+          >
             {forecastLoading && <MeteogramSkeleton />}
             {!forecastLoading && hasForecast && <MeteoChart forecast={forecast!} />}
             {!forecastLoading && !hasForecast && (

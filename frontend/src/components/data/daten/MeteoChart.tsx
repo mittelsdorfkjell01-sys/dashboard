@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { startTransition, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { NormalizedForecastSeries, NormalizedForecastHour } from "../../../lib/forecastNormalization";
 import { closestForecastUtc } from "../../../lib/forecastNormalization";
 import { buildMeteogramModel } from "../meteogramModel";
@@ -6,7 +6,7 @@ import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/Spot
 import { windColor } from "../../../lib/windScale";
 import WeatherGlyph from "./WeatherGlyph";
 
-const COL_W = 46;
+const COL_W = 30;
 const BAR_H = 118; // wind bar band height
 const WAVE_H = 34; // wave bar band height
 const WAVE_ROW_H = WAVE_H + 6;
@@ -20,7 +20,7 @@ const WETTER_ROW_H = WELLE_WETTER_GAP + GLYPH + 16;
 const TEMP_H = 108; // temperature band height — more room for the curve
 const ROW_LABELS = ["WELLE", "WETTER", "TEMP.", "WIND", "RICHT.", "ZEIT"] as const;
 
-function fade(hex: string, alpha = 0.3): string {
+function fade(hex: string, alpha = 0.45): string {
   const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
   if (!m) return hex;
   const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
@@ -43,11 +43,18 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const clipId = useId();
+  const futureClipId = useId();
+  const dropId = useId();
   // Continuous drag position in strip-content pixels; null after the gesture,
   // when the marker resolves to the persistent selected hour.
   const [hoverX, setHoverX] = useState<number | null>(null);
 
   const width = Math.max(slots.length * COL_W, 1);
+  const lastDay = model.dayGroups[model.dayGroups.length - 1];
+  const lastDayWidth = Math.max((lastDay?.count ?? 1) * COL_W, COL_W);
+  // Keep enough trailing room for the last detailed day to align with the
+  // viewport's left edge, without leaving an additional empty viewport.
+  const scrollContentWidth = `calc(${width}px + max(0px, 100% - ${lastDayWidth}px))`;
   const selectedIndex = slots.findIndex((s) => s.utcKey === selectedAtUtc);
   const selectedSlot = selectedIndex >= 0 ? slots[selectedIndex] : null;
 
@@ -84,6 +91,130 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
   }, [hoverX, slots, selectedIndex, selectedSlot?.air, tScale.min, tScale.max]);
   const revealW = marker ? marker.x : 0;
+  // Local time at the marker's nearest hour, for the tooltip pill (e.g. "14:00 Uhr").
+  const markerTime = marker
+    ? slots[Math.min(slots.length - 1, Math.max(0, Math.round(marker.x / COL_W - 0.5)))]?.localTime ?? null
+    : null;
+
+  // Keep the time pill fully on-screen: clamp its centre so its box never spills
+  // past the strip's left/right content edge (where the scroll container would
+  // clip it — the left "forecast edge" being the case that bit us). The marker
+  // dot and guide line stay at the true marker.x; only the pill shifts inward.
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const [pillW, setPillW] = useState(0);
+  useLayoutEffect(() => {
+    if (pillRef.current) setPillW(pillRef.current.offsetWidth);
+  }, [markerTime]);
+  const pillPad = 4;
+  const pillHalf = pillW / 2;
+  const pillLeft = marker
+    ? Math.max(pillHalf + pillPad, Math.min(width - pillHalf - pillPad, marker.x))
+    : 0;
+
+  // The wave/weather rows and the wind/direction/time rows don't depend on the
+  // hover position — memoise them so a pointer move only re-renders the small
+  // temperature-marker overlay, not the hundreds of bar/glyph cells (which is
+  // what made the marker visibly lag the cursor).
+  const topRows = useMemo(() => (
+    <>
+      {/* WELLE — wave-height bars. */}
+      <Row h={WAVE_ROW_H}>
+        {slots.map((s, i) => (
+          <Cell key={i}>
+            {s.swell != null && (
+              <>
+                <span className="mb-0.5 leading-none text-white" style={{ fontSize: 10 }}>{s.swell.toFixed(1)}</span>
+                <span
+                  className="w-[22px] rounded-[4px]"
+                  style={{ height: Math.max(3, (s.swell / waveMax) * WAVE_H), background: "var(--sw-data-swell)" }}
+                />
+              </>
+            )}
+          </Cell>
+        ))}
+      </Row>
+
+      {/* WETTER — glyph + precipitation stub. */}
+      <Row h={WETTER_ROW_H}>
+        {slots.map((s, i) => (
+          <Cell key={i} justify="start">
+            <div aria-hidden style={{ height: WELLE_WETTER_GAP }} />
+            <WeatherGlyph condition={s.weather_condition} isDay={s.is_day ?? true} size={GLYPH} />
+            {s.precip != null && s.precip > 0 && (
+              <span className="mt-0.5 flex flex-col items-center leading-none">
+                <span className="text-muted" style={{ fontSize: 9 }}>{s.precip.toFixed(1)}</span>
+                <span
+                  className="mt-0.5 w-[20px] rounded-[3px]"
+                  style={{ height: Math.max(2, (s.precip / precipMax) * 14), background: "var(--sw-data-rain)" }}
+                />
+              </span>
+            )}
+          </Cell>
+        ))}
+      </Row>
+    </>
+  ), [slots, waveMax, precipMax]);
+
+  const bottomRows = useMemo(() => (
+    <>
+      {/* WIND — the foreground (wind) bar is the full wind-scale colour; the
+          gust bar behind rises to the gust height in the *wind's* hue at 45%
+          opacity (not the gust's own colour). Wind and gust values are
+          labelled on their own bars (Figma Frame 67 / node 504-9). */}
+      <Row h={BAR_H + 16} align="end">
+        {slots.map((s, i) => {
+          const wind = s.wind;
+          if (wind == null) return <Cell key={i} />;
+          const gust = s.gust ?? wind;
+          const windH = Math.max(4, (wind / windMax) * BAR_H);
+          const gustH = Math.max(windH, (gust / windMax) * BAR_H);
+          // Only label the gust when it clears the wind bar with room to read.
+          const showGust = gust > wind + 0.5 && gustH - windH >= 14;
+          return (
+            <Cell key={i} align="end">
+              <span
+                className="relative w-[22px] rounded-[5px]"
+                style={{ height: gustH, background: fade(windColor(wind)) }}
+              >
+                {showGust && <BarValue>{Math.round(gust)}</BarValue>}
+                <span
+                  className="absolute inset-x-0 bottom-0 rounded-[5px]"
+                  style={{ height: windH, background: windColor(wind) }}
+                >
+                  <BarValue>{Math.round(wind)}</BarValue>
+                </span>
+              </span>
+            </Cell>
+          );
+        })}
+      </Row>
+
+      {/* RICHT — wind-direction arrows. */}
+      <Row h={26}>
+        {slots.map((s, i) => (
+          <Cell key={i}>
+            {s.dir != null && (
+              <svg width={16} height={16} viewBox="0 0 16 16" style={{ transform: `rotate(${s.dir}deg)` }} aria-hidden className="text-ink">
+                <path d="M8 2 L8 13 M4.5 6 L8 2 L11.5 6" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </Cell>
+        ))}
+      </Row>
+
+      {/* ZEIT — hour axis, labelled on even hours + day starts. */}
+      <Row h={22}>
+        {slots.map((s, i) => {
+          const show = s.localHour % 2 === 0;
+          return (
+            <Cell key={i}>
+              {show && <span className="tabular-nums text-muted" style={{ fontSize: 10 }}>{s.localTime.slice(0, 2)}</span>}
+            </Cell>
+          );
+        })}
+      </Row>
+    </>
+  ), [slots, windMax]);
 
   if (!slots.length) {
     return (
@@ -93,9 +224,13 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     );
   }
 
-  // Track the cursor for the local marker (every pixel) and sync the shared
-  // selection to the nearest hour only when that column changes, so the map and
-  // sidebar follow without a state write on every mouse move.
+  // Track the cursor for the local marker (every pixel, high priority so it
+  // never misses a paint) and sync the shared selection to the nearest hour
+  // only when that column changes. That shared write fans out to every other
+  // module on the page (map, sidebar, forecast grid) — marking it a
+  // transition lets React finish painting the marker at the cursor first and
+  // apply the heavier fan-out afterward, instead of both being stuck behind
+  // the same commit and the marker visibly lagging the pointer.
   const pickAt = (clientX: number) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -104,7 +239,9 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     setHoverX(x);
     const idx = Math.min(slots.length - 1, Math.max(0, Math.round(x / COL_W - 0.5)));
     const slot = slots[idx];
-    if (slot && slot.utcKey !== selectedAtUtc) setSelectedAtUtc(slot.utcKey);
+    if (slot && slot.utcKey !== selectedAtUtc) {
+      startTransition(() => setSelectedAtUtc(slot.utcKey));
+    }
   };
 
   const resetToNow = () => {
@@ -125,6 +262,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
       </div>
 
       <div
+        id="spot-meteogram-scroll"
         ref={scrollRef}
         tabIndex={0}
         className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:thin] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
@@ -137,7 +275,16 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         role="group"
         aria-label="Meteogramm — Zeitpunkt wählen"
       >
-        <div className="relative" style={{ width }}>
+        <div className="relative" style={{ width: scrollContentWidth }}>
+          {model.dayGroups.map((group) => (
+            <span
+              key={group.date}
+              data-forecast-day={group.date}
+              className="pointer-events-none absolute top-0 h-px w-px"
+              style={{ left: group.start * COL_W }}
+              aria-hidden="true"
+            />
+          ))}
           {/* Selection highlight — a soft column of light, no separators. */}
           {selectedIndex >= 0 && (
             <div
@@ -147,52 +294,30 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
             />
           )}
 
-          {/* WELLE — wave-height bars. */}
-          <Row h={WAVE_ROW_H}>
-            {slots.map((s, i) => (
-              <Cell key={i}>
-                {s.swell != null && (
-                  <>
-                    <span className="mb-0.5 leading-none text-muted" style={{ fontSize: 10 }}>{s.swell.toFixed(1)}</span>
-                    <span
-                      className="w-[22px] rounded-[4px]"
-                      style={{ height: Math.max(3, (s.swell / waveMax) * WAVE_H), background: "var(--sw-data-swell)" }}
-                    />
-                  </>
-                )}
-              </Cell>
-            ))}
-          </Row>
+          {topRows}
 
-          {/* WETTER — glyph + precipitation stub. */}
-          <Row h={WETTER_ROW_H}>
-            {slots.map((s, i) => (
-              <Cell key={i} justify="start">
-                <div aria-hidden style={{ height: WELLE_WETTER_GAP }} />
-                <WeatherGlyph condition={s.weather_condition} isDay={s.is_day ?? true} size={GLYPH} />
-                {s.precip != null && s.precip > 0 && (
-                  <span className="mt-0.5 flex flex-col items-center leading-none">
-                    <span className="text-muted" style={{ fontSize: 9 }}>{s.precip.toFixed(1)}</span>
-                    <span
-                      className="mt-0.5 w-[20px] rounded-[3px]"
-                      style={{ height: Math.max(2, (s.precip / precipMax) * 14), background: "var(--sw-data-rain)" }}
-                    />
-                  </span>
-                )}
-              </Cell>
-            ))}
-          </Row>
-
-          {/* TEMP — smooth curve; a white "reveal" runs from the left to the
-              marker, which tracks the cursor and reads the interpolated value. */}
+          {/* TEMP — smooth curve split at the marker: solid & glowing up to the
+              selected time (the "past"), dotted beyond it (the "future"). The
+              marker tracks the cursor, reads the interpolated value and carries a
+              time pill; a faint guide line drops from it to the band bottom. */}
           <div className="relative" style={{ height: TEMP_H, width }}>
             <svg viewBox={`0 0 ${width} ${TEMP_H}`} width={width} height={TEMP_H} preserveAspectRatio="none" className="absolute inset-0" aria-hidden>
               <defs>
                 <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
                   <rect x={0} y={0} width={Math.max(0, revealW)} height={TEMP_H} />
                 </clipPath>
+                <clipPath id={futureClipId} clipPathUnits="userSpaceOnUse">
+                  <rect x={Math.max(0, revealW)} y={0} width={Math.max(0, width - revealW)} height={TEMP_H} />
+                </clipPath>
+                <linearGradient id={dropId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(243,240,234,0.55)" />
+                  <stop offset="60%" stopColor="rgba(243,240,234,0.28)" />
+                  <stop offset="100%" stopColor="rgba(243,240,234,0)" />
+                </linearGradient>
               </defs>
-              {tempPath && (
+
+              {/* No-marker fallback: whole curve solid in the temp colour. */}
+              {tempPath && !marker && (
                 <path
                   d={tempPath}
                   fill="none"
@@ -200,80 +325,99 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                   strokeWidth={2}
                   strokeLinejoin="round"
                   strokeLinecap="round"
-                  style={{ filter: "drop-shadow(0 0 5px rgba(215,163,93,0.5))" }}
+                  style={{ filter: "drop-shadow(0 0 5px rgba(148,210,255,0.5))" }}
                 />
               )}
+
+              {/* Past — solid, glowing, clipped to the left of the marker. */}
               {tempPath && revealW > 0 && (
+                <>
+                  <path
+                    d={tempPath}
+                    fill="none"
+                    stroke="var(--sw-data-temp)"
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    clipPath={`url(#${clipId})`}
+                    style={{ filter: "drop-shadow(0 0 5px rgba(148,210,255,0.5))" }}
+                  />
+                  <path
+                    d={tempPath}
+                    fill="none"
+                    stroke="#F3F0EA"
+                    strokeWidth={2.4}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    clipPath={`url(#${clipId})`}
+                    style={{ filter: "drop-shadow(0 0 4px rgba(243,240,234,0.55))" }}
+                  />
+                </>
+              )}
+
+              {/* Future — dotted, dimmer, clipped to the right of the marker. */}
+              {tempPath && marker && revealW < width && (
                 <path
                   d={tempPath}
                   fill="none"
-                  stroke="#F3F0EA"
-                  strokeWidth={2.4}
-                  strokeLinejoin="round"
+                  stroke="rgba(243,240,234,0.5)"
+                  strokeWidth={2}
                   strokeLinecap="round"
-                  clipPath={`url(#${clipId})`}
-                  style={{ filter: "drop-shadow(0 0 4px rgba(243,240,234,0.55))" }}
+                  strokeDasharray="0.1 7"
+                  clipPath={`url(#${futureClipId})`}
                 />
               )}
-              {marker && <circle cx={marker.x} cy={marker.y} r={5} fill="#F3F0EA" />}
+
+              {/* Faint vertical guide line from the marker to the band bottom. */}
+              {marker && (
+                <line
+                  x1={marker.x}
+                  y1={marker.y}
+                  x2={marker.x}
+                  y2={TEMP_H}
+                  stroke={`url(#${dropId})`}
+                  strokeWidth={1.5}
+                />
+              )}
+
+              {/* Marker — soft halo behind a bright dot. */}
+              {marker && (
+                <>
+                  <circle cx={marker.x} cy={marker.y} r={9} fill="rgba(243,240,234,0.22)" />
+                  <circle
+                    cx={marker.x}
+                    cy={marker.y}
+                    r={5}
+                    fill="#F3F0EA"
+                    style={{ filter: "drop-shadow(0 0 6px rgba(243,240,234,0.9))" }}
+                  />
+                </>
+              )}
             </svg>
             {marker && (
-              <span
-                className="pointer-events-none absolute -translate-x-1/2 font-medium text-ink"
-                style={{ fontSize: 11, left: marker.x, top: Math.max(0, marker.y - 20) }}
-              >
-                {Math.round(marker.air)}
-              </span>
+              <>
+                {/* Zeit-Pill über dem Marker. */}
+                {markerTime && (
+                  <span
+                    ref={pillRef}
+                    className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-white/10 px-2 py-1 leading-none text-white backdrop-blur-sm"
+                    style={{ fontSize: 11, left: pillLeft, top: Math.max(0, marker.y - 34) }}
+                  >
+                    {markerTime} Uhr
+                  </span>
+                )}
+                {/* Temperatur direkt am Punkt. */}
+                <span
+                  className="pointer-events-none absolute font-medium text-ink"
+                  style={{ fontSize: 11, left: marker.x + 10, top: marker.y - 7 }}
+                >
+                  {Math.round(marker.air)}
+                </span>
+              </>
             )}
           </div>
 
-          {/* WIND — coloured bars; the gust cap is the same hue at 30% opacity,
-              not a darker shade (Figma Frame 67, Group 66). */}
-          <Row h={BAR_H + 16} align="end">
-            {slots.map((s, i) => {
-              const wind = s.wind;
-              const gust = s.gust ?? wind;
-              if (wind == null) return <Cell key={i} />;
-              const windH = Math.max(4, (wind / windMax) * BAR_H);
-              const gustH = Math.max(windH, ((gust ?? wind) / windMax) * BAR_H);
-              return (
-                <Cell key={i} align="end">
-                  <span className="mb-1 leading-none text-muted" style={{ fontSize: 10 }}>{Math.round(wind)}</span>
-                  <span className="relative w-[37px] rounded-[9px]" style={{ height: gustH, background: fade(windColor(gust)) }}>
-                    <span
-                      className="absolute inset-x-0 bottom-0 rounded-[9px]"
-                      style={{ height: windH, background: windColor(wind) }}
-                    />
-                  </span>
-                </Cell>
-              );
-            })}
-          </Row>
-
-          {/* RICHT — wind-direction arrows. */}
-          <Row h={26}>
-            {slots.map((s, i) => (
-              <Cell key={i}>
-                {s.dir != null && (
-                  <svg width={16} height={16} viewBox="0 0 16 16" style={{ transform: `rotate(${s.dir}deg)` }} aria-hidden className="text-ink">
-                    <path d="M8 2 L8 13 M4.5 6 L8 2 L11.5 6" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </Cell>
-            ))}
-          </Row>
-
-          {/* ZEIT — hour axis, labelled on even hours + day starts. */}
-          <Row h={22}>
-            {slots.map((s, i) => {
-              const show = s.localHour % 2 === 0;
-              return (
-                <Cell key={i}>
-                  {show && <span className="tabular-nums text-muted" style={{ fontSize: 10 }}>{s.localTime.slice(0, 2)}</span>}
-                </Cell>
-              );
-            })}
-          </Row>
+          {bottomRows}
         </div>
       </div>
 
@@ -380,6 +524,19 @@ function catmullRom(pts: [number, number][]): string {
     d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
   }
   return d;
+}
+
+// A wind/gust value sitting at the top of its bar, white with a soft shadow so
+// it stays legible on every scale colour (Figma node 504-9).
+function BarValue({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="pointer-events-none absolute inset-x-0 top-0.5 text-center leading-none text-white"
+      style={{ fontSize: 10, textShadow: "0 1px 2px rgba(0, 0, 0, 0.35)" }}
+    >
+      {children}
+    </span>
+  );
 }
 
 function RowLabel({ children, h, anchorH }: { children: string; h: number; anchorH?: number }) {

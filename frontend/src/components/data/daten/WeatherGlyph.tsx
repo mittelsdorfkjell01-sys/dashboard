@@ -3,7 +3,8 @@ import type { WeatherCondition } from "../../../lib/api";
 /**
  * Weather-condition → colored glyph for the Daten page (Figma Frame 67:
  * WETTER row + the 8-day forecast grid). Outline clouds in the light "ink"
- * tone, sun/lightning in orange, precipitation in blue — matching the mockup.
+ * tone, sun/lightning in orange, precipitation/snow in blue — matching the
+ * mockup's icon set.
  *
  * Every glyph is authored on the same 24×24 viewBox and rendered into a square
  * box sized by `size`, so a whole row/grid of them is optically uniform with
@@ -27,9 +28,13 @@ export default function WeatherGlyph({
   const bolt = "#E7A33A";
   const stroke = 1.6;
 
-  const Cloud = ({ y = 0 }: { y?: number }) => (
+  // Bottom edge fixed at CLOUD_BOTTOM for every case that draws one — this is
+  // the shared baseline every glyph aligns to, so a whole row reads flush
+  // along the bottom regardless of which condition is showing.
+  const CLOUD_BOTTOM = 15;
+  const Cloud = () => (
     <path
-      d={`M7 ${15 + y}a3.4 3.4 0 0 1 .3-6.78 4.6 4.6 0 0 1 8.87-1.2A3.6 3.6 0 0 1 17.4 ${15 + y}Z`}
+      d={`M7 ${CLOUD_BOTTOM}a3.4 3.4 0 0 1 .3-6.78 4.6 4.6 0 0 1 8.87-1.2A3.6 3.6 0 0 1 17.4 ${CLOUD_BOTTOM}Z`}
       fill="none"
       stroke={cloud}
       strokeWidth={stroke}
@@ -37,46 +42,87 @@ export default function WeatherGlyph({
     />
   );
 
-  const drops = (color: string, xs: number[], y0 = 16.5, len = 3) =>
-    xs.map((x, i) => (
-      <line
-        key={i}
-        x1={x}
-        y1={y0}
-        x2={x - 1}
-        y2={y0 + len}
-        stroke={color}
-        strokeWidth={stroke}
-        strokeLinecap="round"
-      />
-    ));
+  // Six-spoke snowflake: three crossing lines through the centre, each with a
+  // short V-tick near both ends.
+  const Snowflake = ({ cx, cy, r, color = snow, width = stroke }: { cx: number; cy: number; r: number; color?: string; width?: number }) => (
+    <g stroke={color} strokeWidth={width} strokeLinecap="round">
+      {[0, 60, 120].map((deg) => {
+        const rad = (deg * Math.PI) / 180;
+        const dx = Math.cos(rad) * r;
+        const dy = Math.sin(rad) * r;
+        const tickR = r * 0.42;
+        const tick = (sign: 1 | -1) => {
+          const bx = cx + dx * sign * 0.62;
+          const by = cy + dy * sign * 0.62;
+          const perpX = -dy;
+          const perpY = dx;
+          const norm = Math.hypot(perpX, perpY) || 1;
+          const ux = (perpX / norm) * tickR * 0.5;
+          const uy = (perpY / norm) * tickR * 0.5;
+          const ix = (dx / r) * tickR * 0.5 * sign;
+          const iy = (dy / r) * tickR * 0.5 * sign;
+          return (
+            <path
+              key={sign}
+              d={`M${bx - ux + ix},${by - uy + iy} L${bx},${by} L${bx + ux + ix},${by + uy + iy}`}
+              fill="none"
+            />
+          );
+        };
+        return (
+          <g key={deg}>
+            <line x1={cx - dx} y1={cy - dy} x2={cx + dx} y2={cy + dy} />
+            {tick(1)}
+            {tick(-1)}
+          </g>
+        );
+      })}
+    </g>
+  );
+
+  const Sun = ({ cx, cy, r, rayLen = 2, color = sun, width = stroke }: { cx: number; cy: number; r: number; rayLen?: number; color?: string; width?: number }) => (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={width} />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
+        const rad = (a * Math.PI) / 180;
+        return (
+          <line
+            key={a}
+            x1={cx + Math.cos(rad) * (r + 1.4)}
+            y1={cy + Math.sin(rad) * (r + 1.4)}
+            x2={cx + Math.cos(rad) * (r + 1.4 + rayLen)}
+            y2={cy + Math.sin(rad) * (r + 1.4 + rayLen)}
+            stroke={color}
+            strokeWidth={width}
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </g>
+  );
+
+  const Bolt = ({ x = 12.5, y = 15.5, scale = 1, color = bolt }: { x?: number; y?: number; scale?: number; color?: string }) => (
+    <path
+      d={`M${x} ${y} L${x - 2.5} ${y + 3.5} H${x - 0.5} L${x - 1.5} ${y + 7} L${x + 1.5} ${y + 3.5} H${x - 0.5} Z`}
+      fill={color}
+      stroke={color}
+      strokeWidth={0.8}
+      strokeLinejoin="round"
+      transform={scale !== 1 ? `scale(${scale})` : undefined}
+    />
+  );
 
   let content: JSX.Element;
   switch (condition) {
     case "clear":
     case "mainly_clear":
       content = isDay ? (
-        <g>
-          <circle cx="12" cy="12" r="4.4" fill="none" stroke={sun} strokeWidth={stroke} />
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
-            const r = (a * Math.PI) / 180;
-            return (
-              <line
-                key={a}
-                x1={12 + Math.cos(r) * 7}
-                y1={12 + Math.sin(r) * 7}
-                x2={12 + Math.cos(r) * 9}
-                y2={12 + Math.sin(r) * 9}
-                stroke={sun}
-                strokeWidth={stroke}
-                strokeLinecap="round"
-              />
-            );
-          })}
-        </g>
+        // Disc bottom pinned to CLOUD_BOTTOM so a sunny day sits on the same
+        // baseline as every cloud-bearing condition.
+        <Sun cx={12} cy={CLOUD_BOTTOM - 4.4} r={4.4} rayLen={2.2} />
       ) : (
         <path
-          d="M16.5 15.5A6 6 0 0 1 9 8a6 6 0 1 0 7.5 7.5Z"
+          d="M16.5 10.77A6 6 0 0 1 9 3.27a6 6 0 1 0 7.5 7.5Z"
           fill="none"
           stroke={cloud}
           strokeWidth={stroke}
@@ -87,23 +133,8 @@ export default function WeatherGlyph({
     case "partly_cloudy":
       content = (
         <g>
-          <circle cx="9" cy="8.5" r="3.1" fill="none" stroke={sun} strokeWidth={stroke} />
-          {[210, 250, 290, 330].map((a) => {
-            const r = (a * Math.PI) / 180;
-            return (
-              <line
-                key={a}
-                x1={9 + Math.cos(r) * 4.6}
-                y1={8.5 + Math.sin(r) * 4.6}
-                x2={9 + Math.cos(r) * 6}
-                y2={8.5 + Math.sin(r) * 6}
-                stroke={sun}
-                strokeWidth={stroke}
-                strokeLinecap="round"
-              />
-            );
-          })}
-          <Cloud y={1.5} />
+          <Sun cx={8.7} cy={6.6} r={2.3} rayLen={1.4} />
+          <Cloud />
         </g>
       );
       break;
@@ -111,48 +142,71 @@ export default function WeatherGlyph({
       content = (
         <g>
           <Cloud />
-          {[18.5, 20.5].map((y) => (
+          {[18.3, 21].map((y) => (
             <line key={y} x1="6" y1={y} x2="18" y2={y} stroke={cloud} strokeWidth={stroke} strokeLinecap="round" opacity={0.7} />
           ))}
         </g>
       );
       break;
     case "drizzle":
+      // Light rain: a loose scatter of small dots beneath the cloud, bottom
+      // dot on the shared ACCENT_BOTTOM line.
       content = (
         <g>
           <Cloud />
-          {drops(rain, [9, 12.5, 16], 16.5, 2.4)}
+          {[
+            [9, 17.9],
+            [12.5, 19.9],
+            [16, 17.9],
+          ].map(([cx, cy]) => (
+            <circle key={cx} cx={cx} cy={cy} r={1.1} fill={rain} />
+          ))}
         </g>
       );
       break;
     case "rain":
-    case "rain_showers":
+      // Steady rain: three parallel diagonal streaks reaching ACCENT_BOTTOM.
       content = (
         <g>
           <Cloud />
-          {drops(rain, [8.5, 12, 15.5], 16.5, 3.4)}
+          {[8.5, 12, 15.5].map((x) => (
+            <line key={x} x1={x} y1={16.5} x2={x - 1.4} y2={21} stroke={rain} strokeWidth={1.8} strokeLinecap="round" />
+          ))}
+        </g>
+      );
+      break;
+    case "rain_showers":
+      // Bursty showers: a short wavy trail flanked by two drops.
+      content = (
+        <g>
+          <Cloud />
+          <path d="M12 16.3 q-1.2 1.18 0 2.35 q1.2 1.18 0 2.35" fill="none" stroke={rain} strokeWidth={stroke} strokeLinecap="round" />
+          <circle cx={8.3} cy={20} r={1} fill={rain} />
+          <circle cx={15.7} cy={20} r={1} fill={rain} />
         </g>
       );
       break;
     case "snow":
-    case "snow_showers":
       content = (
         <g>
           <Cloud />
-          {[9, 12.5, 16].map((x) => (
-            <g key={x} stroke={snow} strokeWidth={stroke} strokeLinecap="round">
-              <line x1={x - 1.4} y1={18.2} x2={x + 1.4} y2={18.2} />
-              <line x1={x} y1={16.8} x2={x} y2={19.6} />
-            </g>
-          ))}
+          <Snowflake cx={12} cy={18.7} r={2.6} />
         </g>
       );
+      break;
+    case "snow_showers":
+      // Heavier snow: one large flake, no cloud — the fall dominates the
+      // glyph, but its lowest point still lands on ACCENT_BOTTOM.
+      content = <Snowflake cx={12} cy={14} r={7} width={1.7} />;
       break;
     case "thunderstorm":
       content = (
         <g>
           <Cloud />
-          <path d="M12.5 16 L10 19.5 H12 L11 22.5 L14 18.5 H12 Z" fill={bolt} stroke={bolt} strokeWidth={0.8} strokeLinejoin="round" />
+          <Bolt x={12.5} y={14.5} />
+          {[9.2, 15.8].map((x) => (
+            <line key={x} x1={x} y1={19} x2={x - 0.9} y2={21.5} stroke={rain} strokeWidth={stroke} strokeLinecap="round" />
+          ))}
         </g>
       );
       break;

@@ -14,9 +14,7 @@ export const WIND_BINS: WindBin[] = [
   { min: 15, max: 20, hex: "#4A8159" }, // = green
   { min: 20, max: 25, hex: "#E3C341" },
   { min: 25, max: 30, hex: "#E0823C" }, // = orange
-  { min: 30, max: 35, hex: "#C55E3C" },
-  { min: 35, max: 40, hex: "#9C3E30" },
-  { min: 40, max: Infinity, hex: "#6E2620" },
+  { min: 30, max: Infinity, hex: "#C55E3C" }, // 30+ — top of the Figma palette (node 497-2)
 ];
 
 // = the `line` token, for values with no wind data.

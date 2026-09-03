@@ -32,8 +32,8 @@
      instantly distinguishable. Wind is deliberately absent: it keeps the
      shared speed-graduated windScale (a Beaufort-style encoding) rather than
      collapsing to a single hue, which would erase the speed information. */
-  --sw-data-swell: #9B87C9; /* waves / swell — muted violet */
-  --sw-data-temp: #D7A35D;  /* air temperature — muted amber */
+  --sw-data-swell: #557D9A; /* waves / swell — steel blue (Figma Frame 67) */
+  --sw-data-temp: #94D2FF;  /* air temperature — sky blue (Figma Frame 67) */
   --sw-data-rain: #6FA8DC;  /* precipitation — cool light blue */
   color-scheme: dark;
   background: var(--sw-page);
