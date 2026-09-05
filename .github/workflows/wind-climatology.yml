@@ -2,8 +2,11 @@ name: Wind Climatology Refresh
 
 on:
   schedule:
-    # Refresh after each completed half-year; ERA5 uses completed calendar years.
-    - cron: "15 4 1 2,8 *"
+    # Drain newly published/missing spot jobs every day. The worker is
+    # idempotent and skips every active run whose completed-year configuration
+    # is current, so daily runs are cheap while new spots no longer wait until
+    # the former February/August refresh dates.
+    - cron: "15 4 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -23,6 +26,9 @@ jobs:
       DEPLOYMENT_MODE: admin
       ENABLE_ADMIN_API: "true"
       API_DEBUG: "false"
+      COOKIE_SECURE: "true"
+      PASSWORD_BREACH_CHECK_ENABLED: "true"
+      CORS_ORIGINS: https://surfwinddata.com
       DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
       JWT_SECRET: ${{ secrets.WEATHER_SHADOW_WORKER_JWT_SECRET }}
     steps:
