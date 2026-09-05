@@ -1,12 +1,9 @@
 name: Wind Climatology Refresh
 
 on:
-  schedule:
-    # Drain newly published/missing spot jobs every day. The worker is
-    # idempotent and skips every active run whose completed-year configuration
-    # is current, so daily runs are cheap while new spots no longer wait until
-    # the former February/August refresh dates.
-    - cron: "15 4 * * *"
+  # Production scheduling lives in vercel.json so the worker necessarily uses
+  # the same database as the public API. Keep this direct-database workflow as
+  # an explicit recovery tool only.
   workflow_dispatch: {}
 
 permissions:
