@@ -424,8 +424,14 @@ def get_wind_climatology(
         raise HTTPException(status_code=404, detail="Spot not found")
     from app.wind_climatology.service import public_state
 
-    set_public_cache(response)
-    return public_state(db, spot.id)
+    payload = public_state(db, spot.id)
+    if payload.get("status") == "ready":
+        set_public_cache(response)
+    else:
+        # A missing/pending dataset is transient. Caching that placeholder at
+        # the edge would hide a newly completed worker run for up to a day.
+        response.headers["Cache-Control"] = "no-store"
+    return payload
 
 
 @router.get("/{spot_reference}/wind-climatology-v3")

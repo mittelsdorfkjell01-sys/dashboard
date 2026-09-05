@@ -690,6 +690,36 @@ def test_wind_climatology_cron_processes_a_bounded_pending_batch(
     assert processed == [run.id]
 
 
+def test_wind_climatology_only_caches_ready_public_data(admin, region_id, db):
+    from app.api._http_cache import PUBLIC_CACHE_CONTROL
+    from app.models import Spot
+    from app.wind_climatology.service import enqueue
+
+    spot = _create_spot(admin, region_id)
+    spot_id = uuid.UUID(spot["id"])
+    row = db.get(Spot, spot_id)
+    row.status = "published"
+    db.commit()
+
+    unavailable = admin.get(f"/spots/{spot_id}/wind-climatology")
+    assert unavailable.status_code == 200
+    assert unavailable.json() == {"status": "unavailable"}
+    assert unavailable.headers["Cache-Control"] == "no-store"
+
+    run, created = enqueue(db, spot_id)
+    assert created
+    run.status = "ready"
+    run.quality_status = "passed"
+    run.is_active = True
+    run.public_data = {"sections": []}
+    db.commit()
+
+    ready = admin.get(f"/spots/{spot_id}/wind-climatology")
+    assert ready.status_code == 200
+    assert ready.json()["status"] == "ready"
+    assert ready.headers["Cache-Control"] == PUBLIC_CACHE_CONTROL
+
+
 def test_na_counts_as_fulfilled(admin, region_id, db):
     # a spot whose description is explicitly n/a still satisfies that rule
     spot = _create_spot(admin, region_id)
