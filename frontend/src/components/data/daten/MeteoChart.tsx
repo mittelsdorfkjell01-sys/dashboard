@@ -1,4 +1,5 @@
-import { startTransition, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { NormalizedForecastSeries, NormalizedForecastHour } from "../../../lib/forecastNormalization";
 import { closestForecastUtc } from "../../../lib/forecastNormalization";
 import { buildMeteogramModel } from "../meteogramModel";
@@ -43,18 +44,16 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const clipId = useId();
-  const futureClipId = useId();
   const dropId = useId();
   // Continuous drag position in strip-content pixels; null after the gesture,
   // when the marker resolves to the persistent selected hour.
   const [hoverX, setHoverX] = useState<number | null>(null);
 
+  // The scroll content is exactly the data width — no trailing empty room. An
+  // extra trailing area (to let the last day scroll to the viewport's left edge)
+  // created a dead zone the cursor could enter, where the marker clamped to the
+  // last column and appeared to lag further the more you scrolled right.
   const width = Math.max(slots.length * COL_W, 1);
-  const lastDay = model.dayGroups[model.dayGroups.length - 1];
-  const lastDayWidth = Math.max((lastDay?.count ?? 1) * COL_W, COL_W);
-  // Keep enough trailing room for the last detailed day to align with the
-  // viewport's left edge, without leaving an additional empty viewport.
-  const scrollContentWidth = `calc(${width}px + max(0px, 100% - ${lastDayWidth}px))`;
   const selectedIndex = slots.findIndex((s) => s.utcKey === selectedAtUtc);
   const selectedSlot = selectedIndex >= 0 ? slots[selectedIndex] : null;
 
@@ -224,27 +223,49 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     );
   }
 
-  // Track the cursor for the local marker (every pixel, high priority so it
-  // never misses a paint) and sync the shared selection to the nearest hour
-  // only when that column changes. That shared write fans out to every other
-  // module on the page (map, sidebar, forecast grid) — marking it a
-  // transition lets React finish painting the marker at the cursor first and
-  // apply the heavier fan-out afterward, instead of both being stuck behind
-  // the same commit and the marker visibly lagging the pointer.
+  // Track the cursor for the local marker and sync the shared selection to the
+  // nearest hour when that column changes. During a fast drag the browser fires
+  // many pointermove events per frame; handling each one (a forced layout via
+  // getBoundingClientRect + a state update + an SVG repaint) saturates the main
+  // thread and the marker falls behind the cursor. So coalesce to at most one
+  // update per animation frame: events just stash the latest clientX, and a
+  // single rAF applies it. The shared selection write is a transition so its
+  // heavier page-wide fan-out never blocks the marker paint.
+  const rafRef = useRef<number | null>(null);
+  const pendingXRef = useRef<number | null>(null);
+  useEffect(() => () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); }, []);
+
   const pickAt = (clientX: number) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = Math.max(0, Math.min(width, clientX - rect.left + el.scrollLeft));
-    setHoverX(x);
-    const idx = Math.min(slots.length - 1, Math.max(0, Math.round(x / COL_W - 0.5)));
-    const slot = slots[idx];
-    if (slot && slot.utcKey !== selectedAtUtc) {
-      startTransition(() => setSelectedAtUtc(slot.utcKey));
-    }
+    pendingXRef.current = clientX;
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const cx = pendingXRef.current;
+      const el = scrollRef.current;
+      if (cx == null || !el) return;
+      const rect = el.getBoundingClientRect();
+      // The meteogram sits under a CSS `zoom` (lg:zoom-0.85, see DatenPage):
+      // getBoundingClientRect is in zoomed screen px, but scrollLeft and the SVG
+      // viewBox are unzoomed CSS px. Divide the pointer offset by the zoom before
+      // adding scrollLeft, or the marker drifts left by (1-zoom)·x — the further
+      // right, the worse. zoom = 1 when no zoom is applied, so this is a no-op then.
+      const zoom = el.offsetWidth ? rect.width / el.offsetWidth : 1;
+      const x = Math.max(0, Math.min(width, (cx - rect.left) / zoom + el.scrollLeft));
+      // Commit the marker synchronously so it paints this frame — React's default
+      // deferred commit leaves the marker a constant frame (~16ms) behind the
+      // cursor during a drag. The selection fan-out below stays a transition.
+      flushSync(() => setHoverX(x));
+      const idx = Math.min(slots.length - 1, Math.max(0, Math.round(x / COL_W - 0.5)));
+      const slot = slots[idx];
+      if (slot && slot.utcKey !== selectedAtUtc) {
+        startTransition(() => setSelectedAtUtc(slot.utcKey));
+      }
+    });
   };
 
   const resetToNow = () => {
+    if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    pendingXRef.current = null;
     setHoverX(null);
     setSelectedAtUtc(closestForecastUtc(forecast));
   };
@@ -275,7 +296,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         role="group"
         aria-label="Meteogramm — Zeitpunkt wählen"
       >
-        <div className="relative" style={{ width: scrollContentWidth }}>
+        <div className="relative" style={{ width }}>
           {model.dayGroups.map((group) => (
             <span
               key={group.date}
@@ -306,9 +327,6 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                 <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
                   <rect x={0} y={0} width={Math.max(0, revealW)} height={TEMP_H} />
                 </clipPath>
-                <clipPath id={futureClipId} clipPathUnits="userSpaceOnUse">
-                  <rect x={Math.max(0, revealW)} y={0} width={Math.max(0, width - revealW)} height={TEMP_H} />
-                </clipPath>
                 <linearGradient id={dropId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="rgba(243,240,234,0.55)" />
                   <stop offset="60%" stopColor="rgba(243,240,234,0.28)" />
@@ -316,22 +334,37 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                 </linearGradient>
               </defs>
 
-              {/* No-marker fallback: whole curve solid in the temp colour. */}
-              {tempPath && !marker && (
+              {/* Future baseline — dotted across the WHOLE curve, drawn once. It
+                  never changes with the cursor, so the browser paints it a single
+                  time; the "past" solid below is layered on top to cover it up to
+                  the marker. Keeping this static (rather than re-clipping it every
+                  pointer move) is what stops the marker lagging on fast drags. */}
+              {tempPath && (
                 <path
                   d={tempPath}
                   fill="none"
-                  stroke="var(--sw-data-temp)"
+                  stroke="rgba(243,240,234,0.5)"
                   strokeWidth={2}
-                  strokeLinejoin="round"
                   strokeLinecap="round"
-                  style={{ filter: "drop-shadow(0 0 5px rgba(148,210,255,0.5))" }}
+                  strokeDasharray="0.1 7"
                 />
               )}
 
-              {/* Past — solid, glowing, clipped to the left of the marker. */}
+              {/* Past — bright & softly glowing, clipped to the left of the
+                  marker. The glow is a wide translucent stroke, NOT an SVG
+                  drop-shadow (blurring the full-width path bbox each frame was a
+                  second source of lag). Only this thin clip repaints per move. */}
               {tempPath && revealW > 0 && (
                 <>
+                  <path
+                    d={tempPath}
+                    fill="none"
+                    stroke="rgba(243,240,234,0.25)"
+                    strokeWidth={6}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    clipPath={`url(#${clipId})`}
+                  />
                   <path
                     d={tempPath}
                     fill="none"
@@ -340,7 +373,6 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     clipPath={`url(#${clipId})`}
-                    style={{ filter: "drop-shadow(0 0 5px rgba(148,210,255,0.5))" }}
                   />
                   <path
                     d={tempPath}
@@ -350,22 +382,8 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                     strokeLinejoin="round"
                     strokeLinecap="round"
                     clipPath={`url(#${clipId})`}
-                    style={{ filter: "drop-shadow(0 0 4px rgba(243,240,234,0.55))" }}
                   />
                 </>
-              )}
-
-              {/* Future — dotted, dimmer, clipped to the right of the marker. */}
-              {tempPath && marker && revealW < width && (
-                <path
-                  d={tempPath}
-                  fill="none"
-                  stroke="rgba(243,240,234,0.5)"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeDasharray="0.1 7"
-                  clipPath={`url(#${futureClipId})`}
-                />
               )}
 
               {/* Faint vertical guide line from the marker to the band bottom. */}
