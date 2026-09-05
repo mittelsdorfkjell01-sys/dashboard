@@ -9,7 +9,8 @@
     "api/index.py": { "maxDuration": 60, "memory": 1024 }
   },
   "crons": [
-    { "path": "/api/cron/climatology", "schedule": "15 4 * * *" }
+    { "path": "/api/cron/climatology", "schedule": "15 4 * * *" },
+    { "path": "/api/cron/wind-climatology", "schedule": "45 4 * * *" }
   ],
   "headers": [
     {

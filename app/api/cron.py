@@ -7,7 +7,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 
 from app.config import get_settings
 from app.db.session import get_db
@@ -148,3 +148,52 @@ def maintain_climatology(
         db.rollback()
         result["featured"] = {"error": f"{type(exc).__name__}: {exc}"}
     return result
+
+
+@router.get("/wind-climatology", dependencies=[Depends(_require_cron)])
+def maintain_wind_climatology(
+    db: Session = Depends(get_db),
+) -> dict:
+    """Build a bounded batch of missing public wind-month datasets.
+
+    This intentionally runs inside the public Vercel deployment so it always
+    uses the same database as the read endpoint. Provider I/O is capped to a
+    small batch; repeated cron invocations drain the full published catalogue.
+    """
+    from app.models import WindClimatologyRun
+    from app.wind_climatology.service import backfill, process
+
+    limit = max(1, min(get_settings().climatology_cron_batch_size, 3))
+    queued = backfill(db, limit=limit)
+    pending_ids = list(
+        db.scalars(
+            select(WindClimatologyRun.id)
+            .where(WindClimatologyRun.status == "pending")
+            .order_by(WindClimatologyRun.created_at)
+            .limit(limit)
+        )
+    )
+
+    ready = 0
+    failed = 0
+    for run_id in pending_ids:
+        run = process(db, run_id)
+        if run.status == "ready":
+            ready += 1
+        else:
+            failed += 1
+
+    remaining = db.scalar(
+        select(func.count())
+        .select_from(WindClimatologyRun)
+        .where(WindClimatologyRun.status == "pending")
+    ) or 0
+    has_more = bool(remaining) or len(queued) == limit
+    return {
+        "status": "complete_with_failures" if failed else ("more" if has_more else "complete"),
+        "newly_queued": len(queued),
+        "processed": len(pending_ids),
+        "ready": ready,
+        "failed": failed,
+        "pending": int(remaining),
+    }

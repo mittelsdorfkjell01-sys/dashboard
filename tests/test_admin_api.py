@@ -646,6 +646,50 @@ def test_climatology_cron_is_secret_guarded_and_leaves_wind_refresh_to_worker(
     assert db.get(WindClimatologyRun, run.id).status == "pending"
 
 
+def test_wind_climatology_cron_processes_a_bounded_pending_batch(
+    admin, region_id, db, monkeypatch
+):
+    from app.config import get_settings
+    from app.models import WindClimatologyRun
+    from app.wind_climatology.service import enqueue
+
+    monkeypatch.setattr(get_settings(), "cron_secret", "cron-test-secret")
+    spot = _create_spot(admin, region_id)
+    run, created = enqueue(db, uuid.UUID(spot["id"]))
+    assert created
+
+    processed = []
+
+    def fake_process(session, run_id):
+        row = session.get(WindClimatologyRun, run_id)
+        row.status = "ready"
+        row.quality_status = "passed"
+        row.is_active = True
+        row.public_data = {"sections": []}
+        session.commit()
+        processed.append(run_id)
+        return row
+
+    monkeypatch.setattr("app.wind_climatology.service.backfill", lambda session, limit: [])
+    monkeypatch.setattr("app.wind_climatology.service.process", fake_process)
+
+    assert admin.get("/cron/wind-climatology").status_code == 401
+    response = admin.get(
+        "/cron/wind-climatology",
+        headers={"Authorization": "Bearer cron-test-secret"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json() == {
+        "status": "complete",
+        "newly_queued": 0,
+        "processed": 1,
+        "ready": 1,
+        "failed": 0,
+        "pending": 0,
+    }
+    assert processed == [run.id]
+
+
 def test_na_counts_as_fulfilled(admin, region_id, db):
     # a spot whose description is explicitly n/a still satisfies that rule
     spot = _create_spot(admin, region_id)
