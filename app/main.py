@@ -106,6 +106,9 @@ app.include_router(community.router)
 # Public visitor accounts also live on the public site, so this is ungated
 # (unlike the admin /auth router below).
 app.include_router(account.router)
+# Maintenance routes are available to Vercel Cron on the public deployment,
+# but every endpoint in this router is independently guarded by CRON_SECRET.
+app.include_router(cron.router)
 
 # Back office — auth + /admin* routers. Excluded on the public deployment
 # (ENABLE_ADMIN_API=false) so surfwinddata.com's origin exposes no admin surface.
@@ -117,7 +120,6 @@ if settings.enable_admin_api:
     app.include_router(admin_users.router)
     app.include_router(admin_moderation.router)
     app.include_router(admin_weather.router)
-    app.include_router(cron.router)
 
 
 def _readiness(response: Response) -> dict[str, object]:
