@@ -265,6 +265,27 @@ export interface Region {
   sports: string[];
 }
 
+// One physical wave component (schema WaveComponentRead). Directions are
+// meteorological FROM bearings. total_wave/primary_swell are the marine core
+// and effectively always present; wind_sea/secondary_swell are populated only
+// when the model resolves them (a flat sea has no wind wave, a single swell no
+// secondary), so a null component means "does not exist now", not "no data".
+export interface WaveComponent {
+  significant_height_m: number | null;
+  mean_period_s?: number | null;
+  peak_period_s?: number | null;
+  mean_direction_from_deg?: number | null;
+  peak_direction_from_deg?: number | null;
+  source?: string | null;
+  quality_tier?: string | null;
+}
+export interface WaveComponents {
+  total_wave?: WaveComponent | null;
+  wind_sea?: WaveComponent | null;
+  primary_swell?: WaveComponent | null;
+  secondary_swell?: WaveComponent | null;
+}
+
 export interface CurrentConditions {
   wind: number | null;
   gust: number | null;
@@ -276,6 +297,7 @@ export interface CurrentConditions {
   swell: number | null;
   period: number | null;
   swell_dir: number | null;
+  waves?: WaveComponents | null;
   coastal_normal_deg?: number | null;
   coastal_classification?: CoastalClassification | null;
   wave_coastal_classification?: CoastalClassification | null;
@@ -386,6 +408,7 @@ export interface ForecastHour {
   swell: number | null;
   period: number | null;
   swell_dir: number | null;
+  waves?: WaveComponents | null;
   precip: number | null; // mm/h
   sst: number | null; // deg C
   apparent_temperature_c?: number | null;
