@@ -29,6 +29,25 @@ function dotIcon(color: string): L.DivIcon {
   });
 }
 
+/** Directional marker: the same magnitude-coloured disc as `dotIcon`, plus a
+ *  beak pointing the way the wind/swell travels TO. `rotation` is a screen-space
+ *  bearing (0 = north), pre-derived from the real comes-from reading — never
+ *  drawn when direction is null, so the disc never implies a direction it
+ *  doesn't have. */
+function vaneIcon(color: string, rotation: number): L.DivIcon {
+  return L.divIcon({
+    className: "swd-map-vane",
+    html: `<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+      <g transform="rotate(${rotation.toFixed(1)} 14 14)">
+        <path d="M14 1.6 L17.5 8.4 L10.5 8.4 Z" fill="#FFFDF8" stroke="rgba(18,28,28,0.4)" stroke-width="0.75" stroke-linejoin="round" />
+      </g>
+      <circle cx="14" cy="14" r="7" fill="${color}" stroke="#FFFDF8" stroke-width="2" />
+    </svg>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+}
+
 export default function SpotMap({
   spot,
   live = null,
@@ -101,12 +120,16 @@ export default function SpotMap({
     const map = mapRef.current;
     if (!map || !spot.coords) return;
     const color = spotDotColor(mode, { windKt: reading?.windKt ?? null, waveM: reading?.waveM ?? null });
+    // Direction is real point data (comes-from bearing); rotate to the travel
+    // direction like WindArrow. A plain disc when it's null — no fabricated vane.
+    const dirFrom = mode === "wind" ? reading?.windDir : reading?.waveDir;
+    const icon = dirFrom != null && Number.isFinite(dirFrom) ? vaneIcon(color, (dirFrom + 180) % 360) : dotIcon(color);
     if (markerRef.current) {
-      markerRef.current.setIcon(dotIcon(color));
+      markerRef.current.setIcon(icon);
     } else {
-      markerRef.current = L.marker([spot.coords[0], spot.coords[1]], { icon: dotIcon(color), keyboard: false, interactive: false }).addTo(map);
+      markerRef.current = L.marker([spot.coords[0], spot.coords[1]], { icon, keyboard: false, interactive: false }).addTo(map);
     }
-  }, [spot, mode, reading?.windKt, reading?.waveM]);
+  }, [spot, mode, reading?.windKt, reading?.waveM, reading?.windDir, reading?.waveDir]);
 
   if (!spot.coords) {
     return (

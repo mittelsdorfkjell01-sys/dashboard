@@ -323,6 +323,9 @@
   box-shadow: 0 1px 4px rgb(15 25 25 / 35%);
   transition: transform 140ms ease-out;
 }
+/* Directional spot-preview marker — magnitude disc + a beak toward the travel
+   direction. Same soft shadow as the plain dot so the two read as one family. */
+.swd-map-vane svg { display: block; filter: drop-shadow(0 1px 3px rgb(15 25 25 / 35%)); }
 .swd-map-a11y-marker:is(:hover, :focus-visible) .swd-map-dot { transform: scale(1.15); }
 .swd-map-a11y-marker.is-selected .swd-map-dot {
   border-color: var(--map-selection, #f06f4f);
