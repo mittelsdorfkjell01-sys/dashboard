@@ -84,6 +84,17 @@ the two write sites. Small, low-risk backend change — flagged here rather than
 required type/integration fix" during the frontend work, per the instruction to document rather than
 opportunistically patch backend gaps.
 
+**Resolution (2026-09-06): intentionally left null — the premise above does not hold.** A code re-check found
+both write sites (now `app/live/service.py:504` current/nowcast, `:920` forecast) sit on provenance for a
+**multi-model consensus** value: the headline wind is `consensus.speed_ms` (`service.py:555`), a median across
+the fetched model set (`icon_d2`/`meteofrance_arome_france_hd`/`ecmwf_ifs`/`ncep_gfs_global`/… — grids from
+~1.3 km to ~28 km), which is exactly why the same blocks deliberately set `model: None` and `model_family:
+None`. Stamping any single grid spacing onto a blended value would misrepresent it as a single-model reading —
+the same class of conflation §8 documents, just for resolution instead of direction. So `spatial_resolution_km`
+stays `null` for these consensus responses, and the inspector correctly omits the row. This is no longer an
+open gap; the only case where a single resolution would be honest is a per-single-model source split, which the
+current public provenance does not expose and which is not planned.
+
 ## 🟡 5. Wave component population unverified
 
 **Current state:** `WaveComponentsRead` (total_wave/wind_sea/primary_swell/secondary_swell) is fully specified
@@ -135,7 +146,7 @@ something to guess at from the frontend.
 | Spatial wind/wave tiles | Wind/Wave spatial layers | Large — new provider contract + pipeline |
 | Nearshore engine | Brandung mode entirely | Large — new model + bathymetry sourcing + validation |
 | Wind u/v export | Future field rendering only | Small |
-| `spatial_resolution_km` | Inspector completeness | Small |
+| `spatial_resolution_km` | Nothing — resolved: null by design for consensus values (see §4) | None |
 | Wave component population | Wave-mode inspector accuracy | Verification, then maybe small |
 | Station-list endpoint | Map-wide "live station" filter | Small–Medium |
 | Internal diagnostics dropped | Nothing user-facing | Trivial, optional |
