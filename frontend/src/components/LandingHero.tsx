@@ -6,6 +6,15 @@ import { ChevronRightIcon, PinIcon } from "../lib/icons";
 import type { Spot } from "../lib/types";
 
 const ADVANCE_MS = 60000;
+const MAX_SLIDES = 12;
+
+/** The admin selection is authoritative: unselected hero images must never
+ * leak into the landing reel, including when the selection is empty. */
+export function selectLandingHeroSlides(spots: Spot[]): Spot[] {
+  return spots
+    .filter((spot) => Boolean(spot.hero && spot.heroReel))
+    .slice(0, MAX_SLIDES);
+}
 
 /**
  * Landing hero. Instead of one static photo, this rotates on its own through
@@ -17,8 +26,8 @@ const ADVANCE_MS = 60000;
  * swiped or clicked. The only control is a small text CTA at the bottom-right
  * that jumps to whichever spot is currently on screen.
  *
- * Falls back to the static brand hero when no spot carries a usable image
- * (e.g. a fresh seed database).
+ * Falls back to the static brand hero when no selected spot carries a usable
+ * image (e.g. a fresh seed database or an intentionally empty selection).
  */
 export default function LandingHero({ spots }: { spots: Spot[] }) {
   const [reduce, setReduce] = useState(false);
@@ -29,16 +38,9 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-  // Only spots with a real uploaded hero make good full-screen backgrounds;
-  // the branded fallback field is for tiles, not a 100vh photo. Prefer the
-  // photos an operator curated into the reel (admin Hero tab, image.hero_reel);
-  // until any are picked, fall back to every spot with a hero so the reel is
-  // never empty. Cap it so we never cycle the entire catalogue.
-  const slides = useMemo(() => {
-    const withHero = spots.filter((s) => s.hero);
-    const curated = withHero.filter((s) => s.heroReel);
-    return (curated.length ? curated : withHero).slice(0, 12);
-  }, [spots]);
+  // Only real hero photos explicitly curated in the admin Hero tab may enter
+  // the reel. An empty selection deliberately uses the static brand hero.
+  const slides = useMemo(() => selectLandingHeroSlides(spots), [spots]);
   const count = slides.length;
   const [index, setIndex] = useState(0);
 

@@ -82,7 +82,7 @@ export default function AdminHero() {
         <h1 className="text-title font-semibold text-admin-fg">Hero-Rotation</h1>
         <p className="mt-1 max-w-[70ch] text-label text-admin-muted">
           Wähle per Haken, welche Hero-Bilder im Landing-Hero durchlaufen. Ist nichts
-          ausgewählt, zeigt der Hero alle Spots mit Bild. Klick auf ein Bild öffnet den
+          ausgewählt, erscheint das statische Hero-Bild. Klick auf ein Bild öffnet den
           mobilen Bildausschnitt.
         </p>
         <div className="mt-3">
