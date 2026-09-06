@@ -13,6 +13,7 @@ import MapModeSwitch from "./MapModeSwitch";
 import MapLegend from "./MapLegend";
 import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_POSITRON } from "../lib/basemaps";
 import type { Spot } from "../lib/types";
+import LeafletAttributionDisclosure from "./LeafletAttributionDisclosure";
 
 // Positron (CARTO light) raster basemap — clean, desaturated, Airbnb-style.
 const TILE_URL = cartoTileUrl(CARTO_POSITRON);
@@ -70,7 +71,7 @@ export default function SpotMap({
         minZoom: 6,
         maxZoom: 16,
         zoomControl: false,
-        attributionControl: true,
+        attributionControl: false,
         // Static preview: no interaction at all.
         dragging: false,
         scrollWheelZoom: false,
@@ -146,6 +147,8 @@ export default function SpotMap({
           </div>
         </div>
       )}
+
+      <LeafletAttributionDisclosure source="carto" />
     </div>
   );
 }

@@ -202,7 +202,7 @@ export function sortFeed(posts: FeedPost[], sort: FeedSort, helpfulCounts: Recor
 
 // --- presentation helpers ----------------------------------------------------
 
-const AVATAR_PALETTE = ["#241C17", "#1E6E7E", "#4A8159", "#E0823C", "#3D332C", "#7A6F66"];
+const AVATAR_PALETTE = ["#241C17", "#514942", "#4A8159", "#E0823C", "#3D332C", "#7A6F66"];
 
 export function hashString(s: string): number {
   let h = 0;

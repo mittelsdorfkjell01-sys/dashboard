@@ -207,7 +207,7 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
 
   /* The inline comment composer opts out of the thick outer outline — its own
-     thin teal border is the focus indicator (per design). */
+     thin ink border is the focus indicator. */
   textarea.comment-field:focus-visible {
     outline: none !important;
   }
@@ -324,10 +324,10 @@ html[data-theme="dark"] { color-scheme: dark; }
 
   /* --- "surfwind data" re-skin (Landing redesign) --- */
 
-  /* Opaque caption panel for the tile overlay — solid teal, hairline on top
+  /* Opaque caption panel for the tile overlay — neutral ink, hairline on top
      to separate it from the photo (no blur/translucency). */
   .glass {
-    background-color: #1E6E7E;
+    background-color: #241C17;
     border-top: 0.5px solid #E6E1DA;
   }
   /* Invisible click-catcher behind an open search panel — closes it on an
@@ -341,8 +341,8 @@ html[data-theme="dark"] { color-scheme: dark; }
      wind/wave motif in the EditorialHero component. */
   .editorial-hero-fallback {
     background-image:
-      radial-gradient(120% 100% at 15% 0%, rgba(30, 110, 126, 0.55), transparent 60%),
-      linear-gradient(160deg, #241c17 0%, #3d332c 55%, #1e6e7e 100%);
+      radial-gradient(120% 100% at 15% 0%, rgba(224, 130, 60, 0.28), transparent 60%),
+      linear-gradient(160deg, #241c17 0%, #3d332c 70%, #6b625b 100%);
   }
 
   /* EditorialHero's height. `dvh` accounts for mobile browser chrome

@@ -43,7 +43,8 @@ from app.weather.verification import lead_bucket, load_calibrations, store_forec
 from app.weather.shadow import physics_shadow
 from app.weather.observations import public_measurement
 from app.live.weather_contract import (
-    Availability, MODEL_NOWCAST_STALE_SECONDS, WEATHER_CONTRACT_VERSION,
+    Availability, FORECAST_PRODUCT_VERSION, MODEL_NOWCAST_STALE_SECONDS,
+    WEATHER_CONTRACT_VERSION,
     WMO_MAPPING_VERSION, age_seconds, distance_km, is_stale,
     marine_classification, provider_axis_utc, provider_time_utc, provider_timezone, valid_number,
     weather_condition,
@@ -665,10 +666,9 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
                     return value
             return None
 
-        # Open-Meteo includes elapsed hours of the current day. They must not
-        # influence a forward-looking daily summary or learned lead-time weight.
-        if reference and valid_at and valid_at < reference.replace(minute=0, second=0, microsecond=0):
-            continue
+        # Keep the provider's complete current-day forecast. The Spot-Daten
+        # chart deliberately presents a stable 06:00–22:00 day grid, including
+        # hours that elapsed since this provider run was fetched.
         lead_hours = max(0.0, (valid_at - reference).total_seconds() / 3600) if reference and valid_at else float(i)
         consensus = _wind_consensus_at(hourly, models, i, lead_hours, profile, calibrations)
         wind_band = None if consensus is None or consensus.member_count < 2 else {
@@ -853,8 +853,8 @@ def get_forecast_series(
     """Daily + hourly forecast with a consensus band and per-day confidence.
 
     Returns at most :data:`MAX_FORECAST_DAYS` days (the horizon is hard-capped).
-    Days 1–5 may contain hourly detail. Days 6–10 are daily trends without
-    synthetic or leaked hourly values.
+    Every returned day contains the provider's real hourly detail. No hourly
+    values are synthesized from daily summaries.
     """
     client = client or default_client()
     cache = cache or default_cache()
@@ -900,8 +900,8 @@ def get_forecast_series(
             "confidence": confidence,
             "confidence_source": confidence_source,
             "summary": {**_day_summary(by_date[date]), **daily_weather.get(date, {})},
-            "hours": by_date[date] if i < 5 else [],
-            "detail": "hourly" if i < 5 else "trend",
+            "hours": by_date[date],
+            "detail": "hourly",
         })
 
     generated_at = datetime.now(timezone.utc)
@@ -932,6 +932,7 @@ def get_forecast_series(
         "generated_at": generated_at.isoformat(),
         "observation_type": "forecast",
         "contract_version": WEATHER_CONTRACT_VERSION,
+        "product_version": FORECAST_PRODUCT_VERSION,
         "timezone": timezone_name,
         "calibrated": bool(calibrations),
         "availability": {

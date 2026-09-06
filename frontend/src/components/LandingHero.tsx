@@ -65,7 +65,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(30,110,126,0.35)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(36,28,23,0.35)]" />
       </div>
     );
   }
@@ -111,7 +111,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
             </div>
           );
         })}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(30,110,126,0.35)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(36,28,23,0.35)]" />
       </div>
 
       {/* CTA — a compact frosted "location" pill. Names the spot on screen and

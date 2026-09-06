@@ -19,7 +19,7 @@ export default function SpotDataHeader({ spot }: { spot: Spot }) {
             {spot.sports.map((sport) => (
               <span key={sport} className="inline-flex items-center gap-1 text-label font-medium text-ink">
                 {sportLabel(sport)}
-                <CheckCircleIcon width={16} height={16} className="text-teal" />
+                <CheckCircleIcon checkOnly width={16} height={16} className="text-ink" />
               </span>
             ))}
           </div>

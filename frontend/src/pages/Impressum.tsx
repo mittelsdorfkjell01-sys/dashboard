@@ -32,7 +32,7 @@ export default function Impressum() {
           <h2 className="text-sz-16 font-semibold text-ink">Kontakt</h2>
           <p>
             {legal.phone && <>Telefon: {legal.phone}<br /></>}
-            E-Mail: <a className="text-teal underline" href={`mailto:${legal.email}`}>{legal.email}</a>
+            E-Mail: <a className="text-ink underline" href={`mailto:${legal.email}`}>{legal.email}</a>
           </p>
 
           <h2 className="text-sz-16 font-semibold text-ink">

@@ -187,7 +187,7 @@ function JustifiedGallery({
 function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="mt-8 grid place-items-center rounded-[14px] border border-dashed border-line bg-band/40 px-5 py-12 text-center sm:py-14">
-      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-[14px] border border-line bg-surface text-teal">
+      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-[14px] border border-line bg-surface text-ink">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2.5" />
           <circle cx="8.5" cy="10" r="1.6" />

@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import "../map.css";
 import { mapLinkProps } from "../lib/mapLinks";
 import { LinkIcon } from "../lib/icons";
+import LeafletAttributionDisclosure from "./LeafletAttributionDisclosure";
 
 // Aerial imagery mirrors the reference: daylight coastline and naturally blue
 // water. Esri World Imagery is keyless, so production never drops back to a
@@ -51,7 +52,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         minZoom: 3,
         maxZoom: 18,
         zoomControl: false,
-        attributionControl: true,
+        attributionControl: false,
         zoomSnap: 0.5,
       });
       L.tileLayer(AERIAL_TILE_URL, { attribution: AERIAL_ATTRIBUTION, maxZoom: 19, detectRetina: false }).addTo(map);
@@ -174,6 +175,8 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           <LinkIcon width={18} height={18} />
         </a>
       </div>
+
+      <LeafletAttributionDisclosure source="esri" tone="overlay" />
     </div>
   );
 }

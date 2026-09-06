@@ -22,7 +22,7 @@ export default function Favoriten() {
   if (favs.length === 0) {
     return (
       <div className="rounded-[14px] border border-dashed border-line bg-surface px-6 py-14 text-center">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-[14px] bg-band text-teal">
+        <span className="mx-auto grid h-14 w-14 place-items-center rounded-[14px] bg-band text-ink">
           <HeartFilledIcon className="text-sz-24" />
         </span>
         <h2 className="mt-4 text-sz-17 font-semibold text-ink">

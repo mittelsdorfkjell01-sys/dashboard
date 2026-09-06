@@ -9,5 +9,5 @@ cached in Redis. This path is **strictly separate** from the ERA5 climatology
   OpenMeteoClient                fetch_forecast / fetch_marine (injectable seam)
   cache_get / cache_set          Redis, key om:{model}:{lat}:{lon}:{var}, 30-60 min TTL
   get_live_conditions(spot_id)   current{wind,gust,dir,air,sst,swell,period,swell_dir}
-  get_forecast_series(spot_id)   days 1-5 hourly, days 6-10 trend
+  get_forecast_series(spot_id)   hourly detail for all 10 forecast days
 """

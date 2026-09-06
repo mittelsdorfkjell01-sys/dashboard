@@ -200,10 +200,10 @@ export function useSpotsLive(
   return { data, loading: state.loading, refreshing: state.refreshing, stale: state.stale, error: state.error, reload: state.reload };
 }
 
-/** Normalized 10-day forecast: days 1–5 hourly, days 6–10 trend. */
+/** Normalized 10-day forecast with hourly detail across the full horizon. */
 export function useSpotForecast(id?: string): AsyncStateReloadable<NormalizedForecastSeries> {
   const enabled = import.meta.env.VITE_WEATHER_POLLING_ENABLED === "true";
-  return useSwr(id ? `forecast:${id}` : null, () => api.getSpotForecast(id!), enabled ? {
+  return useSwr(id ? `forecast:${id}` : null, () => api.getSpotForecast(id!, 10), enabled ? {
     refreshIntervalMs: 45 * 60_000, jitterRatio: 0.15,
     refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 60 * 60_000,
   } : {});

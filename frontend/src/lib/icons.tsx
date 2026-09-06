@@ -228,11 +228,11 @@ export const PlusCircleIcon = (p: IconProps) => (
   </svg>
 );
 
-/** Filled check-in-circle badge — sport chips ("Kitesurfen ✓"). */
-export const CheckCircleIcon = (p: IconProps) => (
-  <svg {...base} {...p} fill="currentColor" stroke="none" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M8 12.5l2.5 2.5L16 9.5" stroke="white" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+/** Check badge for sport labels; `checkOnly` removes the surrounding circle. */
+export const CheckCircleIcon = ({ checkOnly = false, ...p }: IconProps & { checkOnly?: boolean }) => (
+  <svg {...base} {...p} fill={checkOnly ? "none" : "currentColor"} stroke="none" viewBox="0 0 24 24">
+    {!checkOnly && <circle cx="12" cy="12" r="10" />}
+    <path d="M6.5 12.5 10.5 16.5 18 8.5" stroke={checkOnly ? "currentColor" : "white"} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 

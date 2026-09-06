@@ -19,7 +19,7 @@ const solar = (summary: ForecastSeries["days"][number]["summary"], timezone: str
 function WeatherIcon({ condition = "unknown", isDay, label }: { condition?: WeatherCondition; isDay?: boolean | null; label: string }) {
   const storm = condition === "thunderstorm";
   const wet = ["drizzle", "rain", "rain_showers", "snow", "snow_showers"].includes(condition);
-  return <svg role="img" aria-label={`${label}${isDay == null ? "" : isDay ? ", Tag" : ", Nacht"}`} viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-teal" fill="none" stroke="currentColor" strokeWidth="1.7">
+  return <svg role="img" aria-label={`${label}${isDay == null ? "" : isDay ? ", Tag" : ", Nacht"}`} viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-ink" fill="none" stroke="currentColor" strokeWidth="1.7">
     {condition === "clear" || condition === "mainly_clear" ? <><circle cx="12" cy="12" r={isDay === false ? "5" : "4"}/>{isDay !== false && <path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>}</> : <><path d="M6 17h11a4 4 0 0 0 0-8 6 6 0 0 0-11.3 1.8A3.2 3.2 0 0 0 6 17Z"/>{wet && <path d="m8 19-1 2m5-2-1 2m5-2-1 2"/>}{storm && <path d="m13 17-2 3h2l-2 3"/>}</>}
   </svg>;
 }
@@ -29,7 +29,7 @@ export default function WeatherDetailsTable({ forecast }: { forecast: Normalized
   const timezone = forecast.timezone ?? "UTC";
   const hours = forecast.days.flatMap((day) => day.hours).slice(0, 24);
   return <div className="space-y-6 px-2 pb-3">
-    <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" tabIndex={0} role="region" aria-label="Tägliche Wettervorhersage horizontal scrollen">
+    <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" tabIndex={0} role="region" aria-label="Tägliche Wettervorhersage horizontal scrollen">
       <table aria-label="Tägliche Wettervorhersage" className="min-w-[820px] w-full border-collapse text-ui tabular-nums">
         <thead><tr>{["Tag", "Wetter", "Temperatur", "Regen", "Wolken", "UV max.", "Sonne"].map((label) => <th scope="col" key={label} className="border-b border-line px-2.5 py-2 text-left text-caption font-medium uppercase tracking-wide text-muted [&:not(:first-child)]:text-right">{label}</th>)}</tr></thead>
         <tbody>{forecast.days.map((day, index) => { const s = day.summary; const condition = s.weather_condition ?? "unknown"; return <tr key={day.date} className={index === 0 ? "bg-band" : ""}>
@@ -43,7 +43,7 @@ export default function WeatherDetailsTable({ forecast }: { forecast: Normalized
         </tr>; })}</tbody>
       </table>
     </div>
-    {hours.length > 0 && <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" tabIndex={0} role="region" aria-label="Stündliche Wettervorhersage horizontal scrollen"><table aria-label="Stündliche Wettervorhersage" className="min-w-[980px] w-full border-collapse text-ui tabular-nums">
+    {hours.length > 0 && <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" tabIndex={0} role="region" aria-label="Stündliche Wettervorhersage horizontal scrollen"><table aria-label="Stündliche Wettervorhersage" className="min-w-[980px] w-full border-collapse text-ui tabular-nums">
       <caption className="px-2.5 pb-2 text-left font-semibold text-ink">Nächste 24 Stunden</caption>
       <thead><tr>{["Zeit", "Wetter", "Temperatur", "Gefühlt", "Regen", "Wolken", "Druck", "UV", ...(forecast.availability?.marine === "available" ? ["Welle", "Meeresoberfläche"] : [])].map((label) => <th scope="col" key={label} className="border-b border-line px-2.5 py-2 text-left text-caption font-medium uppercase tracking-wide text-muted [&:not(:first-child)]:text-right">{label}</th>)}</tr></thead>
       <tbody>{hours.map((hour) => { const condition = hour.weather_condition ?? "unknown"; return <tr key={hour.utcKey}>

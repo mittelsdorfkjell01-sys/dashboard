@@ -9,6 +9,8 @@ from sqlalchemy import event, select
 
 from app.live.cache import InMemoryCache
 from app.live.client import MAX_FORECAST_DAYS
+from app.live.public_cache import public_forecast_key
+from app.live.weather_contract import FORECAST_PRODUCT_VERSION
 from app.live.deps import get_cache, get_om_client
 from app.db.session import engine
 from app.main import app
@@ -95,7 +97,7 @@ def test_public_forecast_cache_hit_does_not_touch_database():
     import uuid
     spot_id = uuid.uuid4()
     cache = InMemoryCache()
-    cache.set(f"public:weather-v6:forecast:{spot_id}", {
+    cache.set(public_forecast_key(spot_id), {
         "spot_id": str(spot_id), "model": "surfwinddata",
         "generated_at": "2026-08-26T00:00:00Z", "days": [],
         "_fresh_until": "2026-08-26T03:00:00Z",
@@ -122,10 +124,11 @@ def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):
     days = resp.json()["days"]
     assert "s-maxage=1800" in resp.headers["cache-control"]
     assert len(days) == MAX_FORECAST_DAYS
+    assert resp.json()["product_version"] == FORECAST_PRODUCT_VERSION
     assert days[0]["confidence"] == "hoch"
     assert days[-1]["confidence"] == "niedrig"
-    assert all(day["detail"] == "hourly" and day["hours"] for day in days[:5])
-    assert all(day["detail"] == "trend" and day["hours"] == [] for day in days[5:])
+    assert all(day["detail"] == "hourly" and day["hours"] for day in days)
+    assert len(days[-1]["hours"]) == 24
 
 
 def test_forecast_endpoint_rejects_over_horizon(client, seeded_spot_id, fake_live):

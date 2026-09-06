@@ -23,9 +23,8 @@ export default {
         band: "var(--sw-band)",
         // Page/body background — cards sit on this as surface.
         page: "var(--sw-page)",
-        // Restricted editorial accent — selected interactive/link text, the
-        // search CTA exception and short data underlines. Never a generic
-        // button, surface, border, focus ring or running-text colour.
+        // Restricted action accent. Product direction keeps this blue only on
+        // controls that already use it and the Spot Info/Daten underline.
         teal: {
           DEFAULT: "var(--sw-teal)",
           hover: "var(--sw-teal-hover)",

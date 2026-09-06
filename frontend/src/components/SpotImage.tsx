@@ -52,7 +52,7 @@ export default function SpotImage({
     <div
       role="img"
       aria-label={region ? `${name}, ${region}` : name}
-      className={`flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-ink-soft to-[#c2d3e6] px-3 text-center ${className}`}
+      className={`flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-ink-soft to-muted px-3 text-center ${className}`}
     >
       <span
         className={`font-semibold leading-tight text-ink-soft ${

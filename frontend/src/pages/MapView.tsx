@@ -27,6 +27,7 @@ import {
   type PublicSpotProperties,
 } from "../lib/publicMap";
 import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_POSITRON } from "../lib/basemaps";
+import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
 
@@ -166,7 +167,7 @@ export default function MapView() {
         minZoom: 2,
         maxZoom: 17,
         zoomControl: false,
-        attributionControl: true,
+        attributionControl: false,
         // Fine zoom snapping keeps fitBounds/cluster easing from clamping to
         // whole levels; a gentler wheel ratio + debounce turns scroll-zoom from
         // steppy jumps into a smooth glide.
@@ -397,6 +398,7 @@ export default function MapView() {
           <button type="button" onClick={() => window.location.reload()}>Erneut versuchen</button>
         </div>
       )}
+      <LeafletAttributionDisclosure source="carto" />
       <div className="swd-map-controls-left pointer-events-none absolute z-20 flex flex-col items-start gap-3">
         <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-back pointer-events-auto">
           <ChevronLeftIcon className="text-sz-19" />

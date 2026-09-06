@@ -6,6 +6,7 @@ import pytest
 
 from app.live.cache import InMemoryCache, cache_key
 from app.live.client import MAX_FORECAST_DAYS
+from app.live.weather_contract import FORECAST_PRODUCT_VERSION
 from app.live.models import AROME, BEST_MATCH, ICON_D2, ICON_EU, select_model
 from app.live.service import (
     _forecast_sample_issued_at,
@@ -163,7 +164,7 @@ def test_unknown_spot_raises_lookup():
 
 # --- forecast horizon + confidence -----------------------------------------
 
-def test_forecast_returns_exactly_10_days_with_five_detail_days():
+def test_forecast_returns_exactly_10_days_with_hourly_detail():
     spot = make_spot()
     client = FakeOpenMeteoClient(data_days=11)
     series = get_forecast_series(
@@ -171,12 +172,40 @@ def test_forecast_returns_exactly_10_days_with_five_detail_days():
     )
 
     assert len(series["days"]) == MAX_FORECAST_DAYS
+    assert series["product_version"] == FORECAST_PRODUCT_VERSION
     confidences = [d["confidence"] for d in series["days"]]
     assert confidences[0] == "hoch"
-    for index, day in enumerate(series["days"]):
-        assert len(day["hours"]) == (24 if index < 5 else 0)
-        assert day["detail"] == ("hourly" if index < 5 else "trend")
+    for day in series["days"]:
+        assert len(day["hours"]) == 24
+        assert day["detail"] == "hourly"
         assert "wind_max" in day["summary"]
+
+    # The far horizon contains the provider's actual timestamped values rather
+    # than values expanded from a daily summary.
+    assert series["days"][-1]["hours"][0]["time"].startswith("2026-07-08T00:00:00")
+    assert series["days"][-1]["hours"][-1]["time"].startswith("2026-07-08T23:00:00")
+
+
+def test_forecast_keeps_elapsed_hours_for_a_complete_current_day():
+    class EveningClient(FakeOpenMeteoClient):
+        def fetch_forecast(self, lat, lon, models, days=10):
+            payload = super().fetch_forecast(lat, lon, models, days)
+            payload["current"]["time"] = "2026-06-29T21:30"
+            return payload
+
+    spot = make_spot()
+    series = get_forecast_series(
+        spot.id,
+        days=10,
+        db=FakeDB(spot),
+        client=EveningClient(data_days=10),
+        cache=InMemoryCache(),
+    )
+
+    today = series["days"][0]
+    assert len(today["hours"]) == 24
+    assert today["hours"][0]["time"].startswith("2026-06-29T00:00:00")
+    assert today["hours"][-1]["time"].startswith("2026-06-29T23:00:00")
 
 
 def test_forecast_horizon_is_capped_even_if_more_requested():

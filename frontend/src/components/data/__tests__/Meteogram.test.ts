@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ForecastDay, ForecastHour, ForecastSeries } from "../../../lib/api";
 import { normalizeForecast } from "../../../lib/forecastNormalization";
+import { isSpotForecastDisplayHour } from "../../../lib/spotForecastWindow";
 import { buildMeteogramModel, hasValidSpread, marineStatusText } from "../meteogramModel";
 
 const hour = (time: string, patch: Partial<ForecastHour> = {}): ForecastHour => ({
@@ -16,6 +17,39 @@ const forecast = (days: ForecastDay[], timezone = "UTC", marine: ForecastSeries[
 });
 
 describe("Meteogram data model", () => {
+  it("shows exactly 17 local hourly slots from 06:00 through 22:00 in Spot-Daten", () => {
+    const hours = Array.from({ length: 24 }, (_, localHour) =>
+      hour(`2026-08-23T${String(localHour).padStart(2, "0")}:00:00Z`),
+    );
+    const model = buildMeteogramModel(
+      normalizeForecast(forecast([day("2026-08-23", hours)])),
+      isSpotForecastDisplayHour,
+    );
+
+    expect(model.slots).toHaveLength(17);
+    expect(model.slots[0].localTime).toBe("06:00");
+    expect(model.slots[model.slots.length - 1]?.localTime).toBe("22:00");
+  });
+
+  it("wires all ten hourly forecast days into the meteogram", () => {
+    const days = Array.from({ length: 10 }, (_, dayIndex) => {
+      const date = `2026-09-${String(dayIndex + 1).padStart(2, "0")}`;
+      const hours = Array.from({ length: 24 }, (_, localHour) =>
+        hour(`${date}T${String(localHour).padStart(2, "0")}:00:00Z`, { wind: 10 + dayIndex }),
+      );
+      return day(date, hours);
+    });
+    const model = buildMeteogramModel(
+      normalizeForecast(forecast(days)),
+      isSpotForecastDisplayHour,
+    );
+
+    expect(model.detailDays).toHaveLength(10);
+    expect(model.dayGroups).toHaveLength(10);
+    expect(model.slots).toHaveLength(10 * 17);
+    expect(model.dayGroups[model.dayGroups.length - 1]?.date).toBe("2026-09-10");
+  });
+
   it.each([
     ["kein Wind",null,null,null,20],
     ["sehr schwach",0.4,0.8,null,1],

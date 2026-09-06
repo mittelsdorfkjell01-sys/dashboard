@@ -17,7 +17,7 @@ function EventTime({ event, timezone, prominent = false }: {
 }) {
   const shown = formatTideTime(event.time, timezone, event.uncertainty_minutes);
   return (
-    <div className={prominent ? "min-w-0 border-l-2 border-teal pl-3" : "grid grid-cols-[5.5rem_1fr] items-baseline gap-3"}>
+    <div className={prominent ? "min-w-0 border-l-2 border-ink pl-3" : "grid grid-cols-[5.5rem_1fr] items-baseline gap-3"}>
       <p className="text-caption font-medium uppercase text-muted">
         {event.event_type === "high" ? "Hochwasser" : "Niedrigwasser"}
       </p>

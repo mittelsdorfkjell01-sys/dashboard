@@ -71,7 +71,7 @@ export default function LiveRow({ live }: {
           <p className="mt-0.5 text-muted">{validAt ? new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" }).format(new Date(validAt)) : "Datenzeit unbekannt"}{!selectedForecast && ` · ${ageLabel}`}</p>
         </div>
         <details className="max-w-prose text-muted">
-          <summary className="cursor-pointer font-medium text-teal underline-offset-4 hover:underline">Herkunft erklären</summary>
+          <summary className="cursor-pointer font-medium text-ink underline-offset-4 hover:underline">Herkunft erklären</summary>
           <p className="mt-2">{provenance?.provider ?? "Surfwinddata"}. Modelllaufzeit: {provenance?.model_run_at ? "bekannt" : "nicht vom Provider gemeldet"}. Wind, Luft und Marinewerte können unterschiedliche Quellen haben.</p>
           {live?.measurement && !selectedForecast && <p className="mt-2">Station {live.measurement.station_name ?? live.measurement.provider_station_id} · {live.measurement.distance_km == null ? "Entfernung unbekannt" : `${live.measurement.distance_km.toFixed(1)} km vom Spot`}. Die Station steht nicht zwingend direkt am Spot.</p>}
         </details>

@@ -69,7 +69,7 @@ export default function Facilities({
               <Icon
                 width={22}
                 height={22}
-                className={`mt-0.5 shrink-0 ${absent ? "text-muted opacity-40" : unknown ? "text-muted opacity-30" : "text-teal"}`}
+                className={`mt-0.5 shrink-0 ${absent ? "text-muted opacity-40" : unknown ? "text-muted opacity-30" : "text-ink"}`}
               />
               <div className="min-w-0">
                 <p className={`text-ui font-medium leading-snug ${absent ? "text-muted line-through" : "text-ink"}`}>
@@ -89,7 +89,7 @@ export default function Facilities({
   if (variant === "rail") {
     return (
       <div>
-        <p className="text-data-label uppercase text-teal">Vor Ort</p>
+        <p className="text-data-label uppercase text-ink">Vor Ort</p>
         <dl className="mt-4 divide-y divide-line">
           {items.map((f) => {
             const Icon = facilityIcon[f.kind];

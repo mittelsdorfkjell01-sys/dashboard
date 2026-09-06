@@ -28,7 +28,7 @@ from app.live.public_cache import (
     set_public_forecast,
     set_public_live,
 )
-from app.live.weather_contract import WEATHER_CONTRACT_VERSION
+from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
 from app.models import Spot, SpotWeatherProfile, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
@@ -511,7 +511,7 @@ def get_spot_forecast(
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),
 ) -> ForecastSeriesRead:
-    """Surfwinddata 10-day forecast: days 1–5 hourly, days 6–10 trend."""
+    """Surfwinddata 10-day forecast with real hourly detail for every day."""
     set_forecast_cache(response)
     cached = get_public_forecast(cache, spot_id)
     if cached is not None:
@@ -525,14 +525,15 @@ def get_spot_forecast(
     if snapshot is not None:
         snapshot_data = public_payload(snapshot)
         snapshot_days = snapshot_data.get("days") or []
-        # weather-v3 preserves the explicit hourly/trend day discriminator.
+        # Only publish snapshots produced for the current ten-day hourly
+        # product. Older five-day-detail snapshots fall through to a rebuild.
         if (
             snapshot_data.get("contract_version") == WEATHER_CONTRACT_VERSION
+            and snapshot_data.get("product_version") == FORECAST_PRODUCT_VERSION
             and len(snapshot_days) == MAX_FORECAST_DAYS
             and all(
-                day.get("detail") == ("hourly" if index < 5 else "trend")
-                and (index < 5 or not day.get("hours"))
-                for index, day in enumerate(snapshot_days)
+                day.get("detail") == "hourly" and bool(day.get("hours"))
+                for day in snapshot_days
             )
         ):
             full_result = ForecastSeriesRead.model_validate(snapshot_data)

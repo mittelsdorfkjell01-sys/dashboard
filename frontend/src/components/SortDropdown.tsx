@@ -126,14 +126,14 @@ export default function SortDropdown({
               {SORT_OPTIONS.map((o) => (
                 <label
                   key={o.key}
-                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-[14px] px-2 py-1.5 text-[13.5px] text-ink hover:bg-teal/[0.06]"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-[14px] px-2 py-1.5 text-[13.5px] text-ink hover:bg-ink/[0.06]"
                 >
                   <input
                     type="radio"
                     name="sort"
                     checked={value.sort === o.key}
                     onChange={() => setSort(o.key)}
-                    className="accent-teal"
+                    className="accent-ink"
                   />
                   {o.label}
                 </label>

@@ -1,7 +1,7 @@
 import { startTransition, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { NormalizedForecastSeries, NormalizedForecastHour } from "../../../lib/forecastNormalization";
-import { closestForecastUtc } from "../../../lib/forecastNormalization";
+import { isSpotForecastDisplayHour } from "../../../lib/spotForecastWindow";
 import { buildMeteogramModel } from "../meteogramModel";
 import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/SpotDataScope";
 import { windColor } from "../../../lib/windScale";
@@ -19,7 +19,15 @@ const GLYPH_INK = Math.round((GLYPH * 16) / 24);
 const WELLE_WETTER_GAP = 16;
 const WETTER_ROW_H = WELLE_WETTER_GAP + GLYPH + 16;
 const TEMP_H = 108; // temperature band height — more room for the curve
+const WIND_ROW_H = BAR_H + 16;
+const RICHT_ROW_H = 26;
 const ROW_LABELS = ["WELLE", "WETTER", "TEMP.", "WIND", "RICHT.", "ZEIT"] as const;
+
+// Vertical offsets in the stacked strip, so the cross-row "now" line can be
+// placed in the outer (all-rows) container with column-accurate x and the right
+// y-extents (fine above the TEMP point, strong from the point down to the axis).
+const TEMP_TOP = WAVE_ROW_H + WETTER_ROW_H;
+const AXIS_TOP = TEMP_TOP + TEMP_H + WIND_ROW_H + RICHT_ROW_H; // top of the ZEIT row
 
 function fade(hex: string, alpha = 0.45): string {
   const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
@@ -39,15 +47,26 @@ function fade(hex: string, alpha = 0.45): string {
  */
 export default function MeteoChart({ forecast }: { forecast: NormalizedForecastSeries }) {
   const { selectedAtUtc, setSelectedAtUtc, windUnit } = useSpotDataScope();
-  const model = useMemo(() => buildMeteogramModel(forecast), [forecast]);
+  const model = useMemo(() => buildMeteogramModel(forecast, isSpotForecastDisplayHour), [forecast]);
   const slots = model.slots;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const clipId = useId();
   const dropId = useId();
+  const uid = useId(); // base for the now-hero gradients/clips/filters
   // Continuous drag position in strip-content pixels; null after the gesture,
   // when the marker resolves to the persistent selected hour.
   const [hoverX, setHoverX] = useState<number | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const pendingXRef = useRef<number | null>(null);
+  useEffect(() => () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); }, []);
+
+  // Real wall-clock "now", refreshed each minute so the now-hero stays current
+  // without a heavier tick. Drives the row's three-zone split and the marker.
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   // The scroll content is exactly the data width — no trailing empty room. An
   // extra trailing area (to let the last day scroll to the viewport's left edge)
@@ -77,6 +96,29 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
   const tempPath = useMemo(() => smoothRuns(runs, cx, tempY), [runs, tScale.min, tScale.max]);
 
+  // The "now" hero: the real current moment mapped onto the curve (interpolated
+  // between hours), with a 3-hour trend for the tile arrow. Null when now falls
+  // outside the loaded window or in an inter-day night gap — then no now-visuals.
+  const now = useMemo(() => {
+    const f = nowIndex(slots, nowMs);
+    if (f == null) return null;
+    const s = sampleCurve(slots, f);
+    if (!s) return null;
+    const ahead = sampleCurve(slots, Math.min(slots.length - 1, f + 3));
+    const d3 = ahead ? ahead.air - s.air : 0;
+    const trend: "up" | "down" | "flat" = d3 > 0.4 ? "up" : d3 < -0.4 ? "down" : "flat";
+    return { x: s.x, y: tempY(s.air), air: s.air, trend };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tempY derives from tScale, tracked
+  }, [slots, nowMs, tScale.min, tScale.max]);
+  const nowLabel = useMemo(
+    () => new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: forecast.timezone || "UTC" }).format(nowMs),
+    [nowMs, forecast.timezone],
+  );
+  // Closed area under the curve (per run), for the glow fill; clipped to the
+  // past at render so it lights only the elapsed part and stays inside the band.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
+  const tempArea = useMemo(() => areaRuns(runs, cx, tempY, TEMP_H), [runs, tScale.min, tScale.max]);
+
   // Marker: the interpolated point under the cursor while hovering, otherwise
   // the "now" slot. `air` is read off the same curve so the readout is exact at
   // any instant — not just on the 2-hour data columns.
@@ -89,7 +131,6 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
   }, [hoverX, slots, selectedIndex, selectedSlot?.air, tScale.min, tScale.max]);
-  const revealW = marker ? marker.x : 0;
   // Local time at the marker's nearest hour, for the tooltip pill (e.g. "14:00 Uhr").
   const markerTime = marker
     ? slots[Math.min(slots.length - 1, Math.max(0, Math.round(marker.x / COL_W - 0.5)))]?.localTime ?? null
@@ -231,10 +272,6 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   // update per animation frame: events just stash the latest clientX, and a
   // single rAF applies it. The shared selection write is a transition so its
   // heavier page-wide fan-out never blocks the marker paint.
-  const rafRef = useRef<number | null>(null);
-  const pendingXRef = useRef<number | null>(null);
-  useEffect(() => () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); }, []);
-
   const pickAt = (clientX: number) => {
     pendingXRef.current = clientX;
     if (rafRef.current != null) return;
@@ -267,7 +304,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     pendingXRef.current = null;
     setHoverX(null);
-    setSelectedAtUtc(closestForecastUtc(forecast));
+    setSelectedAtUtc(null);
   };
 
   return (
@@ -286,7 +323,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         id="spot-meteogram-scroll"
         ref={scrollRef}
         tabIndex={0}
-        className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:thin] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+        className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:thin] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         onPointerDown={(e) => {
           (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
           pickAt(e.clientX);
@@ -315,124 +352,191 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
             />
           )}
 
+          {/* Cross-row NOW line, anchoring the same instant down the whole strip:
+              very fine above the temperature point (through WELLE/WETTER) and
+              strong from the point down to the time axis. Solid strokes with
+              opacity — never a 0-width bbox gradient. */}
+          {now && (
+            <>
+              <div
+                className="pointer-events-none absolute -translate-x-1/2 bg-[#eef1f4] opacity-[0.13]"
+                style={{ left: now.x, top: 0, height: TEMP_TOP + now.y, width: 1 }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute -translate-x-1/2 bg-[#eef1f4] opacity-50"
+                style={{ left: now.x, top: TEMP_TOP + now.y, height: Math.max(0, AXIS_TOP - (TEMP_TOP + now.y)), width: 1.4 }}
+                aria-hidden
+              />
+            </>
+          )}
+
           {topRows}
 
-          {/* TEMP — smooth curve split at the marker: solid & glowing up to the
-              selected time (the "past"), dotted beyond it (the "future"). The
-              marker tracks the cursor, reads the interpolated value and carries a
-              time pill; a faint guide line drops from it to the band bottom. */}
+          {/* TEMP — a now-anchored timeline. The solid past brightens toward the
+              now point (it "collects light"), a stepped bloom marks now, and the
+              dotted future dims to the right. A soft glow area lights the past
+              under the line, and a handoff glow bleeds from now into the first
+              dotted hours. The drag/hover selection is a quieter secondary
+              marker. */}
           <div className="relative" style={{ height: TEMP_H, width }}>
             <svg viewBox={`0 0 ${width} ${TEMP_H}`} width={width} height={TEMP_H} preserveAspectRatio="none" className="absolute inset-0" aria-hidden>
               <defs>
-                <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
-                  <rect x={0} y={0} width={Math.max(0, revealW)} height={TEMP_H} />
-                </clipPath>
                 <linearGradient id={dropId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(243,240,234,0.55)" />
-                  <stop offset="60%" stopColor="rgba(243,240,234,0.28)" />
+                  <stop offset="0%" stopColor="rgba(243,240,234,0.45)" />
                   <stop offset="100%" stopColor="rgba(243,240,234,0)" />
                 </linearGradient>
+                {now && (
+                  <>
+                    <clipPath id={`${uid}-cp`} clipPathUnits="userSpaceOnUse">
+                      <rect x={0} y={0} width={Math.max(0, now.x)} height={TEMP_H} />
+                    </clipPath>
+                    <clipPath id={`${uid}-cf`} clipPathUnits="userSpaceOnUse">
+                      <rect x={now.x} y={0} width={Math.max(0, width - now.x)} height={TEMP_H} />
+                    </clipPath>
+                    <linearGradient id={`${uid}-gp`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={now.x} y2={0}>
+                      <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.42} />
+                      <stop offset="100%" stopColor="#eef1f4" stopOpacity={1} />
+                    </linearGradient>
+                    <linearGradient id={`${uid}-gf`} gradientUnits="userSpaceOnUse" x1={now.x} y1={0} x2={width} y2={0}>
+                      <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.85} />
+                      <stop offset="100%" stopColor="#eef1f4" stopOpacity={0.24} />
+                    </linearGradient>
+                    <linearGradient id={`${uid}-gh`} gradientUnits="userSpaceOnUse" x1={now.x} y1={0} x2={now.x + 3 * COL_W} y2={0} spreadMethod="pad">
+                      <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.55} />
+                      <stop offset="100%" stopColor="#eef1f4" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id={`${uid}-ga`} gradientUnits="userSpaceOnUse" x1={0} y1={8} x2={0} y2={TEMP_H}>
+                      <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="#eef1f4" stopOpacity={0} />
+                    </linearGradient>
+                    <radialGradient id={`${uid}-bloom`} cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.55} />
+                      <stop offset="100%" stopColor="#eef1f4" stopOpacity={0} />
+                    </radialGradient>
+                    <filter id={`${uid}-blur`} x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3" />
+                    </filter>
+                  </>
+                )}
               </defs>
 
-              {/* Future baseline — dotted across the WHOLE curve, drawn once. It
-                  never changes with the cursor, so the browser paints it a single
-                  time; the "past" solid below is layered on top to cover it up to
-                  the marker. Keeping this static (rather than re-clipping it every
-                  pointer move) is what stops the marker lagging on fast drags. */}
-              {tempPath && (
-                <path
-                  d={tempPath}
-                  fill="none"
-                  stroke="rgba(243,240,234,0.5)"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeDasharray="0.1 7"
-                />
+              {now ? (
+                <>
+                  {/* Glow area under the past line, capped to the band bottom. */}
+                  {tempArea && <path d={tempArea} fill={`url(#${uid}-ga)`} clipPath={`url(#${uid}-cp)`} />}
+
+                  {/* Future — dotted, dimming to the right. */}
+                  {tempPath && (
+                    <path
+                      d={tempPath}
+                      fill="none"
+                      stroke={`url(#${uid}-gf)`}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeDasharray="0.1 7"
+                      clipPath={`url(#${uid}-cf)`}
+                    />
+                  )}
+                  {/* Handoff glow — bleeds from now into the first dotted hours. */}
+                  {tempPath && (
+                    <path
+                      d={tempPath}
+                      fill="none"
+                      stroke={`url(#${uid}-gh)`}
+                      strokeWidth={7}
+                      strokeLinecap="round"
+                      clipPath={`url(#${uid}-cf)`}
+                      filter={`url(#${uid}-blur)`}
+                    />
+                  )}
+
+                  {/* Past — a soft wide glow under a bright line that brightens to now. */}
+                  {tempPath && (
+                    <>
+                      <path
+                        d={tempPath}
+                        fill="none"
+                        stroke="rgba(243,240,234,0.22)"
+                        strokeWidth={6}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        clipPath={`url(#${uid}-cp)`}
+                      />
+                      <path
+                        d={tempPath}
+                        fill="none"
+                        stroke={`url(#${uid}-gp)`}
+                        strokeWidth={2.4}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        clipPath={`url(#${uid}-cp)`}
+                        pathLength={1}
+                        className="daten-draw-line"
+                      />
+                    </>
+                  )}
+                </>
+              ) : (
+                // Now outside the loaded window → a quiet dotted curve, no hero.
+                tempPath && (
+                  <path d={tempPath} fill="none" stroke="rgba(243,240,234,0.5)" strokeWidth={2} strokeLinecap="round" strokeDasharray="0.1 7" />
+                )
               )}
 
-              {/* Past — bright & softly glowing, clipped to the left of the
-                  marker. The glow is a wide translucent stroke, NOT an SVG
-                  drop-shadow (blurring the full-width path bbox each frame was a
-                  second source of lag). Only this thin clip repaints per move. */}
-              {tempPath && revealW > 0 && (
+              {/* Secondary marker — the drag/hover selection, kept quiet. */}
+              {marker && (
                 <>
-                  <path
-                    d={tempPath}
-                    fill="none"
-                    stroke="rgba(243,240,234,0.25)"
-                    strokeWidth={6}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    clipPath={`url(#${clipId})`}
-                  />
-                  <path
-                    d={tempPath}
-                    fill="none"
-                    stroke="var(--sw-data-temp)"
-                    strokeWidth={2}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    clipPath={`url(#${clipId})`}
-                  />
-                  <path
-                    d={tempPath}
-                    fill="none"
-                    stroke="#F3F0EA"
-                    strokeWidth={2.4}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    clipPath={`url(#${clipId})`}
-                  />
+                  <line x1={marker.x} y1={marker.y} x2={marker.x} y2={TEMP_H} stroke={`url(#${dropId})`} strokeWidth={1.5} />
+                  <circle cx={marker.x} cy={marker.y} r={3.5} fill="#F3F0EA" opacity={0.85} />
                 </>
               )}
 
-              {/* Faint vertical guide line from the marker to the band bottom. */}
-              {marker && (
-                <line
-                  x1={marker.x}
-                  y1={marker.y}
-                  x2={marker.x}
-                  y2={TEMP_H}
-                  stroke={`url(#${dropId})`}
-                  strokeWidth={1.5}
-                />
-              )}
-
-              {/* Marker — soft halo behind a bright dot. */}
-              {marker && (
+              {/* NOW bloom — the brightest point: aura (live pulse) + soft + sharp core. */}
+              {now && (
                 <>
-                  <circle cx={marker.x} cy={marker.y} r={9} fill="rgba(243,240,234,0.22)" />
-                  <circle
-                    cx={marker.x}
-                    cy={marker.y}
-                    r={5}
-                    fill="#F3F0EA"
-                    style={{ filter: "drop-shadow(0 0 6px rgba(243,240,234,0.9))" }}
-                  />
+                  <circle cx={now.x} cy={now.y} r={34} fill={`url(#${uid}-bloom)`} className="daten-now-pulse" />
+                  <circle cx={now.x} cy={now.y} r={7.5} fill="#eef1f4" opacity={0.85} filter={`url(#${uid}-blur)`} />
+                  <circle cx={now.x} cy={now.y} r={4.6} fill="#ffffff" />
                 </>
               )}
             </svg>
-            {marker && (
-              <>
-                {/* Zeit-Pill über dem Marker. */}
-                {markerTime && (
-                  <span
-                    ref={pillRef}
-                    className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-white/10 px-2 py-1 leading-none text-white backdrop-blur-sm"
-                    style={{ fontSize: 11, left: pillLeft, top: Math.max(0, marker.y - 34) }}
-                  >
-                    {markerTime} Uhr
-                  </span>
-                )}
-                {/* Temperatur direkt am Punkt. */}
-                <span
-                  className="pointer-events-none absolute font-medium text-ink"
-                  style={{ fontSize: 11, left: marker.x + 10, top: marker.y - 7 }}
-                >
-                  {Math.round(marker.air)}
-                </span>
-              </>
+
+            {/* Secondary selection pill (only while a time is being inspected). */}
+            {marker && markerTime && (
+              <span
+                ref={pillRef}
+                className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-white/10 px-2 py-0.5 leading-none text-white/90 backdrop-blur-sm"
+                style={{ fontSize: 10, left: pillLeft, top: Math.max(0, marker.y - 30) }}
+              >
+                {markerTime} Uhr · {Math.round(marker.air)}°
+              </span>
             )}
+
+            {/* NOW detail tile — the one allowed card: time + temp + trend. Sits
+                in the band, flips to the left of the point near the right edge. */}
+            {now && (() => {
+              const tw = 118;
+              const th = 44;
+              const pad = 14;
+              const placeRight = now.x + pad + tw <= width;
+              const tx = placeRight ? now.x + pad : now.x - pad - tw;
+              const ty = now.y < th + 14 ? Math.min(TEMP_H - th - 2, now.y + 12) : Math.max(2, now.y - th - 8);
+              const trendChar = now.trend === "up" ? "↗" : now.trend === "down" ? "↘" : "→";
+              const trendColor = now.trend === "up" ? "var(--sw-orange)" : now.trend === "down" ? "var(--sw-teal)" : "var(--sw-muted)";
+              return (
+                <div
+                  className="pointer-events-none absolute flex flex-col justify-center gap-0.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 backdrop-blur-sm"
+                  style={{ left: tx, top: ty, width: tw, height: th }}
+                >
+                  <span className="leading-none tabular-nums text-white/70" style={{ fontSize: 10 }}>{nowLabel} Uhr</span>
+                  <span className="flex items-center gap-1.5 leading-none">
+                    <span className="font-semibold tabular-nums text-white" style={{ fontSize: 18 }}>{Math.round(now.air)}°</span>
+                    <span className="font-medium" style={{ fontSize: 13, color: trendColor }}>{trendChar}</span>
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           {bottomRows}
@@ -482,6 +586,29 @@ function smoothRuns(
   return d;
 }
 
+// Closed filled area under each smooth run (top edge = the curve, bottom edge =
+// the band floor `bottomY`), so the glow fill stays inside the TEMP band and
+// never bleeds into the WIND row. One sub-path per run keeps gaps open.
+function areaRuns(
+  runs: { i: number; air: number }[][],
+  cx: (i: number) => number,
+  cy: (air: number) => number,
+  bottomY: number,
+): string {
+  let d = "";
+  for (const run of runs) {
+    if (run.length < 2) continue;
+    const pts = run.map((p) => [cx(p.i), cy(p.air)] as [number, number]);
+    const curve = catmullRom(pts); // "Mx0,y0 C.. C.."
+    const sp = curve.indexOf(" ");
+    const segs = sp >= 0 ? curve.slice(sp + 1) : "";
+    const x0 = pts[0][0];
+    const xN = pts[pts.length - 1][0];
+    d += `${d ? " " : ""}M${x0.toFixed(1)},${bottomY} L${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} ${segs} L${xN.toFixed(1)},${bottomY} Z`;
+  }
+  return d;
+}
+
 // Temperature band bounds fitted to the readings, with a small pad and a floor
 // on the span so a nearly-constant day doesn't get stretched into noise.
 function temperatureBounds(slots: NormalizedForecastHour[]): { min: number; max: number } {
@@ -525,6 +652,20 @@ function sampleCurve(
   const u = 1 - t;
   const air = u * u * u * a1 + 3 * u * u * t * c1 + 3 * u * t * t * c2 + t * t * t * a2;
   return { x, air };
+}
+
+// Fractional slot index for the wall-clock instant `nowMs`, or null when it
+// lies before the first slot, after the last, or inside an inter-day night gap
+// (the display window is 06–22, so consecutive days are >1h apart in real time —
+// interpolating across that gap would place "now" on a line that isn't drawn).
+function nowIndex(slots: NormalizedForecastHour[], nowMs: number): number | null {
+  for (let i = 0; i < slots.length - 1; i++) {
+    const t0 = Date.parse(slots[i].utcKey);
+    const t1 = Date.parse(slots[i + 1].utcKey);
+    if (!(t1 > t0) || t1 - t0 > 90 * 60 * 1000) continue; // gap between days
+    if (nowMs >= t0 && nowMs < t1) return i + (nowMs - t0) / (t1 - t0);
+  }
+  return null;
 }
 
 function catmullRom(pts: [number, number][]): string {

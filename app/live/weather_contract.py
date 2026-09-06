@@ -8,6 +8,11 @@ from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 WEATHER_CONTRACT_VERSION = "weather-v6"
+# Bump independently from the shared value/provenance contract whenever the
+# shape or horizon of the public forecast product changes. This prevents a
+# deployment from serving an older assembled forecast from Redis or reusing an
+# already-completed publisher job for the previous product.
+FORECAST_PRODUCT_VERSION = "hourly10-v2"
 MODEL_NOWCAST_STALE_SECONDS = 15 * 60
 MEASUREMENT_STALE_SECONDS = 30 * 60
 ATMOSPHERE_FORECAST_STALE_SECONDS = 3 * 60 * 60

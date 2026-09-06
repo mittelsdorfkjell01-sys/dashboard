@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 // Regression coverage for the rebuilt Daten page (Figma Frame 67): the dark
-// instrument composition — meteogram, today summary + 8-day outlook, map +
+// instrument composition — meteogram, today summary + 10-day outlook, map +
 // live-wind sidebar, wind-months field. Replaces the retired
 // meteogram-accessibility / public-tides specs, whose subjects (hourly
 // meteogram controls, data table, direction-compass card, tide panel) were
@@ -11,9 +11,33 @@ import { expect, test, type Page } from "@playwright/test";
 const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
-const hourly = Array.from({ length: 5 }, (_, day) => { const date = `2026-08-${String(24 + day).padStart(2, "0")}`; return { date, local_date: date, detail: "hourly", confidence: day < 2 ? "hoch" : "mittel", summary: summary(day), hours: Array.from({ length: 9 }, (_, slot) => { const h = slot * 2 + 6; return { time: `${date}T${String(h).padStart(2, "0")}:00:00Z`, wind: 8 + ((slot * 7) % 28), gust: 14 + ((slot * 7) % 28), dir: (180 + slot * 23) % 360, air: 17 + Math.round(6 * Math.sin(slot / 1.5)), precip: slot === 3 ? 0.4 : 0, swell: 0.4 + ((slot * 3) % 9) / 10, period: 7 + slot / 2, swell_dir: 270, sst: 18, uv_index: slot, apparent_temperature_c: 23, coastal_normal_deg: 180, coastal_classification: "onshore", weather_condition: conditions[slot % conditions.length], is_day: h >= 7 && h <= 20 }; }) }; });
-const trend = Array.from({ length: 3 }, (_, day) => { const date = `2026-08-${String(29 + day).padStart(2, "0")}`; return { date, local_date: date, detail: "trend", confidence: "niedrig", summary: summary(day + 3), hours: [] }; });
-const forecast = { spot_id: "test", model: "consensus", product: "Surfwinddata Forecast", generated_at: "2026-08-24T08:00:00Z", updated_at: "2026-08-24T08:00:00Z", timezone: "Europe/Berlin", stale: false, availability: { atmosphere: "available", solar: "available", marine: "available" }, days: [...hourly, ...trend] };
+const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
+const hourly = forecastDates.map((date, day) => ({
+  date,
+  local_date: date,
+  detail: "hourly",
+  confidence: day < 2 ? "hoch" : day < 6 ? "mittel" : "niedrig",
+  summary: summary(day),
+  hours: Array.from({ length: 24 }, (_, h) => ({
+    time: `${date}T${String(h).padStart(2, "0")}:00:00Z`,
+    wind: 8 + ((h * 7) % 28),
+    gust: 14 + ((h * 7) % 28),
+    dir: (180 + h * 23) % 360,
+    air: 17 + Math.round(6 * Math.sin(h / 3)),
+    precip: h === 12 ? 0.4 : 0,
+    swell: 0.4 + ((h * 3) % 9) / 10,
+    period: 7 + h / 4,
+    swell_dir: 270,
+    sst: 18,
+    uv_index: Math.max(0, 8 - Math.abs(h - 12)),
+    apparent_temperature_c: 23,
+    coastal_normal_deg: 180,
+    coastal_classification: "onshore",
+    weather_condition: conditions[h % conditions.length],
+    is_day: h >= 7 && h <= 20,
+  })),
+}));
+const forecast = { spot_id: "test", model: "consensus", product: "Surfwinddata Forecast", generated_at: "2026-09-05T08:00:00Z", updated_at: "2026-09-05T08:00:00Z", timezone: "Europe/Berlin", stale: false, availability: { atmosphere: "available", solar: "available", marine: "available" }, days: hourly };
 
 async function mockApi(page: Page) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
@@ -39,8 +63,10 @@ test("Daten-Seite zeigt Meteogramm, Ausblick und Livewind", async ({ page }) => 
   await expect(page.getByText("WELLE", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("RICHT.", { exact: true })).toBeVisible();
   await expect(page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" })).toBeVisible();
-  // 8-day outlook grid renders the weekday cards.
-  await expect(page.getByText("MO 24.08", { exact: true })).toBeVisible();
+  // The complete 10-day outlook renders through the last hourly day.
+  await expect(page.getByText("SA 05.09", { exact: true })).toBeVisible();
+  await expect(page.getByText("MO 14.09", { exact: true })).toBeVisible();
+  await expect(page.locator("#spot-meteogram-scroll [data-forecast-day]")).toHaveCount(10);
   // Live-wind sidebar metrics.
   await expect(page.getByText("UV INDEX", { exact: true })).toBeVisible();
   await expect(page.getByText("GEFÜHLT", { exact: true })).toBeVisible();
@@ -52,6 +78,19 @@ for (const width of [320, 375, 768, 1280, 1440]) {
     await mockApi(page);
     await page.goto("/spot/test/daten");
     await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+    const outlook = page.locator(".forecast-weather-grid");
+    await expect(outlook.getByRole("button")).toHaveCount(10);
+    const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
+    await expect(navigator.getByRole("button")).toHaveCount(10);
+    const navigatorOverflow = await navigator.evaluate((element) => element.scrollWidth - element.clientWidth);
+    expect(navigatorOverflow).toBeLessThanOrEqual(1);
+    const [bodyEdgeBox, outlookBox] = await Promise.all([
+      page.locator("#spot-meteogramm").boundingBox(),
+      outlook.boundingBox(),
+    ]);
+    expect(bodyEdgeBox).not.toBeNull();
+    expect(outlookBox).not.toBeNull();
+    expect(Math.abs((bodyEdgeBox!.x + bodyEdgeBox!.width) - (outlookBox!.x + outlookBox!.width))).toBeLessThanOrEqual(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });
@@ -64,7 +103,19 @@ test("Meteogramm-Auswahl per Pointer aktualisiert die geteilte Auswahl", async (
   const strip = page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" });
   await strip.click({ position: { x: 30, y: 90 } });
   // The live-region summary reflects a concrete selected hour.
-  await expect(page.getByText(/Ausgewählt 2026-08-24/)).toBeAttached();
+  await expect(page.getByText(/Ausgewählt 2026-09-05/)).toBeAttached();
+});
+
+test("Tag zehn springt in seinen Stundenforecast", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+
+  const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
+  await navigator.getByRole("button", { name: /MO 14\.09/ }).click();
+
+  await expect(page.getByText(/Ausgewählt 2026-09-14 06:00/)).toBeAttached();
+  await expect.poll(async () => page.locator("#spot-meteogram-scroll").evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
 });
 
 test("Info und Daten behalten beim Tabwechsel dieselbe Scrollhöhe", async ({ page }) => {

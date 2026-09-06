@@ -39,3 +39,34 @@
   background: var(--sw-page);
   color: var(--sw-ink);
 }
+
+/* One-shot "draw-on" for the TodaySummary hourly temperature line. Uses SVG
+   pathLength=1 so the single rule works regardless of the path's real length.
+   The line is the only orchestrated load moment on the Daten day-detail view. */
+@keyframes daten-draw-line {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.daten-draw-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: daten-draw-line 1100ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .daten-draw-line { animation: none; stroke-dashoffset: 0; }
+}
+
+/* Slow, quiet "live" pulse for the meteogram now-aura. Scales/fades the large
+   radial bloom so the current moment reads as alive without drawing the eye. */
+@keyframes daten-now-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.92); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+.daten-now-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: daten-now-pulse 3.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .daten-now-pulse { animation: none; }
+}

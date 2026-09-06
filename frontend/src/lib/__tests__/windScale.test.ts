@@ -23,11 +23,11 @@ describe("windColor", () => {
   });
 
   it("falls into the open-ended top bin at 40", () => {
-    expect(windColor(40)).toBe("#6E2620");
+    expect(windColor(40)).toBe("#C55E3C");
   });
 
   it("stays in the top bin far above 40", () => {
-    expect(windColor(999)).toBe("#6E2620");
+    expect(windColor(999)).toBe("#C55E3C");
   });
 
   it("treats null and undefined as no-data", () => {
@@ -35,8 +35,8 @@ describe("windColor", () => {
     expect(windColor(undefined)).toBe("#E6E1DA");
   });
 
-  it("has nine contiguous, non-overlapping bins", () => {
-    expect(WIND_BINS).toHaveLength(9);
+  it("has seven contiguous, non-overlapping bins", () => {
+    expect(WIND_BINS).toHaveLength(7);
     WIND_BINS.slice(1).forEach((bin, i) => {
       expect(bin.min).toBe(WIND_BINS[i].max);
     });

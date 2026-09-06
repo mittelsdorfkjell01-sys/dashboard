@@ -15,7 +15,7 @@ from app.live.client import default_client
 from app.live.public_cache import set_public_forecast
 from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
 from app.schemas.live import ForecastSeriesRead
-from app.live.weather_contract import WEATHER_CONTRACT_VERSION
+from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
 
 ACTIVE = ("queued", "processing")
 MAX_PUBLIC_STALE = timedelta(hours=12)
@@ -24,7 +24,8 @@ MAX_PUBLIC_STALE = timedelta(hours=12)
 def job_key(spot_id, *, profile: bool, reason: str, coordinates_hash: str = "unknown", bucket: str | None = None) -> str:
     stable = bucket or datetime.now(timezone.utc).strftime("%Y%m%d%H")
     return hashlib.sha256(
-        f"forecast:{spot_id}:{coordinates_hash}:{profile}:{reason}:{WEATHER_CONTRACT_VERSION}:{stable}".encode()
+        f"forecast:{spot_id}:{coordinates_hash}:{profile}:{reason}:"
+        f"{WEATHER_CONTRACT_VERSION}:{FORECAST_PRODUCT_VERSION}:{stable}".encode()
     ).hexdigest()
 
 

@@ -51,6 +51,19 @@ test("spot map renders with real coordinates and legend", async ({ page }) => {
 
   await expect(page.getByText("Wind (kt)")).toBeVisible();
   await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
+  const sport = page.locator(".daten-dark").getByText("Kitesurfen", { exact: true });
+  await expect(sport.locator("circle")).toHaveCount(0);
+  await expect(sport.locator("path")).toHaveCount(1);
+
+  const attribution = page.getByRole("button", { name: "Kartenquellen anzeigen" });
+  await expect(attribution).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("complementary", { name: "Kartenquellen" })).toHaveCount(0);
+  await attribution.click();
+  await expect(page.getByRole("complementary", { name: "Kartenquellen" })).toContainText("OpenStreetMap");
+  await expect(page.getByRole("button", { name: "Kartenquellen ausblenden" })).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("complementary", { name: "Kartenquellen" })).toHaveCount(0);
+  await expect(attribution).toBeFocused();
 });
 
 test("a spot without coordinates shows an explanatory state instead of an empty map", async ({ page }) => {

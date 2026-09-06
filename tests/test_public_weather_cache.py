@@ -4,6 +4,7 @@ import uuid
 
 from app.live.public_cache import (
     get_public_forecast,
+    public_forecast_key,
     set_public_forecast,
     set_public_live,
 )
@@ -38,7 +39,7 @@ def test_forecast_cache_ttl_is_capped_to_snapshot_validity(monkeypatch):
         cache, spot_id, {"spot_id": str(spot_id), "days": []}, valid_until=valid_until
     )
 
-    key = f"public:weather-v6:forecast:{spot_id}"
+    key = public_forecast_key(spot_id)
     assert 2819 <= cache.ttls[key] <= 2820
     assert cache.values[key]["_fresh_until"] == valid_until.isoformat()
 

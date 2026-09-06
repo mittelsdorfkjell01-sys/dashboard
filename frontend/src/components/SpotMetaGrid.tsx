@@ -18,7 +18,7 @@ export default function SpotMetaGrid({ spot }: { spot: Spot }) {
       {items.map((item) => {
         const Icon = item.icon;
         return <div key={item.label} className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] gap-x-3 sm:block lg:grid lg:grid-cols-[2rem_minmax(0,1fr)]">
-          <span aria-hidden className="row-span-2 grid h-8 w-8 place-items-center rounded-full bg-band text-teal sm:mb-3 lg:mb-0"><Icon width={16} height={16} /></span>
+          <span aria-hidden className="row-span-2 grid h-8 w-8 place-items-center rounded-full bg-band text-ink sm:mb-3 lg:mb-0"><Icon width={16} height={16} /></span>
           <dt className="text-caption font-medium uppercase tracking-[0.08em] text-muted">
             {item.label}
           </dt>

@@ -86,7 +86,7 @@
 .leaflet-container {
   font-family: "Poppins", system-ui, sans-serif;
   /* Neutral light tone that matches the tinted basemap while tiles load */
-  background: #dfeaea;
+  background: #F5F3F0;
 }
 
 .swd-admin-cluster {
@@ -166,10 +166,10 @@
 .swd-public-map {
   height: 100vh;
   height: 100dvh;
-  background: #BFE3F5;
+  background: #F5F3F0;
   --map-control-edge: max(20px, env(safe-area-inset-right));
   --map-surface: #FFFDF8;
-  --map-spot: #126B70;
+  --map-spot: #241C17;
   --map-selection: #F06F4F;
   --map-label: #233638;
   --map-label-soft: #6C7A82;
@@ -195,7 +195,7 @@
 .swd-spot-map {
   --map-control-edge: 12px;
   --map-surface: #FFFDF8;
-  --map-spot: #126B70;
+  --map-spot: #241C17;
   --map-selection: #F06F4F;
   --map-label: #233638;
   --map-label-soft: #6C7A82;
@@ -339,7 +339,7 @@
   height: 100%;
   border-radius: 999px;
   border: 2px solid var(--map-surface, #fffdf8);
-  background: var(--map-spot, #126b70);
+  background: var(--map-spot, #241c17);
   color: #fff;
   font: 700 12px/1 "Poppins", system-ui, sans-serif;
   box-shadow: 0 2px 8px rgb(15 25 25 / 28%);

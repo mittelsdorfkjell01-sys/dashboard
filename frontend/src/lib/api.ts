@@ -424,6 +424,7 @@ export interface ForecastSeries {
   confidence_note?: string | null;
   stale?: boolean;
   contract_version?: string | null;
+  product_version?: string | null;
   timezone?: string;
   calibrated?: boolean;
   availability?: Record<"atmosphere" | "solar" | "marine", AvailabilityStatus>;

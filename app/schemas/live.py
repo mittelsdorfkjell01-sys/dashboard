@@ -349,6 +349,7 @@ class ForecastSeriesRead(BaseModel):
     attributions: list[dict] = []
     stale: bool = False
     contract_version: str | None = None
+    product_version: str | None = None
     timezone: str = "UTC"
     availability: dict[str, str] = {}
     calibrated: bool = False

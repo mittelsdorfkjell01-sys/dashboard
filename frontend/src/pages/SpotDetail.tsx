@@ -147,7 +147,7 @@ export default function SpotDetail() {
               <ErrorBanner message={error} onRetry={reload} />
             </div>
           )}
-          <Link to="/" className="mt-4 inline-block text-body text-teal underline">
+          <Link to="/" className="mt-4 inline-block text-body text-ink underline">
             Zurück zur Übersicht
           </Link>
         </div>
@@ -249,7 +249,7 @@ export default function SpotDetail() {
                       {regionPart && (
                         <Link
                           to={`/region/${regionSlug(spot.region)}`}
-                          className="font-medium text-teal transition-colors hover:text-teal-hover hover:underline"
+                          className="font-medium text-ink transition-opacity hover:opacity-70 hover:underline"
                         >
                           {regionPart}
                         </Link>
@@ -262,7 +262,7 @@ export default function SpotDetail() {
                   )}
                   <h1 className="mt-3 text-sz-28 font-semibold leading-[1.12] text-balance text-ink sm:text-sz-30">{spot.name}</h1>
 
-                  {/* Sports are plain label + teal check (Figma Frame_9), not
+                  {/* Sports are plain label + white check, not
                       filled pills — datengetrieben aus spot.sports. */}
                   {spot.sports && spot.sports.length > 0 && (
                     <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 sm:mt-8">
@@ -272,7 +272,7 @@ export default function SpotDetail() {
                           className="inline-flex items-center gap-1 text-label font-medium text-ink"
                         >
                           {sportLabel(s)}
-                          <CheckCircleIcon width={16} height={16} className="text-teal" />
+                          <CheckCircleIcon checkOnly width={16} height={16} className="text-ink" />
                         </span>
                       ))}
                     </div>

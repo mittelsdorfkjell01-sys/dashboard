@@ -10,6 +10,7 @@ import "./daten-theme.css";
 import MeteoChart from "./MeteoChart";
 import TodaySummary from "./TodaySummary";
 import ForecastGrid from "./ForecastGrid";
+import ForecastDayStrip from "./ForecastDayStrip";
 import WindSidebar from "./WindSidebar";
 
 const SpotMap = lazy(() => import("../../SpotMap"));
@@ -53,18 +54,26 @@ export default function DatenPage({
                 {spot.sports.map((s) => (
                   <span key={s} className="inline-flex items-center gap-1 text-label font-medium text-ink">
                     {sportLabel(s)}
-                    <CheckCircleIcon width={15} height={15} className="text-teal" />
+                    <CheckCircleIcon checkOnly width={15} height={15} className="text-ink" />
                   </span>
                 ))}
               </div>
             )}
           </header>
 
+          {/* 0) Compact multi-day overview — mini wind bars per day; click a day
+              to jump the meteogram below to it (Windfinder-style day tabs). */}
+          {hasForecast && (
+            <div className="mt-10">
+              <ForecastDayStrip forecast={forecast!} />
+            </div>
+          )}
+
           {/* 1) Meteogram — waves, weather, temperature, wind, direction, time. */}
           <section
             id="spot-meteogramm"
             aria-label="Meteogramm"
-            className="mt-10 scroll-mt-6"
+            className="mt-6 scroll-mt-6"
           >
             {forecastLoading && <MeteogramSkeleton />}
             {!forecastLoading && hasForecast && <MeteoChart forecast={forecast!} />}
@@ -73,10 +82,10 @@ export default function DatenPage({
             )}
           </section>
 
-          {/* 2) Today summary + 8-day outlook. */}
+          {/* 2) Today summary + compact 10-day outlook. */}
           {hasForecast && (
             <section aria-label="Tagesübersicht und Ausblick" className="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-16">
-              <TodaySummary forecast={forecast!} lat={lat} lng={lng} />
+              <TodaySummary forecast={forecast!} />
               <ForecastGrid forecast={forecast!} />
             </section>
           )}

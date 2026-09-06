@@ -106,7 +106,7 @@ export default function CommentModal({
                   maxLength={120}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Worum geht es?"
-                  className="mt-2 min-h-11 w-full rounded-[14px] border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10"
+                  className="mt-2 min-h-11 w-full rounded-[14px] border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
                 />
                 <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
               </div>
@@ -116,7 +116,7 @@ export default function CommentModal({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="verfasse einen Kommentar…"
-              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-[14px] border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/10`}
+              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-[14px] border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10`}
             />
             {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
 

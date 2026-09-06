@@ -124,7 +124,7 @@ export default function RegionDetail() {
         <div className="grid min-h-screen place-items-center px-6 text-center">
           <div>
             <h1 className="text-2xl font-semibold text-ink">Region nicht gefunden</h1>
-            <Link to="/" className="mt-4 inline-block text-body text-teal underline">
+            <Link to="/" className="mt-4 inline-block text-body text-ink underline">
               Zurück zur Übersicht
             </Link>
           </div>
@@ -210,7 +210,7 @@ export default function RegionDetail() {
               </>
             )}
             <span className="mx-1.5 text-muted">›</span>
-            <span className="text-teal">{region.name}</span>
+            <span className="text-ink">{region.name}</span>
           </nav>
           <h1 className="mt-2 text-sz-28 font-semibold leading-tight text-balance text-ink sm:text-sz-32">
             {region.name}

@@ -113,7 +113,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
         aria-controls="climatology-info"
         aria-label={infoOpen ? "Methodische Hinweise ausblenden" : "Methodische Hinweise anzeigen"}
         title={infoOpen ? "Methodische Hinweise ausblenden" : "Methodische Hinweise anzeigen"}
-        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30"
+        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
       >
         <InfoIcon className="h-5 w-5" />
       </button>

@@ -14,7 +14,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.live.cache import Cache
-from app.live.weather_contract import WEATHER_CONTRACT_VERSION
+from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,10 @@ def public_live_key(spot_id) -> str:
 
 
 def public_forecast_key(spot_id) -> str:
-    return f"public:{WEATHER_CONTRACT_VERSION}:forecast:{spot_id}"
+    return (
+        f"public:{WEATHER_CONTRACT_VERSION}:forecast:"
+        f"{FORECAST_PRODUCT_VERSION}:{spot_id}"
+    )
 
 
 def get_public_live(cache: Cache, spot_id) -> dict[str, Any] | None:

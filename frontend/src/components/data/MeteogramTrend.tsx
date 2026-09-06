@@ -12,7 +12,7 @@ export default function MeteogramTrend({ days, windUnit }: { days: NormalizedFor
       <h3 id="meteogram-trend-title" className="text-ui font-semibold text-ink">Tagestrend · Tage 6–10</h3>
       <p className="text-caption text-muted">Tageswerte ohne scheinbare Stundenauflösung</p>
     </div>
-    <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" tabIndex={0} role="region" aria-label="Tagestrend horizontal scrollen">
+    <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" tabIndex={0} role="region" aria-label="Tagestrend horizontal scrollen">
       <div className="grid min-w-[620px] grid-flow-col auto-cols-fr divide-x divide-line">
         {days.map((day) => { const summary=day.summary; return <div key={day.date} className="px-3 py-2 first:pl-0 last:pr-0">
           <p className="text-label font-semibold text-ink">{dayLabel(day.local_date ?? day.date)}</p>

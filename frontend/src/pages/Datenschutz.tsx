@@ -18,7 +18,7 @@ export default function Datenschutz() {
           <h2 className="text-sz-16 font-semibold text-ink">Verantwortliche Stelle</h2>
           <p>
             {controller.operator}<br />{controller.street}<br />{controller.postalCity}<br />
-            <a className="text-teal underline" href={`mailto:${controller.email}`}>{controller.email}</a>
+            <a className="text-ink underline" href={`mailto:${controller.email}`}>{controller.email}</a>
           </p>
 
           <h2 className="text-sz-16 font-semibold text-ink">Verarbeitete Daten und Zwecke</h2>

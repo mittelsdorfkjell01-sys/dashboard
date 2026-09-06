@@ -602,7 +602,7 @@ function FeedPostCard({
               </span>
             )}
             {post.sport && (
-              <span className="rounded-[14px] bg-teal/10 px-2 py-0.5 text-caption font-medium text-teal">
+              <span className="rounded-[14px] bg-band px-2 py-0.5 text-caption font-medium text-ink">
                 {sportLabel(post.sport)}
               </span>
             )}

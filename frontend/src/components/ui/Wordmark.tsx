@@ -5,7 +5,7 @@ type WordmarkSize = "sm" | "md" | "lg" | "xl";
  * (landing hero, shared header, admin). Replaces the old inconsistent mix of
  * this two-tone display wordmark and the plain "SpotInfo" text.
  *
- * Orange "surfwind" + teal "data" in the MADE Mountain display face (see the
+ * Orange "surfwind" + neutral "data" in the MADE Mountain display face (see the
  * `.wordmark` base class). `tag` renders a small suffix pill, e.g. "Admin".
  */
 const SIZE: Record<WordmarkSize, { brand: string; data: string }> = {
@@ -28,7 +28,7 @@ export default function Wordmark({
   return (
     <span className={`inline-flex items-baseline leading-none ${className}`}>
       <span className={`wordmark ${s.brand} text-orange`}>surfwind</span>
-      <span className={`wordmark ml-1.5 align-baseline ${s.data} text-teal`}>
+      <span className={`wordmark ml-1.5 align-baseline ${s.data} text-ink`}>
         data
       </span>
       {tag && (

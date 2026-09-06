@@ -14,6 +14,7 @@ export type MeteogramModel = {
   showMarine: boolean;
 };
 
+const MAX_FORECAST_DAYS = 10;
 const finite = (value: number | null | undefined): value is number => value != null && Number.isFinite(value);
 
 function niceCeiling(value: number): number {
@@ -55,9 +56,16 @@ function temperatureSegments(slots: NormalizedForecastHour[]): NormalizedForecas
   return segments;
 }
 
-export function buildMeteogramModel(forecast: NormalizedForecastSeries): MeteogramModel {
-  const detailDays = forecast.days.filter((day) => day.detail === "hourly" && day.hours.length > 0).slice(0, 5);
-  const trendDays = forecast.days.filter((day) => day.detail === "trend").slice(0, 5);
+export function buildMeteogramModel(
+  forecast: NormalizedForecastSeries,
+  hourFilter: (hour: NormalizedForecastHour) => boolean = () => true,
+): MeteogramModel {
+  const detailDays = forecast.days
+    .filter((day) => day.detail === "hourly")
+    .map((day) => ({ ...day, hours: day.hours.filter(hourFilter) }))
+    .filter((day) => day.hours.length > 0)
+    .slice(0, MAX_FORECAST_DAYS);
+  const trendDays = forecast.days.filter((day) => day.detail === "trend").slice(0, MAX_FORECAST_DAYS);
   const slots = detailDays.flatMap((day) => day.hours);
   const dayGroups: MeteogramDayGroup[] = [];
   for (const day of detailDays) {

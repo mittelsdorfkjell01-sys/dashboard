@@ -137,8 +137,8 @@ def backfill(db: Session, *, limit: int | None = 2) -> list[WindClimatologyRun]:
     """Enqueue missing/outdated runs for published spots.
 
     ``None`` queues the complete catalogue.  The bounded default is retained for
-    interactive/admin callers; the twice-yearly worker deliberately uses the
-    unbounded mode and then drains every pending run.
+    interactive/admin callers; the scheduled catalogue worker deliberately
+    uses the unbounded mode and then drains every pending run.
     """
     spots = db.scalars(select(Spot).where(Spot.status == "published").order_by(Spot.updated_at)).all()
     queued = []

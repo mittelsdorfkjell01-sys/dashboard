@@ -3,14 +3,15 @@ import { describe, expect, it } from "vitest";
 import type { NormalizedForecastDay, NormalizedForecastHour, NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { SpotDataScopeProvider } from "../../../state/SpotDataScope";
 import ForecastGrid from "./ForecastGrid";
+import { tempColor, COLDEST_TEMP_COLOR } from "../../../lib/tempScale";
 
 function day(date: string, detail: "hourly" | "trend"): NormalizedForecastDay {
   const hour = {
-    utcKey: `${date}T00:00:00Z`,
+    utcKey: `${date}T06:00:00Z`,
     localDate: date,
-    localTime: "00:00",
-    localHour: 0,
-    localMinute: 0,
+    localTime: "06:00",
+    localHour: 6,
+    localMinute: 6 * 60,
   } as NormalizedForecastHour;
   return {
     date,
@@ -46,8 +47,8 @@ function forecast(days: NormalizedForecastDay[]): NormalizedForecastSeries {
 }
 
 describe("ForecastGrid", () => {
-  it("keeps the compact outlook and adds descriptions plus day navigation", () => {
-    const days = Array.from({ length: 8 }, (_, index) =>
+  it("shows a compact 10-day outlook without horizontal scrolling", () => {
+    const days = Array.from({ length: 12 }, (_, index) =>
       day(`2026-09-${String(index + 3).padStart(2, "0")}`, index < 5 ? "hourly" : "trend"),
     );
     const data = forecast(days);
@@ -57,11 +58,37 @@ describe("ForecastGrid", () => {
       </SpotDataScopeProvider>,
     );
 
-    expect((html.match(/<button(?: |\/?>)/g) ?? [])).toHaveLength(8);
+    expect((html.match(/<button(?: |\/?>)/g) ?? [])).toHaveLength(10);
+    expect(html).toContain("grid-cols-5");
+    expect(html).not.toContain("overflow-x-auto");
+    expect(html).toContain("12.09");
+    expect(html).not.toContain("13.09");
     expect(html).toContain("Teils bewölkt");
     expect(html).toContain("Im Stundenforecast anzeigen");
     expect(html).not.toContain("Stärkster Wind");
     expect(html).not.toContain("Böen");
     expect(html).not.toContain("Sicherheit");
+  });
+
+  it("tints high and low temps on one absolute scale with a ° unit", () => {
+    const data = forecast([day("2026-09-03", "hourly")]); // air_max 21, air_min 14
+    const html = renderToStaticMarkup(
+      <SpotDataScopeProvider forecast={data}>
+        <ForecastGrid forecast={data} />
+      </SpotDataScopeProvider>,
+    );
+
+    // Degree circle, no more C suffix.
+    expect(html).toContain("21°");
+    expect(html).toContain("14°");
+    expect(html).not.toContain("21C");
+    expect(html).not.toContain("14C");
+    // High tinted by its value on the absolute scale; low always the coolest tone.
+    expect(html).toContain(tempColor(21)); // high (21 °C)
+    expect(html).toContain(COLDEST_TEMP_COLOR); // low always coolest
+    expect(html).not.toContain(tempColor(14)); // low is NOT tinted by its own value
+    // High primary (semibold, full colour), low secondary (normal weight, dimmed).
+    expect(html).toContain("font-semibold");
+    expect(html).toContain("opacity:0.78");
   });
 });

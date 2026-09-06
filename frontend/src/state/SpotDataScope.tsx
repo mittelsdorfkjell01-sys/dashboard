@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { closestForecastUtc, forecastHours, selectedForecastHour, type NormalizedForecastHour, type NormalizedForecastSeries } from "../lib/forecastNormalization";
+import { selectedForecastHour, type NormalizedForecastHour, type NormalizedForecastSeries } from "../lib/forecastNormalization";
+import { spotForecastHours } from "../lib/spotForecastWindow";
 
 export type SportMode = "wind" | "surf";
 export type WindUnit = "kts" | "ms";
@@ -34,7 +35,7 @@ function storedChoice<T extends string>(key: string, allowed: readonly T[], fall
 }
 
 export function SpotDataScopeProvider({ children, forecast = null }: { children: ReactNode; forecast?: NormalizedForecastSeries | null }) {
-  const availableForecasts = useMemo(() => forecastHours(forecast), [forecast]);
+  const availableForecasts = useMemo(() => spotForecastHours(forecast), [forecast]);
   const [selectedAtUtc, setSelectedAtUtc] = useState<string | null>(null);
   const [sportMode, setSportModeState] = useState<SportMode>(() =>
     storedChoice("sw-sport-mode", ["wind", "surf"], "wind"),
@@ -46,10 +47,9 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
 
   useEffect(() => {
     setSelectedAtUtc((current) => {
-      if (current && availableForecasts.some((hour) => hour.utcKey === current)) return current;
-      return closestForecastUtc(forecast);
+      return resolveForecastSelection(availableForecasts, current);
     });
-  }, [availableForecasts, forecast]);
+  }, [availableForecasts]);
 
   const selectedForecast = useMemo(
     () => selectedForecastHour(forecast, selectedAtUtc),

@@ -39,6 +39,11 @@ test("map loads Leaflet layout and renders spots as accessible markers", async (
   // This rule comes from Leaflet's base stylesheet. Without the global import,
   // panes and tiles fall into normal document flow on direct /map visits.
   await expect(map.locator(".leaflet-map-pane")).toHaveCSS("position", "absolute");
+
+  const attribution = page.getByRole("button", { name: "Kartenquellen anzeigen" });
+  await expect(attribution).toHaveAttribute("aria-expanded", "false");
+  await attribution.click();
+  await expect(page.getByRole("complementary", { name: "Kartenquellen" })).toContainText("CARTO");
   expect(consoleErrors).toEqual([]);
 });
 
