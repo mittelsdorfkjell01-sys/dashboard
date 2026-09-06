@@ -199,7 +199,10 @@ def _cached_marine(
     lat: float, lon: float, *, client: OpenMeteoClient, cache: Cache, current_only: bool = False
 ) -> dict:
     # Marine model is independent of the atmospheric model -> fixed key segment.
-    key = cache_key("marine", lat, lon, "marine_current_v1" if current_only else "marine_forecast_v1")
+    # v2: marine payload now also carries wind_wave_* and secondary_swell_wave_*
+    # (wind_sea / secondary_swell components) — bump so stale v1 entries without
+    # those fields are not served after the shape change.
+    key = cache_key("marine", lat, lon, "marine_current_v2" if current_only else "marine_forecast_v2")
     hit = cache.get(key)
     if hit is not None:
         return hit
@@ -572,16 +575,42 @@ def get_live_conditions_for_spot(
                     "mean_direction_from_deg": valid_number(cur_m.get("wave_direction"), minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
+                "wind_sea": _wave_component(
+                    cur_m.get("wind_wave_height"), cur_m.get("wind_wave_period"), cur_m.get("wind_wave_direction")
+                ),
                 "primary_swell": {
                     "significant_height_m": valid_number(cur_m.get("swell_wave_height"), minimum=0, maximum=30),
                     "mean_period_s": valid_number(cur_m.get("swell_wave_period"), minimum=0.5, maximum=35),
                     "mean_direction_from_deg": valid_number(cur_m.get("swell_wave_direction"), minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
+                "secondary_swell": _wave_component(
+                    cur_m.get("secondary_swell_wave_height"), cur_m.get("secondary_swell_wave_period"), cur_m.get("secondary_swell_wave_direction")
+                ),
             } if mar else None,
             "wind_spread": wind_band,
             "gust_spread": gust_band,
         },
+    }
+
+
+def _wave_component(height, period, direction) -> dict | None:
+    """One wave-component sub-object, or ``None`` when the component is absent.
+
+    ``total_wave``/``primary_swell`` are always present (the marine core), but
+    ``wind_sea``/``secondary_swell`` only exist when the model actually resolves
+    them — a flat sea has no wind wave, an isolated swell has no secondary. Keyed
+    off a present significant height so a missing component omits its row rather
+    than rendering an empty placeholder card.
+    """
+    h = valid_number(height, minimum=0, maximum=30)
+    if h is None:
+        return None
+    return {
+        "significant_height_m": h,
+        "mean_period_s": valid_number(period, minimum=0.5, maximum=35),
+        "mean_direction_from_deg": valid_number(direction, minimum=0, maximum=359.999),
+        "source": "Open-Meteo Marine", "quality_tier": "provider_point",
     }
 
 
@@ -591,9 +620,15 @@ def _index_marine_hours(marine: dict) -> dict[str, dict]:
     total_height = hourly.get("wave_height") or []
     total_period = hourly.get("wave_period") or []
     total_direction = hourly.get("wave_direction") or []
+    wind_wave_height = hourly.get("wind_wave_height") or []
+    wind_wave_period = hourly.get("wind_wave_period") or []
+    wind_wave_direction = hourly.get("wind_wave_direction") or []
     swell_height = hourly.get("swell_wave_height") or []
     swell_period = hourly.get("swell_wave_period") or []
     swell_direction = hourly.get("swell_wave_direction") or []
+    sec_swell_height = hourly.get("secondary_swell_wave_height") or []
+    sec_swell_period = hourly.get("secondary_swell_wave_period") or []
+    sec_swell_direction = hourly.get("secondary_swell_wave_direction") or []
     sst = hourly.get("sea_surface_temperature") or []
     by_time: dict[str, dict] = {}
     for i, instant in enumerate(provider_axis_utc(times, provider_timezone(marine))):
@@ -612,12 +647,22 @@ def _index_marine_hours(marine: dict) -> dict[str, dict]:
                     "mean_direction_from_deg": valid_number(total_direction[i] if i < len(total_direction) else None, minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
+                "wind_sea": _wave_component(
+                    wind_wave_height[i] if i < len(wind_wave_height) else None,
+                    wind_wave_period[i] if i < len(wind_wave_period) else None,
+                    wind_wave_direction[i] if i < len(wind_wave_direction) else None,
+                ),
                 "primary_swell": {
                     "significant_height_m": valid_number(swell_height[i] if i < len(swell_height) else None, minimum=0, maximum=30),
                     "mean_period_s": valid_number(swell_period[i] if i < len(swell_period) else None, minimum=0.5, maximum=35),
                     "mean_direction_from_deg": valid_number(swell_direction[i] if i < len(swell_direction) else None, minimum=0, maximum=359.999),
                     "source": "Open-Meteo Marine", "quality_tier": "provider_point",
                 },
+                "secondary_swell": _wave_component(
+                    sec_swell_height[i] if i < len(sec_swell_height) else None,
+                    sec_swell_period[i] if i < len(sec_swell_period) else None,
+                    sec_swell_direction[i] if i < len(sec_swell_direction) else None,
+                ),
             },
             "sst": valid_number(sst[i] if i < len(sst) else None, minimum=-5, maximum=45),
         }

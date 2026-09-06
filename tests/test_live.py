@@ -152,6 +152,48 @@ def test_live_conditions_shape_and_model():
     assert cur["sst"] == 20.0
 
 
+def test_wave_components_populate_all_four_when_provider_has_them():
+    """total_wave + wind_sea + primary_swell + secondary_swell all flow through
+    when the marine payload carries them (Open-Meteo returns wind_wave_* and
+    secondary_swell_wave_* alongside the total/primary fields)."""
+    spot = make_spot()
+    out = get_live_conditions(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(), cache=InMemoryCache())
+    waves = out["current"]["waves"]
+    assert waves["total_wave"]["significant_height_m"] == 1.6
+    assert waves["wind_sea"]["significant_height_m"] == 0.7
+    assert waves["primary_swell"]["significant_height_m"] == 1.2
+    assert waves["secondary_swell"]["significant_height_m"] == 0.4
+    assert waves["secondary_swell"]["mean_direction_from_deg"] == 190.0
+
+    series = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(), cache=InMemoryCache())
+    hour = series["days"][0]["hours"][0]
+    assert {"total_wave", "wind_sea", "primary_swell", "secondary_swell"} <= set(hour["waves"])
+    assert hour["waves"]["wind_sea"]["significant_height_m"] is not None
+
+
+def test_wave_components_omit_absent_components():
+    """A marine payload with no wind-sea / secondary-swell fields yields None for
+    those components — never an empty placeholder card."""
+    spot = make_spot()
+    client = FakeOpenMeteoClient()
+    original = client.fetch_marine
+
+    def _stripped(lat, lon, days=7):
+        data = original(lat, lon, days)
+        for block in ("current", "hourly"):
+            for key in list(data[block]):
+                if key.startswith("wind_wave") or key.startswith("secondary_swell_wave"):
+                    del data[block][key]
+        return data
+
+    client.fetch_marine = _stripped
+    out = get_live_conditions(spot.id, db=FakeDB(spot), client=client, cache=InMemoryCache())
+    waves = out["current"]["waves"]
+    assert waves["wind_sea"] is None
+    assert waves["secondary_swell"] is None
+    assert waves["primary_swell"]["significant_height_m"] == 1.2
+
+
 def test_unknown_spot_raises_lookup():
     spot = make_spot()
     other = make_spot()

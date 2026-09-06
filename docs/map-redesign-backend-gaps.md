@@ -105,6 +105,16 @@ response before the Wave-mode inspector commits to showing four separate reading
 actually populated, the UI shows total/wind-sea as "nicht verfügbar" rather than implying a false level of
 decomposition.
 
+**Resolution (2026-09-06): all four now populated.** Verified: the builders (`_index_marine_hours` +
+the current block in `app/live/service.py`) previously filled only `total_wave` + `primary_swell`, because
+`MARINE_HOURLY` (`app/live/client.py`) requested only `wave_*` + `swell_wave_*`. Open-Meteo Marine does expose
+`wind_wave_{height,period,direction}` and `secondary_swell_wave_{height,period,direction}` (confirmed against
+the live API), so those were added to the request and mapped into `wind_sea` / `secondary_swell` via a shared
+`_wave_component()` helper that returns `None` when a component's significant height is absent (flat sea → no
+wind wave; single swell → no secondary) rather than rendering an empty card. Marine cache key bumped to
+`marine_*_v2`. **UI rule:** the Wave-mode inspector may show up to four components but must treat
+wind_sea/secondary_swell as optional (null = the component does not exist right now, not "no data").
+
 ## 🟡 6. No public station-list endpoint
 
 **Current state:** Station measurements (gap-free — `WeatherStation`/`WeatherObservation` are real and
@@ -147,7 +157,7 @@ something to guess at from the frontend.
 | Nearshore engine | Brandung mode entirely | Large — new model + bathymetry sourcing + validation |
 | Wind u/v export | Future field rendering only | Small |
 | `spatial_resolution_km` | Nothing — resolved: null by design for consensus values (see §4) | None |
-| Wave component population | Wave-mode inspector accuracy | Verification, then maybe small |
+| Wave component population | Resolved: all four components now populated (see §5) | Done |
 | Station-list endpoint | Map-wide "live station" filter | Small–Medium |
 | Internal diagnostics dropped | Nothing user-facing | Trivial, optional |
 | Typical wind direction field | WindRose module (currently always empty) | Small–Medium — needs a real data source decision |

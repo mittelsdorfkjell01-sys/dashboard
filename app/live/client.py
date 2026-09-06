@@ -29,8 +29,11 @@ FORECAST_DAILY = (
 )
 FORECAST_MINUTELY_15 = "wind_speed_10m,wind_gusts_10m,wind_direction_10m"
 MARINE_HOURLY = (
-    "wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,"
-    "swell_wave_direction,sea_surface_temperature"
+    "wave_height,wave_period,wave_direction,"
+    "wind_wave_height,wind_wave_period,wind_wave_direction,"
+    "swell_wave_height,swell_wave_period,swell_wave_direction,"
+    "secondary_swell_wave_height,secondary_swell_wave_period,secondary_swell_wave_direction,"
+    "sea_surface_temperature"
 )
 MARINE_DAILY = "wave_height_max,wave_direction_dominant,wave_period_max"
 
