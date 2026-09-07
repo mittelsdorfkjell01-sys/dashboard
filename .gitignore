@@ -12,6 +12,13 @@ __pycache__/
 frontend/tsconfig.tsbuildinfo
 frontend/dist/
 
+# Generated screenshots and local review/export output
+.impeccable/review/
+frontend/exports/
+
+# Machine-local assistant configuration
+.claude/settings.local.json
+
 # Local agent runtime output (instructions/configuration stay trackable)
 .codex-log/
 .codex/*.log
@@ -46,6 +53,11 @@ Thumbs.db
 # Local screenshots / runtime media (not source)
 screens/
 /data/media/
+
+# Local worker counters and production-operation evidence
+/data/weather-smoke-budget.json
+/reports/weather-shadow-scheduler-readiness.*
+/reports/weather-w1-*
 
 # local-only DB connection string for one-off migrations (never commit)
 scripts/.neon_url

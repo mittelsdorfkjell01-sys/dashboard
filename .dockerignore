@@ -1,6 +1,9 @@
 # Keep the build context small and never bake secrets or local state into the image.
 .git
 .gitignore
+.agents
+.claude
+.impeccable
 .venv
 **/__pycache__
 *.py[cod]
@@ -14,6 +17,7 @@ frontend
 
 # Local data / backups / downloaded ERA5 extracts.
 data
+reports
 backups
 screens
 

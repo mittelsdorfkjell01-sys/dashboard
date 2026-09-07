@@ -206,7 +206,7 @@
   <div class="grid cols-3">
     <div class="card"><div class="ico ic-green"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div><h3>Jetzt-Bewertung</h3><p>Ampel <b>gut · mäßig · nein</b> aus Live-Wind, Böen, Richtung &amp; Welle — für die gewählte Sportart.</p></div>
     <div class="card"><div class="ico ic-teal"><svg class="i" viewBox="0 0 24 24"><path d="M3 17c3-6 6-6 9-3s6 3 9-3"/><path d="M3 21h18"/></svg></div><h3>52-Wochen-Saison</h3><p>Wann ist ein Spot verlässlich gut? Anteil nutzbarer Stunden über das ganze Jahr.</p></div>
-    <div class="card"><div class="ico ic-blue"><svg class="i" viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l3-4 3 3 4-6"/></svg></div><h3>7-Tage-Forecast</h3><p>Multi-Modell-Vorhersage mit ehrlichem <b>Konsensband</b> — Verlässlichkeit sinkt sichtbar zum Horizont.</p></div>
+    <div class="card"><div class="ico ic-blue"><svg class="i" viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l3-4 3 3 4-6"/></svg></div><h3>10-Tage-Forecast</h3><p>Multi-Modell-Vorhersage mit ehrlichem <b>Konsensband</b> — Verlässlichkeit sinkt sichtbar zum Horizont.</p></div>
     <div class="card"><div class="ico ic-navy"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h3>Textsuche</h3><p>Ort, Region oder Spot tippen → gerankte Treffer in der Nähe, nach Bedingung sortiert.</p></div>
     <div class="card"><div class="ico ic-orange"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5 5l14 14"/></svg></div><h3>Reverse-Suche</h3><p>Offene Achsen: „Wo ist es im Juli gut?" oder „Wann ist mein Spot am besten?"</p></div>
     <div class="card"><div class="ico ic-teal"><svg class="i" viewBox="0 0 24 24"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="17" r="3"/><path d="M10 7h5a2 2 0 0 1 2 2v5"/></svg></div><h3>Ähnliche Spots</h3><p>„Wenn dir X gefällt…" — nach Charakter, Saison &amp; Ausrichtung, inkl. gespiegelter Küsten.</p></div>
@@ -220,7 +220,7 @@
   <p class="s-lede">Suche = <b>WO</b> × <b>WANN</b> × <b>WAS</b>. Was du offen lässt, bestimmt die Frage, die das Tool beantwortet.</p>
   <div class="axes">
     <div class="axis"><div class="lbl">WO — Ort</div><div class="val">Region / Spot</div><div class="hint">Tarifa, Sardinien, „bei mir"</div></div>
-    <div class="axis open"><div class="lbl">WANN — Zeit</div><div class="val">offen</div><div class="hint">Woche · Monat · 7-Tage · Saison</div></div>
+    <div class="axis open"><div class="lbl">WANN — Zeit</div><div class="val">offen</div><div class="hint">Woche · Monat · 10-Tage · Saison</div></div>
     <div class="axis"><div class="lbl">WAS — Sport</div><div class="val">Windsurf</div><div class="hint">Kite · Wind · Wing · Welle</div></div>
   </div>
   <div class="tscroll"><table>
@@ -243,7 +243,7 @@
 <section class="slide">
   <div class="s-head"><span class="s-num">03</span><span class="s-eyebrow">Was angezeigt wird</span></div>
   <h2>Die Spot-Seite auf einen Blick</h2>
-  <p class="s-lede">Live-Zustand, die ganze Saison und die nächsten 7 Tage — hier mit <b>echten Daten für Tarifa · Los Lances (Windsurf)</b>.</p>
+  <p class="s-lede">Live-Zustand, die ganze Saison und die nächsten 10 Tage — hier mit <b>historischen Beispieldaten für Tarifa · Los Lances (Windsurf)</b>.</p>
   <div class="spotwrap">
     <div class="panel">
       <h4>Saisonkurve · 52 Wochen — Anteil nutzbarer Stunden</h4>
@@ -267,8 +267,8 @@
         </div>
       </div>
       <div class="panel">
-        <h4>7-Tage-Forecast · mit Konsensband (kt)</h4>
-        <div class="chartbox"><svg id="forecast" viewBox="0 0 520 130" role="img" aria-label="7-Tage-Forecast mit Konsensband"></svg></div>
+        <h4>7-Tage-Ausschnitt · aus dem 10-Tage-Forecast (kt)</h4>
+        <div class="chartbox"><svg id="forecast" viewBox="0 0 520 130" role="img" aria-label="Sieben-Tage-Ausschnitt aus dem 10-Tage-Forecast mit Konsensband"></svg></div>
         <div class="legend">
           <span><i style="background:color-mix(in srgb,var(--blue) 30%,transparent)"></i>Modell-Spreizung</span>
           <span><i style="background:var(--blue)"></i>Ø Wind</span>
@@ -314,7 +314,7 @@
       <span class="arrow">→</span>
       <div class="node"><div class="nt">Redis-Cache</div><div class="ns">TTL 30 min · netzschonend</div></div>
       <span class="arrow">→</span>
-      <div class="node"><div class="nt">Live + 7-Tage</div><div class="ns">Konsens (Median) + Spreizband</div></div>
+      <div class="node"><div class="nt">Live + 10-Tage</div><div class="ns">Konsens (Median) + Spreizband</div></div>
     </div>
   </div>
   <p class="foot"><b>Ehrlichkeits-Prinzip:</b> Keine erfundenen Werte. Wellen-Historie ist kürzer als Wind-Historie und wird im Datensatz mit <code>wave_source</code>/<code>wave_window</code>/<code>wave_note</code> gekennzeichnet. Copernicus CDS bleibt optionaler Fallback.</p>
@@ -390,7 +390,7 @@
       <ul>
         <li><span class="tick done">✓</span> 51 Spots / 28 Regionen geseedet (PostGIS)</li>
         <li><span class="tick done">✓</span> Klima-Pipeline + Bulk-Batch (idempotent)</li>
-        <li><span class="tick done">✓</span> Live + 7-Tage-Forecast + Konsensband</li>
+        <li><span class="tick done">✓</span> Live + 10-Tage-Forecast + Konsensband</li>
         <li><span class="tick done">✓</span> Text- &amp; Reverse-Suche, Ähnlichkeit</li>
         <li><span class="tick done">✓</span> Score-Engine, Admin, Deploy, Tests</li>
       </ul>
@@ -451,7 +451,7 @@
       svg.innerHTML=parts.join("");
     })();
 
-    // ---- 7-day forecast band (real Tarifa) ----
+    // ---- 7-day excerpt from the 10-day forecast example ----
     // [date, lo, hi, avg]
     var FC=[["9.7",6.5,10.7,6.4],["10.7",8.1,12.6,7.9],["11.7",7.5,9.5,7.2],["12.7",8.8,9.9,6.0],["13.7",8.4,11.7,7.6],["14.7",8.4,9.5,4.9],["15.7",6.6,9.3,4.4]];
     (function(){

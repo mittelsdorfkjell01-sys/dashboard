@@ -1,7 +1,7 @@
 [project]
 name = "surfwinddate"
 version = "0.1.0"
-description = "Backend for a watersport spot and trip-planning platform (Sprint 1: data foundation)"
+description = "Full-stack watersport spot, forecast, and trip-planning platform"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]

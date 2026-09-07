@@ -14,7 +14,8 @@ concurrency:
 
 jobs:
   collect:
-    if: github.ref == 'refs/heads/main'
+    # A paused collector must not allocate a runner or query the Neon API.
+    if: github.ref == 'refs/heads/main' && vars.WEATHER_SHADOW_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -34,9 +35,9 @@ jobs:
       NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.11"
           cache: pip
@@ -46,12 +47,8 @@ jobs:
         id: neon_quota
         run: python -m scripts.neon_transfer_guard
 
-      - name: Report paused Shadow collection
-        if: ${{ always() && vars.WEATHER_SHADOW_ENABLED != 'true' }}
-        run: echo "Weather Shadow is paused. Set WEATHER_SHADOW_ENABLED=true only after the transfer incident is resolved." >> "$GITHUB_STEP_SUMMARY"
-
       - name: Validate scheduler configuration
-        if: ${{ success() && vars.WEATHER_SHADOW_ENABLED == 'true' && steps.neon_quota.outputs.allow_shadow == 'true' }}
+        if: ${{ success() && steps.neon_quota.outputs.allow_shadow == 'true' }}
         shell: bash
         run: |
           test -n "$WEATHER_SHADOW_ENDPOINT"
@@ -61,7 +58,7 @@ jobs:
           test -n "$REDIS_URL"
 
       - name: Enqueue model generation
-        if: ${{ success() && vars.WEATHER_SHADOW_ENABLED == 'true' && steps.neon_quota.outputs.allow_shadow == 'true' }}
+        if: ${{ success() && steps.neon_quota.outputs.allow_shadow == 'true' }}
         shell: bash
         run: |
           curl --fail-with-body --silent --show-error \
@@ -72,9 +69,9 @@ jobs:
             "$WEATHER_SHADOW_ENDPOINT"
 
       - name: Install worker dependencies
-        if: ${{ success() && vars.WEATHER_SHADOW_ENABLED == 'true' && steps.neon_quota.outputs.allow_shadow == 'true' }}
+        if: ${{ success() && steps.neon_quota.outputs.allow_shadow == 'true' }}
         run: pip install -r requirements.txt
 
       - name: Process one queued generation
-        if: ${{ success() && vars.WEATHER_SHADOW_ENABLED == 'true' && steps.neon_quota.outputs.allow_shadow == 'true' }}
+        if: ${{ success() && steps.neon_quota.outputs.allow_shadow == 'true' }}
         run: python -m scripts.weather_shadow_worker

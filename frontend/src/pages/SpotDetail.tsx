@@ -206,7 +206,7 @@ export default function SpotDetail() {
         <AnimatePresence
           initial={false}
           custom={tabDirection}
-          mode="sync"
+          mode="popLayout"
         >
           {activeTab === "info" && (
             <motion.div

@@ -2,7 +2,9 @@
 # serverless bundle. The UI is installed and built by Vercel from frontend/.
 .git
 .github
+.agents
 .claude
+.impeccable
 .vercel
 .npm-ui-skills-cache
 .pytest_cache
@@ -15,9 +17,9 @@
 /data
 /tests
 /docs
+/reports
 /scripts
 /alembic
-/Entwickler (soll von claude ignoriert werden)
 /frontend/hero-src
 
 # Local/runtime configuration and non-Vercel deployment files.

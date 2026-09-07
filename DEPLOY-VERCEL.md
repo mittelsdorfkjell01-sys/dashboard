@@ -80,7 +80,7 @@ python -m scripts.verify_content        # red/green check
 Re-run `app.era5.batch` from your machine whenever you add spots (it's idempotent).
 
 ## Step 5 — Vercel projects (two)
-Import the `surfwinddata` repo **twice** — once per project. Both keep **Root
+Import the canonical `dashboard` repo **twice** — once per project. Both keep **Root
 Directory = repo root** (the included `vercel.json` drives the build).
 
 **Shared env vars** (set on *both* projects, identical values — same DB/cache/blob):

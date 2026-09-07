@@ -20,7 +20,7 @@ def test_classify_local_hosts():
 
 
 def test_classify_remote_hosts():
-    neon = "postgresql://neondb_owner:pw@ep-wild-violet-al8cbqvv.c-3.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+    neon = "postgresql://example:pw@ep-example-123456.eu-central-1.aws.neon.tech/example?sslmode=require"
     assert classify_db(neon) == "remote"
     assert db_host(neon).endswith("neon.tech")
     assert classify_db("postgresql://u:p@db.example.com:5432/x") == "remote"

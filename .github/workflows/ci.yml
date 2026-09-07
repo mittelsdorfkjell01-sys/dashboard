@@ -82,7 +82,7 @@ jobs:
           VITE_INCLUDE_ADMIN: "true"
         run: npm run build:release && npm run check:bundle
       - name: Dependency audit
-        run: npm audit --audit-level=critical
+        run: npm audit --audit-level=high
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 

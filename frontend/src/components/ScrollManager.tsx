@@ -9,6 +9,7 @@ import { useLocation, useNavigationType } from "react-router-dom";
 import { getLenis } from "../lib/lenis";
 
 const scrollPositions = new Map<string, number>();
+let pendingSpotTabScroll: number | null = null;
 
 export default function ScrollManager() {
   const { pathname, hash, key, state } = useLocation();
@@ -24,9 +25,37 @@ export default function ScrollManager() {
     const lenis = getLenis();
 
     // Spot-detail tabs are two real routes, but visually they are one page.
-    // Their links opt out of the normal route reset so the viewport remains
-    // at exactly the height from which the visitor switched tabs.
-    if (navigationType !== "POP" && typeof state?.preserveScroll === "number") return;
+    // Keep the target across canonical replace navigations and repeat the
+    // restoration while the destination swaps its loading shell for content.
+    const startsSpotTabNavigation = typeof state?.preserveScroll === "number";
+    if (startsSpotTabNavigation) {
+      pendingSpotTabScroll = state.preserveScroll;
+    }
+    if (pendingSpotTabScroll !== null && pathname.startsWith("/spot/")) {
+      const target = pendingSpotTabScroll;
+      const timers: number[] = [];
+      const restore = () => {
+        if (document.documentElement.scrollHeight - window.innerHeight < target) return;
+        if (lenis) {
+          lenis.resize();
+          lenis.scrollTo(target, { immediate: true, force: true });
+        } else {
+          window.scrollTo(0, target);
+        }
+      };
+
+      restore();
+      timers.push(window.setTimeout(restore, 100));
+      timers.push(window.setTimeout(() => {
+        restore();
+        // The spot loader performs a canonical replace after the initial tab
+        // push. Keep the value through the push and consume it on that replace.
+        if (!startsSpotTabNavigation) pendingSpotTabScroll = null;
+      }, 300));
+      return () => timers.forEach((timer) => window.clearTimeout(timer));
+    }
+
+    if (!pathname.startsWith("/spot/")) pendingSpotTabScroll = null;
 
     if (hash) {
       const el = document.querySelector(hash);

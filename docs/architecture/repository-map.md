@@ -6,11 +6,10 @@ This is the compact navigation index for humans and coding agents. It describes 
 
 | Repository | Role | Direction |
 |---|---|---|
-| `dashboard-main` | Canonical development source | Features and fixes start here |
-| `surfwinddata-main` | Public/release mirror | Receives intentional merges or cherry-picks from dashboard |
+| `dashboard-main` | Canonical development and release source | All features, fixes and deployments start here |
 
-Do not implement the same task independently in both working trees. Confirm and test it in `dashboard-main`, then synchronize explicitly when requested.
-Before synchronization, run `./scripts/repo-drift.ps1 -Fetch`. A `diverged` result requires reviewing both commit lines instead of a blind merge.
+The former `surfwinddata-main` mirror is archived. Both Vercel projects deploy
+from `dashboard-main`; do not recreate a second writable copy.
 
 ## Runtime topology
 

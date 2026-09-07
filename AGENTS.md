@@ -2,8 +2,8 @@
 
 ## Scope and repository role
 
-- This repository (`dashboard-main`) is the canonical development source.
-- The sibling `surfwinddata-main` repository is the public/release mirror. Move changes there only through an explicit merge or cherry-pick; never edit both copies for one task.
+- This repository (`dashboard-main`) is the only canonical development and release source.
+- The former `surfwinddata-main` mirror is archived. Do not synchronize or restore it; both Vercel targets deploy from this repository.
 - Keep work task-scoped. Inspect the repository map first, then only the files and tests relevant to the requested area.
 
 ## Start here
@@ -12,7 +12,6 @@
 - Cost-aware session/model guidance: `docs/architecture/agent-workflow.md`
 - Focused context: `./scripts/context.ps1 <area>`
 - Focused checks: `./scripts/check.ps1 <area>`
-- Public mirror drift: `./scripts/repo-drift.ps1`
 - Backend entry point: `app/main.py`
 - Frontend entry point: `frontend/src/main.tsx`
 - Database migrations: `alembic/versions/`

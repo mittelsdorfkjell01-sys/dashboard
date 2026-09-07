@@ -25,4 +25,4 @@ Scope: app/api/spots.py and frontend/src/pages/MapView.tsx.
 No schema changes. Success: focused spot and public-map tests pass.
 ```
 
-Use `scripts/context.ps1` before broad exploration, `scripts/check.ps1` during iteration, and `scripts/repo-drift.ps1` before synchronizing the public repository.
+Use `scripts/context.ps1` before broad exploration and `scripts/check.ps1` during iteration. The former public mirror is archived; releases and both Vercel deployments originate here.
