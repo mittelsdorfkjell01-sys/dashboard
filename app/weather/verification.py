@@ -7,11 +7,20 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from statistics import mean, median
 import math
+import uuid
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 
-from app.models import WeatherForecastSample, WeatherModelCalibration, WeatherObservation, WeatherStation
+from app.models import (
+    ForecastVerificationScore,
+    Spot,
+    WeatherForecastSample,
+    WeatherModelCalibration,
+    WeatherObservation,
+    WeatherStation,
+)
+from app.weather.observations import public_measurement
 
 # 30 samples can cover only five hours at a ten-minute cadence and is too easy
 # to overfit. Sixty is still deliberately modest for local preparation; an
@@ -21,11 +30,18 @@ CALIBRATION_DECISION_VERSION = "holdout-v1"
 
 
 def lead_bucket(hours: float) -> str:
-    if hours <= 48:
-        return "0-48h"
-    if hours <= 120:
-        return "49-120h"
-    return "121-240h"
+    if hours <= 24:
+        return "0-24h"
+    if hours <= 72:
+        return "24-72h"
+    return "72-240h"
+
+
+# Twelve canonical 30-degree sectors aligned to the Global Wind Atlas bins so the
+# verification breakdown shares the axis a future GWA sector-factor producer uses.
+def direction_sector(direction_deg: float) -> int:
+    """Return the 30-degree sector index (0 = [0,30) ... 11 = [330,360))."""
+    return int((float(direction_deg) % 360.0) // 30.0)
 
 
 @dataclass(frozen=True)
@@ -41,6 +57,7 @@ class VerificationMetrics:
     sample_count: int
     wind_mae_ms: float
     wind_bias_ms: float
+    wind_rmse_ms: float
     direction_mae_deg: float | None
     gust_mae_ms: float | None
 
@@ -80,7 +97,9 @@ def verification_metrics(rows: list[dict]) -> VerificationMetrics | None:
                  for row in clean if row.get("direction_pred") is not None and row.get("direction_obs") is not None]
     gust = [abs(float(row["gust_pred"]) - float(row["gust_obs"]))
             for row in clean if row.get("gust_pred") is not None and row.get("gust_obs") is not None]
+    rmse = math.sqrt(mean(value * value for value in errors))
     return VerificationMetrics(len(clean), round(mean(abs(v) for v in errors), 3), round(mean(errors), 3),
+                               round(rmse, 3),
                                round(mean(direction), 3) if direction else None,
                                round(mean(gust), 3) if gust else None)
 
@@ -233,3 +252,176 @@ def recompute_calibrations(db, *, lookback_days: int = 90) -> int:
             updated += 1
     db.commit()
     return updated
+
+
+# ---------------------------------------------------------------------------
+# WP1 validation harness: score the raw forecast against station measurements.
+#
+# The station wind never enters the forecast; it only produces bias/MAE/RMSE
+# broken down by lead-time bucket and 30-degree direction sector. Only
+# measurements passing ``observations.public_measurement`` are scored, and the
+# staleness gate is neutralised for historical scoring by evaluating each
+# observation at its own timestamp (``now == observed_at``).
+# ---------------------------------------------------------------------------
+
+CONSENSUS_MODEL_ID = "consensus"
+
+
+def _circular_mean_deg(values: list[float]) -> float:
+    xs = sum(math.cos(math.radians(float(v))) for v in values)
+    ys = sum(math.sin(math.radians(float(v))) for v in values)
+    return math.degrees(math.atan2(ys, xs)) % 360.0
+
+
+def _sample_predictions(samples) -> list[dict]:
+    return [{
+        "model_id": s.model_id, "valid_at": s.valid_at, "lead_hours": s.lead_hours,
+        "wind_speed_ms": s.wind_speed_ms, "wind_direction_deg": s.wind_direction_deg,
+        "wind_gust_ms": s.wind_gust_ms,
+    } for s in samples]
+
+
+def _consensus_predictions(samples) -> list[dict]:
+    """One vector-consistent consensus prediction per issued forecast run and hour."""
+    by_run: dict[tuple, list] = defaultdict(list)
+    for sample in samples:
+        by_run[(sample.issued_at, sample.valid_at)].append(sample)
+    output = []
+    for (_issued_at, valid_at), members in by_run.items():
+        gusts = [m.wind_gust_ms for m in members if m.wind_gust_ms is not None]
+        output.append({
+            "model_id": CONSENSUS_MODEL_ID, "valid_at": valid_at,
+            "lead_hours": members[0].lead_hours,
+            "wind_speed_ms": mean(m.wind_speed_ms for m in members),
+            "wind_direction_deg": _circular_mean_deg([m.wind_direction_deg for m in members]),
+            "wind_gust_ms": mean(gusts) if len(gusts) == len(members) else None,
+        })
+    return output
+
+
+def _score_predictions(predictions: list[dict], observations: list, *, tolerance_s: int) -> list[dict]:
+    """Match each prediction to the nearest gated observation and group by cohort."""
+    groups: dict[tuple[str, str, int], list[dict]] = defaultdict(list)
+    for pred in predictions:
+        nearest = min(observations, key=lambda obs: abs((obs.observed_at - pred["valid_at"]).total_seconds()), default=None)
+        if nearest is None or abs((nearest.observed_at - pred["valid_at"]).total_seconds()) > tolerance_s:
+            continue
+        key = (pred["model_id"], lead_bucket(pred["lead_hours"]), direction_sector(pred["wind_direction_deg"]))
+        groups[key].append({
+            "wind_pred": pred["wind_speed_ms"], "wind_obs": nearest.wind_speed_ms,
+            "direction_pred": pred["wind_direction_deg"], "direction_obs": nearest.wind_direction_deg,
+            "gust_pred": pred["wind_gust_ms"], "gust_obs": nearest.wind_gust_ms,
+        })
+    records = []
+    for (model_id, bucket, sector), rows in sorted(groups.items()):
+        metrics = verification_metrics(rows)
+        if metrics is None:
+            continue
+        records.append({
+            "model_id": model_id, "lead_bucket": bucket, "direction_sector": sector,
+            "sample_count": metrics.sample_count, "bias_ms": metrics.wind_bias_ms,
+            "mae_ms": metrics.wind_mae_ms, "rmse_ms": metrics.wind_rmse_ms,
+            "direction_mae_deg": metrics.direction_mae_deg,
+        })
+    return records
+
+
+def gated_observations(db, spot_id, *, cutoff) -> list:
+    """Observations for a spot that pass the public station/quality gate."""
+    accepted = []
+    stations = db.scalars(select(WeatherStation).where(
+        WeatherStation.spot_id == spot_id, WeatherStation.active.is_(True))).all()
+    for station in stations:
+        observations = db.scalars(select(WeatherObservation).where(
+            WeatherObservation.station_id == station.id,
+            WeatherObservation.observed_at >= cutoff)).all()
+        for observation in observations:
+            ok, _reasons = public_measurement(station, observation, now=observation.observed_at.astimezone(timezone.utc))
+            if ok:
+                accepted.append(observation)
+    return accepted
+
+
+def score_spot_forecasts(db, spot_id, *, now=None, lookback_days: int = 45, tolerance_s: int = 1200) -> list[dict]:
+    """Per-model and consensus bias/MAE/RMSE of the raw forecast versus gated observations."""
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=max(1, min(lookback_days, 365)))
+    observations = gated_observations(db, spot_id, cutoff=cutoff)
+    if not observations:
+        return []
+    samples = db.scalars(select(WeatherForecastSample).where(
+        WeatherForecastSample.spot_id == spot_id,
+        WeatherForecastSample.valid_at >= cutoff)).all()
+    if not samples:
+        return []
+    records = _score_predictions(_sample_predictions(samples), observations, tolerance_s=tolerance_s)
+    records += _score_predictions(_consensus_predictions(samples), observations, tolerance_s=tolerance_s)
+    return records
+
+
+def eligible_spot_ids(db) -> list:
+    """Published spots with an approved, representative station worth scoring."""
+    rows = db.execute(
+        select(WeatherStation.spot_id)
+        .join(Spot, Spot.id == WeatherStation.spot_id)
+        .where(
+            WeatherStation.active.is_(True),
+            WeatherStation.approved.is_(True),
+            WeatherStation.representativeness_status == "passed",
+            Spot.status == "published",
+        )
+        .distinct()
+    ).all()
+    return [row[0] for row in rows]
+
+
+def persist_verification_scores(db, run_id, spot_id, records, *, variant: str = "raw",
+                                window_start=None, window_end=None, computed_at=None) -> int:
+    if not records or not hasattr(db, "execute"):
+        return 0
+    computed_at = computed_at or datetime.now(timezone.utc)
+    values = [{
+        "run_id": run_id, "spot_id": spot_id, "model_id": r["model_id"], "variant": variant,
+        "lead_bucket": r["lead_bucket"], "direction_sector": r["direction_sector"],
+        "sample_count": r["sample_count"], "bias_ms": r["bias_ms"], "mae_ms": r["mae_ms"],
+        "rmse_ms": r["rmse_ms"], "direction_mae_deg": r["direction_mae_deg"],
+        "window_start": window_start, "window_end": window_end, "computed_at": computed_at,
+    } for r in records]
+    excluded = insert(ForecastVerificationScore).excluded
+    stmt = insert(ForecastVerificationScore).values(values).on_conflict_do_update(
+        constraint="uq_forecast_verification_score",
+        set_={"sample_count": excluded.sample_count, "bias_ms": excluded.bias_ms,
+              "mae_ms": excluded.mae_ms, "rmse_ms": excluded.rmse_ms,
+              "direction_mae_deg": excluded.direction_mae_deg,
+              "window_start": excluded.window_start, "window_end": excluded.window_end,
+              "computed_at": excluded.computed_at},
+    )
+    db.execute(stmt)
+    db.commit()
+    return len(values)
+
+
+def run_verification_scoring(db, *, spot_ids=None, now=None, lookback_days: int = 45,
+                             tolerance_s: int = 1200, variant: str = "raw",
+                             run_id=None, persist: bool = True) -> dict:
+    """Score every eligible spot in one reproducible run; returns a compact summary."""
+    now = now or datetime.now(timezone.utc)
+    run_id = run_id or uuid.uuid4()
+    window_start = now - timedelta(days=max(1, min(lookback_days, 365)))
+    targets = list(spot_ids) if spot_ids is not None else eligible_spot_ids(db)
+    spots_scored = 0
+    total_rows = 0
+    for spot_id in targets:
+        records = score_spot_forecasts(db, spot_id, now=now, lookback_days=lookback_days, tolerance_s=tolerance_s)
+        if not records:
+            continue
+        spots_scored += 1
+        total_rows += len(records)
+        if persist:
+            persist_verification_scores(db, run_id, spot_id, records, variant=variant,
+                                        window_start=window_start, window_end=now, computed_at=now)
+    return {
+        "run_id": str(run_id), "spots_scored": spots_scored, "rows": total_rows,
+        "variant": variant, "lookback_days": lookback_days,
+        "window_start": window_start.isoformat(), "window_end": now.isoformat(),
+    }

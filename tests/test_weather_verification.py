@@ -6,8 +6,8 @@ from app.weather.verification import MIN_CALIBRATION_SAMPLES, calibration_stats,
 
 
 def test_lead_buckets_are_stable():
-    assert [lead_bucket(value) for value in (0, 48, 49, 120, 121, 240)] == [
-        "0-48h", "0-48h", "49-120h", "49-120h", "121-240h", "121-240h"
+    assert [lead_bucket(value) for value in (0, 24, 25, 72, 73, 240)] == [
+        "0-24h", "0-24h", "24-72h", "24-72h", "72-240h", "72-240h"
     ]
 
 

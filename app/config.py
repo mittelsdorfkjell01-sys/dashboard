@@ -218,6 +218,10 @@ class Settings(BaseSettings):
     # climatology maintenance endpoint. Missing means the endpoint fails closed.
     cron_secret: str | None = None
     climatology_cron_batch_size: int = 3
+    # WP1 validation harness: bounded station-observation import per cron tick and
+    # the historical window scored for raw-forecast verification.
+    weather_observation_cron_batch_size: int = 25
+    weather_verification_lookback_days: int = 45
 
     # TTL (seconds) for cached Open-Meteo live/forecast responses (30-60 min band).
     live_cache_ttl: int = 1800

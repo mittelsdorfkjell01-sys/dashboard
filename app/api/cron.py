@@ -152,6 +152,42 @@ def maintain_climatology(
     return result
 
 
+@router.post(
+    "/weather-observations",
+    dependencies=[Depends(_require_cron)],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def collect_weather_observations(db: Session = Depends(get_db)) -> dict:
+    """Import a bounded batch of station observations, then rescore the raw forecast.
+
+    Observations are stored for validation only and never enter a forecast value.
+    Each stage is isolated so a provider outage cannot fail the scoring pass.
+    """
+    settings = get_settings()
+    result: dict = {}
+    try:
+        from app.weather.observation_worker import run_observation_import
+
+        result["observations"] = run_observation_import(
+            db, limit=settings.weather_observation_cron_batch_size, dry_run=False
+        )
+    except Exception:
+        db.rollback()
+        logger.exception("cron_observation_import_failed")
+        result["observations"] = {"error": "internal_error"}
+    try:
+        from app.weather.verification import run_verification_scoring
+
+        result["verification"] = run_verification_scoring(
+            db, lookback_days=settings.weather_verification_lookback_days
+        )
+    except Exception:
+        db.rollback()
+        logger.exception("cron_verification_scoring_failed")
+        result["verification"] = {"error": "internal_error"}
+    return result
+
+
 @router.get("/wind-climatology", dependencies=[Depends(_require_cron)])
 def maintain_wind_climatology(
     db: Session = Depends(get_db),

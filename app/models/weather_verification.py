@@ -108,3 +108,38 @@ class WeatherModelCalibration(Base, TimestampMixin):
         CheckConstraint("sample_count >= 0", name="ck_weather_calibration_samples"),
         CheckConstraint("weight_multiplier >= 0.5 AND weight_multiplier <= 2.0", name="ck_weather_calibration_weight"),
     )
+
+
+class ForecastVerificationScore(Base):
+    """WP1 harness output: raw-forecast error versus gated station measurements.
+
+    Rows are grouped by spot, model (or the ``consensus`` aggregate), a lead-time
+    bucket and a 30-degree direction sector. ``variant`` is ``raw`` today; a future
+    corrected variant lets a single run compare before/after without a migration.
+    Station wind never feeds the forecast; it only produces these scores.
+    """
+
+    __tablename__ = "forecast_verification_scores"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False)
+    model_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    variant: Mapped[str] = mapped_column(String(16), nullable=False, server_default="raw")
+    lead_bucket: Mapped[str] = mapped_column(String(12), nullable=False)
+    direction_sector: Mapped[int] = mapped_column(Integer, nullable=False)
+    sample_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    bias_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    mae_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    rmse_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    direction_mae_deg: Mapped[float | None] = mapped_column(Float)
+    window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("run_id", "spot_id", "model_id", "variant", "lead_bucket", "direction_sector",
+                         name="uq_forecast_verification_score"),
+        CheckConstraint("direction_sector >= 0 AND direction_sector < 12", name="ck_forecast_verification_sector"),
+        CheckConstraint("sample_count >= 0", name="ck_forecast_verification_samples"),
+    )

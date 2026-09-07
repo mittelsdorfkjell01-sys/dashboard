@@ -20,6 +20,7 @@ from app.models import (
     ForecastProcessingJob,
     ForecastSnapshot,
     Region,
+    ForecastVerificationScore,
     Spot,
     SpotGeoProfileVersion,
     SpotGeoShadowProfile,
@@ -860,6 +861,83 @@ def get_calibration(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
                 "active": r.sample_count >= 30,
                 "rmse_ms": None,
                 "direction_mae_deg": None,
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/verification/runs")
+def verification_runs(limit: int = Query(default=10, ge=1, le=50), db: Session = Depends(get_db)) -> dict:
+    """Recent verification runs with aggregate error, newest first, for before/after review."""
+    recent = db.execute(
+        select(
+            ForecastVerificationScore.run_id,
+            ForecastVerificationScore.variant,
+            func.max(ForecastVerificationScore.computed_at).label("computed_at"),
+            func.count(func.distinct(ForecastVerificationScore.spot_id)).label("spots"),
+            func.count().label("rows"),
+            func.avg(ForecastVerificationScore.mae_ms).label("avg_mae_ms"),
+            func.avg(ForecastVerificationScore.rmse_ms).label("avg_rmse_ms"),
+            func.avg(ForecastVerificationScore.bias_ms).label("avg_bias_ms"),
+        )
+        .group_by(ForecastVerificationScore.run_id, ForecastVerificationScore.variant)
+        .order_by(func.max(ForecastVerificationScore.computed_at).desc())
+        .limit(limit)
+    ).all()
+    return {
+        "runs": [
+            {
+                "run_id": str(row.run_id), "variant": row.variant,
+                "computed_at": row.computed_at.isoformat() if row.computed_at else None,
+                "spots": int(row.spots), "rows": int(row.rows),
+                "avg_mae_ms": round(row.avg_mae_ms, 3) if row.avg_mae_ms is not None else None,
+                "avg_rmse_ms": round(row.avg_rmse_ms, 3) if row.avg_rmse_ms is not None else None,
+                "avg_bias_ms": round(row.avg_bias_ms, 3) if row.avg_bias_ms is not None else None,
+            }
+            for row in recent
+        ]
+    }
+
+
+@router.get("/spots/{spot_id}/verification")
+def spot_verification_scores(
+    spot_id: uuid.UUID,
+    run_id: uuid.UUID | None = None,
+    variant: str = "raw",
+    db: Session = Depends(get_db),
+) -> dict:
+    """Raw-forecast bias/MAE/RMSE for a spot by model, lead-time bucket and 30-degree sector."""
+    if run_id is None:
+        run_id = db.scalar(
+            select(ForecastVerificationScore.run_id)
+            .where(ForecastVerificationScore.spot_id == spot_id,
+                   ForecastVerificationScore.variant == variant)
+            .order_by(ForecastVerificationScore.computed_at.desc())
+            .limit(1)
+        )
+    if run_id is None:
+        return {"spot_id": str(spot_id), "run_id": None, "variant": variant, "scores": []}
+    rows = db.scalars(
+        select(ForecastVerificationScore)
+        .where(ForecastVerificationScore.spot_id == spot_id,
+               ForecastVerificationScore.run_id == run_id,
+               ForecastVerificationScore.variant == variant)
+        .order_by(ForecastVerificationScore.model_id,
+                  ForecastVerificationScore.lead_bucket,
+                  ForecastVerificationScore.direction_sector)
+    ).all()
+    return {
+        "spot_id": str(spot_id), "run_id": str(run_id), "variant": variant,
+        "computed_at": rows[0].computed_at.isoformat() if rows else None,
+        "scores": [
+            {
+                "model_id": r.model_id, "lead_bucket": r.lead_bucket,
+                "direction_sector": r.direction_sector,
+                "sector_deg": [r.direction_sector * 30, r.direction_sector * 30 + 30],
+                "sample_count": r.sample_count, "bias_ms": r.bias_ms,
+                "mae_ms": r.mae_ms, "rmse_ms": r.rmse_ms,
+                "direction_mae_deg": r.direction_mae_deg,
             }
             for r in rows
         ],

@@ -36,6 +36,7 @@ from app.models.tide import (
 )
 from app.models.weather_profile import SpotWeatherProfile, SpotWeatherSector
 from app.models.weather_verification import (
+    ForecastVerificationScore,
     WeatherForecastSample,
     WeatherModelCalibration,
     WeatherObservation,
@@ -98,6 +99,7 @@ __all__ = [
     "SpotWeatherSector",
     "WeatherStation",
     "WeatherObservation",
+    "ForecastVerificationScore",
     "WeatherForecastSample",
     "WeatherModelCalibration",
     "ForecastProvider",

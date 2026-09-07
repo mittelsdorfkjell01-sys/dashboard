@@ -3,7 +3,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 from typing import Iterable
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, nullsfirst, select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.live.cache import Cache
@@ -116,3 +116,46 @@ def import_station(station, fetcher, db, *, cache=None, dry_run=True, attempts=2
             last_error = type(exc).__name__
     return {"received": 0, "accepted": 0, "persisted": 0, "rejected": 0,
             "dry_run": dry_run, "error_class": last_error}
+
+
+def provider_fetchers() -> dict:
+    """Provider id -> callable(station_id) -> list[NormalizedObservation].
+
+    Imported lazily so the scheduler entry point pays the provider/httpx import
+    cost only when it actually runs. KNMI needs a registered key and stays out
+    of the automatic cycle until an operator wires it in.
+    """
+    from app.weather.providers import dmi, dwd
+
+    return {"dwd": dwd.fetch_now, "dmi": dmi.fetch_recent}
+
+
+def run_observation_import(db, *, providers=("dwd", "dmi"), limit: int = 25,
+                           dry_run: bool = True, cache: Cache | None = None) -> dict:
+    """Import a bounded batch of station observations, oldest imports first.
+
+    Idempotent through ``uq_weather_observation_time``; repeated runs replay the
+    overlap window without creating duplicates. Import stores raw observations
+    for later validation only; it never feeds a forecast value.
+    """
+    fetchers = provider_fetchers()
+    stations = db.scalars(
+        select(WeatherStation)
+        .where(WeatherStation.active.is_(True), WeatherStation.provider.in_(list(providers)))
+        .order_by(nullsfirst(WeatherStation.last_import_at.asc()))
+        .limit(max(1, limit))
+    ).all()
+    report = {"stations": len(stations), "persisted": 0, "accepted": 0, "rejected": 0,
+              "errors": 0, "dry_run": dry_run, "providers": list(providers)}
+    for station in stations:
+        fetcher = fetchers.get(station.provider)
+        if fetcher is None:
+            report["errors"] += 1
+            continue
+        result = import_station(station, fetcher, db, cache=cache, dry_run=dry_run)
+        report["persisted"] += result.get("persisted", 0)
+        report["accepted"] += result.get("accepted", 0)
+        report["rejected"] += result.get("rejected", 0)
+        if result.get("error_class"):
+            report["errors"] += 1
+    return report
