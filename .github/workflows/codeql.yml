@@ -13,6 +13,10 @@ permissions:
 
 jobs:
   analyze:
+    # GitHub Free exposes code scanning for public repositories only. Keeping
+    # this job dormant on private repos avoids a permanently failing workflow;
+    # set CODEQL_ENABLED=true after visibility or the plan changes.
+    if: vars.CODEQL_ENABLED == 'true'
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:

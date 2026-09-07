@@ -116,8 +116,10 @@ npm --prefix frontend audit --audit-level=high
 ```
 
 Die GitHub-CI prüft Backend, Frontend, Browser-Flows, Migrationen,
-Abhängigkeiten und das Git-History-Secret-Scanning. CodeQL und Dependabot decken
-statische Analyse und laufende Dependency-Aktualisierungen ab.
+Abhängigkeiten und das Git-History-Secret-Scanning. Dependabot übernimmt
+laufende Dependency-Aktualisierungen. Der CodeQL-Workflow wird über die
+Repository-Variable `CODEQL_ENABLED=true` aktiviert, sobald GitHub Code Scanning
+für die Repository-Sichtbarkeit beziehungsweise den Tarif verfügbar ist.
 
 ## Deployment
 
