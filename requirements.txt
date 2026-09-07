@@ -1,33 +1,33 @@
 # --- Runtime ---
 fastapi==0.141.1
-uvicorn[standard]==0.52.1
-sqlalchemy==2.0.36
-geoalchemy2==0.16.0
-alembic==1.14.0
-psycopg[binary]==3.2.3
-pydantic==2.10.4
-pydantic-settings==2.7.0
+uvicorn[standard]==0.52.4
+sqlalchemy==2.0.52
+geoalchemy2==0.20.0
+alembic==1.19.1
+psycopg[binary]==3.3.5
+pydantic==2.13.5
+pydantic-settings==2.15.0
 redis==5.2.1
-shapely==2.0.6
-rasterio==1.4.3
-boto3==1.40.11
-pyproj==3.7.1
+shapely==2.1.2
+rasterio==1.4.4
+boto3==1.43.88
+pyproj==3.7.2
 httpx==0.28.1            # Open-Meteo client (Sprint 3 live path) + test client
 python-multipart==0.0.32  # multipart/form-data parsing for the hero-image upload
 pillow==12.3.0            # server-side hero-image dimension/format validation
-pillow-avif-plugin==1.5.5 # AVIF encode on upload (falls back to built-in WebP if absent)
+pillow-avif-plugin==1.6.0 # AVIF encode on upload (falls back to built-in WebP if absent)
 
 # --- Auth (Sprint A) ---
 bcrypt==5.0.0            # admin password hashing (used directly; passlib dropped)
 PyJWT==2.13.0           # short-lived JWT for the httpOnly admin session cookie
-email-validator==2.2.0  # Pydantic EmailStr validation
+email-validator==2.3.0  # Pydantic EmailStr validation
 
 # --- Climatology pipeline ---
 # Data source is Open-Meteo Historical (ERA5 via archive-api + waves via
 # marine-api) over plain HTTP (uses httpx, above) — no CDS credentials needed.
 numpy==2.4.6
-eccodes==2.44.0         # bounded direct DWD/NOAA GRIB2 point extraction
-pyarrow==25.0.0          # on-disk format for raw extracts (Parquet)
+eccodes==2.48.0         # bounded direct DWD/NOAA GRIB2 point extraction
+pyarrow==25.0.1          # on-disk format for raw extracts (Parquet)
 # OPTIONAL, not on the default path: the Copernicus CDS adapter (app/era5/_real_cds.py)
 # needs `cdsapi` (+ `xarray`/`netCDF4` and ~/.cdsapirc). Install only if you opt into it:
 #   pip install cdsapi xarray netCDF4
