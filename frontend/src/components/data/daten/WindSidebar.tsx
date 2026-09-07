@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import type { LiveConditionsRead } from "../../../lib/api";
 import type { NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/SpotDataScope";
@@ -83,7 +83,12 @@ export default function WindSidebar({
     { label: "WIND", icon: <WindIcon />, value: wind == null ? null : formatWind(wind, windUnit), unit: windUnitLabel(windUnit) },
     {
       label: "WELLE", icon: <WaveIcon />, value: wave == null ? null : wave.toFixed(1), unit: "m",
-      sub: waveParts.length ? waveParts.map((p) => `${p.label} ${p.h.toFixed(1)} m`).join(" · ") : undefined,
+      sub: waveParts.length ? waveParts.map((p, i) => (
+        <Fragment key={p.label}>
+          {i > 0 && " · "}
+          <span className="whitespace-nowrap">{p.label} {p.h.toFixed(1)} m</span>
+        </Fragment>
+      )) : undefined,
     },
     { label: "UV INDEX", icon: <UvIcon />, value: uv == null ? null : String(Math.round(uv)) },
     { label: "SONNE", icon: <SunIcon />, value: sunHours == null ? null : String(Math.round(sunHours)), unit: "STD" },
