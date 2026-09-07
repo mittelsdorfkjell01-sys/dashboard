@@ -25,8 +25,12 @@ def _normalize_pg_driver(url: str) -> str:
 class Settings(BaseSettings):
     """Application configuration, sourced from environment variables / .env."""
 
+    # `.env.local` (gitignored) overrides `.env` when present, so a developer can
+    # point at the local Docker Postgres without editing the shared `.env`. A
+    # missing file is silently skipped, so this is a no-op in prod/CI. OS env vars
+    # still win over both.
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=(".env", ".env.local"), env_file_encoding="utf-8", extra="ignore"
     )
 
     database_url: str = "postgresql+psycopg://surf:surf@localhost:5432/surfwind"
