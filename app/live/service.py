@@ -300,6 +300,19 @@ def _knots(value_ms: float | None) -> float | None:
     return round(convert_wind_speed(value_ms, WindSpeedUnit.METRES_PER_SECOND, WindSpeedUnit.KNOTS), 1)
 
 
+def _wind_uv(consensus) -> tuple[float | None, float | None]:
+    """Eastward/northward components (m/s) of the consensus wind vector, or
+    ``(None, None)`` when the consensus has no direction (calm) — mirroring the
+    exported ``dir``. The consensus speed/direction already come from a
+    vector-space mean, so these are that mean's true components and are exactly
+    consistent with the exported ``wind_ms``/``dir`` (no re-derivation for a
+    field consumer)."""
+    if consensus is None or consensus.direction_deg is None:
+        return None, None
+    u, v = wind_to_uv(consensus.speed_ms, consensus.direction_deg)
+    return round(u, 3), round(v, 3)
+
+
 def _parse_provider_time(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -560,6 +573,8 @@ def get_live_conditions_for_spot(
             "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
             "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
             "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
+            "wind_u_ms": _wind_uv(consensus)[0],
+            "wind_v_ms": _wind_uv(consensus)[1],
             "air": valid_number(cur_f.get("temperature_2m"), minimum=-90, maximum=60),
             "sst": cur_m.get("sea_surface_temperature"),
             "swell": cur_m.get("swell_wave_height"),
@@ -733,6 +748,8 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
                 "wind_ms": round(consensus.speed_ms, 3) if consensus else None,
                 "gust_ms": round(consensus.gust_ms, 3) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,
                 "dir": round(consensus.direction_deg, 1) if consensus and consensus.direction_deg is not None else None,
+                "wind_u_ms": _wind_uv(consensus)[0],
+                "wind_v_ms": _wind_uv(consensus)[1],
                 "air": value_at("temperature_2m", minimum=-90, maximum=60),
                 "apparent_temperature_c": value_at("apparent_temperature", minimum=-100, maximum=70),
                 "precip": value_at("precipitation", minimum=0, maximum=500),

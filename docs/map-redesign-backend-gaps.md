@@ -71,6 +71,14 @@ point-only wind marker draw a slightly more honest arrow (todo: confirm whether 
 already vector-consistent enough that this is purely a nice-to-have for point rendering — likely yes, this
 mainly matters for future field rendering).
 
+**Resolution (2026-09-07): shipped.** `wind_u_ms`/`wind_v_ms` (m/s, eastward/northward) added to
+`CurrentConditions` and `ForecastHour` (schema + `frontend/src/lib/api.ts`), populated at both write sites in
+`app/live/service.py` via `_wind_uv(consensus)`. The todo is confirmed: the consensus speed/direction already
+come from a **vector-space mean** (`weighted_vector_mean`), so `dir` is vector-consistent and the new components
+are that mean's true parts — exactly consistent with `wind_ms`/`dir` (a test round-trips `uv_to_wind` back to
+them), not a correction. They are `null` when the consensus has no direction (calm), mirroring `dir`. This is
+forward-looking for field rendering; the point marker still reads fine from `dir` alone.
+
 ## 🟡 4. `spatial_resolution_km` always null
 
 **Current state:** The field exists on `ValueProvenance` but every write site (`app/live/service.py:394,704`)
@@ -155,7 +163,7 @@ something to guess at from the frontend.
 |---|---|---|
 | Spatial wind/wave tiles | Wind/Wave spatial layers | Large — new provider contract + pipeline |
 | Nearshore engine | Brandung mode entirely | Large — new model + bathymetry sourcing + validation |
-| Wind u/v export | Future field rendering only | Small |
+| Wind u/v export | Resolved: `wind_u_ms`/`wind_v_ms` shipped on the point schema (see §3) | Done |
 | `spatial_resolution_km` | Nothing — resolved: null by design for consensus values (see §4) | None |
 | Wave component population | Resolved: all four components now populated (see §5) | Done |
 | Station-list endpoint | Map-wide "live station" filter | Small–Medium |

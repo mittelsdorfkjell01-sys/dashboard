@@ -37,7 +37,7 @@ def _sanitize_conditions(data):
         if clean is None:
             issues.append(f"{field}:invalid")
         result[field] = clean
-    for field in ("air", "sst", "apparent_temperature_c"):
+    for field in ("air", "sst", "apparent_temperature_c", "wind_u_ms", "wind_v_ms"):
         if field in result and result[field] is not None:
             clean = _finite(result[field])
             if clean is None:
@@ -219,7 +219,9 @@ class CurrentConditions(BaseModel):
     gust: float | None = None       # knots (consensus median)
     wind_ms: float | None = None    # canonical m/s value
     gust_ms: float | None = None    # canonical m/s value
-    dir: float | None = None        # degrees, wind direction (primary model)
+    dir: float | None = None        # degrees, wind direction-from (consensus vector mean)
+    wind_u_ms: float | None = None  # eastward component of the consensus wind vector (m/s)
+    wind_v_ms: float | None = None  # northward component of the consensus wind vector (m/s)
     air: float | None = None        # deg C (primary model)
     sst: float | None = None        # deg C
     swell: float | None = None      # m
@@ -263,6 +265,8 @@ class ForecastHour(BaseModel):
     wind_ms: float | None = None     # canonical m/s value
     gust_ms: float | None = None     # canonical m/s value
     dir: float | None = None
+    wind_u_ms: float | None = None   # eastward component of the consensus wind vector (m/s)
+    wind_v_ms: float | None = None   # northward component of the consensus wind vector (m/s)
     air: float | None = None
     swell: float | None = None
     period: float | None = None

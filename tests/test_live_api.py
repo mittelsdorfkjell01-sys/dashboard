@@ -68,7 +68,7 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     # membership. Model diagnostics remain admin-only.
     assert body["models"] == []
     assert set(body["current"]) == {
-        "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
+        "wind", "gust", "dir", "wind_u_ms", "wind_v_ms", "air", "sst", "swell", "period", "swell_dir",
         "wind_spread", "gust_spread", "wind_ms", "gust_ms", "waves",
         "coastal_normal_deg", "coastal_classification", "wave_coastal_classification",
     }

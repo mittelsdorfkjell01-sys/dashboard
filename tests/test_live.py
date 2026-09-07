@@ -144,7 +144,7 @@ def test_live_conditions_shape_and_model():
     assert out["model"] == "icon_d2"  # honoured model_pref
     cur = out["current"]
     assert set(cur) == {
-        "wind", "gust", "dir", "air", "sst", "swell", "period", "swell_dir",
+        "wind", "gust", "dir", "wind_u_ms", "wind_v_ms", "air", "sst", "swell", "period", "swell_dir",
         "wind_spread", "gust_spread", "wind_ms", "gust_ms", "waves",
         "coastal_normal_deg", "coastal_classification", "wave_coastal_classification",
     }
@@ -192,6 +192,26 @@ def test_wave_components_omit_absent_components():
     assert waves["wind_sea"] is None
     assert waves["secondary_swell"] is None
     assert waves["primary_swell"]["significant_height_m"] == 1.2
+
+
+def test_wind_vector_components_are_consistent_with_speed_and_direction():
+    """wind_u_ms/wind_v_ms are the consensus vector's true components, so
+    reconstructing speed/direction from them matches the exported wind_ms/dir."""
+    from app.weather.vectors import uv_to_wind
+
+    spot = make_spot()
+    out = get_live_conditions(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(), cache=InMemoryCache())
+    cur = out["current"]
+    assert cur["wind_u_ms"] is not None and cur["wind_v_ms"] is not None
+    speed, direction = uv_to_wind(cur["wind_u_ms"], cur["wind_v_ms"])
+    assert speed == pytest.approx(cur["wind_ms"], abs=1e-2)
+    assert direction == pytest.approx(cur["dir"], abs=0.2)
+
+    series = get_forecast_series(spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(), cache=InMemoryCache())
+    hour = series["days"][0]["hours"][0]
+    assert hour["wind_u_ms"] is not None and hour["wind_v_ms"] is not None
+    hspeed, _ = uv_to_wind(hour["wind_u_ms"], hour["wind_v_ms"])
+    assert hspeed == pytest.approx(hour["wind_ms"], abs=1e-2)
 
 
 def test_unknown_spot_raises_lookup():

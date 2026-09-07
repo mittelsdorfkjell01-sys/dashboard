@@ -292,6 +292,8 @@ export interface CurrentConditions {
   wind_ms?: number | null;
   gust_ms?: number | null;
   dir: number | null;
+  wind_u_ms?: number | null; // eastward component of the consensus wind vector (m/s)
+  wind_v_ms?: number | null; // northward component of the consensus wind vector (m/s)
   air: number | null;
   sst: number | null;
   swell: number | null;
@@ -404,6 +406,8 @@ export interface ForecastHour {
   wind_ms?: number | null;
   gust_ms?: number | null;
   dir: number | null;
+  wind_u_ms?: number | null; // eastward component of the consensus wind vector (m/s)
+  wind_v_ms?: number | null; // northward component of the consensus wind vector (m/s)
   air: number | null;
   swell: number | null;
   period: number | null;
