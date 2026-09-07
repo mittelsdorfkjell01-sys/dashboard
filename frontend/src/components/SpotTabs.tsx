@@ -1,5 +1,5 @@
 import { useRef, type KeyboardEvent, type MouseEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export interface SpotTab {
@@ -28,20 +28,21 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
     0,
     tabs.findIndex((t) => t.href === pathname)
   );
-  const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const onKeyDown = (e: KeyboardEvent<HTMLAnchorElement>, i: number) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     e.preventDefault();
     const next = e.key === "ArrowRight" ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
     tabRefs.current[next]?.focus();
   };
 
-  const onClick = (e: MouseEvent<HTMLAnchorElement>, href: string) => {
-    const opensAnotherContext = e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
-    if (opensAnotherContext) return;
-    e.preventDefault();
-    navigate(href, { state: { preserveScroll: window.scrollY } });
+  const onClick = (e: MouseEvent<HTMLButtonElement>, href: string) => {
+    if (e.button !== 0) return;
+    navigate(href, {
+      state: { preserveScroll: window.scrollY },
+      preventScrollReset: true,
+    });
   };
 
   return (
@@ -54,14 +55,14 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
         {tabs.map((tab, i) => {
           const active = i === activeIndex;
           return (
-            <Link
+            <button
               key={tab.id}
+              type="button"
               ref={(el) => (tabRefs.current[i] = el)}
               id={`tab-${tab.id}`}
               role="tab"
               aria-selected={active}
               tabIndex={active ? 0 : -1}
-              to={tab.href}
               onClick={(e) => onClick(e, tab.href)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className="relative flex h-12 min-w-[140px] items-center justify-center px-4 text-label"
@@ -85,7 +86,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
-            </Link>
+            </button>
           );
         })}
       </div>

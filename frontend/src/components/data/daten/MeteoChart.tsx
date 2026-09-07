@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { NormalizedForecastSeries, NormalizedForecastHour } from "../../../lib/forecastNormalization";
 import { isSpotForecastDisplayHour } from "../../../lib/spotForecastWindow";
@@ -19,15 +19,7 @@ const GLYPH_INK = Math.round((GLYPH * 16) / 24);
 const WELLE_WETTER_GAP = 16;
 const WETTER_ROW_H = WELLE_WETTER_GAP + GLYPH + 16;
 const TEMP_H = 108; // temperature band height — more room for the curve
-const WIND_ROW_H = BAR_H + 16;
-const RICHT_ROW_H = 26;
 const ROW_LABELS = ["WELLE", "WETTER", "TEMP.", "WIND", "RICHT.", "ZEIT"] as const;
-
-// Vertical offsets in the stacked strip, so the cross-row "now" line can be
-// placed in the outer (all-rows) container with column-accurate x and the right
-// y-extents (fine above the TEMP point, strong from the point down to the axis).
-const TEMP_TOP = WAVE_ROW_H + WETTER_ROW_H;
-const AXIS_TOP = TEMP_TOP + TEMP_H + WIND_ROW_H + RICHT_ROW_H; // top of the ZEIT row
 
 function fade(hex: string, alpha = 0.45): string {
   const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
@@ -51,8 +43,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   const slots = model.slots;
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const dropId = useId();
-  const uid = useId(); // base for the now-hero gradients/clips/filters
+  const uid = useId(); // base for the active-point gradients/clips/filters
   // Continuous drag position in strip-content pixels; null after the gesture,
   // when the marker resolves to the persistent selected hour.
   const [hoverX, setHoverX] = useState<number | null>(null);
@@ -96,60 +87,32 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
   const tempPath = useMemo(() => smoothRuns(runs, cx, tempY), [runs, tScale.min, tScale.max]);
 
-  // The "now" hero: the real current moment mapped onto the curve (interpolated
-  // between hours), with a 3-hour trend for the tile arrow. Null when now falls
-  // outside the loaded window or in an inter-day night gap — then no now-visuals.
-  const now = useMemo(() => {
-    const f = nowIndex(slots, nowMs);
-    if (f == null) return null;
-    const s = sampleCurve(slots, f);
+  // The single wandering, glowing point that anchors the whole TEMP row: the
+  // inspected time (the cursor while dragging, else the persistent selection),
+  // or "now" when nothing is being inspected. One glowing marker that rests at
+  // now and follows the cursor — it replaces the old fixed now-bloom plus a
+  // separate selection dot. Null only when there is no readable point at all
+  // (e.g. now at night / out of window and nothing selected).
+  const activeF: number | null =
+    hoverX != null ? hoverX / COL_W - 0.5
+    : selectedIndex >= 0 ? selectedIndex
+    : nowIndex(slots, nowMs);
+  const active = useMemo(() => {
+    if (activeF == null) return null;
+    const s = sampleCurve(slots, activeF);
     if (!s) return null;
-    const ahead = sampleCurve(slots, Math.min(slots.length - 1, f + 3));
+    const ahead = sampleCurve(slots, Math.min(slots.length - 1, activeF + 3));
     const d3 = ahead ? ahead.air - s.air : 0;
     const trend: "up" | "down" | "flat" = d3 > 0.4 ? "up" : d3 < -0.4 ? "down" : "flat";
-    return { x: s.x, y: tempY(s.air), air: s.air, trend };
+    const idx = Math.min(slots.length - 1, Math.max(0, Math.round(activeF)));
+    const label = slots[idx]?.localTime ?? null;
+    return { x: s.x, y: tempY(s.air), air: s.air, trend, label };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tempY derives from tScale, tracked
-  }, [slots, nowMs, tScale.min, tScale.max]);
-  const nowLabel = useMemo(
-    () => new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: forecast.timezone || "UTC" }).format(nowMs),
-    [nowMs, forecast.timezone],
-  );
+  }, [activeF, slots, tScale.min, tScale.max]);
   // Closed area under the curve (per run), for the glow fill; clipped to the
   // past at render so it lights only the elapsed part and stays inside the band.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
   const tempArea = useMemo(() => areaRuns(runs, cx, tempY, TEMP_H), [runs, tScale.min, tScale.max]);
-
-  // Marker: the interpolated point under the cursor while hovering, otherwise
-  // the "now" slot. `air` is read off the same curve so the readout is exact at
-  // any instant — not just on the 2-hour data columns.
-  const marker = useMemo(() => {
-    if (hoverX != null) {
-      const s = sampleCurve(slots, hoverX / COL_W - 0.5);
-      return s ? { x: s.x, y: tempY(s.air), air: s.air } : null;
-    }
-    if (selectedSlot?.air != null) return { x: cx(selectedIndex), y: tempY(selectedSlot.air), air: selectedSlot.air };
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
-  }, [hoverX, slots, selectedIndex, selectedSlot?.air, tScale.min, tScale.max]);
-  // Local time at the marker's nearest hour, for the tooltip pill (e.g. "14:00 Uhr").
-  const markerTime = marker
-    ? slots[Math.min(slots.length - 1, Math.max(0, Math.round(marker.x / COL_W - 0.5)))]?.localTime ?? null
-    : null;
-
-  // Keep the time pill fully on-screen: clamp its centre so its box never spills
-  // past the strip's left/right content edge (where the scroll container would
-  // clip it — the left "forecast edge" being the case that bit us). The marker
-  // dot and guide line stay at the true marker.x; only the pill shifts inward.
-  const pillRef = useRef<HTMLSpanElement>(null);
-  const [pillW, setPillW] = useState(0);
-  useLayoutEffect(() => {
-    if (pillRef.current) setPillW(pillRef.current.offsetWidth);
-  }, [markerTime]);
-  const pillPad = 4;
-  const pillHalf = pillW / 2;
-  const pillLeft = marker
-    ? Math.max(pillHalf + pillPad, Math.min(width - pillHalf - pillPad, marker.x))
-    : 0;
 
   // The wave/weather rows and the wind/direction/time rows don't depend on the
   // hover position — memoise them so a pointer move only re-renders the small
@@ -352,25 +315,6 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
             />
           )}
 
-          {/* Cross-row NOW line, anchoring the same instant down the whole strip:
-              very fine above the temperature point (through WELLE/WETTER) and
-              strong from the point down to the time axis. Solid strokes with
-              opacity — never a 0-width bbox gradient. */}
-          {now && (
-            <>
-              <div
-                className="pointer-events-none absolute -translate-x-1/2 bg-[#eef1f4] opacity-[0.13]"
-                style={{ left: now.x, top: 0, height: TEMP_TOP + now.y, width: 1 }}
-                aria-hidden
-              />
-              <div
-                className="pointer-events-none absolute -translate-x-1/2 bg-[#eef1f4] opacity-50"
-                style={{ left: now.x, top: TEMP_TOP + now.y, height: Math.max(0, AXIS_TOP - (TEMP_TOP + now.y)), width: 1.4 }}
-                aria-hidden
-              />
-            </>
-          )}
-
           {topRows}
 
           {/* TEMP — a now-anchored timeline. The solid past brightens toward the
@@ -382,27 +326,23 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
           <div className="relative" style={{ height: TEMP_H, width }}>
             <svg viewBox={`0 0 ${width} ${TEMP_H}`} width={width} height={TEMP_H} preserveAspectRatio="none" className="absolute inset-0" aria-hidden>
               <defs>
-                <linearGradient id={dropId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(243,240,234,0.45)" />
-                  <stop offset="100%" stopColor="rgba(243,240,234,0)" />
-                </linearGradient>
-                {now && (
+                {active && (
                   <>
                     <clipPath id={`${uid}-cp`} clipPathUnits="userSpaceOnUse">
-                      <rect x={0} y={0} width={Math.max(0, now.x)} height={TEMP_H} />
+                      <rect x={0} y={0} width={Math.max(0, active.x)} height={TEMP_H} />
                     </clipPath>
                     <clipPath id={`${uid}-cf`} clipPathUnits="userSpaceOnUse">
-                      <rect x={now.x} y={0} width={Math.max(0, width - now.x)} height={TEMP_H} />
+                      <rect x={active.x} y={0} width={Math.max(0, width - active.x)} height={TEMP_H} />
                     </clipPath>
-                    <linearGradient id={`${uid}-gp`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={now.x} y2={0}>
+                    <linearGradient id={`${uid}-gp`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={active.x} y2={0}>
                       <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.42} />
                       <stop offset="100%" stopColor="#eef1f4" stopOpacity={1} />
                     </linearGradient>
-                    <linearGradient id={`${uid}-gf`} gradientUnits="userSpaceOnUse" x1={now.x} y1={0} x2={width} y2={0}>
+                    <linearGradient id={`${uid}-gf`} gradientUnits="userSpaceOnUse" x1={active.x} y1={0} x2={width} y2={0}>
                       <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.85} />
                       <stop offset="100%" stopColor="#eef1f4" stopOpacity={0.24} />
                     </linearGradient>
-                    <linearGradient id={`${uid}-gh`} gradientUnits="userSpaceOnUse" x1={now.x} y1={0} x2={now.x + 3 * COL_W} y2={0} spreadMethod="pad">
+                    <linearGradient id={`${uid}-gh`} gradientUnits="userSpaceOnUse" x1={active.x} y1={0} x2={active.x + 3 * COL_W} y2={0} spreadMethod="pad">
                       <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.55} />
                       <stop offset="100%" stopColor="#eef1f4" stopOpacity={0} />
                     </linearGradient>
@@ -421,7 +361,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                 )}
               </defs>
 
-              {now ? (
+              {active ? (
                 <>
                   {/* Glow area under the past line, capped to the band bottom. */}
                   {tempArea && <path d={tempArea} fill={`url(#${uid}-ga)`} clipPath={`url(#${uid}-cp)`} />}
@@ -484,54 +424,37 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                 )
               )}
 
-              {/* Secondary marker — the drag/hover selection, kept quiet. */}
-              {marker && (
+              {/* The one wandering point — a small crisp dot with just a faint
+                  halo (kept subtle: no large bloom). Rests at now, follows the
+                  cursor/selection. */}
+              {active && (
                 <>
-                  <line x1={marker.x} y1={marker.y} x2={marker.x} y2={TEMP_H} stroke={`url(#${dropId})`} strokeWidth={1.5} />
-                  <circle cx={marker.x} cy={marker.y} r={3.5} fill="#F3F0EA" opacity={0.85} />
-                </>
-              )}
-
-              {/* NOW bloom — the brightest point: aura (live pulse) + soft + sharp core. */}
-              {now && (
-                <>
-                  <circle cx={now.x} cy={now.y} r={34} fill={`url(#${uid}-bloom)`} className="daten-now-pulse" />
-                  <circle cx={now.x} cy={now.y} r={7.5} fill="#eef1f4" opacity={0.85} filter={`url(#${uid}-blur)`} />
-                  <circle cx={now.x} cy={now.y} r={4.6} fill="#ffffff" />
+                  <circle cx={active.x} cy={active.y} r={11} fill={`url(#${uid}-bloom)`} opacity={0.4} className="daten-now-pulse" />
+                  <circle cx={active.x} cy={active.y} r={3.6} fill="#ffffff" />
                 </>
               )}
             </svg>
 
-            {/* Secondary selection pill (only while a time is being inspected). */}
-            {marker && markerTime && (
-              <span
-                ref={pillRef}
-                className="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/15 bg-white/10 px-2 py-0.5 leading-none text-white/90 backdrop-blur-sm"
-                style={{ fontSize: 10, left: pillLeft, top: Math.max(0, marker.y - 30) }}
-              >
-                {markerTime} Uhr · {Math.round(marker.air)}°
-              </span>
-            )}
-
-            {/* NOW detail tile — the one allowed card: time + temp + trend. Sits
-                in the band, flips to the left of the point near the right edge. */}
-            {now && (() => {
+            {/* Detail tile at the glowing point — the one allowed card: time +
+                temp + trend. Sits in the band, flips to the left near the right
+                edge, and follows the wandering point. */}
+            {active && (() => {
               const tw = 118;
               const th = 44;
               const pad = 14;
-              const placeRight = now.x + pad + tw <= width;
-              const tx = placeRight ? now.x + pad : now.x - pad - tw;
-              const ty = now.y < th + 14 ? Math.min(TEMP_H - th - 2, now.y + 12) : Math.max(2, now.y - th - 8);
-              const trendChar = now.trend === "up" ? "↗" : now.trend === "down" ? "↘" : "→";
-              const trendColor = now.trend === "up" ? "var(--sw-orange)" : now.trend === "down" ? "var(--sw-teal)" : "var(--sw-muted)";
+              const placeRight = active.x + pad + tw <= width;
+              const tx = placeRight ? active.x + pad : active.x - pad - tw;
+              const ty = active.y < th + 14 ? Math.min(TEMP_H - th - 2, active.y + 12) : Math.max(2, active.y - th - 8);
+              const trendChar = active.trend === "up" ? "↗" : active.trend === "down" ? "↘" : "→";
+              const trendColor = active.trend === "up" ? "var(--sw-orange)" : active.trend === "down" ? "var(--sw-teal)" : "var(--sw-muted)";
               return (
                 <div
                   className="pointer-events-none absolute flex flex-col justify-center gap-0.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 backdrop-blur-sm"
                   style={{ left: tx, top: ty, width: tw, height: th }}
                 >
-                  <span className="leading-none tabular-nums text-white/70" style={{ fontSize: 10 }}>{nowLabel} Uhr</span>
+                  <span className="leading-none tabular-nums text-white/70" style={{ fontSize: 10 }}>{active.label ?? "—"} Uhr</span>
                   <span className="flex items-center gap-1.5 leading-none">
-                    <span className="font-semibold tabular-nums text-white" style={{ fontSize: 18 }}>{Math.round(now.air)}°</span>
+                    <span className="font-semibold tabular-nums text-white" style={{ fontSize: 18 }}>{Math.round(active.air)}°</span>
                     <span className="font-medium" style={{ fontSize: 13, color: trendColor }}>{trendChar}</span>
                   </span>
                 </div>

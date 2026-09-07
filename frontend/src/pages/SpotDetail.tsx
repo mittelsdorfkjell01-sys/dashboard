@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import LandingHeader from "../components/LandingHeader";
@@ -21,7 +21,6 @@ import { sortFeed } from "../lib/communityFeed";
 import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
-import { getLenis } from "../lib/lenis";
 import { spotPath } from "../lib/spotRoutes";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
@@ -33,23 +32,6 @@ export default function SpotDetail() {
   const location = useLocation();
   const activeTab = location.pathname.endsWith("/daten") ? "daten" : "info";
   const reduceMotion = useReducedMotion();
-  const preservedTabScrollRef = useRef<number | null>(null);
-
-  // Keep the precise pre-navigation height until the outgoing panel has left
-  // the DOM; that removal is where mobile scroll anchoring otherwise jumps.
-  useLayoutEffect(() => {
-    preservedTabScrollRef.current =
-      typeof location.state?.preserveScroll === "number" ? location.state.preserveScroll : null;
-  }, [location.key, location.state]);
-
-  const finishTabTransition = () => {
-    const scrollY = preservedTabScrollRef.current;
-    if (scrollY === null) return;
-    preservedTabScrollRef.current = null;
-    const lenis = getLenis();
-    if (lenis) lenis.scrollTo(scrollY, { immediate: true });
-    else window.scrollTo(0, scrollY);
-  };
 
   // Direction for the tab-content swap: which side the new content slides in
   // from. Comparing against the previous tab index (kept in a ref) each
@@ -77,12 +59,18 @@ export default function SpotDetail() {
     useSpotForecast(activeTab === "daten" ? spotId : undefined);
   const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } =
     useCommunityFeed(activeTab === "info" ? spotId : undefined);
-
   useEffect(() => {
     if (!spot) return;
     const canonical = spotPath(spot, activeTab);
-    if (location.pathname !== canonical) navigate(canonical, { replace: true });
-  }, [activeTab, location.pathname, navigate, spot]);
+    if (location.pathname !== canonical) {
+      const preserveScroll = typeof location.state?.preserveScroll === "number";
+      navigate(canonical, {
+        replace: true,
+        state: location.state,
+        preventScrollReset: preserveScroll,
+      });
+    }
+  }, [activeTab, location.pathname, location.state, navigate, spot]);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -218,8 +206,7 @@ export default function SpotDetail() {
         <AnimatePresence
           initial={false}
           custom={tabDirection}
-          mode="popLayout"
-          onExitComplete={finishTabTransition}
+          mode="sync"
         >
           {activeTab === "info" && (
             <motion.div

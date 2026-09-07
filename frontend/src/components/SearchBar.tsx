@@ -369,7 +369,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                       type="button"
                       onClick={submit}
                       aria-label="Suchen"
-                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center text-ink transition-colors hover:text-teal"
+                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-teal text-white transition-colors hover:bg-teal-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
                     >
                       <SearchIcon className="text-sz-18" />
                     </button>

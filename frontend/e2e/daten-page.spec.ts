@@ -124,10 +124,14 @@ test("Info und Daten behalten beim Tabwechsel dieselbe Scrollhöhe", async ({ pa
   await page.goto("/spot/test/info");
   await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
 
-  await page.mouse.wheel(0, 480);
-  await page.waitForTimeout(1200);
+  // Native programmatic scrolling is deterministic under both the desktop
+  // Lenis layer and touch emulation; wheel events depend on runner timing.
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+    .toBeGreaterThan(480);
+  await page.evaluate(() => window.scrollTo(0, 480));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   const infoScrollY = await page.evaluate(() => window.scrollY);
-  expect(infoScrollY).toBeGreaterThan(0);
   await page.getByRole("tab", { name: "Daten" }).click();
   await expect(page).toHaveURL(/\/spot\/laboe\/daten$/);
   await expect(page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" })).toBeVisible();
