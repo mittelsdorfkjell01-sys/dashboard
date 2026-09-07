@@ -152,12 +152,20 @@ def object_exists(url: str) -> bool:
         import httpx
 
         try:
-            response = httpx.head(url, follow_redirects=True, timeout=15.0)
-            if response.status_code == 404:
-                return False
-            response.raise_for_status()
-            return True
-        except httpx.HTTPError as exc:
+            # Never request the stored URL directly: although is_owned_url()
+            # restricts its host, redirects and future custom domains would
+            # otherwise reopen an SSRF path. Vercel's authenticated list API
+            # has a fixed origin and supports an exact object-path prefix.
+            canonical = parsed._replace(query="", fragment="").geturl()
+            page = list_blob_objects(prefix=parsed.path.lstrip("/"), limit=2)
+            return any(
+                urlparse(item["url"])
+                ._replace(query="", fragment="")
+                .geturl()
+                == canonical
+                for item in page["items"]
+            )
+        except (httpx.HTTPError, KeyError, RuntimeError, TypeError, ValueError) as exc:
             raise RuntimeError(
                 f"Vercel Blob existence check failed: {type(exc).__name__}: {exc}"
             ) from exc

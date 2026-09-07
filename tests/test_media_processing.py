@@ -113,6 +113,23 @@ def test_owned_local_object_existence_check_stays_inside_media_root(
     assert storage.object_exists("/media/../../outside.avif") is False
 
 
+def test_blob_existence_check_uses_the_fixed_provider_api(monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "media_backend", "blob")
+    url = "https://store.public.blob.vercel-storage.com/images/present.avif"
+    calls = []
+
+    def fake_list(*, prefix, limit, cursor=None):
+        calls.append((prefix, limit, cursor))
+        return {"items": [{"url": url}], "cursor": None, "has_more": False}
+
+    monkeypatch.setattr(storage, "list_blob_objects", fake_list)
+
+    assert storage.object_exists(url) is True
+    assert calls == [("images/present.avif", 2, None)]
+    assert storage.object_exists("https://127.0.0.1/internal") is False
+
+
 def test_only_responsive_derivatives_are_canonicalized():
     derivative = "/media/images/aa/hash-responsive-480_768-w480.avif"
     assert canonical_image_url(derivative) == (

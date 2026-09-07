@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import case, func, select
@@ -14,6 +15,8 @@ from app.era5.freshness import (
     state,
 )
 from app.models import Era5Job, Spot
+
+logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 3
 RETRY_DELAYS = (timedelta(minutes=15), timedelta(hours=6))
@@ -219,9 +222,14 @@ def compute_now(spot_id, *, client, job_id=None) -> tuple[str, str]:
             spot, db=db, client=client, job_id=selected_job_id
         )
         return "ok", "derived"
-    except Exception as exc:
+    except Exception:
         db.rollback()
-        detail = f"{type(exc).__name__}: {exc}"
+        logger.exception(
+            "era5_compute_failed spot_id=%s job_id=%s",
+            spot_id,
+            selected_job_id,
+        )
+        detail = "Interner Fehler bei der Klimatologie-Berechnung."
         mark_failed(db, spot_id, detail, job_id=selected_job_id)
         return "fail", detail
     finally:

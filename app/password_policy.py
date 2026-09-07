@@ -25,6 +25,9 @@ def ensure_password_safe(password: str, *, min_length: int = 12) -> None:
     if not get_settings().password_breach_check_enabled:
         return
 
+    # The HIBP range API mandates SHA-1 for its k-anonymity lookup protocol.
+    # This digest is never stored and is unrelated to the bcrypt credential
+    # hash used by app.auth.security.
     digest = hashlib.sha1(password.encode("utf-8"), usedforsecurity=False).hexdigest().upper()
     prefix, suffix = digest[:5], digest[5:]
     try:

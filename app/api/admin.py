@@ -818,11 +818,11 @@ def trigger_era5(
     # Compute synchronously and in memory (serverless-safe); see go_live.
     from app.admin import era5_worker
 
-    outcome, detail = era5_worker.compute_now(spot_id, client=client)
+    outcome, _detail = era5_worker.compute_now(spot_id, client=client)
     if outcome != "ok":
         raise HTTPException(
             status_code=502,
-            detail=f"Klimatologie konnte nicht berechnet werden: {detail}",
+            detail="Klimatologie konnte nicht berechnet werden.",
         )
     db.expire_all()
     return get_job_status(spot_id, db=db)

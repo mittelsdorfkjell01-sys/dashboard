@@ -64,9 +64,10 @@ def maintain_climatology(
     result = {}
     try:
         result["media"] = sweep_expired(db)
-    except Exception as exc:  # never let housekeeping fail the climatology run
+    except Exception:  # never let housekeeping fail the climatology run
         db.rollback()
-        result["media"] = {"error": f"{type(exc).__name__}: {exc}"}
+        logger.exception("cron_media_sweep_failed")
+        result["media"] = {"error": "internal_error"}
     try:
         from app.media.archive import archive_retired_images
 
@@ -76,28 +77,27 @@ def maintain_climatology(
             retention_days=settings.image_archive_retention_days,
             limit=settings.image_archive_batch_size,
         )
-    except Exception as exc:
+    except Exception:
         db.rollback()
-        result["media_archive"] = {"error": f"{type(exc).__name__}: {exc}"}
+        logger.exception("cron_media_archive_failed")
+        result["media_archive"] = {"error": "internal_error"}
     result["media_gc"] = {}
     try:
         from app.media.gc import audit_blob_orphans
 
         result["media_gc"]["audit"] = audit_blob_orphans(db)
-    except Exception as exc:
+    except Exception:
         db.rollback()
-        result["media_gc"]["audit"] = {
-            "error": f"{type(exc).__name__}: {exc}"
-        }
+        logger.exception("cron_media_gc_audit_failed")
+        result["media_gc"]["audit"] = {"error": "internal_error"}
     try:
         from app.media.gc import collect_media_garbage
 
         result["media_gc"]["collect"] = collect_media_garbage(db)
-    except Exception as exc:
+    except Exception:
         db.rollback()
-        result["media_gc"]["collect"] = {
-            "error": f"{type(exc).__name__}: {exc}"
-        }
+        logger.exception("cron_media_gc_collect_failed")
+        result["media_gc"]["collect"] = {"error": "internal_error"}
     try:
         from datetime import datetime, timezone
         from app.forecast.publisher import enqueue, run_job
@@ -132,9 +132,10 @@ def maintain_climatology(
         result["forecast"] = [
             {"id": str(job.id), "status": run_job(db, job.id).status} for job in jobs
         ]
-    except Exception as exc:
+    except Exception:
         db.rollback()
-        result["forecast"] = {"error": f"{type(exc).__name__}: {exc}"}
+        logger.exception("cron_forecast_refresh_failed")
+        result["forecast"] = {"error": "internal_error"}
     try:
         # Publish today's featured list off the visitor request path. Combined
         # with the retained previous-day entry, the landing page is instant
@@ -144,9 +145,10 @@ def maintain_climatology(
         # /spots/top?limit=5 ranks eight candidates before safe serialization.
         warmed = warm_once(limits=[8], sports=[None], db=db)
         result["featured"] = {"spots": warmed[0][2] if warmed else 0}
-    except Exception as exc:
+    except Exception:
         db.rollback()
-        result["featured"] = {"error": f"{type(exc).__name__}: {exc}"}
+        logger.exception("cron_featured_warmup_failed")
+        result["featured"] = {"error": "internal_error"}
     return result
 
 

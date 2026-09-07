@@ -398,9 +398,12 @@ def test_manual_climatology_failure_can_be_retried(admin, region_id, db):
     app.dependency_overrides[get_cds_client] = lambda: FailingClient()
     failed = admin.post(f"/admin/spots/{sid}/era5")
     assert failed.status_code == 502
+    assert failed.json()["detail"] == "Klimatologie konnte nicht berechnet werden."
+    assert "temporary upstream failure" not in failed.text
     failed_status = admin.get(f"/admin/spots/{sid}/era5").json()
     assert failed_status["status"] == "queued"
     assert failed_status["attempt_count"] == 1
+    assert failed_status["error"] == "Interner Fehler bei der Klimatologie-Berechnung."
 
     app.dependency_overrides[get_cds_client] = lambda: FakeCdsClient(
         make_synthetic_series()
@@ -625,6 +628,10 @@ def test_climatology_cron_is_secret_guarded_and_leaves_wind_refresh_to_worker(
     from app.wind_climatology.service import enqueue
 
     monkeypatch.setattr(get_settings(), "cron_secret", "cron-test-secret")
+    monkeypatch.setattr(
+        "app.media.budget.sweep_expired",
+        lambda _db: (_ for _ in ()).throw(RuntimeError("private provider detail")),
+    )
     spot = _create_spot(admin, region_id)
 
     # Clear stray pending runs so this assertion is scoped to our run.
@@ -641,6 +648,8 @@ def test_climatology_cron_is_secret_guarded_and_leaves_wind_refresh_to_worker(
     assert response.status_code == 200, response.text
     body = response.json()
     assert "wind_climatology_v2" not in body
+    assert body["media"] == {"error": "internal_error"}
+    assert "private provider detail" not in response.text
 
     db.expire_all()
     assert db.get(WindClimatologyRun, run.id).status == "pending"
