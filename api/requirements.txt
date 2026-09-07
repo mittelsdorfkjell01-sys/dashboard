@@ -14,7 +14,7 @@ geoalchemy2==0.16.0
 psycopg[binary]==3.2.3
 pydantic==2.10.4
 pydantic-settings==2.7.0
-redis==5.2.1
+redis==8.1.0
 shapely==2.0.6
 httpx==0.28.1
 python-multipart==0.0.32
