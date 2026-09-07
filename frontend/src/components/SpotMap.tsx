@@ -48,6 +48,60 @@ function vaneIcon(color: string, rotation: number): L.DivIcon {
   });
 }
 
+const clamp = (value: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, value));
+
+/** Qualitative point-flow overlay: thin streaks drifting the way the active
+ *  mode's reading travels, paced by its strength. This is NOT a spatial field —
+ *  it visualises the spot's single point value (same direction everywhere), so
+ *  it renders only when both magnitude and a real comes-from direction exist,
+ *  never a fabricated flow. Drift only (no in-place sea-state marks): without a
+ *  water mask those would fall on land, which the map brief forbids. The
+ *  `swd-wind-streak` keyframe + reduced-motion handling live in map.css. */
+function FlowLayer({ mode, reading }: { mode: PublicMapMode; reading: ReturnType<typeof currentReading> }) {
+  if (!reading) return null;
+  const isWind = mode === "wind";
+  const mag = isWind ? reading.windKt : reading.waveM;
+  const dir = isWind ? reading.windDir : reading.waveDir;
+  if (mag == null || !Number.isFinite(mag) || dir == null || !Number.isFinite(dir)) return null;
+
+  const bearing = (dir + 180) % 360; // comes-from → travel direction
+  const count = isWind
+    ? clamp(8 + Math.round(mag / 3), 8, 16)
+    : clamp(5 + Math.round(mag * 2), 5, 11);
+  const duration = isWind
+    ? clamp(2.8 - mag * 0.06, 1.1, 2.8)          // stronger wind → quicker streaks
+    : clamp(reading.period ? 6 - reading.period * 0.12 : 4.5, 3.2, 6);
+  const color = isWind ? "#285F7C" : "#1C4E63";
+  const length = isWind ? 54 : 80;
+
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+      <div
+        className="absolute left-1/2 top-1/2 h-[150%] w-[150%]"
+        style={{ transform: `translate(-50%, -50%) rotate(${bearing.toFixed(1)}deg)` }}
+      >
+        {Array.from({ length: count }, (_, i) => (
+          <span
+            key={i}
+            className="swd-wind-streak absolute block rounded-full"
+            style={{
+              left: `${(i * 61.8) % 100}%`,
+              top: `${((i * 37.5 + 12) % 76) + 12}%`,
+              width: isWind ? 2 : 2.4,
+              height: length,
+              background: color,
+              opacity: 0.6,
+              boxShadow: "0 0 4px rgba(74,166,216,0.18)",
+              animationDuration: `${duration}s`,
+              animationDelay: `-${((i / count) * duration).toFixed(2)}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SpotMap({
   spot,
   live = null,
@@ -143,7 +197,9 @@ export default function SpotMap({
 
   return (
     <div data-forecast-utc={reading?.type === "forecast" ? dataScope?.selectedForecast?.utcKey ?? "" : ""} data-observation-type={reading?.type ?? "unavailable"} className={`swd-spot-map relative w-full overflow-hidden ${aspect} aspect-[4/5] ${rounded ? "rounded-3xl" : ""}`}>
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="h-full w-full isolate" />
+
+      <FlowLayer mode={mode} reading={reading} />
 
       {mapError && (
         <div role="status" className="swd-map-error absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
