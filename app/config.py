@@ -211,6 +211,12 @@ class Settings(BaseSettings):
     # Directory where ERA5 raw extracts (Parquet) are stored by the pipeline.
     era5_raw_dir: str = "data/era5_raw"
 
+    # Mounted Global Wind Atlas v3 raster (per-sector Weibull A/k @10 m). Empty
+    # means "not mounted": the GWA sector producer then emits only neutral
+    # factors with a clear status and never invents a speed-up. Never fetched on
+    # a request path.
+    gwa_raster_dir: str | None = None
+
     # Rolling window (weeks) used to smooth the 52-week climatology curve
     # (wrap-around). 1 disables smoothing. 3 = ±1 week.
     climatology_smooth_weeks: int = 3

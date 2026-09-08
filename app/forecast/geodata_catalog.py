@@ -49,8 +49,34 @@ class DatasetDefinition:
 
 COP_DEM_ATTRIBUTION = "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved"
 WORLDCOVER_ATTRIBUTION = "© ESA WorldCover project / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium"
+GWA_ATTRIBUTION = "Global Wind Atlas 3.0, a free, web-based application developed, owned and operated by the Technical University of Denmark (DTU) in partnership with the World Bank Group"
 
 GEODATASETS = {
+    "gwa3-europe": DatasetDefinition(
+        "gwa3-europe",
+        "DTU / World Bank Group",
+        "Global Wind Atlas 3.0",
+        "GWA3-weibull-10m-europe",
+        "3.0",
+        "Europe",
+        250,
+        "EPSG:4326",
+        None,
+        "GeoTIFF",
+        "mounted volume / object storage (GWA_RASTER_DIR)",
+        "https://globalwindatlas.info",
+        "none",
+        "CC BY 4.0",
+        "https://creativecommons.org/licenses/by/4.0/",
+        GWA_ATTRIBUTION,
+        "Per-sector Weibull A/k @10 m (12 sectors); climatological prior only, not a forecast. Ocean cells are NoData.",
+        "2026-09-08",
+        False,
+        "local SHA-256",
+        "ocean cells NoData",
+        ("A", "k"),
+        "per-30-degree-sector A/k rasters gwa3_A_{deg}.tif / gwa3_k_{deg}.tif",
+    ),
     "cop-dem-glo30": DatasetDefinition(
         "cop-dem-glo30",
         "Copernicus Data Space Ecosystem",
