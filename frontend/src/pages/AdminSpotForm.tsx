@@ -878,50 +878,56 @@ export default function AdminSpotForm() {
               {FACILITY_KINDS.map((k) => (
                 <div
                   key={k}
-                  className="rounded-lg border border-admin-border bg-admin-bg p-3 sm:flex sm:items-center sm:gap-3"
+                  data-facility-row={k}
+                  className="rounded-lg border border-admin-border bg-admin-bg p-4"
                 >
-                  <span className="w-40 shrink-0 text-[13.5px] font-medium text-ink">
+                  <span className="block text-[13.5px] font-medium text-ink">
                     {facilityLabel(k)}
                   </span>
-                  <div className="mt-2 grid min-w-0 grid-cols-2 gap-1.5 sm:mt-0 sm:flex">
-                    {(
-                      [
-                        ["yes", "Vorhanden"],
-                        ["no", "Nicht vorhanden"],
-                        ["unknown", "Unbekannt"],
-                      ] as [Availability, string][]
-                    ).map(([st, label]) => (
-                      <Chip
-                        key={st}
-                        active={facilities[k].state === st}
-                        className="min-w-0 justify-center whitespace-normal"
-                        onClick={() => {
-                          markDirty("main");
-                          setFacilities((prev) => ({
-                            ...prev,
-                            [k]: { ...prev[k], state: st },
-                          }));
-                        }}
-                      >
-                        {label}
-                      </Chip>
-                    ))}
+                  <div className="mt-3 grid min-w-0 gap-3">
+                    <div
+                      data-facility-availability={k}
+                      className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3"
+                    >
+                      {(
+                        [
+                          ["yes", "Vorhanden"],
+                          ["no", "Nicht vorhanden"],
+                          ["unknown", "Unbekannt"],
+                        ] as [Availability, string][]
+                      ).map(([st, label]) => (
+                        <Chip
+                          key={st}
+                          active={facilities[k].state === st}
+                          className="inline-flex min-h-11 w-full min-w-0 items-center justify-center whitespace-nowrap px-4"
+                          onClick={() => {
+                            markDirty("main");
+                            setFacilities((prev) => ({
+                              ...prev,
+                              [k]: { ...prev[k], state: st },
+                            }));
+                          }}
+                        >
+                          {label}
+                        </Chip>
+                      ))}
+                    </div>
+                    <input
+                      className={`${inputCls} min-w-0 disabled:cursor-not-allowed disabled:opacity-50`}
+                      value={facilities[k].note}
+                      disabled={facilities[k].state === "unknown"}
+                      onChange={(e) => {
+                        markDirty("main");
+                        setFacilities((prev) => ({
+                          ...prev,
+                          [k]: { ...prev[k], note: e.target.value },
+                        }));
+                      }}
+                      placeholder={
+                        facilities[k].state === "unknown" ? "Notiz (erst bei ja/nein)" : "Notiz (optional)"
+                      }
+                    />
                   </div>
-                  <input
-                    className={`${inputCls} mt-2 sm:mt-0 disabled:cursor-not-allowed disabled:opacity-50`}
-                    value={facilities[k].note}
-                    disabled={facilities[k].state === "unknown"}
-                    onChange={(e) => {
-                      markDirty("main");
-                      setFacilities((prev) => ({
-                        ...prev,
-                        [k]: { ...prev[k], note: e.target.value },
-                      }));
-                    }}
-                    placeholder={
-                      facilities[k].state === "unknown" ? "Notiz (erst bei ja/nein)" : "Notiz (optional)"
-                    }
-                  />
                 </div>
               ))}
             </div>

@@ -211,6 +211,35 @@ test.describe("media picker", () => {
     );
   });
 
+  test("facility status buttons stay large and contain their labels", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+
+    const facilities = page.locator("#f-facilities");
+    const toggle = facilities.getByRole("button", { name: "Facilities" });
+    if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+
+    const buttons = facilities.locator("[data-facility-availability] [role=checkbox]");
+    await expect(buttons).toHaveCount(15);
+    for (const width of [320, 640, 1024, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const button of await buttons.all()) {
+        const dimensions = await button.evaluate((element) => ({
+          height: element.getBoundingClientRect().height,
+          horizontalOverflow: element.scrollWidth - element.clientWidth,
+        }));
+        expect(dimensions.height).toBeGreaterThanOrEqual(44);
+        expect(dimensions.horizontalOverflow).toBeLessThanOrEqual(0);
+      }
+      for (const row of await facilities.locator("[data-facility-row]").all()) {
+        const rowOverflow = await row.evaluate(
+          (element) => element.scrollWidth - element.clientWidth,
+        );
+        expect(rowOverflow, `facility row overflow at ${width}px`).toBeLessThanOrEqual(0);
+      }
+    }
+  });
+
   test("chip → tile → adopt writes a canonical hero and shows it", async ({ page }) => {
     await page.goto(`/admin/spot/${SPOT_ID}/edit`);
 
