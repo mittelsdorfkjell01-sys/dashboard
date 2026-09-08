@@ -2,7 +2,7 @@ from functools import lru_cache
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -216,6 +216,12 @@ class Settings(BaseSettings):
     # factors with a clear status and never invents a speed-up. Never fetched on
     # a request path.
     gwa_raster_dir: str | None = None
+
+    # Per-model-family blend for GWA sector factors, keyed by ModelFamily value
+    # (e.g. {"regional": 0.5}). Missing family = 1.0 (full factor). WP1's
+    # per-family verification dials an overcorrecting family down here with no
+    # code change. Effective factor = 1 + blend * (speed_factor - 1).
+    wind_sector_blend: dict[str, float] = Field(default_factory=dict)
 
     # Rolling window (weeks) used to smooth the 52-week climatology curve
     # (wrap-around). 1 disables smoothing. 3 = ±1 week.

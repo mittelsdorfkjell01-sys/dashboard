@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from app.weather.physics.blend import blended_factor
 from app.weather.physics.coast import coastal_class
 from app.weather.physics.limits import clamp_combined_factor, clamp_direction_change
 from app.weather.physics.manual import select_sector
@@ -32,12 +33,14 @@ def _rotate_uv(u: float, v: float, offset_deg: float) -> tuple[float, float]:
     return u * cos + v * sin, -u * sin + v * cos
 
 
-def apply_local_physics(speed_ms: float, direction_deg: float, profile) -> AppliedWind:
+def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend: float = 1.0) -> AppliedWind:
     """Apply only reviewed sector corrections; missing metadata degrades safely.
 
     Covers both the live and forecast paths (single call site per member). The
     magnitude/offset are applied in u/v space so a later direction rotation
-    needs no restructuring; in phase 1 the offset is 0. Station wind is never
+    needs no restructuring; in phase 1 the offset is 0. ``blend`` (1.0 = full
+    factor) scales the sector factor towards neutral for a member's model family
+    so high-resolution members are not overcorrected. Station wind is never
     involved here.
     """
     if profile is None or not profile.active:
@@ -57,12 +60,15 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile) -> Appli
     component = None
     limited = False
     if sector is not None and reviewed:
-        factor = clamp_combined_factor(sector.speed_factor, advanced)
+        effective = blended_factor(sector.speed_factor, blend)
+        factor = clamp_combined_factor(effective, advanced)
         offset = clamp_direction_change(sector.direction_offset_deg, advanced)
-        limited = factor != sector.speed_factor or offset != sector.direction_offset_deg
+        limited = factor != effective or offset != sector.direction_offset_deg
         component = {
             "component": "gwa_sector",
             "factor": round(factor, 4),
+            "raw_factor": round(sector.speed_factor, 4),
+            "blend": round(blend, 4),
             "offset": round(offset, 3),
             "sector": [sector.start_deg, sector.end_deg],
             "saturated": limited,

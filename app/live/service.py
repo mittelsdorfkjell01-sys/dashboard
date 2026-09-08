@@ -35,7 +35,9 @@ from app.live.models import consensus_models, select_model
 from app.models import Spot, SpotWeatherProfile, WeatherObservation, WeatherStation
 from app.weather.consensus import WindMember, calculate_wind_consensus
 from app.weather.units import WindSpeedUnit, convert_wind_speed
+from app.weather.catalog import family_for
 from app.weather.physics import apply_local_physics
+from app.weather.physics.blend import family_blend
 from app.weather.physics.coast import coastal_class
 from app.weather.vectors import uv_to_wind, wind_to_uv
 from app.weather.profiles import resolve_weather_profile
@@ -283,7 +285,8 @@ def _wind_consensus_at(hourly: dict, models: list[str], idx: int, lead_hours: fl
             calibration = (calibrations or {}).get((model, lead_bucket(lead_hours)))
             if calibration is not None:
                 speed = max(0.0, speed - calibration.bias_ms)
-            corrected = apply_local_physics(speed, direction, profile)
+            blend = family_blend(family_for(model), get_settings().wind_sector_blend)
+            corrected = apply_local_physics(speed, direction, profile, blend=blend)
             gust_factor = corrected.speed_ms / speed if speed > 0 else 1.0
             members.append(WindMember(model, corrected.speed_ms, corrected.direction_deg, gust * gust_factor if gust is not None else None))
     multipliers = {
@@ -362,7 +365,8 @@ def _current_consensus(forecast: dict, models: list[str], profile=None):
         speed, direction = uv_to_wind(u0 + (u1 - u0) * ratio, v0 + (v1 - v0) * ratio)
         if direction is None:
             continue
-        corrected = apply_local_physics(speed, direction, profile)
+        blend = family_blend(family_for(model), get_settings().wind_sector_blend)
+        corrected = apply_local_physics(speed, direction, profile, blend=blend)
         gusts = [_number(_hour_at(hourly, "wind_gusts_10m", model, multi, index)) for index in {left, right}]
         gust = max((value for value in gusts if value is not None), default=None)
         factor = corrected.speed_ms / speed if speed > 0 else 1.0
