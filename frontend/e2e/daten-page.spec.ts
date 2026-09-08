@@ -93,7 +93,7 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
   await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
 });
 
-test("Spot-Karte bleibt rasterfrei und endet ohne weiche Maskenkante", async ({ page }) => {
+test("Spot-Karte bleibt beim Herauszoomen bis an alle Ränder gefüllt", async ({ page }) => {
   let delayReplacementTiles = false;
   await page.route("https://server.arcgisonline.com/**", async (route) => {
     if (delayReplacementTiles) await new Promise((resolve) => setTimeout(resolve, 650));
@@ -132,9 +132,9 @@ test("Spot-Karte bleibt rasterfrei und endet ohne weiche Maskenkante", async ({ 
   const box = await map.locator(".leaflet-container").boundingBox();
   expect(box).not.toBeNull();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  await page.mouse.wheel(0, -120);
+  await page.mouse.wheel(0, 120);
   await page.waitForTimeout(35);
-  await page.mouse.wheel(0, -120);
+  await page.mouse.wheel(0, 120);
   await page.waitForTimeout(80);
 
   const uncoveredSamples = await map.locator(".leaflet-container").evaluate((container) => {
@@ -145,8 +145,8 @@ test("Spot-Karte bleibt rasterfrei und endet ohne weiche Maskenkante", async ({ 
         return getComputedStyle(tile).visibility !== "hidden" && (!level || Number.parseFloat(getComputedStyle(level).opacity) > 0);
       })
       .map((tile) => tile.getBoundingClientRect());
-    const samples = [0.08, 0.3, 0.5, 0.7, 0.92].flatMap((x) =>
-      [0.1, 0.5, 0.9].map((y) => ({
+    const samples = [0.01, 0.25, 0.5, 0.75, 0.99].flatMap((x) =>
+      [0.01, 0.5, 0.99].map((y) => ({
         x: mapRect.left + mapRect.width * x,
         y: mapRect.top + mapRect.height * y,
       })),

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../map.css";
@@ -23,8 +23,12 @@ const PIN_SVG = `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://w
 
 /** Interaction handlers toggled by the click-to-activate flow. */
 function interactionHandlers(map: L.Map) {
-  return [map.dragging, map.scrollWheelZoom, map.doubleClickZoom, map.touchZoom, map.keyboard, map.boxZoom];
+  return [map.dragging, map.doubleClickZoom, map.touchZoom, map.keyboard, map.boxZoom];
 }
+
+type BufferedTileLayer = L.TileLayer & {
+  _getTiledPixelBounds(center: L.LatLng): L.Bounds;
+};
 
 /**
  * "Lage" — Leaflet locator map on keyless Esri aerial imagery (Figma Frame_9),
@@ -37,6 +41,10 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   const link = mapLinkProps(lat, lng);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const zoomTransitionRef = useRef(false);
+  const pendingZoomDeltaRef = useRef(0);
+  const zoomReleaseTimerRef = useRef(0);
   const [active, setActive] = useState(false);
   const [ready, setReady] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
@@ -54,15 +62,14 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         zoomControl: false,
         attributionControl: false,
         fadeAnimation: false,
-        // Quarter-step wheel zoom feels continuous without introducing a
-        // second animation system on top of Leaflet's native transform.
+        // Native half-step transitions keep controls precise while quarter
+        // snapping prevents layout or fitted views from jumping to integers.
         zoomAnimation: true,
         zoomSnap: 0.25,
         zoomDelta: 0.5,
-        wheelPxPerZoomLevel: 120,
-        wheelDebounceTime: 20,
+        scrollWheelZoom: false,
       });
-      L.tileLayer(AERIAL_TILE_URL, {
+      const tileLayer = L.tileLayer(AERIAL_TILE_URL, {
         attribution: AERIAL_ATTRIBUTION,
         maxZoom: 19,
         detectRetina: false,
@@ -76,7 +83,16 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         // Retain an extra off-screen ring so short pans do not reveal the map
         // background before the next network response arrives.
         keepBuffer: 6,
-      }).addTo(map);
+      }) as BufferedTileLayer;
+      // Leaflet normally requests exactly the visible rectangle. A half-step
+      // zoom-out makes that old rectangle 29% smaller before the next level is
+      // ready, exposing the map background at the edges. Preload a 25% ring
+      // around the viewport so the current imagery still covers the full
+      // frame throughout that transition.
+      const visiblePixelBounds = tileLayer._getTiledPixelBounds.bind(tileLayer);
+      tileLayer._getTiledPixelBounds = (center) => visiblePixelBounds(center).pad(0.25);
+      tileLayer.addTo(map);
+      tileLayerRef.current = tileLayer;
     } catch (error) {
       console.error("Unable to initialise locator map:", error);
       setUnavailable(true);
@@ -102,10 +118,49 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     return () => {
       resizeObserver.disconnect();
       cancelAnimationFrame(resizeFrame);
+      window.clearTimeout(zoomReleaseTimerRef.current);
       map.remove();
       mapRef.current = null;
+      tileLayerRef.current = null;
+      zoomTransitionRef.current = false;
+      pendingZoomDeltaRef.current = 0;
     };
   }, [lat, lng]);
+
+  const requestZoom = useCallback((delta: number) => {
+    const map = mapRef.current;
+    const tileLayer = tileLayerRef.current;
+    if (!map || !tileLayer) return;
+    if (zoomTransitionRef.current) {
+      pendingZoomDeltaRef.current = delta;
+      return;
+    }
+    const target = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta));
+    if (target === map.getZoom()) return;
+
+    zoomTransitionRef.current = true;
+    const release = (continueQueuedZoom: boolean) => {
+      window.clearTimeout(zoomReleaseTimerRef.current);
+      tileLayer.off("load", finishLoadedTiles);
+      zoomTransitionRef.current = false;
+      const queuedDelta = pendingZoomDeltaRef.current;
+      pendingZoomDeltaRef.current = 0;
+      if (continueQueuedZoom && queuedDelta !== 0) requestAnimationFrame(() => requestZoom(queuedDelta));
+    };
+    const finishLoadedTiles = () => release(true);
+    const waitForTiles = () => {
+      if (tileLayer.isLoading()) {
+        tileLayer.once("load", finishLoadedTiles);
+        // A provider failure must release the interaction lock, but must not
+        // advance into another unloaded level.
+        zoomReleaseTimerRef.current = window.setTimeout(() => release(false), 1800);
+      } else {
+        release(true);
+      }
+    };
+    map.once("zoomend", waitForTiles);
+    map.setZoom(target, { animate: true });
+  }, []);
 
   // Enable/disable interaction to match the active state.
   useEffect(() => {
@@ -116,6 +171,21 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       else h.disable();
     }
   }, [active, ready]);
+
+  // Handle one bounded half-step per wheel gesture. Serialising the next
+  // request until the replacement tiles are ready prevents rapid trackpad
+  // input from outrunning the image network and exposing blank map edges.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !active || !ready) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.deltaY === 0) return;
+      requestZoom(event.deltaY < 0 ? 0.5 : -0.5);
+    };
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, [active, ready, requestZoom]);
 
   // While active, a plain click (not a drag) locks the map again.
   useEffect(() => {
@@ -171,7 +241,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           <button
             type="button"
             aria-label="Vergrößern"
-            onClick={() => mapRef.current?.zoomIn()}
+            onClick={() => requestZoom(0.5)}
             className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
           >
             <ControlGlyph plus />
@@ -179,7 +249,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
           <button
             type="button"
             aria-label="Verkleinern"
-            onClick={() => mapRef.current?.zoomOut()}
+            onClick={() => requestZoom(-0.5)}
             className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
           >
             <ControlGlyph />
