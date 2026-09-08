@@ -937,7 +937,7 @@ def spot_verification_scores(
                 "sector_deg": [r.direction_sector * 30, r.direction_sector * 30 + 30],
                 "sample_count": r.sample_count, "bias_ms": r.bias_ms,
                 "mae_ms": r.mae_ms, "rmse_ms": r.rmse_ms,
-                "direction_mae_deg": r.direction_mae_deg,
+                "direction_mae_deg": r.direction_mae_deg, "gust_mae_ms": r.gust_mae_ms,
             }
             for r in rows
         ],

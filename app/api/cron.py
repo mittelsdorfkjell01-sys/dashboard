@@ -152,29 +152,45 @@ def maintain_climatology(
     return result
 
 
-@router.post(
-    "/weather-observations",
-    dependencies=[Depends(_require_cron)],
-    status_code=status.HTTP_202_ACCEPTED,
-)
-def collect_weather_observations(db: Session = Depends(get_db)) -> dict:
-    """Import a bounded batch of station observations, then rescore the raw forecast.
+@router.get("/observations", dependencies=[Depends(_require_cron)])
+def collect_observations(db: Session = Depends(get_db)) -> dict:
+    """Import a bounded batch of due station observations (validation only).
 
-    Observations are stored for validation only and never enter a forecast value.
-    Each stage is isolated so a provider outage cannot fail the scoring pass.
+    Observations are stored for verification/calibration and never enter a
+    forecast value. Idempotent through the observation uniqueness constraint;
+    repeated cron invocations drain the active-station catalogue.
     """
     settings = get_settings()
-    result: dict = {}
     try:
         from app.weather.observation_worker import run_observation_import
 
-        result["observations"] = run_observation_import(
+        return run_observation_import(
             db, limit=settings.weather_observation_cron_batch_size, dry_run=False
         )
     except Exception:
         db.rollback()
         logger.exception("cron_observation_import_failed")
-        result["observations"] = {"error": "internal_error"}
+        return {"error": "internal_error"}
+
+
+@router.get("/verification", dependencies=[Depends(_require_cron)])
+def run_verification(db: Session = Depends(get_db)) -> dict:
+    """Refresh model calibration stats and the raw-forecast verification scores.
+
+    Calibration recompute keeps the existing holdout activation gate (decisions
+    land as ``pending_review``; no second gate is introduced). Scoring and
+    calibration are isolated so one failure cannot mask the other.
+    """
+    settings = get_settings()
+    result: dict = {}
+    try:
+        from app.weather.verification import recompute_calibrations
+
+        result["calibrations_updated"] = recompute_calibrations(db, lookback_days=90)
+    except Exception:
+        db.rollback()
+        logger.exception("cron_recompute_calibrations_failed")
+        result["calibrations_updated"] = {"error": "internal_error"}
     try:
         from app.weather.verification import run_verification_scoring
 

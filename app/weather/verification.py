@@ -30,11 +30,11 @@ CALIBRATION_DECISION_VERSION = "holdout-v1"
 
 
 def lead_bucket(hours: float) -> str:
-    if hours <= 24:
-        return "0-24h"
-    if hours <= 72:
-        return "24-72h"
-    return "72-240h"
+    if hours <= 48:
+        return "0-48h"
+    if hours <= 120:
+        return "49-120h"
+    return "121-240h"
 
 
 # Twelve canonical 30-degree sectors aligned to the Global Wind Atlas bins so the
@@ -321,7 +321,7 @@ def _score_predictions(predictions: list[dict], observations: list, *, tolerance
             "model_id": model_id, "lead_bucket": bucket, "direction_sector": sector,
             "sample_count": metrics.sample_count, "bias_ms": metrics.wind_bias_ms,
             "mae_ms": metrics.wind_mae_ms, "rmse_ms": metrics.wind_rmse_ms,
-            "direction_mae_deg": metrics.direction_mae_deg,
+            "direction_mae_deg": metrics.direction_mae_deg, "gust_mae_ms": metrics.gust_mae_ms,
         })
     return records
 
@@ -385,6 +385,7 @@ def persist_verification_scores(db, run_id, spot_id, records, *, variant: str = 
         "lead_bucket": r["lead_bucket"], "direction_sector": r["direction_sector"],
         "sample_count": r["sample_count"], "bias_ms": r["bias_ms"], "mae_ms": r["mae_ms"],
         "rmse_ms": r["rmse_ms"], "direction_mae_deg": r["direction_mae_deg"],
+        "gust_mae_ms": r["gust_mae_ms"],
         "window_start": window_start, "window_end": window_end, "computed_at": computed_at,
     } for r in records]
     excluded = insert(ForecastVerificationScore).excluded
@@ -392,7 +393,7 @@ def persist_verification_scores(db, run_id, spot_id, records, *, variant: str = 
         constraint="uq_forecast_verification_score",
         set_={"sample_count": excluded.sample_count, "bias_ms": excluded.bias_ms,
               "mae_ms": excluded.mae_ms, "rmse_ms": excluded.rmse_ms,
-              "direction_mae_deg": excluded.direction_mae_deg,
+              "direction_mae_deg": excluded.direction_mae_deg, "gust_mae_ms": excluded.gust_mae_ms,
               "window_start": excluded.window_start, "window_end": excluded.window_end,
               "computed_at": excluded.computed_at},
     )

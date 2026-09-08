@@ -42,9 +42,9 @@ def test_direction_sector_bins_into_twelve_thirty_degree_slices():
     assert direction_sector(360) == 0  # wraps
 
 
-def test_lead_buckets_follow_the_wp1_boundaries():
-    assert [lead_bucket(h) for h in (0, 24, 25, 72, 73, 240)] == [
-        "0-24h", "0-24h", "24-72h", "24-72h", "72-240h", "72-240h"
+def test_lead_buckets_follow_the_authoritative_boundaries():
+    assert [lead_bucket(h) for h in (0, 48, 49, 120, 121, 240)] == [
+        "0-48h", "0-48h", "49-120h", "49-120h", "121-240h", "121-240h"
     ]
 
 
@@ -102,13 +102,13 @@ def test_score_predictions_groups_by_model_bucket_sector_with_symmetric_bias():
     ]
     records = {(r["model_id"], r["lead_bucket"], r["direction_sector"]): r
                for r in _score_predictions(predictions, observations, tolerance_s=1200)}
-    sector3 = records[("a", "0-24h", 3)]
+    sector3 = records[("a", "0-48h", 3)]
     assert sector3["sample_count"] == 2
     assert sector3["bias_ms"] == 0.0
     assert sector3["mae_ms"] == 2.0
     assert sector3["rmse_ms"] == 2.0
     assert sector3["direction_mae_deg"] == 0.0
-    assert ("a", "0-24h", 6) in records  # a second sector is grouped apart
+    assert ("a", "0-48h", 6) in records  # a second sector is grouped apart
 
 
 def test_score_predictions_drops_matches_outside_tolerance():
@@ -181,10 +181,11 @@ def test_scoring_end_to_end_persists_bucketed_scores_and_is_idempotent(db, score
     by_model = {r.model_id: r for r in rows}
     assert set(by_model) == {"icon", "consensus"}
     icon = by_model["icon"]
-    assert icon.lead_bucket == "0-24h"
+    assert icon.lead_bucket == "0-48h"
     assert icon.direction_sector == 4  # 120 // 30
     assert icon.bias_ms == 2.0
     assert icon.mae_ms == 2.0
+    assert icon.gust_mae_ms == 2.0  # |13 - 11|
 
     # Re-running the same run id upserts in place rather than duplicating.
     run_verification_scoring(db, spot_ids=[spot.id], run_id=run_id, lookback_days=30)
@@ -202,6 +203,23 @@ def test_scoring_skips_a_spot_whose_station_is_not_approved(db, scored_spot):
                                  valid_at=valid, lead_hours=5, wind_speed_ms=11.0, wind_direction_deg=120.0))
     db.commit()
     assert score_spot_forecasts(db, spot.id, lookback_days=30) == []
+
+
+def test_cron_endpoints_are_guarded_and_leak_no_secret(anon_client, monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "cron_secret", "wp1-test-secret")
+    # Wrong verb, missing auth and wrong secret are all rejected on both endpoints.
+    assert anon_client.post("/cron/observations").status_code == 405
+    assert anon_client.get("/cron/observations").status_code == 401
+    assert anon_client.get("/cron/verification").status_code == 401
+    assert anon_client.get("/cron/observations", headers={"Authorization": "Bearer nope"}).status_code == 401
+    ok_headers = {"Authorization": "Bearer wp1-test-secret"}
+    observations = anon_client.get("/cron/observations", headers=ok_headers)
+    verification = anon_client.get("/cron/verification", headers=ok_headers)
+    assert observations.status_code == 200 and verification.status_code == 200
+    assert observations.json()["dry_run"] is False  # cron always imports for real
+    assert "secret" not in (observations.text + verification.text).lower()
 
 
 def test_observation_import_is_idempotent(db, scored_spot):

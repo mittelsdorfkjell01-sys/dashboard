@@ -133,6 +133,7 @@ class ForecastVerificationScore(Base):
     mae_ms: Mapped[float] = mapped_column(Float, nullable=False)
     rmse_ms: Mapped[float] = mapped_column(Float, nullable=False)
     direction_mae_deg: Mapped[float | None] = mapped_column(Float)
+    gust_mae_ms: Mapped[float | None] = mapped_column(Float)
     window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
