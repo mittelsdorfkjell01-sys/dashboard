@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import type { CommunityImage } from "../src/lib/api";
 
 // Regression coverage for the rebuilt Daten page (Figma Frame 67): the dark
 // instrument composition — meteogram, today summary + 10-day outlook, map +
@@ -39,20 +40,58 @@ const hourly = forecastDates.map((date, day) => ({
 }));
 const forecast = { spot_id: "test", model: "consensus", product: "Surfwinddata Forecast", generated_at: "2026-09-05T08:00:00Z", updated_at: "2026-09-05T08:00:00Z", timezone: "Europe/Berlin", stale: false, availability: { atmosphere: "available", solar: "available", marine: "available" }, days: hourly };
 
-async function mockApi(page: Page) {
+async function mockApi(page: Page, photos: CommunityImage[] = []) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path.startsWith("/media/gallery-")) {
+      return route.fulfill({
+        contentType: "image/svg+xml",
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#397488"/></svg>',
+      });
+    }
     if (["/spots/test", "/spots/laboe", "/spots/Alcyons"].includes(path)) return route.fulfill({ json: spot });
     if (path === "/regions/r1") return route.fulfill({ json: { id: "r1", slug: "kieler-bucht", name: "Kieler Bucht", country: "DE", center: null, description: null, image: null, season: null, defaults: null, status: "published", updated_at: "2026-08-24T00:00:00Z" } });
     if (path === "/spots/test/forecast") return route.fulfill({ json: forecast });
     if (path === "/spots/test/live") return route.fulfill({ json: { spot_id: "test", model: "consensus", time: "2026-08-24T12:00:00Z", current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250, coastal_normal_deg: 180, coastal_classification: "cross_onshore" } } });
     if (path === "/spots/test/tides") return route.fulfill({ status: 404, json: { detail: "none" } });
     if (path === "/spots/test/ratings") return route.fulfill({ json: { items: [], aggregate: { count: 0, average: null } } });
-    if (path === "/spots/test/tips" || path === "/spots/test/images") return route.fulfill({ json: [] });
+    if (path === "/spots/test/tips") return route.fulfill({ json: [] });
+    if (path === "/spots/test/images") return route.fulfill({ json: { items: photos } });
     if (path.startsWith("/spots/test/wind-climatology")) return route.fulfill({ status: 404, json: { detail: "none" } });
     return route.fulfill({ status: 404, json: { detail: `mock missing: ${path}` } });
   });
 }
+
+test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-Frame bereit", async ({ page }) => {
+  const photos: CommunityImage[] = [1, 2].map((id) => ({
+    id: `gallery-${id}`,
+    url: `/media/gallery-${id}.svg`,
+    kind: "gallery",
+    width: 800,
+    height: 600,
+    credit: null,
+    created_at: "2026-09-08T12:00:00Z",
+    source: "community",
+    license_name: null,
+    license_url: null,
+    source_url: null,
+  }));
+  const requested = new Set<string>();
+  page.on("request", (request) => {
+    if (request.url().includes("/media/gallery-")) requested.add(request.url());
+  });
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  await mockApi(page, photos);
+  await page.goto("/spot/test/info");
+  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+  await expect.poll(() => requested.size).toBe(2);
+  await expect(page.locator(".spot-media-frame img")).toHaveJSProperty("complete", true);
+
+  await page.getByRole("button", { name: "Fotogalerie öffnen" }).click();
+  await expect(page.getByRole("heading", { name: "Fotogalerie" })).toBeVisible();
+  await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
+});
 
 test("Daten-Seite zeigt Meteogramm, Ausblick und Livewind", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });

@@ -1,7 +1,7 @@
-import { useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { resolveMediaUrl, type CommunityImage } from "../lib/api";
 import { ChevronLeftIcon, ChevronRightIcon } from "../lib/icons";
-import { responsiveImageAttributes } from "../lib/heroSource";
+import { preloadResponsiveImage, responsiveImageAttributes } from "../lib/heroSource";
 
 /**
  * The Info tab's portrait gallery tile (Figma Frame_9). A single big image
@@ -23,6 +23,16 @@ export default function SpotGalleryTile({
   const photo = photos[index];
   const go = (delta: number) => setIndex((i) => (i + delta + photos.length) % photos.length);
 
+  useEffect(() => {
+    for (const candidate of photos) {
+      preloadResponsiveImage(
+        resolveMediaUrl(candidate.url),
+        candidate.width,
+        "(max-width: 639px) 50vw, 33vw",
+      );
+    }
+  }, [photos]);
+
   return (
     <div className="spot-media-frame relative aspect-[3/4] overflow-hidden bg-band sm:aspect-[4/3] lg:aspect-auto">
       {photo && (
@@ -35,7 +45,7 @@ export default function SpotGalleryTile({
           )}
           alt={photo.credit ?? ""}
           className="h-full w-full object-cover object-center"
-          loading="lazy"
+          loading="eager"
           decoding="async"
         />
       )}

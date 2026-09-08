@@ -120,7 +120,12 @@ export default function PhotoGalleryOverlay({
 /** Measures a container's content width, kept in sync via ResizeObserver. */
 function useContainerWidth<T extends HTMLElement>(): [RefObject<T>, number] {
   const ref = useRef<T>(null);
-  const [width, setWidth] = useState(0);
+  const [width, setWidth] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return window.innerWidth < 640
+      ? Math.max(0, window.innerWidth - 40)
+      : Math.max(0, Math.min(window.innerWidth - 32, 1570) - 66);
+  });
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -172,7 +177,7 @@ function JustifiedGallery({
                   )}
                   alt={tile.photo.credit ?? ""}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                 />
               </button>

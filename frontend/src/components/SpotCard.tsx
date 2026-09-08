@@ -29,12 +29,15 @@ export default function SpotCard({
   compact = false,
   mapRail = false,
   live,
+  eager = true,
 }: {
   spot: Spot;
   compact?: boolean;
   /** Public /map rail: compact image card with its factual region line. */
   mapRail?: boolean;
   live?: LiveConditionsRead;
+  /** Start the image request immediately once this card is mounted. */
+  eager?: boolean;
 }) {
   const sports = (spot.sports ?? []).map(sportLabel).join(" · ");
   const regionLine = [spot.regionName, countryName(spot.regionCountry ?? undefined)]
@@ -53,7 +56,7 @@ export default function SpotCard({
   return (
     <Link
       to={spotPath(spot)}
-      className="swd-mobile-deferred-card group flex h-full flex-col rounded-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className="group flex h-full flex-col rounded-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
       <div className={`relative overflow-hidden rounded-[14px] ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>
         <SpotImage
@@ -63,6 +66,7 @@ export default function SpotCard({
           width={spot.heroWidth}
           focal={spot.heroFocal}
           rotation={spot.heroRotation}
+          eager={eager}
           compact
         />
       </div>

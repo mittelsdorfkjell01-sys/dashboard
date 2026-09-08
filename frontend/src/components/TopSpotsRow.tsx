@@ -62,12 +62,8 @@ export default function TopSpotsRow() {
 
   return (
     <div className={GRID}>
-      {top.map((spot, i) => (
-        <div
-          key={spot.id}
-          className="animate-fade-up"
-          style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
-        >
+      {top.map((spot) => (
+        <div key={spot.id}>
           <SpotCard spot={spot} live={live?.get(spot.id)} />
         </div>
       ))}

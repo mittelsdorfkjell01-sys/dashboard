@@ -57,4 +57,10 @@ describe("RegionTile", () => {
     expect(html).toContain("aspect-video");
     expect(html).toContain("rounded-[14px]");
   });
+
+  it("loads a known tile image immediately without deferred rendering", () => {
+    const html = render({ image: "/media/tarifa.jpg" });
+    expect(html).toContain('loading="eager"');
+    expect(html).not.toContain("swd-mobile-deferred-card");
+  });
 });

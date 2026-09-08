@@ -15,6 +15,7 @@ export default function SpotImage({
   width,
   focal,
   rotation = 0,
+  eager = true,
 }: {
   src?: string;
   name: string;
@@ -23,6 +24,8 @@ export default function SpotImage({
   width?: number | null;
   focal?: { x: number; y: number } | null;
   rotation?: number;
+  /** Immediately fetch mounted browse cards; large expanded catalogues may opt out below the initial set. */
+  eager?: boolean;
   /** Smaller type for tight cards (map popup / strip). */
   compact?: boolean;
 }) {
@@ -36,7 +39,7 @@ export default function SpotImage({
         srcSet={srcSet}
         sizes={srcSet ? "(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 20vw" : undefined}
         alt={name}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
         decoding="async"
         className={`h-full w-full object-cover ${className}`}
         style={{

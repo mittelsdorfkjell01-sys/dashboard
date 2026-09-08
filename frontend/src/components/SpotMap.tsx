@@ -145,6 +145,7 @@ export default function SpotMap({
         maxZoom: 16,
         zoomControl: false,
         attributionControl: false,
+        fadeAnimation: false,
         // Static preview: no interaction at all.
         dragging: false,
         scrollWheelZoom: false,
@@ -153,7 +154,16 @@ export default function SpotMap({
         keyboard: false,
         boxZoom: false,
       });
-      L.tileLayer(TILE_URL, { subdomains: "a", attribution: TILE_ATTRIBUTION, maxZoom: 20, detectRetina: false }).addTo(map);
+      L.tileLayer(TILE_URL, {
+        subdomains: "a",
+        attribution: TILE_ATTRIBUTION,
+        maxZoom: 20,
+        detectRetina: false,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
+        updateInterval: 120,
+        keepBuffer: 4,
+      }).addTo(map);
     } catch (err) {
       console.error("Spot map: failed to construct Leaflet map", err);
       setMapError(true);

@@ -214,9 +214,7 @@
   --sw-green: #4A8159;
 }
 
-/* Controls — 40px desktop / 44px touch, warm floating surface, no blur.
-   Two independent floating stacks: `-left` (back + zoom) and the plain
-   `.swd-map-controls` (list), mirrored left/right at the same top offset. */
+/* Controls — two independent stacks mirrored at the same top offset. */
 .swd-map-controls,
 .swd-map-controls-left {
   top: max(20px, env(safe-area-inset-top));
@@ -242,35 +240,24 @@
 }
 .swd-map-control:hover { color: var(--map-selection); }
 .swd-map-control:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
-.swd-map-control-group {
-  border: 1px solid var(--map-line);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
-  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
-}
-.swd-map-control-stacked { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
-
-/* Back — filled/primary so it still reads as the main way off the page, but
-   sized the same as the other floating controls (40px / 44px touch), not
-   bigger (2026-08-23 feedback: it looked oversized next to zoom/list). */
-.swd-map-back {
+/* Back and zoom mirror the Spot-Info map: only their glyphs are visible. The
+   invisible 44px target remains comfortably tappable and a restrained light
+   drop-shadow keeps the dark strokes legible over labels and coastlines. */
+.swd-map-bare-control {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 0;
-  border-radius: 12px;
-  background: var(--sw-teal);
-  color: #fff;
-  box-shadow: 0 3px 10px rgb(15 25 25 / 18%);
-  transition: background-color 160ms ease-out, transform 160ms ease-out;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--map-spot);
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 95%)) drop-shadow(0 1px 3px rgb(15 25 25 / 16%));
+  transition: color 140ms ease-out, opacity 140ms ease-out;
 }
-@media (pointer: coarse) {
-  .swd-map-back { width: 44px; height: 44px; }
-}
-.swd-map-back:hover { background: var(--sw-teal-hover); }
-.swd-map-back:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 2px; }
+.swd-map-bare-control:hover { color: var(--map-selection); }
+.swd-map-bare-control:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 0; }
 
 /* Bare close control (results tiles / chart panel) — intentionally no
    border, shadow or fill; the larger tap target is invisible padding,
@@ -583,5 +570,5 @@
   .swd-public-map .leaflet-bottom.leaflet-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .swd-map-a11y-marker::after, .swd-map-control, .swd-map-back, .swd-map-plain-close { transition-duration: 1ms; }
+  .swd-map-a11y-marker::after, .swd-map-control, .swd-map-bare-control, .swd-map-plain-close { transition-duration: 1ms; }
 }

@@ -97,6 +97,31 @@ export function responsiveImageAttributes(
   return { src: url, srcSet, sizes: srcSet ? sizes : undefined };
 }
 
+const preloadedResponsiveImages = new Set<string>();
+
+/**
+ * Starts fetching and decoding a responsive image as soon as its URL is known.
+ * This is used for gallery photos that otherwise would not exist in the DOM
+ * until the overlay is opened.
+ */
+export function preloadResponsiveImage(
+  url: string | undefined,
+  width: number | null | undefined,
+  sizes: string,
+): void {
+  if (!url || typeof Image === "undefined") return;
+  const attributes = responsiveImageAttributes(url, width, sizes);
+  const key = `${attributes.src ?? url}|${attributes.srcSet ?? ""}|${attributes.sizes ?? ""}`;
+  if (preloadedResponsiveImages.has(key)) return;
+  preloadedResponsiveImages.add(key);
+
+  const image = new Image();
+  if (attributes.sizes) image.sizes = attributes.sizes;
+  if (attributes.srcSet) image.srcset = attributes.srcSet;
+  image.src = attributes.src ?? url;
+  void image.decode?.().catch(() => undefined);
+}
+
 /** Focal point → CSS object-position. Percentages, as stored. */
 export function objectPosition(focal?: { x: number; y: number } | null): string | undefined {
   if (!focal) return undefined;

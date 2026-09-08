@@ -162,15 +162,6 @@ html[data-theme="dark"] { color-scheme: dark; }
     overflow: hidden;
   }
 
-  /* Skip layout/paint work for off-screen catalogue cards on touch screens.
-     The intrinsic block size keeps the scroll range stable until measured. */
-  @media (pointer: coarse) and (hover: none) {
-    .swd-mobile-deferred-card {
-      content-visibility: auto;
-      contain-intrinsic-block-size: auto 180px;
-    }
-  }
-
   /* Uppercase field labels: WO? / WANN? */
   .label-caps {
     @apply text-[12px] font-medium tracking-[0.18em] text-ink-soft uppercase;
@@ -372,27 +363,6 @@ html[data-theme="dark"] { color-scheme: dark; }
   }
   to {
     opacity: 1;
-  }
-}
-
-/* Staggered entrance for the top-spots tiles (respect reduced-motion below). */
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-fade-up {
-  animation: fade-up 0.5s ease-out both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-up {
-    animation: none;
   }
 }
 

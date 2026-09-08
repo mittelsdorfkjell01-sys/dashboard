@@ -74,8 +74,8 @@ function SpotRow({
         {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
       </div>
       <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-3">
-        {spots.map((spot, i) => (
-          <div key={spot.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+        {spots.map((spot) => (
+          <div key={spot.id}>
             <SpotCard spot={spot} live={live?.get(spot.id)} />
           </div>
         ))}
@@ -103,7 +103,7 @@ function RegionRow({
       </div>
       <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-2">
         {regions.map((r, i) => (
-          <div key={r.slug || i} className="animate-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+          <div key={r.slug || i}>
             <RegionTile slug={r.slug} name={r.name} country={r.country} image={r.image} spotCount={r.spotCount} sports={r.sports} />
           </div>
         ))}

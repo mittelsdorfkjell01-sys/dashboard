@@ -10,7 +10,10 @@ const spots = [
   { id: "00000000-0000-4000-8000-000000000002", slug: "spot-b", name: "Spot B", region_id: null, region_name: "Region B", region_country: "FR", location: { lat: 43, lon: 6 }, sports: ["surf"], image: null, facing: null, water_type: [], bottom_type: [], level: [], water_character: [], style: [], facilities: null, best_months: null, typical_wind_kt: 12, typical_wave_height_m: null },
 ];
 
-async function mockBackend(page: import("@playwright/test").Page) {
+async function mockBackend(
+  page: import("@playwright/test").Page,
+  onTileRequest?: (url: URL) => void,
+) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/spots") return route.fulfill({ json: spots });
@@ -19,9 +22,10 @@ async function mockBackend(page: import("@playwright/test").Page) {
     if (url.pathname === "/auth/me") return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     return route.fulfill({ json: [] });
   });
-  await page.route(/https:\/\/[a-d]\.basemaps\.cartocdn\.com\/.*\.png(?:\?.*)?$/, (route) =>
-    route.fulfill({ body: TRANSPARENT_PNG, contentType: "image/png" }),
-  );
+  await page.route(/https:\/\/[a-d]\.basemaps\.cartocdn\.com\/.*\.png(?:\?.*)?$/, (route) => {
+    onTileRequest?.(new URL(route.request().url()));
+    return route.fulfill({ body: TRANSPARENT_PNG, contentType: "image/png" });
+  });
 }
 
 test("map loads Leaflet layout and renders spots as accessible markers", async ({ page }) => {
@@ -45,6 +49,49 @@ test("map loads Leaflet layout and renders spots as accessible markers", async (
   await attribution.click();
   await expect(page.getByRole("complementary", { name: "Kartenquellen" })).toContainText("CARTO");
   expect(consoleErrors).toEqual([]);
+});
+
+test("back and zoom controls stay above the tiles and use bare map glyphs", async ({ page }) => {
+  await mockBackend(page);
+  await page.goto("/map");
+  await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
+
+  const back = page.getByRole("button", { name: "Zurück" });
+  const zoomIn = page.getByRole("button", { name: "Vergrößern" });
+  const zoomOut = page.getByRole("button", { name: "Verkleinern" });
+  for (const control of [back, zoomIn, zoomOut]) {
+    await expect(control).toBeVisible();
+    await expect(control).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(control).toHaveCSS("border-top-width", "0px");
+    expect(await control.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)?.closest("button") === element;
+    })).toBe(true);
+  }
+
+  const before = Number(new URL(page.url()).searchParams.get("z"));
+  await zoomIn.click();
+  await expect.poll(() => Number(new URL(page.url()).searchParams.get("z"))).toBeGreaterThan(before);
+  await zoomOut.click();
+  await expect(zoomIn).toBeVisible();
+  await expect(zoomOut).toBeVisible();
+});
+
+test("the initial overview requests only its final fitted tile zoom", async ({ page }) => {
+  const tileZooms: number[] = [];
+  await mockBackend(page, (url) => {
+    const match = url.pathname.match(/\/(\d+)\/-?\d+\/-?\d+\.png$/);
+    if (match) tileZooms.push(Number(match[1]));
+  });
+
+  await page.goto("/map");
+  await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
+  await expect.poll(() => tileZooms.length).toBeGreaterThan(0);
+
+  // A provisional world zoom followed by fitBounds used to request two full
+  // tile sets here. The catalogue-aware initialisation must start directly at
+  // the final fitted level.
+  expect(new Set(tileZooms).size).toBe(1);
 });
 
 test("the map stays on its light palette and keeps its markers regardless of the site's dark mode (2026-08-22 feedback)", async ({ page }) => {

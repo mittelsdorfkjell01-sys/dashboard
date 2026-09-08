@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import LandingHeader from "../components/LandingHeader";
 import LandingHero from "../components/LandingHero";
 import MobileSearchTrigger from "../components/MobileSearchTrigger";
@@ -7,11 +7,13 @@ import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
 import { useSpots } from "../lib/hooks";
+import { getSpotCatalogVersion } from "../lib/api";
 import { MapIcon } from "../lib/icons";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 
 const SearchBar = lazy(() => import("../components/SearchBar"));
 const MobileSearchSheet = lazy(() => import("../components/MobileSearchSheet"));
+const CATALOG_POLL_MS = 60_000;
 
 /**
  * "surfwind data" landing. Two parts that flow into each other on scroll:
@@ -34,18 +36,80 @@ export default function Landing() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileSearchLoaded, setMobileSearchLoaded] = useState(false);
   const mobileSearchTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const knownCatalogVersion = useRef<string>();
+  const [catalogVersion, setCatalogVersion] = useState<string>();
+  const [catalogReady, setCatalogReady] = useState(false);
   const desktopSearch = useDesktopViewport();
   const openSearch = (trigger: HTMLButtonElement) => {
     mobileSearchTriggerRef.current = trigger;
     setMobileSearchLoaded(true);
     setSearchOpen(true);
   };
-  // Fetch the lightweight catalogue once. Changing the request key from 20 to
-  // 100 used to temporarily unmount the entire grid while the second request
-  // ran; the page height collapsed and clamped the visitor's scroll position
-  // toward the top. Card images are still mounted only as they become visible
-  // and remain native lazy-loaded, so this does not eagerly download 100 photos.
-  const { data: allSpots, loading: spotsLoading } = useSpots({ limit: 100 });
+  // Hero curation is editorial state, so the seven-day persisted catalogue and
+  // the unversioned edge response must not decide which photos rotate. Resolve
+  // the current catalogue version first and keep checking it while the landing
+  // page is open. A changed hero_reel flag updates Spot.updated_at, producing a
+  // new immutable request URL and replacing the reel without a hard refresh.
+  useEffect(() => {
+    let cancelled = false;
+    let timer: number | undefined;
+    let versionRequest: Promise<void> | null = null;
+
+    const checkVersion = async () => {
+      if (document.visibilityState === "hidden" || versionRequest) return versionRequest;
+      versionRequest = (async () => {
+        try {
+          const { version } = await getSpotCatalogVersion();
+          if (!cancelled && version !== knownCatalogVersion.current) {
+            knownCatalogVersion.current = version;
+            setCatalogVersion(version);
+          }
+        } catch {
+          // If the lightweight version lookup alone fails, still try the list
+          // through a unique URL instead of reviving a stale persisted reel.
+          if (!cancelled && !knownCatalogVersion.current) {
+            const fallbackVersion = `landing-${Date.now()}`;
+            knownCatalogVersion.current = fallbackVersion;
+            setCatalogVersion(fallbackVersion);
+          }
+        } finally {
+          if (!cancelled) setCatalogReady(true);
+          versionRequest = null;
+        }
+      })();
+      return versionRequest;
+    };
+
+    const schedule = () => {
+      if (cancelled) return;
+      timer = window.setTimeout(async () => {
+        await checkVersion();
+        schedule();
+      }, CATALOG_POLL_MS);
+    };
+    const refreshNow = () => {
+      if (document.visibilityState !== "hidden") void checkVersion();
+    };
+
+    void checkVersion();
+    schedule();
+    document.addEventListener("visibilitychange", refreshNow);
+    window.addEventListener("online", refreshNow);
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", refreshNow);
+      window.removeEventListener("online", refreshNow);
+    };
+  }, []);
+
+  // Fetch all published records so a curated photo beyond the first 100 spots
+  // cannot disappear from the reel. Only the first 20 cards mount initially,
+  // keeping their immediate image requests bounded.
+  const { data: allSpots, loading: spotsLoading } = useSpots(
+    { limit: 500, catalog_version: catalogVersion },
+    catalogReady,
+  );
   const spots = allSpots ?? [];
   const visibleSpots = spots.slice(0, visibleSpotLimit);
 
@@ -127,8 +191,8 @@ export default function Landing() {
 
           {spots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5">
-              {visibleSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} />
+              {visibleSpots.map((spot, index) => (
+                <SpotCard key={spot.id} spot={spot} eager={index < 20} />
               ))}
             </div>
           )}

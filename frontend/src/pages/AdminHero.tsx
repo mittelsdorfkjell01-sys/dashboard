@@ -83,7 +83,8 @@ export default function AdminHero() {
         <p className="mt-1 max-w-[70ch] text-label text-admin-muted">
           Wähle per Haken, welche Hero-Bilder im Landing-Hero durchlaufen. Ist nichts
           ausgewählt, erscheint das statische Hero-Bild. Klick auf ein Bild öffnet den
-          mobilen Bildausschnitt.
+          mobilen Bildausschnitt. „Mobiler Ausschnitt“ bedeutet nur, dass die Darstellung
+          fürs Smartphone ausgerichtet wurde; die Rotation steuert ausschließlich der Haken.
         </p>
         <div className="mt-3">
           <Badge tone={inReel > 0 ? "primary" : "neutral"}>
@@ -162,8 +163,11 @@ export default function AdminHero() {
                   </label>
 
                   {spot.image?.focal_mobile && (
-                    <span className="absolute bottom-2 right-2 rounded-md bg-black/55 px-2 py-0.5 text-caption font-medium text-white backdrop-blur-sm">
-                      Mobil ✓
+                    <span
+                      className="absolute bottom-2 right-2 rounded-md bg-black/55 px-2 py-0.5 text-caption font-medium text-white backdrop-blur-sm"
+                      title="Eigener Bildausschnitt für Smartphones gespeichert"
+                    >
+                      Mobiler Ausschnitt ✓
                     </span>
                   )}
                 </div>

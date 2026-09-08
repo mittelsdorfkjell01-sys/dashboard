@@ -73,7 +73,8 @@ export default function MapView() {
   const markerCache = useRef<Map<string, { marker: L.Marker; sig: string }>>(new Map());
   const indexRef = useRef<Supercluster<PublicSpotProperties> | null>(null);
   const popupRef = useRef<L.Popup | null>(null);
-  const initialFitDone = useRef(Boolean(parsePublicMapUrl(window.location.search)));
+  const initialView = useRef(parsePublicMapUrl(window.location.search));
+  const initialCoordinates = useRef<[number, number][]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [viewportIds, setViewportIds] = useState<string[]>([]);
   const [viewportZoom, setViewportZoom] = useState(3);
@@ -84,7 +85,7 @@ export default function MapView() {
   const [catalogReady, setCatalogReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
-  const { data: spots } = useSpots(
+  const { data: spots, loading: spotsLoading } = useSpots(
     { limit: 500, catalog_version: catalogVersion },
     catalogReady,
   );
@@ -133,6 +134,11 @@ export default function MapView() {
   }, []);
 
   const withCoords = useMemo(() => (spots ?? []).filter((spot): spot is Spot & { coords: [number, number] } => Boolean(spot.coords)), [spots]);
+  initialCoordinates.current = withCoords.map((spot) => spot.coords);
+  // A shared/deep-linked view can start immediately. The default overview
+  // waits for the catalogue, so Leaflet requests only the final fitted zoom
+  // instead of loading a temporary world view and replacing every tile.
+  const mapCanInitialize = initialView.current !== null || (catalogReady && !spotsLoading);
   const spotById = useMemo(() => new Map(withCoords.map((spot) => [spot.id, spot])), [withCoords]);
   useEffect(() => { if (selectedId && spots && !spotById.has(selectedId)) setSelectedId(undefined); }, [selectedId, spotById, spots]);
 
@@ -156,18 +162,23 @@ export default function MapView() {
 
   // --- map construction -----------------------------------------------------
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (!mapCanInitialize || !containerRef.current || mapRef.current) return;
     const container = containerRef.current;
-    const saved = parsePublicMapUrl(window.location.search);
+    const saved = initialView.current;
     let map: L.Map;
+    let tileLayer: L.TileLayer;
+    let revealTimer = 0;
+    let readyFrame = 0;
     try {
       map = L.map(container, {
-        center: saved ? [saved.center[1], saved.center[0]] : [40.3, 9.3],
-        zoom: saved?.zoom ?? 3,
         minZoom: 2,
         maxZoom: 17,
         zoomControl: false,
         attributionControl: false,
+        // Tiles appear as soon as their bytes arrive. Keeping the old level
+        // underneath provides the transition; a second opacity fade only
+        // prolongs pale gaps on slower connections.
+        fadeAnimation: false,
         // Fine zoom snapping keeps fitBounds/cluster easing from clamping to
         // whole levels; a gentler wheel ratio + debounce turns scroll-zoom from
         // steppy jumps into a smooth glide.
@@ -176,15 +187,29 @@ export default function MapView() {
         wheelDebounceTime: 30,
         worldCopyJump: false,
       });
-      L.tileLayer(TILE_URL, {
+      if (saved) {
+        map.setView([saved.center[1], saved.center[0]], saved.zoom, { animate: false });
+      } else if (initialCoordinates.current.length > 0) {
+        map.fitBounds(L.latLngBounds(initialCoordinates.current), {
+          paddingTopLeft: [52, 100],
+          paddingBottomRight: [52, window.innerWidth < 640 ? 270 : 240],
+          maxZoom: 7,
+          animate: false,
+        });
+      } else {
+        map.setView([40.3, 9.3], 3, { animate: false });
+      }
+      tileLayer = L.tileLayer(TILE_URL, {
         subdomains: "a",
         attribution: TILE_ATTRIBUTION,
         maxZoom: 20,
         detectRetina: false,
-        // Don't re-request tiles on every intermediate frame of a zoom (avoids
-        // the grey "reload" flash on zoom-out); keep a larger ring of
-        // off-screen tiles so panning reveals cached tiles instead of blanks.
-        updateWhenZooming: false,
+        // Request the next integer tile level during a smooth zoom, including
+        // on touch devices, and keep a generous off-screen ring. Leaflet then
+        // retains loaded parent/child tiles until their replacements are ready.
+        updateWhenIdle: false,
+        updateWhenZooming: true,
+        updateInterval: 120,
         keepBuffer: 4,
       }).addTo(map);
     } catch (err) {
@@ -194,23 +219,36 @@ export default function MapView() {
     }
     mapRef.current = map;
     markersLayer.current = L.layerGroup().addTo(map);
+    const markersForCleanup = markerCache.current;
     // Background click closes whichever bottom panel is open (marker clicks call
     // stopPropagation via Leaflet's own layer events, so they don't bubble here).
     map.on("click", () => { setSelectedId(undefined); setTilesOpen(false); });
-    const readyFrame = requestAnimationFrame(() => {
-      map.invalidateSize();
+    const revealMap = () => {
+      window.clearTimeout(revealTimer);
+      tileLayer.off("load", revealMap);
       setMapReady(true);
+    };
+    // Reveal the map as one composed surface after its first visible tile set
+    // has loaded. The timeout preserves a usable partial map during provider
+    // errors instead of leaving the canvas hidden indefinitely.
+    revealTimer = window.setTimeout(revealMap, 1800);
+    readyFrame = requestAnimationFrame(() => {
+      map.invalidateSize();
+      if (tileLayer.isLoading()) tileLayer.once("load", revealMap);
+      else revealMap();
     });
     return () => {
       cancelAnimationFrame(readyFrame);
+      window.clearTimeout(revealTimer);
+      tileLayer.off("load", revealMap);
       window.clearTimeout(viewportTimer.current);
       map.remove();
       mapRef.current = null;
       markersLayer.current = null;
-      markerCache.current.clear();
+      markersForCleanup.clear();
       popupRef.current = null;
     };
-  }, []);
+  }, [mapCanInitialize]);
 
   // Viewport tracking (URL + debounced live/list commit).
   useEffect(() => {
@@ -219,15 +257,6 @@ export default function MapView() {
     map.on("moveend", commitViewport); commitViewport();
     return () => { map.off("moveend", commitViewport); };
   }, [mapReady, commitViewport]);
-
-  // Initial fit to all spots (only when the URL carried no saved view).
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!mapReady || !map || initialFitDone.current || withCoords.length === 0) return;
-    initialFitDone.current = true;
-    const bounds = L.latLngBounds(withCoords.map((spot) => [spot.coords[0], spot.coords[1]] as [number, number]));
-    map.fitBounds(bounds, { paddingTopLeft: [52, 100], paddingBottomRight: [52, window.innerWidth < 640 ? 270 : 240], maxZoom: 7, animate: !reducedMotion() });
-  }, [mapReady, withCoords]);
 
   // Live wind readings for currently-visible spots → marker colours.
   const markerLiveIds = useMemo(
@@ -399,18 +428,17 @@ export default function MapView() {
         </div>
       )}
       <LeafletAttributionDisclosure source="carto" />
-      <div className="swd-map-controls-left pointer-events-none absolute z-20 flex flex-col items-start gap-3">
-        <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-back pointer-events-auto">
-          <ChevronLeftIcon className="text-sz-19" />
+      <div className="swd-map-controls-left pointer-events-none absolute z-[1100] flex flex-col items-start gap-2">
+        <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-bare-control pointer-events-auto">
+          <ChevronLeftIcon className="text-sz-22" />
         </button>
-        <div className="swd-map-control-group pointer-events-auto flex flex-col overflow-hidden">
-          <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn()} className="swd-map-control swd-map-control-stacked"><PlusIcon className="text-sz-17" /></button>
-          <span className="mx-2 h-px bg-line" />
-          <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut()} className="swd-map-control swd-map-control-stacked"><MinusIcon className="text-sz-17" /></button>
+        <div className="pointer-events-auto flex flex-col">
+          <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn()} className="swd-map-bare-control"><PlusIcon className="text-sz-21" /></button>
+          <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut()} className="swd-map-bare-control"><MinusIcon className="text-sz-21" /></button>
         </div>
       </div>
       {!tilesOpen && (
-        <div className="swd-map-controls pointer-events-none absolute z-20 flex flex-col items-end gap-3">
+        <div className="swd-map-controls pointer-events-none absolute z-[1100] flex flex-col items-end gap-3">
           <button
             type="button"
             aria-label="Spots im Ausschnitt anzeigen"
@@ -424,7 +452,7 @@ export default function MapView() {
         </div>
       )}
       {tilesOpen && (
-        <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto absolute z-20">
+        <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto absolute z-[1100]">
             <div className="swd-map-panel-head">
               <p className="swd-map-list-title">Spots im Ausschnitt</p>
               <button type="button" aria-label="Schließen" aria-expanded={true} onClick={() => setTilesOpen(false)} className="swd-map-plain-close">

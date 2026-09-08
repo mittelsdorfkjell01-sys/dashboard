@@ -53,9 +53,18 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         maxZoom: 18,
         zoomControl: false,
         attributionControl: false,
+        fadeAnimation: false,
         zoomSnap: 0.5,
       });
-      L.tileLayer(AERIAL_TILE_URL, { attribution: AERIAL_ATTRIBUTION, maxZoom: 19, detectRetina: false }).addTo(map);
+      L.tileLayer(AERIAL_TILE_URL, {
+        attribution: AERIAL_ATTRIBUTION,
+        maxZoom: 19,
+        detectRetina: false,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
+        updateInterval: 120,
+        keepBuffer: 4,
+      }).addTo(map);
     } catch (error) {
       console.error("Unable to initialise locator map:", error);
       setUnavailable(true);
