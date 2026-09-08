@@ -54,16 +54,28 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         zoomControl: false,
         attributionControl: false,
         fadeAnimation: false,
-        zoomSnap: 0.5,
+        // Quarter-step wheel zoom feels continuous without introducing a
+        // second animation system on top of Leaflet's native transform.
+        zoomAnimation: true,
+        zoomSnap: 0.25,
+        zoomDelta: 0.5,
+        wheelPxPerZoomLevel: 120,
+        wheelDebounceTime: 20,
       });
       L.tileLayer(AERIAL_TILE_URL, {
         attribution: AERIAL_ATTRIBUTION,
         maxZoom: 19,
         detectRetina: false,
         updateWhenIdle: false,
-        updateWhenZooming: true,
+        // Keep the already loaded level scaled beneath the interaction and
+        // request the replacement level once the zoom settles. Rebuilding the
+        // grid at every intermediate wheel step exposes empty tiles on slower
+        // connections.
+        updateWhenZooming: false,
         updateInterval: 120,
-        keepBuffer: 4,
+        // Retain an extra off-screen ring so short pans do not reveal the map
+        // background before the next network response arrives.
+        keepBuffer: 6,
       }).addTo(map);
     } catch (error) {
       console.error("Unable to initialise locator map:", error);
@@ -135,10 +147,11 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   }
 
   return (
-    // data-lenis-prevent stops the wheel from also scrolling the surrounding
-    // page while Leaflet is consuming it to zoom the map.
+    // Only isolate wheel input after activation. While locked, the surrounding
+    // page keeps its normal smooth scrolling even when the pointer is over the
+    // map.
     <div
-      data-lenis-prevent
+      data-lenis-prevent={active ? "" : undefined}
       className="swd-locator-map relative h-[360px] overflow-hidden bg-band sm:h-[440px] lg:h-full"
     >
       <div ref={containerRef} className="h-full w-full" />
