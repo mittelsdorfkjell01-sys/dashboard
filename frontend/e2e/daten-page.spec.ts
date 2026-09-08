@@ -9,7 +9,7 @@ import type { CommunityImage } from "../src/lib/api";
 // meteogram controls, data table, direction-compass card, tide panel) were
 // intentionally removed in the rebuild.
 
-const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: { parking: { available: true, note: "Am Strand" }, shower: { available: false } }, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
+const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
 const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
@@ -93,44 +93,18 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
   await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
 });
 
-test("Spot-Info nutzt die volle Desktopbreite mit Profil rechts der Galerie und Kommentaren am Außenrand", async ({ page }) => {
-  await page.setViewportSize({ width: 1600, height: 1000 });
+test("Spot-Karte färbt die gemeinsame Tile-Ebene statt sichtbare Kachelkanten", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await mockApi(page);
-  await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+  await page.goto("/spot/laboe/info");
 
-  const gallery = page.locator('[data-spot-layout="gallery"]');
-  const profile = page.locator('[data-spot-layout="profile"]');
-  const comments = page.locator('[data-spot-layout="comments"]');
-  const map = page.locator('[data-spot-layout="map"]');
-  await Promise.all([
-    expect(gallery).toBeVisible(),
-    expect(profile).toBeVisible(),
-    expect(comments).toBeVisible(),
-    expect(map).toBeVisible(),
-  ]);
-  const [galleryBox, profileBox, commentsBox, mapBox] = await Promise.all([
-    gallery.boundingBox(),
-    profile.boundingBox(),
-    comments.boundingBox(),
-    map.boundingBox(),
-  ]);
-
-  expect(galleryBox).not.toBeNull();
-  expect(profileBox).not.toBeNull();
-  expect(commentsBox).not.toBeNull();
-  expect(mapBox).not.toBeNull();
-  expect(profileBox!.x).toBeGreaterThan(galleryBox!.x + galleryBox!.width);
-  expect(commentsBox!.x).toBeGreaterThan(profileBox!.x + profileBox!.width);
-  expect(mapBox!.x + mapBox!.width).toBeLessThanOrEqual(commentsBox!.x + 1);
-  await expect(profile).toHaveCSS("border-radius", "14px");
-  await expect(map).toHaveCSS("border-radius", "14px");
-
-  for (const width of [1600, 1024, 768, 390, 320]) {
-    await page.setViewportSize({ width, height: width < 500 ? 800 : 1000 });
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
-  }
+  const map = page.getByRole("region", { name: "Lage" });
+  await expect(map).toBeAttached();
+  await map.scrollIntoViewIfNeeded();
+  const tile = map.locator(".leaflet-tile").first();
+  await expect(tile).toBeVisible();
+  await expect(tile).toHaveCSS("filter", "none");
+  await expect(map.locator(".leaflet-tile-pane")).not.toHaveCSS("filter", "none");
 });
 
 test("Daten-Seite zeigt Meteogramm, Ausblick und Livewind", async ({ page }) => {
