@@ -34,7 +34,7 @@ def _rotate_uv(u: float, v: float, offset_deg: float) -> tuple[float, float]:
 
 
 def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend: float = 1.0) -> AppliedWind:
-    """Apply only reviewed sector corrections; missing metadata degrades safely.
+    """Apply the active enabled sector correction; missing metadata degrades safely.
 
     Covers both the live and forecast paths (single call site per member). The
     magnitude/offset are applied in u/v space so a later direction rotation
@@ -54,12 +54,11 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend
     )
     advanced = tier == "advanced"
     sector = select_sector(direction_deg, getattr(profile, "sectors", None) or [])
-    reviewed = getattr(profile, "reviewed_at", None) is not None
 
     factor, offset = 1.0, 0.0
     component = None
     limited = False
-    if sector is not None and reviewed:
+    if sector is not None:
         effective = blended_factor(sector.speed_factor, blend)
         factor = clamp_combined_factor(effective, advanced)
         offset = clamp_direction_change(sector.direction_offset_deg, advanced)

@@ -37,12 +37,25 @@ def test_missing_profile_does_not_invent_local_correction():
     assert result.quality_tier == "coordinates"
 
 
-def test_unreviewed_advanced_sector_is_not_applied():
-    sector = SimpleNamespace(enabled=True, start_deg=250, end_deg=290, speed_factor=1.3, direction_offset_deg=12, version=1)
-    profile = SimpleNamespace(active=True, quality_tier="advanced", reviewed_at=None, coastal_normal_deg=270, sectors=[sector])
+def test_enabled_sector_applies_without_a_review_gate():
+    # Application is gated only by the sector being enabled (no reviewed_at gate).
+    sector = SimpleNamespace(enabled=True, start_deg=250, end_deg=290, speed_factor=1.3,
+                             direction_offset_deg=0, version=1, note="gwa")
+    profile = SimpleNamespace(active=True, quality_tier="advanced", reviewed_at=None,
+                              coastal_normal_deg=270, sectors=[sector])
+    result = apply_local_physics(10.0, 270.0, profile)
+    assert result.speed_ms == pytest.approx(13.0)
+    assert result.corrected is True
+
+
+def test_inactive_profile_applies_nothing():
+    sector = SimpleNamespace(enabled=True, start_deg=250, end_deg=290, speed_factor=1.3,
+                             direction_offset_deg=0, version=1, note="gwa")
+    profile = SimpleNamespace(active=False, quality_tier="advanced", reviewed_at=None,
+                              coastal_normal_deg=270, sectors=[sector])
     result = apply_local_physics(10.0, 270.0, profile)
     assert result.speed_ms == 10.0
-    assert result.direction_deg == 270.0
+    assert result.corrected is False
 
 
 def test_reviewed_sector_scales_magnitude_in_uv_space():
