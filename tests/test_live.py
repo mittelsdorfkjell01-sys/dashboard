@@ -382,11 +382,16 @@ def test_forecast_hour_has_wind_spread():
 
 
 def test_consensus_degrades_gracefully_to_single_model():
-    # 3 of 4 models report nothing -> n==1, no error, calendar fallback confidence
+    # Every model but the primary reports nothing -> n==1, no error, calendar
+    # fallback confidence. Derived from the live catalogue so it stays correct as
+    # regional coverage grows (make_spot defaults to Tarifa, 36.0128/-5.6035).
+    from app.weather.catalog import forecast_models
+
     spot = make_spot()
+    members = [model.id for model in forecast_models(36.0128, -5.6035)]
     client = FakeOpenMeteoClient(
         data_days=8,
-        null_models=["ncep_gfs_global", "ecmwf_aifs025_single", "icon_global"],
+        null_models=[model_id for model_id in members if model_id != "ecmwf_ifs"],
     )
     series = get_forecast_series(
         spot.id, days=7, db=FakeDB(spot), client=client, cache=InMemoryCache()
