@@ -59,23 +59,23 @@ export default function Facilities({
 
   if (variant === "list") {
     return (
-      <ul className="grid grid-cols-2 gap-x-5 gap-y-6 lg:grid-cols-1 lg:gap-5">
+      <ul className="grid grid-cols-2 gap-x-5 gap-y-6 lg:grid-cols-1 lg:gap-0 lg:divide-y lg:divide-line/70">
         {items.map((f) => {
           const absent = f.available === false;
           const unknown = f.available === null;
           const Icon = facilityIcon[f.kind];
           return (
-            <li key={f.kind} className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3">
+            <li key={f.kind} className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-start gap-x-3 lg:grid-cols-[24px_minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center lg:py-4 first:lg:pt-0">
               <Icon
                 width={22}
                 height={22}
                 className={`mt-0.5 shrink-0 ${absent ? "text-muted opacity-40" : unknown ? "text-muted opacity-30" : "text-ink"}`}
               />
-              <div className="min-w-0">
+              <div className="min-w-0 lg:contents">
                 <p className={`text-ui font-medium leading-snug ${absent ? "text-muted line-through" : "text-ink"}`}>
                   {f.title}
                 </p>
-                <p className={`mt-1 text-caption leading-snug ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
+                <p className={`mt-1 text-caption leading-snug lg:mt-0 lg:min-w-0 lg:text-right ${absent || unknown ? "text-muted" : "text-ink-soft"}`}>
                   {absent ? "Nicht vorhanden" : f.note}
                 </p>
               </div>

@@ -23,7 +23,6 @@ import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { spotPath } from "../lib/spotRoutes";
 
-const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
 const LocatorMap = lazy(() => import("../components/LocatorMap"));
 
 export default function SpotDetail() {
@@ -218,17 +217,19 @@ export default function SpotDetail() {
               exit="exit"
               transition={{ duration: reduceMotion ? 0 : 0.22, ease: "easeOut" }}
             >
-            {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
+            {/* Desktop reading order: identity, gallery, spot facts, comments.
+                The location map anchors the first three columns below them;
+                comments close the composition at the outer right edge. */}
             <SectionBand tone="page" pad="md" width="spotBody">
               {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
               <div
-                className={`spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[58px] ${SPOT_INFO_GRID}`}
+                className="spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-x-9 lg:gap-y-14"
                 style={{
                   "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined,
                   "--spot-gallery-right-inset": `${galleryRightInset}px`,
                 } as CSSProperties}
               >
-                <div className="order-1 flex min-w-0 flex-col self-stretch">
+                <div data-spot-layout="identity" className="order-1 flex min-w-0 flex-col self-stretch">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
@@ -276,7 +277,7 @@ export default function SpotDetail() {
                   </div>
                 </div>
 
-                <div ref={galleryFrameRef} className="spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2">
+                <div ref={galleryFrameRef} data-spot-layout="gallery" className="spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2">
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -284,7 +285,11 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <aside aria-label="Spotprofil und Ausstattung" className="order-2 flex min-w-0 flex-col lg:order-3">
+                <aside
+                  data-spot-layout="profile"
+                  aria-label="Spotprofil und Ausstattung"
+                  className="spot-info-panel order-2 flex min-w-0 flex-col self-stretch rounded-[14px] bg-surface p-5 sm:p-6 lg:order-3"
+                >
                   <SpotMetaGrid spot={spot} />
                   {facilities.length > 0 && (
                     <div className="mt-8 lg:mt-12">
@@ -296,7 +301,12 @@ export default function SpotDetail() {
                   )}
                 </aside>
                   {spot.coords ? (
-                    <section ref={mapSlotRef} aria-label="Lage" className="spot-locator-compact order-3 min-w-0 lg:order-4 lg:col-span-2">
+                    <section
+                      ref={mapSlotRef}
+                      data-spot-layout="map"
+                      aria-label="Lage"
+                      className="spot-locator-compact order-3 min-w-0 overflow-hidden rounded-[14px] lg:order-4"
+                    >
                       {mapReady ? (
                         <LocatorMapBoundary coords={spot.coords}>
                           <Suspense fallback={<MapPlaceholder />}>
@@ -308,9 +318,9 @@ export default function SpotDetail() {
                       )}
                     </section>
                   ) : (
-                    <div aria-hidden className="order-3 lg:order-4 lg:col-span-2" />
+                    <div data-spot-layout="map" aria-hidden className="order-3 lg:order-4" />
                   )}
-                  <div className="order-5 min-w-0">
+                  <div data-spot-layout="comments" className="order-5 min-w-0">
                     <SpotCommentBox
                       spotId={spotId}
                       posts={sortedPosts}

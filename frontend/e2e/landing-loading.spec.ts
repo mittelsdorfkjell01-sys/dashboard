@@ -28,7 +28,7 @@ test("all spots expand in place without a second catalogue request or scroll res
     const url = new URL(route.request().url());
     if (url.pathname === "/spots") {
       catalogueCalls += 1;
-      expect(url.searchParams.get("limit")).toBe("100");
+      expect(url.searchParams.get("limit")).toBe("500");
       return route.fulfill({ json: spots });
     }
     if (url.pathname === "/spots/top" || url.pathname === "/spots/live") {
