@@ -45,16 +45,46 @@ def test_unreviewed_advanced_sector_is_not_applied():
     assert result.direction_deg == 270.0
 
 
-def test_reviewed_advanced_sector_stays_disabled():
-    sector = SimpleNamespace(enabled=True, start_deg=250, end_deg=290, speed_factor=1.35, direction_offset_deg=15, version=1)
-    profile = SimpleNamespace(active=True, quality_tier="advanced", reviewed_at=datetime.now(timezone.utc), coastal_normal_deg=270, sectors=[sector])
+def test_reviewed_sector_scales_magnitude_in_uv_space():
+    # Phase 1: magnitude only (offset 0). A reviewed, enabled sector applies.
+    sector = SimpleNamespace(enabled=True, start_deg=250, end_deg=290, speed_factor=1.3,
+                             direction_offset_deg=0, version=1, note="gwa")
+    profile = SimpleNamespace(active=True, quality_tier="advanced", reviewed_at=datetime.now(timezone.utc),
+                              coastal_normal_deg=270, sectors=[sector])
+    result = apply_local_physics(10.0, 270.0, profile)
+    assert result.speed_ms == pytest.approx(13.0)
+    assert result.direction_deg == pytest.approx(270.0)
+    assert result.corrected is True
+    assert result.applied_component["component"] == "gwa_sector"
+    # The caller derives the gust factor from the same ratio.
+    assert result.speed_ms / 10.0 == pytest.approx(1.3)
+
+
+def test_disabled_sector_is_not_applied():
+    sector = SimpleNamespace(enabled=False, start_deg=250, end_deg=290, speed_factor=1.3,
+                             direction_offset_deg=0, version=1, note=None)
+    profile = SimpleNamespace(active=True, quality_tier="advanced", reviewed_at=datetime.now(timezone.utc),
+                              coastal_normal_deg=270, sectors=[sector])
     result = apply_local_physics(10.0, 270.0, profile)
     assert result.speed_ms == pytest.approx(10.0)
-    assert result.direction_deg == 270.0
+    assert result.corrected is False
+    assert result.applied_component is None
+
+
+def test_saturated_factor_is_clamped_and_flagged():
+    sector = SimpleNamespace(enabled=True, start_deg=250, end_deg=290, speed_factor=1.75,
+                             direction_offset_deg=0, version=1, note="gwa")
+    profile = SimpleNamespace(active=True, quality_tier="advanced", reviewed_at=datetime.now(timezone.utc),
+                              coastal_normal_deg=270, sectors=[sector])
+    result = apply_local_physics(10.0, 270.0, profile)
+    assert result.speed_ms == pytest.approx(16.0)  # clamped to the 1.60 advanced hull
+    assert result.correction_limited is True
+    assert result.applied_component["saturated"] is True
 
 
 def test_normal_and_advanced_limits_are_explicit():
     assert clamp_combined_factor(1.5, advanced=False) == 1.25
-    assert clamp_combined_factor(0.5, advanced=True) == 0.60
+    assert clamp_combined_factor(0.5, advanced=True) == 0.50
+    assert clamp_combined_factor(1.7, advanced=True) == 1.60
     assert clamp_direction_change(14, advanced=False) == 10
     assert clamp_direction_change(14, advanced=True) == 14

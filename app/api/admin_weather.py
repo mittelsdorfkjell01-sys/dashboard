@@ -309,7 +309,7 @@ def shadow_study_status(db: Session = Depends(get_db)) -> dict:
 class SectorIn(BaseModel):
     start_deg: float = Field(ge=0, lt=360)
     end_deg: float = Field(ge=0, lt=360)
-    speed_factor: float = Field(ge=0.60, le=1.35)
+    speed_factor: float = Field(ge=0.50, le=1.60)
     direction_offset_deg: float = Field(default=0, ge=-15, le=15)
     version: int = Field(default=1, ge=1)
     enabled: bool = True

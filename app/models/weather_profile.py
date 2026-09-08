@@ -58,7 +58,7 @@ class SpotWeatherSector(Base, TimestampMixin):
     __table_args__ = (
         CheckConstraint("start_deg >= 0 AND start_deg < 360", name="ck_weather_sector_start"),
         CheckConstraint("end_deg >= 0 AND end_deg < 360", name="ck_weather_sector_end"),
-        CheckConstraint("speed_factor >= 0.60 AND speed_factor <= 1.35", name="ck_weather_sector_factor"),
+        CheckConstraint("speed_factor >= 0.50 AND speed_factor <= 1.60", name="ck_weather_sector_factor"),
         CheckConstraint("direction_offset_deg >= -15 AND direction_offset_deg <= 15", name="ck_weather_sector_direction"),
         UniqueConstraint("profile_id", "start_deg", "end_deg", "version", name="uq_weather_sector_version"),
     )

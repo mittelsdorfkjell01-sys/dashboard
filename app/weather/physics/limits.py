@@ -6,7 +6,10 @@ def clamp(value: float, low: float, high: float) -> float:
 
 
 def clamp_combined_factor(factor: float, advanced: bool) -> float:
-    return clamp(factor, 0.60 if advanced else 0.70, 1.35 if advanced else 1.25)
+    # Advanced profiles use the full DB hull (0.50-1.60) for exposed coasts and
+    # gap/jet effects; other tiers stay conservatively tighter. Neither bound may
+    # exceed the ck_weather_sector_factor constraint.
+    return clamp(factor, 0.50 if advanced else 0.70, 1.60 if advanced else 1.25)
 
 
 def clamp_direction_change(offset_deg: float, advanced: bool) -> float:
