@@ -104,12 +104,10 @@ test("Spot-Karte färbt die gemeinsame Tile-Ebene statt sichtbare Kachelkanten",
   const tile = map.locator(".leaflet-tile").first();
   await expect(tile).toBeVisible();
   await expect(tile).toHaveCSS("filter", "none");
-  const tileSize = await tile.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { width: Number.parseFloat(style.width), height: Number.parseFloat(style.height) };
-  });
-  expect(tileSize.width).toBeGreaterThan(256.5);
-  expect(tileSize.height).toBeGreaterThan(256.5);
+  const mapZoom = await map.locator(".swd-locator-map").evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).zoom),
+  );
+  expect(mapZoom).toBeCloseTo(1 / 0.85, 5);
   await expect(map.locator(".leaflet-tile-pane")).not.toHaveCSS("filter", "none");
   const edgeBlend = await map.locator(".swd-locator-map").evaluate((element) =>
     getComputedStyle(element, "::after").boxShadow,

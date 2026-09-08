@@ -119,14 +119,17 @@
    desktop CSS zoom their fractional edges show up as a visible raster. */
 .swd-locator-map .leaflet-tile {
   filter: none;
-  /* Leaflet positions tiles on a 256px grid. The surrounding desktop page is
-     rendered at 85%, so those edges land between device pixels. One CSS pixel
-     of overlap removes the anti-aliased gap without moving or scaling imagery. */
-  width: 257px !important;
-  height: 257px !important;
 }
 .swd-locator-map .leaflet-tile-pane {
   filter: saturate(.9) brightness(1.04) contrast(.94);
+}
+@media (min-width: 1024px) {
+  /* SpotDetail renders its desktop body at 85%. Counter that zoom only inside
+     Leaflet so its 256px tile coordinates land on whole device pixels again.
+     CSS zoom preserves the map's measured outer box, unlike stretching tiles. */
+  .swd-locator-map {
+    zoom: 1.176470588;
+  }
 }
 .swd-locator-map::after {
   position: absolute;
