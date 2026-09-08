@@ -93,7 +93,7 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
   await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
 });
 
-test("Spot-Karte bleibt beim Herauszoomen bis an alle Ränder gefüllt", async ({ page }) => {
+test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }) => {
   let delayReplacementTiles = false;
   await page.route("https://server.arcgisonline.com/**", async (route) => {
     if (delayReplacementTiles) await new Promise((resolve) => setTimeout(resolve, 650));
@@ -112,6 +112,9 @@ test("Spot-Karte bleibt beim Herauszoomen bis an alle Ränder gefüllt", async (
   const tile = map.locator(".leaflet-tile").first();
   await expect(tile).toBeVisible();
   await expect(tile).toHaveCSS("filter", "none");
+  await expect(tile).toHaveCSS("outline-width", "1px");
+  await expect(tile).toHaveCSS("outline-style", "solid");
+  await expect(tile).toHaveCSS("outline-color", "rgba(0, 0, 0, 0)");
   const mapZoom = await map.locator(".swd-locator-map").evaluate((element) =>
     Number.parseFloat(getComputedStyle(element).zoom),
   );

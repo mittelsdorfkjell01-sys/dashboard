@@ -119,6 +119,11 @@
    desktop CSS zoom their fractional edges show up as a visible raster. */
 .swd-locator-map .leaflet-tile {
   filter: none;
+  /* Leaflet scales its 256px raster tiles through fractional device pixels
+     during smooth zoom. Chromium can briefly antialias those shared edges as
+     bright hairlines; a transparent outline keeps the adjoining pixels in the
+     same raster coverage without enlarging or blurring the imagery. */
+  outline: 1px solid transparent;
 }
 .swd-locator-map .leaflet-tile-pane {
   filter: saturate(.9) brightness(1.04) contrast(.94);
