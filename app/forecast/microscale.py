@@ -120,6 +120,40 @@ class SectorSurface:
     upwind_is_water: bool
 
 
+EARTH_RADIUS_M = 6371008.8
+DEFAULT_STEP_M = 100.0
+DEFAULT_MAX_FETCH_M = 20000.0
+
+
+def destination_point(lat: float, lon: float, bearing_deg: float, distance_m: float) -> tuple[float, float]:
+    """Spherical forward geodesic: point ``distance_m`` from (lat, lon) on ``bearing_deg``."""
+    angular = distance_m / EARTH_RADIUS_M
+    bearing = math.radians(bearing_deg)
+    lat1, lon1 = math.radians(lat), math.radians(lon)
+    lat2 = math.asin(math.sin(lat1) * math.cos(angular)
+                     + math.cos(lat1) * math.sin(angular) * math.cos(bearing))
+    lon2 = lon1 + math.atan2(math.sin(bearing) * math.sin(angular) * math.cos(lat1),
+                             math.cos(angular) - math.sin(lat1) * math.sin(lat2))
+    return math.degrees(lat2), (math.degrees(lon2) + 540.0) % 360.0 - 180.0
+
+
+def resolve_surface_change(local_is_water: bool, local_z0: float, upwind_samples,
+                           *, step_m: float = DEFAULT_STEP_M,
+                           max_fetch_m: float = DEFAULT_MAX_FETCH_M) -> SectorSurface:
+    """Turn a walk of upwind (is_water, z0) samples into one roughness change.
+
+    ``upwind_samples`` are ordered outward at ``step_m`` spacing. The fetch is
+    the distance to the first surface-type change (land<->water); the upwind
+    roughness is that of the surface beyond it. No change within range means a
+    uniform surface: equal roughness -> the IBL factor is 1.0.
+    """
+    for index, (is_water, z0) in enumerate(upwind_samples):
+        if is_water != local_is_water:
+            fetch = min((index + 1) * step_m, max_fetch_m)
+            return SectorSurface(upwind_z0=z0, downwind_z0=local_z0, fetch_m=fetch, upwind_is_water=is_water)
+    return SectorSurface(upwind_z0=local_z0, downwind_z0=local_z0, fetch_m=max_fetch_m, upwind_is_water=local_is_water)
+
+
 class SurfaceProvider(Protocol):
     mounted: bool
 
@@ -263,29 +297,91 @@ def _note_sig(note: str | None) -> str | None:
 
 
 class RasterSurfaceProvider:
-    """WorldCover roughness + GLO-30 WBM coastline/fetch, read per sector.
+    """WorldCover roughness + GLO-30 WBM coastline/fetch, sampled per sector.
 
     Unmounted (no raster dirs configured) -> mounted is False and the producer
     reports microscale_unavailable. WBM NoData is treated as water (Charnock),
-    never as missing. rasterio is imported lazily; never used on a request path.
+    never as missing. rasterio is imported lazily and open datasets are cached
+    per tile for the run; never used on a request path.
+
+    Expected layout under the mounted dirs (the operator provides the tiles):
+      worldcover_dir: ESA_WorldCover_10m_2021_v200_{tile3}_Map.tif  (3-degree tiles)
+      glo30_wbm_dir:  {tile1}_WBM.tif                               (1-degree geocells)
     """
 
-    def __init__(self, worldcover_dir: str | None = None, dem_dir: str | None = None) -> None:
+    def __init__(self, worldcover_dir: str | None = None, glo30_wbm_dir: str | None = None,
+                 *, step_m: float = DEFAULT_STEP_M, max_fetch_m: float = DEFAULT_MAX_FETCH_M) -> None:
+        if worldcover_dir is None or glo30_wbm_dir is None:
+            from app.config import get_settings
+
+            settings = get_settings()
+            worldcover_dir = worldcover_dir or settings.worldcover_raster_dir
+            glo30_wbm_dir = glo30_wbm_dir or settings.glo30_wbm_raster_dir
         self._worldcover_dir = worldcover_dir
-        self._dem_dir = dem_dir
+        self._glo30_wbm_dir = glo30_wbm_dir
+        self._step_m = step_m
+        self._max_fetch_m = max_fetch_m
+        self._open: dict = {}
 
     @property
     def mounted(self) -> bool:
-        return bool(self._worldcover_dir and self._dem_dir)
+        return bool(self._worldcover_dir and self._glo30_wbm_dir)
 
     def sector_surface(self, lat: float, lon: float, sector_index: int) -> SectorSurface | None:
-        # Real sampling (WorldCover class ring + WBM coastline distance per bearing)
-        # is wired where the rasters are mounted; unmounted installs get None.
         if not self.mounted:
             return None
-        raise NotImplementedError(
-            "RasterSurfaceProvider sampling runs only in the raster-mounted offline job"
-        )
+        local_is_water = self._is_water(lat, lon)
+        local_z0 = self._z0(lat, lon, local_is_water)
+        if local_z0 is None:  # land cell with no usable land-cover sample
+            return None
+        bearing = (sector_index * SECTOR_WIDTH + SECTOR_WIDTH / 2.0) % 360.0  # sector-centre "from"
+        steps = max(1, int(self._max_fetch_m // self._step_m))
+        samples = []
+        for step in range(1, steps + 1):
+            plat, plon = destination_point(lat, lon, bearing, step * self._step_m)
+            is_water = self._is_water(plat, plon)
+            samples.append((is_water, self._z0(plat, plon, is_water) or DEFAULT_LAND_Z0))
+        return resolve_surface_change(local_is_water, local_z0, samples,
+                                      step_m=self._step_m, max_fetch_m=self._max_fetch_m)
+
+    # --- raster IO (lazy, cached) ------------------------------------------
+
+    def _z0(self, lat: float, lon: float, is_water: bool) -> float | None:
+        if is_water:
+            return CHARNOCK_SEA_Z0
+        from app.forecast.geodata import tile_code
+
+        tile = tile_code(lat, lon, 3)
+        path = f"{self._worldcover_dir.rstrip('/')}/ESA_WorldCover_10m_2021_v200_{tile}_Map.tif"
+        value = self._sample(path, lon, lat)
+        return None if value is None else roughness_for_class(int(value))
+
+    def _is_water(self, lat: float, lon: float) -> bool:
+        from app.forecast.geodata import tile_code
+
+        tile = tile_code(lat, lon, 1)
+        path = f"{self._glo30_wbm_dir.rstrip('/')}/{tile}_WBM.tif"
+        value, nodata = self._sample(path, lon, lat, with_nodata=True)
+        return surface_is_water(value, nodata)  # missing/NoData -> water
+
+    def _sample(self, path: str, lon: float, lat: float, *, with_nodata: bool = False):
+        try:
+            dataset = self._open.get(path)
+            if dataset is None:
+                import rasterio
+
+                dataset = rasterio.open(path)
+                self._open[path] = dataset
+            value = next(dataset.sample([(lon, lat)]))[0]
+            nodata = dataset.nodata
+        except Exception:
+            return (None, None) if with_nodata else None
+        if value is not None and nodata is not None and value == nodata:
+            value = None
+        if value is not None and not math.isfinite(float(value)):
+            value = None
+        result = None if value is None else float(value)
+        return (result, nodata) if with_nodata else result
 
 
 def build_spot_microscale(db, spot, *, surface_provider=None, orography=None) -> dict:

@@ -217,6 +217,12 @@ class Settings(BaseSettings):
     # a request path.
     gwa_raster_dir: str | None = None
 
+    # Mounted rasters for the WP5 microscale producer (offline only, never on a
+    # request path): ESA WorldCover 10 m for roughness, GLO-30 Water Body Mask
+    # for the coastline/fetch. Empty means microscale stays "unavailable".
+    worldcover_raster_dir: str | None = None
+    glo30_wbm_raster_dir: str | None = None
+
     # Per-model-family blend for GWA sector factors, keyed by ModelFamily value
     # (e.g. {"regional": 0.5}). Missing family = 1.0 (full factor). WP1's
     # per-family verification dials an overcorrecting family down here with no

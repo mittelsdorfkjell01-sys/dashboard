@@ -9,11 +9,14 @@ from geoalchemy2 import WKTElement
 
 from app.forecast.microscale import (
     CHARNOCK_SEA_Z0,
+    RasterSurfaceProvider,
     SectorSurface,
     compute_microscale_sectors,
+    destination_point,
     dtm_from_dsm,
     internal_boundary_layer_height,
     persist_microscale_sectors,
+    resolve_surface_change,
     roughness_for_class,
     roughness_transfer_factor,
     surface_is_water,
@@ -65,6 +68,64 @@ def test_roughness_transfer_deviation_grows_with_fetch():
     short = roughness_transfer_factor(0.10, 0.0002, 300)
     long = roughness_transfer_factor(0.10, 0.0002, 8000)
     assert long > short > 1.0
+
+
+# --- geodesic walk + surface change ----------------------------------------
+
+
+def test_destination_point_moves_north_and_east():
+    north_lat, north_lon = destination_point(45.0, 0.0, 0.0, 111195.0)  # ~1 deg north
+    assert north_lat == pytest.approx(46.0, abs=0.01)
+    assert north_lon == pytest.approx(0.0, abs=1e-6)
+    east_lat, east_lon = destination_point(0.0, 0.0, 90.0, 111195.0)  # ~1 deg east at equator
+    assert east_lon == pytest.approx(1.0, abs=0.01)
+    assert east_lat == pytest.approx(0.0, abs=1e-6)
+
+
+def test_resolve_surface_change_finds_first_transition():
+    # Land spot; water appears at the 3rd upwind step (index 2) -> fetch 300 m.
+    upwind = [(False, 0.1), (False, 0.1), (True, CHARNOCK_SEA_Z0), (True, CHARNOCK_SEA_Z0)]
+    surface = resolve_surface_change(False, 0.1, upwind, step_m=100.0, max_fetch_m=2000.0)
+    assert surface.upwind_is_water is True
+    assert surface.upwind_z0 == CHARNOCK_SEA_Z0 and surface.downwind_z0 == 0.1
+    assert surface.fetch_m == pytest.approx(300.0)
+
+
+def test_resolve_surface_change_uniform_surface_is_neutral():
+    upwind = [(False, 0.1)] * 5
+    surface = resolve_surface_change(False, 0.1, upwind, step_m=100.0, max_fetch_m=500.0)
+    assert surface.upwind_z0 == surface.downwind_z0 == 0.1  # -> IBL factor 1.0
+    assert surface.fetch_m == pytest.approx(500.0)
+    assert roughness_transfer_factor(surface.upwind_z0, surface.downwind_z0, surface.fetch_m) == 1.0
+
+
+class _CounterRaster(RasterSurfaceProvider):
+    """Fake IO: land until the Nth _is_water call, then water; land z0 = 0.1."""
+
+    def __init__(self, water_from_call):
+        super().__init__("wc", "wbm", step_m=100.0, max_fetch_m=2000.0)
+        self._n = 0
+        self._water_from = water_from_call
+
+    def _is_water(self, lat, lon):
+        self._n += 1
+        return self._n >= self._water_from
+
+    def _z0(self, lat, lon, is_water):
+        return CHARNOCK_SEA_Z0 if is_water else 0.1
+
+
+def test_provider_walk_finds_the_coastline_fetch():
+    provider = _CounterRaster(water_from_call=6)  # local + 4 land steps, then water
+    surface = provider.sector_surface(43.66, -1.44, 0)
+    assert surface.upwind_is_water is True
+    assert surface.downwind_z0 == 0.1 and surface.upwind_z0 == CHARNOCK_SEA_Z0
+    assert surface.fetch_m == pytest.approx(500.0)  # 5th step
+
+
+def test_unmounted_raster_provider_returns_none():
+    assert RasterSurfaceProvider(None, None).mounted is False
+    assert RasterSurfaceProvider(None, None).sector_surface(43.0, -1.4, 0) is None
 
 
 # --- producer status paths -------------------------------------------------
