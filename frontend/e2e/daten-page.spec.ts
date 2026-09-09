@@ -9,7 +9,7 @@ import type { CommunityImage } from "../src/lib/api";
 // meteogram controls, data table, direction-compass card, tide panel) were
 // intentionally removed in the rebuild.
 
-const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: { parking: { available: true, note: "Am Strand" }, shower: { available: false } }, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
+const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
 const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
@@ -93,44 +93,72 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
   await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
 });
 
-test("Spot-Info nutzt die volle Desktopbreite mit Profil rechts der Galerie und Kommentaren am Außenrand", async ({ page }) => {
-  await page.setViewportSize({ width: 1600, height: 1000 });
+test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }) => {
+  let delayReplacementTiles = false;
+  await page.route("https://server.arcgisonline.com/**", async (route) => {
+    if (delayReplacementTiles) await new Promise((resolve) => setTimeout(resolve, 650));
+    await route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
+    });
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await mockApi(page);
-  await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+  await page.goto("/spot/laboe/info");
 
-  const gallery = page.locator('[data-spot-layout="gallery"]');
-  const profile = page.locator('[data-spot-layout="profile"]');
-  const comments = page.locator('[data-spot-layout="comments"]');
-  const map = page.locator('[data-spot-layout="map"]');
-  await Promise.all([
-    expect(gallery).toBeVisible(),
-    expect(profile).toBeVisible(),
-    expect(comments).toBeVisible(),
-    expect(map).toBeVisible(),
-  ]);
-  const [galleryBox, profileBox, commentsBox, mapBox] = await Promise.all([
-    gallery.boundingBox(),
-    profile.boundingBox(),
-    comments.boundingBox(),
-    map.boundingBox(),
-  ]);
+  const map = page.getByRole("region", { name: "Lage" });
+  await expect(map).toBeAttached();
+  await map.scrollIntoViewIfNeeded();
+  const tile = map.locator(".leaflet-tile").first();
+  await expect(tile).toBeVisible();
+  await expect(tile).toHaveCSS("filter", "none");
+  await expect(tile).toHaveCSS("outline-width", "1px");
+  await expect(tile).toHaveCSS("outline-style", "solid");
+  await expect(tile).toHaveCSS("outline-color", "rgba(0, 0, 0, 0)");
+  const mapZoom = await map.locator(".swd-locator-map").evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).zoom),
+  );
+  expect(mapZoom).toBeCloseTo(1 / 0.85, 5);
+  await expect(map.locator(".leaflet-tile-pane")).not.toHaveCSS("filter", "none");
+  const edgeBlend = await map.locator(".swd-locator-map").evaluate((element) =>
+    getComputedStyle(element, "::after").boxShadow,
+  );
+  expect(edgeBlend).toBe("none");
 
-  expect(galleryBox).not.toBeNull();
-  expect(profileBox).not.toBeNull();
-  expect(commentsBox).not.toBeNull();
-  expect(mapBox).not.toBeNull();
-  expect(profileBox!.x).toBeGreaterThan(galleryBox!.x + galleryBox!.width);
-  expect(commentsBox!.x).toBeGreaterThan(profileBox!.x + profileBox!.width);
-  expect(mapBox!.x + mapBox!.width).toBeLessThanOrEqual(commentsBox!.x + 1);
-  await expect(profile).toHaveCSS("border-radius", "14px");
-  await expect(map).toHaveCSS("border-radius", "14px");
+  // A slow replacement level must not uncover the map while several wheel
+  // inputs are still being animated. The already loaded level stays scaled
+  // beneath it until the new tiles are ready.
+  await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible();
+  delayReplacementTiles = true;
+  await map.getByRole("button", { name: "Karte aktivieren" }).click();
+  await expect(map.locator(".swd-locator-map")).toHaveAttribute("data-lenis-prevent", "");
+  const box = await map.locator(".leaflet-container").boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(35);
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(80);
 
-  for (const width of [1600, 1024, 768, 390, 320]) {
-    await page.setViewportSize({ width, height: width < 500 ? 800 : 1000 });
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
-  }
+  const uncoveredSamples = await map.locator(".leaflet-container").evaluate((container) => {
+    const mapRect = container.getBoundingClientRect();
+    const tiles = [...container.querySelectorAll<HTMLElement>(".leaflet-tile-loaded")]
+      .filter((tile) => {
+        const level = tile.closest<HTMLElement>(".leaflet-tile-container");
+        return getComputedStyle(tile).visibility !== "hidden" && (!level || Number.parseFloat(getComputedStyle(level).opacity) > 0);
+      })
+      .map((tile) => tile.getBoundingClientRect());
+    const samples = [0.01, 0.25, 0.5, 0.75, 0.99].flatMap((x) =>
+      [0.01, 0.5, 0.99].map((y) => ({
+        x: mapRect.left + mapRect.width * x,
+        y: mapRect.top + mapRect.height * y,
+      })),
+    );
+    return samples.filter((point) => !tiles.some((tile) =>
+      point.x >= tile.left && point.x <= tile.right && point.y >= tile.top && point.y <= tile.bottom,
+    ));
+  });
+  expect(uncoveredSamples).toEqual([]);
 });
 
 test("Daten-Seite zeigt Meteogramm, Ausblick und Livewind", async ({ page }) => {

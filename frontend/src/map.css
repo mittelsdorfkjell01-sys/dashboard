@@ -118,11 +118,29 @@
   background: #DDECF2;
 }
 
-/* Keep aerial detail on the locator, but pull it into the UI palette. */
+/* Keep aerial detail on the locator, but pull it into the UI palette. Apply
+   the colour treatment once to Leaflet's shared tile pane. A filter on every
+   256px image creates separate compositing layers; under the spot page's
+   desktop CSS zoom their fractional edges show up as a visible raster. */
 .swd-locator-map .leaflet-tile {
+  filter: none;
+  /* Leaflet scales its 256px raster tiles through fractional device pixels
+     during smooth zoom. Chromium can briefly antialias those shared edges as
+     bright hairlines; a transparent outline keeps the adjoining pixels in the
+     same raster coverage without enlarging or blurring the imagery. */
+  outline: 1px solid transparent;
+}
+.swd-locator-map .leaflet-tile-pane {
   filter: saturate(.9) brightness(1.04) contrast(.94);
 }
-
+@media (min-width: 1024px) {
+  /* SpotDetail renders its desktop body at 85%. Counter that zoom only inside
+     Leaflet so its 256px tile coordinates land on whole device pixels again.
+     CSS zoom preserves the map's measured outer box, unlike stretching tiles. */
+  .swd-locator-map {
+    zoom: 1.176470588;
+  }
+}
 @media (max-width: 639px) {
   .swd-locator-map .leaflet-bottom {
     bottom: max(0px, env(safe-area-inset-bottom));
