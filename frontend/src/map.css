@@ -102,15 +102,20 @@
 }
 
 /* Colour wash over the CARTO Voyager basemap on the search/region maps:
-   water leans light blue, land leans light green. The public overview and
-   spot-detail maps use the clean Positron basemap instead and opt out below,
-   so their Airbnb-style light palette is never tinted. */
+   water leans light blue, land leans light green. */
 .leaflet-tile {
   filter: hue-rotate(22deg) saturate(1.35);
 }
+/* Public and spot maps use Voyager's native, Airbnb-like travel palette:
+   pale blue water, warm land and restrained detail. Avoid per-tile filters
+   here because GPU compositing can expose hairline seams between raster tiles. */
 .swd-public-map .leaflet-tile,
 .swd-spot-map .leaflet-tile {
   filter: none;
+}
+.swd-public-map .leaflet-container,
+.swd-spot-map .leaflet-container {
+  background: #DDECF2;
 }
 
 /* Keep aerial detail on the locator, but pull it into the UI palette. */
@@ -166,7 +171,7 @@
 .swd-public-map {
   height: 100vh;
   height: 100dvh;
-  background: #F5F3F0;
+  background: #DDECF2;
   --map-control-edge: max(20px, env(safe-area-inset-right));
   --map-surface: #FFFDF8;
   --map-spot: #241C17;

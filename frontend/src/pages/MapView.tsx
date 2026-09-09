@@ -26,13 +26,14 @@ import {
   type PublicSpotLiveValue,
   type PublicSpotProperties,
 } from "../lib/publicMap";
-import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_POSITRON } from "../lib/basemaps";
+import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_VOYAGER } from "../lib/basemaps";
 import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
 
-// Positron (CARTO light) raster basemap — clean, desaturated, Airbnb-style.
-const TILE_URL = cartoTileUrl(CARTO_POSITRON);
+// Voyager keeps the map light and quiet while giving water and land distinct,
+// travel-map colours. CSS applies the final muted Surfwinddata treatment.
+const TILE_URL = cartoTileUrl(CARTO_VOYAGER);
 const TILE_ATTRIBUTION = CARTO_ATTRIBUTION;
 
 // Background catalogue check, not a live feed: 60s is plenty to notice a

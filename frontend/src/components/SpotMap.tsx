@@ -11,12 +11,12 @@ import { waveColor } from "../lib/waveScale";
 import { currentReading, OBSERVATION_BADGE } from "../lib/spotMapReading";
 import MapModeSwitch from "./MapModeSwitch";
 import MapLegend from "./MapLegend";
-import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_POSITRON } from "../lib/basemaps";
+import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_VOYAGER } from "../lib/basemaps";
 import type { Spot } from "../lib/types";
 import LeafletAttributionDisclosure from "./LeafletAttributionDisclosure";
 
-// Positron (CARTO light) raster basemap — clean, desaturated, Airbnb-style.
-const TILE_URL = cartoTileUrl(CARTO_POSITRON);
+// Match the public map's softly coloured travel-map basemap.
+const TILE_URL = cartoTileUrl(CARTO_VOYAGER);
 const TILE_ATTRIBUTION = CARTO_ATTRIBUTION;
 const SPOT_MAP_ZOOM = 14.5; // matches SpotMapEditor's DEFAULT_ZOOM, so an un-framed spot lines up with what an admin sees while framing it
 
