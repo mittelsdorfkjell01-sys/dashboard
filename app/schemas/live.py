@@ -341,12 +341,20 @@ class ForecastDay(BaseModel):
     confidence_source: Literal["spread", "calendar"] | None = None
 
 
+class CorrectionInfo(BaseModel):
+    """Honest summary of the applied local terrain correction."""
+
+    applied: bool = False
+    confidence: str = "ok"
+
+
 class ForecastSeriesRead(BaseModel):
     spot_id: uuid.UUID
     model: str
     models: list[str] = []
     generated_at: str
     days: list[ForecastDay]
+    correction: CorrectionInfo | None = None
     product: str = "Surfwinddata Forecast"
     updated_at: str | None = None
     confidence_note: str | None = None

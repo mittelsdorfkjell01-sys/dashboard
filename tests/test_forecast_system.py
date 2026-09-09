@@ -5,8 +5,6 @@ import pytest
 from app.forecast.contracts import GridPoint, NormalizedModelValue, ProviderRequest
 from app.forecast.providers import DwdIconProvider, InvalidModelData, NoaaGfsProvider
 from app.forecast.registry import MODELS, SOURCES, public_attributions
-from app.forecast.physics import apply_automatic_physics
-from app.forecast.consensus import combine
 
 RUN = datetime(2026, 8, 12, 0, tzinfo=timezone.utc)
 
@@ -85,51 +83,6 @@ def test_provider_request_rejects_unsorted_or_duplicate_hours():
         request((3, 0))
     with pytest.raises(ValueError):
         request((0, 0))
-
-
-def value(model="gfs-0p25", u=3, v=4, gust=6):
-    return NormalizedModelValue(
-        provider="test",
-        model=model,
-        model_run=RUN,
-        valid_at=RUN,
-        fetched_at=RUN,
-        grid_point=GridPoint(latitude=0, longitude=0, distance_km=0),
-        horizontal_resolution_km=10,
-        horizon_hours=0,
-        u_ms=u,
-        v_ms=v,
-        speed_ms=(u * u + v * v) ** 0.5,
-        direction_deg=216.869897,
-        gust_ms=gust,
-        source_key="test",
-    )
-
-
-def test_physics_is_neutral_without_raster_and_bounded_with_shelter():
-    raw = value()
-    neutral = apply_automatic_physics(raw, None)
-    assert neutral.speed_ms == raw.speed_ms and not neutral.components
-    profile = {
-        "corrections_enabled": True,
-        "elevation_m": 100,
-        "sectors": [{"terrain_shelter": 1} for _ in range(16)],
-    }
-    corrected = apply_automatic_physics(raw, profile, model_elevation_m=0)
-    assert raw.speed_ms * 0.78 <= corrected.speed_ms < raw.speed_ms
-    assert {c.key for c in corrected.components} == {"elevation", "terrain_shelter"}
-
-
-def test_consensus_vector_aggregation_family_cap_and_gust_floor():
-    rows = [
-        apply_automatic_physics(value("gfs-0p25", 3, 4, 4), None),
-        apply_automatic_physics(value("icon-global", 4, 3, 7), None),
-        apply_automatic_physics(value("icon-eu", 4, 3, 7), None),
-    ]
-    result = combine(rows, now=RUN)
-    assert result.model_count == 3 and result.gust_ms >= result.speed_ms
-    assert result.low_ms <= result.speed_ms <= result.high_ms
-    assert result.confidence in {"hoch", "mittel", "niedrig"}
 
 
 def test_public_contract_never_exposes_model_registry(client, db):

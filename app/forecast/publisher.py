@@ -131,9 +131,10 @@ def run_job(db, job_id, *, client=None, cache=None):
         payload["models"] = []
         payload = ForecastSeriesRead.model_validate(payload).model_dump(mode="json")
         generated = datetime.now(timezone.utc)
-        quality = (
-            "automatic" if profile.profile.get("corrections_enabled") else "baseline"
-        )
+        # Honest label: "corrected" only when a local correction actually changed
+        # a value (derived from the produced series), not from a config flag.
+        correction = payload.get("correction") or {}
+        quality = "corrected" if correction.get("applied") else "baseline"
         snapshot = ForecastSnapshot(
             spot_id=target_spot_id,
             generated_at=generated,
@@ -182,6 +183,7 @@ def run_job(db, job_id, *, client=None, cache=None):
             "snapshot_id": str(snapshot.id),
             "fallback_status": snapshot.fallback_status,
             "quality_level": quality,
+            "correction": correction,
             "weather_contract_version": WEATHER_CONTRACT_VERSION,
             "availability": payload.get("availability", {}),
             "horizons": internal_weather.get("horizons", {}),

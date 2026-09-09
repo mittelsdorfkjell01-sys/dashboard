@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass
 
-from app.weather.physics.blend import blended_factor
+from app.weather.contracts import ModelFamily
+from app.weather.physics.blend import blended_factor, family_blend
 from app.weather.physics.coast import coastal_class
 from app.weather.physics.limits import clamp_combined_factor, clamp_direction_change
 from app.weather.physics.manual import select_sector
@@ -93,3 +95,40 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend
         corrected=corrected,
         applied_component=component,
     )
+
+
+def _sector_confidence(note: str | None) -> str:
+    if not note:
+        return "ok"
+    try:
+        return json.loads(note).get("confidence", "ok")
+    except (ValueError, TypeError):
+        return "ok"
+
+
+def correction_summary(profile, blend_overrides: dict[str, float] | None = None) -> dict:
+    """Honest snapshot label: does the profile actually correct a value, and how
+    confident is that correction.
+
+    ``applied`` is True when an active profile has an enabled sector whose factor
+    or offset is non-neutral and at least one model family still receives the
+    correction (blend > 0). ``confidence`` is "low" if any applied sector is
+    flagged low-confidence (e.g. a steep-slope GWA sector). No forecast value is
+    read here; this is a structural summary of the wired corrections.
+    """
+    if profile is None or not getattr(profile, "active", False):
+        return {"applied": False, "confidence": "ok"}
+    enabled = [s for s in (getattr(profile, "sectors", None) or []) if getattr(s, "enabled", False)]
+    if not enabled:
+        return {"applied": False, "confidence": "ok"}
+    any_family_blended = any(family_blend(family, blend_overrides) > 0 for family in ModelFamily)
+    applied = False
+    confidence = "ok"
+    for sector in enabled:
+        non_neutral = (abs(sector.speed_factor - 1.0) > 1e-9
+                       or abs(getattr(sector, "direction_offset_deg", 0.0)) > 1e-9)
+        if any_family_blended and non_neutral:
+            applied = True
+            if _sector_confidence(getattr(sector, "note", None)) == "low":
+                confidence = "low"
+    return {"applied": applied, "confidence": confidence}

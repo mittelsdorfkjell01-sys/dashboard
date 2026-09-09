@@ -36,7 +36,7 @@ from app.models import Spot, SpotWeatherProfile, WeatherObservation, WeatherStat
 from app.weather.consensus import WindMember, calculate_wind_consensus
 from app.weather.units import WindSpeedUnit, convert_wind_speed
 from app.weather.catalog import family_for
-from app.weather.physics import apply_local_physics
+from app.weather.physics import apply_local_physics, correction_summary
 from app.weather.physics.blend import family_blend
 from app.weather.physics.coast import coastal_class
 from app.weather.vectors import uv_to_wind, wind_to_uv
@@ -1006,6 +1006,7 @@ def get_forecast_series(
             "solar": Availability.AVAILABLE.value if daily_weather else Availability.UNAVAILABLE_PROVIDER.value,
             "marine": marine_diagnostics["status"],
         },
+        "correction": correction_summary(resolved_profile, get_settings().wind_sector_blend),
         "days": day_records,
         "internal": {
             "units": "m/s",
