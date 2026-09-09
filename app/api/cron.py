@@ -215,6 +215,27 @@ def run_verification(db: Session = Depends(get_db)) -> dict:
     return result
 
 
+@router.get("/build-sectors", dependencies=[Depends(_require_cron)])
+def build_sectors(db: Session = Depends(get_db)) -> dict:
+    """Build a bounded batch of CANDIDATE sector factors (never activated).
+
+    Writes enabled=False candidates only; activation is a separate WP1-gated
+    admin path, so this cannot change a served value. Resumable: spots are
+    ordered by least-recently-built, so repeated invocations drain the full
+    published catalogue without starving or double-running a spot.
+    """
+    settings = get_settings()
+    try:
+        from app.forecast.sector_runner import run_sector_producer
+
+        limit = max(1, min(settings.sector_build_batch_size, 5))
+        return run_sector_producer(db, producer="gwa", limit=limit)
+    except Exception:
+        db.rollback()
+        logger.exception("cron_build_sectors_failed")
+        return {"error": "internal_error"}
+
+
 @router.get("/wind-climatology", dependencies=[Depends(_require_cron)])
 def maintain_wind_climatology(
     db: Session = Depends(get_db),

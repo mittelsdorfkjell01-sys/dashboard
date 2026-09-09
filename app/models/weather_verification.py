@@ -144,3 +144,27 @@ class ForecastVerificationScore(Base):
         CheckConstraint("direction_sector >= 0 AND direction_sector < 12", name="ck_forecast_verification_sector"),
         CheckConstraint("sample_count >= 0", name="ck_forecast_verification_samples"),
     )
+
+
+class ForecastSectorBuild(Base):
+    """Per-spot sector-producer build state: resumable cursor + coverage summary.
+
+    Records the last producer run per spot (status, content hash, candidate
+    version). ``built_at`` orders the resumable cron batch so every spot drains
+    and none runs twice; ``content_hash`` gates idempotent re-runs. This never
+    activates a sector — it only records what candidate was written.
+    """
+
+    __tablename__ = "forecast_sector_builds"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    spot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False)
+    producer: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    content_hash: Mapped[str | None] = mapped_column(String(32))
+    version: Mapped[int | None] = mapped_column(Integer)
+    built_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("spot_id", "producer", name="uq_forecast_sector_build"),
+    )

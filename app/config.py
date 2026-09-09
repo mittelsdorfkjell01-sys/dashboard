@@ -234,6 +234,8 @@ class Settings(BaseSettings):
     # the historical window scored for raw-forecast verification.
     weather_observation_cron_batch_size: int = 25
     weather_verification_lookback_days: int = 45
+    # Spots processed per /cron/build-sectors tick (candidate writes only).
+    sector_build_batch_size: int = 5
 
     # TTL (seconds) for cached Open-Meteo live/forecast responses (30-60 min band).
     live_cache_ttl: int = 1800

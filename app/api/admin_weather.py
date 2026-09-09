@@ -944,6 +944,28 @@ def spot_verification_scores(
     }
 
 
+@router.post("/spots/{spot_id}/sectors/activate")
+def activate_sectors(
+    spot_id: uuid.UUID,
+    version: int = Query(..., ge=1),
+    reason: str | None = None,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> dict:
+    """Activate one candidate sector version (the ONLY path that enables sectors).
+
+    Flips the given version's rows to enabled=True and deactivates any previously
+    active version. WP1-gated by operator decision; records who/when/why. The
+    producer runner only ever writes enabled=False candidates.
+    """
+    from app.weather.sector_activation import activate_spot_sectors
+
+    try:
+        return activate_spot_sectors(db, spot_id, version, actor=actor, reason=reason)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
 @router.get("/spots/{spot_id}/operations")
 def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
     """Read model, cell, validation, job and publication state without implying inactive layers are live."""
