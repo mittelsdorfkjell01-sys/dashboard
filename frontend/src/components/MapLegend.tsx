@@ -30,7 +30,14 @@ export default function MapLegend({ mode }: { mode: PublicMapMode }) {
         <span>{format(bins[Math.floor(bins.length / 2)].min)}</span>
         <span>{format(bins[bins.length - 1].min)}+</span>
       </div>
-      <span className="swd-map-legend-note">Graue Marker: keine Live-Daten für diesen Modus</span>
+      <span className="sr-only">
+        Farbstufen: {bins.map((bin) => Number.isFinite(bin.max)
+          ? `${format(bin.min)} bis unter ${format(bin.max)} ${unit}`
+          : `ab ${format(bin.min)} ${unit}`).join(", ")}.
+      </span>
+      <span className="swd-map-legend-note">
+        Graue Marker: keine aktuellen {mode === "wind" ? "Winddaten" : "Wellendaten"}
+      </span>
     </div>
   );
 }

@@ -28,6 +28,8 @@ import {
 } from "../lib/publicMap";
 import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_VOYAGER } from "../lib/basemaps";
 import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
+import MapLegend from "../components/MapLegend";
+import { usePageMeta } from "../lib/pageMeta";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
 
@@ -63,6 +65,12 @@ const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)"
 type ClusterOrPoint = Supercluster.ClusterFeature<Supercluster.AnyProps> | Supercluster.PointFeature<PublicSpotProperties>;
 
 export default function MapView() {
+  usePageMeta({
+    title: "Surfspot-Karte: Windspots weltweit entdecken | surfwind data",
+    description: "Entdecke veröffentlichte Surf-, Kite-, Wing- und Windsurfspots auf der Karte und vergleiche aktuelle Windbedingungen.",
+    canonicalPath: "/map",
+    robots: "noindex,follow",
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,7 +94,12 @@ export default function MapView() {
   const [catalogReady, setCatalogReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
-  const { data: spots, loading: spotsLoading } = useSpots(
+  const {
+    data: spots,
+    loading: spotsLoading,
+    error: spotsError,
+    reload: reloadSpots,
+  } = useSpots(
     { limit: 500, catalog_version: catalogVersion },
     catalogReady,
   );
@@ -406,29 +419,54 @@ export default function MapView() {
   }, [selectedId, listPanelSpots, tilesOpen]);
   const { data: live } = useSpotsLive(liveIds);
 
-  const listEmptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`;
+  const listEmptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : spotCountLabel(viewportSpots.length);
   const regionLine = (spot: Spot) => [spot.regionName, countryName(spot.regionCountry ?? undefined)].filter(Boolean).join(" · ");
 
   return (
     <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${selectedSpot ? "has-bottom-panel" : ""}`} aria-labelledby="public-map-title">
       <Header />
       <h1 id="public-map-title" className="sr-only">Spot-Karte</h1>
-      <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" className="absolute inset-0">
+      <p id="public-map-help" className="sr-only">
+        Verschiebe oder vergrößere die Karte. Aktiviere einen Marker für die Vorhersage oder öffne die Liste für alle Spots im sichtbaren Ausschnitt.
+      </p>
+      <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" aria-describedby="public-map-help" className="absolute inset-0">
         <div className={`swd-map-canvas h-full w-full transition-opacity duration-300 ${mapReady ? "opacity-100" : "opacity-0"}`}>
           <div ref={containerRef} className="h-full w-full" />
         </div>
       </div>
+      {!mapReady && !mapError && (
+        <div role="status" className="swd-map-loading absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
+          Karte wird geladen…
+        </div>
+      )}
       {popupContainer && selectedSpot && createPortal(
         <div className="w-[176px]"><SpotCard spot={selectedSpot} live={live?.get(selectedSpot.id)} /></div>,
         popupContainer,
       )}
       {mapError && (
-        <div role="status" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
+        <div role="alert" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
           <span>Karte momentan nicht verfügbar.</span>
           <button type="button" onClick={() => window.location.reload()}>Erneut versuchen</button>
         </div>
       )}
+      {!mapError && spotsError && (
+        <div role="alert" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
+          <span>Spots konnten nicht geladen werden.</span>
+          <button type="button" onClick={reloadSpots}>Erneut versuchen</button>
+        </div>
+      )}
       <LeafletAttributionDisclosure source="carto" />
+      {mapReady && !tilesOpen && !selectedSpot && (
+        <>
+          <div className="swd-map-context pointer-events-none absolute z-[600]" aria-live="polite">
+            <strong>{spotCountLabel(viewportSpots.length)}</strong>
+            <span>Marker wählen für Vorhersage</span>
+          </div>
+          <div className="swd-map-legend-anchor pointer-events-none absolute z-[600]">
+            <MapLegend mode="wind" />
+          </div>
+        </>
+      )}
       <div className="swd-map-controls-left pointer-events-none absolute z-[1100] flex flex-col items-start gap-2">
         <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-bare-control pointer-events-auto">
           <ChevronLeftIcon className="text-sz-22" />
@@ -446,16 +484,22 @@ export default function MapView() {
             aria-expanded={false}
             aria-controls="swd-map-list-panel"
             onClick={() => { setTilesOpen(true); setSelectedId(undefined); }}
-            className="swd-map-control pointer-events-auto h-10 w-10"
+            className="swd-map-control pointer-events-auto px-2.5 sm:px-3"
           >
             <ListIcon className="text-sz-17" />
+            <span className="hidden text-caption font-semibold sm:inline">{viewportSpots.length}</span>
           </button>
         </div>
       )}
       {tilesOpen && (
         <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto absolute z-[1100]">
             <div className="swd-map-panel-head">
-              <p className="swd-map-list-title">Spots im Ausschnitt</p>
+              <div>
+                <p className="swd-map-list-title">Spots im Ausschnitt</p>
+                <p className="text-caption text-muted">
+                  Nach Entfernung sortiert · {listPanelSpots.length} von {viewportSpots.length} angezeigt
+                </p>
+              </div>
               <button type="button" aria-label="Schließen" aria-expanded={true} onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
                 <CloseIcon className="text-body" />
               </button>

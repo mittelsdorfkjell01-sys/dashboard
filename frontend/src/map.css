@@ -407,6 +407,29 @@
   box-shadow: 0 3px 14px rgb(36 28 23 / 13%);
 }
 .swd-map-error button { min-height: 44px; color: var(--sw-teal); font-weight: 600; }
+.swd-map-loading,
+.swd-map-context {
+  width: max-content;
+  max-width: calc(100% - 176px);
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--map-surface) 96%, transparent);
+  color: var(--map-label);
+  box-shadow: 0 2px 8px rgb(15 25 25 / 10%);
+  font-size: 11px;
+}
+.swd-map-loading { padding: 10px 12px; }
+.swd-map-context {
+  top: max(76px, calc(60px + env(safe-area-inset-top)));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  transform: translateX(-50%);
+}
+.swd-map-context strong { font-weight: 600; }
+.swd-map-context span { color: var(--map-label-soft); }
 
 /* Bottom shell — a soft gradient stands in for a solid panel behind the
    tiles/chart, never a dark scrim (the map must stay visible and pannable
@@ -492,6 +515,10 @@
   font-variant-numeric: tabular-nums;
 }
 .swd-map-legend-note { font-size: 10px; color: var(--map-label-soft); }
+.swd-map-legend-anchor {
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
 
 .swd-public-map .leaflet-bottom.leaflet-right {
   right: max(12px, env(safe-area-inset-right));
@@ -590,6 +617,10 @@
 
 @media (max-width: 639px) {
   .swd-map-panel { max-width: none; }
+  .swd-map-context { max-width: calc(100% - 32px); }
+  .swd-map-context span { display: none; }
+  .swd-map-legend { width: min(200px, calc(100vw - 96px)); }
+  .swd-map-legend-note { display: none; }
   .swd-public-map .leaflet-bottom.leaflet-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
 }
 @media (prefers-reduced-motion: reduce) {

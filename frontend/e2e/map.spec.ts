@@ -177,13 +177,13 @@ test("back navigation falls back to the homepage when there is no history entry"
   await expect(page).toHaveURL(/\/$/);
 });
 
-test("overview omits mode controls, legend and the bottom empty hint", async ({ page }) => {
+test("overview explains the wind scale without exposing unfinished map modes", async ({ page }) => {
   await mockBackend(page);
   await page.goto("/map?lat=0&lon=-150&z=10&mode=waves");
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await expect(page.getByRole("group", { name: "Kartenmodus" })).toHaveCount(0);
-  await expect(page.locator(".swd-map-legend")).toHaveCount(0);
-  await expect(page.locator(".swd-map-status")).toHaveCount(0);
-  await expect(page.getByText("Keine Spots in diesem Kartenausschnitt", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Legende: Wind" })).toBeVisible();
+  await expect(page.getByText("Graue Marker: keine aktuellen Winddaten")).toBeVisible();
+  await expect(page.locator(".swd-map-context")).toContainText("0 Spots im Kartenausschnitt");
   await expect(page).not.toHaveURL(/mode=/);
 });

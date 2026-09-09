@@ -16,6 +16,8 @@ import * as api from "../lib/api";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
 import { useSpots, useSpotsLive, useTopSpots, useRegions } from "../lib/hooks";
 import type { Spot } from "../lib/types";
+import { sportLabel } from "../lib/labels";
+import { usePageMeta } from "../lib/pageMeta";
 
 const MONTHS = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
@@ -40,16 +42,62 @@ const pinIcon = L.divIcon({
 /** Breadcrumb + heading — shared by every axis so it can sit either above the
  *  content (loading/error/best-weeks) or inside the split-view grid (so its
  *  row lines up with the map). */
-function ResultHead({ heading }: { heading: string }) {
+function ResultHead({
+  heading,
+  description,
+  context,
+}: {
+  heading: string;
+  description?: string;
+  context?: string[];
+}) {
   return (
     <>
-      <nav className="text-sz-11 font-medium text-muted">
+      <nav aria-label="Brotkrumen" className="text-sz-11 font-medium text-muted">
         <Link to="/" className="hover:underline">Übersicht</Link>
         <span className="mx-1.5 text-muted">›</span>
         <span className="text-ink">Suche</span>
       </nav>
       <h1 className="mt-2 text-sz-32 font-semibold leading-tight text-balance text-ink">{heading}</h1>
+      {description && <p className="mt-3 max-w-[68ch] text-body leading-relaxed text-ink-soft">{description}</p>}
+      {context && context.length > 0 && (
+        <ul aria-label="Aktive Suchauswahl" className="mt-4 flex flex-wrap gap-2">
+          {context.map((item, index) => (
+            <li key={`${index}-${item}`} className="rounded-full border border-line bg-surface px-3 py-1.5 text-caption font-medium text-ink-soft">
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
     </>
+  );
+}
+
+function spotKeys(spot: Spot): string[] {
+  return [spot.id, spot.uuid, spot.slug].filter((value): value is string => Boolean(value));
+}
+
+function withoutDuplicates(candidates: Spot[], excluded: Spot[] = []): Spot[] {
+  const seen = new Set(excluded.flatMap(spotKeys));
+  return candidates.filter((spot) => {
+    const keys = spotKeys(spot);
+    if (keys.some((key) => seen.has(key))) return false;
+    keys.forEach((key) => seen.add(key));
+    return true;
+  });
+}
+
+function SearchEmptyState() {
+  return (
+    <div className="rounded-2xl bg-band px-5 py-10 text-center">
+      <h2 className="text-body font-semibold text-ink">Keine passenden Treffer</h2>
+      <p className="mx-auto mt-2 max-w-[54ch] text-ui leading-relaxed text-muted">
+        Prüfe die Schreibweise, suche nach einer größeren Region oder entdecke verfügbare Spots direkt auf der Karte.
+      </p>
+      <Link to="/map" className="mt-5 inline-flex min-h-11 items-center font-semibold text-ink hover:underline hover:underline-offset-4">
+        Spot-Karte öffnen
+      </Link>
+    </div>
   );
 }
 
@@ -141,7 +189,7 @@ function ResultsMap({
   const [map, setMap] = useState<LeafletMap | null>(null);
   const withCoords = spots.filter((s) => s.coords);
   return (
-    <div className="relative h-full w-full">
+    <div role="region" aria-label="Karte der Suchergebnisse" className="relative h-full w-full">
       <MapContainer
         center={center}
         zoom={zoom}
@@ -157,7 +205,7 @@ function ResultsMap({
           subdomains="abcd"
         />
         {withCoords.map((spot) => (
-          <Marker key={spot.id} position={spot.coords!} icon={pinIcon}>
+          <Marker key={spot.id} position={spot.coords!} icon={pinIcon} alt={`Surfspot ${spot.name}`} title={spot.name}>
             <Popup className="spot-popup" closeButton={false}>
               <div className="w-[200px]">
                 <SpotCard spot={spot} compact live={live?.get(spot.id)} />
@@ -303,6 +351,7 @@ function useSimilarSpots(spotId: string | undefined, sport?: string): Spot[] {
       setSpots([]);
       return;
     }
+    setSpots([]);
     const ctrl = new AbortController();
     const query = new URLSearchParams({ mode: "charakter", limit: "6" });
     if (sport) query.set("sport", sport);
@@ -326,7 +375,22 @@ function enrichSpots(hits: api.SearchSpot[], catalogue: Spot[]): Spot[] {
     byId.set(s.id, s);
     if (s.uuid) byId.set(s.uuid, s);
   }
-  return hits.map((h) => bySlug.get(h.slug) ?? byId.get(h.id)).filter((s): s is Spot => Boolean(s));
+  return hits.map((hit): Spot =>
+    bySlug.get(hit.slug) ?? byId.get(hit.id) ?? {
+      id: hit.id,
+      uuid: hit.id,
+      slug: hit.slug,
+      name: hit.name,
+      region: "",
+      wind: 0,
+      tags: [],
+      image: "",
+      coords: hit.location ? [hit.location.lat, hit.location.lon] : undefined,
+      sports: hit.sports,
+      typicalWindKt: null,
+      typicalWaveHeightM: null,
+    },
+  );
 }
 
 // --- page ------------------------------------------------------------------
@@ -366,7 +430,7 @@ export default function SearchResults() {
   // Shared data.
   const { data: catalogue } = useSpots({ limit: 100 });
   const { data: topSpots } = useTopSpots(6);
-  const performing = useMemo(() => (topSpots ?? []).slice(0, 6), [topSpots]);
+  const topCandidates = useMemo(() => withoutDuplicates((topSpots ?? []).slice(0, 6)), [topSpots]);
   // Region catalogue (SWR-cached under the "regions" key — every consumer on
   // this page, including DiscoveryRegions below, shares the one fetch) so
   // direct-hit region tiles can carry image/country/spot_count/sports
@@ -446,11 +510,19 @@ export default function SearchResults() {
   );
   const anchorSpotId = spotId ?? directSpots[0]?.uuid ?? directSpots[0]?.id;
   const similar = useSimilarSpots(showSearch ? anchorSpotId : undefined, sport);
+  const comparableSpots = useMemo(
+    () => withoutDuplicates(similar, directSpots),
+    [directSpots, similar],
+  );
+  const recommendedSpots = useMemo(
+    () => withoutDuplicates(topCandidates, showSearch ? [...directSpots, ...comparableSpots] : []),
+    [comparableSpots, directSpots, showSearch, topCandidates],
+  );
 
   // Live conditions for everything shown on tiles/map.
   const liveIds = useMemo(
-    () => Array.from(new Set([...directSpots, ...similar, ...performing].map((s) => s.id))),
-    [directSpots, similar, performing],
+    () => Array.from(new Set([...directSpots, ...comparableSpots, ...recommendedSpots].map((s) => s.id))),
+    [comparableSpots, directSpots, recommendedSpots],
   );
   const { data: liveData } = useSpotsLive(liveIds);
   const live = liveData ?? undefined;
@@ -458,31 +530,61 @@ export default function SearchResults() {
   const mapSpots = useMemo(() => {
     const seen = new Set<string>();
     const out: Spot[] = [];
-    for (const s of [...directSpots, ...similar, ...performing]) {
+    for (const s of [...directSpots, ...comparableSpots, ...recommendedSpots]) {
       if (s.coords && !seen.has(s.id)) {
         seen.add(s.id);
         out.push(s);
       }
     }
     return out;
-  }, [directSpots, similar, performing]);
-  const center = centerFor(directSpots, performing);
+  }, [comparableSpots, directSpots, recommendedSpots]);
+  const center = centerFor(directSpots, recommendedSpots);
 
   const directRegions = useMemo(
     () =>
-      (result?.regionen ?? []).map((r) => {
-        const meta = regionById.get(r.id);
-        return {
-          slug: r.slug,
-          name: r.name,
-          country: meta?.country ?? null,
-          image: meta?.image,
-          spotCount: meta?.spot_count ?? null,
-          sports: meta?.sports ?? null,
-        };
-      }),
+      (result?.regionen ?? [])
+        .map((r) => {
+          const meta = regionById.get(r.id);
+          return {
+            slug: r.slug,
+            name: r.name,
+            country: meta?.country ?? null,
+            image: meta?.image,
+            spotCount: meta?.spot_count ?? null,
+            sports: meta?.sports ?? null,
+          };
+        })
+        .filter((region, index, regions) => regions.findIndex((candidate) => candidate.slug === region.slug) === index),
     [result, regionById],
   );
+
+  const resultDescription = showWeeks
+    ? "Die Wochen sind nach dem Anteil nutzbarer Stunden sortiert. Höhere Werte bedeuten verlässlichere Zeitfenster, nicht garantiert perfekte Bedingungen."
+    : discovery
+    ? "Starte ohne festes Ziel: Vergleiche aktuell empfohlene Spots, saisonal starke Regionen und ihre Lage auf der Karte."
+    : showBestRegions
+    ? "Die Reihenfolge basiert auf der saisonalen Abdeckung nutzbarer Stunden im gewählten Zeitraum."
+    : nearby && geocodeName
+    ? "Die Treffer werden nach Passung und Entfernung zum gefundenen Ort angeordnet."
+    : result
+    ? `${result.treffer} ${result.treffer === 1 ? "Treffer wurde" : "Treffer wurden"} gefunden. Direkte Treffer, ähnliche Spots und aktuelle Empfehlungen werden getrennt dargestellt.`
+    : "Direkte Treffer, ähnliche Spots und aktuelle Empfehlungen werden getrennt dargestellt.";
+  const searchContext = [
+    placeOpen ? "Alle Orte" : q || "Ausgewählter Ort",
+    week ? `Kalenderwoche ${week}` : monthName || "Jeder Zeitraum",
+    sport ? sportLabel(sport) : "Alle Sportarten",
+  ];
+
+  usePageMeta({
+    title: q
+      ? `${q}: Surfspots und Bedingungen | surfwind data`
+      : "Surfspots suchen und vergleichen | surfwind data",
+    description: q
+      ? `Finde Surf- und Windspots rund um ${q}, vergleiche Bedingungen, ähnliche Spots und aktuelle Empfehlungen.`
+      : "Suche Surf-, Kite-, Wing- und Windsurfspots nach Ort, Zeitraum und Sportart.",
+    canonicalPath: "/search",
+    robots: "noindex,follow",
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-page">
@@ -491,7 +593,7 @@ export default function SearchResults() {
       <main className="flex-1 pt-20 sm:pt-24">
         {loading && (
           <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
-            <ResultHead heading={heading} />
+            <ResultHead heading={heading} description={resultDescription} context={searchContext} />
             <div className="mt-8">
               <SpotGridSkeleton />
             </div>
@@ -500,7 +602,7 @@ export default function SearchResults() {
 
         {error && !loading && (
           <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 sm:px-8">
-            <ResultHead heading={heading} />
+            <ResultHead heading={heading} description={resultDescription} context={searchContext} />
             <div className="mt-8">
               <ErrorBanner message={error} onRetry={() => setRetry((n) => n + 1)} />
             </div>
@@ -509,7 +611,7 @@ export default function SearchResults() {
 
         {!loading && !error && showWeeks && bestWeeks && (
           <div className="mx-auto w-full max-w-[1180px] px-4 pt-2 pb-16 sm:px-8">
-            <ResultHead heading={heading} />
+            <ResultHead heading={heading} description={resultDescription} context={searchContext} />
             <div className="mt-8">
               <BestWeeksList data={bestWeeks} place={q} />
             </div>
@@ -518,24 +620,29 @@ export default function SearchResults() {
 
         {!loading && !error && (discovery || showBestRegions || showSearch) && (
           <SplitView
-            head={<ResultHead heading={heading} />}
+            head={<ResultHead heading={heading} description={resultDescription} context={searchContext} />}
             mapSpots={discovery ? (catalogue ?? []).filter((s) => s.coords) : mapSpots}
             center={center}
             live={live}
           >
             {showSearch && (
               <>
-                <RegionRow title="Direkte Treffer" subtitle="Regionen zu deiner Suche" regions={directRegions} />
+                <RegionRow title="Passende Regionen" subtitle="Regionen mit direkter Namens- oder Ortsübereinstimmung" regions={directRegions} />
                 <SpotRow
-                  title={directRegions.length ? "Spots" : "Direkte Treffer"}
-                  subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Passend zu deiner Suche"}
+                  title="Passende Spots"
+                  subtitle={nearby && geocodeName ? `Nach Nähe zu ${geocodeName} und Bedingungen sortiert` : "Direkte Treffer zu deiner Auswahl"}
                   spots={directSpots}
                   live={live}
                 />
                 {directSpots.length === 0 && directRegions.length === 0 && (
-                  <EmptyState message="Keine direkten Treffer. Versuche einen anderen Ort oder Spotnamen." />
+                  <SearchEmptyState />
                 )}
-                <SpotRow title="Vergleichbares Profil" subtitle="Spots mit ähnlichem Charakter" spots={similar} live={live} />
+                <SpotRow
+                  title="Ähnliche Bedingungen"
+                  subtitle="Spots mit vergleichbarem Charakter · bereits gezeigte Treffer sind ausgeschlossen"
+                  spots={comparableSpots}
+                  live={live}
+                />
               </>
             )}
 
@@ -543,7 +650,12 @@ export default function SearchResults() {
               <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
             )}
 
-            <SpotRow title="Gerade gut" subtitle="Spots mit aktuell guten Bedingungen" spots={performing} live={live} />
+            <SpotRow
+              title="Aktuell empfohlen"
+              subtitle="Nach 7-Tage-Windvorhersage, heutigen Bedingungen und Community-Signalen · ohne Dubletten"
+              spots={recommendedSpots}
+              live={live}
+            />
 
             {discovery && <DiscoveryRegions />}
           </SplitView>
@@ -572,8 +684,8 @@ function BestRegionsRow({
   }
   return (
     <RegionRow
-      title="Direkte Treffer"
-      subtitle={`Beste Reviere ${monthName ? `im ${monthName}` : "über die Saison"} · nach Abdeckung`}
+      title="Empfohlene Regionen"
+      subtitle={`Saisonale Abdeckung nutzbarer Stunden ${monthName ? `im ${monthName}` : "über das Jahr"}`}
       regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
@@ -612,8 +724,8 @@ function DiscoveryRegions() {
   if (ranking.length === 0) return null;
   return (
     <RegionRow
-      title="Top-Regionen"
-      subtitle="Reviere, die gerade gut laufen"
+      title="Saisonal starke Regionen"
+      subtitle="Nach der Abdeckung nutzbarer Stunden über die Saison"
       regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
@@ -646,12 +758,15 @@ function BestWeeksList({ data, place }: { data: api.BestWeeksResponse; place: st
           return (
             <li key={w.week} className="flex items-center gap-4 rounded-[14px] border border-line bg-surface px-4 py-3">
               <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
-              <span className="h-2 flex-1 overflow-hidden rounded-full bg-line">
+              <span aria-hidden className="h-2 flex-1 overflow-hidden rounded-full bg-line">
                 <span className={`block h-full rounded-full ${isBest ? "bg-orange" : "bg-teal"}`} style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }} />
               </span>
               {typeof w.score === "number" && (
-                <span className="w-24 shrink-0 text-right text-label text-muted" title="Anteil der Zeit mit fahrbaren Bedingungen in dieser Woche">
+                <span className="w-36 shrink-0 text-right text-label text-muted" title="Anteil der Zeit mit fahrbaren Bedingungen in dieser Woche">
                   <span className="data-accent">{Math.round(w.score * 100)}%</span> nutzbar
+                  {typeof w.spots_working === "number" && (
+                    <span className="block text-caption">{w.spots_working} {w.spots_working === 1 ? "Spot" : "Spots"}</span>
+                  )}
                 </span>
               )}
             </li>

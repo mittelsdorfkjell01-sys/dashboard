@@ -14,12 +14,12 @@ import { spotPath } from "../lib/spotRoutes";
  * surface. No hover treatment on the card (no bg change) — the whole tile
  * is the tap target, `focus-visible` covers keyboard/a11y.
  *
- * Every tile shows wind (kts) with wave height (m) stacked below it. Wind
+ * Every tile shows available wind (kt) with wave height (m) stacked below it. Wind
  * gets a live green-dot reading when the caller passes `live` (see
  * lib/hooks.ts's useSpotsLive, chunked to the `/spots/live` endpoint's
  * 20-id cap); otherwise it falls back to the typical/editorial figure.
- * Wave height has no backend source yet, so it renders as a "—" placeholder
- * until that data exists.
+ * Missing measurements are omitted instead of rendering a unit next to a dash;
+ * a card must never imply that unavailable data is a real reading.
  *
  * `compact` is the map popup/strip treatment: image + name/figure row only —
  * no room there for region, sports or best-months.
@@ -79,10 +79,13 @@ export default function SpotCard({
             {spot.name}
           </p>
           {windValue != null && (
-            <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
+            <div
+              className="flex shrink-0 items-baseline gap-1 whitespace-nowrap"
+              aria-label={`${windIsLive ? "Aktueller" : "Typischer"} Wind: ${windValue} Knoten`}
+            >
               {!mapRail && windIsLive && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
               <span className="text-label font-semibold text-ink">{windValue}</span>
-              <span className="text-caption text-ink-soft">kts</span>
+              <span aria-hidden className="text-caption text-ink-soft">kt</span>
               {mapRail && liveSuffix && <span className="text-caption text-muted">· {liveSuffix}</span>}
             </div>
           )}
@@ -95,10 +98,12 @@ export default function SpotCard({
         {!compact && (
           <div className="flex items-baseline justify-between gap-3">
             {regionLine && <p className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{regionLine}</p>}
-            <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              <span className="text-label font-semibold text-ink">{waveValue ?? "—"}</span>
-              <span className="text-caption text-ink-soft">m</span>
-            </div>
+            {waveValue != null && (
+              <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap" aria-label={`Typische Wellenhöhe: ${waveValue} Meter`}>
+                <span className="text-label font-semibold text-ink">{waveValue}</span>
+                <span aria-hidden className="text-caption text-ink-soft">m</span>
+              </div>
+            )}
           </div>
         )}
 

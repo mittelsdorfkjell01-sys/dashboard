@@ -130,7 +130,7 @@ export default function LandingHeader({
                   }`}
                   style={sticky ? { opacity: 1 - progress } : undefined}
                 >
-                  Best collection of surfspots
+                  Surf- und Windspots im Vergleich
                 </span>
                 {sticky && (
                   <Link
