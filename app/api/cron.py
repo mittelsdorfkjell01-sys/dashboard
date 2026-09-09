@@ -201,6 +201,17 @@ def run_verification(db: Session = Depends(get_db)) -> dict:
         db.rollback()
         logger.exception("cron_verification_scoring_failed")
         result["verification"] = {"error": "internal_error"}
+    try:
+        from app.weather.sector_calibration import recalibrate_eligible_spots
+
+        # Shrink sector factors from their WP3/WP5 prior towards measurement as
+        # station data accumulates. Writes a new sector version; never emits
+        # station wind as a forecast value.
+        result["sector_calibration"] = recalibrate_eligible_spots(db)
+    except Exception:
+        db.rollback()
+        logger.exception("cron_sector_calibration_failed")
+        result["sector_calibration"] = {"error": "internal_error"}
     return result
 
 
