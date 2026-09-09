@@ -153,7 +153,7 @@ test("search separates result types, removes duplicates and explains every ranki
   await page.goto("/search?q=Nordsee&sport=kitesurf");
 
   await expect(page.getByRole("heading", { level: 1, name: "Ergebnisse für „Nordsee“" })).toBeVisible();
-  await expect(page.getByText("Kitesurfen", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Aktive Suchauswahl").getByText("Kitesurfen", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Passende Spots" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Ähnliche Bedingungen" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aktuell empfohlen" })).toBeVisible();

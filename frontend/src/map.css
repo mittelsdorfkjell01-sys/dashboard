@@ -620,7 +620,6 @@
   .swd-map-context { max-width: calc(100% - 32px); }
   .swd-map-context span { display: none; }
   .swd-map-legend { width: min(200px, calc(100vw - 96px)); }
-  .swd-map-legend-note { display: none; }
   .swd-public-map .leaflet-bottom.leaflet-right { bottom: max(380px, calc(364px + env(safe-area-inset-bottom))); }
 }
 @media (prefers-reduced-motion: reduce) {
