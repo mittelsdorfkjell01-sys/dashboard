@@ -157,9 +157,9 @@ test("search separates result types, removes duplicates and explains every ranki
   await expect(page.getByRole("heading", { name: "Passende Spots" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Ähnliche Bedingungen" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Aktuell empfohlen" })).toBeVisible();
-  await expect(page.locator("main").getByText("Spot A", { exact: true })).toHaveCount(1);
-  await expect(page.locator("main").getByText("Spot B", { exact: true })).toHaveCount(1);
-  await expect(page.locator("main").getByText("Spot C", { exact: true })).toHaveCount(1);
+  await expect(page.locator('main a[href="/spot/spot-a/info"]')).toHaveCount(1);
+  await expect(page.locator('main a[href="/spot/spot-b/info"]')).toHaveCount(1);
+  await expect(page.locator('main a[href="/spot/spot-c/info"]')).toHaveCount(1);
   await expect(page.getByText(/7-Tage-Windvorhersage, heutigen Bedingungen/)).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex,follow");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://surfwinddata.com/search");
