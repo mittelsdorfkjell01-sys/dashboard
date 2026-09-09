@@ -124,7 +124,8 @@ def test_gate_has_terminal_credential_and_budget_states(monkeypatch):
 
 def test_shadow_engine_is_not_wired_into_public_publisher():
     import inspect
-    from app.forecast import physics, publisher
+    from app.forecast import publisher
+    from app.live import service
 
     assert "forecast.shadow" not in inspect.getsource(publisher)
-    assert "forecast.shadow" not in inspect.getsource(physics)
+    assert "forecast.shadow" not in inspect.getsource(service)
