@@ -26,13 +26,24 @@ from app.forecast.sector_runner import run_sector_producer
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build candidate sector factors.")
-    scope = parser.add_mutually_exclusive_group(required=True)
+    scope = parser.add_mutually_exclusive_group(required=False)
     scope.add_argument("--all", action="store_true", help="Every published spot.")
     scope.add_argument("--spot", action="append", help="One or more spot ids.")
     scope.add_argument("--limit", type=int, help="Least-recently-built N published spots.")
     parser.add_argument("--producer", choices=("gwa", "microscale"), default="gwa")
     parser.add_argument("--dry-run", action="store_true", help="Compute and report; write nothing.")
+    parser.add_argument("--check-rasters", action="store_true",
+                        help="Run the GWA raster preflight doctor and exit.")
     args = parser.parse_args()
+
+    if args.check_rasters:
+        from app.forecast.gwa_producer import gwa_raster_doctor
+
+        report = gwa_raster_doctor()
+        print(json.dumps(report, indent=2, default=str))
+        raise SystemExit(0 if report.get("ok") else 1)
+    if not (args.all or args.spot or args.limit):
+        parser.error("one of --all / --spot / --limit is required (or --check-rasters)")
 
     spot_ids = [uuid.UUID(value) for value in args.spot] if args.spot else None
     with SessionLocal() as db:

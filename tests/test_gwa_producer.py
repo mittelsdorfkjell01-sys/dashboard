@@ -1,206 +1,128 @@
-"""WP3 Task 3: GWA sector-factor producer — pure arithmetic, status paths, persistence."""
+"""WP3-A: omnidirectional GWA bias factor against the real combined layer."""
 
 from __future__ import annotations
 
 import math
-import uuid
 
 import pytest
-from geoalchemy2 import WKTElement
 
 from app.forecast.gwa_producer import (
+    FACTOR_HIGH,
+    REQUIRED_HEIGHT_M,
     SECTOR_COUNT,
-    WeibullSector,
-    bin_mean_speeds,
+    WEIBULL_A_VARIABLE,
+    WIND_SPEED_VARIABLE,
+    MountedGwaRasterReader,
     compute_gwa_sectors,
-    persist_gwa_sectors,
+    gwa_raster_doctor,
     weibull_mean,
 )
-from app.models import Region, Spot, SpotWeatherProfile, SpotWeatherSector
 
 
 class FakeReader:
-    def __init__(self, sectors, *, mounted=True):
+    def __init__(self, mean_gwa, *, mounted=True):
         self.mounted = mounted
-        self._sectors = sectors
+        self._mean_gwa = mean_gwa
 
     def read(self, lat, lon):
-        return self._sectors
+        return self._mean_gwa
 
 
 class FakeReference:
-    def __init__(self, means):
-        self._means = means
+    def __init__(self, mean_ref):
+        self._mean_ref = mean_ref
 
-    def sector_mean_speeds(self, lat, lon, window):
-        return self._means
-
-
-class FakeSlope:
-    def __init__(self, gradients):
-        self._gradients = gradients
-
-    def sector_gradients(self, lat, lon):
-        return self._gradients
+    def mean_speed(self, lat, lon, window):
+        return self._mean_ref
 
 
-def _uniform(a=8.0, k=1.0):
-    return [WeibullSector(a, k) for _ in range(SECTOR_COUNT)]
-
-
-# --- pure arithmetic -------------------------------------------------------
+# --- pure factor -----------------------------------------------------------
 
 
 def test_weibull_mean_matches_closed_form():
-    assert weibull_mean(8.0, 1.0) == pytest.approx(8.0)  # gamma(2) == 1
+    assert weibull_mean(8.0, 1.0) == pytest.approx(8.0)
     assert weibull_mean(10.0, 2.0) == pytest.approx(10.0 * math.gamma(1.5))
     assert math.isnan(weibull_mean(0.0, 2.0))
 
 
-def test_factor_is_gwa_over_reference_and_clamped():
-    reader = FakeReader(_uniform(a=8.0, k=1.0))            # mean_gwa == 8.0
-    reference = FakeReference([6.4] * SECTOR_COUNT)         # ratio 1.25
-    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=reader, reference=reference)
+def test_factor_is_gwa_over_reference_on_all_twelve_sectors():
+    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(8.0), reference=FakeReference(6.4))
     assert result.status == "ok" and result.enabled is True
-    assert all(s.speed_factor == pytest.approx(1.25) for s in result.sectors)
-    assert all(s.saturated is False and s.confidence == "ok" for s in result.sectors)
+    assert len(result.sectors) == SECTOR_COUNT
+    assert all(s.speed_factor == pytest.approx(1.25) for s in result.sectors)   # one omni value
+    assert all(s.direction_offset_deg == 0 and s.confidence == "ok" for s in result.sectors)
+    assert result.provenance["variable"] == WIND_SPEED_VARIABLE and result.provenance["height"] == 10
 
 
 def test_factor_saturates_at_hull_and_flags():
-    reader = FakeReader(_uniform(a=12.0, k=1.0))           # mean_gwa == 12.0
-    reference = FakeReference([6.0] * SECTOR_COUNT)         # ratio 2.0 -> clamp 1.60
-    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=reader, reference=reference)
-    assert all(s.speed_factor == pytest.approx(1.60) and s.saturated for s in result.sectors)
+    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(12.0), reference=FakeReference(6.0))
+    assert all(s.speed_factor == pytest.approx(FACTOR_HIGH) and s.saturated for s in result.sectors)
 
 
-def test_zero_or_nan_reference_stays_neutral_low_confidence():
-    reader = FakeReader(_uniform())
-    means = [6.4] * SECTOR_COUNT
-    means[0] = 0.0
-    means[1] = float("nan")
-    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=reader, reference=FakeReference(means))
-    assert result.sectors[0].speed_factor == 1.0 and result.sectors[0].confidence == "low"
-    assert result.sectors[1].speed_factor == 1.0 and result.sectors[1].confidence == "low"
+def test_invalid_ratio_is_neutral_low_confidence():
+    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(8.0), reference=FakeReference(0.0))
+    assert result.status == "ok"
+    assert all(s.speed_factor == 1.0 and s.confidence == "low" for s in result.sectors)
 
 
-def test_steep_slope_marks_low_confidence_without_dropping_factor():
-    gradients = [0.0] * SECTOR_COUNT
-    gradients[4] = 0.5  # > 0.30
-    result = compute_gwa_sectors(
-        0.0, 0.0, gwa_reader=FakeReader(_uniform()), reference=FakeReference([6.4] * SECTOR_COUNT),
-        slope_provider=FakeSlope(gradients),
-    )
-    assert result.sectors[4].confidence == "low"
-    assert result.sectors[4].speed_factor == pytest.approx(1.25)  # factor still computed
-    assert result.sectors[0].confidence == "ok"
+def test_status_paths_are_neutral():
+    not_mounted = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(8.0, mounted=False), reference=FakeReference(6.4))
+    assert not_mounted.status == "gwa_not_mounted" and not_mounted.enabled is False
+    nodata = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(None), reference=FakeReference(6.4))
+    assert nodata.status == "gwa_nodata"
+    no_ref = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(8.0), reference=FakeReference(None))
+    assert no_ref.status == "reference_unavailable"
+    for result in (not_mounted, nodata, no_ref):
+        assert all(s.speed_factor == 1.0 for s in result.sectors)
 
 
-# --- status paths (never invented values) ----------------------------------
+# --- reader: height enforcement + primary/fallback -------------------------
 
 
-def test_unmounted_raster_returns_neutral_status():
-    result = compute_gwa_sectors(
-        0.0, 0.0, gwa_reader=FakeReader(_uniform(), mounted=False),
-        reference=FakeReference([6.4] * SECTOR_COUNT),
-    )
-    assert result.status == "gwa_not_mounted" and result.enabled is False
-    assert all(s.speed_factor == 1.0 for s in result.sectors)
+def test_reader_requires_ten_metre_height():
+    MountedGwaRasterReader("dir", height=10)  # ok
+    with pytest.raises(ValueError, match="10 m"):
+        MountedGwaRasterReader("dir", height=100)
 
 
-def test_nodata_cell_returns_neutral_status():
-    result = compute_gwa_sectors(
-        0.0, 0.0, gwa_reader=FakeReader(None), reference=FakeReference([6.4] * SECTOR_COUNT),
-    )
-    assert result.status == "gwa_nodata"
-    assert all(s.speed_factor == 1.0 for s in result.sectors)
+def test_reader_unmounted_reads_none():
+    assert MountedGwaRasterReader(None).mounted is False
 
 
-def test_reference_unavailable_returns_status():
-    result = compute_gwa_sectors(0.0, 0.0, gwa_reader=FakeReader(_uniform()), reference=FakeReference(None))
-    assert result.status == "reference_unavailable"
+class _StubSampleReader(MountedGwaRasterReader):
+    """Exercise read()'s primary/fallback logic without rasterio."""
+
+    def __init__(self, *, wind_speed=None, a=None, k=None):
+        super().__init__("dir", height=10)
+        self._values = {WIND_SPEED_VARIABLE: wind_speed, WEIBULL_A_VARIABLE: a, "combined-Weibull-k": k}
+
+    def _sample(self, path, lon, lat):
+        for variable, value in self._values.items():
+            if variable in path:
+                return value
+        return None
 
 
-# --- binning ---------------------------------------------------------------
+def test_reader_prefers_wind_speed_then_falls_back_to_weibull():
+    assert _StubSampleReader(wind_speed=7.5).read(43.0, -1.4) == pytest.approx(7.5)
+    fallback = _StubSampleReader(wind_speed=None, a=8.0, k=2.0).read(43.0, -1.4)
+    assert fallback == pytest.approx(weibull_mean(8.0, 2.0))
+    assert _StubSampleReader().read(43.0, -1.4) is None  # nothing available -> NoData
 
 
-def test_bin_mean_speeds_puts_easterly_wind_in_sector_three():
-    # from-east (90 deg): u=-s, v=0 -> sector index 3.
-    means = bin_mean_speeds([-10.0, -10.0], [0.0, 0.0])
-    assert means[3] == pytest.approx(10.0)
-    assert math.isnan(means[0])
+# --- doctor ----------------------------------------------------------------
 
 
-# --- persistence -----------------------------------------------------------
+def test_doctor_reports_unmounted():
+    report = gwa_raster_doctor(None)
+    assert report["ok"] is False and report["mounted"] is False
 
 
-@pytest.fixture
-def gwa_spot(db):
-    suffix = uuid.uuid4().hex[:8]
-    region = Region(slug=f"gwa-region-{suffix}", name=f"GWA Region {suffix}",
-                    normalized_name=f"gwa region {suffix}", country="FR", status="published")
-    db.add(region)
-    db.flush()
-    spot = Spot(slug=f"gwa-spot-{suffix}", name=f"GWA Spot {suffix}",
-                normalized_name=f"gwa spot {suffix}", region_id=region.id,
-                location=WKTElement("POINT(-1.44 43.66)", srid=4326),
-                sports=["wind"], water_type=["sea"], status="published")
-    db.add(spot)
-    db.commit()
-    yield spot
-    db.query(SpotWeatherSector).delete()
-    profile = db.query(SpotWeatherProfile).filter_by(spot_id=spot.id).one_or_none()
-    if profile:
-        db.delete(profile)
-    db.delete(spot)
-    db.flush()
-    db.delete(region)
-    db.commit()
+def test_doctor_refuses_non_ten_metre_height():
+    report = gwa_raster_doctor("dir", height=100)
+    assert report["ok"] is False
+    assert any("10 m" in p for p in report["problems"])
 
 
-def _ok_result():
-    return compute_gwa_sectors(
-        43.66, -1.44, gwa_reader=FakeReader(_uniform(a=8.0, k=1.0)),
-        reference=FakeReference([6.4] * SECTOR_COUNT), grid_cell=[43.75, -1.5],
-    )
-
-
-def test_persist_writes_twelve_versioned_rows_and_is_idempotent(db, gwa_spot):
-    result = _ok_result()
-    first = persist_gwa_sectors(db, gwa_spot.id, result)
-    assert first == {"status": "ok", "written": 12, "version": 1, "reason": "written"}
-
-    rows = db.query(SpotWeatherSector).join(SpotWeatherProfile).filter(
-        SpotWeatherProfile.spot_id == gwa_spot.id).all()
-    assert len(rows) == 12
-    assert all(r.enabled and r.direction_offset_deg == 0 for r in rows)
-    assert all(r.speed_factor == pytest.approx(1.25) for r in rows)
-
-    # Identical input -> no new version.
-    again = persist_gwa_sectors(db, gwa_spot.id, _ok_result())
-    assert again["reason"] == "idempotent" and again["version"] == 1
-
-    # A changed result bumps the version.
-    changed = compute_gwa_sectors(
-        43.66, -1.44, gwa_reader=FakeReader(_uniform(a=8.8, k=1.0)),
-        reference=FakeReference([6.4] * SECTOR_COUNT), grid_cell=[43.75, -1.5])
-    bumped = persist_gwa_sectors(db, gwa_spot.id, changed)
-    assert bumped["version"] == 2 and bumped["written"] == 12
-
-
-def test_reference_unavailable_never_writes(db, gwa_spot):
-    result = compute_gwa_sectors(43.66, -1.44, gwa_reader=FakeReader(_uniform()), reference=FakeReference(None))
-    outcome = persist_gwa_sectors(db, gwa_spot.id, result)
-    assert outcome["written"] == 0 and outcome["reason"] == "no_write"
-    assert db.query(SpotWeatherSector).join(SpotWeatherProfile).filter(
-        SpotWeatherProfile.spot_id == gwa_spot.id).count() == 0
-
-
-def test_unmounted_persists_disabled_neutral_rows(db, gwa_spot):
-    result = compute_gwa_sectors(
-        43.66, -1.44, gwa_reader=FakeReader(_uniform(), mounted=False),
-        reference=FakeReference([6.4] * SECTOR_COUNT))
-    outcome = persist_gwa_sectors(db, gwa_spot.id, result)
-    assert outcome["written"] == 12
-    rows = db.query(SpotWeatherSector).join(SpotWeatherProfile).filter(
-        SpotWeatherProfile.spot_id == gwa_spot.id).all()
-    assert all(not r.enabled and r.speed_factor == 1.0 for r in rows)
+def test_required_height_constant_is_ten():
+    assert REQUIRED_HEIGHT_M == 10

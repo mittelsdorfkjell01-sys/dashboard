@@ -7,7 +7,7 @@ import uuid
 import pytest
 from geoalchemy2 import WKTElement
 
-from app.forecast.gwa_producer import SECTOR_COUNT, WeibullSector, compute_gwa_sectors
+from app.forecast.gwa_producer import compute_gwa_sectors
 from app.forecast.sector_runner import _persist_candidate, run_sector_producer
 from app.models import ForecastSectorBuild, Region, Spot, SpotWeatherProfile, SpotWeatherSector
 from app.weather.physics.manual import select_sector
@@ -18,12 +18,12 @@ class _FakeReader:
     mounted = True
 
     def read(self, lat, lon):
-        return [WeibullSector(8.0, 1.0) for _ in range(SECTOR_COUNT)]  # mean 8.0
+        return 8.0  # mean_GWA @10 m
 
 
 class _FakeReference:
-    def sector_mean_speeds(self, lat, lon, window):
-        return [6.4] * SECTOR_COUNT  # ratio 1.25
+    def mean_speed(self, lat, lon, window):
+        return 6.4  # ratio 1.25
 
 
 def _ok_result():
@@ -81,6 +81,9 @@ def test_writing_candidates_does_not_change_the_served_sector(db, runner_spot):
     rows = db.query(SpotWeatherSector).filter_by(profile_id=profile.id).all()
     candidate_rows = [r for r in rows if r.version == 2]
     assert len(candidate_rows) == 12 and all(not r.enabled for r in candidate_rows)  # candidates disabled
+    # Omnidirectional: one factor on all 12 sectors, no direction offset.
+    assert len({round(r.speed_factor, 4) for r in candidate_rows}) == 1
+    assert all(r.direction_offset_deg == 0 for r in candidate_rows)
     served_after = select_sector(255.0, rows)
     # A newer *disabled* version must not shadow the active one.
     assert served_after.version == 1 == served_before.version

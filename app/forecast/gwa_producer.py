@@ -1,20 +1,21 @@
-"""Global Wind Atlas sector-factor producer (offline).
+"""Global Wind Atlas omnidirectional bias factor (WP3-A).
 
-Computes, per 30-degree sector, ``speed_factor = mean_GWA / mean_reference`` and
-writes 12 versioned rows into ``spot_weather_sectors``. It NEVER fetches a raster
-on a request path and NEVER invents a factor: without a mounted GWA raster, on an
-ocean/NoData cell, or on a failed reference fetch it returns a clear status and
-neutral (1.0) factors. Station wind is not involved.
+The Global Wind Atlas publishes no per-sector A/k GeoTIFFs — only *combined*
+(all-sector) layers. So this produces ONE omnidirectional factor per spot,
+``C = mean_GWA@10m / mean_ERA5@10m``, clamped to [0.50, 1.60], and writes it to
+all 12 sectors with ``direction_offset_deg = 0``. Directional resolution (cape
+vs. bay, onshore vs. offshore) comes later from WP5/WAsP, which overrides
+individual sectors at a higher version. Until then this is honestly labelled
+omnidirectional, never as direction-resolved.
 
-Raster and reference access sit behind injectable adapters; the core
-``compute_gwa_sectors`` is a pure function so the factor arithmetic is fully
-testable without any IO.
+The compute is pure behind injectable adapters; the reader/reference do the IO.
+Without a mounted raster the result is neutral with a clear status — never an
+invented factor. Persistence (candidate, enabled=False) is owned by
+``app/forecast/sector_runner.py``; this module only computes.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from dataclasses import dataclass
 from typing import Protocol
@@ -24,11 +25,14 @@ from app.weather.physics.limits import clamp
 SECTOR_COUNT = 12
 SECTOR_WIDTH = 30.0
 FACTOR_LOW, FACTOR_HIGH = 0.50, 1.60
-# Above this GLO-30 slope gradient the WAsP linear flow model is invalid
-# (flow separation); flag the sector low-confidence instead of trusting it.
-STEEP_SLOPE_GRADIENT = 0.30
 REFERENCE_WINDOW = (2008, 2017)
 GWA_VERSION = "GWA-3.0"
+REQUIRED_HEIGHT_M = 10
+
+WIND_SPEED_VARIABLE = "wind-speed"
+WEIBULL_A_VARIABLE = "combined-Weibull-A"
+WEIBULL_K_VARIABLE = "combined-Weibull-k"
+DEFAULT_FILENAME_TEMPLATE = "gwa_{variable}_{height}.tif"
 
 STATUS_OK = "ok"
 STATUS_NOT_MOUNTED = "gwa_not_mounted"
@@ -49,17 +53,13 @@ def weibull_mean(a: float, k: float) -> float:
 
 
 def bin_mean_speeds(u10, v10) -> list[float]:
-    """Mean wind speed per 30-degree from-sector from ERA5 u/v components.
-
-    Twelve GWA-aligned sectors (not the 16-sector default in ``bins.py``). Empty
-    sectors return NaN, which the factor step treats as low-confidence neutral.
-    """
+    """Mean wind speed per 30-degree from-sector from ERA5 u/v (kept for WP5)."""
     import numpy as np
 
     u = np.asarray(u10, dtype="float64")
     v = np.asarray(v10, dtype="float64")
     speed = np.hypot(u, v)
-    direction = np.degrees(np.arctan2(-u, -v)) % 360.0  # meteorological "from"
+    direction = np.degrees(np.arctan2(-u, -v)) % 360.0
     finite = np.isfinite(speed) & np.isfinite(direction)
     index = (direction // SECTOR_WIDTH).astype("int64") % SECTOR_COUNT
     means = []
@@ -78,18 +78,13 @@ class WeibullSector:
 class GwaRasterReader(Protocol):
     mounted: bool
 
-    def read(self, lat: float, lon: float) -> list[WeibullSector] | None:
-        """12 (A, k) sectors at the point, or None on an ocean/NoData cell."""
+    def read(self, lat: float, lon: float) -> float | None:
+        """Mean GWA wind speed (m/s) @10 m at the point, or None on NoData/ocean."""
 
 
 class ReferenceWindSource(Protocol):
-    def sector_mean_speeds(self, lat: float, lon: float, window: tuple[int, int]) -> list[float] | None:
-        """12 mean wind speeds (m/s), or None if the reference fetch failed."""
-
-
-class SlopeProvider(Protocol):
-    def sector_gradients(self, lat: float, lon: float) -> list[float] | None:
-        """12 GLO-30 slope gradients, or None if unavailable."""
+    def mean_speed(self, lat: float, lon: float, window: tuple[int, int]) -> float | None:
+        """All-sector mean reference wind speed (m/s) @10 m, or None if unavailable."""
 
 
 @dataclass(frozen=True)
@@ -114,11 +109,12 @@ class GwaSectorResult:
         return self.status == STATUS_OK
 
 
-def _neutral_sectors() -> list[SectorFactor]:
+def _uniform_sectors(factor: float, confidence: str, saturated: bool) -> list[SectorFactor]:
+    """The same omnidirectional factor on all 12 sectors (offset 0)."""
     out = []
     for index in range(SECTOR_COUNT):
         start, end = sector_bounds(index)
-        out.append(SectorFactor(index, start, end, 1.0, 0.0, "ok", False))
+        out.append(SectorFactor(index, start, end, round(factor, 4), 0.0, confidence, saturated))
     return out
 
 
@@ -130,133 +126,50 @@ def compute_gwa_sectors(
     reference: ReferenceWindSource,
     window: tuple[int, int] = REFERENCE_WINDOW,
     reference_model: str = "era5",
-    slope_provider: SlopeProvider | None = None,
     grid_cell: list | None = None,
+    variable: str = WIND_SPEED_VARIABLE,
+    height: int = REQUIRED_HEIGHT_M,
 ) -> GwaSectorResult:
-    """Pure factor arithmetic. Missing/insufficient inputs degrade to neutral."""
+    """One omnidirectional factor applied to all 12 sectors; neutral on missing data."""
     provenance = {
-        "method": "gwa_over_reference", "gwa_version": GWA_VERSION,
+        "method": "gwa_over_reference_omni", "gwa_version": GWA_VERSION,
         "reference_model": reference_model, "window": list(window), "grid_cell": grid_cell,
+        "variable": variable, "height": height,
     }
 
     if not getattr(gwa_reader, "mounted", False):
-        return GwaSectorResult(STATUS_NOT_MOUNTED, _neutral_sectors(), {**provenance, "status": STATUS_NOT_MOUNTED})
-    weibull = gwa_reader.read(lat, lon)
-    if weibull is None:
-        return GwaSectorResult(STATUS_NODATA, _neutral_sectors(), {**provenance, "status": STATUS_NODATA})
-    means = reference.sector_mean_speeds(lat, lon, window)
-    if means is None:
-        return GwaSectorResult(STATUS_REFERENCE_UNAVAILABLE, _neutral_sectors(),
+        return GwaSectorResult(STATUS_NOT_MOUNTED, _uniform_sectors(1.0, "ok", False),
+                               {**provenance, "status": STATUS_NOT_MOUNTED})
+    mean_gwa = gwa_reader.read(lat, lon)
+    if mean_gwa is None:
+        return GwaSectorResult(STATUS_NODATA, _uniform_sectors(1.0, "ok", False),
+                               {**provenance, "status": STATUS_NODATA})
+    mean_ref = reference.mean_speed(lat, lon, window)
+    if mean_ref is None:
+        return GwaSectorResult(STATUS_REFERENCE_UNAVAILABLE, _uniform_sectors(1.0, "ok", False),
                                {**provenance, "status": STATUS_REFERENCE_UNAVAILABLE})
-    if len(weibull) != SECTOR_COUNT or len(means) != SECTOR_COUNT:
-        raise ValueError("GWA reader and reference must each return 12 sectors")
 
-    gradients = slope_provider.sector_gradients(lat, lon) if slope_provider is not None else None
-    sectors = []
-    for index in range(SECTOR_COUNT):
-        start, end = sector_bounds(index)
-        mean_gwa = weibull_mean(weibull[index].a, weibull[index].k)
-        mean_ref = means[index]
-        steep = (gradients is not None and index < len(gradients)
-                 and gradients[index] is not None and gradients[index] > STEEP_SLOPE_GRADIENT)
-        if not (math.isfinite(mean_gwa) and math.isfinite(mean_ref)) or mean_ref <= 0 or mean_gwa <= 0:
-            # No trustworthy ratio -> stay neutral, mark low confidence.
-            sectors.append(SectorFactor(index, start, end, 1.0, 0.0, "low", False))
-            continue
-        raw = mean_gwa / mean_ref
-        factor = clamp(raw, FACTOR_LOW, FACTOR_HIGH)
-        sectors.append(SectorFactor(
-            index, start, end, round(factor, 4), 0.0,
-            "low" if steep else "ok", factor != raw,
-        ))
-    return GwaSectorResult(STATUS_OK, sectors, {**provenance, "status": STATUS_OK})
+    if not (math.isfinite(mean_gwa) and math.isfinite(mean_ref)) or mean_ref <= 0 or mean_gwa <= 0:
+        # Data present but the ratio is unusable -> neutral, low confidence.
+        return GwaSectorResult(STATUS_OK, _uniform_sectors(1.0, "low", False),
+                               {**provenance, "status": STATUS_OK})
+    raw = mean_gwa / mean_ref
+    factor = clamp(raw, FACTOR_LOW, FACTOR_HIGH)
+    return GwaSectorResult(STATUS_OK, _uniform_sectors(factor, "ok", factor != raw),
+                           {**provenance, "status": STATUS_OK,
+                            "mean_gwa": round(mean_gwa, 3), "mean_reference": round(mean_ref, 3)})
 
 
-# --- persistence -----------------------------------------------------------
-
-
-def result_signature(result: GwaSectorResult) -> str:
-    payload = {
-        "status": result.status,
-        "method": result.provenance.get("method"),
-        "gwa_version": result.provenance.get("gwa_version"),
-        "reference_model": result.provenance.get("reference_model"),
-        "window": result.provenance.get("window"),
-        "grid_cell": result.provenance.get("grid_cell"),
-        "sectors": [[s.index, s.speed_factor, s.confidence, s.saturated] for s in result.sectors],
-    }
-    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:16]
-
-
-def _sector_note(result: GwaSectorResult, sector: SectorFactor, signature: str) -> str:
-    return json.dumps({
-        "method": result.provenance["method"], "gwa_version": result.provenance["gwa_version"],
-        "reference_model": result.provenance["reference_model"], "window": result.provenance["window"],
-        "grid_cell": result.provenance["grid_cell"], "saturated": sector.saturated,
-        "confidence": sector.confidence, "sig": signature,
-    }, separators=(",", ":"))[:500]
-
-
-def persist_gwa_sectors(db, spot_id, result: GwaSectorResult, *, now=None) -> dict:
-    """Write 12 versioned sector rows; idempotent for an unchanged result.
-
-    ``reference_unavailable`` never writes. A profile is created if missing.
-    """
-    from sqlalchemy import select
-
-    from app.models import SpotWeatherProfile, SpotWeatherSector
-
-    if result.status == STATUS_REFERENCE_UNAVAILABLE:
-        return {"status": result.status, "written": 0, "version": None, "reason": "no_write"}
-
-    profile = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id))
-    if profile is None:
-        profile = SpotWeatherProfile(spot_id=spot_id)
-        db.add(profile)
-        db.flush()
-
-    existing = db.scalars(
-        select(SpotWeatherSector).where(SpotWeatherSector.profile_id == profile.id)
-    ).all()
-    latest_version = max((sector.version for sector in existing), default=0)
-    signature = result_signature(result)
-
-    if latest_version:
-        latest_rows = [row for row in existing if row.version == latest_version]
-        stored_sig = next((_note_sig(row.note) for row in latest_rows if row.note), None)
-        if stored_sig == signature:
-            return {"status": result.status, "written": 0, "version": latest_version, "reason": "idempotent"}
-
-    version = latest_version + 1
-    for sector in result.sectors:
-        db.add(SpotWeatherSector(
-            profile_id=profile.id, start_deg=sector.start_deg, end_deg=sector.end_deg,
-            speed_factor=sector.speed_factor, direction_offset_deg=sector.direction_offset_deg,
-            version=version, enabled=result.enabled, note=_sector_note(result, sector, signature),
-        ))
-    db.commit()
-    return {"status": result.status, "written": SECTOR_COUNT, "version": version, "reason": "written"}
-
-
-def _note_sig(note: str | None) -> str | None:
-    if not note:
-        return None
-    try:
-        return json.loads(note).get("sig")
-    except (ValueError, TypeError):
-        return None
-
-
-# --- concrete adapters (thin IO; core stays pure and tested) ---------------
+# --- concrete adapters (thin IO; compute stays pure) -----------------------
 
 
 class Era5ReferenceSource:
-    """ERA5 hourly wind via OpenMeteoHistoryClient, binned into 12 sectors."""
+    """All-sector ERA5 mean @10 m via OpenMeteoHistoryClient over the window."""
 
     def __init__(self, client=None) -> None:
         self._client = client
 
-    def sector_mean_speeds(self, lat: float, lon: float, window: tuple[int, int]) -> list[float] | None:
+    def mean_speed(self, lat: float, lon: float, window: tuple[int, int]) -> float | None:
         client = self._client
         if client is None:
             from app.era5.openmeteo import OpenMeteoHistoryClient
@@ -274,74 +187,162 @@ class Era5ReferenceSource:
         u10, v10 = series.get("u10"), series.get("v10")
         if u10 is None or v10 is None:
             return None
-        return bin_mean_speeds(u10, v10)
+        import numpy as np
+
+        speed = np.hypot(np.asarray(u10, dtype="float64"), np.asarray(v10, dtype="float64"))
+        finite = speed[np.isfinite(speed)]
+        return float(finite.mean()) if finite.size else None
 
 
 class MountedGwaRasterReader:
-    """Reads per-sector Weibull A/k from a mounted GWA v3 raster export.
+    """Reads one combined GWA layer at the point and enforces the 10 m height.
 
-    Expected layout under ``GWA_RASTER_DIR``: single-band EPSG:4326 GeoTIFFs
-    ``gwa3_A_{deg}.tif`` and ``gwa3_k_{deg}.tif`` for deg in 0,30,...,330.
-    rasterio is imported lazily so the neutral (unmounted) path needs no
-    geospatial stack. Never used on a request path.
+    Primary: the mean wind-speed layer (``gwa_wind-speed_10.tif`` by default) ->
+    mean_GWA directly. Fallback: combined Weibull A & k -> A*Gamma(1+1/k). The
+    filename template is configurable ({variable}/{height}); the 10 m height is
+    required (GWA's default is 100 m) and a non-10 m construction is refused.
+    NoData/ocean -> None (a small nearest-valid ring rescues a single masked
+    coastal pixel). rasterio is lazy; never used on a request path.
     """
 
-    def __init__(self, raster_dir: str | None = None) -> None:
-        if raster_dir is None:
+    def __init__(self, raster_dir: str | None = None, *, height: int = REQUIRED_HEIGHT_M,
+                 filename_template: str | None = None, variable: str = WIND_SPEED_VARIABLE) -> None:
+        if int(height) != REQUIRED_HEIGHT_M:
+            raise ValueError(f"GWA reader requires the {REQUIRED_HEIGHT_M} m height; refusing {height} m")
+        if raster_dir is None or filename_template is None:
             from app.config import get_settings
 
-            raster_dir = get_settings().gwa_raster_dir
+            settings = get_settings()
+            raster_dir = raster_dir or settings.gwa_raster_dir
+            filename_template = filename_template or settings.gwa_raster_filename_template
         self._dir = raster_dir
+        self._template = filename_template or DEFAULT_FILENAME_TEMPLATE
+        self._height = int(height)
+        self._variable = variable
+        self._open: dict = {}
 
     @property
     def mounted(self) -> bool:
         return bool(self._dir)
 
-    def read(self, lat: float, lon: float) -> list[WeibullSector] | None:
-        if not self._dir:
-            return None
+    def path_for(self, variable: str) -> str:
         import os
 
-        import rasterio
+        return os.path.join(self._dir, self._template.format(variable=variable, height=self._height))
 
-        sectors: list[WeibullSector] = []
-        for index in range(SECTOR_COUNT):
-            deg = int(index * SECTOR_WIDTH)
-            a_path = os.path.join(self._dir, f"gwa3_A_{deg}.tif")
-            k_path = os.path.join(self._dir, f"gwa3_k_{deg}.tif")
-            a = self._sample(rasterio, a_path, lon, lat)
-            k = self._sample(rasterio, k_path, lon, lat)
-            if a is None or k is None:  # ocean / NoData / missing tile
-                return None
-            sectors.append(WeibullSector(a=a, k=k))
-        return sectors
+    def read(self, lat: float, lon: float) -> float | None:
+        if not self._dir:
+            return None
+        primary = self._sample(self.path_for(self._variable), lon, lat)
+        if primary is not None:
+            return primary
+        a = self._sample(self.path_for(WEIBULL_A_VARIABLE), lon, lat)
+        k = self._sample(self.path_for(WEIBULL_K_VARIABLE), lon, lat)
+        if a is None or k is None:
+            return None
+        mean = weibull_mean(a, k)
+        return mean if math.isfinite(mean) else None
 
-    @staticmethod
-    def _sample(rasterio, path: str, lon: float, lat: float) -> float | None:
+    def _dataset(self, path: str):
+        dataset = self._open.get(path)
+        if dataset is None:
+            import rasterio
+
+            dataset = rasterio.open(path)
+            self._open[path] = dataset
+        return dataset
+
+    def _sample(self, path: str, lon: float, lat: float) -> float | None:
         try:
-            with rasterio.open(path) as dataset:
-                value = next(dataset.sample([(lon, lat)]))[0]
-                nodata = dataset.nodata
+            dataset = self._dataset(path)
+            nodata = dataset.nodata
+            value = next(dataset.sample([(lon, lat)]))[0]
+            if _valid(value, nodata):
+                return float(value)
+            # Nearest-valid ring (~GWA 250 m pixels) rescues a single masked pixel.
+            for step in (0.0025, 0.005):
+                for dlon, dlat in ((step, 0), (-step, 0), (0, step), (0, -step)):
+                    neighbour = next(dataset.sample([(lon + dlon, lat + dlat)]))[0]
+                    if _valid(neighbour, nodata):
+                        return float(neighbour)
         except Exception:
             return None
-        if value is None or (nodata is not None and value == nodata) or not math.isfinite(float(value)):
-            return None
-        return float(value)
+        return None
 
 
-def build_spot_sectors(db, spot, *, gwa_reader=None, reference=None,
-                       window: tuple[int, int] = REFERENCE_WINDOW, reference_model: str = "era5") -> dict:
-    """Compute and persist GWA sector factors for one spot (offline job)."""
-    from app.era5.grid import resolve_grid_cell
-    from app.live import service as live_service
+def _valid(value, nodata) -> bool:
+    if value is None:
+        return False
+    if nodata is not None and value == nodata:
+        return False
+    return bool(math.isfinite(float(value)))
 
-    lat, lon = live_service._spot_coords(spot)
-    grid_cell = resolve_grid_cell(lat, lon)["wind"]
-    reader = gwa_reader or MountedGwaRasterReader()
-    ref = reference or Era5ReferenceSource()
-    result = compute_gwa_sectors(
-        lat, lon, gwa_reader=reader, reference=ref,
-        window=window, reference_model=reference_model, grid_cell=grid_cell,
-    )
-    outcome = persist_gwa_sectors(db, spot.id, result)
-    return {"spot_id": str(spot.id), **outcome}
+
+# --- preflight doctor -------------------------------------------------------
+
+# Plausible value ranges per variable, to catch a wrong layer (e.g. 100 m winds
+# or power-density) mounted by mistake.
+PLAUSIBLE_RANGE = {
+    WIND_SPEED_VARIABLE: (2.0, 12.0),
+    WEIBULL_A_VARIABLE: (2.0, 14.0),
+    WEIBULL_K_VARIABLE: (1.0, 4.0),
+}
+
+
+def gwa_raster_doctor(raster_dir: str | None = None, *, height: int = REQUIRED_HEIGHT_M,
+                      filename_template: str | None = None) -> dict:
+    """Inspect the mounted GWA raster and fail loudly on a wrong layer/height."""
+    try:
+        reader = MountedGwaRasterReader(raster_dir, height=height, filename_template=filename_template)
+    except ValueError as exc:
+        return {"ok": False, "mounted": False, "problems": [str(exc)], "files": []}
+    if not reader.mounted:
+        return {"ok": False, "mounted": False, "problems": ["GWA_RASTER_DIR is not set"], "files": []}
+
+    problems: list[str] = []
+    files: list[dict] = []
+    checked_any = False
+    for variable in (WIND_SPEED_VARIABLE, WEIBULL_A_VARIABLE, WEIBULL_K_VARIABLE):
+        path = reader.path_for(variable)
+        report = _inspect_file(path, variable)
+        files.append(report)
+        if not report["exists"]:
+            continue
+        checked_any = True
+        if report.get("crs") != "EPSG:4326":
+            problems.append(f"{path}: CRS is {report.get('crs')}, expected EPSG:4326")
+        low, high = PLAUSIBLE_RANGE[variable]
+        mean = report.get("mean")
+        if mean is not None and not (low <= mean <= high):
+            problems.append(f"{path}: mean {mean} outside plausible {variable} range {low}-{high} "
+                            f"(wrong height or variable mounted?)")
+    if not checked_any:
+        import glob
+        import os
+
+        present = [os.path.basename(p) for p in glob.glob(os.path.join(reader._dir, "gwa_*"))]
+        problems.append(f"No expected {height} m GWA layer found. Present files: {present or 'none'}")
+    return {"ok": not problems, "mounted": True, "height": height, "problems": problems, "files": files}
+
+
+def _inspect_file(path: str, variable: str) -> dict:
+    import os
+
+    if not os.path.exists(path):
+        return {"path": path, "variable": variable, "exists": False}
+    try:
+        import numpy as np
+        import rasterio
+
+        with rasterio.open(path) as dataset:
+            crs = str(dataset.crs)
+            nodata = dataset.nodata
+            array = dataset.read(1, out_shape=(min(dataset.height, 128), min(dataset.width, 128))).astype("float64")
+        valid = array[np.isfinite(array)]
+        if nodata is not None:
+            valid = valid[valid != nodata]
+        stats = ({"min": round(float(valid.min()), 3), "max": round(float(valid.max()), 3),
+                  "mean": round(float(valid.mean()), 3)} if valid.size else {"min": None, "max": None, "mean": None})
+        return {"path": path, "variable": variable, "exists": True, "crs": crs, "nodata": nodata, **stats}
+    except Exception as exc:
+        return {"path": path, "variable": variable, "exists": True, "error": f"{type(exc).__name__}: {exc}"}

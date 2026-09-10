@@ -216,6 +216,9 @@ class Settings(BaseSettings):
     # factors with a clear status and never invents a speed-up. Never fetched on
     # a request path.
     gwa_raster_dir: str | None = None
+    # GWA layer filename template ({variable}/{height}); default is the real DTU
+    # combined-layer schema. The producer enforces the 10 m height.
+    gwa_raster_filename_template: str = "gwa_{variable}_{height}.tif"
 
     # Mounted rasters for the WP5 microscale producer (offline only, never on a
     # request path): ESA WorldCover 10 m for roughness, GLO-30 Water Body Mask
