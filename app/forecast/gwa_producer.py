@@ -280,11 +280,15 @@ def _valid(value, nodata) -> bool:
 
 # --- preflight doctor -------------------------------------------------------
 
-# Plausible value ranges per variable, to catch a wrong layer (e.g. 100 m winds
-# or power-density) mounted by mistake.
+# Plausible mean-value ranges per variable, to catch a grossly wrong layer
+# (power-density ~50-2000, capacity-factor 0-1) mounted by mistake. Validated
+# against the real GWA 10 m wind-speed tiles, where sheltered inland means sit
+# around 2 m/s (Luxembourg mean ~2.1) — hence a low bound of 1.0, not 2.0. The
+# height itself lives in the filename, not the value, so 10 m vs 100 m is not
+# distinguished here; the filename/height check is authoritative for that.
 PLAUSIBLE_RANGE = {
-    WIND_SPEED_VARIABLE: (2.0, 12.0),
-    WEIBULL_A_VARIABLE: (2.0, 14.0),
+    WIND_SPEED_VARIABLE: (1.0, 40.0),
+    WEIBULL_A_VARIABLE: (1.0, 45.0),
     WEIBULL_K_VARIABLE: (1.0, 4.0),
 }
 

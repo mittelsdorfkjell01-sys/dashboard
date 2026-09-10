@@ -85,7 +85,10 @@ def test_reader_requires_ten_metre_height():
         MountedGwaRasterReader("dir", height=100)
 
 
-def test_reader_unmounted_reads_none():
+def test_reader_unmounted_reads_none(monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "gwa_raster_dir", None)
     assert MountedGwaRasterReader(None).mounted is False
 
 
@@ -113,7 +116,10 @@ def test_reader_prefers_wind_speed_then_falls_back_to_weibull():
 # --- doctor ----------------------------------------------------------------
 
 
-def test_doctor_reports_unmounted():
+def test_doctor_reports_unmounted(monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "gwa_raster_dir", None)
     report = gwa_raster_doctor(None)
     assert report["ok"] is False and report["mounted"] is False
 
