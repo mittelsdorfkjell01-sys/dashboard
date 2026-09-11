@@ -305,27 +305,45 @@ def gwa_raster_doctor(raster_dir: str | None = None, *, height: int = REQUIRED_H
 
     problems: list[str] = []
     files: list[dict] = []
-    checked_any = False
+    usable: dict[str, bool] = {}
     for variable in (WIND_SPEED_VARIABLE, WEIBULL_A_VARIABLE, WEIBULL_K_VARIABLE):
         path = reader.path_for(variable)
         report = _inspect_file(path, variable)
         files.append(report)
         if not report["exists"]:
+            usable[variable] = False
             continue
-        checked_any = True
+        ok = True
+        if "error" in report:
+            problems.append(f"{path}: {report['error']}")
+            ok = False
         if report.get("crs") != "EPSG:4326":
             problems.append(f"{path}: CRS is {report.get('crs')}, expected EPSG:4326")
+            ok = False
+        if not report.get("valid_pixels"):
+            # An all-NoData/empty layer used to pass silently (mean was None, so the
+            # range check below was skipped). Flag it explicitly.
+            problems.append(f"{path}: no valid (non-NoData) pixels — empty raster?")
+            ok = False
         low, high = PLAUSIBLE_RANGE[variable]
         mean = report.get("mean")
         if mean is not None and not (low <= mean <= high):
             problems.append(f"{path}: mean {mean} outside plausible {variable} range {low}-{high} "
                             f"(wrong height or variable mounted?)")
-    if not checked_any:
+            ok = False
+        usable[variable] = ok
+
+    # The reader needs a usable wind-speed layer, OR both usable Weibull A and k
+    # for the fallback. A lone Weibull-A (no k) or a present-but-empty file must
+    # not read as "ok".
+    if not (usable.get(WIND_SPEED_VARIABLE)
+            or (usable.get(WEIBULL_A_VARIABLE) and usable.get(WEIBULL_K_VARIABLE))):
         import glob
         import os
 
-        present = [os.path.basename(p) for p in glob.glob(os.path.join(reader._dir, "gwa_*"))]
-        problems.append(f"No expected {height} m GWA layer found. Present files: {present or 'none'}")
+        on_disk = [os.path.basename(p) for p in glob.glob(os.path.join(reader._dir, "gwa_*"))]
+        problems.append("no usable GWA layer: need a wind-speed layer, or BOTH Weibull A and k. "
+                        f"Files on disk: {on_disk or 'none'}")
     return {"ok": not problems, "mounted": True, "height": height, "problems": problems, "files": files}
 
 
@@ -347,6 +365,7 @@ def _inspect_file(path: str, variable: str) -> dict:
             valid = valid[valid != nodata]
         stats = ({"min": round(float(valid.min()), 3), "max": round(float(valid.max()), 3),
                   "mean": round(float(valid.mean()), 3)} if valid.size else {"min": None, "max": None, "mean": None})
-        return {"path": path, "variable": variable, "exists": True, "crs": crs, "nodata": nodata, **stats}
+        return {"path": path, "variable": variable, "exists": True, "crs": crs, "nodata": nodata,
+                "valid_pixels": int(valid.size), **stats}
     except Exception as exc:
         return {"path": path, "variable": variable, "exists": True, "error": f"{type(exc).__name__}: {exc}"}

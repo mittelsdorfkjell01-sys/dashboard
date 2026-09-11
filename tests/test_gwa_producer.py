@@ -132,3 +132,59 @@ def test_doctor_refuses_non_ten_metre_height():
 
 def test_required_height_constant_is_ten():
     assert REQUIRED_HEIGHT_M == 10
+
+
+# --- doctor: usable-set + empty-raster hardening ---------------------------
+
+
+def _present(variable, path, **stats):
+    base = {"path": path, "variable": variable, "exists": True, "crs": "EPSG:4326",
+            "nodata": None, "valid_pixels": 300}
+    return {**base, **stats}
+
+
+def _patch_inspect(monkeypatch, by_variable):
+    from app.forecast import gwa_producer as gp
+
+    def fake_inspect(path, variable):
+        make = by_variable.get(variable)
+        return make(path) if make else {"path": path, "variable": variable, "exists": False}
+
+    monkeypatch.setattr(gp, "_inspect_file", fake_inspect)
+    return gp
+
+
+def test_doctor_flags_a_lone_weibull_a_without_k(monkeypatch):
+    gp = _patch_inspect(monkeypatch, {
+        WEIBULL_A_VARIABLE: lambda p: _present(WEIBULL_A_VARIABLE, p, min=3.0, max=12.0, mean=7.0),
+    })
+    report = gp.gwa_raster_doctor("dir")
+    assert report["ok"] is False
+    assert any("usable GWA layer" in problem for problem in report["problems"])
+
+
+def test_doctor_flags_an_empty_wind_speed_raster(monkeypatch):
+    gp = _patch_inspect(monkeypatch, {
+        WIND_SPEED_VARIABLE: lambda p: _present(WIND_SPEED_VARIABLE, p, valid_pixels=0,
+                                                min=None, max=None, mean=None, nodata=-9999.0),
+    })
+    report = gp.gwa_raster_doctor("dir")
+    assert report["ok"] is False
+    assert any("empty raster" in problem for problem in report["problems"])
+
+
+def test_doctor_accepts_a_usable_wind_speed_layer(monkeypatch):
+    gp = _patch_inspect(monkeypatch, {
+        WIND_SPEED_VARIABLE: lambda p: _present(WIND_SPEED_VARIABLE, p, min=2.0, max=12.0, mean=6.5),
+    })
+    report = gp.gwa_raster_doctor("dir")
+    assert report["ok"] is True and report["problems"] == []
+
+
+def test_doctor_accepts_the_weibull_fallback_when_both_present(monkeypatch):
+    gp = _patch_inspect(monkeypatch, {
+        WEIBULL_A_VARIABLE: lambda p: _present(WEIBULL_A_VARIABLE, p, min=3.0, max=12.0, mean=7.0),
+        "combined-Weibull-k": lambda p: _present("combined-Weibull-k", p, min=1.2, max=3.0, mean=2.0),
+    })
+    report = gp.gwa_raster_doctor("dir")
+    assert report["ok"] is True
