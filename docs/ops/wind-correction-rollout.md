@@ -67,17 +67,28 @@ python -m scripts.verification_report --persist     # note the baseline run_id
 
 ## 4. Activate — the only step that changes served wind (WP1-gated)
 
-After corrections could apply, re-score and activate only where the bias drops:
+The gate is a **within-run** comparison: `/cron/verification` (via
+`run_gated_verification_scoring`) scores the raw forecast **and** each spot's
+latest candidate as a shadow-corrected variant over the *same* samples and
+observations, writing both under one run id. Activation then requires the
+candidate to actually lower the error — not merely a different weather window.
 
 ```
-python -m scripts.verification_report --persist      # after-change run_id
-python -m scripts.activate_sectors \
-    --compare <after_run_id> --against <baseline_run_id> --min-bias-drop 0.2
+# take a gated run (raw + corrected in one run_id)
+python -m scripts.verification_report --gated --persist    # note the run_id
+python -m scripts.activate_sectors --run <run_id> --min-bias-drop 0.2
 ```
 
-Or per spot: `POST /admin/weather/spots/{id}/sectors/activate?version=N`.
+`candidate_bias_improvement(run_id)` = `raw_mae − corrected_mae` per spot;
+activation fires only where that drop ≥ threshold. Per spot:
+`POST /admin/weather/spots/{id}/sectors/activate?version=N`.
 If a model family overcorrects, lower `WIND_SECTOR_BLEND` (e.g. `{"regional":0.5}`)
-and re-compare before activating.
+and re-score before activating.
+
+> Note: activating a sector makes it `enabled=True`, but the serving resolver
+> (`resolve_weather_profile`) does not yet surface enabled sectors into the live
+> forecast — that wiring is a separate, deliberate decision. The shadow score
+> above faithfully measures what activation *would* do once that path is opened.
 
 ## 5. WP5 microscale (directional, where residual bias remains)
 

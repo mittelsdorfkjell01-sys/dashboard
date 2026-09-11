@@ -192,9 +192,12 @@ def run_verification(db: Session = Depends(get_db)) -> dict:
         logger.exception("cron_recompute_calibrations_failed")
         result["calibrations_updated"] = {"error": "internal_error"}
     try:
-        from app.weather.verification import run_verification_scoring
+        from app.weather.verification import run_gated_verification_scoring
 
-        result["verification"] = run_verification_scoring(
+        # Scores the raw forecast AND each spot's latest candidate (shadow-corrected)
+        # in one run, so the activation gate compares before/after over identical
+        # samples/observations. Writes measurement rows only; no served value changes.
+        result["verification"] = run_gated_verification_scoring(
             db, lookback_days=settings.weather_verification_lookback_days
         )
     except Exception:

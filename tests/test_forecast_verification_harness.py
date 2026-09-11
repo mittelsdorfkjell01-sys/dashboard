@@ -13,6 +13,8 @@ from app.models import (
     ForecastVerificationScore,
     Region,
     Spot,
+    SpotWeatherProfile,
+    SpotWeatherSector,
     WeatherForecastSample,
     WeatherObservation,
     WeatherStation,
@@ -20,11 +22,14 @@ from app.models import (
 from app.weather.observation_worker import persist_batch
 from app.weather.observations import public_measurement
 from app.weather.providers.common import normalize_observation
+from app.weather.sector_activation import candidate_bias_improvement
 from app.weather.verification import (
     _consensus_predictions,
+    _corrected_samples,
     _score_predictions,
     direction_sector,
     lead_bucket,
+    run_gated_verification_scoring,
     run_verification_scoring,
     score_spot_forecasts,
 )
@@ -134,6 +139,37 @@ def test_consensus_prediction_averages_speed_and_uses_circular_direction():
     assert consensus["wind_gust_ms"] == 14.0
 
 
+# --- counterfactual (shadow) correction replay -----------------------------
+
+
+def _omni_candidate(factor: float, version: int = 2):
+    """A disabled 12x30-degree omnidirectional candidate shim, as the scoring view builds."""
+    sectors = [SimpleNamespace(enabled=True, version=version, start_deg=float(s),
+                               end_deg=float((s + 30) % 360), speed_factor=factor,
+                               direction_offset_deg=0.0, note='{"method":"gwa_over_reference"}')
+               for s in range(0, 360, 30)]
+    return SimpleNamespace(active=True, quality_tier="advanced", coastal_normal_deg=None, sectors=sectors)
+
+
+def test_corrected_samples_replay_the_engine_factor_and_scale_gust():
+    valid = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    issued = valid - timedelta(hours=5)
+    samples = [SimpleNamespace(model_id="icon", issued_at=issued, valid_at=valid, lead_hours=5,
+                               wind_speed_ms=10.0, wind_direction_deg=270.0, wind_gust_ms=12.0)]
+    (out,) = _corrected_samples(samples, _omni_candidate(1.25), None)
+    assert out.wind_speed_ms == pytest.approx(12.5)   # 10 * 1.25 (full blend, unknown family)
+    assert out.wind_gust_ms == pytest.approx(15.0)    # gust scaled by the same ratio
+    assert out.wind_direction_deg == pytest.approx(270.0)  # phase-1 offset is 0
+
+
+def test_corrected_samples_blend_zero_leaves_samples_unchanged():
+    valid = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    samples = [SimpleNamespace(model_id="icon", issued_at=valid, valid_at=valid, lead_hours=5,
+                               wind_speed_ms=10.0, wind_direction_deg=270.0, wind_gust_ms=12.0)]
+    (out,) = _corrected_samples(samples, _omni_candidate(1.5), {"other": 0.0})
+    assert out.wind_speed_ms == pytest.approx(10.0) and out.wind_gust_ms == pytest.approx(12.0)
+
+
 # --- DB-backed: end-to-end scoring, persistence and import idempotency ------
 
 
@@ -190,6 +226,39 @@ def test_scoring_end_to_end_persists_bucketed_scores_and_is_idempotent(db, score
     # Re-running the same run id upserts in place rather than duplicating.
     run_verification_scoring(db, spot_ids=[spot.id], run_id=run_id, lookback_days=30)
     assert db.query(ForecastVerificationScore).filter_by(run_id=run_id, spot_id=spot.id).count() == len(rows)
+
+
+def test_gated_scoring_measures_the_candidate_and_gate_sees_the_drop(db, scored_spot):
+    spot, station = scored_spot
+    valid = datetime.now(timezone.utc) - timedelta(days=5)
+    issued = valid - timedelta(hours=5)
+    # Observation 13 m/s from 270 deg; the model under-forecasts at 10 m/s.
+    db.add(WeatherObservation(station_id=station.id, observed_at=valid, wind_speed_ms=13.0,
+                              wind_gust_ms=15.0, wind_direction_deg=270.0, provider_quality="1",
+                              import_status="accepted"))
+    db.add(WeatherForecastSample(spot_id=spot.id, model_id="icon", issued_at=issued, valid_at=valid,
+                                 lead_hours=5, wind_speed_ms=10.0, wind_gust_ms=12.0, wind_direction_deg=270.0))
+    profile = SpotWeatherProfile(spot_id=spot.id)
+    db.add(profile)
+    db.flush()
+    # Disabled candidate v1: an omni 1.3 factor lifts 10 -> 13 m/s (raw MAE 3 -> corrected 0).
+    for start in range(0, 360, 30):
+        db.add(SpotWeatherSector(profile_id=profile.id, start_deg=float(start),
+                                 end_deg=float((start + 30) % 360), speed_factor=1.3,
+                                 direction_offset_deg=0.0, version=1, enabled=False,
+                                 note='{"method":"gwa_over_reference"}'))
+    db.commit()
+
+    run_id = uuid.uuid4()
+    summary = run_gated_verification_scoring(db, spot_ids=[spot.id], run_id=run_id, lookback_days=30)
+    assert summary["raw_spots_scored"] == 1 and summary["corrected_spots_scored"] == 1
+
+    variants = {r.variant for r in db.query(ForecastVerificationScore).filter_by(run_id=run_id).all()}
+    assert variants == {"raw", "corrected"}
+
+    # The gate compares raw vs corrected WITHIN the one run and sees the real drop.
+    drops = candidate_bias_improvement(db, run_id)
+    assert drops[str(spot.id)] == pytest.approx(3.0, abs=1e-6)
 
 
 def test_scoring_skips_a_spot_whose_station_is_not_approved(db, scored_spot):

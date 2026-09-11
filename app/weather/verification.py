@@ -6,6 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from statistics import mean, median
+from types import SimpleNamespace
 import math
 import uuid
 
@@ -15,6 +16,8 @@ from sqlalchemy.dialects.postgresql import insert
 from app.models import (
     ForecastVerificationScore,
     Spot,
+    SpotWeatherProfile,
+    SpotWeatherSector,
     WeatherForecastSample,
     WeatherModelCalibration,
     WeatherObservation,
@@ -359,6 +362,103 @@ def score_spot_forecasts(db, spot_id, *, now=None, lookback_days: int = 45, tole
     return records
 
 
+# ---------------------------------------------------------------------------
+# Counterfactual ("shadow") scoring of a concrete candidate sector version.
+#
+# The raw forecast samples are stored BEFORE any correction, so comparing raw
+# scores across two runs can never show a candidate's effect — it only reflects
+# a different time window. Instead we replay the *exact* live engine correction
+# (``apply_local_physics`` + per-family blend) over the SAME stored samples and
+# score the result against the SAME gated observations, tagged variant
+# "corrected". The activation gate then compares raw-vs-corrected WITHIN ONE run
+# (``sector_activation.candidate_bias_improvement``), removing the weather-window
+# confound. This is a measurement only: no served value is touched, and station
+# wind never enters a forecast value here either.
+# ---------------------------------------------------------------------------
+
+
+def _scoring_sector_profile(db, spot_id, version: int):
+    """A profile-shaped shim exposing sector ``version`` as active+enabled.
+
+    Lets the live engine correction be replayed over stored samples for a
+    candidate that is (by design) still disabled. Returns None when the spot has
+    no such version. The ``advanced`` tier keeps the engine's re-clamp a no-op
+    over the candidate's own [0.50, 1.60] hull; the reviewed coastal normal
+    carries through for the (phase-1 zero) direction offset.
+    """
+    profile = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id))
+    if profile is None:
+        return None
+    rows = db.scalars(select(SpotWeatherSector).where(
+        SpotWeatherSector.profile_id == profile.id,
+        SpotWeatherSector.version == version)).all()
+    if not rows:
+        return None
+    sectors = [SimpleNamespace(
+        enabled=True, version=row.version, start_deg=row.start_deg, end_deg=row.end_deg,
+        speed_factor=row.speed_factor, direction_offset_deg=row.direction_offset_deg,
+        note=row.note,
+    ) for row in rows]
+    return SimpleNamespace(active=True, quality_tier="advanced",
+                           coastal_normal_deg=getattr(profile, "coastal_normal_deg", None),
+                           sectors=sectors)
+
+
+def _corrected_samples(samples, sector_profile, blend_overrides):
+    """Replay the live per-member sector correction over stored raw samples.
+
+    Uses the SAME engine path as serving (``apply_local_physics`` with the member's
+    per-family blend) so the shadow measures exactly what activating this candidate
+    would do to each model before consensus. Only the consensus aggregation is held
+    identical to the raw variant (via ``_consensus_predictions``) so the gate
+    isolates the sector correction. Gust is scaled by the same speed ratio the live
+    path applies. Station wind is never involved.
+    """
+    from app.weather.catalog import family_for
+    from app.weather.physics import apply_local_physics
+    from app.weather.physics.blend import family_blend
+
+    corrected = []
+    for s in samples:
+        blend = family_blend(family_for(s.model_id), blend_overrides)
+        applied = apply_local_physics(s.wind_speed_ms, s.wind_direction_deg, sector_profile, blend=blend)
+        gust_factor = applied.speed_ms / s.wind_speed_ms if s.wind_speed_ms > 0 else 1.0
+        corrected.append(SimpleNamespace(
+            model_id=s.model_id, issued_at=s.issued_at, valid_at=s.valid_at,
+            lead_hours=s.lead_hours, wind_speed_ms=applied.speed_ms,
+            wind_direction_deg=applied.direction_deg,
+            wind_gust_ms=(s.wind_gust_ms * gust_factor) if s.wind_gust_ms is not None else None,
+        ))
+    return corrected
+
+
+def score_spot_forecasts_corrected(db, spot_id, *, version: int, now=None, lookback_days: int = 45,
+                                   tolerance_s: int = 1200, blend_overrides=None) -> list[dict]:
+    """Shadow score: apply candidate sector ``version`` to the stored raw samples and
+    score per-model + consensus against the SAME gated observations as the raw pass.
+
+    Returns [] when the version, samples or observations are missing. No served value
+    changes; this only produces variant="corrected" measurement rows.
+    """
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=max(1, min(lookback_days, 365)))
+    sector_profile = _scoring_sector_profile(db, spot_id, version)
+    if sector_profile is None:
+        return []
+    observations = gated_observations(db, spot_id, cutoff=cutoff)
+    if not observations:
+        return []
+    samples = db.scalars(select(WeatherForecastSample).where(
+        WeatherForecastSample.spot_id == spot_id,
+        WeatherForecastSample.valid_at >= cutoff)).all()
+    if not samples:
+        return []
+    corrected = _corrected_samples(samples, sector_profile, blend_overrides)
+    records = _score_predictions(_sample_predictions(corrected), observations, tolerance_s=tolerance_s)
+    records += _score_predictions(_consensus_predictions(corrected), observations, tolerance_s=tolerance_s)
+    return records
+
+
 def eligible_spot_ids(db) -> list:
     """Published spots with an approved, representative station worth scoring."""
     rows = db.execute(
@@ -424,5 +524,59 @@ def run_verification_scoring(db, *, spot_ids=None, now=None, lookback_days: int 
     return {
         "run_id": str(run_id), "spots_scored": spots_scored, "rows": total_rows,
         "variant": variant, "lookback_days": lookback_days,
+        "window_start": window_start.isoformat(), "window_end": now.isoformat(),
+    }
+
+
+def run_gated_verification_scoring(db, *, spot_ids=None, now=None, lookback_days: int = 45,
+                                   tolerance_s: int = 1200, run_id=None, persist: bool = True,
+                                   blend_overrides=None) -> dict:
+    """Score the raw forecast AND each spot's latest candidate corrected variant in ONE
+    run, so the activation gate compares before/after over identical samples and
+    observations (no time-window confound).
+
+    Raw rows are written with variant="raw", the shadow-corrected rows with
+    variant="corrected" under the same run_id. The per-family blend defaults to the
+    live ``settings.wind_sector_blend`` so the shadow matches what serving would do.
+    Served wind is unchanged — this only writes measurement rows.
+    """
+    from app.weather.sector_activation import latest_candidate_version
+
+    now = now or datetime.now(timezone.utc)
+    run_id = run_id or uuid.uuid4()
+    if blend_overrides is None:
+        try:
+            from app.config import get_settings
+
+            blend_overrides = get_settings().wind_sector_blend
+        except Exception:
+            blend_overrides = None
+    window_start = now - timedelta(days=max(1, min(lookback_days, 365)))
+    targets = list(spot_ids) if spot_ids is not None else eligible_spot_ids(db)
+    raw_spots = corrected_spots = raw_rows = corrected_rows = 0
+    for spot_id in targets:
+        raw = score_spot_forecasts(db, spot_id, now=now, lookback_days=lookback_days, tolerance_s=tolerance_s)
+        if raw:
+            raw_spots += 1
+            raw_rows += len(raw)
+            if persist:
+                persist_verification_scores(db, run_id, spot_id, raw, variant="raw",
+                                            window_start=window_start, window_end=now, computed_at=now)
+        version = latest_candidate_version(db, spot_id)
+        if version is None:
+            continue
+        corrected = score_spot_forecasts_corrected(
+            db, spot_id, version=version, now=now, lookback_days=lookback_days,
+            tolerance_s=tolerance_s, blend_overrides=blend_overrides)
+        if corrected:
+            corrected_spots += 1
+            corrected_rows += len(corrected)
+            if persist:
+                persist_verification_scores(db, run_id, spot_id, corrected, variant="corrected",
+                                            window_start=window_start, window_end=now, computed_at=now)
+    return {
+        "run_id": str(run_id), "raw_spots_scored": raw_spots, "raw_rows": raw_rows,
+        "corrected_spots_scored": corrected_spots, "corrected_rows": corrected_rows,
+        "lookback_days": lookback_days,
         "window_start": window_start.isoformat(), "window_end": now.isoformat(),
     }

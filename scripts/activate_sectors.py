@@ -5,12 +5,14 @@ Two modes:
   python -m scripts.activate_sectors --spot <UUID> --version 2 --reason "..."
 
   # Gated batch: activate each spot's latest candidate only where the WP1
-  # before/after comparison shows a mean-MAE drop >= threshold.
-  python -m scripts.activate_sectors --compare <AFTER_RUN> --against <BASELINE_RUN> --min-bias-drop 0.2
+  # within-run shadow comparison (raw vs corrected) shows a mean-MAE drop >=
+  # threshold. Produce the run with run_gated_verification_scoring (cron
+  # /cron/verification does this), then pass its run id:
+  python -m scripts.activate_sectors --run <GATED_RUN> --min-bias-drop 0.2
 
 The runner never enables sectors; this is the only path that does. On
 overcorrection for a model family, lower settings.wind_sector_blend and
-re-compare before activating.
+re-score before activating.
 """
 
 from __future__ import annotations
@@ -26,8 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.db.session import SessionLocal
 from app.weather.sector_activation import (
     activate_spot_sectors,
+    candidate_bias_improvement,
     latest_candidate_version,
-    spot_bias_improvement,
 )
 
 ACTOR = "cli:activate_sectors"
@@ -38,8 +40,7 @@ def main() -> None:
     parser.add_argument("--spot", help="Spot id for direct activation.")
     parser.add_argument("--version", type=int, help="Sector version to activate (direct mode).")
     parser.add_argument("--reason", default=None)
-    parser.add_argument("--compare", help="AFTER verification run id (gated batch mode).")
-    parser.add_argument("--against", help="BASELINE verification run id (gated batch mode).")
+    parser.add_argument("--run", help="Gated verification run id (raw+corrected) for batch mode.")
     parser.add_argument("--min-bias-drop", type=float, default=0.0,
                         help="Minimum mean-MAE drop (m/s) required to activate a spot.")
     args = parser.parse_args()
@@ -50,8 +51,8 @@ def main() -> None:
                                            actor=ACTOR, reason=args.reason)
             print(json.dumps(result, indent=2))
             return
-        if args.compare and args.against:
-            improvements = spot_bias_improvement(db, uuid.UUID(args.compare), uuid.UUID(args.against))
+        if args.run:
+            improvements = candidate_bias_improvement(db, uuid.UUID(args.run))
             activated, skipped = [], []
             for spot_id, drop in sorted(improvements.items()):
                 if drop < args.min_bias_drop:
@@ -67,7 +68,7 @@ def main() -> None:
             print(json.dumps({"activated": activated, "skipped": skipped,
                               "min_bias_drop": args.min_bias_drop}, indent=2))
             return
-    raise SystemExit("use --spot/--version, or --compare/--against [--min-bias-drop]")
+    raise SystemExit("use --spot/--version, or --run [--min-bias-drop]")
 
 
 if __name__ == "__main__":

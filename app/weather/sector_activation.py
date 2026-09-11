@@ -64,8 +64,29 @@ def _run_mean_mae(db, run_id, variant: str = "raw") -> dict[str, float]:
     return {spot_id: mean(values) for spot_id, values in by_spot.items() if values}
 
 
+def candidate_bias_improvement(db, run_id) -> dict[str, float]:
+    """Per-spot mean-MAE drop from activating the candidate, measured WITHIN one run.
+
+    Compares the shadow-corrected variant against the raw variant over identical
+    samples and observations (``run_gated_verification_scoring`` writes both under
+    one run_id): ``raw_mae - corrected_mae``. Positive means the candidate actually
+    lowers the forecast error. This is the authoritative WP1 activation gate — it
+    measures the concrete candidate, not two different time windows.
+    """
+    raw = _run_mean_mae(db, run_id, "raw")
+    corrected = _run_mean_mae(db, run_id, "corrected")
+    return {spot_id: round(raw[spot_id] - corrected[spot_id], 4)
+            for spot_id in corrected if spot_id in raw}
+
+
 def spot_bias_improvement(db, after_run, baseline_run, *, variant: str = "raw") -> dict[str, float]:
-    """Mean-MAE drop per spot (baseline - after); positive means improvement."""
+    """Mean-MAE drop per spot across two runs (baseline - after); positive = improvement.
+
+    DEPRECATED for activation gating: comparing the same variant across two runs
+    conflates the correction with a different weather window and cannot isolate a
+    candidate's effect. Use :func:`candidate_bias_improvement` (within-run
+    raw-vs-corrected) for the gate. Kept only for run-to-run drift reporting.
+    """
     after = _run_mean_mae(db, after_run, variant)
     baseline = _run_mean_mae(db, baseline_run, variant)
     return {spot_id: round(baseline[spot_id] - after[spot_id], 4)

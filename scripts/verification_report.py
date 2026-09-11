@@ -24,7 +24,11 @@ from sqlalchemy import select
 
 from app.db.session import SessionLocal
 from app.models import ForecastVerificationScore
-from app.weather.verification import eligible_spot_ids, run_verification_scoring
+from app.weather.verification import (
+    eligible_spot_ids,
+    run_gated_verification_scoring,
+    run_verification_scoring,
+)
 
 
 def _score_map(db, run_id: uuid.UUID, variant: str) -> dict[tuple, ForecastVerificationScore]:
@@ -63,6 +67,9 @@ def main() -> None:
     parser.add_argument("--lookback-days", type=int, default=45)
     parser.add_argument("--tolerance-min", type=int, default=20, help="Forecast/observation match window.")
     parser.add_argument("--variant", default="raw")
+    parser.add_argument("--gated", action="store_true",
+                        help="Score raw AND each spot's latest candidate (corrected) in one run, "
+                             "for the within-run activation gate.")
     parser.add_argument("--persist", dest="persist", action="store_true", default=True)
     parser.add_argument("--no-persist", dest="persist", action="store_false")
     parser.add_argument("--compare", default=None, help="Run id to report/diff.")
@@ -80,10 +87,16 @@ def main() -> None:
         if spot_ids is None:
             eligible = eligible_spot_ids(db)
             print(json.dumps({"eligible_spots": len(eligible)}))
-        summary = run_verification_scoring(
-            db, spot_ids=spot_ids, lookback_days=args.lookback_days,
-            tolerance_s=max(60, args.tolerance_min * 60), variant=args.variant, persist=args.persist,
-        )
+        if args.gated:
+            summary = run_gated_verification_scoring(
+                db, spot_ids=spot_ids, lookback_days=args.lookback_days,
+                tolerance_s=max(60, args.tolerance_min * 60), persist=args.persist,
+            )
+        else:
+            summary = run_verification_scoring(
+                db, spot_ids=spot_ids, lookback_days=args.lookback_days,
+                tolerance_s=max(60, args.tolerance_min * 60), variant=args.variant, persist=args.persist,
+            )
         print(json.dumps(summary, indent=2))
 
 
