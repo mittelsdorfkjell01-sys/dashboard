@@ -3,6 +3,7 @@ import type { LiveConditionsRead } from "../../../lib/api";
 import type { NormalizedForecastSeries } from "../../../lib/forecastNormalization";
 import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/SpotDataScope";
 import { resolveDirectionSnapshot, degreesToCompass } from "../../../lib/directionSnapshot";
+import { referenceMeasurement } from "../../../lib/spotMapReading";
 import { sunTimes } from "../../../lib/sunTimes";
 import { tempColor } from "../../../lib/tempScale";
 import CompassDial from "./CompassDial";
@@ -73,6 +74,14 @@ export default function WindSidebar({
   const classification = snapshot?.windCoastalClassification;
   const classLabel = classification && classification !== "unavailable" ? CLASS_LABEL[classification] : null;
 
+  // A nearby station reading is a SEPARATE reference product (P0.1): shown on
+  // its own with the real observation time, never merged into the computed
+  // reading above. Absent when no accepted measurement exists.
+  const reference = referenceMeasurement(live ?? null);
+  const referenceStamp = reference
+    ? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(new Date(reference.observedAt)) + " GMT"
+    : null;
+
   // Value/unit split so the reading dominates and the unit reads as quiet
   // metadata (brief: "Der Messwert ist immer wichtiger als seine Einheit").
   // Colour lives only on temperature: GEFÜHLT is tinted on the temperature scale
@@ -129,6 +138,26 @@ export default function WindSidebar({
         {dir != null && <p className="mt-1 text-caption tabular-nums text-muted">{Math.round(dir)} Grad</p>}
         {classLabel && <p className="mt-0.5 text-caption text-muted">{classLabel}</p>}
       </div>
+
+      {reference && (
+        <div className="mt-6 border-t border-line pt-3">
+          <p className="text-caption uppercase tracking-[0.12em] text-muted">
+            Referenzmessung{reference.stationName ? ` · ${reference.stationName}` : ` · ${reference.provider}`}
+            {reference.distanceKm != null && (
+              <span className="normal-case tracking-normal"> · {reference.distanceKm.toFixed(reference.distanceKm < 10 ? 1 : 0)} km entfernt</span>
+            )}
+          </p>
+          <p className="mt-1 text-caption tabular-nums text-ink">
+            <span className="font-semibold">
+              {reference.windKt == null ? "—" : `${formatWind(reference.windKt, windUnit)} ${windUnitLabel(windUnit)}`}
+            </span>
+            {reference.windDir != null && (
+              <span className="text-muted"> · aus {degreesToCompass(reference.windDir)} ({Math.round(reference.windDir)} Grad)</span>
+            )}
+          </p>
+          <p className="mt-0.5 text-caption tabular-nums text-muted">Gemessen {referenceStamp}</p>
+        </div>
+      )}
 
       {/* Compass hero — pushed to the bottom so its lower edge sits on the map's
           bottom edge; fills the panel's existing inner width. */}

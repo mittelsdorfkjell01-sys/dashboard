@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentReading } from "../spotMapReading";
+import { currentReading, referenceMeasurement } from "../spotMapReading";
 import type { LiveConditionsRead } from "../api";
 
 const baseLive: LiveConditionsRead = {
@@ -16,7 +16,7 @@ describe("currentReading — provenance priority and never mixing sources", () =
     expect(reading!.label).toContain("16:00 +02:00");
   });
 
-  it("prefers a real station measurement over the model nowcast when no forecast hour is selected", () => {
+  it("P0.1: keeps the model nowcast as the computed reading even when a measurement exists", () => {
     const live: LiveConditionsRead = {
       ...baseLive,
       measurement: {
@@ -25,26 +25,29 @@ describe("currentReading — provenance priority and never mixing sources", () =
         wind_speed_ms: 10, wind_gust_ms: 14, wind_direction_from_deg: 305, quality: 1,
       },
     };
+    // The station reading must NOT be presented as the computed spot wind.
     const reading = currentReading(live, null);
-    expect(reading!.type).toBe("measurement");
-    expect(reading!.windDir).toBe(305);
-    expect(reading!.windKt).toBeCloseTo(19.4384, 3); // 10 m/s -> kt
-    expect(reading!.label).toContain("DWD");
+    expect(reading!.type).toBe("nowcast");
+    expect(reading!.windDir).toBe(312);
+    expect(reading!.windKt).toBe(18);
+    expect(reading!.label).toContain("icon_eu");
   });
 
-  it("never borrows wave fields for a measurement — stations here measure wind only", () => {
+  it("P0.1: exposes the station reading separately as a reference with its own observed_at", () => {
     const live: LiveConditionsRead = {
       ...baseLive,
       measurement: {
         observation_type: "measurement", station_id: "st-1", provider: "DWD", provider_station_id: "123",
-        observed_at: "2026-08-24T11:58:00Z", age_seconds: 120, distance_km: null,
-        wind_speed_ms: 10, wind_gust_ms: null, wind_direction_from_deg: 305, quality: null,
+        observed_at: "2026-08-24T11:58:00Z", age_seconds: 120, distance_km: 3.2,
+        wind_speed_ms: 10, wind_gust_ms: 14, wind_direction_from_deg: 305, quality: 1,
       },
     };
-    const reading = currentReading(live, null);
-    expect(reading!.waveDir).toBeNull();
-    expect(reading!.waveM).toBeNull();
-    expect(reading!.period).toBeNull();
+    const reference = referenceMeasurement(live);
+    expect(reference!.observedAt).toBe("2026-08-24T11:58:00Z");
+    expect(reference!.windDir).toBe(305);
+    expect(reference!.windKt).toBeCloseTo(19.4384, 3); // 10 m/s -> kt
+    expect(reference!.provider).toBe("DWD");
+    expect(referenceMeasurement(baseLive)).toBeNull();  // none when no station reading
   });
 
   it("falls back to the model nowcast when there is no measurement and no selected forecast hour", () => {

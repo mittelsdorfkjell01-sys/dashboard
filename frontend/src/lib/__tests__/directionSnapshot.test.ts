@@ -26,14 +26,17 @@ describe("resolveDirectionSnapshot", () => {
   it("uses the complete nowcast only without a forecast selection", () => {
     expect(resolveDirectionSnapshot({ selectedForecast: null, live, forecastTimezone: "UTC" })).toMatchObject({ kind: "nowcast", windDirectionFromDeg: 90, waveDirectionFromDeg: 180 });
   });
-  it("keeps a real measurement separate from model and wave fields", () => {
+  it("P0.1: a station measurement never becomes the computed directional state", () => {
     const measured: LiveConditionsRead = { ...live, measurement: {
       observation_type: "measurement", station_id: "station", provider: "DWD", provider_station_id: "123",
       observed_at: "2026-08-24T12:00:00Z", age_seconds: 120, distance_km: 2,
       wind_speed_ms: 10, wind_gust_ms: 14, wind_direction_from_deg: 305, quality: 1,
     }};
     const result = resolveDirectionSnapshot({ selectedForecast: null, live: measured, forecastTimezone: "Europe/Berlin" });
-    expect(result).toMatchObject({ kind: "measurement", provider: "DWD", windDirectionFromDeg: 305, waveDirectionFromDeg: null, waveHeightM: null });
+    // The computed snapshot stays the model nowcast; the measurement is shown
+    // separately (referenceMeasurement), never as the spot wind/direction.
+    expect(result).toMatchObject({ kind: "nowcast", windDirectionFromDeg: 90 });
+    expect(result?.windKt).not.toBe(10 / 0.514444);
   });
   it("keeps missing coastal metadata unavailable", () => {
     expect(resolveDirectionSnapshot({ selectedForecast: hour(), live, forecastTimezone: "UTC" })?.coastalNormalDeg).toBeNull();

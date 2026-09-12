@@ -72,30 +72,11 @@ export function resolveDirectionSnapshot({
     };
   }
 
-  if (live?.measurement) {
-    const measurement = live.measurement;
-    const timezone = live.provenance?.spot_timezone ?? forecastTimezone;
-    return {
-      validAtUtc: measurement.observed_at,
-      localLabel: localInstant(measurement.observed_at, timezone),
-      timezone,
-      kind: "measurement",
-      windDirectionFromDeg: finiteDirection(measurement.wind_direction_from_deg),
-      windKt: measurement.wind_speed_ms == null ? null : measurement.wind_speed_ms / 0.514444,
-      gustKt: measurement.wind_gust_ms == null ? null : measurement.wind_gust_ms / 0.514444,
-      waveDirectionFromDeg: null,
-      waveHeightM: null,
-      wavePeriodS: null,
-      coastalNormalDeg: null,
-      windCoastalClassification: null,
-      waveCoastalClassification: null,
-      stale: false,
-      quality: measurement.quality == null ? null : String(measurement.quality),
-      provider: measurement.provider,
-      model: null,
-    };
-  }
-
+  // P0.1: a station measurement is a SEPARATE reference product and must not be
+  // returned here as the computed directional state — that would present it as
+  // the spot wind. The sidebar/card renders it on its own via
+  // ``referenceMeasurement`` (with its real ``observed_at``). The computed
+  // snapshot is the forecast hour (above) or the model nowcast (below).
   if (live?.current && live.time) {
     const current = live.current;
     const timezone = live.provenance?.spot_timezone ?? forecastTimezone;
