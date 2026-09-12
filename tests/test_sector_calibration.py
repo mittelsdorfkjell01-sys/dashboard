@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -114,18 +115,57 @@ def test_posterior_shrinks_prior_towards_measurement(db, calib_spot):
     assert v2[9].speed_factor < 1.5  # shrunk towards prior, not the raw measurement
     assert v2[0].speed_factor == 1.0  # a sector with no data carries the prior
     assert all(not sector.enabled for sector in v2.values())  # gated candidate only
+    note = json.loads(v2[9].note)
+    assert note["posterior_schema"] == "sector-holdout-v2"
+    assert datetime.fromisoformat(note["training_window_end"]).tzinfo is not None
     # version 1 prior is never deleted
     v1 = db.query(SpotWeatherSector).filter_by(profile_id=profile.id, version=1).all()
     assert len(v1) == 12 and all(sector.enabled for sector in v1)
 
 
-def test_idempotent_when_measurements_unchanged(db, calib_spot):
+def test_pending_posterior_is_frozen_while_holdout_accumulates(db, calib_spot):
     spot, station, _ = calib_spot
     _seed_matched_series(db, spot, station, obs_speed=15.0, model_speed=10.0, direction=270.0)
     first = recalibrate_spot_sectors(db, spot.id, lookback_days=30)
     second = recalibrate_spot_sectors(db, spot.id, lookback_days=30)
     assert first["version"] == 2
-    assert second["status"] == "idempotent" and second["version"] == 2
+    assert second["status"] == "candidate_pending" and second["version"] == 2
+
+
+def test_malformed_pending_posterior_is_rebuilt_with_a_valid_boundary(
+    db, calib_spot
+):
+    spot, station, profile = calib_spot
+    _seed_matched_series(
+        db,
+        spot,
+        station,
+        obs_speed=15.0,
+        model_speed=10.0,
+        direction=270.0,
+    )
+    first = recalibrate_spot_sectors(db, spot.id, lookback_days=30)
+    rows = db.query(SpotWeatherSector).filter_by(
+        profile_id=profile.id, version=first["version"]
+    ).all()
+    for row in rows:
+        note = json.loads(row.note)
+        note.pop("training_window_end")
+        row.note = json.dumps(note, separators=(",", ":"))
+    db.commit()
+
+    rebuilt = recalibrate_spot_sectors(db, spot.id, lookback_days=30)
+
+    assert rebuilt["status"] == "ok" and rebuilt["version"] == 3
+    rebuilt_rows = db.query(SpotWeatherSector).filter_by(
+        profile_id=profile.id, version=3
+    ).all()
+    assert len(rebuilt_rows) == 12
+    assert all(
+        datetime.fromisoformat(json.loads(row.note)["training_window_end"]).tzinfo
+        is not None
+        for row in rebuilt_rows
+    )
 
 
 def test_insufficient_measurements_writes_nothing(db, calib_spot):

@@ -133,10 +133,20 @@ def _load_spot(db: Session, spot_id) -> Spot:
 
 
 def _forecast_sample_issued_at(forecast: dict) -> datetime:
-    """Stable identity for all samples derived from one provider cache capture."""
-    return _parse_provider_time(forecast.get("_cache_captured_at")) or datetime.now(
-        timezone.utc
-    )
+    """Bounded stable identity for one verification capture interval.
+
+    Open-Meteo does not expose a reliable run timestamp for every selected
+    model.  Using each 45-minute cache refresh as a new run heavily duplicates
+    the same model cycle, so captures are deliberately quantised (six hours by
+    default).  The database uniqueness key then keeps one sample per model,
+    valid time and interval.
+    """
+    captured = _parse_provider_time(
+        forecast.get("_cache_captured_at")
+    ) or datetime.now(timezone.utc)
+    interval = get_settings().weather_forecast_sample_interval_hours
+    bucket_hour = captured.hour - captured.hour % interval
+    return captured.replace(hour=bucket_hour, minute=0, second=0, microsecond=0)
 
 
 def _store_forecast_samples_once(
@@ -409,21 +419,20 @@ def get_live_conditions(
     """
     spot = _load_spot(db, spot_id)
     result = get_live_conditions_for_spot(spot, client=client, cache=cache)
-    result["measurement"] = _latest_measurement(db, spot.id)
-    measurement = result["measurement"]
-    if measurement:
-        current = result["current"]
-        current.update({
-            "wind_ms": measurement["wind_speed_ms"], "gust_ms": measurement["wind_gust_ms"],
-            "wind": _knots(measurement["wind_speed_ms"]), "gust": _knots(measurement["wind_gust_ms"]),
-            "dir": measurement["wind_direction_from_deg"],
-        })
-        result["sources"]["wind"] = measurement["provenance"]
+    # P0.1: the station measurement is a SEPARATE product. It never rewrites the
+    # model nowcast (`current`) or its `sources["wind"]` provenance — it is
+    # carried alongside and warmed into its own cache layer so a later cache hit
+    # can attach it without a database round-trip.
+    result["measurement"] = _latest_measurement(db, spot.id, cache=cache)
     return result
 
 
-def _latest_measurement(db, spot_id) -> dict | None:
-    """Return an actual station observation separately from the model nowcast."""
+def _latest_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | None:
+    """Return an actual station observation separately from the model nowcast.
+
+    When a cache is supplied the computed reading is warmed into the dedicated
+    measurement layer (P0.1) so subsequent cache hits attach it DB-free.
+    """
     if not hasattr(db, "scalar"):
         return None
     station = db.scalar(select(WeatherStation).where(
@@ -441,7 +450,7 @@ def _latest_measurement(db, spot_id) -> dict | None:
     eligible, _reasons = public_measurement(station, observation, now=now)
     if not eligible:
         return None
-    return {
+    result = {
         "observation_type": "measurement", "station_id": str(station.id),
         "provider": station.provider, "provider_station_id": station.provider_station_id,
         "observed_at": observed.isoformat(), "age_seconds": max(0, int((now - observed).total_seconds())),
@@ -460,6 +469,22 @@ def _latest_measurement(db, spot_id) -> dict | None:
             "grid_distance_km": station.distance_km, "uncertainty": "limited", "data_issues": observation.data_issues or [],
         },
     }
+    if cache is not None:
+        from app.live.public_cache import set_public_measurement
+
+        set_public_measurement(cache, spot_id, result)
+    return result
+
+
+def public_station_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | None:
+    """The separate station-measurement product for a spot (never part of current).
+
+    Served from the dedicated measurement cache layer when warm, else computed.
+    Both the single and batch live endpoints attach it at serve time so the
+    measurement is present consistently and never pinned into the model-nowcast
+    cache (which is what kept it order-independent).
+    """
+    return _latest_measurement(db, spot_id, cache=cache)
 
 
 def get_live_conditions_for_spot(

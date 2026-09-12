@@ -1,13 +1,15 @@
 """Sector-producer runner: writes CANDIDATE sector factors, never activates.
 
-Iterates published spots, runs a producer (GWA or microscale) and persists its
-12 sectors as a new *candidate* version with ``enabled = False``. Activation is a
-separate, WP1-gated path (see app/api/admin_weather.py); this runner never flips
+Iterates published spots, runs a producer (the combined GWA x microscale prior
+by default) and persists its 12 sectors as a new *candidate* version with
+``enabled = False``. Activation is a separate, WP1-gated path (see
+app/api/admin_weather.py); this runner never flips
 ``enabled`` to True, so writing candidates cannot change a single served value
 (select_sector picks the newest *enabled* version).
 
 Only ``status == "ok"`` writes factor rows; every other status (gwa_not_mounted,
-gwa_nodata, reference_unavailable, microscale_unavailable) is recorded in the
+gwa_nodata, reference_unavailable, microscale_unavailable,
+combined_unavailable) is recorded in the
 run summary so coverage gaps are visible, never stored as a real factor. A
 content hash over factors + provenance prevents version spam on re-runs.
 """
@@ -24,7 +26,7 @@ from app.era5.grid import resolve_grid_cell
 from app.live import service as live_service
 from app.models import ForecastSectorBuild, Spot, SpotWeatherProfile, SpotWeatherSector
 
-PRODUCERS = ("gwa", "microscale")
+PRODUCERS = ("gwa", "microscale", "combined")
 
 
 def _compute(producer: str, spot):
@@ -39,6 +41,32 @@ def _compute(producer: str, spot):
         from app.forecast.microscale import RasterSurfaceProvider, compute_microscale_sectors
 
         return compute_microscale_sectors(lat, lon, surface_provider=RasterSurfaceProvider(), grid_cell=grid_cell)
+    if producer == "combined":
+        from app.forecast.combined_correction import combine_sector_results
+        from app.forecast.gwa_producer import (
+            Era5ReferenceSource,
+            MountedGwaRasterReader,
+            compute_gwa_sectors,
+        )
+        from app.forecast.microscale import (
+            RasterSurfaceProvider,
+            compute_microscale_sectors,
+        )
+
+        gwa = compute_gwa_sectors(
+            lat,
+            lon,
+            gwa_reader=MountedGwaRasterReader(),
+            reference=Era5ReferenceSource(),
+            grid_cell=grid_cell,
+        )
+        microscale = compute_microscale_sectors(
+            lat,
+            lon,
+            surface_provider=RasterSurfaceProvider(),
+            grid_cell=grid_cell,
+        )
+        return combine_sector_results(gwa, microscale)
     raise ValueError(f"unknown producer {producer!r}")
 
 
@@ -54,8 +82,29 @@ def candidate_signature(result) -> str:
 
 def _sector_note(result, sector, signature: str) -> str:
     provenance = {k: v for k, v in result.provenance.items() if k != "status"}
-    return json.dumps({**provenance, "confidence": sector.confidence, "saturated": sector.saturated,
-                       "candidate": True, "sig": signature}, separators=(",", ":"))[:500]
+    components = provenance.pop("sector_components", {}).get(str(sector.index))
+    note = {
+        **provenance,
+        "factor_components": components,
+        "confidence": sector.confidence,
+        "saturated": sector.saturated,
+        "candidate": True,
+        "sig": signature,
+    }
+    encoded = json.dumps(note, separators=(",", ":"))
+    if len(encoded) <= 500:
+        return encoded
+    # Keep a valid, useful JSON note even if a future producer adds verbose
+    # provenance.  Invalid JSON would make WP6 mistake the physical prior.
+    compact = {
+        "method": provenance.get("method"),
+        "factor_components": components,
+        "confidence": sector.confidence,
+        "saturated": sector.saturated,
+        "candidate": True,
+        "sig": signature,
+    }
+    return json.dumps(compact, separators=(",", ":"))
 
 
 def _record_build(db, spot_id, producer, *, status, content_hash=None, version=None):
@@ -114,7 +163,7 @@ def _target_spots(db, *, spot_ids, producer, limit):
     return db.scalars(query).all()
 
 
-def run_sector_producer(db, *, producer: str = "gwa", spot_ids=None, limit=None, dry_run: bool = False) -> dict:
+def run_sector_producer(db, *, producer: str = "combined", spot_ids=None, limit=None, dry_run: bool = False) -> dict:
     """Run the producer over target spots, writing candidates only (never enabled)."""
     if producer not in PRODUCERS:
         raise ValueError(f"unknown producer {producer!r}")

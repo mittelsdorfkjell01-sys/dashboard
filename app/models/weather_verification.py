@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -146,6 +146,72 @@ class ForecastVerificationScore(Base):
                          name="uq_forecast_verification_score"),
         CheckConstraint("direction_sector >= 0 AND direction_sector < 12", name="ck_forecast_verification_sector"),
         CheckConstraint("sample_count >= 0", name="ck_forecast_verification_samples"),
+    )
+
+
+class ForecastSectorGateEvidence(Base):
+    """Paired, day-blocked evidence authorising one sector candidate.
+
+    Diagnostic verification scores stay grouped by lead bucket and direction.
+    This row stores the stricter activation statistic: baseline and candidate
+    are paired by forecast identity, repeated runs are collapsed by valid time,
+    and uncertainty is bootstrapped over distinct UTC days.
+    """
+
+    __tablename__ = "forecast_sector_gate_evidence"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spot_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("spots.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    candidate_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    gate_context_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    training_window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    matched_forecasts: Mapped[int] = mapped_column(Integer, nullable=False)
+    unique_valid_times: Mapped[int] = mapped_column(Integer, nullable=False)
+    distinct_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    baseline_mae_ms: Mapped[float | None] = mapped_column(Float)
+    candidate_mae_ms: Mapped[float | None] = mapped_column(Float)
+    mae_drop_ms: Mapped[float | None] = mapped_column(Float)
+    ci_lower_ms: Mapped[float | None] = mapped_column(Float)
+    ci_upper_ms: Mapped[float | None] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(String(80), nullable=False)
+    policy: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    computed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "run_id", "spot_id", name="uq_forecast_sector_gate_evidence_run_spot"
+        ),
+        CheckConstraint(
+            "candidate_version >= 1", name="ck_forecast_sector_gate_version"
+        ),
+        CheckConstraint(
+            "matched_forecasts >= 0 AND unique_valid_times >= 0 AND distinct_days >= 0",
+            name="ck_forecast_sector_gate_counts",
+        ),
+        CheckConstraint(
+            "status IN ('collecting','rejected','passed')",
+            name="ck_forecast_sector_gate_status",
+        ),
+        Index(
+            "ix_forecast_sector_gate_candidate",
+            "spot_id",
+            "candidate_version",
+            "computed_at",
+        ),
     )
 
 

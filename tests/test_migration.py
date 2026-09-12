@@ -233,6 +233,57 @@ def test_migration_0027_upgrades_legacy_image_objects(db):
     db.commit()
 
 
+def test_migration_0051_sector_gate_evidence_down_and_up(db):
+    """P0.4: the gate-evidence migration reverses cleanly and re-applies.
+
+    Covers the "previously migrated to the prior head (0050)" case explicitly; the
+    empty-database case is exercised by the suite bootstrap that builds the test
+    database empty -> head. Downgrade runs only against the disposable test DB.
+    """
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+
+    def gate_table_present() -> bool:
+        return bool(
+            db.execute(
+                text(
+                    "SELECT 1 FROM information_schema.tables "
+                    "WHERE table_name = 'forecast_sector_gate_evidence'"
+                )
+            ).scalar()
+        )
+
+    assert gate_table_present()  # the suite starts at head (0051)
+    command.downgrade(cfg, "0050_verification_gate_context")
+    db.commit()
+    assert not gate_table_present()  # 0051 removed the table and its index
+    command.upgrade(cfg, "head")
+    db.commit()
+    assert gate_table_present()  # re-applying 0051 from 0050 restores it
+
+
+def test_migration_0051_model_matches_table(db):
+    """The ORM model and the migrated table define the same columns (P0.4)."""
+    from app.models import ForecastSectorGateEvidence
+
+    inspector = inspect(db.get_bind())
+    table_columns = {
+        column["name"]
+        for column in inspector.get_columns("forecast_sector_gate_evidence")
+    }
+    model_columns = {column.name for column in ForecastSectorGateEvidence.__table__.columns}
+    assert model_columns == table_columns
+
+
 def test_migration_0003_down_and_up(db):
     """The category migration reverses cleanly and re-applies (up→down→up)."""
     from pathlib import Path

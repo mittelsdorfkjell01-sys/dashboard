@@ -25,6 +25,7 @@ from app.live.deps import get_cache, get_om_client
 from app.live.public_cache import (
     get_public_forecast,
     get_public_live,
+    get_public_measurement,
     public_weather_generation,
     set_public_forecast,
     set_public_live,
@@ -373,6 +374,22 @@ def get_spots_live_batch(
                 )
             except Exception:
                 logger.exception("live batch failed for spot %s", futures[future])
+    # Attach the separate station measurement at serve time (main thread, one
+    # session) so a batch item carries the same measurement a single fetch would,
+    # without ever pinning it into the shared model-nowcast cache. Freshly
+    # computed spots already did DB work, so we compute (and warm) their
+    # measurement from the database; cache-hit spots stay DB-free.
+    missing_set = set(missing)
+    for spot_id in list(results):
+        if spot_id in missing_set:
+            measurement = live_service.public_station_measurement(
+                db, spot_id, cache=cache
+            )
+        else:
+            measurement = get_public_measurement(cache, spot_id)
+        enriched = results[spot_id].model_dump(mode="json")
+        enriched["measurement"] = measurement
+        results[spot_id] = LiveConditionsRead.model_validate(enriched)
     return [results[spot_id] for spot_id in parsed if spot_id in results]
 
 
@@ -509,7 +526,12 @@ def get_spot_live(
     generation = public_weather_generation(cache, spot_id)
     cached = get_public_live(cache, spot_id, generation=generation)
     if cached is not None:
-        return LiveConditionsRead.model_validate(cached)
+        # The cached product is the model nowcast only; attach the separate
+        # station measurement from its own cache layer (no DB on a cache hit) so
+        # single and batch stay consistent without pinning it into the nowcast.
+        enriched = dict(cached)
+        enriched["measurement"] = get_public_measurement(cache, spot_id)
+        return LiveConditionsRead.model_validate(enriched)
     if not published_spot_exists(db, spot_id):
         raise HTTPException(status_code=404, detail="Spot not found")
     try:

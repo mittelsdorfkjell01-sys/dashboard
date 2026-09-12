@@ -124,6 +124,37 @@ def enqueue(
     return job
 
 
+def snapshot_quality_level(correction: dict | None) -> str:
+    """Map a produced-series correction summary to a VALID snapshot quality tier.
+
+    ``quality_level`` is the pipeline tier constrained by the database
+    (baseline/automatic/calibrated/reviewed); it must never be the correction
+    status. An effective automatic local correction keeps the historical
+    "automatic" tier, otherwise "baseline". The correction status and its
+    provenance are stored separately in ``snapshot.internal['correction']``.
+    """
+    return "automatic" if (correction or {}).get("applied") else "baseline"
+
+
+def _active_sector_versions(db, spot_id) -> list[int]:
+    """Enabled forecast-sector versions effective for the spot (audit provenance)."""
+    from app.models import SpotWeatherProfile, SpotWeatherSector
+    from app.weather.profiles import is_forecast_sector
+
+    profile = db.scalar(
+        select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id)
+    )
+    if profile is None:
+        return []
+    rows = db.scalars(
+        select(SpotWeatherSector).where(
+            SpotWeatherSector.profile_id == profile.id,
+            SpotWeatherSector.enabled.is_(True),
+        )
+    ).all()
+    return sorted({int(row.version) for row in rows if is_forecast_sector(row)})
+
+
 def run_job(db, job_id, *, client=None, cache=None):
     job = db.scalar(
         select(ForecastProcessingJob)
@@ -185,10 +216,22 @@ def run_job(db, job_id, *, client=None, cache=None):
         payload["models"] = []
         payload = ForecastSeriesRead.model_validate(payload).model_dump(mode="json")
         generated = datetime.now(timezone.utc)
-        # Honest label: "corrected" only when a local correction actually changed
-        # a value (derived from the produced series), not from a config flag.
+        # ``quality_level`` is the pipeline tier (baseline/automatic/calibrated/
+        # reviewed) and must never encode whether a value was changed. Keep its
+        # historical meaning ("automatic" = the automatic correction pipeline was
+        # in effect, else "baseline") and record the correction STATUS + its
+        # provenance separately, so "corrected" is never written as a quality.
         correction = payload.get("correction") or {}
-        quality = "corrected" if correction.get("applied") else "baseline"
+        quality = snapshot_quality_level(correction)
+        correction_provenance = {
+            "applied": bool(correction.get("applied")),
+            "confidence": correction.get("confidence", "ok"),
+            "consensus_version": CONSENSUS_VERSION,
+            "physics_version": PHYSICS_VERSION,
+            "geo_profile_id": str(profile.id),
+            "active_sector_versions": _active_sector_versions(db, target_spot_id),
+            "weather_serving_context": context_before,
+        }
         snapshot = ForecastSnapshot(
             spot_id=target_spot_id,
             generated_at=generated,
@@ -204,6 +247,7 @@ def run_job(db, job_id, *, client=None, cache=None):
                 "geo_profile_status": profile.status,
                 "geo_profile_quality": profile.quality,
                 "weather_serving_context": context_before,
+                "correction": correction_provenance,
                 **internal_weather,
             },
             attributions=public_attributions({"open-meteo"}),

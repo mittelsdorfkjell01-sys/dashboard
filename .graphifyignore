@@ -1,0 +1,36 @@
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+scripts/.neon_url
+scripts/.vercel_token
+scripts/.maptiler_key
+scripts/.db_url
+.vercel/
+
+# Dependencies, build output, and generated metadata
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+.venv/
+.venv*/
+*.egg-info/
+
+# Runtime caches and generated output
+.git/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+.codex-log/
+.codex/
+.impeccable/review/
+test-results/
+screens/
+frontend/exports/
+backups/
+
+# Large downloaded or generated project data
+data/
+reports/
+

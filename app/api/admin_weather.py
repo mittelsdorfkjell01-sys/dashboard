@@ -21,6 +21,7 @@ from app.live.deps import get_cache
 from app.weather.profiles import WIND_CLIMATOLOGY_V3_NOTE, is_forecast_sector
 from app.models import (
     ForecastProcessingJob,
+    ForecastSectorGateEvidence,
     ForecastSnapshot,
     Region,
     ForecastVerificationScore,
@@ -974,6 +975,11 @@ def verification_runs(limit: int = Query(default=10, ge=1, le=50), db: Session =
         .order_by(func.max(ForecastVerificationScore.computed_at).desc())
         .limit(limit)
     ).all()
+    gates = db.scalars(
+        select(ForecastSectorGateEvidence)
+        .order_by(ForecastSectorGateEvidence.computed_at.desc())
+        .limit(limit)
+    ).all()
     return {
         "runs": [
             {
@@ -985,7 +991,28 @@ def verification_runs(limit: int = Query(default=10, ge=1, le=50), db: Session =
                 "avg_bias_ms": round(row.avg_bias_ms, 3) if row.avg_bias_ms is not None else None,
             }
             for row in recent
-        ]
+        ],
+        "gates": [
+            {
+                "run_id": str(row.run_id),
+                "spot_id": str(row.spot_id),
+                "candidate_version": row.candidate_version,
+                "status": row.status,
+                "reason": row.reason,
+                "mae_drop_ms": row.mae_drop_ms,
+                "ci_lower_ms": row.ci_lower_ms,
+                "ci_upper_ms": row.ci_upper_ms,
+                "unique_valid_times": row.unique_valid_times,
+                "distinct_days": row.distinct_days,
+                "training_window_end": (
+                    row.training_window_end.isoformat()
+                    if row.training_window_end
+                    else None
+                ),
+                "computed_at": row.computed_at.isoformat(),
+            }
+            for row in gates
+        ],
     }
 
 
@@ -1016,9 +1043,34 @@ def spot_verification_scores(
                   ForecastVerificationScore.lead_bucket,
                   ForecastVerificationScore.direction_sector)
     ).all()
+    gate = db.scalar(
+        select(ForecastSectorGateEvidence).where(
+            ForecastSectorGateEvidence.spot_id == spot_id,
+            ForecastSectorGateEvidence.run_id == run_id,
+        )
+    )
     return {
         "spot_id": str(spot_id), "run_id": str(run_id), "variant": variant,
         "computed_at": rows[0].computed_at.isoformat() if rows else None,
+        "gate": None if gate is None else {
+            "candidate_version": gate.candidate_version,
+            "status": gate.status,
+            "reason": gate.reason,
+            "matched_forecasts": gate.matched_forecasts,
+            "unique_valid_times": gate.unique_valid_times,
+            "distinct_days": gate.distinct_days,
+            "baseline_mae_ms": gate.baseline_mae_ms,
+            "candidate_mae_ms": gate.candidate_mae_ms,
+            "mae_drop_ms": gate.mae_drop_ms,
+            "ci_lower_ms": gate.ci_lower_ms,
+            "ci_upper_ms": gate.ci_upper_ms,
+            "training_window_end": (
+                gate.training_window_end.isoformat()
+                if gate.training_window_end
+                else None
+            ),
+            "policy": gate.policy,
+        },
         "scores": [
             {
                 "model_id": r.model_id, "lead_bucket": r.lead_bucket,
@@ -1038,7 +1090,7 @@ def activate_sectors(
     spot_id: uuid.UUID,
     version: int = Query(..., ge=1),
     run_id: uuid.UUID = Query(...),
-    min_bias_drop: float = Query(default=0.0, ge=0),
+    min_bias_drop: float | None = Query(default=None, ge=0),
     reason: str | None = None,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),

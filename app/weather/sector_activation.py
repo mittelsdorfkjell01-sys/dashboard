@@ -13,10 +13,11 @@ from collections import defaultdict
 import logging
 from statistics import mean
 
-from sqlalchemy import or_, select, update
+from sqlalchemy import inspect as sa_inspect, or_, select, update
 
 from app.live.cache import Cache
 from app.models import (
+    ForecastSectorGateEvidence,
     ForecastSnapshot,
     ForecastVerificationScore,
     Spot,
@@ -28,8 +29,40 @@ from app.weather.serving_context import serving_context_hash
 
 CANDIDATE_VARIANT_PREFIX = "candidate:"
 GATE_MODEL_ID = "consensus"
+GATE_EVIDENCE_TABLE = ForecastSectorGateEvidence.__tablename__
 
 logger = logging.getLogger(__name__)
+
+
+class GateEvidenceUnavailable(RuntimeError):
+    """The gate-evidence table (migration 0051) is not present in the database.
+
+    Raised instead of letting a raw ``ProgrammingError`` surface — and, crucially,
+    instead of treating "no evidence" as "no objection". A candidate must never be
+    activated when the evidence store cannot even be read.
+    """
+
+
+def gate_evidence_table_exists(db) -> bool:
+    """Whether the 0051 gate-evidence table has been migrated into this database."""
+    try:
+        return sa_inspect(db.get_bind()).has_table(GATE_EVIDENCE_TABLE)
+    except Exception:
+        return False
+
+
+def require_gate_evidence_table(db) -> None:
+    """Fail clearly when the gate-evidence migration has not been applied.
+
+    Verification scoring and activation both read/write this table; if it is
+    missing the only safe behaviour is to stop with a clear, actionable error so
+    no candidate is silently activated without statistically independent proof.
+    """
+    if not gate_evidence_table_exists(db):
+        raise GateEvidenceUnavailable(
+            f"{GATE_EVIDENCE_TABLE} is missing — run 'alembic upgrade head' "
+            "before scoring or activating sector candidates"
+        )
 
 
 def _log_gate_rejection(
@@ -143,13 +176,17 @@ def activate_spot_sectors(
     *,
     actor: str,
     gate_run_id,
-    min_bias_drop: float = 0.0,
+    min_bias_drop: float | None = None,
     reason: str | None = None,
     cache: Cache | None = None,
 ) -> dict:
     """Enable one complete, currently scored version after its WP1 gate passes."""
     from app.admin.audit import record_audit
 
+    # The gate-evidence table must exist before we can prove a candidate earned
+    # activation. A missing migration fails loudly here rather than silently
+    # skipping the proof.
+    require_gate_evidence_table(db)
     # Every serving-state mutation and final snapshot publication takes the spot
     # lock first, then the weather-profile lock.  This shared order prevents an
     # in-flight publisher from promoting data computed before this activation.
@@ -176,6 +213,13 @@ def activate_spot_sectors(
     current_candidate = latest_candidate_version(db, spot_id)
     if current_candidate != version:
         raise ValueError("scored sector candidate is no longer the latest candidate")
+    from app.config import get_settings
+
+    settings = get_settings()
+    required_drop = max(
+        settings.wind_sector_min_mae_drop_ms,
+        float(min_bias_drop or 0.0),
+    )
     gate = candidate_gate_results(
         db, gate_run_id, spot_id=spot_id
     ).get(str(spot_id))
@@ -188,18 +232,18 @@ def activate_spot_sectors(
         )
         raise ValueError("verification run does not authorize this candidate version")
     drop = float(gate["mae_drop"])
-    if drop <= 0 or drop < min_bias_drop:
+    if drop < required_drop:
         _log_gate_rejection(
             spot_id=spot_id,
             version=version,
             gate_run_id=gate_run_id,
             reason_code="insufficient_mae_drop",
             weather_mae_drop=drop,
-            weather_min_mae_drop=min_bias_drop,
+            weather_min_mae_drop=required_drop,
         )
         raise ValueError(
             f"candidate MAE drop {drop:.4f} must be positive and at least "
-            f"{min_bias_drop:.4f} m/s"
+            f"{required_drop:.4f} m/s"
         )
     current_context = serving_context_hash(
         db, spot_id, candidate_version=version
@@ -245,7 +289,11 @@ def activate_spot_sectors(
         "gate_run_id": str(gate_run_id),
         "gate_context_hash": current_context,
         "mae_drop": drop,
-        "min_bias_drop": min_bias_drop,
+        "ci_lower_ms": gate["ci_lower_ms"],
+        "ci_upper_ms": gate["ci_upper_ms"],
+        "unique_valid_times": gate["unique_valid_times"],
+        "distinct_days": gate["distinct_days"],
+        "min_bias_drop": required_drop,
         "reason": reason,
     }, actor)
     db.commit()
@@ -262,6 +310,9 @@ def activate_spot_sectors(
             "weather_gate_run_id": str(gate_run_id),
             "weather_gate_context_hash": current_context,
             "weather_mae_drop": drop,
+            "weather_ci_lower_ms": gate["ci_lower_ms"],
+            "weather_unique_valid_times": gate["unique_valid_times"],
+            "weather_distinct_days": gate["distinct_days"],
             "weather_snapshots_invalidated": max(0, invalidated.rowcount or 0),
         },
     )
@@ -269,6 +320,10 @@ def activate_spot_sectors(
             "deactivated_versions": previously_active, "sectors": len(candidate),
             "snapshots_invalidated": max(0, invalidated.rowcount or 0),
             "gate_run_id": str(gate_run_id), "mae_drop": drop,
+            "ci_lower_ms": gate["ci_lower_ms"],
+            "unique_valid_times": gate["unique_valid_times"],
+            "distinct_days": gate["distinct_days"],
+            "min_bias_drop": required_drop,
             "gate_context_hash": current_context}
 
 
@@ -324,8 +379,13 @@ def candidate_bias_improvement(db, run_id) -> dict[str, float]:
     the concrete candidate, not two different time windows.
     """
     results = {
-        spot_id: result["mae_drop"]
-        for spot_id, result in candidate_gate_results(db, run_id).items()
+        str(row.spot_id): float(row.mae_drop_ms)
+        for row in db.scalars(
+            select(ForecastSectorGateEvidence).where(
+                ForecastSectorGateEvidence.run_id == run_id,
+                ForecastSectorGateEvidence.mae_drop_ms.is_not(None),
+            )
+        ).all()
     }
     # Preserve read compatibility for WP1 runs created before candidate versions
     # were embedded in the variant. Batch activation intentionally does not use
@@ -342,6 +402,14 @@ def candidate_gate_results(
     db, run_id, *, spot_id=None
 ) -> dict[str, dict[str, int | float | str]]:
     """Return only unambiguous, version-bound within-run candidate results."""
+    from app.config import get_settings
+    from app.weather.verification import TIME_NORMALIZATION_VERSION
+
+    # A missing gate-evidence table must raise, never return an empty mapping that
+    # a caller could misread as "no passing candidate" (still safe) — but more
+    # importantly it keeps the failure explicit for operators.
+    require_gate_evidence_table(db)
+    settings = get_settings()
     raw = _run_weighted_consensus_mae(
         db, run_id, "raw", spot_id=spot_id
     )
@@ -370,6 +438,18 @@ def candidate_gate_results(
                 (float(mae), int(sample_count), context_hash)
             )
 
+    evidence_statement = select(ForecastSectorGateEvidence).where(
+        ForecastSectorGateEvidence.run_id == run_id,
+        ForecastSectorGateEvidence.status == "passed",
+    )
+    if spot_id is not None:
+        evidence_statement = evidence_statement.where(
+            ForecastSectorGateEvidence.spot_id == spot_id
+        )
+    evidence_by_spot = {
+        str(row.spot_id): row for row in db.scalars(evidence_statement).all()
+    }
+
     results: dict[str, dict[str, int | float | str]] = {}
     for spot_id, by_version in grouped.items():
         # More than one candidate version under one run id is ambiguous and must
@@ -379,20 +459,38 @@ def candidate_gate_results(
         version, values = next(iter(by_version.items()))
         sample_count = sum(max(0, count) for _, count, _ in values)
         contexts = {context for _, _, context in values}
-        baseline_mae, baseline_count, baseline_context = raw[spot_id]
+        _baseline_mae, baseline_count, baseline_context = raw[spot_id]
+        evidence = evidence_by_spot.get(spot_id)
         if (
             sample_count <= 0
             or sample_count != baseline_count
             or contexts != {baseline_context}
+            or evidence is None
+            or evidence.candidate_version != version
+            or evidence.gate_context_hash != baseline_context
+            or evidence.mae_drop_ms is None
+            or evidence.ci_lower_ms is None
+            or evidence.ci_upper_ms is None
+            or evidence.ci_lower_ms <= 0
+            or evidence.mae_drop_ms < settings.wind_sector_min_mae_drop_ms
+            or evidence.unique_valid_times
+            < settings.wind_sector_gate_min_unique_valid_times
+            or evidence.distinct_days < settings.wind_sector_gate_min_distinct_days
+            # Evidence built before the provider-zone UTC fix (or any future
+            # change to sample time normalisation) lacks the current marker and
+            # must not authorise activation until a correctly-timed run rebuilds it.
+            or (evidence.policy or {}).get("time_normalization")
+            != TIME_NORMALIZATION_VERSION
         ):
             continue
-        candidate_mae = sum(
-            mae * max(0, count) for mae, count, _ in values
-        ) / sample_count
         results[spot_id] = {
             "version": version,
-            "mae_drop": round(baseline_mae - candidate_mae, 4),
+            "mae_drop": float(evidence.mae_drop_ms),
             "context_hash": baseline_context,
+            "ci_lower_ms": float(evidence.ci_lower_ms),
+            "ci_upper_ms": float(evidence.ci_upper_ms),
+            "unique_valid_times": int(evidence.unique_valid_times),
+            "distinct_days": int(evidence.distinct_days),
         }
     return results
 

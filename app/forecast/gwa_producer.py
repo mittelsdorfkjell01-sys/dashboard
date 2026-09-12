@@ -3,10 +3,9 @@
 The Global Wind Atlas publishes no per-sector A/k GeoTIFFs — only *combined*
 (all-sector) layers. So this produces ONE omnidirectional factor per spot,
 ``C = mean_GWA@10m / mean_ERA5@10m``, clamped to [0.50, 1.60], and writes it to
-all 12 sectors with ``direction_offset_deg = 0``. Directional resolution (cape
-vs. bay, onshore vs. offshore) comes later from WP5/WAsP, which overrides
-individual sectors at a higher version. Until then this is honestly labelled
-omnidirectional, never as direction-resolved.
+all 12 sectors with ``direction_offset_deg = 0``. The production runner composes
+it with the directional WP5 roughness/fetch transfer before persistence. On its
+own it is honestly labelled omnidirectional, never as direction-resolved.
 
 The compute is pure behind injectable adapters; the reader/reference do the IO.
 Without a mounted raster the result is neutral with a clear status — never an

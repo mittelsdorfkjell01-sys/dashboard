@@ -24,12 +24,20 @@ from sqlalchemy import select
 from app.models import SpotWeatherProfile, SpotWeatherSector, WeatherForecastSample
 from app.weather.physics.limits import clamp
 from app.weather.profiles import is_forecast_sector
-from app.weather.verification import _consensus_predictions, direction_sector, gated_observations
+from app.weather.verification import (
+    _circular_mean_deg,
+    _consensus_predictions,
+    direction_sector,
+    gated_observations,
+    nearest_observation,
+    observation_index,
+)
 
 MIN_SECTOR_SAMPLES = 10
 # Samples at which the posterior sits halfway between prior and measurement.
 SHRINKAGE_K = 40.0
 FACTOR_LOW, FACTOR_HIGH = 0.50, 1.60
+POSTERIOR_SCHEMA = "sector-holdout-v2"
 
 
 def shrink_factor(prior: float, measured: float, sample_count: int, *, k: float = SHRINKAGE_K) -> float:
@@ -61,24 +69,46 @@ def _pairs_by_sector(observations, samples, *, tolerance_s: int) -> dict[int, li
     pairs: dict[int, list[tuple[float, float]]] = defaultdict(list)
     if not observations or not samples:
         return pairs
+    observations_by_time = observation_index(observations)
+    predictions_by_valid: dict[datetime, list[dict]] = defaultdict(list)
     for pred in _consensus_predictions(samples):
-        nearest = min(observations, key=lambda obs: abs((obs.observed_at - pred["valid_at"]).total_seconds()), default=None)
-        if nearest is None or abs((nearest.observed_at - pred["valid_at"]).total_seconds()) > tolerance_s:
+        predictions_by_valid[pred["valid_at"]].append(pred)
+    for valid_at, predictions in predictions_by_valid.items():
+        nearest = nearest_observation(
+            observations_by_time, valid_at, tolerance_s=tolerance_s
+        )
+        if nearest is None:
             continue
-        pairs[direction_sector(pred["wind_direction_deg"])].append((nearest.wind_speed_ms, pred["wind_speed_ms"]))
+        speed = mean(float(pred["wind_speed_ms"]) for pred in predictions)
+        direction = _circular_mean_deg(
+            [float(pred["wind_direction_deg"]) for pred in predictions]
+        )
+        pairs[direction_sector(direction)].append((nearest.wind_speed_ms, speed))
     return pairs
 
 
 def _posterior_signature(rows: list[tuple[float, float, bool]]) -> str:
-    payload = [[round(start, 3), round(factor, 4), calibrated] for start, factor, calibrated in rows]
+    payload = {
+        "schema": POSTERIOR_SCHEMA,
+        "sectors": [
+            [round(start, 3), round(factor, 4), calibrated]
+            for start, factor, calibrated in rows
+        ],
+    }
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:16]
 
 
 def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
-                             tolerance_s: int = 1200, k: float = SHRINKAGE_K) -> dict:
+                             tolerance_s: int = 1200, k: float = SHRINKAGE_K,
+                             min_recalibration_days: int = 30) -> dict:
     """Shrink sector priors towards measurement; write a disabled candidate."""
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(days=max(14, min(lookback_days, 720)))
+    training_window = {
+        "training_window_start": cutoff.isoformat(),
+        "training_window_end": now.isoformat(),
+        "posterior_schema": POSTERIOR_SCHEMA,
+    }
 
     profile = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id))
     if profile is None:
@@ -96,6 +126,42 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
     for row in sectors:
         by_version[row.version].append(row)
     latest_version = max(by_version)
+    latest_rows = by_version[latest_version]
+    latest_note = _note_payload(next((row.note for row in latest_rows if row.note), None))
+    current_posterior = (
+        latest_note.get("method") == "shrinkage_posterior"
+        and latest_note.get("posterior_schema") == POSTERIOR_SCHEMA
+    )
+    invalid_current_boundary = False
+    if current_posterior:
+        training_end = _note_training_end(latest_note)
+        if training_end is None:
+            # A malformed/legacy note cannot ever produce valid holdout
+            # evidence.  Rebuild it with a fresh immutable boundary instead of
+            # freezing the spot forever on an unactivatable candidate.
+            invalid_current_boundary = True
+        # A disabled posterior needs a genuinely future holdout. Re-fitting it
+        # on every cron tick would move the boundary forever and make that
+        # evidence impossible to collect.
+        elif not any(row.enabled for row in latest_rows):
+            return {
+                "status": "candidate_pending",
+                "written": 0,
+                "version": latest_version,
+                "calibrated": sum(
+                    bool(_note_payload(row.note).get("calibrated"))
+                    for row in latest_rows
+                ),
+            }
+        elif now - training_end < timedelta(
+            days=max(1, min_recalibration_days)
+        ):
+            return {
+                "status": "recalibration_cooldown",
+                "written": 0,
+                "version": latest_version,
+                "calibrated": 0,
+            }
     # Always shrink from the stable climatological/physical prior (GWA/microscale),
     # never from a previous posterior, so repeated runs converge by sample count
     # rather than drifting to the measurement.
@@ -104,9 +170,12 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
     base_version = max(base_versions) if base_versions else min(by_version)
     priors = sorted(by_version[base_version], key=lambda row: row.start_deg)
 
-    observations = gated_observations(db, spot_id, cutoff=cutoff)
+    observations = gated_observations(db, spot_id, cutoff=cutoff, until=now)
     samples = db.scalars(select(WeatherForecastSample).where(
-        WeatherForecastSample.spot_id == spot_id, WeatherForecastSample.valid_at >= cutoff)).all()
+        WeatherForecastSample.spot_id == spot_id,
+        WeatherForecastSample.valid_at >= cutoff,
+        WeatherForecastSample.valid_at <= now,
+    )).all()
     pairs = _pairs_by_sector(observations, samples, tolerance_s=tolerance_s)
 
     planned: list[tuple[SpotWeatherSector, float, dict]] = []
@@ -115,9 +184,12 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
         index = int(prior.start_deg // 30) % 12
         measured = sector_measured_factor(pairs.get(index, []))
         if measured is None:
-            planned.append((prior, float(prior.speed_factor),
-                            {"method": "shrinkage_posterior", "calibrated": False,
-                             "prior": round(prior.speed_factor, 4)}))
+            planned.append((prior, float(prior.speed_factor), {
+                "method": "shrinkage_posterior",
+                "calibrated": False,
+                "prior": round(prior.speed_factor, 4),
+                **training_window,
+            }))
             continue
         measured_factor, sample_count = measured
         posterior = clamp(shrink_factor(prior.speed_factor, measured_factor, sample_count, k=k),
@@ -127,6 +199,7 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
             "method": "shrinkage_posterior", "calibrated": True,
             "prior": round(prior.speed_factor, 4), "measured": round(measured_factor, 4),
             "samples": sample_count, "k": k,
+            **training_window,
         }))
 
     if calibrated == 0:
@@ -134,7 +207,7 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
 
     signature = _posterior_signature([(p.start_deg, f, n["calibrated"]) for p, f, n in planned])
     latest_sig = next((_note_sig(r.note) for r in by_version[latest_version] if r.note), None)
-    if latest_sig == signature:
+    if latest_sig == signature and not invalid_current_boundary:
         return {"status": "idempotent", "written": 0, "version": latest_version, "calibrated": calibrated}
 
     version = latest_version + 1
@@ -143,7 +216,7 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
         db.add(SpotWeatherSector(
             profile_id=profile.id, start_deg=prior.start_deg, end_deg=prior.end_deg,
             speed_factor=round(factor, 4), direction_offset_deg=prior.direction_offset_deg,
-            version=version, enabled=False, note=json.dumps(note, separators=(",", ":"))[:500],
+            version=version, enabled=False, note=_encode_note(note),
         ))
     db.commit()
     return {"status": "ok", "written": len(planned), "version": version, "calibrated": calibrated}
@@ -156,6 +229,52 @@ def _note_sig(note: str | None) -> str | None:
         return json.loads(note).get("sig")
     except (ValueError, TypeError):
         return None
+
+
+def _note_payload(note: str | None) -> dict:
+    if not note:
+        return {}
+    try:
+        value = json.loads(note)
+        return value if isinstance(value, dict) else {}
+    except (ValueError, TypeError):
+        return {}
+
+
+def _note_training_end(note: dict) -> datetime | None:
+    value = note.get("training_window_end")
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def _encode_note(note: dict) -> str:
+    """Keep WP6 audit metadata valid JSON within the model's 500-char field."""
+    encoded = json.dumps(note, separators=(",", ":"))
+    if len(encoded) <= 500:
+        return encoded
+    compact = {
+        key: note[key]
+        for key in (
+            "method",
+            "calibrated",
+            "prior",
+            "measured",
+            "samples",
+            "k",
+            "training_window_end",
+            "posterior_schema",
+            "sig",
+        )
+        if key in note
+    }
+    return json.dumps(compact, separators=(",", ":"))
 
 
 def _note_method(note: str | None) -> str | None:

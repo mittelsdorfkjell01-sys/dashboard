@@ -215,6 +215,18 @@ def run_verification(db: Session = Depends(get_db)) -> dict:
         db.rollback()
         logger.exception("cron_sector_calibration_failed")
         result["sector_calibration"] = {"error": "internal_error"}
+    try:
+        from app.weather.verification import prune_forecast_samples
+
+        result["forecast_sample_retention"] = prune_forecast_samples(
+            db,
+            retention_days=settings.weather_forecast_sample_retention_days,
+            batch_size=settings.weather_forecast_sample_retention_batch_size,
+        )
+    except Exception:
+        db.rollback()
+        logger.exception("cron_forecast_sample_retention_failed")
+        result["forecast_sample_retention"] = {"error": "internal_error"}
     return result
 
 
@@ -232,7 +244,7 @@ def build_sectors(db: Session = Depends(get_db)) -> dict:
         from app.forecast.sector_runner import run_sector_producer
 
         limit = max(1, min(settings.sector_build_batch_size, 5))
-        return run_sector_producer(db, producer="gwa", limit=limit)
+        return run_sector_producer(db, producer="combined", limit=limit)
     except Exception:
         db.rollback()
         logger.exception("cron_build_sectors_failed")

@@ -7,7 +7,7 @@ from sqlalchemy import delete, nullsfirst, select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.live.cache import Cache
-from app.live.weather_contract import WEATHER_CONTRACT_VERSION
+from app.live.public_cache import invalidate_public_measurement
 from app.models import Spot, WeatherObservation, WeatherStation
 from app.weather.providers.common import ObservationStation, haversine_km, nearest_stations
 
@@ -98,12 +98,12 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
     station.last_observation_at = latest.observed_at
     db.commit()
     if cache:
-        cache.set(f"public:{WEATHER_CONTRACT_VERSION}:measurement:{station.spot_id}", {
-            "provider": latest.provider, "station_id": latest.station_id,
-            "observed_at": latest.observed_at.isoformat(), "wind_speed_ms": latest.wind_speed_ms,
-            "wind_direction_deg": latest.wind_direction_deg, "wind_gust_ms": latest.wind_gust_ms,
-            "fetched_at": latest.fetched_at.isoformat(),
-        }, 1800)
+        # Invalidate the measurement layer rather than writing a raw row here: the
+        # serving path rebuilds the gated, correctly-shaped MeasurementRead payload
+        # (eligibility gate, provider_station_id, provenance, wind_direction_from_deg)
+        # on the next request. A hand-rolled entry here skipped the gate and used
+        # the wrong field names, which broke response validation.
+        invalidate_public_measurement(cache, station.spot_id)
     return report
 
 

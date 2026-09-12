@@ -4,8 +4,9 @@ The dominant local coastal effect is the land/sea roughness change: offshore
 wind at the beach is still land-influenced (weaker), onshore wind arrives almost
 at its over-water strength. This module computes a per-sector speed factor from a
 two-log-profile with an internal boundary layer (IBL) growing over the upwind
-fetch, and writes the result into ``spot_weather_sectors`` at a HIGHER version so
-it overrides the WP3 GWA prior; the engine is unchanged (it reads select_sector).
+fetch. The production runner multiplies this transfer with the WP3 GWA level
+factor before writing one combined candidate; the engine is unchanged (it reads
+select_sector).
 
 Raster access (WorldCover roughness, GLO-30 WBM coastline/fetch, GLO-30 DEM) sits
 behind an injectable surface provider; the physics is pure and fully tested.
@@ -241,7 +242,7 @@ def _sector_note(result: MicroscaleResult, sector: MicroscaleSector, signature: 
 
 
 def persist_microscale_sectors(db, spot_id, result: MicroscaleResult) -> dict:
-    """Write a higher-version sector candidate for later gated activation.
+    """Write a standalone diagnostic candidate for later gated activation.
 
     ``microscale_unavailable`` never writes (the active rows stay untouched).
     Successful rows are deliberately disabled; only ``activate_spot_sectors``

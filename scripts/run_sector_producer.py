@@ -6,8 +6,9 @@ Usage:
     python -m scripts.run_sector_producer --limit 5 --dry-run
 
 Writes enabled=False candidates only. Activation is a separate, WP1-gated step
-(scripts/activate_sectors.py or the admin endpoint). Without a mounted GWA raster
-the run just records gwa_not_mounted per spot and changes nothing.
+(scripts/activate_sectors.py or the admin endpoint). Without all rasters required
+by the selected producer, the run records an unavailable status per spot and
+changes nothing.
 """
 
 from __future__ import annotations
@@ -30,7 +31,11 @@ def main() -> None:
     scope.add_argument("--all", action="store_true", help="Every published spot.")
     scope.add_argument("--spot", action="append", help="One or more spot ids.")
     scope.add_argument("--limit", type=int, help="Least-recently-built N published spots.")
-    parser.add_argument("--producer", choices=("gwa", "microscale"), default="gwa")
+    parser.add_argument(
+        "--producer",
+        choices=("gwa", "microscale", "combined"),
+        default="combined",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Compute and report; write nothing.")
     parser.add_argument("--check-rasters", action="store_true",
                         help="Run the raster preflight doctor for --producer and exit.")
@@ -39,7 +44,19 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.check_rasters:
-        if args.producer == "microscale":
+        if args.producer == "combined":
+            from app.forecast.gwa_producer import gwa_raster_doctor
+            from app.forecast.microscale import microscale_raster_doctor
+
+            probe = (args.lat, args.lon) if args.lat is not None and args.lon is not None else None
+            gwa = gwa_raster_doctor()
+            microscale = microscale_raster_doctor(probe=probe)
+            report = {
+                "ok": bool(gwa.get("ok") and microscale.get("ok")),
+                "gwa": gwa,
+                "microscale": microscale,
+            }
+        elif args.producer == "microscale":
             from app.forecast.microscale import microscale_raster_doctor
 
             probe = (args.lat, args.lon) if args.lat is not None and args.lon is not None else None

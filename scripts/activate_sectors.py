@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.config import get_settings
 from app.db.session import SessionLocal
 from app.live.cache import default_cache
 from app.weather.sector_activation import (
@@ -42,8 +43,12 @@ def main() -> None:
     parser.add_argument("--version", type=int, help="Sector version to activate (direct mode).")
     parser.add_argument("--reason", default=None)
     parser.add_argument("--run", help="Gated verification run id (baseline+candidate) for batch mode.")
-    parser.add_argument("--min-bias-drop", type=float, default=0.0,
-                        help="Minimum mean-MAE drop (m/s) required to activate a spot.")
+    parser.add_argument(
+        "--min-bias-drop",
+        type=float,
+        default=None,
+        help="Optional stricter mean-MAE drop; the configured floor always applies.",
+    )
     args = parser.parse_args()
 
     with SessionLocal() as db:
@@ -71,16 +76,14 @@ def main() -> None:
             for spot_id, gate in sorted(gate_results.items()):
                 drop = float(gate["mae_drop"])
                 version = int(gate["version"])
-                if drop <= 0 or drop < args.min_bias_drop:
+                configured_floor = get_settings().wind_sector_min_mae_drop_ms
+                required_drop = max(configured_floor, args.min_bias_drop or 0.0)
+                if drop < required_drop:
                     skipped.append({
                         "spot_id": spot_id,
                         "version": version,
                         "bias_drop": drop,
-                        "reason": (
-                            "mae_drop_not_positive"
-                            if drop <= 0
-                            else "mae_drop_below_threshold"
-                        ),
+                        "reason": "mae_drop_below_threshold",
                     })
                     continue
                 current = latest_candidate_version(db, uuid.UUID(spot_id))
@@ -104,7 +107,10 @@ def main() -> None:
                 )
                 activated.append({"spot_id": spot_id, "version": version, "bias_drop": drop})
             print(json.dumps({"activated": activated, "skipped": skipped,
-                              "min_bias_drop": args.min_bias_drop}, indent=2))
+                              "min_bias_drop": max(
+                                  get_settings().wind_sector_min_mae_drop_ms,
+                                  args.min_bias_drop or 0.0,
+                              )}, indent=2))
             return
     raise SystemExit(
         "use --spot/--version/--run, or --run [--min-bias-drop]"

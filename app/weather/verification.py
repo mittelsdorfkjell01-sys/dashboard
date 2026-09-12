@@ -2,19 +2,24 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from statistics import mean, median
 from types import SimpleNamespace
+import hashlib
+import json
 import math
+import random
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.models import (
     ForecastVerificationScore,
+    ForecastSectorGateEvidence,
     Spot,
     SpotWeatherProfile,
     SpotWeatherSector,
@@ -30,6 +35,12 @@ from app.weather.observations import public_measurement
 # activation additionally needs a chronological holdout improvement.
 MIN_CALIBRATION_SAMPLES = 60
 CALIBRATION_DECISION_VERSION = "holdout-v1"
+
+# Identifies the forecast-sample time normalisation in force. Bump this whenever
+# the UTC conversion of provider timestamps changes so that gate evidence built
+# from differently-timed samples is not trusted for activation. "provider-utc-v1"
+# = naive Open-Meteo axes resolved in the provider timezone (DST-fold aware).
+TIME_NORMALIZATION_VERSION = "provider-utc-v1"
 
 
 def lead_bucket(hours: float) -> str:
@@ -89,6 +100,37 @@ class BenchmarkMetrics:
 
 def circular_error_deg(predicted: float, observed: float) -> float:
     return abs((float(predicted) - float(observed) + 180.0) % 360.0 - 180.0)
+
+
+def observation_index(observations) -> tuple[list[float], list]:
+    """Sort observations once for O(log n) nearest-time matching."""
+    ordered = sorted(observations, key=lambda row: row.observed_at)
+    return [row.observed_at.timestamp() for row in ordered], ordered
+
+
+def nearest_observation(index, target, *, tolerance_s: int):
+    """Return the closest observation inside ``tolerance_s`` from a time index."""
+    times, observations = index
+    if not times:
+        return None
+    target_s = target.timestamp()
+    position = bisect_left(times, target_s)
+    candidates = []
+    if position < len(observations):
+        candidates.append(observations[position])
+    if position:
+        candidates.append(observations[position - 1])
+    nearest = min(
+        candidates,
+        key=lambda row: abs(row.observed_at.timestamp() - target_s),
+        default=None,
+    )
+    if (
+        nearest is None
+        or abs(nearest.observed_at.timestamp() - target_s) > tolerance_s
+    ):
+        return None
+    return nearest
 
 
 def verification_metrics(rows: list[dict]) -> VerificationMetrics | None:
@@ -178,15 +220,21 @@ def store_forecast_samples(db, spot_id, raw: dict, models: list[str], issued_at:
         return 0
     if db.scalar(select(WeatherStation.id).where(WeatherStation.spot_id == spot_id, WeatherStation.active.is_(True)).limit(1)) is None:
         return 0
+    from app.live.weather_contract import provider_axis_utc, provider_timezone
+
     hourly = raw.get("hourly") or {}
     times = hourly.get("time") or []
     multi = len(models) > 1
+    # Use the SAME normalisation as serving: Open-Meteo is queried with
+    # ``timezone=auto`` so the hourly axis is local-naive; it must be resolved in
+    # the provider timezone (DST-fold aware) to UTC. Stamping it directly as UTC
+    # shifted every sample by the spot's offset, so valid_at no longer referenced
+    # the same real instant as the observations and lead buckets were wrong.
+    axis = provider_axis_utc(times, provider_timezone(raw))
     rows = []
-    for index, value in enumerate(times):
-        try:
-            valid_at = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-            valid_at = valid_at.replace(tzinfo=timezone.utc) if valid_at.tzinfo is None else valid_at.astimezone(timezone.utc)
-        except ValueError:
+    for index, _value in enumerate(times):
+        valid_at = axis[index] if index < len(axis) else None
+        if valid_at is None:
             continue
         lead = max(0, round((valid_at - issued_at).total_seconds() / 3600))
         for model in models:
@@ -213,20 +261,28 @@ def store_forecast_samples(db, spot_id, raw: dict, models: list[str], issued_at:
 
 def recompute_calibrations(db, *, lookback_days: int = 90) -> int:
     """Match forecasts to observations within 20 minutes and refresh robust stats."""
-    cutoff = datetime.now(timezone.utc) - timedelta(days=max(7, min(lookback_days, 365)))
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=max(7, min(lookback_days, 365)))
     stations = db.scalars(select(WeatherStation).where(WeatherStation.active.is_(True))).all()
     updated = 0
     for station in stations:
         observations = db.scalars(select(WeatherObservation).where(
-            WeatherObservation.station_id == station.id, WeatherObservation.observed_at >= cutoff
+            WeatherObservation.station_id == station.id,
+            WeatherObservation.observed_at >= cutoff,
+            WeatherObservation.observed_at <= now,
         )).all()
         samples = db.scalars(select(WeatherForecastSample).where(
-            WeatherForecastSample.spot_id == station.spot_id, WeatherForecastSample.valid_at >= cutoff
+            WeatherForecastSample.spot_id == station.spot_id,
+            WeatherForecastSample.valid_at >= cutoff,
+            WeatherForecastSample.valid_at <= now,
         )).all()
+        observations_by_time = observation_index(observations)
         grouped: dict[tuple[str, str], list[float]] = defaultdict(list)
         for sample in samples:
-            nearest = min(observations, key=lambda row: abs((row.observed_at - sample.valid_at).total_seconds()), default=None)
-            if nearest is None or abs((nearest.observed_at - sample.valid_at).total_seconds()) > 1200:
+            nearest = nearest_observation(
+                observations_by_time, sample.valid_at, tolerance_s=1200
+            )
+            if nearest is None:
                 continue
             grouped[(sample.model_id, lead_bucket(sample.lead_hours))].append(sample.wind_speed_ms - nearest.wind_speed_ms)
         provisional = {key: calibration_stats(errors) for key, errors in grouped.items()}
@@ -278,7 +334,8 @@ def _circular_mean_deg(values: list[float]) -> float:
 
 def _sample_predictions(samples) -> list[dict]:
     return [{
-        "model_id": s.model_id, "valid_at": s.valid_at, "lead_hours": s.lead_hours,
+        "model_id": s.model_id, "issued_at": s.issued_at,
+        "valid_at": s.valid_at, "lead_hours": s.lead_hours,
         "wind_speed_ms": s.wind_speed_ms, "wind_direction_deg": s.wind_direction_deg,
         "wind_gust_ms": s.wind_gust_ms,
     } for s in samples]
@@ -293,7 +350,8 @@ def _consensus_predictions(samples) -> list[dict]:
     for (_issued_at, valid_at), members in by_run.items():
         gusts = [m.wind_gust_ms for m in members if m.wind_gust_ms is not None]
         output.append({
-            "model_id": CONSENSUS_MODEL_ID, "valid_at": valid_at,
+            "model_id": CONSENSUS_MODEL_ID, "issued_at": _issued_at,
+            "valid_at": valid_at,
             "lead_hours": members[0].lead_hours,
             "wind_speed_ms": mean(m.wind_speed_ms for m in members),
             "wind_direction_deg": _circular_mean_deg([m.wind_direction_deg for m in members]),
@@ -305,9 +363,12 @@ def _consensus_predictions(samples) -> list[dict]:
 def _score_predictions(predictions: list[dict], observations: list, *, tolerance_s: int) -> list[dict]:
     """Match each prediction to the nearest gated observation and group by cohort."""
     groups: dict[tuple[str, str, int], list[dict]] = defaultdict(list)
+    observations_by_time = observation_index(observations)
     for pred in predictions:
-        nearest = min(observations, key=lambda obs: abs((obs.observed_at - pred["valid_at"]).total_seconds()), default=None)
-        if nearest is None or abs((nearest.observed_at - pred["valid_at"]).total_seconds()) > tolerance_s:
+        nearest = nearest_observation(
+            observations_by_time, pred["valid_at"], tolerance_s=tolerance_s
+        )
+        if nearest is None:
             continue
         key = (pred["model_id"], lead_bucket(pred["lead_hours"]), direction_sector(pred["wind_direction_deg"]))
         groups[key].append({
@@ -329,15 +390,19 @@ def _score_predictions(predictions: list[dict], observations: list, *, tolerance
     return records
 
 
-def gated_observations(db, spot_id, *, cutoff) -> list:
+def gated_observations(db, spot_id, *, cutoff, until=None) -> list:
     """Observations for a spot that pass the public station/quality gate."""
     accepted = []
     stations = db.scalars(select(WeatherStation).where(
         WeatherStation.spot_id == spot_id, WeatherStation.active.is_(True))).all()
     for station in stations:
-        observations = db.scalars(select(WeatherObservation).where(
+        statement = select(WeatherObservation).where(
             WeatherObservation.station_id == station.id,
-            WeatherObservation.observed_at >= cutoff)).all()
+            WeatherObservation.observed_at >= cutoff,
+        )
+        if until is not None:
+            statement = statement.where(WeatherObservation.observed_at <= until)
+        observations = db.scalars(statement).all()
         for observation in observations:
             ok, _reasons = public_measurement(station, observation, now=observation.observed_at.astimezone(timezone.utc))
             if ok:
@@ -349,12 +414,14 @@ def score_spot_forecasts(db, spot_id, *, now=None, lookback_days: int = 45, tole
     """Per-model and consensus bias/MAE/RMSE of the raw forecast versus gated observations."""
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(days=max(1, min(lookback_days, 365)))
-    observations = gated_observations(db, spot_id, cutoff=cutoff)
+    observations = gated_observations(db, spot_id, cutoff=cutoff, until=now)
     if not observations:
         return []
     samples = db.scalars(select(WeatherForecastSample).where(
         WeatherForecastSample.spot_id == spot_id,
-        WeatherForecastSample.valid_at >= cutoff)).all()
+        WeatherForecastSample.valid_at >= cutoff,
+        WeatherForecastSample.valid_at <= now,
+    )).all()
     if not samples:
         return []
     records = _score_predictions(_sample_predictions(samples), observations, tolerance_s=tolerance_s)
@@ -487,6 +554,7 @@ def _serving_consensus_predictions(samples, calibrations) -> list[dict]:
             continue
         output.append({
             "model_id": CONSENSUS_MODEL_ID,
+            "issued_at": _issued_at,
             "valid_at": valid_at,
             "lead_hours": lead_hours,
             "wind_speed_ms": consensus.speed_ms,
@@ -505,14 +573,17 @@ def _score_spot_serving_variant(
     lookback_days: int,
     tolerance_s: int,
     blend_overrides,
+    cutoff=None,
 ) -> list[dict]:
-    cutoff = now - timedelta(days=max(1, min(lookback_days, 365)))
-    observations = gated_observations(db, spot_id, cutoff=cutoff)
+    cutoff = cutoff or now - timedelta(days=max(1, min(lookback_days, 365)))
+    observations = gated_observations(db, spot_id, cutoff=cutoff, until=now)
     if not observations:
         return []
     samples = db.scalars(select(WeatherForecastSample).where(
         WeatherForecastSample.spot_id == spot_id,
-        WeatherForecastSample.valid_at >= cutoff)).all()
+        WeatherForecastSample.valid_at >= cutoff,
+        WeatherForecastSample.valid_at <= now,
+    )).all()
     if not samples:
         return []
     calibrations = load_calibrations(db, spot_id)
@@ -531,6 +602,215 @@ def _score_spot_serving_variant(
         tolerance_s=tolerance_s,
     )
     return records
+
+
+def _candidate_training_end(profile) -> datetime | None:
+    """Return the immutable WP6 fit boundary encoded in a candidate.
+
+    Physical candidates do not learn from recent station observations and need
+    no temporal holdout.  Every row in a shrinkage candidate must agree on one
+    timezone-aware boundary; legacy candidates without it deliberately cannot
+    produce activation evidence and must be rebuilt.
+    """
+    sectors = list(getattr(profile, "sectors", ()) or ())
+    posterior = []
+    for sector in sectors:
+        try:
+            note = json.loads(sector.note or "{}")
+        except (TypeError, ValueError):
+            note = {}
+        if note.get("method") == "shrinkage_posterior":
+            posterior.append(note)
+    if not posterior:
+        return None
+    if len(posterior) != len(sectors):
+        raise ValueError("candidate mixes WP6 posterior and physical sectors")
+    if any(
+        note.get("posterior_schema") != "sector-holdout-v2" for note in posterior
+    ):
+        raise ValueError("candidate uses an unsupported WP6 posterior schema")
+    boundaries = [note.get("training_window_end") for note in posterior]
+    if any(value is None for value in boundaries) or len(set(boundaries)) != 1:
+        raise ValueError("candidate has no unambiguous WP6 training boundary")
+    parsed = datetime.fromisoformat(str(boundaries[0]).replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("candidate WP6 training boundary must be timezone-aware")
+    return parsed.astimezone(timezone.utc)
+
+
+def _paired_gate_statistics(
+    baseline_predictions: list[dict],
+    candidate_predictions: list[dict],
+    observations: list,
+    *,
+    tolerance_s: int,
+    min_unique_valid_times: int,
+    min_distinct_days: int,
+    min_mae_drop_ms: float,
+    bootstrap_iterations: int,
+) -> dict:
+    """Build a paired, day-blocked confidence interval for candidate benefit."""
+    candidate_by_key = {
+        (row["issued_at"], row["valid_at"]): row for row in candidate_predictions
+    }
+    observations_by_time = observation_index(observations)
+    per_valid: dict[datetime, list[tuple[float, float]]] = defaultdict(list)
+    matched_forecasts = 0
+    for baseline in baseline_predictions:
+        candidate = candidate_by_key.get(
+            (baseline["issued_at"], baseline["valid_at"])
+        )
+        if candidate is None:
+            continue
+        observation = nearest_observation(
+            observations_by_time,
+            baseline["valid_at"],
+            tolerance_s=tolerance_s,
+        )
+        if observation is None:
+            continue
+        per_valid[baseline["valid_at"]].append(
+            (
+                abs(float(baseline["wind_speed_ms"]) - observation.wind_speed_ms),
+                abs(float(candidate["wind_speed_ms"]) - observation.wind_speed_ms),
+            )
+        )
+        matched_forecasts += 1
+
+    valid_rows = [
+        (
+            valid_at,
+            mean(pair[0] for pair in pairs),
+            mean(pair[1] for pair in pairs),
+        )
+        for valid_at, pairs in sorted(per_valid.items())
+    ]
+    baseline_mae = mean(row[1] for row in valid_rows) if valid_rows else None
+    candidate_mae = mean(row[2] for row in valid_rows) if valid_rows else None
+    mae_drop = (
+        baseline_mae - candidate_mae
+        if baseline_mae is not None and candidate_mae is not None
+        else None
+    )
+    by_day: dict[str, list[float]] = defaultdict(list)
+    for valid_at, baseline_error, candidate_error in valid_rows:
+        by_day[valid_at.astimezone(timezone.utc).date().isoformat()].append(
+            baseline_error - candidate_error
+        )
+    day_improvements = [mean(values) for _, values in sorted(by_day.items())]
+
+    ci_lower = ci_upper = None
+    if len(day_improvements) >= 2:
+        seed_payload = json.dumps(
+            [round(value, 9) for value in day_improvements], separators=(",", ":")
+        )
+        seed = int(hashlib.sha256(seed_payload.encode()).hexdigest()[:16], 16)
+        rng = random.Random(seed)
+        bootstrap_means = sorted(
+            mean(rng.choice(day_improvements) for _ in day_improvements)
+            for _ in range(bootstrap_iterations)
+        )
+        ci_lower = bootstrap_means[int(0.025 * (bootstrap_iterations - 1))]
+        ci_upper = bootstrap_means[int(0.975 * (bootstrap_iterations - 1))]
+
+    if len(valid_rows) < min_unique_valid_times:
+        status, reason = "collecting", "insufficient_unique_valid_times"
+    elif len(day_improvements) < min_distinct_days:
+        status, reason = "collecting", "insufficient_distinct_days"
+    elif mae_drop is None or mae_drop < min_mae_drop_ms:
+        status, reason = "rejected", "mae_drop_below_policy"
+    elif ci_lower is None or ci_lower <= 0:
+        status, reason = "rejected", "improvement_not_significant"
+    else:
+        status, reason = "passed", "holdout_improved"
+
+    return {
+        "matched_forecasts": matched_forecasts,
+        "unique_valid_times": len(valid_rows),
+        "distinct_days": len(day_improvements),
+        "baseline_mae_ms": round(baseline_mae, 4) if baseline_mae is not None else None,
+        "candidate_mae_ms": round(candidate_mae, 4) if candidate_mae is not None else None,
+        "mae_drop_ms": round(mae_drop, 4) if mae_drop is not None else None,
+        "ci_lower_ms": round(ci_lower, 4) if ci_lower is not None else None,
+        "ci_upper_ms": round(ci_upper, 4) if ci_upper is not None else None,
+        "status": status,
+        "reason": reason,
+    }
+
+
+def persist_sector_gate_evidence(
+    db,
+    *,
+    run_id,
+    spot_id,
+    candidate_version: int,
+    context_hash: str,
+    window_start,
+    window_end,
+    training_window_end,
+    evidence: dict,
+    policy: dict,
+) -> None:
+    """Upsert the one authoritative activation-evidence row for a spot/run."""
+    from app.weather.sector_activation import require_gate_evidence_table
+
+    # Writing evidence against a non-migrated database must fail clearly, not with
+    # an opaque DB error mid-run.
+    require_gate_evidence_table(db)
+    values = {
+        "run_id": run_id,
+        "spot_id": spot_id,
+        "candidate_version": candidate_version,
+        "gate_context_hash": context_hash,
+        "window_start": window_start,
+        "window_end": window_end,
+        "training_window_end": training_window_end,
+        **evidence,
+        "policy": policy,
+        "computed_at": window_end,
+    }
+    excluded = insert(ForecastSectorGateEvidence).excluded
+    db.execute(
+        insert(ForecastSectorGateEvidence)
+        .values(values)
+        .on_conflict_do_update(
+            constraint="uq_forecast_sector_gate_evidence_run_spot",
+            set_={
+                key: getattr(excluded, key)
+                for key in values
+                if key not in {"run_id", "spot_id"}
+            },
+        )
+    )
+    db.commit()
+
+
+def prune_forecast_samples(
+    db,
+    *,
+    retention_days: int = 400,
+    batch_size: int = 5000,
+    now=None,
+) -> dict:
+    """Delete one bounded batch of expired verification samples."""
+    now = now or datetime.now(timezone.utc)
+    retention_days = max(120, min(int(retention_days), 730))
+    batch_size = max(100, min(int(batch_size), 50_000))
+    cutoff = now - timedelta(days=retention_days)
+    expired_ids = select(WeatherForecastSample.id).where(
+        WeatherForecastSample.valid_at < cutoff
+    ).order_by(WeatherForecastSample.valid_at).limit(batch_size)
+    result = db.execute(
+        delete(WeatherForecastSample).where(
+            WeatherForecastSample.id.in_(expired_ids)
+        )
+    )
+    db.commit()
+    return {
+        "cutoff": cutoff.isoformat(),
+        "deleted": max(0, result.rowcount or 0),
+        "batch_size": batch_size,
+    }
 
 
 def score_spot_forecasts_serving_baseline(
@@ -667,35 +947,44 @@ def run_verification_scoring(db, *, spot_ids=None, now=None, lookback_days: int 
 def run_gated_verification_scoring(db, *, spot_ids=None, now=None, lookback_days: int = 45,
                                    tolerance_s: int = 1200, run_id=None, persist: bool = True,
                                    blend_overrides=None) -> dict:
-    """Score the current serving baseline and latest candidate in one run.
+    """Score and persist statistically defensible candidate activation evidence.
 
-    The activation gate compares before/after over identical samples and
-    observations (no time-window confound).
-
-    Baseline rows retain variant="raw" for score-schema compatibility. They
-    include the active calibration and currently enabled sector version. Shadow rows encode the exact
-    candidate version under the same run_id, preventing a newer unscored version
-    from being activated later. The per-family blend defaults to the live
-    ``settings.wind_sector_blend`` so the shadow matches serving semantics.
-    Served wind is unchanged — this only writes measurement rows.
+    Baseline and candidate use identical observations and raw forecast members.
+    WP6 candidates are evaluated only after their immutable training boundary.
+    The activation statistic collapses repeated runs by valid time and uses a
+    deterministic day-block bootstrap, while the existing cohort score rows are
+    retained for diagnostics.
     """
+    from app.config import get_settings
+    from app.weather.profiles import resolve_weather_profile
     from app.weather.sector_activation import candidate_variant, latest_candidate_version
     from app.weather.serving_context import serving_context_hash
 
     now = now or datetime.now(timezone.utc)
     run_id = run_id or uuid.uuid4()
+    settings = get_settings()
     if blend_overrides is None:
-        try:
-            from app.config import get_settings
-
-            blend_overrides = get_settings().wind_sector_blend
-        except Exception:
-            blend_overrides = None
+        blend_overrides = settings.wind_sector_blend
+    policy = {
+        "version": "sector-gate-v2",
+        # Records which forecast-sample time normalisation produced this evidence.
+        # Evidence written before the provider-zone UTC fix lacks this marker and
+        # is refused at the activation gate, so time-corrupted samples can never
+        # authorise a new activation until a correctly-normalised run rebuilds it.
+        "time_normalization": TIME_NORMALIZATION_VERSION,
+        "min_mae_drop_ms": settings.wind_sector_min_mae_drop_ms,
+        "min_unique_valid_times": settings.wind_sector_gate_min_unique_valid_times,
+        "min_distinct_days": settings.wind_sector_gate_min_distinct_days,
+        "bootstrap_iterations": settings.wind_sector_gate_bootstrap_iterations,
+        "confidence": 0.95,
+        "block": "utc_day",
+    }
     window_start = now - timedelta(days=max(1, min(lookback_days, 365)))
     targets = list(spot_ids) if spot_ids is not None else eligible_spot_ids(db)
     raw_spots = corrected_spots = raw_rows = corrected_rows = 0
     contexts_changed = 0
     candidate_versions: dict[str, int] = {}
+    gate_statuses: dict[str, int] = defaultdict(int)
     for spot_id in targets:
         version = latest_candidate_version(db, spot_id)
         context_before = (
@@ -708,21 +997,106 @@ def run_gated_verification_scoring(db, *, spot_ids=None, now=None, lookback_days
             if version is not None
             else None
         )
-        raw = score_spot_forecasts_serving_baseline(
-            db,
-            spot_id,
-            now=now,
-            lookback_days=lookback_days,
-            tolerance_s=tolerance_s,
-            blend_overrides=blend_overrides,
+        candidate_profile = (
+            _scoring_sector_profile(db, spot_id, version)
+            if version is not None
+            else None
         )
-        corrected = []
-        if version is not None:
-            corrected = score_spot_forecasts_corrected(
-                db, spot_id, version=version, now=now,
-                lookback_days=lookback_days, tolerance_s=tolerance_s,
-                blend_overrides=blend_overrides,
+        training_end = None
+        training_error = False
+        if candidate_profile is not None:
+            try:
+                training_end = _candidate_training_end(candidate_profile)
+            except (TypeError, ValueError):
+                training_error = True
+
+        spot_window_start = window_start
+        if training_end is not None:
+            spot_window_start = max(
+                spot_window_start, training_end + timedelta(microseconds=1)
             )
+        observations = gated_observations(
+            db, spot_id, cutoff=spot_window_start, until=now
+        )
+        samples = db.scalars(
+            select(WeatherForecastSample).where(
+                WeatherForecastSample.spot_id == spot_id,
+                WeatherForecastSample.valid_at >= spot_window_start,
+                WeatherForecastSample.valid_at <= now,
+            )
+        ).all()
+        calibrations = load_calibrations(db, spot_id)
+        stored_profile = db.scalar(
+            select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id)
+        )
+        baseline_prepared = _corrected_samples(
+            samples,
+            resolve_weather_profile(stored_profile),
+            blend_overrides,
+            calibrations=calibrations,
+        )
+        baseline_consensus = _serving_consensus_predictions(
+            baseline_prepared, calibrations
+        )
+        raw = _score_predictions(
+            _sample_predictions(baseline_prepared),
+            observations,
+            tolerance_s=tolerance_s,
+        )
+        raw += _score_predictions(
+            baseline_consensus, observations, tolerance_s=tolerance_s
+        )
+
+        corrected = []
+        candidate_consensus = []
+        if candidate_profile is not None and not training_error:
+            candidate_prepared = _corrected_samples(
+                samples,
+                candidate_profile,
+                blend_overrides,
+                calibrations=calibrations,
+            )
+            candidate_consensus = _serving_consensus_predictions(
+                candidate_prepared, calibrations
+            )
+            corrected = _score_predictions(
+                _sample_predictions(candidate_prepared),
+                observations,
+                tolerance_s=tolerance_s,
+            )
+            corrected += _score_predictions(
+                candidate_consensus,
+                observations,
+                tolerance_s=tolerance_s,
+            )
+
+        evidence = None
+        if version is not None and candidate_profile is not None:
+            if training_error:
+                evidence = {
+                    "matched_forecasts": 0,
+                    "unique_valid_times": 0,
+                    "distinct_days": 0,
+                    "baseline_mae_ms": None,
+                    "candidate_mae_ms": None,
+                    "mae_drop_ms": None,
+                    "ci_lower_ms": None,
+                    "ci_upper_ms": None,
+                    "status": "collecting",
+                    "reason": "invalid_training_boundary",
+                }
+            else:
+                evidence = _paired_gate_statistics(
+                    baseline_consensus,
+                    candidate_consensus,
+                    observations,
+                    tolerance_s=tolerance_s,
+                    min_unique_valid_times=policy["min_unique_valid_times"],
+                    min_distinct_days=policy["min_distinct_days"],
+                    min_mae_drop_ms=policy["min_mae_drop_ms"],
+                    bootstrap_iterations=policy["bootstrap_iterations"],
+                )
+        if version is not None:
             context_after = serving_context_hash(
                 db,
                 spot_id,
@@ -732,31 +1106,48 @@ def run_gated_verification_scoring(db, *, spot_ids=None, now=None, lookback_days
             if context_after != context_before:
                 contexts_changed += 1
                 continue
+        if evidence is not None:
+            gate_statuses[evidence["status"]] += 1
         if raw:
             raw_spots += 1
             raw_rows += len(raw)
             if persist:
                 persist_verification_scores(
                     db, run_id, spot_id, raw, variant="raw",
-                    window_start=window_start, window_end=now, computed_at=now,
+                    window_start=spot_window_start, window_end=now, computed_at=now,
                     gate_context_hash=context_before,
                 )
-        if corrected:
+        if version is not None and candidate_profile is not None:
             candidate_versions[str(spot_id)] = version
+        if corrected:
             corrected_spots += 1
             corrected_rows += len(corrected)
             if persist:
                 persist_verification_scores(
                     db, run_id, spot_id, corrected,
                     variant=candidate_variant(version),
-                    window_start=window_start, window_end=now, computed_at=now,
+                    window_start=spot_window_start, window_end=now, computed_at=now,
                     gate_context_hash=context_before,
                 )
+        if persist and evidence is not None:
+            persist_sector_gate_evidence(
+                db,
+                run_id=run_id,
+                spot_id=spot_id,
+                candidate_version=version,
+                context_hash=context_before,
+                window_start=spot_window_start,
+                window_end=now,
+                training_window_end=training_end,
+                evidence=evidence,
+                policy=policy,
+            )
     return {
         "run_id": str(run_id), "raw_spots_scored": raw_spots, "raw_rows": raw_rows,
         "corrected_spots_scored": corrected_spots, "corrected_rows": corrected_rows,
         "candidate_versions": candidate_versions,
         "contexts_changed": contexts_changed,
+        "gate_statuses": dict(gate_statuses),
         "lookback_days": lookback_days,
         "window_start": window_start.isoformat(), "window_end": now.isoformat(),
     }

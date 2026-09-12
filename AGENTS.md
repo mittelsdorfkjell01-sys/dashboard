@@ -47,10 +47,24 @@ Use the local URL only in the process environment; do not replace a user's `.env
 - Use only a skill that directly matches the current request.
 - Normal backend, database, and test work needs no design, SEO, iOS, Notion, or image skill.
 - Use `impeccable` only for an actual frontend/UX task and `seo` only for an explicit SEO task.
-- Do not add an MCP server or plugin just to search local code; the focused scripts and `rg` are the default.
+- Do not add another MCP server or plugin just to search local code. Use Graphify for cross-cutting architecture and blast-radius questions; the focused scripts and `rg` remain the default for narrow searches.
 
 ## Definition of done
 
 - Requested behavior is implemented without unrelated refactors.
 - Relevant focused checks pass, or an external blocker is reported precisely.
 - The final handoff lists changed files, validation, and any remaining operational step.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `$graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For cross-cutting architecture or blast-radius questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. Use `rg` and the focused context scripts for narrow symbol or file searches.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- This repository uses Graphify in code-only mode. Do not enable semantic extraction for docs or media, or configure an external model backend, unless the user explicitly requests it.

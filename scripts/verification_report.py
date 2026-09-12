@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sqlalchemy import select
 
 from app.db.session import SessionLocal
-from app.models import ForecastVerificationScore
+from app.models import ForecastSectorGateEvidence, ForecastVerificationScore
 from app.weather.verification import (
     eligible_spot_ids,
     run_gated_verification_scoring,
@@ -61,6 +61,32 @@ def _compare(db, run_id: uuid.UUID, against: uuid.UUID, variant: str) -> dict:
             "mae_worsened": worsened, "deltas": deltas}
 
 
+def _gate_evidence(db, run_id: uuid.UUID) -> list[dict]:
+    rows = db.scalars(
+        select(ForecastSectorGateEvidence)
+        .where(ForecastSectorGateEvidence.run_id == run_id)
+        .order_by(ForecastSectorGateEvidence.spot_id)
+    ).all()
+    return [
+        {
+            "spot_id": str(row.spot_id),
+            "candidate_version": row.candidate_version,
+            "status": row.status,
+            "reason": row.reason,
+            "mae_drop_ms": row.mae_drop_ms,
+            "ci_95_ms": [row.ci_lower_ms, row.ci_upper_ms],
+            "unique_valid_times": row.unique_valid_times,
+            "distinct_days": row.distinct_days,
+            "training_window_end": (
+                row.training_window_end.isoformat()
+                if row.training_window_end is not None
+                else None
+            ),
+        }
+        for row in rows
+    ]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run or diff the forecast verification harness.")
     parser.add_argument("--spot", action="append", default=None, help="Limit to one or more spot ids.")
@@ -92,6 +118,10 @@ def main() -> None:
                 db, spot_ids=spot_ids, lookback_days=args.lookback_days,
                 tolerance_s=max(60, args.tolerance_min * 60), persist=args.persist,
             )
+            if args.persist:
+                summary["gate_evidence"] = _gate_evidence(
+                    db, uuid.UUID(summary["run_id"])
+                )
         else:
             summary = run_verification_scoring(
                 db, spot_ids=spot_ids, lookback_days=args.lookback_days,

@@ -243,6 +243,12 @@ class Settings(BaseSettings):
     # the historical window scored for raw-forecast verification.
     weather_observation_cron_batch_size: int = 25
     weather_verification_lookback_days: int = 45
+    # Sector activation is a scientific governance boundary, not an operator
+    # convention.  These defaults are enforced again by the activation service.
+    wind_sector_min_mae_drop_ms: float = Field(default=0.2, gt=0)
+    wind_sector_gate_min_unique_valid_times: int = Field(default=100, ge=1)
+    wind_sector_gate_min_distinct_days: int = Field(default=14, ge=2)
+    wind_sector_gate_bootstrap_iterations: int = Field(default=2000, ge=200, le=20_000)
     # Spots processed per /cron/build-sectors tick (candidate writes only).
     sector_build_batch_size: int = 5
 
@@ -251,6 +257,13 @@ class Settings(BaseSettings):
     weather_nowcast_cache_ttl: int = 300
     weather_marine_current_cache_ttl: int = 900
     weather_forecast_cache_ttl: int = 2700
+    # Forecast captures are only a verification sample.  Quantising their
+    # identity avoids treating every cache refresh as an independent model run.
+    weather_forecast_sample_interval_hours: int = Field(default=6, ge=1, le=24)
+    weather_forecast_sample_retention_days: int = Field(default=400, ge=120, le=730)
+    weather_forecast_sample_retention_batch_size: int = Field(
+        default=5000, ge=100, le=50_000
+    )
     # Fully assembled public responses. These avoid Postgres reads on cache hits;
     # forecast entries are additionally capped to the snapshot's valid_until.
     weather_public_live_cache_ttl: int = 300

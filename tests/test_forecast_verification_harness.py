@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -10,6 +11,7 @@ import pytest
 from geoalchemy2 import WKTElement
 
 from app.models import (
+    ForecastSectorGateEvidence,
     ForecastVerificationScore,
     Region,
     Spot,
@@ -31,10 +33,12 @@ from app.weather.sector_activation import (
 from app.weather.verification import (
     _consensus_predictions,
     _corrected_samples,
+    _paired_gate_statistics,
     _score_predictions,
     _serving_consensus_predictions,
     direction_sector,
     lead_bucket,
+    prune_forecast_samples,
     run_gated_verification_scoring,
     run_verification_scoring,
     score_spot_forecasts,
@@ -214,6 +218,122 @@ def test_shadow_consensus_uses_the_serving_vector_aggregation():
     assert consensus["wind_direction_deg"] == pytest.approx(1.683, abs=1e-3)
 
 
+def test_paired_gate_collapses_repeated_runs_and_bootstraps_by_day():
+    start = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    observations = []
+    baseline = []
+    candidate = []
+    for day in range(14):
+        valid = start + timedelta(days=day)
+        observations.append(SimpleNamespace(observed_at=valid, wind_speed_ms=10.0))
+        for run in range(3):
+            issued = valid - timedelta(hours=run + 1)
+            common = {
+                "model_id": "consensus",
+                "issued_at": issued,
+                "valid_at": valid,
+                "lead_hours": run + 1,
+                "wind_direction_deg": 270.0,
+                "wind_gust_ms": None,
+            }
+            baseline.append({**common, "wind_speed_ms": 8.0})
+            candidate.append({**common, "wind_speed_ms": 9.0})
+
+    evidence = _paired_gate_statistics(
+        baseline,
+        candidate,
+        observations,
+        tolerance_s=1200,
+        min_unique_valid_times=14,
+        min_distinct_days=14,
+        min_mae_drop_ms=0.2,
+        bootstrap_iterations=200,
+    )
+
+    assert evidence["matched_forecasts"] == 42
+    assert evidence["unique_valid_times"] == 14
+    assert evidence["distinct_days"] == 14
+    assert evidence["mae_drop_ms"] == 1.0
+    assert evidence["ci_lower_ms"] == 1.0
+    assert evidence["status"] == "passed"
+
+
+def test_paired_gate_keeps_collecting_below_the_independent_sample_floors():
+    start = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    observations = []
+    baseline = []
+    candidate = []
+    for day in range(10):
+        valid = start + timedelta(days=day)
+        issued = valid - timedelta(hours=6)
+        observations.append(SimpleNamespace(observed_at=valid, wind_speed_ms=10.0))
+        common = {
+            "model_id": "consensus",
+            "issued_at": issued,
+            "valid_at": valid,
+            "lead_hours": 6,
+            "wind_direction_deg": 270.0,
+            "wind_gust_ms": None,
+        }
+        baseline.append({**common, "wind_speed_ms": 8.0})
+        candidate.append({**common, "wind_speed_ms": 9.0})
+
+    evidence = _paired_gate_statistics(
+        baseline,
+        candidate,
+        observations,
+        tolerance_s=1200,
+        min_unique_valid_times=14,
+        min_distinct_days=14,
+        min_mae_drop_ms=0.2,
+        bootstrap_iterations=200,
+    )
+
+    assert evidence["mae_drop_ms"] == 1.0
+    assert evidence["status"] == "collecting"
+    assert evidence["reason"] == "insufficient_unique_valid_times"
+
+
+def test_paired_gate_rejects_an_improvement_that_is_not_stable_across_days():
+    start = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    observations = []
+    baseline = []
+    candidate = []
+    daily_improvements = [-1.0] * 7 + [2.0] * 7
+    for day, improvement in enumerate(daily_improvements):
+        valid = start + timedelta(days=day)
+        issued = valid - timedelta(hours=6)
+        observations.append(SimpleNamespace(observed_at=valid, wind_speed_ms=10.0))
+        common = {
+            "model_id": "consensus",
+            "issued_at": issued,
+            "valid_at": valid,
+            "lead_hours": 6,
+            "wind_direction_deg": 270.0,
+            "wind_gust_ms": None,
+        }
+        baseline_error = 1.0 if improvement < 0 else 3.0
+        candidate_error = baseline_error - improvement
+        baseline.append({**common, "wind_speed_ms": 10.0 - baseline_error})
+        candidate.append({**common, "wind_speed_ms": 10.0 - candidate_error})
+
+    evidence = _paired_gate_statistics(
+        baseline,
+        candidate,
+        observations,
+        tolerance_s=1200,
+        min_unique_valid_times=14,
+        min_distinct_days=14,
+        min_mae_drop_ms=0.2,
+        bootstrap_iterations=2000,
+    )
+
+    assert evidence["mae_drop_ms"] == 0.5
+    assert evidence["ci_lower_ms"] < 0
+    assert evidence["status"] == "rejected"
+    assert evidence["reason"] == "improvement_not_significant"
+
+
 # --- DB-backed: end-to-end scoring, persistence and import idempotency ------
 
 
@@ -272,16 +392,51 @@ def test_scoring_end_to_end_persists_bucketed_scores_and_is_idempotent(db, score
     assert db.query(ForecastVerificationScore).filter_by(run_id=run_id, spot_id=spot.id).count() == len(rows)
 
 
-def test_gated_scoring_measures_the_candidate_and_gate_sees_the_drop(db, scored_spot):
+def test_forecast_sample_retention_deletes_only_expired_rows(db, scored_spot):
+    spot, _station = scored_spot
+    now = datetime.now(timezone.utc)
+    old = WeatherForecastSample(
+        spot_id=spot.id, model_id="old", issued_at=now - timedelta(days=122),
+        valid_at=now - timedelta(days=121), lead_hours=24,
+        wind_speed_ms=10.0, wind_direction_deg=270.0,
+    )
+    current = WeatherForecastSample(
+        spot_id=spot.id, model_id="current", issued_at=now - timedelta(days=120),
+        valid_at=now - timedelta(days=119), lead_hours=24,
+        wind_speed_ms=10.0, wind_direction_deg=270.0,
+    )
+    db.add_all([old, current])
+    db.commit()
+    old_id, current_id = old.id, current.id
+
+    result = prune_forecast_samples(
+        db, retention_days=120, batch_size=100, now=now
+    )
+
+    assert result["deleted"] == 1
+    assert db.get(WeatherForecastSample, old_id) is None
+    assert db.get(WeatherForecastSample, current_id) is not None
+
+
+def test_gated_scoring_measures_the_candidate_and_gate_sees_the_drop(
+    db, scored_spot, monkeypatch
+):
+    from app.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "wind_sector_gate_min_unique_valid_times", 2)
+    monkeypatch.setattr(settings, "wind_sector_gate_min_distinct_days", 2)
+    monkeypatch.setattr(settings, "wind_sector_gate_bootstrap_iterations", 200)
     spot, station = scored_spot
-    valid = datetime.now(timezone.utc) - timedelta(days=5)
-    issued = valid - timedelta(hours=5)
-    # Observation 13 m/s from 270 deg; the model under-forecasts at 10 m/s.
-    db.add(WeatherObservation(station_id=station.id, observed_at=valid, wind_speed_ms=13.0,
-                              wind_gust_ms=15.0, wind_direction_deg=270.0, provider_quality="1",
-                              import_status="accepted"))
-    db.add(WeatherForecastSample(spot_id=spot.id, model_id="icon", issued_at=issued, valid_at=valid,
-                                 lead_hours=5, wind_speed_ms=10.0, wind_gust_ms=12.0, wind_direction_deg=270.0))
+    for days_ago in (5, 6):
+        valid = datetime.now(timezone.utc) - timedelta(days=days_ago)
+        issued = valid - timedelta(hours=5)
+        # Observation 13 m/s from 270 deg; the model under-forecasts at 10 m/s.
+        db.add(WeatherObservation(station_id=station.id, observed_at=valid, wind_speed_ms=13.0,
+                                  wind_gust_ms=15.0, wind_direction_deg=270.0, provider_quality="1",
+                                  import_status="accepted"))
+        db.add(WeatherForecastSample(spot_id=spot.id, model_id="icon", issued_at=issued, valid_at=valid,
+                                     lead_hours=5, wind_speed_ms=10.0, wind_gust_ms=12.0, wind_direction_deg=270.0))
     profile = SpotWeatherProfile(spot_id=spot.id)
     db.add(profile)
     db.flush()
@@ -315,13 +470,76 @@ def test_gated_scoring_measures_the_candidate_and_gate_sees_the_drop(db, scored_
     assert drops[str(spot.id)] == pytest.approx(1.5, abs=1e-6)
 
 
+def test_wp6_gate_excludes_every_training_period_observation(
+    db, scored_spot, monkeypatch
+):
+    from app.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "wind_sector_gate_min_unique_valid_times", 2)
+    monkeypatch.setattr(settings, "wind_sector_gate_min_distinct_days", 2)
+    monkeypatch.setattr(settings, "wind_sector_gate_bootstrap_iterations", 200)
+    now = datetime.now(timezone.utc)
+    training_end = now - timedelta(days=10)
+    spot, station = scored_spot
+    profile = SpotWeatherProfile(spot_id=spot.id)
+    db.add(profile)
+    db.flush()
+    posterior_note = json.dumps({
+        "method": "shrinkage_posterior",
+        "posterior_schema": "sector-holdout-v2",
+        "training_window_start": (training_end - timedelta(days=120)).isoformat(),
+        "training_window_end": training_end.isoformat(),
+    })
+    for start in range(0, 360, 30):
+        db.add(SpotWeatherSector(
+            profile_id=profile.id, start_deg=start, end_deg=(start + 30) % 360,
+            speed_factor=1.0, version=1, enabled=True,
+            note='{"method":"combined_prior"}',
+        ))
+        db.add(SpotWeatherSector(
+            profile_id=profile.id, start_deg=start, end_deg=(start + 30) % 360,
+            speed_factor=1.25, version=2, enabled=False, note=posterior_note,
+        ))
+    for valid in (
+        training_end - timedelta(days=1),  # fitted data: must be excluded
+        training_end + timedelta(days=2),
+        training_end + timedelta(days=3),
+    ):
+        db.add(WeatherObservation(
+            station_id=station.id, observed_at=valid, wind_speed_ms=12.5,
+            wind_direction_deg=270.0, provider_quality="1", import_status="accepted",
+        ))
+        db.add(WeatherForecastSample(
+            spot_id=spot.id, model_id="icon", issued_at=valid - timedelta(hours=5),
+            valid_at=valid, lead_hours=5, wind_speed_ms=10.0,
+            wind_direction_deg=270.0,
+        ))
+    db.commit()
+
+    run_id = uuid.uuid4()
+    run_gated_verification_scoring(
+        db, spot_ids=[spot.id], run_id=run_id, lookback_days=30, now=now
+    )
+
+    evidence = db.query(ForecastSectorGateEvidence).filter_by(
+        run_id=run_id, spot_id=spot.id
+    ).one()
+    assert evidence.training_window_end == training_end
+    assert evidence.window_start > training_end
+    assert evidence.unique_valid_times == 2
+    assert evidence.distinct_days == 2
+    assert evidence.status == "passed"
+
+
 def test_gate_to_http_activation_reaches_live_and_forecast_serving(
-    db, scored_spot, client
+    db, scored_spot, client, monkeypatch
 ):
     """Prove the whole WP path, including snapshot/cache invalidation."""
     from sqlalchemy import select
 
     from app.db.session import SessionLocal
+    from app.config import get_settings
     from app.forecast.gwa_producer import compute_gwa_sectors
     from app.forecast.publisher import enqueue, run_job
     from app.forecast.sector_runner import _persist_candidate
@@ -330,6 +548,7 @@ def test_gate_to_http_activation_reaches_live_and_forecast_serving(
     from app.live.public_cache import (
         get_public_forecast,
         get_public_live,
+        invalidate_public_weather,
         public_weather_generation,
     )
     from app.main import app
@@ -337,31 +556,36 @@ def test_gate_to_http_activation_reaches_live_and_forecast_serving(
     from tests.live_helpers import FakeOpenMeteoClient
 
     spot, station = scored_spot
-    valid = datetime.now(timezone.utc) - timedelta(days=5)
-    issued = valid - timedelta(hours=5)
-    db.add(
-        WeatherObservation(
-            station_id=station.id,
-            observed_at=valid,
-            wind_speed_ms=12.5,
-            wind_gust_ms=15.0,
-            wind_direction_deg=270.0,
-            provider_quality="1",
-            import_status="accepted",
+    settings = get_settings()
+    monkeypatch.setattr(settings, "wind_sector_gate_min_unique_valid_times", 2)
+    monkeypatch.setattr(settings, "wind_sector_gate_min_distinct_days", 2)
+    monkeypatch.setattr(settings, "wind_sector_gate_bootstrap_iterations", 200)
+    for days_ago in (5, 6):
+        valid = datetime.now(timezone.utc) - timedelta(days=days_ago)
+        issued = valid - timedelta(hours=5)
+        db.add(
+            WeatherObservation(
+                station_id=station.id,
+                observed_at=valid,
+                wind_speed_ms=12.5,
+                wind_gust_ms=15.0,
+                wind_direction_deg=270.0,
+                provider_quality="1",
+                import_status="accepted",
+            )
         )
-    )
-    db.add(
-        WeatherForecastSample(
-            spot_id=spot.id,
-            model_id="icon",
-            issued_at=issued,
-            valid_at=valid,
-            lead_hours=5,
-            wind_speed_ms=10.0,
-            wind_gust_ms=12.0,
-            wind_direction_deg=270.0,
+        db.add(
+            WeatherForecastSample(
+                spot_id=spot.id,
+                model_id="icon",
+                issued_at=issued,
+                valid_at=valid,
+                lead_hours=5,
+                wind_speed_ms=10.0,
+                wind_gust_ms=12.0,
+                wind_direction_deg=270.0,
+            )
         )
-    )
     profile = SpotWeatherProfile(
         spot_id=spot.id,
         active=True,
@@ -491,6 +715,38 @@ def test_gate_to_http_activation_reaches_live_and_forecast_serving(
         ] > baseline_forecast["days"][0]["hours"][0]["wind_ms"]
         assert get_public_live(cache, spot.id) is not None
         assert get_public_forecast(cache, spot.id) is not None
+
+        # A fresh, accepted station measurement remains a separate live
+        # product. Neither the activated physical sector nor forecast-only
+        # model-bias calibration may rewrite its speed or direction.
+        db.add(
+            WeatherObservation(
+                station_id=station.id,
+                observed_at=datetime.now(timezone.utc),
+                wind_speed_ms=7.0,
+                wind_gust_ms=9.0,
+                wind_direction_deg=180.0,
+                provider_quality="1",
+                import_status="accepted",
+            )
+        )
+        db.commit()
+        invalidate_public_weather(cache, spot.id)
+        measured_live_response = client.get(f"/spots/{spot.id}/live")
+        assert measured_live_response.status_code == 200
+        measured_live = measured_live_response.json()
+        # P0.1 contract: the station measurement is a SEPARATE product and must
+        # not rewrite any `current` field. `current` stays the corrected model
+        # wind; the reading is exposed under `measurement` with its own value,
+        # time and provenance.
+        assert measured_live["current"]["wind_ms"] == corrected_live["current"]["wind_ms"]
+        assert measured_live["current"]["dir"] == corrected_live["current"]["dir"]
+        assert measured_live["measurement"]["wind_speed_ms"] == 7.0
+        assert measured_live["measurement"]["wind_direction_from_deg"] == 180.0
+        assert measured_live["measurement"]["observed_at"] is not None
+        assert measured_live["measurement"]["provenance"]["source_type"] == (
+            "measurement"
+        )
 
         with SessionLocal() as verification_db:
             snapshot = verification_db.get(ForecastSnapshot, snapshot_id)

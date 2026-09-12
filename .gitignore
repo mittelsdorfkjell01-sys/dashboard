@@ -16,6 +16,9 @@ frontend/dist/
 .impeccable/review/
 frontend/exports/
 
+# Generated local code knowledge graph
+/graphify-out/
+
 # Machine-local assistant configuration
 .claude/settings.local.json
 

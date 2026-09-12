@@ -19,6 +19,9 @@ from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT
 
 logger = logging.getLogger(__name__)
 PUBLIC_WEATHER_GENERATION_TTL = 24 * 60 * 60
+# The station-measurement layer self-expires quickly so a stale reading drops
+# out on its own even if no import invalidates it first.
+PUBLIC_MEASUREMENT_TTL = 30 * 60
 
 
 def public_weather_generation_key(spot_id) -> str:
@@ -37,7 +40,10 @@ def public_weather_generation(cache: Cache, spot_id) -> str:
 
 
 def public_live_key(spot_id, generation: str = "0") -> str:
-    base = f"public:{WEATHER_CONTRACT_VERSION}:live:{spot_id}"
+    # The model-nowcast product layer (keyed ``nowcast``), distinct from the
+    # separate ``measurement`` layer (P0.1). The function name is kept for its
+    # many call sites; the key names the product it actually stores.
+    base = f"public:{WEATHER_CONTRACT_VERSION}:nowcast:{spot_id}"
     return base if generation == "0" else f"{base}:{generation}"
 
 
@@ -47,6 +53,16 @@ def public_forecast_key(spot_id, generation: str = "0") -> str:
         f"{FORECAST_PRODUCT_VERSION}:{spot_id}"
     )
     return base if generation == "0" else f"{base}:{generation}"
+
+
+def public_measurement_key(spot_id) -> str:
+    """Key for the SEPARATE station-measurement product (P0.1).
+
+    A measurement is never folded into the model-nowcast cache: it lives in its
+    own layer, attached at serve time.  Keeping it out of the nowcast key is
+    what makes single and batch serving order-independent.
+    """
+    return f"public:{WEATHER_CONTRACT_VERSION}:measurement:{spot_id}"
 
 
 def get_public_live(
@@ -64,12 +80,42 @@ def set_public_live(
     generation: str | None = None,
 ) -> None:
     generation = generation or public_weather_generation(cache, spot_id)
+    # The assembled model-nowcast cache must NEVER pin a station measurement
+    # (P0.1): it is a separate product attached at serve time.  Forcing it to
+    # ``None`` keeps the stored product order-independent no matter which
+    # endpoint warmed the cache.
+    stored = {**payload, "measurement": None}
     _safe_set(
         cache,
         public_live_key(spot_id, generation),
-        payload,
+        stored,
         get_settings().weather_public_live_cache_ttl,
     )
+
+
+def get_public_measurement(cache: Cache, spot_id) -> dict[str, Any] | None:
+    """The station-measurement product from its own cache layer (cache-only).
+
+    Cache hits on the live endpoints read the measurement from here so they stay
+    database-free; a miss simply means no warm reading (the caller computes it).
+    """
+    return _safe_get(cache, public_measurement_key(spot_id))
+
+
+def set_public_measurement(cache: Cache, spot_id, payload: dict[str, Any] | None) -> None:
+    """Warm the separate measurement layer with a freshly computed reading."""
+    if payload is None:
+        return
+    _safe_set(cache, public_measurement_key(spot_id), payload, PUBLIC_MEASUREMENT_TTL)
+
+
+def invalidate_public_measurement(cache: Cache, spot_id) -> None:
+    """Drop the cached measurement (e.g. after a station import persists rows).
+
+    The import layer calls this instead of hand-rolling a cache entry, so the
+    next serve recomputes from the freshly stored, quality-gated observation.
+    """
+    _safe_delete(cache, public_measurement_key(spot_id))
 
 
 def get_public_forecast(

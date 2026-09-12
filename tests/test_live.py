@@ -76,9 +76,11 @@ def test_cache_envelope_does_not_replace_provider_capture_time():
     assert cache.get("weather")["_cache_captured_at"] == captured
 
 
-def test_forecast_sample_identity_uses_cache_capture_time():
+def test_forecast_sample_identity_is_bounded_to_the_capture_interval():
     captured = "2026-08-29T10:15:30.123456+00:00"
-    assert _forecast_sample_issued_at({"_cache_captured_at": captured}).isoformat() == captured
+    assert _forecast_sample_issued_at({"_cache_captured_at": captured}).isoformat() == (
+        "2026-08-29T06:00:00+00:00"
+    )
 
 
 def test_forecast_samples_are_processed_once_per_cache_capture(monkeypatch):

@@ -254,6 +254,10 @@ class LiveConditionsRead(BaseModel):
     coastal_normal_deg: float | None = Field(default=None, ge=0, lt=360)
     availability: dict[str, str] = Field(default_factory=dict)
     provenance: ValueProvenance | None = None
+    # Per-value model provenance (wind/air/marine). Produced by the service but
+    # previously dropped here because the field was absent, so the response
+    # validation silently discarded it (P0.1).
+    sources: CurrentSourceMap | None = None
     measurement: MeasurementRead | None = None
     current: CurrentConditions
 

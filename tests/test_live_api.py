@@ -79,7 +79,9 @@ def test_public_live_cache_hit_does_not_touch_database():
     import uuid
     spot_id = uuid.uuid4()
     cache = InMemoryCache()
-    cache.set(f"public:weather-v6:live:{spot_id}", {
+    # The model-nowcast cache layer is keyed ``...:nowcast:...`` (the measurement
+    # is a separate layer); a cache hit must be served without any DB access.
+    cache.set(f"public:weather-v6:nowcast:{spot_id}", {
         "spot_id": str(spot_id), "model": "surfwinddata", "time": None, "current": {}
     }, 60)
     class NoDb:

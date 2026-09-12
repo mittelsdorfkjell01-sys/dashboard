@@ -22,6 +22,7 @@ from app.live.public_cache import (
     public_live_key,
 )
 from app.models import (
+    ForecastSectorGateEvidence,
     ForecastSectorBuild,
     ForecastSnapshot,
     ForecastVerificationScore,
@@ -58,7 +59,16 @@ def _ok_result():
                                grid_cell=[43.75, -1.5])
 
 
-def _authorize_candidate(db, spot_id, version: int, *, drop: float = 1.0):
+def _authorize_candidate(
+    db,
+    spot_id,
+    version: int,
+    *,
+    drop: float = 1.0,
+    unique_valid_times: int = 100,
+    distinct_days: int = 14,
+    ci_lower: float | None = None,
+):
     run_id = uuid.uuid4()
     context_hash = serving_context_hash(
         db, spot_id, candidate_version=version
@@ -71,12 +81,31 @@ def _authorize_candidate(db, spot_id, version: int, *, drop: float = 1.0):
             variant=variant,
             lead_bucket="0-48h",
             direction_sector=0,
-            sample_count=10,
+            sample_count=100,
             bias_ms=mae,
             mae_ms=mae,
             rmse_ms=mae,
             gate_context_hash=context_hash,
         ))
+    db.add(ForecastSectorGateEvidence(
+        run_id=run_id,
+        spot_id=spot_id,
+        candidate_version=version,
+        gate_context_hash=context_hash,
+        window_start=datetime.now(timezone.utc) - timedelta(days=20),
+        window_end=datetime.now(timezone.utc),
+        matched_forecasts=100,
+        unique_valid_times=unique_valid_times,
+        distinct_days=distinct_days,
+        baseline_mae_ms=2.0,
+        candidate_mae_ms=2.0 - drop,
+        mae_drop_ms=drop,
+        ci_lower_ms=max(0.1, drop - 0.2) if ci_lower is None else ci_lower,
+        ci_upper_ms=drop + 0.2,
+        status="passed",
+        reason="holdout_improved",
+        policy={"version": "sector-gate-v2", "time_normalization": "provider-utc-v1"},
+    ))
     db.commit()
     return run_id
 
@@ -162,10 +191,31 @@ def test_unmounted_gwa_records_status_and_writes_no_factors(db, runner_spot):
     assert build.status == "gwa_not_mounted" and build.content_hash is None
 
 
-def test_microscale_is_inert_while_provider_is_a_stub(db, runner_spot):
+def test_unmounted_microscale_records_status_and_writes_no_factors(db, runner_spot):
     summary = run_sector_producer(db, producer="microscale", spot_ids=[runner_spot.id])
     assert summary["statuses"] == {"microscale_unavailable": 1}
     assert db.query(SpotWeatherSector).count() == 0
+
+
+def test_runner_defaults_to_the_combined_production_candidate(
+    db, runner_spot, monkeypatch
+):
+    producers = []
+
+    def fake_compute(producer, spot):
+        producers.append(producer)
+        return _ok_result()
+
+    monkeypatch.setattr("app.forecast.sector_runner._compute", fake_compute)
+
+    summary = run_sector_producer(db, spot_ids=[runner_spot.id])
+
+    assert producers == ["combined"]
+    assert summary["producer"] == "combined"
+    assert summary["statuses"] == {"candidate_written": 1}
+    assert db.query(ForecastSectorBuild).filter_by(
+        spot_id=runner_spot.id, producer="combined"
+    ).one()
 
 
 def test_dry_run_writes_nothing(db, runner_spot):
@@ -285,6 +335,35 @@ def test_activation_enables_one_version_and_disables_the_previous(db, runner_spo
     assert latest_candidate_version(db, runner_spot.id) is None
 
 
+def test_activation_rejects_gate_evidence_without_time_normalization_marker(db, runner_spot):
+    # P0.3/P0.4: evidence produced before the provider-zone UTC fix (no
+    # time_normalization marker) must not authorise a new activation.
+    profile = SpotWeatherProfile(spot_id=runner_spot.id)
+    db.add(profile)
+    db.flush()
+    db.add(SpotWeatherSector(profile_id=profile.id, start_deg=240, end_deg=270, speed_factor=1.10,
+                             version=1, enabled=True, note='{"method":"gwa_over_reference"}'))
+    db.commit()
+    _persist_candidate(db, runner_spot.id, "gwa", _ok_result())  # candidate v2
+    db.commit()
+    version = latest_candidate_version(db, runner_spot.id)
+    assert version == 2
+    gate_run_id = _authorize_candidate(db, runner_spot.id, version)
+    evidence = db.query(ForecastSectorGateEvidence).filter_by(
+        run_id=gate_run_id, spot_id=runner_spot.id
+    ).one()
+    evidence.policy = {"version": "sector-gate-v2"}  # legacy policy, marker absent
+    db.commit()
+
+    with pytest.raises(ValueError):
+        activate_spot_sectors(
+            db, runner_spot.id, version, actor="test",
+            gate_run_id=gate_run_id, min_bias_drop=0.5, reason="unit",
+        )
+    # Nothing was activated; the version is still an awaiting candidate.
+    assert latest_candidate_version(db, runner_spot.id) == version
+
+
 def test_activation_rejects_an_incomplete_candidate(db, runner_spot):
     profile = SpotWeatherProfile(spot_id=runner_spot.id)
     db.add(profile)
@@ -364,13 +443,50 @@ def test_activation_rejects_a_gate_after_candidate_content_changes(
     assert event["weather_candidate_version"] == version
 
 
-def test_activation_requires_a_strictly_positive_mae_drop(db, runner_spot):
+def test_activation_rejects_a_gate_below_the_enforced_mae_floor(db, runner_spot):
     _persist_candidate(db, runner_spot.id, "gwa", _ok_result())
     db.commit()
     version = latest_candidate_version(db, runner_spot.id)
     gate_run_id = _authorize_candidate(db, runner_spot.id, version, drop=0.0)
 
-    with pytest.raises(ValueError, match="must be positive"):
+    with pytest.raises(ValueError, match="does not authorize"):
+        activate_spot_sectors(
+            db,
+            runner_spot.id,
+            version,
+            actor="test",
+            gate_run_id=gate_run_id,
+        )
+
+
+@pytest.mark.parametrize(
+    ("unique_valid_times", "distinct_days", "ci_lower"),
+    [
+        (99, 14, 0.5),
+        (100, 13, 0.5),
+        (100, 14, 0.0),
+    ],
+)
+def test_activation_rejects_incomplete_or_uncertain_gate_evidence(
+    db,
+    runner_spot,
+    unique_valid_times,
+    distinct_days,
+    ci_lower,
+):
+    _persist_candidate(db, runner_spot.id, "gwa", _ok_result())
+    db.commit()
+    version = latest_candidate_version(db, runner_spot.id)
+    gate_run_id = _authorize_candidate(
+        db,
+        runner_spot.id,
+        version,
+        unique_valid_times=unique_valid_times,
+        distinct_days=distinct_days,
+        ci_lower=ci_lower,
+    )
+
+    with pytest.raises(ValueError, match="does not authorize"):
         activate_spot_sectors(
             db,
             runner_spot.id,
