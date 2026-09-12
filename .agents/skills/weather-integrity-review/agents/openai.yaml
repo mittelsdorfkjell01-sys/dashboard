@@ -1,0 +1,7 @@
+interface:
+  display_name: "Weather Integrity Review"
+  short_description: "Review wind data integrity and forecast safety"
+  default_prompt: "Use $weather-integrity-review to review this weather-related change for product separation, time semantics, corrections, publication, and verification integrity."
+
+policy:
+  allow_implicit_invocation: true

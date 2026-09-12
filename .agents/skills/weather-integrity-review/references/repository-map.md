@@ -46,15 +46,18 @@ Run scripts/check.ps1 weather when available, but do not assume its current sele
 
 Add or identify evidence for every affected scenario:
 
-1. A fresh station observation and a model value retain independent speed, direction, u/v, timestamps, and source labels.
-2. Station selection chooses the nearest eligible fresh high-quality observation deterministically and rejects stale, future, blocked, and over-distance data.
+1. A station measurement, LiveWind, and adaptive forecast retain independent speed, direction, u/v, timestamps, product kind, and source labels.
+2. Station analysis rejects stale, future, blocked, and over-distance data; weights eligible observations by all available relevance dimensions; and raises uncertainty when they disagree.
 3. An older source capture wrapped by a new generation remains old/stale.
-4. Every active correction publishes a database-valid state and cannot bypass its governance threshold.
-5. Changing an active calibration or sector version invalidates or republishes affected output.
-6. Training and holdout observations are disjoint by stable identity and time.
-7. The frontend displays the source and timestamp belonging to the exact value shown.
-8. Backend serialization retains every weather field that the frontend contract declares.
+4. A published forecast impulse is frozen against later observations, decays monotonically with lead time, reaches zero at its configured horizon, and leaves separately validated persistent corrections intact.
+5. Every active correction publishes a database-valid state and cannot bypass its governance threshold.
+6. Changing an active calibration or sector version invalidates or republishes affected output.
+7. Training and holdout observations are disjoint by stable identity and time.
+8. The frontend displays the source and timestamp belonging to the exact value shown.
+9. Backend serialization retains every weather field that the frontend contract declares.
 
 ## Continuous enforcement
 
-For automatic coverage, invoke this review on pull_request opened, synchronize, reopened, and ready_for_review events. Run deterministic tests in CI and make the weather-integrity result a required branch-protection check. A path filter may skip clearly visual-only changes, but the review itself must perform semantic impact expansion.
+The project-local metadata allows implicit skill discovery, and the root AGENTS.md routes relevant reviews to this skill. This provides consistent agent-assisted reviews but is not a required GitHub status check.
+
+For automatic enforcement, add a separately authorized workflow or GitHub integration on pull_request opened, synchronize, reopened, and ready_for_review events. Run deterministic tests in CI and make the weather-integrity result a required branch-protection check. A path filter may skip clearly visual-only changes, but the review itself must perform semantic impact expansion.
