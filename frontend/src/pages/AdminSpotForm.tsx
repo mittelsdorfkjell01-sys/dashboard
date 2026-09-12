@@ -1178,9 +1178,8 @@ export default function AdminSpotForm() {
               open
               initialRole={pickerOpen}
               onClose={() => setPickerOpen(null)}
-              onAdopted={async () => {
-                const spot = await getAdminSpot(id);
-                seedImage((spot.image as ImageRecord | null) ?? null);
+              onAdopted={({ role, image }) => {
+                if (role === "hero") seedImage(image);
                 setGalleryVersion((v) => v + 1);
               }}
             />
@@ -1221,14 +1220,18 @@ export default function AdminSpotForm() {
 
         {/* Right column: sticky on wide viewports. As a grid track it starts on
             the same row as "Basisdaten", so its top aligns with that card when
-            scrolled to the top; `sticky` then pins it without the panel itself
-            scrolling. Below xl it stacks below the form as before.
+            scrolled to the top. Below xl it stacks below the form as before.
             The top offset reads the admin header's real rendered height from
             --admin-header-h (set in AdminShell) instead of a guessed pixel
             value, so the panel locks flush under the header with no visible
-            creep. max-h is a safety net for content taller than the
-            viewport — it only engages then, it isn't the normal case. */}
-        <aside className="mt-8 space-y-4 xl:mt-0 xl:sticky xl:top-[var(--admin-header-h,64px)] xl:self-start xl:max-h-[calc(100vh-var(--admin-header-h,64px)-16px)] xl:overflow-y-auto no-scrollbar">
+            creep. When its content exceeds the viewport, data-lenis-prevent
+            gives mouse-wheel and touch scrolling to this nested rail instead
+            of the page-wide smooth-scroll handler. */}
+        <aside
+          data-spot-edit-rail
+          data-lenis-prevent
+          className="mt-8 space-y-4 xl:sticky xl:top-[var(--admin-header-h,64px)] xl:mt-0 xl:max-h-[calc(100vh-var(--admin-header-h,64px)-16px)] xl:self-start xl:overflow-y-auto xl:overscroll-y-contain xl:pr-2 xl:[scrollbar-gutter:stable]"
+        >
           {isEdit && id && <WindClimatologyV3Summary spotId={id} />}
           {isEdit && id ? (
             <div id="f-operations" className="scroll-mt-24">

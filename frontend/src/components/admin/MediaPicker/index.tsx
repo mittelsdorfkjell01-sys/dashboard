@@ -14,6 +14,7 @@ import {
   adoptMedia,
   getMediaContext,
   searchMedia,
+  type ImageRecord,
   type MediaContext,
 } from "../../../lib/api";
 import {
@@ -37,6 +38,13 @@ import LicenseCard from "./LicenseCard";
 
 const COLUMN_COUNT = 3;
 const CHIP_DEBOUNCE_MS = 250;
+const ADOPT_TIMEOUT_SECONDS = 120;
+
+function elapsedLabel(seconds: number): string {
+  if (seconds < 60) return `${seconds} Sek.`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")} Min.`;
+}
 
 const EMPTY_TAB: TabState = {
   status: "ok",
@@ -61,8 +69,14 @@ export default function MediaPicker({
    *  be picked at once and all get adopted in a single confirm. */
   initialRole?: MediaRole;
   onClose: () => void;
-  /** Fired after a successful adoption so the form can reload its record. */
-  onAdopted: (result: { role: MediaRole; warnings: string[] }) => void;
+  /** Fired after a successful adoption. For a hero, `image` is the exact
+   *  record returned by the write, so callers can render it without a second,
+   *  potentially stale read. */
+  onAdopted: (result: {
+    role: MediaRole;
+    warnings: string[];
+    image: ImageRecord | null;
+  }) => void | Promise<void>;
 }) {
   const providers = useMemo(() => tabOrder(entityType), [entityType]);
   // The parent decides which role — hero is single-select, gallery is
@@ -79,6 +93,8 @@ export default function MediaPicker({
   const [selection, setSelection] = useState<MediaItem[]>([]);
   const [focal, setFocal] = useState({ x: 50, y: 50 });
   const [busy, setBusy] = useState(false);
+  const [adoptCompleted, setAdoptCompleted] = useState(0);
+  const [adoptElapsed, setAdoptElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -91,6 +107,7 @@ export default function MediaPicker({
   // Separate controller for the per-tab reload button, so reloading one tab
   // never cancels the other tabs' in-flight bulk-search requests.
   const reloadAbortRef = useRef<AbortController | null>(null);
+  const adoptTimerRef = useRef<number | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const outerScrollRef = useRef<HTMLDivElement>(null);
 
@@ -212,6 +229,7 @@ export default function MediaPicker({
   useEffect(() => () => {
     abortRef.current?.abort();
     reloadAbortRef.current?.abort();
+    if (adoptTimerRef.current != null) window.clearInterval(adoptTimerRef.current);
   }, []);
 
   // Switching libraries (tabs) always starts scrolled to the top of the
@@ -231,6 +249,8 @@ export default function MediaPicker({
     setError(null);
     setNotice(null);
     setTabs({});
+    setAdoptCompleted(0);
+    setAdoptElapsed(0);
   }, [open]);
 
   const current = tabs[activeTab];
@@ -245,10 +265,10 @@ export default function MediaPicker({
 
   const onGridKey = (event: React.KeyboardEvent) => {
     if (event.key === "Escape") {
-      onClose();
+      if (!busy) onClose();
       return;
     }
-    if (event.key === "Enter" && selection.length > 0) {
+    if (event.key === "Enter" && selection.length > 0 && !busy) {
       void adopt();
       return;
     }
@@ -261,6 +281,7 @@ export default function MediaPicker({
   };
 
   const select = (item: MediaItem) => {
+    if (busy) return;
     if (role === "hero") {
       // Hero is single-select — pick replaces.
       setSelection([item]);
@@ -279,10 +300,18 @@ export default function MediaPicker({
   };
 
   const adopt = async () => {
-    if (selection.length === 0) return;
+    if (selection.length === 0 || busy) return;
     setBusy(true);
+    setAdoptCompleted(0);
+    setAdoptElapsed(0);
     setError(null);
     const collectedWarnings: string[] = [];
+    let adoptedHero: ImageRecord | null = null;
+    const startedAt = Date.now();
+    if (adoptTimerRef.current != null) window.clearInterval(adoptTimerRef.current);
+    adoptTimerRef.current = window.setInterval(() => {
+      setAdoptElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
     try {
       // Sequential, not parallel: keeps ordering stable (position column) and
       // avoids the provider fetch fanning out into a rate-limit spike.
@@ -300,6 +329,8 @@ export default function MediaPicker({
             focal: role === "hero" ? focal : undefined,
           });
           for (const w of result.warnings) collectedWarnings.push(w);
+          if (role === "hero") adoptedHero = result.image;
+          setAdoptCompleted(index + 1);
         } catch (err) {
           if (err instanceof ApiError && err.status === 409) {
             const outer = err.detail as { detail?: { message?: string } } | undefined;
@@ -316,11 +347,22 @@ export default function MediaPicker({
           throw err;
         }
       }
-      onAdopted({ role, warnings: collectedWarnings });
+      try {
+        await onAdopted({ role, warnings: collectedWarnings, image: adoptedHero });
+      } catch {
+        setError(
+          "Bild wurde gespeichert, die Ansicht aber nicht aktualisiert. Bitte Seite neu laden."
+        );
+        return;
+      }
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Übernahme fehlgeschlagen.");
     } finally {
+      if (adoptTimerRef.current != null) {
+        window.clearInterval(adoptTimerRef.current);
+        adoptTimerRef.current = null;
+      }
       setBusy(false);
     }
   };
@@ -328,11 +370,23 @@ export default function MediaPicker({
   if (!open) return null;
 
   const budgetWarning = Object.values(tabs).find((tab) => tab.budget?.warning);
+  const adoptPercent = selection.length
+    ? Math.round((adoptCompleted / selection.length) * 100)
+    : 0;
+  const adoptStatus = role === "gallery"
+    ? adoptCompleted >= selection.length
+      ? "Galerie wird aktualisiert…"
+      : `Bild ${adoptCompleted + 1} von ${selection.length} wird verarbeitet…`
+    : adoptCompleted > 0
+      ? "Hero-Bild wird angezeigt…"
+      : "Hero-Bild wird geladen und verarbeitet…";
 
   return (
     <Modal
       open
-      onClose={onClose}
+      onClose={() => {
+        if (!busy) onClose();
+      }}
       labelledBy="media-picker-title"
       cardClassName="max-w-[1400px] h-[92vh] rounded-lg bg-admin-surface"
     >
@@ -360,16 +414,18 @@ export default function MediaPicker({
               type="search"
               value={freeText}
               onChange={(event) => setFreeText(event.target.value)}
+              disabled={busy}
               placeholder="Eigener Suchbegriff"
-              className="h-9 w-56 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none focus:border-admin-primary"
+              className="h-9 w-56 rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg outline-none focus:border-admin-primary disabled:opacity-50"
             />
           </form>
 
           <button
             type="button"
             onClick={onClose}
+            disabled={busy}
             aria-label="Schließen"
-            className="rounded-md border border-admin-border px-2.5 py-1 text-label text-admin-fg2 hover:bg-admin-hover"
+            className="rounded-md border border-admin-border px-2.5 py-1 text-label text-admin-fg2 hover:bg-admin-hover disabled:cursor-not-allowed disabled:opacity-45"
           >
             ✕
           </button>
@@ -381,11 +437,12 @@ export default function MediaPicker({
             <button
               key={chip}
               type="button"
+              disabled={busy}
               onClick={() => {
                 setQuery(chip);
                 setFreeText(chip);
               }}
-              className={`rounded-full px-3 py-1 text-label transition-colors ${
+              className={`rounded-full px-3 py-1 text-label transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 query === chip
                   ? "bg-admin-primary text-admin-primary-fg"
                   : "border border-admin-border text-admin-fg2 hover:bg-admin-hover"
@@ -407,8 +464,9 @@ export default function MediaPicker({
             <button
               key={provider}
               type="button"
+              disabled={busy}
               onClick={() => setActiveTab(provider)}
-              className={`-mb-px border-b-2 px-3 py-2 text-label font-medium transition-colors ${
+              className={`-mb-px border-b-2 px-3 py-2 text-label font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 activeTab === provider
                   ? "border-admin-primary text-admin-fg"
                   : "border-transparent text-admin-muted hover:text-admin-fg"
@@ -420,7 +478,7 @@ export default function MediaPicker({
           <button
             type="button"
             onClick={reloadActiveTab}
-            disabled={current?.loading || !context || !query}
+            disabled={busy || current?.loading || !context || !query}
             title="Diese Bibliothek neu laden"
             aria-label="Diese Bibliothek neu laden"
             className="ml-auto rounded-md p-1.5 text-admin-muted transition-colors hover:bg-admin-hover hover:text-admin-fg disabled:opacity-40"
@@ -556,6 +614,41 @@ export default function MediaPicker({
                       ? `Zur Galerie hinzufügen (${selection.length})`
                       : adoptLabel(role)}
                 </Button>
+                {busy && (
+                  <div className="mt-3 shrink-0" aria-busy="true">
+                    <div className="flex items-center justify-between gap-3 text-caption text-admin-fg2">
+                      <span aria-live="polite">{adoptStatus}</span>
+                      <span className="shrink-0 tabular-nums" aria-label={`Läuft seit ${elapsedLabel(adoptElapsed)}`}>
+                        {elapsedLabel(adoptElapsed)}
+                      </span>
+                    </div>
+                    <div
+                      role="progressbar"
+                      aria-label="Fortschritt der Bildübernahme"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={role === "gallery" ? adoptPercent : undefined}
+                      aria-valuetext={
+                        role === "gallery"
+                          ? `${adoptCompleted} von ${selection.length} Bildern übernommen`
+                          : "Bild wird auf dem Server geladen und verarbeitet"
+                      }
+                      className="mt-2 h-2 overflow-hidden rounded-full bg-admin-border"
+                    >
+                      {role === "gallery" ? (
+                        <div
+                          className="h-full rounded-full bg-admin-primary transition-[width] duration-300"
+                          style={{ width: `${adoptPercent}%` }}
+                        />
+                      ) : (
+                        <div className="admin-progress-bar h-full w-full text-admin-primary" />
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-caption text-admin-muted">
+                      Je nach Bildquelle kann die Verarbeitung bis zu {ADOPT_TIMEOUT_SECONDS / 60} Minuten dauern.
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <div className="rounded-lg border border-dashed border-admin-border p-6 text-center">

@@ -568,8 +568,12 @@ export default function AdminRegionForm() {
           open
           initialRole={pickerOpen}
           onClose={() => setPickerOpen(null)}
-          onAdopted={() => {
-            void loadRegion();
+          onAdopted={async ({ role, image }) => {
+            if (role === "hero") {
+              setRegion((current) => current ? { ...current, image } : current);
+            } else {
+              await loadRegion();
+            }
             flash("Bild übernommen.");
           }}
         />

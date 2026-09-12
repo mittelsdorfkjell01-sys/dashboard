@@ -95,10 +95,12 @@ const SPOT_WITHOUT_HERO = {
 test.describe("media picker", () => {
   let spotState = SPOT_WITHOUT_HERO;
   let adoptRequest: unknown = null;
+  let adoptDelayMs = 0;
 
   test.beforeEach(async ({ page }) => {
     spotState = SPOT_WITHOUT_HERO;
     adoptRequest = null;
+    adoptDelayMs = 0;
 
     await page.route("**/auth/me", (route) => route.fulfill({ json: ADMIN_USER }));
     await page.route("**/admin/notifications/unread-count", (route) =>
@@ -170,17 +172,19 @@ test.describe("media picker", () => {
     await page.route("**/admin/media/adopt", (route) => {
       adoptRequest = route.request().postDataJSON();
       spotState = SPOT_WITH_HERO;
-      return route.fulfill({
-        json: {
-          entity_type: "spot",
-          entity_id: SPOT_ID,
-          role: "hero",
-          image: SPOT_WITH_HERO.image,
-          gallery_image_id: null,
-          demoted_hero: false,
-          warnings: ["Ortsbezug ungeprüft."],
-        },
-      });
+      return new Promise((resolve) => setTimeout(resolve, adoptDelayMs)).then(() =>
+        route.fulfill({
+          json: {
+            entity_type: "spot",
+            entity_id: SPOT_ID,
+            role: "hero",
+            image: SPOT_WITH_HERO.image,
+            gallery_image_id: null,
+            demoted_hero: false,
+            warnings: ["Ortsbezug ungeprüft."],
+          },
+        })
+      );
     });
 
     // The spot editor's own reads — enough for the "Header-Bild" section to
@@ -241,6 +245,7 @@ test.describe("media picker", () => {
   });
 
   test("chip → tile → adopt writes a canonical hero and shows it", async ({ page }) => {
+    adoptDelayMs = 350;
     await page.goto(`/admin/spot/${SPOT_ID}/edit`);
 
     // The header opens the picker in Hero mode.
@@ -276,6 +281,11 @@ test.describe("media picker", () => {
 
     await dialog.getByRole("button", { name: "Als Hero übernehmen" }).click();
 
+    // Hosted providers can need several seconds for download + encoding. The
+    // picker stays open and shows honest activity instead of looking frozen.
+    await expect(dialog.getByRole("progressbar", { name: "Fortschritt der Bildübernahme" })).toBeVisible();
+    await expect(dialog.getByText("Hero-Bild wird geladen und verarbeitet…")).toBeVisible();
+
     // The request carries an identity, not a payload — everything else is
     // re-resolved server-side. The active tab on open is "nearby" (first in
     // the spot tab order), so the provider on the wire matches whichever tab
@@ -289,12 +299,45 @@ test.describe("media picker", () => {
     expect(adoptRequest).not.toHaveProperty("full_url");
     expect(adoptRequest).not.toHaveProperty("license");
 
-    // Overlay closes and the form reloads with the freshly written hero.
-    // The reload triggers a fresh spot-record fetch — checking that call was
-    // made is a more reliable proof than probing for a specific <img> that
-    // the focal-point editor might render with any alt text.
+    // Overlay closes and the form uses the exact image from the successful
+    // write response. This avoids a second read racing the just-finished write.
     await expect(dialog).toHaveCount(0);
-    await expect.poll(() => spotState.image?.url).toBe(SPOT_WITH_HERO.image!.url);
+    const heroSection = page.locator("#f-hero");
+    const heroToggle = heroSection.getByRole("button", { name: "Headerbild ausrichten" });
+    if ((await heroToggle.getAttribute("aria-expanded")) !== "true") await heroToggle.click();
+    await expect(heroSection.locator("img").first()).toHaveAttribute(
+      "src",
+      SPOT_WITH_HERO.image!.url
+    );
+  });
+
+  test("the right edit rail scrolls while the pointer is over it", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 600 });
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+
+    const rail = page.locator("[data-spot-edit-rail]");
+    await expect(rail).toBeVisible();
+    await rail.evaluate((element) => {
+      element.style.height = "180px";
+      element.style.maxHeight = "180px";
+    });
+
+    const metrics = await rail.evaluate((element) => {
+      const styles = window.getComputedStyle(element);
+      return {
+        overflowY: styles.overflowY,
+        scrollbarWidth: styles.scrollbarWidth,
+        scrollHeight: element.scrollHeight,
+        clientHeight: element.clientHeight,
+      };
+    });
+    expect(metrics.overflowY).toBe("auto");
+    expect(metrics.scrollbarWidth).not.toBe("none");
+    expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
+
+    await rail.hover();
+    await page.mouse.wheel(0, 300);
+    await expect.poll(() => rail.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   });
 
   test("keyboard navigation and Escape work in the grid", async ({ page }) => {
