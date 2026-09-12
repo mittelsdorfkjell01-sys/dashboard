@@ -4,9 +4,10 @@ The WP3/WP5 sector factor is a climatological/physical PRIOR. As station
 measurements accumulate (WP1 infrastructure), each sector's factor is blended
 towards the measured multiplier obs/model with a shrinkage weight n/(n+k): few
 samples stay near the prior, many approach the measurement. Every update writes
-a NEW sector version (the prior is never deleted), so the engine keeps reading
-the newest via select_sector. Station wind only calibrates the FACTOR; it is
-never emitted as a forecast value.
+a NEW disabled candidate version (the prior is never deleted). The candidate
+must pass the same shadow-scoring and activation gate as every other sector
+version. Station wind only calibrates the FACTOR; it is never emitted as a
+forecast value.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from sqlalchemy import select
 
 from app.models import SpotWeatherProfile, SpotWeatherSector, WeatherForecastSample
 from app.weather.physics.limits import clamp
+from app.weather.profiles import is_forecast_sector
 from app.weather.verification import _consensus_predictions, direction_sector, gated_observations
 
 MIN_SECTOR_SAMPLES = 10
@@ -74,14 +76,20 @@ def _posterior_signature(rows: list[tuple[float, float, bool]]) -> str:
 
 def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
                              tolerance_s: int = 1200, k: float = SHRINKAGE_K) -> dict:
-    """Shrink the active sector factors towards measurement; write a new version."""
+    """Shrink sector priors towards measurement; write a disabled candidate."""
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(days=max(14, min(lookback_days, 720)))
 
     profile = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id))
     if profile is None:
         return {"status": "no_profile", "written": 0, "version": None, "calibrated": 0}
-    sectors = db.scalars(select(SpotWeatherSector).where(SpotWeatherSector.profile_id == profile.id)).all()
+    sectors = [
+        row
+        for row in db.scalars(
+            select(SpotWeatherSector).where(SpotWeatherSector.profile_id == profile.id)
+        ).all()
+        if is_forecast_sector(row)
+    ]
     if not sectors:
         return {"status": "no_prior", "written": 0, "version": None, "calibrated": 0}
     by_version: dict[int, list[SpotWeatherSector]] = defaultdict(list)
@@ -135,7 +143,7 @@ def recalibrate_spot_sectors(db, spot_id, *, now=None, lookback_days: int = 120,
         db.add(SpotWeatherSector(
             profile_id=profile.id, start_deg=prior.start_deg, end_deg=prior.end_deg,
             speed_factor=round(factor, 4), direction_offset_deg=prior.direction_offset_deg,
-            version=version, enabled=True, note=json.dumps(note, separators=(",", ":"))[:500],
+            version=version, enabled=False, note=json.dumps(note, separators=(",", ":"))[:500],
         ))
     db.commit()
     return {"status": "ok", "written": len(planned), "version": version, "calibrated": calibrated}

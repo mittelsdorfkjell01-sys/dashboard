@@ -241,10 +241,12 @@ def _sector_note(result: MicroscaleResult, sector: MicroscaleSector, signature: 
 
 
 def persist_microscale_sectors(db, spot_id, result: MicroscaleResult) -> dict:
-    """Write a higher-version sector set that overrides the GWA prior.
+    """Write a higher-version sector candidate for later gated activation.
 
-    ``microscale_unavailable`` never writes (the GWA rows stay active). Also
-    fills the profile roughness/land/water reference fields from the result.
+    ``microscale_unavailable`` never writes (the active rows stay untouched).
+    Successful rows are deliberately disabled; only ``activate_spot_sectors``
+    may change a served value. Also fills the profile roughness/land/water
+    reference fields from the result.
     """
     from sqlalchemy import select
 
@@ -275,7 +277,7 @@ def persist_microscale_sectors(db, spot_id, result: MicroscaleResult) -> dict:
         db.add(SpotWeatherSector(
             profile_id=profile.id, start_deg=sector.start_deg, end_deg=sector.end_deg,
             speed_factor=sector.speed_factor, direction_offset_deg=sector.direction_offset_deg,
-            version=version, enabled=True, note=_sector_note(result, sector, signature),
+            version=version, enabled=False, note=_sector_note(result, sector, signature),
         ))
     # Surface provenance for audit (land/water reference + representative roughness).
     land = [s for s in result.sectors if s.downwind_z0 > CHARNOCK_SEA_Z0]
@@ -296,13 +298,28 @@ def _note_sig(note: str | None) -> str | None:
         return None
 
 
+class _RasterUnavailable(Exception):
+    """A required raster tile is missing or unreadable.
+
+    Deliberately distinct from in-file NoData: a NoData pixel inside a readable
+    tile is legitimate data (for the WBM it means water), whereas a missing or
+    unreadable file means we simply have no coverage there and must NOT invent a
+    surface. This is the hinge that makes the provider fail closed.
+    """
+
+
 class RasterSurfaceProvider:
     """WorldCover roughness + GLO-30 WBM coastline/fetch, sampled per sector.
 
     Unmounted (no raster dirs configured) -> mounted is False and the producer
-    reports microscale_unavailable. WBM NoData is treated as water (Charnock),
-    never as missing. rasterio is imported lazily and open datasets are cached
-    per tile for the run; never used on a request path.
+    reports microscale_unavailable. rasterio is imported lazily and open datasets
+    are cached per tile for the run; never used on a request path.
+
+    Fail-closed: an in-file NoData pixel counts as water (Charnock) for the WBM,
+    but a missing/unreadable tile raises ``_RasterUnavailable`` and yields NO
+    factor for that location (the local cell) or truncates the fetch walk (an
+    upwind step that leaves coverage) — it is never silently read as water or
+    grassland. Validate a mount up front with ``microscale_raster_doctor``.
 
     Expected layout under the mounted dirs (the operator provides the tiles):
       worldcover_dir: ESA_WorldCover_10m_2021_v200_{tile3}_Map.tif  (3-degree tiles)
@@ -322,6 +339,7 @@ class RasterSurfaceProvider:
         self._step_m = step_m
         self._max_fetch_m = max_fetch_m
         self._open: dict = {}
+        self._missing: set[str] = set()  # tiles that failed to open (negative cache)
 
     @property
     def mounted(self) -> bool:
@@ -330,17 +348,24 @@ class RasterSurfaceProvider:
     def sector_surface(self, lat: float, lon: float, sector_index: int) -> SectorSurface | None:
         if not self.mounted:
             return None
-        local_is_water = self._is_water(lat, lon)
-        local_z0 = self._z0(lat, lon, local_is_water)
-        if local_z0 is None:  # land cell with no usable land-cover sample
+        try:
+            local_is_water = self._is_water(lat, lon)
+            local_z0 = self._z0(lat, lon, local_is_water)
+        except _RasterUnavailable:
+            return None  # the spot's own tiles are not mounted -> no factor (fail closed)
+        if local_z0 is None:  # land cell with an in-file NoData land-cover sample
             return None
         bearing = (sector_index * SECTOR_WIDTH + SECTOR_WIDTH / 2.0) % 360.0  # sector-centre "from"
         steps = max(1, int(self._max_fetch_m // self._step_m))
         samples = []
         for step in range(1, steps + 1):
             plat, plon = destination_point(lat, lon, bearing, step * self._step_m)
-            is_water = self._is_water(plat, plon)
-            samples.append((is_water, self._z0(plat, plon, is_water) or DEFAULT_LAND_Z0))
+            try:
+                is_water = self._is_water(plat, plon)
+                z0 = self._z0(plat, plon, is_water)
+            except _RasterUnavailable:
+                break  # fetch leaves mounted coverage -> stop; never fabricate water/land
+            samples.append((is_water, z0 if z0 is not None else DEFAULT_LAND_Z0))
         return resolve_surface_change(local_is_water, local_z0, samples,
                                       step_m=self._step_m, max_fetch_m=self._max_fetch_m)
 
@@ -353,7 +378,7 @@ class RasterSurfaceProvider:
 
         tile = tile_code(lat, lon, 3)
         path = f"{self._worldcover_dir.rstrip('/')}/ESA_WorldCover_10m_2021_v200_{tile}_Map.tif"
-        value = self._sample(path, lon, lat)
+        value = self._sample(path, lon, lat)  # raises _RasterUnavailable on a missing tile
         return None if value is None else roughness_for_class(int(value))
 
     def _is_water(self, lat: float, lon: float) -> bool:
@@ -361,21 +386,29 @@ class RasterSurfaceProvider:
 
         tile = tile_code(lat, lon, 1)
         path = f"{self._glo30_wbm_dir.rstrip('/')}/{tile}_WBM.tif"
-        value, nodata = self._sample(path, lon, lat, with_nodata=True)
-        return surface_is_water(value, nodata)  # missing/NoData -> water
+        value, nodata = self._sample(path, lon, lat, with_nodata=True)  # raises on a missing tile
+        return surface_is_water(value, nodata)  # in-file NoData -> water; a missing file cannot reach here
 
     def _sample(self, path: str, lon: float, lat: float, *, with_nodata: bool = False):
-        try:
-            dataset = self._open.get(path)
-            if dataset is None:
+        """Sample one pixel. Returns None for an in-file NoData/non-finite value;
+        raises ``_RasterUnavailable`` when the tile itself cannot be opened/read."""
+        if path in self._missing:
+            raise _RasterUnavailable(path)
+        dataset = self._open.get(path)
+        if dataset is None:
+            try:
                 import rasterio
 
                 dataset = rasterio.open(path)
-                self._open[path] = dataset
+            except Exception as exc:
+                self._missing.add(path)
+                raise _RasterUnavailable(path) from exc
+            self._open[path] = dataset
+        try:
             value = next(dataset.sample([(lon, lat)]))[0]
             nodata = dataset.nodata
-        except Exception:
-            return (None, None) if with_nodata else None
+        except Exception as exc:
+            raise _RasterUnavailable(path) from exc
         if value is not None and nodata is not None and value == nodata:
             value = None
         if value is not None and not math.isfinite(float(value)):
@@ -385,7 +418,7 @@ class RasterSurfaceProvider:
 
 
 def build_spot_microscale(db, spot, *, surface_provider=None, orography=None) -> dict:
-    """Compute and persist the microscale override for one spot (offline job)."""
+    """Compute and persist a microscale candidate for one spot (offline job)."""
     from app.era5.grid import resolve_grid_cell
     from app.live import service as live_service
 
@@ -396,3 +429,85 @@ def build_spot_microscale(db, spot, *, surface_provider=None, orography=None) ->
                                         orography=orography, grid_cell=grid_cell)
     outcome = persist_microscale_sectors(db, spot.id, result)
     return {"spot_id": str(spot.id), **outcome}
+
+
+# --- preflight doctor -------------------------------------------------------
+
+# Valid GLO-30 WBM codes (0 land, 1 ocean, 2 lake, 3 river) and the known ESA
+# WorldCover class codes, used to catch a grossly wrong layer mounted by mistake.
+WBM_CODES = {0, 1, 2, 3}
+WORLDCOVER_CODES = set(WORLDCOVER_CLASSES)
+
+
+def _inspect_microscale_file(path: str, kind: str, codes: set[int]) -> dict:
+    import os
+
+    if not os.path.exists(path):
+        return {"path": path, "kind": kind, "exists": False}
+    try:
+        import numpy as np
+        import rasterio
+
+        with rasterio.open(path) as dataset:
+            crs = str(dataset.crs)
+            nodata = dataset.nodata
+            array = dataset.read(1, out_shape=(min(dataset.height, 128), min(dataset.width, 128)))
+        flat = array.astype("float64").ravel()
+        valid = flat[np.isfinite(flat)]
+        if nodata is not None:
+            valid = valid[valid != nodata]
+        sampled = {int(v) for v in np.unique(valid)} if valid.size else set()
+        return {"path": path, "kind": kind, "exists": True, "crs": crs, "nodata": nodata,
+                "valid_pixels": int(valid.size), "unknown_codes": sorted(sampled - codes)[:16]}
+    except Exception as exc:
+        return {"path": path, "kind": kind, "exists": True, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def microscale_raster_doctor(worldcover_dir: str | None = None, glo30_wbm_dir: str | None = None,
+                             *, probe: tuple[float, float] | None = None) -> dict:
+    """Inspect the mounted WorldCover + GLO-30 WBM rasters; fail loudly on a
+    missing/unreadable tile, wrong CRS, an empty (all-NoData) layer, or class
+    codes that do not belong to the expected product.
+
+    The tiles are per-location, so ``probe`` (a spot lat/lon) is needed to open
+    the exact tiles a spot would use; without it only the configured directories
+    are checked. Mirrors ``gwa_raster_doctor``: {ok, mounted, problems, files}.
+    """
+    provider = RasterSurfaceProvider(worldcover_dir, glo30_wbm_dir)
+    if not provider.mounted:
+        return {"ok": False, "mounted": False,
+                "problems": ["WORLDCOVER_RASTER_DIR / GLO30_WBM_RASTER_DIR is not set"], "files": []}
+    if probe is None:
+        return {"ok": False, "mounted": True,
+                "problems": ["no probe point given; pass a spot lat/lon to validate the exact tiles"],
+                "files": []}
+
+    from app.forecast.geodata import tile_code
+
+    lat, lon = probe
+    checks = [
+        ("wbm", f"{provider._glo30_wbm_dir.rstrip('/')}/{tile_code(lat, lon, 1)}_WBM.tif", WBM_CODES),
+        ("worldcover",
+         f"{provider._worldcover_dir.rstrip('/')}/ESA_WorldCover_10m_2021_v200_{tile_code(lat, lon, 3)}_Map.tif",
+         WORLDCOVER_CODES),
+    ]
+    problems: list[str] = []
+    files: list[dict] = []
+    for kind, path, codes in checks:
+        report = _inspect_microscale_file(path, kind, codes)
+        files.append(report)
+        if not report.get("exists"):
+            problems.append(f"{path}: {kind} tile missing")
+            continue
+        if "error" in report:
+            problems.append(f"{path}: {report['error']}")
+            continue
+        if report.get("crs") != "EPSG:4326":
+            problems.append(f"{path}: CRS is {report.get('crs')}, expected EPSG:4326")
+        if not report.get("valid_pixels"):
+            problems.append(f"{path}: no valid (non-NoData) pixels — empty raster?")
+        if report.get("unknown_codes"):
+            problems.append(f"{path}: unexpected {kind} codes {report['unknown_codes']} "
+                            f"(wrong product mounted?)")
+    return {"ok": not problems, "mounted": True, "probe": [lat, lon],
+            "problems": problems, "files": files}

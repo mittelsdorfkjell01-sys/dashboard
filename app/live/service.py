@@ -32,7 +32,13 @@ from app.live.consensus import (
     confidence_from_spread,
 )
 from app.live.models import consensus_models, select_model
-from app.models import Spot, SpotWeatherProfile, WeatherObservation, WeatherStation
+from app.models import (
+    Spot,
+    SpotWeatherProfile,
+    SpotWeatherSector,
+    WeatherObservation,
+    WeatherStation,
+)
 from app.weather.consensus import WindMember, calculate_wind_consensus
 from app.weather.units import WindSpeedUnit, convert_wind_speed
 from app.weather.catalog import family_for
@@ -99,13 +105,25 @@ def _load_spot(db: Session, spot_id) -> Spot:
             .where(Spot.id == spot_id)
             .options(
                 load_only(Spot.id, Spot.location, Spot.model_pref, Spot.water_type),
-                selectinload(Spot.weather_profile).load_only(
-                    SpotWeatherProfile.active,
-                    SpotWeatherProfile.timezone,
-                    SpotWeatherProfile.elevation_m,
-                    SpotWeatherProfile.coastal_normal_deg,
-                    SpotWeatherProfile.quality_tier,
-                    SpotWeatherProfile.physics_version,
+                selectinload(Spot.weather_profile).options(
+                    load_only(
+                        SpotWeatherProfile.active,
+                        SpotWeatherProfile.timezone,
+                        SpotWeatherProfile.elevation_m,
+                        SpotWeatherProfile.coastal_normal_deg,
+                        SpotWeatherProfile.quality_tier,
+                        SpotWeatherProfile.physics_version,
+                        SpotWeatherProfile.reviewed_at,
+                    ),
+                    selectinload(SpotWeatherProfile.sectors).load_only(
+                        SpotWeatherSector.start_deg,
+                        SpotWeatherSector.end_deg,
+                        SpotWeatherSector.speed_factor,
+                        SpotWeatherSector.direction_offset_deg,
+                        SpotWeatherSector.version,
+                        SpotWeatherSector.enabled,
+                        SpotWeatherSector.note,
+                    ),
                 ),
             )
         )

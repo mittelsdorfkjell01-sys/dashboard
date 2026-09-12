@@ -25,7 +25,18 @@ def physics_shadow(spot, profile) -> dict:
             missing.append(name)
     return {
         "mode": "shadow",
-        "active_correction": False,
+        "active_correction": bool(
+            profile is not None
+            and getattr(profile, "active", False)
+            and any(
+                getattr(sector, "enabled", False)
+                and (
+                    abs(float(getattr(sector, "speed_factor", 1.0)) - 1.0) > 1e-9
+                    or abs(float(getattr(sector, "direction_offset_deg", 0.0))) > 1e-9
+                )
+                for sector in (getattr(profile, "sectors", None) or ())
+            )
+        ),
         "grid_preference": grid_preference,
         "metadata_quality": "reviewed" if profile is not None and not missing else "partial" if len(missing) < 5 else "coordinates",
         "available": {

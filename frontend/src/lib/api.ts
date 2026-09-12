@@ -752,6 +752,27 @@ export interface WeatherProfileListItem { spot_id: string; spot_name: string; re
 export const getAdminWeatherProfiles = (filters: { country?: string; state?: string } = {}) => request<{items: WeatherProfileListItem[]; total: number}>(`/admin/weather/profiles${qs(filters)}`);
 export const getAdminWeatherProfile = (spotId: string) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`);
 export const putAdminWeatherProfile = (spotId: string, body: WeatherProfileInput) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`, { method: "PUT", body: JSON.stringify(body) });
+export interface WeatherSectorActivation {
+  spot_id: string;
+  activated_version: number;
+  mae_drop: number;
+  gate_run_id: string;
+  gate_context_hash: string;
+  sectors: number;
+  snapshots_invalidated: number;
+}
+export const activateAdminWeatherSectors = (
+  spotId: string,
+  input: { version: number; runId: string; minBiasDrop: number; reason?: string },
+) => request<WeatherSectorActivation>(
+  `/admin/weather/spots/${spotId}/sectors/activate${qs({
+    version: input.version,
+    run_id: input.runId,
+    min_bias_drop: input.minBiasDrop,
+    reason: input.reason,
+  })}`,
+  { method: "POST" },
+);
 export const getAdminWeatherDiagnostics = (spotId: string) => request<Record<string, unknown>>(`/admin/weather/spots/${spotId}/diagnostics`);
 export interface ForecastJob { id: string; spot_id: string | null; status: "queued"|"processing"|"succeeded"|"failed"|"superseded"|"paused"; progress: number; error: string | null; diagnostics: Record<string, unknown>; }
 export const recalculateAdminForecast = (spotId: string, rebuildProfile = false) => request<ForecastJob>(`/admin/weather/spots/${spotId}/recalculate${qs({ rebuild_profile: rebuildProfile })}`, { method: "POST" });

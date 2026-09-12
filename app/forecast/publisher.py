@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import hashlib
+import logging
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 from sqlalchemy.orm import load_only, noload
@@ -12,13 +13,54 @@ from app.forecast.registry import public_attributions
 from app.live import service as legacy
 from app.live.cache import default_cache
 from app.live.client import default_client
-from app.live.public_cache import set_public_forecast
+from app.live.public_cache import public_weather_generation, set_public_forecast
 from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
 from app.schemas.live import ForecastSeriesRead
 from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
+from app.weather.serving_context import serving_context_hash
 
 ACTIVE = ("queued", "processing")
 MAX_PUBLIC_STALE = timedelta(hours=12)
+
+logger = logging.getLogger(__name__)
+
+
+def _mark_superseded(
+    job,
+    *,
+    reason: str,
+    phase: str,
+    expected_context: str | None = None,
+    current_context: str | None = None,
+) -> None:
+    job.status = "superseded"
+    job.finished_at = datetime.now(timezone.utc)
+    job.diagnostics = {
+        "reason": reason,
+        "phase": phase,
+        **(
+            {"expected_weather_serving_context": expected_context}
+            if expected_context is not None
+            else {}
+        ),
+        **(
+            {"current_weather_serving_context": current_context}
+            if current_context is not None
+            else {}
+        ),
+    }
+    logger.warning(
+        "weather_forecast_publisher_superseded",
+        extra={
+            "weather_event": "weather_forecast_publisher_superseded",
+            "weather_reason_code": reason,
+            "weather_phase": phase,
+            "weather_job_id": str(job.id),
+            "weather_spot_id": str(job.spot_id),
+            "weather_expected_context_hash": expected_context,
+            "weather_current_context_hash": current_context,
+        },
+    )
 
 
 def job_key(spot_id, *, profile: bool, reason: str, coordinates_hash: str = "unknown", bucket: str | None = None) -> str:
@@ -116,6 +158,7 @@ def run_job(db, job_id, *, client=None, cache=None):
         )
         job.progress = 30
         db.commit()
+        context_before = serving_context_hash(db, target_spot_id)
         # Stable migration source. Direct adapters run in shadow until their
         # run completeness gates pass; a failed shadow source never reaches here.
         cache_backend = cache or default_cache()
@@ -126,6 +169,17 @@ def run_job(db, job_id, *, client=None, cache=None):
             client=client or default_client(),
             cache=cache_backend,
         )
+        context_after_generation = serving_context_hash(db, target_spot_id)
+        if context_after_generation != context_before:
+            _mark_superseded(
+                job,
+                reason="weather_serving_context_changed",
+                phase="after_generation",
+                expected_context=context_before,
+                current_context=context_after_generation,
+            )
+            db.commit()
+            return job
         internal_weather = dict(payload.pop("internal", {}))
         payload["model"] = "surfwinddata"
         payload["models"] = []
@@ -149,6 +203,7 @@ def run_job(db, job_id, *, client=None, cache=None):
                 "source": "open-meteo",
                 "geo_profile_status": profile.status,
                 "geo_profile_quality": profile.quality,
+                "weather_serving_context": context_before,
                 **internal_weather,
             },
             attributions=public_attributions({"open-meteo"}),
@@ -156,14 +211,37 @@ def run_job(db, job_id, *, client=None, cache=None):
         )
         db.add(snapshot)
         db.flush()
+        # Serialize the final comparison and promotion against activation.  If
+        # activation wins first, its new hash rejects this snapshot.  If this
+        # lock wins first, activation waits and then invalidates this snapshot.
+        db.scalar(select(Spot).where(Spot.id == target_spot_id).with_for_update())
+        current_context = serving_context_hash(
+            db, target_spot_id, lock_profile=True
+        )
+        if current_context != context_before:
+            db.delete(snapshot)
+            _mark_superseded(
+                job,
+                reason="weather_serving_context_changed",
+                phase="before_promotion",
+                expected_context=context_before,
+                current_context=current_context,
+            )
+            db.commit()
+            return job
         newer = db.scalar(select(ForecastSnapshot).where(
             ForecastSnapshot.spot_id == target_spot_id,
             ForecastSnapshot.active.is_(True),
             ForecastSnapshot.generated_at > generated,
         ).with_for_update())
         if newer is not None:
-            job.status = "superseded"
-            job.finished_at = datetime.now(timezone.utc)
+            _mark_superseded(
+                job,
+                reason="newer_snapshot_available",
+                phase="before_promotion",
+                expected_context=context_before,
+                current_context=current_context,
+            )
             db.commit()
             return job
         db.execute(
@@ -184,6 +262,7 @@ def run_job(db, job_id, *, client=None, cache=None):
             "fallback_status": snapshot.fallback_status,
             "quality_level": quality,
             "correction": correction,
+            "weather_serving_context": context_before,
             "weather_contract_version": WEATHER_CONTRACT_VERSION,
             "availability": payload.get("availability", {}),
             "horizons": internal_weather.get("horizons", {}),
@@ -193,6 +272,9 @@ def run_job(db, job_id, *, client=None, cache=None):
         cached_spot_id = target_spot_id
         cached_spot_is_public = target_spot_is_public
         cached_valid_until = snapshot.valid_until
+        cached_generation = public_weather_generation(
+            cache_backend, target_spot_id
+        )
         db.commit()
         # Publish only after the active snapshot transaction succeeds. The
         # cache helper fails open, so Redis cannot turn a successful DB publish
@@ -203,7 +285,18 @@ def run_job(db, job_id, *, client=None, cache=None):
                 cached_spot_id,
                 cached_public_payload,
                 valid_until=cached_valid_until,
+                generation=cached_generation,
             )
+        logger.info(
+            "weather_forecast_publisher_succeeded",
+            extra={
+                "weather_event": "weather_forecast_publisher_succeeded",
+                "weather_job_id": str(job.id),
+                "weather_spot_id": str(target_spot_id),
+                "weather_serving_context_hash": context_before,
+                "weather_cache_generation": cached_generation,
+            },
+        )
         return job
     except Exception as exc:
         db.rollback()

@@ -33,13 +33,21 @@ def main() -> None:
     parser.add_argument("--producer", choices=("gwa", "microscale"), default="gwa")
     parser.add_argument("--dry-run", action="store_true", help="Compute and report; write nothing.")
     parser.add_argument("--check-rasters", action="store_true",
-                        help="Run the GWA raster preflight doctor and exit.")
+                        help="Run the raster preflight doctor for --producer and exit.")
+    parser.add_argument("--lat", type=float, help="Probe latitude for the microscale raster doctor.")
+    parser.add_argument("--lon", type=float, help="Probe longitude for the microscale raster doctor.")
     args = parser.parse_args()
 
     if args.check_rasters:
-        from app.forecast.gwa_producer import gwa_raster_doctor
+        if args.producer == "microscale":
+            from app.forecast.microscale import microscale_raster_doctor
 
-        report = gwa_raster_doctor()
+            probe = (args.lat, args.lon) if args.lat is not None and args.lon is not None else None
+            report = microscale_raster_doctor(probe=probe)
+        else:
+            from app.forecast.gwa_producer import gwa_raster_doctor
+
+            report = gwa_raster_doctor()
         print(json.dumps(report, indent=2, default=str))
         raise SystemExit(0 if report.get("ok") else 1)
     if not (args.all or args.spot or args.limit):

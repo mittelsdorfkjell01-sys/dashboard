@@ -68,7 +68,7 @@ def main() -> None:
     parser.add_argument("--tolerance-min", type=int, default=20, help="Forecast/observation match window.")
     parser.add_argument("--variant", default="raw")
     parser.add_argument("--gated", action="store_true",
-                        help="Score raw AND each spot's latest candidate (corrected) in one run, "
+                        help="Score serving baseline AND each spot's latest candidate in one run, "
                              "for the within-run activation gate.")
     parser.add_argument("--persist", dest="persist", action="store_true", default=True)
     parser.add_argument("--no-persist", dest="persist", action="store_false")

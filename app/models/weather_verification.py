@@ -114,9 +114,11 @@ class ForecastVerificationScore(Base):
     """WP1 harness output: raw-forecast error versus gated station measurements.
 
     Rows are grouped by spot, model (or the ``consensus`` aggregate), a lead-time
-    bucket and a 30-degree direction sector. ``variant`` is ``raw`` today; a future
-    corrected variant lets a single run compare before/after without a migration.
-    Station wind never feeds the forecast; it only produces these scores.
+    bucket and a 30-degree direction sector. Gated runs keep the serving baseline
+    under ``raw`` for schema compatibility and encode the exact candidate version
+    as ``candidate:<base36>``. Their shared context hash binds candidate
+    contents, active baseline, calibration, blend and physics versions. Station
+    wind never feeds the forecast; it only produces these scores.
     """
 
     __tablename__ = "forecast_verification_scores"
@@ -136,6 +138,7 @@ class ForecastVerificationScore(Base):
     gust_mae_ms: Mapped[float | None] = mapped_column(Float)
     window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    gate_context_hash: Mapped[str | None] = mapped_column(String(64))
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (

@@ -25,11 +25,12 @@ from app.live.deps import get_cache, get_om_client
 from app.live.public_cache import (
     get_public_forecast,
     get_public_live,
+    public_weather_generation,
     set_public_forecast,
     set_public_live,
 )
 from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
-from app.models import Spot, SpotWeatherProfile, WindClimatologyRun
+from app.models import Spot, SpotWeatherProfile, SpotWeatherSector, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
 from app.schemas import SpotRead, SpotSummary
@@ -300,8 +301,13 @@ def get_spots_live_batch(
 
     results: dict[uuid.UUID, LiveConditionsRead] = {}
     missing: list[uuid.UUID] = []
+    generations = {
+        spot_id: public_weather_generation(cache, spot_id) for spot_id in parsed
+    }
     for spot_id in parsed:
-        cached = get_public_live(cache, spot_id)
+        cached = get_public_live(
+            cache, spot_id, generation=generations[spot_id]
+        )
         if cached is None:
             missing.append(spot_id)
             continue
@@ -317,12 +323,24 @@ def get_spots_live_batch(
             .where(Spot.id.in_(missing), Spot.status == PUBLISHED)
             .options(
                 load_only(Spot.id, Spot.location, Spot.model_pref, Spot.water_type),
-                selectinload(Spot.weather_profile).load_only(
-                    SpotWeatherProfile.active,
-                    SpotWeatherProfile.timezone,
-                    SpotWeatherProfile.elevation_m,
-                    SpotWeatherProfile.coastal_normal_deg,
-                    SpotWeatherProfile.quality_tier,
+                selectinload(Spot.weather_profile).options(
+                    load_only(
+                        SpotWeatherProfile.active,
+                        SpotWeatherProfile.timezone,
+                        SpotWeatherProfile.elevation_m,
+                        SpotWeatherProfile.coastal_normal_deg,
+                        SpotWeatherProfile.quality_tier,
+                        SpotWeatherProfile.reviewed_at,
+                    ),
+                    selectinload(SpotWeatherProfile.sectors).load_only(
+                        SpotWeatherSector.start_deg,
+                        SpotWeatherSector.end_deg,
+                        SpotWeatherSector.speed_factor,
+                        SpotWeatherSector.direction_offset_deg,
+                        SpotWeatherSector.version,
+                        SpotWeatherSector.enabled,
+                        SpotWeatherSector.note,
+                    ),
                 ),
             )
         )
@@ -347,7 +365,12 @@ def get_spots_live_batch(
                 spot_id = futures[future]
                 result = LiveConditionsRead.model_validate(data)
                 results[spot_id] = result
-                set_public_live(cache, spot_id, result.model_dump(mode="json"))
+                set_public_live(
+                    cache,
+                    spot_id,
+                    result.model_dump(mode="json"),
+                    generation=generations[spot_id],
+                )
             except Exception:
                 logger.exception("live batch failed for spot %s", futures[future])
     return [results[spot_id] for spot_id in parsed if spot_id in results]
@@ -483,7 +506,8 @@ def get_spot_live(
 ) -> LiveConditionsRead:
     """Current conditions for a spot (Open-Meteo, cached). Not persisted."""
     set_live_cache(response)
-    cached = get_public_live(cache, spot_id)
+    generation = public_weather_generation(cache, spot_id)
+    cached = get_public_live(cache, spot_id, generation=generation)
     if cached is not None:
         return LiveConditionsRead.model_validate(cached)
     if not published_spot_exists(db, spot_id):
@@ -498,7 +522,12 @@ def get_spot_live(
     data["model"] = "surfwinddata"
     data["models"] = []
     result = LiveConditionsRead.model_validate(data)
-    set_public_live(cache, spot_id, result.model_dump(mode="json"))
+    set_public_live(
+        cache,
+        spot_id,
+        result.model_dump(mode="json"),
+        generation=generation,
+    )
     return result
 
 
@@ -513,7 +542,8 @@ def get_spot_forecast(
 ) -> ForecastSeriesRead:
     """Surfwinddata 10-day forecast with real hourly detail for every day."""
     set_forecast_cache(response)
-    cached = get_public_forecast(cache, spot_id)
+    generation = public_weather_generation(cache, spot_id)
+    cached = get_public_forecast(cache, spot_id, generation=generation)
     if cached is not None:
         cached["days"] = list(cached.get("days") or [])[:days]
         return ForecastSeriesRead.model_validate(cached)
@@ -539,7 +569,11 @@ def get_spot_forecast(
             full_result = ForecastSeriesRead.model_validate(snapshot_data)
             stored = full_result.model_dump(mode="json")
             set_public_forecast(
-                cache, spot_id, stored, valid_until=snapshot.valid_until
+                cache,
+                spot_id,
+                stored,
+                valid_until=snapshot.valid_until,
+                generation=generation,
             )
             stored["days"] = stored["days"][:days]
             return ForecastSeriesRead.model_validate(stored)
@@ -565,7 +599,13 @@ def get_spot_forecast(
     result = ForecastSeriesRead.model_validate(data)
     stored = result.model_dump(mode="json")
     valid_until = datetime.now(timezone.utc) + timedelta(hours=3)
-    set_public_forecast(cache, spot_id, stored, valid_until=valid_until)
+    set_public_forecast(
+        cache,
+        spot_id,
+        stored,
+        valid_until=valid_until,
+        generation=generation,
+    )
     stored["days"] = stored["days"][:days]
     return ForecastSeriesRead.model_validate(stored)
 

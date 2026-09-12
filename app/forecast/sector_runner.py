@@ -99,15 +99,16 @@ def _persist_candidate(db, spot_id, producer, result) -> tuple[str, int | None]:
 
 
 def _target_spots(db, *, spot_ids, producer, limit):
-    if spot_ids:
-        return db.scalars(select(Spot).where(Spot.id.in_(list(spot_ids)))).all()
     query = (
         select(Spot)
         .outerjoin(ForecastSectorBuild,
                    (ForecastSectorBuild.spot_id == Spot.id) & (ForecastSectorBuild.producer == producer))
-        .where(Spot.status == "published")
         .order_by(ForecastSectorBuild.built_at.asc().nullsfirst(), Spot.id)
     )
+    if spot_ids:
+        query = query.where(Spot.id.in_(list(spot_ids)))
+    else:
+        query = query.where(Spot.status == "published")
     if limit:
         query = query.limit(limit)
     return db.scalars(query).all()

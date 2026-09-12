@@ -9,13 +9,16 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.deps import Principal, get_actor, require_role
 from app.admin.audit import record_audit
 from app.db.session import get_db
 from app.live import service as live_service
+from app.live.cache import Cache
+from app.live.deps import get_cache
+from app.weather.profiles import WIND_CLIMATOLOGY_V3_NOTE, is_forecast_sector
 from app.models import (
     ForecastProcessingJob,
     ForecastSnapshot,
@@ -118,7 +121,7 @@ def wind_climatology_v3_directions(spot_id: uuid.UUID, db: Session = Depends(get
     selected: list[int] = []
     if profile:
         for sector in profile.sectors:
-            if not sector.enabled:
+            if not sector.enabled or sector.note != WIND_CLIMATOLOGY_V3_NOTE:
                 continue
             start, end = round(sector.start_deg % 360, 6), round(sector.end_deg % 360, 6)
             for index in range(16):
@@ -144,15 +147,21 @@ def update_wind_climatology_v3_directions(spot_id: uuid.UUID, body: WindDirectio
         if loaded != expected:
             raise HTTPException(status_code=409, detail="Die Windrichtungen wurden zwischenzeitlich geändert.")
     before = {"reviewed": bool(profile.reviewed_at), "windows": [
-        [s.start_deg, s.end_deg] for s in profile.sectors if s.enabled]}
+        [s.start_deg, s.end_deg] for s in profile.sectors
+        if s.enabled and s.note == WIND_CLIMATOLOGY_V3_NOTE]}
     db.add(profile)
-    profile.sectors.clear()
+    profile.sectors = [sector for sector in profile.sectors if is_forecast_sector(sector)]
+    # Flush removals before recreating identical V3 windows; otherwise the
+    # versioned unique constraint can observe INSERT before orphan DELETE.
+    db.flush()
     profile.sectors.extend(SpotWeatherSector(start_deg=i * 22.5,
         end_deg=((i + 1) * 22.5) % 360, speed_factor=1, direction_offset_deg=0,
-        version=1, enabled=True, note="Windklimatologie V3") for i in sorted(body.sectors))
+        version=1, enabled=True, note=WIND_CLIMATOLOGY_V3_NOTE) for i in sorted(body.sectors))
     profile.reviewed_at = datetime.now(timezone.utc) if body.reviewed else None
     db.flush()
-    after = {"reviewed": body.reviewed, "windows": [[s.start_deg, s.end_deg] for s in profile.sectors]}
+    after = {"reviewed": body.reviewed, "windows": [
+        [s.start_deg, s.end_deg] for s in profile.sectors
+        if s.note == WIND_CLIMATOLOGY_V3_NOTE]}
     effective_changed = before != after
     run = None; created = False
     if effective_changed:
@@ -312,7 +321,9 @@ class SectorIn(BaseModel):
     speed_factor: float = Field(ge=0.50, le=1.60)
     direction_offset_deg: float = Field(default=0, ge=-15, le=15)
     version: int = Field(default=1, ge=1)
-    enabled: bool = True
+    # Profile editing may create candidates, but activation is exclusively the
+    # version- and context-bound WP1 endpoint.
+    enabled: bool = False
     note: str | None = Field(default=None, max_length=500)
 
 
@@ -382,6 +393,21 @@ def _overlap(left: SectorIn, right: SectorIn) -> bool:
     )
 
 
+def _enabled_sector_identities(sectors) -> list[tuple]:
+    return sorted(
+        (
+            round(float(sector.start_deg), 6),
+            round(float(sector.end_deg), 6),
+            round(float(sector.speed_factor), 6),
+            round(float(sector.direction_offset_deg), 6),
+            int(sector.version),
+            sector.note,
+        )
+        for sector in sectors
+        if sector.enabled and is_forecast_sector(sector)
+    )
+
+
 def _view(profile: SpotWeatherProfile) -> dict:
     return {
         "id": str(profile.id),
@@ -410,6 +436,7 @@ def _view(profile: SpotWeatherProfile) -> dict:
                 "note": s.note,
             }
             for s in profile.sectors
+            if is_forecast_sector(s)
         ],
     }
 
@@ -497,9 +524,14 @@ def get_profile(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
 
 @router.put("/spots/{spot_id}/profile")
 def put_profile(
-    spot_id: uuid.UUID, body: WeatherProfileIn, db: Session = Depends(get_db)
+    spot_id: uuid.UUID,
+    body: WeatherProfileIn,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+    cache: Cache = Depends(get_cache),
 ) -> dict:
-    if db.get(Spot, spot_id) is None:
+    spot = db.scalar(select(Spot).where(Spot.id == spot_id).with_for_update())
+    if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     if body.timezone:
         try:
@@ -515,6 +547,16 @@ def put_profile(
             detail={name: "Pflichtfeld für diese Qualitätsstufe." for name in missing},
         )
     enabled = [sector for sector in body.sectors if sector.enabled]
+    if any(sector.note == WIND_CLIMATOLOGY_V3_NOTE for sector in body.sectors):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "sectors": (
+                    "Windklimatologie-V3-Richtungen werden ausschließlich über "
+                    "ihren eigenen Endpunkt verwaltet."
+                )
+            },
+        )
     for index, left in enumerate(enabled):
         if any(_overlap(left, right) for right in enabled[index + 1 :]):
             raise HTTPException(
@@ -530,7 +572,24 @@ def put_profile(
                 "quality_tier": "Advanced bleibt bis zur fachlichen Validierung deaktiviert."
             },
         )
-    profile = _load(db, spot_id) or SpotWeatherProfile(spot_id=spot_id)
+    profile = db.scalar(
+        select(SpotWeatherProfile)
+        .where(SpotWeatherProfile.spot_id == spot_id)
+        .options(selectinload(SpotWeatherProfile.sectors))
+        .with_for_update()
+    ) or SpotWeatherProfile(spot_id=spot_id)
+    if _enabled_sector_identities(body.sectors) != _enabled_sector_identities(
+        profile.sectors
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "sectors": (
+                    "Aktive Forecast-Sektoren dürfen nur über den "
+                    "WP1-Gate-Endpunkt geändert werden."
+                )
+            },
+        )
     if profile.id and body.expected_updated_at:
         loaded = (
             profile.updated_at
@@ -567,11 +626,41 @@ def put_profile(
             value.model_dump() if isinstance(value, ReferencePointIn) else value,
         )
     profile.reviewed_at = datetime.now(timezone.utc) if body.reviewed else None
-    profile.sectors.clear()
+    # Relationship-only edits would otherwise leave the profile revision
+    # unchanged and defeat expected_updated_at on the next editor request.
+    profile.updated_at = datetime.now(timezone.utc)
+    v3_sectors = [
+        sector for sector in profile.sectors
+        if sector.note == WIND_CLIMATOLOGY_V3_NOTE
+    ]
+    profile.sectors = v3_sectors
+    # Candidate rows are versioned and may be posted back unchanged. Retire the
+    # old correction rows before inserting their replacements with the same key.
+    db.flush()
     profile.sectors.extend(
         SpotWeatherSector(**sector.model_dump()) for sector in body.sectors
     )
     db.flush()
+    invalidated = db.execute(
+        update(ForecastSnapshot)
+        .where(
+            ForecastSnapshot.spot_id == spot_id,
+            ForecastSnapshot.active.is_(True),
+        )
+        .values(active=False)
+    )
+    record_audit(
+        db,
+        spot_id,
+        "weather_profile_updated",
+        {"snapshots_invalidated": max(0, invalidated.rowcount or 0)},
+        actor,
+    )
+    db.commit()
+    from app.live.public_cache import invalidate_public_weather
+
+    invalidate_public_weather(cache, spot_id)
+    db.refresh(profile)
     return _view(profile)
 
 
@@ -948,22 +1037,37 @@ def spot_verification_scores(
 def activate_sectors(
     spot_id: uuid.UUID,
     version: int = Query(..., ge=1),
+    run_id: uuid.UUID = Query(...),
+    min_bias_drop: float = Query(default=0.0, ge=0),
     reason: str | None = None,
     db: Session = Depends(get_db),
     actor: str = Depends(get_actor),
+    cache: Cache = Depends(get_cache),
 ) -> dict:
-    """Activate one candidate sector version (the ONLY path that enables sectors).
+    """Activate one complete candidate authorized by a current WP1 gate run.
 
     Flips the given version's rows to enabled=True and deactivates any previously
-    active version. WP1-gated by operator decision; records who/when/why. The
-    producer runner only ever writes enabled=False candidates.
+    active version. The run must score this exact version in the current serving
+    context and meet ``min_bias_drop``. The producer runner only ever writes
+    enabled=False candidates.
     """
     from app.weather.sector_activation import activate_spot_sectors
 
     try:
-        return activate_spot_sectors(db, spot_id, version, actor=actor, reason=reason)
+        return activate_spot_sectors(
+            db,
+            spot_id,
+            version,
+            actor=actor,
+            gate_run_id=run_id,
+            min_bias_drop=min_bias_drop,
+            reason=reason,
+            cache=cache,
+        )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 @router.get("/spots/{spot_id}/operations")

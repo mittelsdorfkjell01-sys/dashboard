@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import logging
 import math
+import uuid
 from typing import Any
 
 from app.config import get_settings
@@ -17,34 +18,65 @@ from app.live.cache import Cache
 from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
 
 logger = logging.getLogger(__name__)
+PUBLIC_WEATHER_GENERATION_TTL = 24 * 60 * 60
 
 
-def public_live_key(spot_id) -> str:
-    return f"public:{WEATHER_CONTRACT_VERSION}:live:{spot_id}"
+def public_weather_generation_key(spot_id) -> str:
+    return f"public:{WEATHER_CONTRACT_VERSION}:generation:{spot_id}"
 
 
-def public_forecast_key(spot_id) -> str:
-    return (
+def public_weather_generation(cache: Cache, spot_id) -> str:
+    try:
+        value = cache.get(public_weather_generation_key(spot_id))
+    except Exception as exc:
+        logger.warning(
+            "public weather generation get failed (%s)", type(exc).__name__
+        )
+        return "0"
+    return value if isinstance(value, str) and value else "0"
+
+
+def public_live_key(spot_id, generation: str = "0") -> str:
+    base = f"public:{WEATHER_CONTRACT_VERSION}:live:{spot_id}"
+    return base if generation == "0" else f"{base}:{generation}"
+
+
+def public_forecast_key(spot_id, generation: str = "0") -> str:
+    base = (
         f"public:{WEATHER_CONTRACT_VERSION}:forecast:"
         f"{FORECAST_PRODUCT_VERSION}:{spot_id}"
     )
+    return base if generation == "0" else f"{base}:{generation}"
 
 
-def get_public_live(cache: Cache, spot_id) -> dict[str, Any] | None:
-    return _safe_get(cache, public_live_key(spot_id))
+def get_public_live(
+    cache: Cache, spot_id, *, generation: str | None = None
+) -> dict[str, Any] | None:
+    generation = generation or public_weather_generation(cache, spot_id)
+    return _safe_get(cache, public_live_key(spot_id, generation))
 
 
-def set_public_live(cache: Cache, spot_id, payload: dict[str, Any]) -> None:
+def set_public_live(
+    cache: Cache,
+    spot_id,
+    payload: dict[str, Any],
+    *,
+    generation: str | None = None,
+) -> None:
+    generation = generation or public_weather_generation(cache, spot_id)
     _safe_set(
         cache,
-        public_live_key(spot_id),
+        public_live_key(spot_id, generation),
         payload,
         get_settings().weather_public_live_cache_ttl,
     )
 
 
-def get_public_forecast(cache: Cache, spot_id) -> dict[str, Any] | None:
-    payload = _safe_get(cache, public_forecast_key(spot_id))
+def get_public_forecast(
+    cache: Cache, spot_id, *, generation: str | None = None
+) -> dict[str, Any] | None:
+    generation = generation or public_weather_generation(cache, spot_id)
+    payload = _safe_get(cache, public_forecast_key(spot_id, generation))
     if payload is None:
         return None
     payload.pop("_cache_captured_at", None)
@@ -60,6 +92,7 @@ def set_public_forecast(
     payload: dict[str, Any],
     *,
     valid_until: datetime,
+    generation: str | None = None,
 ) -> None:
     """Cache a public forecast only for the remaining snapshot lifetime."""
     valid_until = _as_utc(valid_until)
@@ -72,7 +105,40 @@ def set_public_forecast(
     stored = dict(payload)
     stored.pop("_cache_captured_at", None)
     stored["_fresh_until"] = valid_until.isoformat()
-    _safe_set(cache, public_forecast_key(spot_id), stored, ttl)
+    generation = generation or public_weather_generation(cache, spot_id)
+    _safe_set(cache, public_forecast_key(spot_id, generation), stored, ttl)
+
+
+def invalidate_public_weather(cache: Cache, spot_id) -> None:
+    """Drop assembled values after a serving-affecting profile change.
+
+    Provider responses use different keys and deliberately remain cached: the
+    next request can recalculate local physics without another upstream call.
+    """
+    previous = public_weather_generation(cache, spot_id)
+    replacement = uuid.uuid4().hex
+    try:
+        cache.set(
+            public_weather_generation_key(spot_id),
+            replacement,
+            PUBLIC_WEATHER_GENERATION_TTL,
+        )
+    except Exception as exc:
+        logger.warning(
+            "public weather generation bump failed (%s)", type(exc).__name__
+        )
+    else:
+        logger.info(
+            "public_weather_cache_generation_advanced",
+            extra={
+                "weather_event": "public_weather_cache_generation_advanced",
+                "weather_spot_id": str(spot_id),
+                "weather_previous_cache_generation": previous,
+                "weather_cache_generation": replacement,
+            },
+        )
+    _safe_delete(cache, public_live_key(spot_id, previous))
+    _safe_delete(cache, public_forecast_key(spot_id, previous))
 
 
 def _safe_get(cache: Cache, key: str) -> dict[str, Any] | None:
@@ -95,6 +161,16 @@ def _safe_set(cache: Cache, key: str, value: dict[str, Any], ttl: int) -> None:
         cache.set(key, value, ttl)
     except Exception as exc:
         logger.warning("public weather cache set failed (%s)", type(exc).__name__)
+
+
+def _safe_delete(cache: Cache, key: str) -> None:
+    delete = getattr(cache, "delete", None)
+    if delete is None:
+        return
+    try:
+        delete(key)
+    except Exception as exc:
+        logger.warning("public weather cache delete failed (%s)", type(exc).__name__)
 
 
 def _as_utc(value: datetime | str | None) -> datetime | None:

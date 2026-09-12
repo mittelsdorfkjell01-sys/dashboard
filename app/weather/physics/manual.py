@@ -4,8 +4,8 @@ from __future__ import annotations
 def direction_in_sector(direction: float, start: float, end: float) -> bool:
     direction %= 360.0
     if start <= end:
-        return start <= direction <= end
-    return direction >= start or direction <= end
+        return start <= direction < end
+    return direction >= start or direction < end
 
 
 def select_sector(direction: float, sectors) -> object | None:

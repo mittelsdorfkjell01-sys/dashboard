@@ -33,6 +33,8 @@ class Cache(Protocol):
 
     def set(self, key: str, value: Any, ttl: int) -> None: ...
 
+    def delete(self, key: str) -> None: ...
+
 
 class RedisCache:
     """JSON-over-Redis cache.
@@ -67,6 +69,12 @@ class RedisCache:
         except Exception as exc:  # redis.RedisError + socket errors
             logger.warning("live cache set failed (%s) — skipping cache", type(exc).__name__)
 
+    def delete(self, key: str) -> None:
+        try:
+            self._r.delete(key)
+        except Exception as exc:  # redis.RedisError + socket errors
+            logger.warning("live cache delete failed (%s) — leaving entry to expire", type(exc).__name__)
+
 
 class InMemoryCache:
     """Thread-safe process-local TTL cache, lost completely on restart."""
@@ -92,6 +100,10 @@ class InMemoryCache:
             return
         with self._lock:
             self._store[key] = (self._clock() + ttl, _pack(value))
+
+    def delete(self, key: str) -> None:
+        with self._lock:
+            self._store.pop(key, None)
 
 
 def _pack(value: Any) -> dict[str, Any]:
@@ -124,6 +136,10 @@ class FailOpenCache:
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         self.primary.set(key, value, ttl)
         self.fallback.set(key, value, ttl)
+
+    def delete(self, key: str) -> None:
+        self.primary.delete(key)
+        self.fallback.delete(key)
 
 
 _default_cache: Cache | None = None
