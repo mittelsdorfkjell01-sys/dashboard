@@ -113,8 +113,10 @@ def test_posterior_shrinks_prior_towards_measurement(db, calib_spot):
     assert v2[9].speed_factor == pytest.approx(round(expected, 4))
     assert v2[9].speed_factor < 1.5  # shrunk towards prior, not the raw measurement
     assert v2[0].speed_factor == 1.0  # a sector with no data carries the prior
+    assert all(not sector.enabled for sector in v2.values())  # gated candidate only
     # version 1 prior is never deleted
-    assert db.query(SpotWeatherSector).filter_by(profile_id=profile.id, version=1).count() == 12
+    v1 = db.query(SpotWeatherSector).filter_by(profile_id=profile.id, version=1).all()
+    assert len(v1) == 12 and all(sector.enabled for sector in v1)
 
 
 def test_idempotent_when_measurements_unchanged(db, calib_spot):

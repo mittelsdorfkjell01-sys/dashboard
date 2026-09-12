@@ -8,6 +8,7 @@ import pytest
 from app.weather.physics.coast import coastal_class
 from app.weather.physics.engine import apply_local_physics
 from app.weather.physics.limits import clamp_combined_factor, clamp_direction_change
+from app.weather.physics.manual import select_sector
 
 
 def test_coastal_classification_uses_waterward_normal_and_wraps_north():
@@ -82,6 +83,13 @@ def test_disabled_sector_is_not_applied():
     assert result.speed_ms == pytest.approx(10.0)
     assert result.corrected is False
     assert result.applied_component is None
+
+
+def test_adjacent_sector_boundary_belongs_only_to_the_sector_that_starts_there():
+    left = SimpleNamespace(enabled=True, start_deg=0, end_deg=30, version=9)
+    right = SimpleNamespace(enabled=True, start_deg=30, end_deg=60, version=1)
+
+    assert select_sector(30, [left, right]) is right
 
 
 def test_saturated_factor_is_clamped_and_flagged():

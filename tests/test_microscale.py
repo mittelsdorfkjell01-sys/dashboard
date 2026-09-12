@@ -11,10 +11,12 @@ from app.forecast.microscale import (
     CHARNOCK_SEA_Z0,
     RasterSurfaceProvider,
     SectorSurface,
+    _RasterUnavailable,
     compute_microscale_sectors,
     destination_point,
     dtm_from_dsm,
     internal_boundary_layer_height,
+    microscale_raster_doctor,
     persist_microscale_sectors,
     resolve_surface_change,
     roughness_for_class,
@@ -128,6 +130,54 @@ def test_unmounted_raster_provider_returns_none():
     assert RasterSurfaceProvider(None, None).sector_surface(43.0, -1.4, 0) is None
 
 
+# --- fail-closed on missing/unreadable tiles -------------------------------
+
+
+def test_missing_rasters_fail_closed_and_never_fabricate_sectors():
+    # Directories are configured (mounted) but the tiles do not exist: the old
+    # behaviour read every cell as water and returned 12 "ok" sectors. Now a
+    # missing tile yields NO factor at all.
+    provider = RasterSurfaceProvider("/no/such/worldcover", "/no/such/wbm")
+    assert provider.mounted is True
+    assert provider.sector_surface(43.66, -1.44, 0) is None
+    result = compute_microscale_sectors(43.66, -1.44, surface_provider=provider)
+    assert result.status == "microscale_unavailable" and result.sectors == []
+
+
+class _TruncatedRaster(RasterSurfaceProvider):
+    """Local + two upwind steps are readable land; beyond that coverage ends."""
+
+    def __init__(self):
+        super().__init__("wc", "wbm", step_m=100.0, max_fetch_m=2000.0)
+        self._calls = 0
+
+    def _is_water(self, lat, lon):
+        self._calls += 1
+        if self._calls > 3:  # local (1) + 2 readable steps, then the tile is gone
+            raise _RasterUnavailable("edge")
+        return False
+
+    def _z0(self, lat, lon, is_water):
+        return CHARNOCK_SEA_Z0 if is_water else 0.1
+
+
+def test_missing_upwind_tile_truncates_fetch_without_fabricating_water():
+    surface = _TruncatedRaster().sector_surface(43.66, -1.44, 0)
+    assert surface is not None
+    assert surface.upwind_is_water is False              # water was never invented
+    assert surface.upwind_z0 == surface.downwind_z0 == 0.1  # uniform land -> neutral
+    assert roughness_transfer_factor(surface.upwind_z0, surface.downwind_z0, surface.fetch_m) == 1.0
+
+
+def test_microscale_doctor_reports_unmounted_missing_and_needs_a_probe():
+    assert microscale_raster_doctor(None, None)["mounted"] is False
+    no_probe = microscale_raster_doctor("wc", "wbm")
+    assert no_probe["mounted"] is True and no_probe["ok"] is False  # a probe is required
+    missing = microscale_raster_doctor("/no/such/wc", "/no/such/wbm", probe=(43.66, -1.44))
+    assert missing["ok"] is False
+    assert any("missing" in problem for problem in missing["problems"])
+
+
 # --- producer status paths -------------------------------------------------
 
 
@@ -186,7 +236,7 @@ def micro_spot(db):
     db.commit()
 
 
-def test_microscale_overrides_gwa_with_higher_version(db, micro_spot):
+def test_microscale_writes_a_disabled_candidate_without_overriding_gwa(db, micro_spot):
     profile = SpotWeatherProfile(spot_id=micro_spot.id)
     db.add(profile)
     db.flush()
@@ -202,7 +252,8 @@ def test_microscale_overrides_gwa_with_higher_version(db, micro_spot):
     db.expire_all()
     rows = db.query(SpotWeatherSector).filter_by(profile_id=profile.id).all()
     chosen = select_sector(255.0, rows)  # in the 240-270 sector
-    assert chosen.version == 2  # microscale wins over the GWA prior
+    assert chosen.version == 1  # the candidate cannot bypass gated activation
+    assert all(not row.enabled for row in rows if row.version == 2)
     refreshed = db.get(SpotWeatherProfile, profile.id)
     assert refreshed.land_reference is not None and refreshed.water_reference is not None
 

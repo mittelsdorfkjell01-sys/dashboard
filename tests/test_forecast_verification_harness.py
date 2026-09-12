@@ -22,11 +22,17 @@ from app.models import (
 from app.weather.observation_worker import persist_batch
 from app.weather.observations import public_measurement
 from app.weather.providers.common import normalize_observation
-from app.weather.sector_activation import candidate_bias_improvement
+from app.weather.sector_activation import (
+    candidate_bias_improvement,
+    candidate_gate_results,
+    candidate_variant,
+    parse_candidate_variant,
+)
 from app.weather.verification import (
     _consensus_predictions,
     _corrected_samples,
     _score_predictions,
+    _serving_consensus_predictions,
     direction_sector,
     lead_bucket,
     run_gated_verification_scoring,
@@ -51,6 +57,13 @@ def test_lead_buckets_follow_the_authoritative_boundaries():
     assert [lead_bucket(h) for h in (0, 48, 49, 120, 121, 240)] == [
         "0-48h", "0-48h", "49-120h", "49-120h", "121-240h", "121-240h"
     ]
+
+
+@pytest.mark.parametrize("version", [1, 35, 36, 2_147_483_647])
+def test_candidate_score_variant_round_trips_the_exact_version(version):
+    variant = candidate_variant(version)
+    assert len(variant) <= 16
+    assert parse_candidate_variant(variant) == version
 
 
 # --- gate logic ------------------------------------------------------------
@@ -170,6 +183,37 @@ def test_corrected_samples_blend_zero_leaves_samples_unchanged():
     assert out.wind_speed_ms == pytest.approx(10.0) and out.wind_gust_ms == pytest.approx(12.0)
 
 
+def test_shadow_member_preparation_replays_active_serving_bias():
+    valid = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    samples = [SimpleNamespace(model_id="icon", issued_at=valid, valid_at=valid,
+                               lead_hours=5, wind_speed_ms=10.0,
+                               wind_direction_deg=270.0, wind_gust_ms=12.0)]
+    calibrations = {("icon", "0-48h"): SimpleNamespace(bias_ms=2.0)}
+
+    (out,) = _corrected_samples(samples, None, None, calibrations=calibrations)
+
+    assert out.wind_speed_ms == pytest.approx(8.0)
+    assert out.wind_gust_ms == pytest.approx(12.0)  # serving calibrates speed, not gust
+
+
+def test_shadow_consensus_uses_the_serving_vector_aggregation():
+    issued = datetime(2026, 1, 1, 6, tzinfo=timezone.utc)
+    valid = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    members = [
+        SimpleNamespace(model_id="a", issued_at=issued, valid_at=valid, lead_hours=6,
+                        wind_speed_ms=10.0, wind_direction_deg=350.0, wind_gust_ms=12.0),
+        SimpleNamespace(model_id="b", issued_at=issued, valid_at=valid, lead_hours=6,
+                        wind_speed_ms=14.0, wind_direction_deg=10.0, wind_gust_ms=16.0),
+    ]
+
+    (consensus,) = _serving_consensus_predictions(members, {})
+
+    # A vector mean is shorter than the old arithmetic 12 m/s mean when member
+    # directions differ; this is the value the public serving path emits.
+    assert consensus["wind_speed_ms"] == pytest.approx(11.823, abs=1e-3)
+    assert consensus["wind_direction_deg"] == pytest.approx(1.683, abs=1e-3)
+
+
 # --- DB-backed: end-to-end scoring, persistence and import idempotency ------
 
 
@@ -241,11 +285,16 @@ def test_gated_scoring_measures_the_candidate_and_gate_sees_the_drop(db, scored_
     profile = SpotWeatherProfile(spot_id=spot.id)
     db.add(profile)
     db.flush()
-    # Disabled candidate v1: an omni 1.3 factor lifts 10 -> 13 m/s (raw MAE 3 -> corrected 0).
+    # Active v1 lifts 10 -> 11 m/s. Disabled candidate v2 is clamped at the
+    # coordinates tier and lifts 10 -> 12.5 m/s (baseline MAE 2 -> candidate 0.5).
     for start in range(0, 360, 30):
         db.add(SpotWeatherSector(profile_id=profile.id, start_deg=float(start),
+                                 end_deg=float((start + 30) % 360), speed_factor=1.1,
+                                 direction_offset_deg=0.0, version=1, enabled=True,
+                                 note='{"method":"gwa_over_reference"}'))
+        db.add(SpotWeatherSector(profile_id=profile.id, start_deg=float(start),
                                  end_deg=float((start + 30) % 360), speed_factor=1.3,
-                                 direction_offset_deg=0.0, version=1, enabled=False,
+                                 direction_offset_deg=0.0, version=2, enabled=False,
                                  note='{"method":"gwa_over_reference"}'))
     db.commit()
 
@@ -254,11 +303,211 @@ def test_gated_scoring_measures_the_candidate_and_gate_sees_the_drop(db, scored_
     assert summary["raw_spots_scored"] == 1 and summary["corrected_spots_scored"] == 1
 
     variants = {r.variant for r in db.query(ForecastVerificationScore).filter_by(run_id=run_id).all()}
-    assert variants == {"raw", "corrected"}
+    assert variants == {"raw", "candidate:2"}
 
-    # The gate compares raw vs corrected WITHIN the one run and sees the real drop.
+    # The gate compares the active v1 baseline vs candidate WITHIN one run and
+    # binds that score to v2.
+    gate = candidate_gate_results(db, run_id)
+    assert gate[str(spot.id)]["version"] == 2
+    assert gate[str(spot.id)]["mae_drop"] == pytest.approx(1.5, abs=1e-6)
+    assert len(gate[str(spot.id)]["context_hash"]) == 64
     drops = candidate_bias_improvement(db, run_id)
-    assert drops[str(spot.id)] == pytest.approx(3.0, abs=1e-6)
+    assert drops[str(spot.id)] == pytest.approx(1.5, abs=1e-6)
+
+
+def test_gate_to_http_activation_reaches_live_and_forecast_serving(
+    db, scored_spot, client
+):
+    """Prove the whole WP path, including snapshot/cache invalidation."""
+    from sqlalchemy import select
+
+    from app.db.session import SessionLocal
+    from app.forecast.gwa_producer import compute_gwa_sectors
+    from app.forecast.publisher import enqueue, run_job
+    from app.forecast.sector_runner import _persist_candidate
+    from app.live.cache import InMemoryCache
+    from app.live.deps import get_cache, get_om_client
+    from app.live.public_cache import (
+        get_public_forecast,
+        get_public_live,
+        public_weather_generation,
+    )
+    from app.main import app
+    from app.models import ForecastSnapshot
+    from tests.live_helpers import FakeOpenMeteoClient
+
+    spot, station = scored_spot
+    valid = datetime.now(timezone.utc) - timedelta(days=5)
+    issued = valid - timedelta(hours=5)
+    db.add(
+        WeatherObservation(
+            station_id=station.id,
+            observed_at=valid,
+            wind_speed_ms=12.5,
+            wind_gust_ms=15.0,
+            wind_direction_deg=270.0,
+            provider_quality="1",
+            import_status="accepted",
+        )
+    )
+    db.add(
+        WeatherForecastSample(
+            spot_id=spot.id,
+            model_id="icon",
+            issued_at=issued,
+            valid_at=valid,
+            lead_hours=5,
+            wind_speed_ms=10.0,
+            wind_gust_ms=12.0,
+            wind_direction_deg=270.0,
+        )
+    )
+    profile = SpotWeatherProfile(
+        spot_id=spot.id,
+        active=True,
+        quality_tier="coordinates",
+    )
+    db.add(profile)
+    db.flush()
+    for start in range(0, 360, 30):
+        db.add(
+            SpotWeatherSector(
+                profile_id=profile.id,
+                start_deg=float(start),
+                end_deg=float((start + 30) % 360),
+                speed_factor=1.0,
+                direction_offset_deg=0.0,
+                version=1,
+                enabled=True,
+                note='{"method":"existing_baseline"}',
+            )
+        )
+    db.flush()
+
+    class GwaReader:
+        mounted = True
+
+        def read(self, lat, lon):
+            return 8.0
+
+    class Reference:
+        def mean_speed(self, lat, lon, window):
+            return 6.4
+
+    candidate_result = compute_gwa_sectors(
+        54.5,
+        8.5,
+        gwa_reader=GwaReader(),
+        reference=Reference(),
+        grid_cell=[54.5, 8.5],
+    )
+    candidate_status, candidate_version = _persist_candidate(
+        db, spot.id, "gwa", candidate_result
+    )
+    db.commit()
+    assert (candidate_status, candidate_version) == ("candidate_written", 2)
+    assert all(
+        not row.enabled
+        for row in db.scalars(
+            select(SpotWeatherSector).where(
+                SpotWeatherSector.profile_id == profile.id,
+                SpotWeatherSector.version == 2,
+            )
+        ).all()
+    )
+
+    run_id = uuid.uuid4()
+    scoring = run_gated_verification_scoring(
+        db,
+        spot_ids=[spot.id],
+        run_id=run_id,
+        lookback_days=30,
+    )
+    assert scoring["candidate_versions"] == {str(spot.id): 2}
+    assert candidate_gate_results(db, run_id)[str(spot.id)][
+        "mae_drop"
+    ] == pytest.approx(2.5, abs=1e-6)
+
+    weather_client = FakeOpenMeteoClient(data_days=11)
+    cache = InMemoryCache()
+    app.dependency_overrides[get_om_client] = lambda: weather_client
+    app.dependency_overrides[get_cache] = lambda: cache
+    try:
+        # Publish a real baseline snapshot first. Activation must retire it and
+        # fence both assembled public caches before corrected serving begins.
+        job = enqueue(
+            db,
+            spot.id,
+            reason=f"gate-e2e-baseline-{uuid.uuid4()}",
+        )
+        published = run_job(
+            db,
+            job.id,
+            client=weather_client,
+            cache=cache,
+        )
+        assert published.status == "succeeded"
+        snapshot_id = published.diagnostics["snapshot_id"]
+
+        baseline_live_response = client.get(f"/spots/{spot.id}/live")
+        baseline_forecast_response = client.get(f"/spots/{spot.id}/forecast")
+        assert baseline_live_response.status_code == 200
+        assert baseline_forecast_response.status_code == 200
+        baseline_live = baseline_live_response.json()
+        baseline_forecast = baseline_forecast_response.json()
+        assert baseline_forecast["correction"]["applied"] is False
+        baseline_generation = public_weather_generation(cache, spot.id)
+        assert get_public_live(cache, spot.id) is not None
+        assert get_public_forecast(cache, spot.id) is not None
+
+        activated = client.post(
+            f"/admin/weather/spots/{spot.id}/sectors/activate",
+            params={
+                "version": 2,
+                "run_id": str(run_id),
+                "min_bias_drop": 0.5,
+                "reason": "full integration gate",
+            },
+        )
+        assert activated.status_code == 200, activated.text
+        assert activated.json()["activated_version"] == 2
+        assert activated.json()["snapshots_invalidated"] == 1
+        assert public_weather_generation(cache, spot.id) != baseline_generation
+        assert get_public_live(cache, spot.id) is None
+        assert get_public_forecast(cache, spot.id) is None
+
+        corrected_live_response = client.get(f"/spots/{spot.id}/live")
+        corrected_forecast_response = client.get(f"/spots/{spot.id}/forecast")
+        assert corrected_live_response.status_code == 200
+        assert corrected_forecast_response.status_code == 200
+        corrected_live = corrected_live_response.json()
+        corrected_forecast = corrected_forecast_response.json()
+        assert corrected_forecast["correction"]["applied"] is True
+        assert corrected_live["current"]["wind_ms"] > baseline_live["current"][
+            "wind_ms"
+        ]
+        assert corrected_forecast["days"][0]["hours"][0][
+            "wind_ms"
+        ] > baseline_forecast["days"][0]["hours"][0]["wind_ms"]
+        assert get_public_live(cache, spot.id) is not None
+        assert get_public_forecast(cache, spot.id) is not None
+
+        with SessionLocal() as verification_db:
+            snapshot = verification_db.get(ForecastSnapshot, snapshot_id)
+            assert snapshot is not None and snapshot.active is False
+            active_versions = {
+                row.version
+                for row in verification_db.scalars(
+                    select(SpotWeatherSector).where(
+                        SpotWeatherSector.profile_id == profile.id,
+                        SpotWeatherSector.enabled.is_(True),
+                    )
+                ).all()
+            }
+            assert active_versions == {2}
+    finally:
+        app.dependency_overrides.pop(get_om_client, None)
+        app.dependency_overrides.pop(get_cache, None)
 
 
 def test_scoring_skips_a_spot_whose_station_is_not_approved(db, scored_spot):

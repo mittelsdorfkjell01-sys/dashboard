@@ -2,6 +2,7 @@ from types import SimpleNamespace
 
 from app.api.admin_weather import SectorIn, WeatherProfileIn, _missing, _overlap
 from app.live.cache import InMemoryCache
+from app.live.public_cache import public_forecast_key, public_live_key
 from app.live.service import get_live_conditions
 from tests.live_helpers import FakeDB, FakeOpenMeteoClient, make_spot
 import uuid
@@ -61,3 +62,63 @@ def test_profile_list_is_single_admin_endpoint_and_unknown_spot_is_404(client):
     assert listing.status_code == 200
     assert isinstance(listing.json()["items"], list)
     assert client.put(f"/admin/weather/spots/{uuid.uuid4()}/profile", json={"quality_tier": "coordinates"}).status_code == 404
+
+
+def test_profile_update_persists_candidates_and_invalidates_public_cache(
+    client, db
+):
+    from app.live.deps import get_cache
+    from app.main import app
+    from app.models import Spot, SpotWeatherProfile
+    from app.seed.seed import seed
+    from sqlalchemy import select
+
+    seed(db)
+    spot = db.scalar(select(Spot).order_by(Spot.name))
+    cache = InMemoryCache()
+    cache.set(public_live_key(spot.id), {"old": True}, 300)
+    cache.set(public_forecast_key(spot.id), {"old": True}, 300)
+    app.dependency_overrides[get_cache] = lambda: cache
+    try:
+        response = client.put(f"/admin/weather/spots/{spot.id}/profile", json={
+            "quality_tier": "coordinates",
+            "timezone": "Europe/Berlin",
+            "sectors": [{
+                "start_deg": 0,
+                "end_deg": 30,
+                "speed_factor": 1.1,
+            }],
+        })
+    finally:
+        app.dependency_overrides.pop(get_cache, None)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["sectors"][0]["enabled"] is False
+    db.expire_all()
+    profile = db.scalar(
+        select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot.id)
+    )
+    assert profile is not None and profile.timezone == "Europe/Berlin"
+    assert cache.get(public_live_key(spot.id)) is None
+    assert cache.get(public_forecast_key(spot.id)) is None
+
+
+def test_profile_update_cannot_enable_a_candidate_directly(client, db):
+    from app.models import Spot
+    from app.seed.seed import seed
+    from sqlalchemy import select
+
+    seed(db)
+    spot = db.scalar(select(Spot).order_by(Spot.name))
+    response = client.put(f"/admin/weather/spots/{spot.id}/profile", json={
+        "quality_tier": "coordinates",
+        "sectors": [{
+            "start_deg": 0,
+            "end_deg": 30,
+            "speed_factor": 1.1,
+            "enabled": True,
+        }],
+    })
+
+    assert response.status_code == 422
+    assert "WP1-Gate-Endpunkt" in response.json()["detail"]["sectors"]
