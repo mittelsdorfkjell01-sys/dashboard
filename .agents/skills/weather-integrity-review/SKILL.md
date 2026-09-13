@@ -12,11 +12,13 @@ This is a review skill. Diagnose and report; do not change code, configuration, 
 ## Review workflow
 
 1. Read the repository AGENTS.md files that govern the changed paths and the weather section of docs/architecture/repository-map.md.
-2. Determine the diff against the merge base or requested baseline. Use [references/repository-map.md](references/repository-map.md) to expand changed files to every affected producer, persistence layer, serving path, contract, consumer, and test. Do not limit the review to filenames containing "wind".
-3. Read [references/invariants.md](references/invariants.md) completely. For each affected public wind field and forecast correction impulse, record the source kind, source time, valid time, transformations, correction stages, persisted identity, public provenance, and frontend consumer.
-4. Trace measurements, model nowcasts, and forecasts separately. Comments and type names are claims, not evidence; verify assignments, serialization, cache behavior, database constraints, and UI selection logic.
-5. Run the narrowest relevant checks from [references/repository-map.md](references/repository-map.md). A passing existing test suite does not override a demonstrated invariant violation. Report blocked or unavailable checks as NOT_PROVEN.
-6. Produce the result using [references/report-format.md](references/report-format.md). Every failure needs a stable invariant ID and concrete file-and-line evidence.
+2. Establish the complete review scope. For a PR or committed review, compare with the requested baseline or merge base. For a local review, include the committed delta plus staged, unstaged, and relevant untracked files unless the user explicitly restricts the scope. Exclude generated or ignored output under the repository rules.
+3. Run `scripts/context.ps1 weather`. For cross-cutting architecture or blast-radius questions, query the existing Graphify graph for the changed symbols and products, then verify every claimed path with `rg`, assignments, and source code. Graph output is navigation, not evidence, and a stale graph must not hide a changed or untracked file.
+4. Use [references/repository-map.md](references/repository-map.md) to expand changed files to every affected producer, persistence layer, serving path, contract, consumer, and test. Do not limit the review to filenames containing "wind".
+5. Read [references/invariants.md](references/invariants.md) completely. When a public API or frontend weather consumer is affected, also read [references/display-contract.md](references/display-contract.md) completely. For each affected public wind field and forecast correction impulse, record the source kind, source time, valid time, transformations, correction stages, persisted identity, public provenance, and frontend consumer.
+6. Trace measurements, model nowcasts, LiveWind, and forecasts separately. Comments and type names are claims, not evidence; verify assignments, serialization, cache behavior, database constraints, and UI selection logic.
+7. Run the narrowest relevant checks from [references/repository-map.md](references/repository-map.md). A passing existing test suite does not override a demonstrated invariant violation. Report blocked or unavailable checks as NOT_PROVEN.
+8. Produce the result using [references/report-format.md](references/report-format.md). Every failure needs a stable invariant ID and concrete file-and-line evidence.
 
 ## Decision rules
 

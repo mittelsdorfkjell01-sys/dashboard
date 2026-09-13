@@ -10,6 +10,8 @@ Apply every affected invariant. Use PASS, FAIL, WARN, N/A, or NOT_PROVEN. Missin
 
 These are separate public products even when one product supplies evidence for another. A derived correction never turns a station observation into a forecast sample.
 
+Surfwinddata rule: Open-Meteo `current`, `minutely_15`, and `hourly` weather fields are model output. An endpoint or provider field named `current` does not make the value a station measurement; expose it as a model nowcast or forecast with honest capture-time-only provenance when no upstream run time is available.
+
 ## WIR-001 — Data-kind separation
 
 - Keep station measurement, LiveWind, and adaptive forecast as distinct data products.
@@ -17,6 +19,7 @@ These are separate public products even when one product supplies evidence for a
 - A station value must not overwrite model speed, gust, or direction while leaving model u/v, spread, trend, classification, timestamps, or confidence attached.
 - Measurement residuals may influence LiveWind or an adaptive forecast only through an explicitly versioned regional vector analysis with its own confidence and uncertainty.
 - Caches, serializers, schemas, and frontend normalization must preserve the distinction.
+- Public consumers must obey [display-contract.md](display-contract.md); product separation includes where a value may appear, not only its JSON type.
 - Fail hybrids and labels that imply a model value is measured, or a measurement is forecast.
 
 ## WIR-002 — No direct or future observation leakage into forecasts
@@ -51,15 +54,21 @@ An unknown model-run time remains unknown. Do not substitute generation time for
 
 ## WIR-005 — Station eligibility and weighting
 
-Apply before selection or influence:
+Every public station measurement must be:
 
 - active, approved, not blocked, representative, and acceptable provider quality;
 - observation fresh enough, not too far in the future, and within a documented maximum distance;
+- selected deterministically and tied to stable station identity.
+
+A dedicated station-measurement product may intentionally show one clearly identified station. That selection is not a regional analysis and must retain the station name/location, observation time, distance, quality, and source.
+
+When observations influence LiveWind, a regional forecast impulse, or calibration, also require:
+
 - age, distance, elevation difference, terrain similarity, coastal setting, wind sector, exposure, installation quality, and known station problems considered where available;
-- every available relevance dimension represented in weights when a station affects LiveWind, a regional forecast impulse, or calibration;
+- every available relevance dimension represented in the influence weights;
 - multiple observations selected deterministically, deduplicated, and tied to stable station identity.
 
-Stations must not overwrite one another. Conflicting eligible observations must reduce confidence or increase uncertainty instead of being hidden by winner-takes-all selection. Never rely on incidental database order. Verification and calibration station pools require the same explicit eligibility policy or a documented stricter one.
+Stations must not overwrite one another inside a computed product. Conflicting eligible observations must reduce confidence or increase uncertainty instead of being hidden by winner-takes-all selection. Never rely on incidental database order. Verification and calibration station pools require the same explicit eligibility policy or a documented stricter one.
 
 ## WIR-006 — Regional observation analysis and temporal decay
 
@@ -76,16 +85,16 @@ Mark this invariant N/A only when WIR-001 proves that no observation adjusts mod
 
 ## WIR-007 — Correction composition and double correction
 
-Maintain one ordered correction ledger for every served wind value. Name stages such as:
+Maintain one ordered correction ledger for every served wind value. Distinguish candidate construction from runtime application. Logical effects may include:
 
 1. model calibration;
-2. GWA/background bias;
-3. terrain or microscale transform;
-4. reviewed sector correction;
-5. manual override;
-6. live observation impulse.
+2. persistent local physics such as height, GWA/background bias, terrain, roughness, coast, valley, estuary, forest, or buildings;
+3. reviewed sector correction or manual override;
+4. current regional observation analysis or the corresponding decaying forecast impulse.
 
 Each physical effect may be applied once. A replacement must not stack with the stage it replaces. Intentional composition requires a versioned order plus full-pipeline tests that include an untouched baseline and an independent holdout. Public provenance must name the producer that actually created the value.
+
+Current Surfwinddata rule: `combined_correction` constructs one sector candidate from the GWA level prior and the microscale roughness/fetch prior. Their component provenance is not evidence that both were applied again at serving time. Once activated, the resolved sector correction is one runtime stage; fail any path that also reapplies either component independently.
 
 ## WIR-008 — Activation and governance
 
@@ -113,8 +122,10 @@ An immutable publication record must identify the exact served product, includin
 
 Verification rows must reference that publication identity and a fixed cohort. Do not call a cache timestamp a provider issue time. Distinguish a theoretical replay from a forecast proven to have been published.
 
+If an upstream provider does not expose issue/model-run time, persist `null`/unknown plus the real capture time and its quality instead of inventing a run time. Publication payload and lineage are immutable after activation; lifecycle flags such as `active` may change atomically. A served cold or fallback path must identify itself honestly and must not be treated as a historically published snapshot.
+
 ## WIR-010 — API/frontend contract equality
 
 Compare all four layers: serialized backend response/OpenAPI, frontend types, normalization/adapters, and rendered consumers/fixtures.
 
-Require equality for wind speed, gust, direction, u/v, data kind, provenance, timestamps, stale state, correction state, availability, and source maps. Fail a frontend field that is silently dropped, defaulted to a different meaning, or paired with a source/timestamp from another value. Prefer generated types or an automated structural comparison where practical.
+For every field declared or served by the affected product, require equality for wind speed, gust, direction, u/v, data kind, provenance, timestamps, stale state, correction state, availability, and source maps. Fail a frontend field that is silently dropped, defaulted to a different meaning, paired with a source/timestamp from another value, or rendered in a forbidden surface from [display-contract.md](display-contract.md). Prefer generated types or an automated structural comparison where practical.
