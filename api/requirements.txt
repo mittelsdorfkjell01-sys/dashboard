@@ -9,18 +9,18 @@
 # Keep this in sync with the runtime imports of app/ (minus the above).
 
 fastapi==0.141.1
-sqlalchemy==2.0.36
-geoalchemy2==0.16.0
-psycopg[binary]==3.2.3
-pydantic==2.10.4
-pydantic-settings==2.7.0
+sqlalchemy==2.0.52
+geoalchemy2==0.20.0
+psycopg[binary]==3.3.5
+pydantic==2.13.5
+pydantic-settings==2.15.0
 redis==5.2.1
-shapely==2.0.6
+shapely==2.1.2
 httpx==0.28.1
 python-multipart==0.0.32
 pillow==12.3.0
-pillow-avif-plugin==1.5.5
+pillow-avif-plugin==1.6.0
 bcrypt==5.0.0
 PyJWT==2.13.0
-email-validator==2.2.0
+email-validator==2.3.0
 numpy==2.4.6
