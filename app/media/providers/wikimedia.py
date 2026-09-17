@@ -41,6 +41,7 @@ _LICENSE_TERMS: dict[str, tuple[bool, bool]] = {
 }
 
 _IMAGE_NAMESPACE = 6
+SEARCH_THUMB_WIDTH = 480
 
 
 def _license_terms(short_name: str) -> tuple[bool, bool]:
@@ -83,6 +84,7 @@ class WikimediaAdapter:
                 "gsrnamespace": _IMAGE_NAMESPACE,
                 "gsrlimit": request.per_page,
                 "gsroffset": max(0, (request.page - 1) * request.per_page),
+                "iiurlwidth": SEARCH_THUMB_WIDTH,
             },
         )
         return [body]
@@ -100,6 +102,7 @@ class WikimediaAdapter:
                 "ggsradius": int(min(10_000, max(10, request.radius_km * 1000))),
                 "ggsnamespace": _IMAGE_NAMESPACE,
                 "ggslimit": request.per_page,
+                "iiurlwidth": SEARCH_THUMB_WIDTH,
             },
         )
         return [body]

@@ -109,6 +109,21 @@ def test_repeating_a_search_costs_one_upstream_request(db, monkeypatch, with_key
     assert first.items and first.items == second.items
 
 
+def test_wikimedia_resized_tiles_bypass_older_search_cache(db, monkeypatch):
+    old_key = budget_store.cache_key(
+        "wikimedia", "Tarifa", 1,
+        nearby=False, lat=None, lon=None, radius=None, per_page=24,
+    )
+    budget_store.cache_put(db, old_key, fixture("wikimedia_search.json"))
+    fake = CountingSearch(fixture("wikimedia_search.json"))
+    monkeypatch.setattr(wikimedia.ADAPTER, "search", fake)
+
+    media_search.search(db, provider="wikimedia", query="Tarifa")
+    media_search.search(db, provider="wikimedia", query="Tarifa")
+
+    assert fake.calls == 1
+
+
 def test_query_spelling_variants_share_one_cache_entry(db, monkeypatch, with_keys):
     fake = CountingSearch(fixture("unsplash_search.json"))
     monkeypatch.setattr(unsplash.ADAPTER, "search", fake)

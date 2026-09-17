@@ -22,6 +22,7 @@ from app.media.normalize import (
     hero_eligible,
 )
 from app.media.providers import openverse, pexels, unsplash, wikimedia
+from app.media.providers.base import ProviderRequest
 
 FIXTURES = Path(__file__).parent / "fixtures" / "media"
 
@@ -154,6 +155,26 @@ def test_wikimedia_normalises_a_cc_by_sa_file():
     assert photo.license.name == "CC BY-SA 4.0"
     assert photo.license.commercial and photo.license.modification
     assert photo.source_page.startswith("https://commons.wikimedia.org/")
+
+
+def test_wikimedia_search_requests_small_tiles_but_keeps_full_image_for_adoption(monkeypatch):
+    calls = []
+
+    def fake_get(url, *, params):
+        calls.append(params)
+        return load("wikimedia_search.json")[0]
+
+    monkeypatch.setattr(wikimedia, "http_get", fake_get)
+    request = ProviderRequest(query="Tarifa", lat=36.0, lon=-5.6)
+    photo = by_id(wikimedia.ADAPTER.parse(wikimedia.ADAPTER.search(request)), "45219876")
+    assert calls[0]["iiurlwidth"] == 480
+    assert photo.thumb_url != photo.full_url
+    assert photo.preview_url == photo.full_url
+
+    wikimedia.ADAPTER.search_nearby(request)
+    assert calls[1]["iiurlwidth"] == 480
+    wikimedia.ADAPTER.fetch("45219876")
+    assert "iiurlwidth" not in calls[2]
 
 
 def test_wikimedia_strips_html_from_the_author_field_server_side():

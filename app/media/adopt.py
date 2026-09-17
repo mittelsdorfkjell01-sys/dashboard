@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Callable
 
 from sqlalchemy import func, select
@@ -58,6 +59,16 @@ logger = logging.getLogger(__name__)
 ENTITY_TYPES = ("spot", "region")
 ROLES = ("hero", "gallery")
 ProgressCallback = Callable[[int, str], None]
+
+
+def _log_stage(result: MediaResult, role: str, stage: str, started: float) -> None:
+    elapsed_ms = (perf_counter() - started) * 1000
+    logger.log(
+        logging.WARNING if elapsed_ms >= 5_000 else logging.INFO,
+        "media adopt provider=%s external_id=%s role=%s stage=%s duration_ms=%.0f",
+        result.provider, result.external_id, role, stage,
+        elapsed_ms,
+    )
 
 
 class AdoptError(ValueError):
@@ -239,24 +250,43 @@ def _store_locally(
                     last_reported_mb = received_mb
                     progress(30, f"Originalbild: {received_mb} MB geladen…")
 
-            data = download_bytes(result.full_url, on_progress=download_progress)
-            progress(45, "Originalbild heruntergeladen. Bildgrößen werden erstellt…")
-            encoded = reencode_image_set(
-                data, max_width=max_width, quality=quality,
-                on_progress=lambda done, total: progress(
-                    45 + int(done / total * 35),
-                    f"Bildgröße {done} von {total} erstellt…",
-                ),
+            encode_progress = lambda done, total: progress(
+                45 + int(done / total * 35),
+                f"Bildgröße {done} von {total} erstellt…",
             )
         else:
-            data = download_bytes(result.full_url)
-            encoded = reencode_image_set(data, max_width=max_width, quality=quality)
+            download_progress = None
+            encode_progress = None
+
+        started = perf_counter()
+        try:
+            data = (
+                download_bytes(result.full_url, on_progress=download_progress)
+                if progress else download_bytes(result.full_url)
+            )
+        finally:
+            _log_stage(result, role, "download", started)
+        if progress:
+            progress(45, "Originalbild heruntergeladen. Bildgrößen werden erstellt…")
+        started = perf_counter()
+        try:
+            encoded = reencode_image_set(
+                data, max_width=max_width, quality=quality,
+                on_progress=encode_progress,
+            )
+        finally:
+            _log_stage(result, role, "encode", started)
     except ProviderError as exc:
         raise AdoptError(f"Bild konnte nicht geladen werden: {exc}")
     except HeroImageError as exc:
         raise AdoptError(str(exc))
 
-    acquire_image_set_lock(db, encoded)
+    started = perf_counter()
+    try:
+        acquire_image_set_lock(db, encoded)
+    finally:
+        _log_stage(result, role, "dedupe_lock", started)
+    started = perf_counter()
     try:
         url = save_responsive_image(
             None, encoded,
@@ -274,6 +304,8 @@ def _store_locally(
     except Exception:
         db.rollback()
         raise
+    finally:
+        _log_stage(result, role, "store", started)
     register_media_reference(db, url)
     return {
         "url": url,
@@ -290,6 +322,7 @@ def _prepare_file(
     """Either hotlink (Unsplash) or copy into our storage (everyone else)."""
     if result.delivery == "hotlinked":
         if result.provider == unsplash_module.ADAPTER.name:
+            started = perf_counter()
             try:
                 unsplash_module.ADAPTER.ping_download(result.unsplash_download_location)
             except ProviderError as exc:
@@ -297,6 +330,8 @@ def _prepare_file(
                 # smaller problem. Logged loudly because repeated failures do
                 # put API access at risk.
                 logger.warning("unsplash download ping failed for %s: %s", result.external_id, exc)
+            finally:
+                _log_stage(result, role, "unsplash_ping", started)
         if progress:
             progress(95, "Bildquelle verknüpft. Eintrag wird gespeichert…")
         return {
@@ -435,7 +470,16 @@ def adopt(
         raise AdoptError(f"Unbekannte Rolle: {role}")
 
     entity = _load_entity(db, entity_type, entity_id)
-    result = _resolve(db, provider, external_id)
+    started = perf_counter()
+    try:
+        result = _resolve(db, provider, external_id)
+    finally:
+        elapsed_ms = (perf_counter() - started) * 1000
+        logger.log(
+            logging.WARNING if elapsed_ms >= 5_000 else logging.INFO,
+            "media adopt provider=%s external_id=%s role=%s stage=resolve duration_ms=%.0f",
+            provider, external_id, role, elapsed_ms,
+        )
     if progress:
         progress(15, "Bildquelle geprüft…")
     warnings = _check_gate(result, role)
@@ -548,6 +592,7 @@ def adopt(
         entity_id=entity.id,
         role=role,
     )
+    started = perf_counter()
     try:
         db.commit()
     except Exception:
@@ -555,6 +600,8 @@ def adopt(
         if stored["delivery"] == "hosted":
             purge_if_unreferenced(db, stored["url"])
         raise
+    finally:
+        _log_stage(result, role, "commit", started)
     if progress:
         progress(100, "Hero-Bild übernommen." if role == "hero" else "Galeriebild übernommen.")
     return outcome

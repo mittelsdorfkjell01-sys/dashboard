@@ -81,6 +81,11 @@ def _fetch_raw(
         lon=round(request.lon, 3) if nearby and request.lon is not None else None,
         radius=request.radius_km if nearby else None,
         per_page=request.per_page,
+        # Wikimedia's older cached payloads have no generated thumburl. Give
+        # the resized search format its own key so the smaller tiles take
+        # effect immediately after deployment rather than after the 24 h TTL.
+        **({"thumbnail_width": wikimedia_module.SEARCH_THUMB_WIDTH}
+           if provider_key == wikimedia_module.ADAPTER.name else {}),
     )
     cached = budget_store.cache_get(db, key)
     if cached is not None:

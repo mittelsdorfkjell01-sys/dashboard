@@ -97,7 +97,7 @@ def _encode_pillow_image(img, *, quality: int) -> tuple[bytes, str]:
             out,
             format="AVIF",
             quality=quality,
-            speed=4,
+            speed=6,
             subsampling="4:2:0",
             **save_kwargs,
         )
