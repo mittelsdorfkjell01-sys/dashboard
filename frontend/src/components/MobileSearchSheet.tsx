@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import {
-  AnimatePresence,
-  motion,
-  useDragControls,
-  useReducedMotion,
-} from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   CloseIcon,
   KitesurfIcon,
@@ -40,14 +35,15 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
   { value: "wing", Icon: WingIcon },
 ];
 
-// The whole sheet rides up (and snaps back on a swipe-down) on one long, calm
-// easeOut. It is a plain GPU transform with no competing child animations, so
-// the bottom-to-top open glides at a steady 60fps instead of the old spring +
-// staggered-tile entrance, which repainted every shadowed tile mid-slide and
-// made the motion stutter. Curve matches the tile-expand easing already used
-// below, so every motion in the sheet reads as one material.
-const SHEET_EASE = [0.22, 1, 0.36, 1] as const;
-const SHEET_SLIDE = { type: "tween" as const, duration: 0.44, ease: SHEET_EASE };
+// The whole sheet rides up (and snaps back on a swipe-down) on one native CSS
+// transform transition — NOT a framer animation. A framer `drag` element is
+// pinned to the JS engine and animates transform on the main thread, which on
+// iOS Safari drops to well under 60fps whenever the thread is busy (the "too
+// few frames" feel). A CSS `transition: transform` runs on the compositor
+// instead, so the slide stays smooth regardless of main-thread load. The drag
+// itself is a few pointer handlers below.
+const SHEET_SLIDE_MS = 460;
+const SHEET_EASE_CSS = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /** A place suggestion, flattened for the mobile single-column list. */
 interface WhereRowItem {
@@ -92,6 +88,15 @@ export default function MobileSearchSheet({
   const [whenTab, setWhenTab] = useState<WhenTab>("date");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Native-CSS slide state (see SHEET_SLIDE_MS). `mounted` keeps the node in the
+  // DOM through the close animation; `slidIn` toggles the transform a frame
+  // after mount so the transition actually runs; `dragging` cuts the transition
+  // while a finger is driving the sheet directly.
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(open);
+  const [slidIn, setSlidIn] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   // Lock body scroll while open; move focus into the modal, contain keyboard
   // navigation, support Esc, and return focus to the control that opened it.
@@ -148,6 +153,38 @@ export default function MobileSearchSheet({
       void import("../pages/SearchResults").catch(() => undefined);
     }
   }, [open]);
+
+  // Mount on open; on close, slide out first and only then unmount and hand
+  // focus back to the control that opened the sheet (replaces framer's
+  // AnimatePresence exit + onExitComplete).
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    setSlidIn(false);
+    const previous = previousFocusRef.current;
+    const timer = window.setTimeout(() => {
+      setMounted(false);
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    }, reduce ? 160 : SHEET_SLIDE_MS);
+    return () => window.clearTimeout(timer);
+  }, [open, reduce]);
+
+  // Once the node is mounted for an open sheet, flip to the slid-in transform on
+  // a later frame (double rAF) so the browser paints the off-screen start state
+  // first and the transition animates instead of jumping.
+  useEffect(() => {
+    if (!mounted || !open) return;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setSlidIn(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner) cancelAnimationFrame(inner);
+    };
+  }, [mounted, open]);
 
   // Place data — fetched only while the sheet is engaged.
   const enabled = open && (section === "where" || val.whereText.trim().length > 0);
@@ -228,31 +265,74 @@ export default function MobileSearchSheet({
   const whereValue =
     val.whereSel?.label || val.whereText || (val.whereOpen ? "Überall" : "");
 
-  // Swipe-to-close: dragging the grab handle drives the sheet's y. The scrolling
-  // body below hands the same gesture off to the sheet once it is scrolled to
-  // the very top and the thumb travels downward — so a natural pull-down closes
-  // the mask from anywhere, while an upward swipe still scrolls the tiles.
-  const dragControls = useDragControls();
-  const bodyDragStartY = useRef<number | null>(null);
-  const bodyDragging = useRef(false);
+  // Swipe-to-close, hand-rolled so the sheet transform stays under our control
+  // (framer's drag would re-pin it to the JS engine). Dragging the grab handle
+  // or the header drives the sheet 1:1; the scrolling body hands the gesture off
+  // once it is scrolled to the very top and the thumb travels clearly downward,
+  // so a natural pull-down closes the mask from anywhere while an upward swipe
+  // still scrolls the tiles. Moves are applied imperatively (no React re-render
+  // per frame) so the follow is as smooth as the slide.
+  const dragRef = useRef({ startY: 0, lastY: 0, lastT: 0, vy: 0, active: false });
+  const bodyStart = useRef<{ y: number; id: number } | null>(null);
+
+  const beginDrag = (clientY: number, el: HTMLElement, pointerId: number) => {
+    dragRef.current = { startY: clientY, lastY: clientY, lastT: performance.now(), vy: 0, active: true };
+    // Kill the transition immediately (not only once React commits `dragging`)
+    // so the very first move follows the finger instead of easing after it.
+    if (sheetRef.current) sheetRef.current.style.transition = "none";
+    setDragging(true);
+    try {
+      el.setPointerCapture(pointerId);
+    } catch {
+      /* Safari < 16 without capture still works via the element's own events. */
+    }
+  };
+  const moveDrag = (clientY: number) => {
+    const d = dragRef.current;
+    if (!d.active) return;
+    const now = performance.now();
+    const dt = now - d.lastT;
+    if (dt > 0) d.vy = (clientY - d.lastY) / dt; // px/ms, for a flick check
+    d.lastY = clientY;
+    d.lastT = now;
+    if (sheetRef.current) sheetRef.current.style.transform = `translateY(${Math.max(0, clientY - d.startY)}px)`;
+  };
+  const endDrag = () => {
+    const d = dragRef.current;
+    if (!d.active) return;
+    d.active = false;
+    const dy = d.lastY - d.startY;
+    const closing = dy > 120 || (dy > 40 && d.vy > 0.5);
+    if (closing) {
+      // Slide out from where the finger left off (no jump back to 0 first).
+      setSlidIn(false);
+      onClose();
+    } else if (reduce && sheetRef.current) {
+      sheetRef.current.style.transform = ""; // reduced motion: reset instantly
+    }
+    // Re-render re-enables the transition; for full motion this animates the
+    // snap-back (finger → 0) or the slide-out (finger → 100%) on the compositor.
+    setDragging(false);
+  };
+
   const onBodyPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    bodyDragStartY.current = e.clientY;
-    bodyDragging.current = false;
+    bodyStart.current = { y: e.clientY, id: e.pointerId };
   };
   const onBodyPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (bodyDragging.current || bodyDragStartY.current === null) return;
-    const dy = e.clientY - bodyDragStartY.current;
-    // Only at the top of the list, and only on a clear downward pull (a margin
-    // wide enough that a shaky tap on a tile isn't mistaken for a drag), does
-    // the gesture become a close — otherwise the browser keeps it a normal scroll.
-    if (e.currentTarget.scrollTop <= 0 && dy > 14) {
-      bodyDragging.current = true;
-      dragControls.start(e);
+    if (dragRef.current.active) {
+      moveDrag(e.clientY);
+      return;
+    }
+    const bs = bodyStart.current;
+    if (!bs) return;
+    if (e.currentTarget.scrollTop <= 0 && e.clientY - bs.y > 14) {
+      beginDrag(bs.y, e.currentTarget, bs.id);
+      moveDrag(e.clientY);
     }
   };
   const onBodyPointerEnd = () => {
-    bodyDragStartY.current = null;
-    bodyDragging.current = false;
+    bodyStart.current = null;
+    endDrag();
   };
   // Delayed autofocus + auto-scroll refs.
   const whereInputRef = useRef<HTMLInputElement>(null);
@@ -276,44 +356,41 @@ export default function MobileSearchSheet({
     return () => window.clearTimeout(t);
   }, [open, section]);
 
+  if (!mounted) return null;
+
+  // Compositor-driven slide: transform (or opacity, reduced motion) is toggled
+  // by `slidIn`; the transition is cut while a finger is dragging.
+  const sheetStyle: React.CSSProperties = reduce
+    ? {
+        willChange: "opacity",
+        transition: dragging ? "none" : "opacity 150ms ease-out",
+        opacity: slidIn ? 1 : 0,
+      }
+    : {
+        willChange: "transform",
+        transition: dragging ? "none" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`,
+        transform: slidIn ? "translateY(0)" : "translateY(100%)",
+      };
+
   return createPortal(
-    <AnimatePresence
-      onExitComplete={() => {
-        const previous = previousFocusRef.current;
-        if (previous?.isConnected) previous.focus({ preventScroll: true });
-      }}
+    <div
+      ref={sheetRef}
+      id="mobile-search-dialog"
+      className="fixed inset-0 z-[1300] flex flex-col bg-page"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Suche"
+      tabIndex={-1}
+      style={sheetStyle}
     >
-      {open && (
-        <motion.div
-          id="mobile-search-dialog"
-          key="sheet"
-          className="fixed inset-0 z-[1300] flex flex-col bg-page"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Suche"
-          tabIndex={-1}
-          // Promote to its own layer up front so the first slide frame doesn't
-          // pay for a paint-to-composite hand-off (a common cause of the hitch).
-          style={{ willChange: "transform" }}
-          initial={reduce ? { opacity: 0 } : { y: "100%" }}
-          animate={reduce ? { opacity: 1 } : { y: 0 }}
-          exit={reduce ? { opacity: 0 } : { y: "100%" }}
-          transition={reduce ? { duration: 0.15 } : SHEET_SLIDE}
-          drag="y"
-          dragListener={false}
-          dragControls={dragControls}
-          dragConstraints={{ top: 0 }}
-          dragElastic={{ top: 0, bottom: 0.2 }}
-          dragSnapToOrigin
-          onDragEnd={(_, info) => {
-            if (info.offset.y > 120 || info.velocity.y > 600) onClose();
-          }}
-        >
           {/* Grab handle — swipe down to close. */}
           <div
             className="flex cursor-grab justify-center pt-2 active:cursor-grabbing"
             style={{ touchAction: "none" }}
-            onPointerDown={(e) => dragControls.start(e)}
+            onPointerDown={(e) => beginDrag(e.clientY, e.currentTarget, e.pointerId)}
+            onPointerMove={(e) => moveDrag(e.clientY)}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
           >
             <span className="h-1.5 w-10 rounded-full bg-line" />
           </div>
@@ -324,7 +401,10 @@ export default function MobileSearchSheet({
           <div
             className="flex items-center gap-3 px-4 py-3"
             style={{ touchAction: "none" }}
-            onPointerDown={(e) => dragControls.start(e)}
+            onPointerDown={(e) => beginDrag(e.clientY, e.currentTarget, e.pointerId)}
+            onPointerMove={(e) => moveDrag(e.clientY)}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
           >
             <button
               ref={closeButtonRef}
@@ -332,7 +412,10 @@ export default function MobileSearchSheet({
               onClick={onClose}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label="Schließen"
-              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"
+              // focus-visible only: the sheet moves focus here programmatically
+              // on open, and on touch that must NOT paint an outline (the stray
+              // "stroke" around the ✕). Keyboard users still get a clear ring.
+              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               <CloseIcon className="text-body" />
             </button>
@@ -515,9 +598,7 @@ export default function MobileSearchSheet({
               </motion.button>
             </div>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>,
+    </div>,
     document.body
   );
 }

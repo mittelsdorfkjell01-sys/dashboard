@@ -186,7 +186,7 @@ export default function LandingHeader({
               onClick={(event) => onMobileSearch(event.currentTarget)}
               aria-label="Suche öffnen"
               style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
-              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink transition-opacity duration-150 active:scale-[0.97] sm:hidden"
+              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink transition-opacity duration-150 active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:hidden"
             >
               <SearchIcon className="text-sz-18" />
             </button>

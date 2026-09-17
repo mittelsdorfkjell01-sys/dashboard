@@ -73,6 +73,12 @@ html[data-theme="dark"] { color-scheme: dark; }
    boxes, unaffected by this root clip. */
 #root { overflow-x: clip; }
 
+/* No grey tap-flash on iOS/Android taps — every control already gives its own
+   press feedback (active:scale / hover), so the default highlight just reads as
+   a smear during quick interactions. Inherited, so setting it on the root is
+   enough. */
+html { -webkit-tap-highlight-color: transparent; }
+
 /* Full-width backdrop sampling is costly while mobile browser chrome and the
    page are moving together. Touch headers use the same opaque surface without
    changing their layout or interaction model. */
