@@ -344,7 +344,11 @@ export default function MobileSearchSheet({
           <div
             data-lenis-prevent
             className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
-            style={{ overscrollBehaviorY: "contain" }}
+            // Give the scrolling region its own compositor layer (translateZ)
+            // so the sheet's slide-up stays a pure GPU transform on iOS instead
+            // of repainting this scroll subtree each frame; `contain` also keeps
+            // its overscroll from chaining into the page behind.
+            style={{ overscrollBehaviorY: "contain", transform: "translateZ(0)" }}
             onPointerDown={onBodyPointerDown}
             onPointerMove={onBodyPointerMove}
             onPointerUp={onBodyPointerEnd}

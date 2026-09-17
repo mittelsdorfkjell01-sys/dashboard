@@ -63,12 +63,15 @@ html[data-theme="dark"] { color-scheme: dark; }
 
 /* The page scrolls only vertically. Any stray element wider than the viewport
    (a full-bleed hero, an off-canvas sheet mid-animation, a rounded overshoot)
-   is clipped rather than opening a sideways scroll. `clip` — not `hidden` — so
-   no new scroll container is created: vertical scrolling and `position: sticky`
-   keep working, and Lenis' <html> scroller is untouched. Inner components that
-   genuinely need to pan sideways (meteogram tables, chip rails) keep their own
-   `overflow-x:auto` boxes, which are unaffected by this root clip. */
-html, body { overflow-x: clip; }
+   is clipped rather than opening a sideways scroll. The clip lives on the app
+   mount (#root), NOT on html/body: clipping the viewport scroller itself drops
+   iOS Safari onto a non-accelerated scroll path and stutters momentum, whereas
+   #root grows with content while the document keeps scrolling normally. `clip`
+   — not `hidden` — creates no scroll container, so vertical scrolling and
+   `position: sticky` keep working. Inner components that genuinely need to pan
+   sideways (meteogram tables, chip rails) keep their own `overflow-x:auto`
+   boxes, unaffected by this root clip. */
+#root { overflow-x: clip; }
 
 /* Full-width backdrop sampling is costly while mobile browser chrome and the
    page are moving together. Touch headers use the same opaque surface without

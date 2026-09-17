@@ -174,7 +174,12 @@ export default function Landing() {
           No `isolate` here — an isolated stacking context would trap the search
           bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
           hit the scrim and close instead of switching the panel. */}
-      <section className="relative flex min-h-[92dvh] flex-col overflow-hidden sm:min-h-[100dvh]">
+      {/* `svh`, not `dvh`: the small-viewport height is fixed, so when iOS
+          Safari's URL bar collapses on scroll the hero does NOT grow and its
+          object-cover crop does NOT rescale — the photo stays steady (no
+          zoom-in) and the page stops reflowing every scroll frame (no stutter).
+          The old `dvh` recalculated continuously as the chrome animated. */}
+      <section className="relative flex min-h-[92svh] flex-col overflow-hidden sm:min-h-[100svh]">
         <LandingHero spots={spots} />
 
         <h1 className="sr-only">
