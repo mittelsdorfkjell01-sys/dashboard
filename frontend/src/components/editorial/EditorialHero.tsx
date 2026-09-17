@@ -17,6 +17,7 @@ import { hasCredit, type CreditSource } from "../../lib/imageCredit";
  */
 export default function EditorialHero({
   image,
+  fallbackImage,
   focal,
   focalMobile,
   rotation,
@@ -33,6 +34,7 @@ export default function EditorialHero({
   onImageClick,
 }: {
   image?: string | null;
+  fallbackImage?: string;
   focal?: { x: number; y: number } | null;
   focalMobile?: { x: number; y: number } | null;
   rotation?: number;
@@ -87,6 +89,7 @@ export default function EditorialHero({
         >
           <HeroImage
             src={image}
+            fallbackSrc={fallbackImage}
             alt={alt}
             focal={focal}
             focalMobile={focalMobile}

@@ -89,8 +89,12 @@ export default function HeroImage({
   priority?: boolean;
 }) {
   const isMobile = useMobileViewport();
+  const [imageAttempt, setImageAttempt] = useState<"primary" | "fallback" | "failed">("primary");
+  useEffect(() => setImageAttempt("primary"), [src, fallbackSrc]);
+  const useFallback = imageAttempt === "fallback" && Boolean(fallbackSrc);
+  const displayedSrc = useFallback ? fallbackSrc! : src;
   const activeFocal = isMobile && focalMobile ? focalMobile : focal;
-  const entry = src.startsWith("/") ? heroManifest[keyFromSrc(src)] : undefined;
+  const entry = !useFallback && src.startsWith("/") ? heroManifest[keyFromSrc(src)] : undefined;
   const safeRotation = Math.max(-5, Math.min(5, rotation));
   const style = {
     ...(activeFocal ? { objectPosition: objectPosition(activeFocal) } : {}),
@@ -99,21 +103,33 @@ export default function HeroImage({
       : undefined,
   };
 
-  const onError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (fallbackSrc && e.currentTarget.src !== fallbackSrc) {
-      e.currentTarget.src = fallbackSrc;
-    }
+  const onError = () => {
+    setImageAttempt((current) =>
+      current === "primary" && fallbackSrc && fallbackSrc !== src ? "fallback" : "failed"
+    );
   };
+
+  if (imageAttempt === "failed") {
+    return (
+      <div
+        role="img"
+        aria-label={alt || "Bild nicht verfügbar"}
+        className={`${className ?? ""} grid place-items-center bg-ink px-4 text-center text-caption text-white/80`}
+      >
+        Bild nicht verfügbar
+      </div>
+    );
+  }
 
   // Hotlinked: no local variants exist, but the provider's CDN resizes for us,
   // so the browser still downloads a right-sized file instead of a 6000px original.
-  const cdnSrcSet = delivery === "hotlinked" ? hotlinkSrcSet(src, provider) : undefined;
-  const storedSrcSet = delivery !== "hotlinked" ? hostedSrcSet(src, width) : undefined;
+  const cdnSrcSet = !useFallback && delivery === "hotlinked" ? hotlinkSrcSet(src, provider) : undefined;
+  const storedSrcSet = !useFallback && delivery !== "hotlinked" ? hostedSrcSet(src, width) : undefined;
   const dynamicSrcSet = cdnSrcSet ?? storedSrcSet;
   if (dynamicSrcSet) {
     return (
       <img
-        src={src}
+        src={displayedSrc}
         srcSet={dynamicSrcSet}
         sizes="100vw"
         alt={alt}
@@ -128,7 +144,7 @@ export default function HeroImage({
   }
 
   if (!entry) {
-    return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={className} style={style} onError={onError} />;
+    return <img src={displayedSrc} alt={alt} loading={priority ? "eager" : "lazy"} {...fetchPriorityAttribute(priority)} decoding="async" className={className} style={style} onError={onError} />;
   }
 
   const key = keyFromSrc(src);

@@ -388,6 +388,61 @@ test.describe("media picker", () => {
     }
   });
 
+  test("Wikimedia photos remain visible when direct image requests are blocked", async ({ page }) => {
+    const thumbnail = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/photo.jpg/500px-photo.jpg";
+    const original = "https://upload.wikimedia.org/wikipedia/commons/a/a1/photo.jpg";
+    const image = {
+      ...UNSPLASH_ITEM,
+      provider: "wikimedia",
+      external_id: "45219876",
+      thumb_url: thumbnail,
+      preview_url: original,
+      full_url: original,
+      delivery: "hosted",
+    };
+    let proxied = 0;
+    await page.route("**/admin/media/search**", (route) => {
+      if (new URL(route.request().url()).searchParams.get("provider") !== "wikimedia") {
+        return route.fallback();
+      }
+      return route.fulfill({
+        json: {
+          provider: "wikimedia", status: "ok", items: [image], total: 1, page: 1,
+          meta: { cached: false, budget: null, message: null },
+        },
+      });
+    });
+    await page.route("https://upload.wikimedia.org/**", (route) =>
+      route.fulfill({ status: 403, contentType: "text/plain", body: "blocked" })
+    );
+    await page.route("**/admin/media/thumbnail**", (route) => {
+      proxied += 1;
+      return route.fulfill({
+        contentType: "image/png",
+        body: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAAD0lEQVR4nGPkqrjEwMAAAAXqAVYVfiwaAAAAAElFTkSuQmCC",
+          "base64",
+        ),
+      });
+    });
+
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+    await page.getByRole("button", { name: "Bild suchen" }).first().click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /Wikimedia \(1\)/ }).click();
+    const tile = dialog.getByRole("listbox", { name: "Suchergebnisse" }).getByRole("button").first();
+    await expect(tile.locator("img")).toHaveAttribute("src", /\/admin\/media\/thumbnail\?/);
+    await expect.poll(() => tile.locator("img").evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
+
+    await tile.click();
+    const preview = dialog.locator("aside img").first();
+    await expect(preview).toHaveAttribute("src", /\/admin\/media\/thumbnail\?/);
+    await expect.poll(() => preview.evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
+    expect(proxied).toBeGreaterThan(0);
+  });
+
   test("chip → tile → adopt writes a canonical hero and shows it", async ({ page }) => {
     adoptDelayMs = 350;
     await page.goto(`/admin/spot/${SPOT_ID}/edit`);

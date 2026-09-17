@@ -18,6 +18,9 @@ import queue
 import threading
 import uuid
 from collections.abc import Callable, Iterator
+from urllib.parse import urlsplit
+
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
@@ -25,6 +28,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.auth.deps import require_role
+from app.config import get_settings
 from app.db.session import SessionLocal, get_db
 from app.media import adopt as media_adopt
 from app.media import gallery as media_gallery
@@ -40,6 +44,62 @@ router = APIRouter(
     tags=["admin-media"],
     dependencies=[Depends(require_role("admin", "curator"))],
 )
+
+_WIKIMEDIA_THUMB_MAX_BYTES = 8 * 1024 * 1024
+_THUMB_MIME_TYPES = {
+    "image/jpeg", "image/png", "image/webp", "image/avif", "image/gif",
+}
+
+
+@router.get("/thumbnail")
+def wikimedia_thumbnail(url: str = Query(..., max_length=2048)) -> Response:
+    """Serve Commons thumbnails with our descriptive User-Agent when hotlinks fail."""
+    try:
+        parsed = urlsplit(url)
+        allowed = (
+            parsed.scheme == "https"
+            and parsed.hostname == "upload.wikimedia.org"
+            and parsed.port is None
+            and parsed.username is None
+            and parsed.password is None
+            and parsed.path.startswith("/wikipedia/commons/thumb/")
+            and not parsed.query
+            and not parsed.fragment
+        )
+    except ValueError:
+        allowed = False
+    if not allowed:
+        raise HTTPException(status_code=400, detail="Ungültige Wikimedia-Vorschau-URL.")
+
+    try:
+        with httpx.stream(
+            "GET", url,
+            headers={"User-Agent": get_settings().wikimedia_user_agent},
+            timeout=15.0,
+            follow_redirects=False,
+        ) as upstream:
+            upstream.raise_for_status()
+            mime = upstream.headers.get("content-type", "").split(";", 1)[0].lower()
+            if mime not in _THUMB_MIME_TYPES:
+                raise HTTPException(status_code=502, detail="Bildformat der Vorschau ist nicht verfügbar.")
+            length = upstream.headers.get("content-length", "")
+            if length.isdigit() and int(length) > _WIKIMEDIA_THUMB_MAX_BYTES:
+                raise HTTPException(status_code=502, detail="Vorschaubild ist zu groß.")
+            chunks: list[bytes] = []
+            total = 0
+            for chunk in upstream.iter_bytes(64 * 1024):
+                total += len(chunk)
+                if total > _WIKIMEDIA_THUMB_MAX_BYTES:
+                    raise HTTPException(status_code=502, detail="Vorschaubild ist zu groß.")
+                chunks.append(chunk)
+    except httpx.HTTPError as exc:
+        logger.warning("Wikimedia thumbnail request failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Vorschaubild konnte nicht geladen werden.") from exc
+
+    return Response(
+        content=b"".join(chunks), media_type=mime,
+        headers={"Cache-Control": "private, max-age=86400", "X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.get("/search")

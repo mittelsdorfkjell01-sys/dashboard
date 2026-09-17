@@ -51,6 +51,15 @@ export function resolveMediaUrl(url?: string | null): string | undefined {
   return url;
 }
 
+/** Commons thumbnails may reject direct browser hotlinks; fetch them through
+ * the admin API, which sends Wikimedia's required descriptive User-Agent. */
+export function mediaThumbnailUrl(item: Pick<MediaItem, "provider" | "thumb_url">): string {
+  if (item.provider !== "wikimedia") return item.thumb_url;
+  return resolveMediaUrl(
+    `/admin/media/thumbnail?url=${encodeURIComponent(item.thumb_url)}`,
+  ) ?? item.thumb_url;
+}
+
 /** Seed rows carry an unreachable `*.local` sentinel host. */
 const SENTINEL_HOST = /^https?:\/\/[^/]+\.local\b/i;
 

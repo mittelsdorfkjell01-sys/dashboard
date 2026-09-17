@@ -7,6 +7,7 @@
 
 import { useRef } from "react";
 import EditorialHero from "../../editorial/EditorialHero";
+import { mediaThumbnailUrl } from "../../../lib/api";
 import { focalFromPoint, type MediaItem } from "../../../lib/mediaPicker";
 import type { CreditSource } from "../../../lib/imageCredit";
 
@@ -36,6 +37,7 @@ export default function PreviewPanel({
     license: item.license.name,
     licenseUrl: item.license.url,
   };
+  const fallbackImage = mediaThumbnailUrl(item);
 
   const pick = (container: HTMLDivElement | null) => (event: React.MouseEvent) => {
     if (!container) return;
@@ -54,6 +56,7 @@ export default function PreviewPanel({
         <div ref={desktopRef} className="mt-2 overflow-hidden rounded-lg">
           <EditorialHero
             image={item.preview_url}
+            fallbackImage={fallbackImage}
             focal={focal}
             alt={title}
             credit={credit}
@@ -73,6 +76,7 @@ export default function PreviewPanel({
         >
           <EditorialHero
             image={item.preview_url}
+            fallbackImage={fallbackImage}
             focal={focal}
             alt={title}
             credit={credit}
