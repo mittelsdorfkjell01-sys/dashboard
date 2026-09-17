@@ -40,14 +40,14 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
   { value: "wing", Icon: WingIcon },
 ];
 
-// One shared spring so every motion in the sheet feels of a piece.
-const SPRING = { type: "spring" as const, stiffness: 420, damping: 34, mass: 0.9 };
-// Staggered tile entrance on open.
-const TILES = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } } };
-const TILE = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: SPRING },
-};
+// The whole sheet rides up (and snaps back on a swipe-down) on one long, calm
+// easeOut. It is a plain GPU transform with no competing child animations, so
+// the bottom-to-top open glides at a steady 60fps instead of the old spring +
+// staggered-tile entrance, which repainted every shadowed tile mid-slide and
+// made the motion stutter. Curve matches the tile-expand easing already used
+// below, so every motion in the sheet reads as one material.
+const SHEET_EASE = [0.22, 1, 0.36, 1] as const;
+const SHEET_SLIDE = { type: "tween" as const, duration: 0.44, ease: SHEET_EASE };
 
 /** A place suggestion, flattened for the mobile single-column list. */
 interface WhereRowItem {
@@ -228,8 +228,32 @@ export default function MobileSearchSheet({
   const whereValue =
     val.whereSel?.label || val.whereText || (val.whereOpen ? "Überall" : "");
 
-  // Swipe-to-close: dragging the grab handle drives the sheet's y.
+  // Swipe-to-close: dragging the grab handle drives the sheet's y. The scrolling
+  // body below hands the same gesture off to the sheet once it is scrolled to
+  // the very top and the thumb travels downward — so a natural pull-down closes
+  // the mask from anywhere, while an upward swipe still scrolls the tiles.
   const dragControls = useDragControls();
+  const bodyDragStartY = useRef<number | null>(null);
+  const bodyDragging = useRef(false);
+  const onBodyPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    bodyDragStartY.current = e.clientY;
+    bodyDragging.current = false;
+  };
+  const onBodyPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (bodyDragging.current || bodyDragStartY.current === null) return;
+    const dy = e.clientY - bodyDragStartY.current;
+    // Only at the top of the list, and only on a clear downward pull (a margin
+    // wide enough that a shaky tap on a tile isn't mistaken for a drag), does
+    // the gesture become a close — otherwise the browser keeps it a normal scroll.
+    if (e.currentTarget.scrollTop <= 0 && dy > 14) {
+      bodyDragging.current = true;
+      dragControls.start(e);
+    }
+  };
+  const onBodyPointerEnd = () => {
+    bodyDragStartY.current = null;
+    bodyDragging.current = false;
+  };
   // Delayed autofocus + auto-scroll refs.
   const whereInputRef = useRef<HTMLInputElement>(null);
 
@@ -268,10 +292,13 @@ export default function MobileSearchSheet({
           aria-modal="true"
           aria-label="Suche"
           tabIndex={-1}
+          // Promote to its own layer up front so the first slide frame doesn't
+          // pay for a paint-to-composite hand-off (a common cause of the hitch).
+          style={{ willChange: "transform" }}
           initial={reduce ? { opacity: 0 } : { y: "100%" }}
           animate={reduce ? { opacity: 1 } : { y: 0 }}
           exit={reduce ? { opacity: 0 } : { y: "100%" }}
-          transition={reduce ? { duration: 0.15 } : SPRING}
+          transition={reduce ? { duration: 0.15 } : SHEET_SLIDE}
           drag="y"
           dragListener={false}
           dragControls={dragControls}
@@ -314,15 +341,18 @@ export default function MobileSearchSheet({
 
           {/* Tiles — top-aligned; content sizes to itself and the whole area
               scrolls, so nothing lives in a cramped inner scroll box. */}
-          <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-            <motion.div
-              variants={TILES}
-              initial={reduce ? false : "hidden"}
-              animate="show"
-              className="mx-auto flex w-full max-w-[520px] flex-col gap-3"
-            >
+          <div
+            data-lenis-prevent
+            className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
+            style={{ overscrollBehaviorY: "contain" }}
+            onPointerDown={onBodyPointerDown}
+            onPointerMove={onBodyPointerMove}
+            onPointerUp={onBodyPointerEnd}
+            onPointerCancel={onBodyPointerEnd}
+          >
+            <div className="mx-auto flex w-full max-w-[520px] flex-col gap-3">
               {/* Wohin? */}
-              <motion.div variants={TILE} id="msheet-where">
+              <div id="msheet-where">
               <Section
                 label="Wohin?"
                 value={whereValue}
@@ -381,10 +411,10 @@ export default function MobileSearchSheet({
                   )}
                 </div>
               </Section>
-              </motion.div>
+              </div>
 
               {/* Wann? — the Datum/flexibel toggle sits in the tile header. */}
-              <motion.div variants={TILE} id="msheet-when">
+              <div id="msheet-when">
               <Section
                 label="Wann?"
                 value={whenLabel(val.when)}
@@ -403,10 +433,10 @@ export default function MobileSearchSheet({
                   }}
                 />
               </Section>
-              </motion.div>
+              </div>
 
               {/* Welche Sportart? */}
-              <motion.div variants={TILE} id="msheet-which">
+              <div id="msheet-which">
               <Section
                 label="Welche Sportart?"
                 value={val.which.map(sportLabel).join(", ")}
@@ -456,8 +486,8 @@ export default function MobileSearchSheet({
                   })}
                 </div>
               </Section>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
 
           {/* Actions — a text-link clear + a filled primary search button. */}

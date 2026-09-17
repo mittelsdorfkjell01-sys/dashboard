@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, useTransition } from "react";
 import LandingHeader from "../components/LandingHeader";
 import LandingHero from "../components/LandingHero";
 import MobileSearchTrigger from "../components/MobileSearchTrigger";
@@ -14,6 +14,11 @@ import { useDesktopViewport } from "../lib/useAutoHideHeader";
 const SearchBar = lazy(() => import("../components/SearchBar"));
 const MobileSearchSheet = lazy(() => import("../components/MobileSearchSheet"));
 const CATALOG_POLL_MS = 60_000;
+// "Alle Spots anzeigen" used to jump the grid from 20 to the full catalogue
+// (up to 500 cards) in a single render — a long synchronous mount/layout that
+// froze the tap for a second or more. Reveal one screen's worth at a time
+// instead and let the rest stream in on scroll, so each step stays cheap.
+const SPOT_REVEAL_STEP = 40;
 
 /**
  * "surfwind data" landing. Two parts that flow into each other on scroll:
@@ -28,6 +33,11 @@ export default function Landing() {
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
   const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
+  // Once the visitor opts into the full catalogue, further batches stream in as
+  // they scroll toward the end (see the sentinel effect below).
+  const [browseAll, setBrowseAll] = useState(false);
+  const [, startRevealTransition] = useTransition();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   // Mobile search sheet (Airbnb-style full-screen flow); desktop keeps the
   // inline SearchBar dropdown. The sheet is a full-screen overlay that locks
   // body scroll while open, so we deliberately do NOT scroll to the top when
@@ -45,6 +55,23 @@ export default function Landing() {
     setMobileSearchLoaded(true);
     setSearchOpen(true);
   };
+
+  // Warm the search-sheet chunk on idle so the first tap — from the hero pill or
+  // the docked header lupe — opens instantly, with no lazy-chunk stall before
+  // the slide-up begins.
+  useEffect(() => {
+    const preload = () => void import("../components/MobileSearchSheet");
+    const idle = window as typeof window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (idle.requestIdleCallback) {
+      const id = idle.requestIdleCallback(preload);
+      return () => idle.cancelIdleCallback?.(id);
+    }
+    const timer = window.setTimeout(preload, 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
   // Hero curation is editorial state, so the seven-day persisted catalogue and
   // the unversioned edge response must not decide which photos rotate. Resolve
   // the current catalogue version first and keep checking it while the landing
@@ -112,6 +139,31 @@ export default function Landing() {
   );
   const spots = allSpots ?? [];
   const visibleSpots = spots.slice(0, visibleSpotLimit);
+
+  // Reveal the next batch off the main thread so the tap (and each subsequent
+  // scroll step) stays responsive even while dozens of cards mount.
+  const revealMore = useCallback(() => {
+    startRevealTransition(() =>
+      setVisibleSpotLimit((n) => Math.min(n + SPOT_REVEAL_STEP, spots.length)),
+    );
+  }, [spots.length]);
+
+  // While browsing the full catalogue, load more as the end of the grid nears —
+  // a wide rootMargin means the next batch is ready before the visitor reaches
+  // the bottom, so scrolling never stalls waiting on a render.
+  useEffect(() => {
+    if (!browseAll || visibleSpotLimit >= spots.length) return;
+    const sentinel = loadMoreRef.current;
+    if (!sentinel || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) revealMore();
+      },
+      { rootMargin: "800px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [browseAll, visibleSpotLimit, spots.length, revealMore]);
 
   return (
     <div className="relative bg-page">
@@ -197,16 +249,25 @@ export default function Landing() {
             </div>
           )}
 
-          {!spotsLoading && visibleSpotLimit < spots.length && (
+          {!spotsLoading && !browseAll && visibleSpotLimit < spots.length && (
             <div className="mt-10 flex justify-center">
               <button
                 type="button"
-                onClick={() => setVisibleSpotLimit(spots.length)}
+                onClick={() => {
+                  setBrowseAll(true);
+                  revealMore();
+                }}
                 className="min-h-11 px-5 py-2.5 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
               >
                 Alle Spots anzeigen
               </button>
             </div>
+          )}
+
+          {/* Streaming sentinel — once "Alle Spots anzeigen" is pressed, this
+              marker below the grid pulls the next batch in as it nears view. */}
+          {browseAll && visibleSpotLimit < spots.length && (
+            <div ref={loadMoreRef} aria-hidden className="h-px w-full" />
           )}
         </div>
       </section>

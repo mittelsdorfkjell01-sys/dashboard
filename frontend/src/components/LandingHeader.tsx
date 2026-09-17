@@ -138,7 +138,9 @@ export default function LandingHeader({
                     className="absolute left-0 inline-flex min-h-11 select-none items-center leading-none"
                     style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
                   >
-                    <Wordmark size="md" />
+                    {/* Docked identity sits smaller on mobile than the desktop
+                        results-header lockup, so the hardened bar stays compact. */}
+                    <Wordmark size={desktop ? "md" : "sm"} />
                   </Link>
                 )}
               </div>
@@ -174,15 +176,17 @@ export default function LandingHeader({
             )}
           </div>
 
-          {/* Mobile: a square icon button — same shape as ResultsHeader's —
-              fades in as the bar hardens, sitting where the wordmark was. */}
+          {/* Mobile: a bare magnifying-glass icon — same de-chromed treatment as
+              ResultsHeader's (no teal fill/box), in the ink token so it stays
+              readable on the hardened white bar — fades in where the wordmark
+              was as the bar hardens. */}
           {onMobileSearch && (
             <button
               type="button"
               onClick={(event) => onMobileSearch(event.currentTarget)}
               aria-label="Suche öffnen"
               style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
-              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[14px] bg-teal text-white shadow-card transition-opacity duration-150 sm:hidden"
+              className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink transition-opacity duration-150 active:scale-[0.97] sm:hidden"
             >
               <SearchIcon className="text-sz-18" />
             </button>
