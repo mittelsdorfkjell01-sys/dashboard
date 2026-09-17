@@ -256,19 +256,27 @@ test.describe("media picker", () => {
     await page.route(`**/admin/spots/${SPOT_ID}/image/upload`, (route) => {
       uploads += 1;
       galleryItems = [];
-      spotState = {
+      const uploadedSpot = {
         ...SPOT_WITH_HERO,
         image: { ...SPOT_WITH_HERO.image, url: "/media/new-hero.avif", provider: "upload" },
       };
-      return route.fulfill({ json: spotState });
+      // The next record GET may still return the old image. The editor must
+      // use the successful upload response for its immediate state.
+      return route.fulfill({ json: uploadedSpot });
     });
 
     await page.goto(`/admin/spot/${SPOT_ID}/edit`);
-    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+    const heroSection = page.locator("#f-hero");
+    const heroToggle = heroSection.getByRole("button", { name: "Headerbild ausrichten" });
+    if ((await heroToggle.getAttribute("aria-expanded")) !== "true") await heroToggle.click();
+    const gallerySection = page.locator("#f-galerie");
+    const galleryToggle = gallerySection.getByRole("button", { name: "Galerie" });
+    if ((await galleryToggle.getAttribute("aria-expanded")) !== "true") await galleryToggle.click();
+    await expect(heroSection.getByText("Bildposition und Drehung"))
       .toBeVisible();
-    await expect(page.locator("#f-galerie").getByRole("button", { name: "Entfernen" }))
+    await expect(gallerySection.getByRole("button", { name: "Entfernen" }))
       .toHaveCount(1);
-    await page.locator("#f-hero input[type=file]").setInputFiles({
+    await heroSection.locator("input[type=file]").setInputFiles({
       name: "new-hero.png",
       mimeType: "image/png",
       buffer: Buffer.from(
@@ -278,14 +286,39 @@ test.describe("media picker", () => {
     });
 
     await expect(page.getByAltText("Vorschau des neuen Hero-Bildes")).toBeVisible();
-    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+    await expect(heroSection.getByText("Bildposition und Drehung"))
       .toHaveCount(0);
     await page.getByPlaceholder("Fotograf:in / Quelle").fill("Fotografin");
     await page.getByRole("button", { name: "Änderungen speichern" }).click();
     await expect.poll(() => uploads).toBe(1);
     await expect(page.getByAltText("Vorschau des neuen Hero-Bildes")).toHaveCount(0);
-    await expect(page.locator("#f-galerie").getByText("Noch keine Galeriebilder."))
+    await expect(heroSection.locator("img").first()).toHaveAttribute("src", /new-hero\.avif$/);
+    await expect(heroSection.getByRole("button", { name: "Ortsbezug prüfen" }))
       .toBeVisible();
+    await expect(gallerySection.getByText("Noch keine Galeriebilder."))
+      .toBeVisible();
+  });
+
+  test("geo verification stays visible and can be reversed", async ({ page }) => {
+    spotState = SPOT_WITH_HERO; // older image without a geo_verified field
+    await page.route(`**/admin/spots/${SPOT_ID}/image/geo-verified`, (route) => {
+      const { value } = route.request().postDataJSON() as { value: boolean };
+      spotState = {
+        ...spotState,
+        image: { ...SPOT_WITH_HERO.image, geo_verified: value },
+      };
+      return route.fulfill({ json: spotState });
+    });
+
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+    const heroSection = page.locator("#f-hero");
+    const heroToggle = heroSection.getByRole("button", { name: "Headerbild ausrichten" });
+    if ((await heroToggle.getAttribute("aria-expanded")) !== "true") await heroToggle.click();
+    await expect(heroSection.getByRole("button", { name: "Ortsbezug prüfen" })).toBeVisible();
+    await heroSection.getByRole("button", { name: "Ortsbezug prüfen" }).click();
+    await expect(heroSection.getByText("Ortsbezug geprüft", { exact: true })).toBeVisible();
+    await heroSection.getByRole("button", { name: "Prüfung zurücknehmen" }).click();
+    await expect(heroSection.getByRole("button", { name: "Ortsbezug prüfen" })).toBeVisible();
   });
 
   test("removing the current gallery hero clears its preview", async ({ page }) => {
@@ -309,14 +342,20 @@ test.describe("media picker", () => {
     });
 
     await page.goto(`/admin/spot/${SPOT_ID}/edit`);
-    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+    const heroSection = page.locator("#f-hero");
+    const heroToggle = heroSection.getByRole("button", { name: "Headerbild ausrichten" });
+    if ((await heroToggle.getAttribute("aria-expanded")) !== "true") await heroToggle.click();
+    const gallerySection = page.locator("#f-galerie");
+    const galleryToggle = gallerySection.getByRole("button", { name: "Galerie" });
+    if ((await galleryToggle.getAttribute("aria-expanded")) !== "true") await galleryToggle.click();
+    await expect(heroSection.getByText("Bildposition und Drehung"))
       .toBeVisible();
-    await page.locator("#f-galerie li").hover();
-    await page.locator("#f-galerie").getByRole("button", { name: "Entfernen" }).click();
+    await gallerySection.locator("li").hover();
+    await gallerySection.getByRole("button", { name: "Entfernen" }).click();
 
-    await expect(page.locator("#f-galerie").getByText("Noch keine Galeriebilder."))
+    await expect(gallerySection.getByText("Noch keine Galeriebilder."))
       .toBeVisible();
-    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+    await expect(heroSection.getByText("Bildposition und Drehung"))
       .toHaveCount(0);
   });
 

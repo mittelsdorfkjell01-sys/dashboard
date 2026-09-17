@@ -136,6 +136,7 @@ export default function AdminSpotForm() {
   const heroInputRef = useRef<HTMLInputElement>(null);
   const [heroUploadError, setHeroUploadError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<ImageRecord | null>(null);
+  const [geoBusy, setGeoBusy] = useState(false);
   const pickHeroFile = (file: File | null) => {
     heroPickGenerationRef.current += 1;
     const previous = heroPreviewUrlRef.current;
@@ -509,7 +510,7 @@ export default function AdminSpotForm() {
 
       if (heroFile) {
         try {
-          await uploadHeroImage(spot.id, heroFile, credit.trim());
+          spot = await uploadHeroImage(spot.id, heroFile, credit.trim());
         } catch (uploadError) {
           if (uploadError instanceof ApiError) {
             throw new ApiError(
@@ -524,7 +525,6 @@ export default function AdminSpotForm() {
             uploadError,
           );
         }
-        spot = await getAdminSpot(spot.id);
         setGalleryVersion((version) => version + 1);
       }
 
@@ -600,6 +600,7 @@ export default function AdminSpotForm() {
   );
   const selectedRegionName =
     regionOptions.find((region) => region.id === regionId)?.name ?? "Ohne Region";
+  const imageGeoVerified = currentImage?.geo_verified === true;
 
   if (loadingExisting) {
     return (
@@ -1032,23 +1033,37 @@ export default function AdminSpotForm() {
                   </div>
                 </div>
 
-                {/* Ortsbezug — nur sichtbar, solange das Bild nicht als
-                    verifiziert markiert ist. Klick auf den Button setzt das
-                    Flag serverseitig und der Hinweis verschwindet. */}
-                {currentImage.geo_verified === false && id && (
-                  <div className="flex flex-wrap items-center gap-3 rounded-md border border-admin-warning-border bg-admin-warning-bg px-3 py-2">
-                    <span className="text-label font-medium text-admin-warning">
-                      Ortsbezug ungeprüft
+                {/* Legacy images may not carry geo_verified; treat them as
+                    unverified and keep the control visible after verification. */}
+                {id && (
+                  <div className={`flex flex-wrap items-center gap-3 rounded-md border px-3 py-2 ${
+                    imageGeoVerified
+                      ? "border-admin-success-border bg-admin-success-bg"
+                      : "border-admin-warning-border bg-admin-warning-bg"
+                  }`}>
+                    <span aria-live="polite" className={`text-label font-medium ${
+                      imageGeoVerified ? "text-admin-success" : "text-admin-warning"
+                    }`}>
+                      {imageGeoVerified ? "Ortsbezug geprüft" : "Ortsbezug ungeprüft"}
                     </span>
                     <Button
                       variant="secondary"
                       className="ml-auto"
+                      disabled={geoBusy}
                       onClick={async () => {
-                        const spot = await setSpotImageGeoVerified(id, true);
-                        seedImage((spot.image as ImageRecord | null) ?? null);
+                        setGeoBusy(true);
+                        setError(null);
+                        try {
+                          const spot = await setSpotImageGeoVerified(id, !imageGeoVerified);
+                          seedImage((spot.image as ImageRecord | null) ?? null);
+                        } catch (e) {
+                          setError(e instanceof ApiError ? e.message : "Ortsbezug konnte nicht gespeichert werden.");
+                        } finally {
+                          setGeoBusy(false);
+                        }
                       }}
                     >
-                      Ortsbezug geprüft
+                      {geoBusy ? "Speichern…" : imageGeoVerified ? "Prüfung zurücknehmen" : "Ortsbezug prüfen"}
                     </Button>
                   </div>
                 )}
