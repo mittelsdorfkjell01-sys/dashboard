@@ -15,13 +15,21 @@ from typing import Any
 
 from app.config import get_settings
 from app.live.cache import Cache
-from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
+from app.live.weather_contract import (
+    FORECAST_PRODUCT_VERSION,
+    LIVE_WIND_CONTRACT_VERSION,
+    WEATHER_CONTRACT_VERSION,
+)
 
 logger = logging.getLogger(__name__)
 PUBLIC_WEATHER_GENERATION_TTL = 24 * 60 * 60
 # The station-measurement layer self-expires quickly so a stale reading drops
 # out on its own even if no import invalidates it first.
 PUBLIC_MEASUREMENT_TTL = 30 * 60
+PUBLIC_LIVE_WIND_BASELINE_TTL = 15 * 60
+PUBLIC_LIVE_WIND_RESIDUAL_TTL = 5 * 60
+PUBLIC_LIVE_WIND_ANALYSIS_TTL = 5 * 60
+PUBLIC_LIVE_WIND_LOCK_TTL = 30
 
 
 def public_weather_generation_key(spot_id) -> str:
@@ -65,6 +73,66 @@ def public_measurement_key(spot_id) -> str:
     return f"public:{WEATHER_CONTRACT_VERSION}:measurement:{spot_id}"
 
 
+def public_live_wind_input_generation_key(spot_id) -> str:
+    return (
+        f"public:{WEATHER_CONTRACT_VERSION}:{LIVE_WIND_CONTRACT_VERSION}:"
+        f"live-wind-input-generation:{spot_id}"
+    )
+
+
+def public_live_wind_input_generation(cache: Cache, spot_id) -> str:
+    value = _safe_scalar_get(cache, public_live_wind_input_generation_key(spot_id))
+    return value if isinstance(value, str) and value else "0"
+
+
+def public_live_wind_residual_key(
+    spot_id,
+    context_id: str,
+    *,
+    input_generation: str = "0",
+) -> str:
+    return (
+        f"public:{WEATHER_CONTRACT_VERSION}:{LIVE_WIND_CONTRACT_VERSION}:"
+        f"station-residuals:{spot_id}:{input_generation}:{context_id}"
+    )
+
+
+def public_live_wind_analysis_key(
+    spot_id,
+    context_id: str,
+    *,
+    weather_generation: str = "0",
+    input_generation: str = "0",
+) -> str:
+    return (
+        f"public:{WEATHER_CONTRACT_VERSION}:{LIVE_WIND_CONTRACT_VERSION}:"
+        f"analysis:{spot_id}:{weather_generation}:{input_generation}:{context_id}"
+    )
+
+
+def public_live_wind_lock_key(
+    spot_id,
+    context_id: str,
+    *,
+    weather_generation: str,
+    input_generation: str,
+) -> str:
+    return "lock:" + public_live_wind_analysis_key(
+        spot_id,
+        context_id,
+        weather_generation=weather_generation,
+        input_generation=input_generation,
+    )
+
+
+def public_live_wind_baseline_key(spot_id, generation: str = "0") -> str:
+    base = (
+        f"public:{WEATHER_CONTRACT_VERSION}:{LIVE_WIND_CONTRACT_VERSION}:"
+        f"live-wind-model-baseline:{spot_id}"
+    )
+    return base if generation == "0" else f"{base}:{generation}"
+
+
 def get_public_live(
     cache: Cache, spot_id, *, generation: str | None = None
 ) -> dict[str, Any] | None:
@@ -80,11 +148,11 @@ def set_public_live(
     generation: str | None = None,
 ) -> None:
     generation = generation or public_weather_generation(cache, spot_id)
-    # The assembled model-nowcast cache must NEVER pin a station measurement
-    # (P0.1): it is a separate product attached at serve time.  Forcing it to
-    # ``None`` keeps the stored product order-independent no matter which
-    # endpoint warmed the cache.
+    # The assembled model-nowcast cache must NEVER pin a station measurement or
+    # residual-adjusted LiveWind analysis: both are attached at serve time. A
+    # separate short-lived key holds only the reproducible model scaffold.
     stored = {**payload, "measurement": None}
+    stored.pop("live_wind", None)
     _safe_set(
         cache,
         public_live_key(spot_id, generation),
@@ -109,6 +177,140 @@ def set_public_measurement(cache: Cache, spot_id, payload: dict[str, Any] | None
     _safe_set(cache, public_measurement_key(spot_id), payload, PUBLIC_MEASUREMENT_TTL)
 
 
+def get_public_live_wind_baseline(
+    cache: Cache, spot_id, *, generation: str | None = None
+) -> dict[str, Any] | None:
+    """Return the model-only LiveWind scaffold used for a fresh DB analysis."""
+    generation = generation or public_weather_generation(cache, spot_id)
+    return _safe_get(cache, public_live_wind_baseline_key(spot_id, generation))
+
+
+def set_public_live_wind_baseline(
+    cache: Cache,
+    spot_id,
+    payload: dict[str, Any],
+    *,
+    model_ids: list[str] | tuple[str, ...],
+    generation: str | None = None,
+) -> None:
+    """Cache only the immutable model baseline, never station-adjusted LiveWind."""
+    if payload.get("status") != "baseline" or payload.get("station_count") != 0:
+        return
+    generation = generation or public_weather_generation(cache, spot_id)
+    stored = _json_ready({**payload, "_model_ids": list(model_ids)})
+    _safe_set(
+        cache,
+        public_live_wind_baseline_key(spot_id, generation),
+        stored,
+        PUBLIC_LIVE_WIND_BASELINE_TTL,
+    )
+
+
+def get_public_live_wind_residuals(
+    cache: Cache,
+    spot_id,
+    context_id: str,
+    *,
+    input_generation: str | None = None,
+) -> dict[str, Any] | None:
+    input_generation = input_generation or public_live_wind_input_generation(
+        cache, spot_id
+    )
+    return _safe_get(
+        cache,
+        public_live_wind_residual_key(
+            spot_id,
+            context_id,
+            input_generation=input_generation,
+        ),
+    )
+
+
+def set_public_live_wind_residuals(
+    cache: Cache,
+    spot_id,
+    context_id: str,
+    payload: dict[str, Any],
+    *,
+    input_generation: str | None = None,
+) -> None:
+    input_generation = input_generation or public_live_wind_input_generation(
+        cache, spot_id
+    )
+    _safe_set(
+        cache,
+        public_live_wind_residual_key(
+            spot_id,
+            context_id,
+            input_generation=input_generation,
+        ),
+        _json_ready(payload),
+        PUBLIC_LIVE_WIND_RESIDUAL_TTL,
+    )
+
+
+def get_public_live_wind_analysis(
+    cache: Cache,
+    spot_id,
+    context_id: str,
+    *,
+    weather_generation: str | None = None,
+    input_generation: str | None = None,
+) -> dict[str, Any] | None:
+    weather_generation = weather_generation or public_weather_generation(cache, spot_id)
+    input_generation = input_generation or public_live_wind_input_generation(cache, spot_id)
+    payload = _safe_get(
+        cache,
+        public_live_wind_analysis_key(
+            spot_id,
+            context_id,
+            weather_generation=weather_generation,
+            input_generation=input_generation,
+        ),
+    )
+    if payload is None:
+        return None
+    expires_at = _as_utc(payload.get("expires_at"))
+    if expires_at is not None and expires_at <= datetime.now(timezone.utc):
+        return None
+    return payload
+
+
+def set_public_live_wind_analysis(
+    cache: Cache,
+    spot_id,
+    context_id: str,
+    payload: dict[str, Any],
+    *,
+    weather_generation: str | None = None,
+    input_generation: str | None = None,
+) -> None:
+    if payload.get("status") not in {"baseline", "station_adjusted"}:
+        return
+    weather_generation = weather_generation or public_weather_generation(cache, spot_id)
+    input_generation = input_generation or public_live_wind_input_generation(cache, spot_id)
+    expires_at = _as_utc(payload.get("expires_at"))
+    remaining = (
+        math.ceil((expires_at - datetime.now(timezone.utc)).total_seconds())
+        if expires_at is not None
+        else PUBLIC_LIVE_WIND_ANALYSIS_TTL
+    )
+    ttl = min(PUBLIC_LIVE_WIND_ANALYSIS_TTL, remaining)
+    if ttl <= 0:
+        return
+    _safe_set(
+        cache,
+        public_live_wind_analysis_key(
+            spot_id,
+            context_id,
+            weather_generation=weather_generation,
+            input_generation=input_generation,
+        ),
+        _json_ready(payload),
+        ttl,
+    )
+
+
 def invalidate_public_measurement(cache: Cache, spot_id) -> None:
     """Drop the cached measurement (e.g. after a station import persists rows).
 
@@ -116,6 +318,23 @@ def invalidate_public_measurement(cache: Cache, spot_id) -> None:
     next serve recomputes from the freshly stored, quality-gated observation.
     """
     _safe_delete(cache, public_measurement_key(spot_id))
+    previous = public_live_wind_input_generation(cache, spot_id)
+    replacement = uuid.uuid4().hex
+    _safe_scalar_set(
+        cache,
+        public_live_wind_input_generation_key(spot_id),
+        replacement,
+        PUBLIC_WEATHER_GENERATION_TTL,
+    )
+    logger.info(
+        "live_wind_input_generation_advanced",
+        extra={
+            "weather_event": "live_wind_input_generation_advanced",
+            "weather_spot_id": str(spot_id),
+            "weather_previous_input_generation": previous,
+            "weather_input_generation": replacement,
+        },
+    )
 
 
 def get_public_forecast(
@@ -184,6 +403,7 @@ def invalidate_public_weather(cache: Cache, spot_id) -> None:
             },
         )
     _safe_delete(cache, public_live_key(spot_id, previous))
+    _safe_delete(cache, public_live_wind_baseline_key(spot_id, previous))
     _safe_delete(cache, public_forecast_key(spot_id, previous))
 
 
@@ -198,6 +418,21 @@ def _safe_get(cache: Cache, key: str) -> dict[str, Any] | None:
     result = dict(value)
     result.pop("_cache_captured_at", None)
     return result
+
+
+def _safe_scalar_get(cache: Cache, key: str) -> Any | None:
+    try:
+        return cache.get(key)
+    except Exception as exc:
+        logger.warning("public weather cache get failed (%s)", type(exc).__name__)
+        return None
+
+
+def _safe_scalar_set(cache: Cache, key: str, value: Any, ttl: int) -> None:
+    try:
+        cache.set(key, value, ttl)
+    except Exception as exc:
+        logger.warning("public weather cache set failed (%s)", type(exc).__name__)
 
 
 def _safe_set(cache: Cache, key: str, value: dict[str, Any], ttl: int) -> None:
@@ -230,3 +465,13 @@ def _as_utc(value: datetime | str | None) -> datetime | None:
     if value.tzinfo is None or value.utcoffset() is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
+
+
+def _json_ready(value):
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value, dict):
+        return {key: _json_ready(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_ready(item) for item in value]
+    return value

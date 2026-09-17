@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import math
+import uuid
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -25,6 +26,9 @@ from sqlalchemy.orm import Session, load_only, selectinload
 from app.config import get_settings
 from app.live.cache import Cache, cache_key, default_cache
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient, default_client
+from app.live.live_wind import (
+    build_live_wind_baseline,
+)
 from app.live.consensus import (
     CONFIDENCE_HIGH,
     CONFIDENCE_LOW,
@@ -33,6 +37,7 @@ from app.live.consensus import (
 )
 from app.live.models import consensus_models, select_model
 from app.models import (
+    Region,
     Spot,
     SpotWeatherProfile,
     SpotWeatherSector,
@@ -49,7 +54,6 @@ from app.weather.vectors import uv_to_wind, wind_to_uv
 from app.weather.profiles import resolve_weather_profile
 from app.weather.verification import lead_bucket, load_calibrations, store_forecast_samples
 from app.weather.shadow import physics_shadow
-from app.weather.observations import public_measurement
 from app.live.weather_contract import (
     Availability, FORECAST_PRODUCT_VERSION, MODEL_NOWCAST_STALE_SECONDS,
     WEATHER_CONTRACT_VERSION,
@@ -104,7 +108,14 @@ def _load_spot(db: Session, spot_id) -> Spot:
             select(Spot)
             .where(Spot.id == spot_id)
             .options(
-                load_only(Spot.id, Spot.location, Spot.model_pref, Spot.water_type),
+                load_only(
+                    Spot.id,
+                    Spot.region_id,
+                    Spot.location,
+                    Spot.model_pref,
+                    Spot.water_type,
+                ),
+                selectinload(Spot.region).load_only(Region.slug),
                 selectinload(Spot.weather_profile).options(
                     load_only(
                         SpotWeatherProfile.active,
@@ -423,11 +434,29 @@ def get_live_conditions(
     # model nowcast (`current`) or its `sources["wind"]` provenance — it is
     # carried alongside and warmed into its own cache layer so a later cache hit
     # can attach it without a database round-trip.
-    result["measurement"] = _latest_measurement(db, spot.id, cache=cache)
+    result["measurement"] = _latest_measurement(
+        db,
+        spot.id,
+        cache=cache,
+        wind_direction_deg=(result.get("current") or {}).get("dir"),
+    )
+    result["live_wind"] = public_live_wind_analysis(
+        db,
+        spot.id,
+        result.get("live_wind"),
+        cache=cache,
+        model_ids=tuple(result.get("models") or ()),
+    )
     return result
 
 
-def _latest_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | None:
+def _latest_measurement(
+    db,
+    spot_id,
+    *,
+    cache: Cache | None = None,
+    wind_direction_deg: float | None = None,
+) -> dict | None:
     """Return an actual station observation separately from the model nowcast.
 
     When a cache is supplied the computed reading is warmed into the dedicated
@@ -435,26 +464,38 @@ def _latest_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | No
     """
     if not hasattr(db, "scalar"):
         return None
-    station = db.scalar(select(WeatherStation).where(
-        WeatherStation.spot_id == spot_id, WeatherStation.active.is_(True)
-    ).order_by(WeatherStation.distance_km.asc().nullslast()).limit(1))
+    from app.weather.station_selection import select_stations_for_spot
+
+    now = datetime.now(timezone.utc)
+    selection = select_stations_for_spot(
+        db,
+        spot_id,
+        now=now,
+        wind_direction_deg=wind_direction_deg,
+    )
+    selected = selection.selected
+    if (
+        selected is None
+        or selected.station_id is None
+        or selected.observed_at is None
+    ):
+        return None
+    station = db.get(WeatherStation, uuid.UUID(selected.station_id))
     if station is None:
         return None
+    selected_observed_at = datetime.fromisoformat(selected.observed_at)
     observation = db.scalar(select(WeatherObservation).where(
-        WeatherObservation.station_id == station.id
-    ).order_by(WeatherObservation.observed_at.desc()).limit(1))
+        WeatherObservation.station_id == station.id,
+        WeatherObservation.observed_at == selected_observed_at,
+    ).limit(1))
     if observation is None:
         return None
-    now = datetime.now(timezone.utc)
     observed = observation.observed_at.astimezone(timezone.utc)
-    eligible, _reasons = public_measurement(station, observation, now=now)
-    if not eligible:
-        return None
     result = {
         "observation_type": "measurement", "station_id": str(station.id),
         "provider": station.provider, "provider_station_id": station.provider_station_id,
         "observed_at": observed.isoformat(), "age_seconds": max(0, int((now - observed).total_seconds())),
-        "distance_km": station.distance_km, "wind_speed_ms": observation.wind_speed_ms,
+        "distance_km": selected.distance_km, "wind_speed_ms": observation.wind_speed_ms,
         "wind_gust_ms": observation.wind_gust_ms, "wind_direction_from_deg": observation.wind_direction_deg,
         "quality": observation.quality,
         "station_name": station.name, "stale": False,
@@ -462,11 +503,20 @@ def _latest_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | No
             "source_type": "measurement", "observation_type": "measurement",
             "source": "station", "provider": station.provider.upper(),
             "observation_at": observed, "valid_at": observed,
-            "captured_at": observation.fetched_at or observation.created_at,
+            "captured_at": (
+                getattr(observation, "received_at", None)
+                or observation.fetched_at
+                or observation.created_at
+            ),
             "model_run_quality": "unknown", "age_seconds": max(0, int((now-observed).total_seconds())),
             "stale": False, "availability": "available", "quality_tier": "quality_checked_station",
+            "attribution": [{
+                "provider": station.provider,
+                "license": getattr(station, "license", None),
+                **(getattr(station, "provenance", None) or {}),
+            }],
             "spot_timezone": "UTC", "requested_coordinate": {"latitude": station.latitude, "longitude": station.longitude},
-            "grid_distance_km": station.distance_km, "uncertainty": "limited", "data_issues": observation.data_issues or [],
+            "grid_distance_km": selected.distance_km, "uncertainty": "limited", "data_issues": observation.data_issues or [],
         },
     }
     if cache is not None:
@@ -476,7 +526,13 @@ def _latest_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | No
     return result
 
 
-def public_station_measurement(db, spot_id, *, cache: Cache | None = None) -> dict | None:
+def public_station_measurement(
+    db,
+    spot_id,
+    *,
+    cache: Cache | None = None,
+    wind_direction_deg: float | None = None,
+) -> dict | None:
     """The separate station-measurement product for a spot (never part of current).
 
     Served from the dedicated measurement cache layer when warm, else computed.
@@ -484,7 +540,179 @@ def public_station_measurement(db, spot_id, *, cache: Cache | None = None) -> di
     measurement is present consistently and never pinned into the model-nowcast
     cache (which is what kept it order-independent).
     """
-    return _latest_measurement(db, spot_id, cache=cache)
+    return _latest_measurement(
+        db,
+        spot_id,
+        cache=cache,
+        wind_direction_deg=wind_direction_deg,
+    )
+
+
+def public_live_wind_analysis(
+    db,
+    spot_id,
+    baseline: dict | None,
+    *,
+    cache: Cache | None = None,
+    model_ids: tuple[str, ...] = (),
+) -> dict:
+    """Attach only rollout- and quality-gated LiveWind to a public response."""
+    if not isinstance(baseline, dict):
+        from app.live.weather_contract import unavailable_live_wind
+
+        return unavailable_live_wind("model_baseline_unavailable")
+    settings = get_settings()
+    if settings.live_wind_force_baseline or settings.live_wind_rollout_stage in {
+        "shadow",
+        "internal",
+    }:
+        return baseline
+    spot = _load_spot(db, spot_id)
+    cache = cache or default_cache()
+    from app.live.live_wind import live_wind_context_id
+    from app.live.public_cache import (
+        PUBLIC_LIVE_WIND_LOCK_TTL,
+        get_public_live_wind_analysis,
+        public_live_wind_input_generation,
+        public_live_wind_lock_key,
+        public_weather_generation,
+        set_public_live_wind_analysis,
+    )
+
+    working_baseline = dict(baseline)
+    if model_ids:
+        working_baseline["_model_ids"] = list(model_ids)
+    gate_configuration = {
+        "rollout_stage": settings.live_wind_rollout_stage,
+        "enabled_regions": sorted(settings.live_wind_enabled_region_slugs),
+        "require_verification_evidence": settings.live_wind_require_verification_evidence,
+        "candidate_version": settings.live_wind_candidate_version,
+        "verification_context_hash": settings.live_wind_verification_context_hash,
+        "verification_min_samples": settings.live_wind_verification_min_samples,
+        "verification_min_days": settings.live_wind_verification_min_days,
+        "verification_min_stations": settings.live_wind_verification_min_stations,
+        "verification_min_uv_mae_drop_ms": settings.live_wind_verification_min_uv_mae_drop_ms,
+        "minimum_station_count": settings.live_wind_min_station_count,
+        "minimum_confidence": settings.live_wind_min_confidence,
+        "maximum_conflict": settings.live_wind_max_conflict_index,
+        "maximum_uncertainty_ms": settings.live_wind_max_uncertainty_ms,
+        "maximum_correction_ms": settings.live_wind_max_correction_ms,
+    }
+    context_id = live_wind_context_id(
+        spot,
+        working_baseline,
+        gate_configuration=gate_configuration,
+    )
+    weather_generation = public_weather_generation(cache, spot_id)
+    input_generation = public_live_wind_input_generation(cache, spot_id)
+    cached = get_public_live_wind_analysis(
+        cache,
+        spot_id,
+        context_id,
+        weather_generation=weather_generation,
+        input_generation=input_generation,
+    )
+    if cached is not None:
+        return cached
+
+    lock_token = uuid.uuid4().hex
+    lock_key = public_live_wind_lock_key(
+        spot_id,
+        context_id,
+        weather_generation=weather_generation,
+        input_generation=input_generation,
+    )
+    acquire = getattr(cache, "acquire_lock", None)
+    acquired = True if acquire is None else bool(
+        acquire(lock_key, lock_token, PUBLIC_LIVE_WIND_LOCK_TTL)
+    )
+    if not acquired:
+        cached = get_public_live_wind_analysis(
+            cache,
+            spot_id,
+            context_id,
+            weather_generation=weather_generation,
+            input_generation=input_generation,
+        )
+        if cached is not None:
+            return cached
+        waiting = dict(baseline)
+        waiting["fallback_reason"] = "analysis_in_progress"
+        return waiting
+    from app.weather.live_wind_rollout import public_live_wind
+    try:
+        result = public_live_wind(
+            db,
+            spot,
+            baseline,
+            model_ids=tuple(working_baseline.get("_model_ids") or ()),
+            settings=settings,
+            cache=cache,
+            residual_context_id=context_id,
+            input_generation=input_generation,
+        )
+        set_public_live_wind_analysis(
+            cache,
+            spot_id,
+            context_id,
+            result,
+            weather_generation=weather_generation,
+            input_generation=input_generation,
+        )
+        return result
+    finally:
+        release = getattr(cache, "release_lock", None)
+        if release is not None:
+            release(lock_key, lock_token)
+
+
+def get_live_wind_baseline_for_spot(
+    spot: Spot,
+    *,
+    client: OpenMeteoClient | None = None,
+    cache: Cache | None = None,
+) -> tuple[dict, tuple[str, ...]]:
+    """Fetch only the model-nowcast input needed by the shadow worker.
+
+    This deliberately skips marine/current-condition assembly and all station
+    reads. It uses the exact same raw consensus and baseline builder as the
+    public LiveWind scaffold.
+    """
+    client = client or default_client()
+    cache = cache or default_cache()
+    lat, lon = _spot_coords(spot)
+    _, models = _model_set(lat, lon, spot.model_pref)
+    forecast = _cached_nowcast(
+        lat,
+        lon,
+        ",".join(models),
+        client=client,
+        cache=cache,
+    )
+    raw_consensus, _, calculated_time = _current_consensus(forecast, models, None)
+    valid_at = provider_time_utc(
+        (forecast.get("current") or {}).get("time"),
+        provider_timezone(forecast),
+    ) or provider_time_utc(calculated_time, provider_timezone(forecast))
+    captured_at = _parse_provider_time(
+        forecast.get("_cache_captured_at")
+    ) or datetime.now(timezone.utc)
+    baseline = build_live_wind_baseline(
+        spot,
+        raw_consensus,
+        model_ids=models,
+        valid_at=valid_at,
+        captured_at=captured_at,
+    )
+    from app.live.public_cache import set_public_live_wind_baseline
+
+    set_public_live_wind_baseline(
+        cache,
+        spot.id,
+        baseline,
+        model_ids=models,
+    )
+    return baseline, tuple(models)
 
 
 def get_live_conditions_for_spot(
@@ -516,6 +744,7 @@ def get_live_conditions_for_spot(
     # current hour of the multi-model hourly series.
     hourly = fc.get("hourly") or {}
     idx = _hour_index(hourly.get("time") or [], cur_f.get("time"))
+    raw_consensus, _, _ = _current_consensus(fc, models, None)
     consensus, resolution, calculated_time = _current_consensus(fc, models, profile)
     calculated_instant = provider_time_utc(calculated_time, provider_timezone(fc))
     canonical_time = calculated_instant.isoformat() if calculated_instant else None
@@ -525,6 +754,21 @@ def get_live_conditions_for_spot(
     marine_age = age_seconds(marine_valid_at, now=datetime.now(timezone.utc))
     atmosphere_stale = is_stale(atmosphere_age, 0, threshold_seconds=MODEL_NOWCAST_STALE_SECONDS)
     marine_stale = is_stale(marine_age, 0, threshold_seconds=MODEL_NOWCAST_STALE_SECONDS * 2)
+    live_wind = build_live_wind_baseline(
+        spot,
+        raw_consensus,
+        model_ids=models,
+        valid_at=atmosphere_valid_at,
+        captured_at=captured_at,
+    )
+    from app.live.public_cache import set_public_live_wind_baseline
+
+    set_public_live_wind_baseline(
+        cache,
+        spot.id,
+        live_wind,
+        model_ids=models,
+    )
     previous = _wind_consensus_at(hourly, models, max(0, idx - 1), 0.0, profile)
     following = _wind_consensus_at(hourly, models, min(len(hourly.get("time") or []) - 1, idx + 1), 1.0, profile)
     trend = None
@@ -614,6 +858,9 @@ def get_live_conditions_for_spot(
             },
         },
         "measurement": None,
+        # Separate analysis product: the model-only scaffold is enriched with
+        # quality-checked residuals at serve time and never mutates ``current``.
+        "live_wind": live_wind,
         "current": {
             "wind": _knots(consensus.speed_ms) if consensus else None,
             "gust": _knots(consensus.gust_ms) if consensus and consensus.gust_ms is not None and consensus.gust_ms >= consensus.speed_ms else None,

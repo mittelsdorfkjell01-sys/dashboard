@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 from app.config import get_settings
 
@@ -62,7 +63,9 @@ MAX_DOWNLOAD_BYTES = 60 * 1024 * 1024
 _DOWNLOAD_CHUNK = 512 * 1024
 
 
-def download_bytes(url: str) -> bytes:
+def download_bytes(
+    url: str, *, on_progress: Callable[[int, int | None], None] | None = None
+) -> bytes:
     """Fetch a remote image, aborting once it exceeds the cap.
 
     Streamed and checked as it arrives rather than after the fact — reading the
@@ -82,6 +85,8 @@ def download_bytes(url: str) -> bytes:
             follow_redirects=True,
         ) as response:
             response.raise_for_status()
+            content_length = response.headers.get("content-length")
+            expected = int(content_length) if content_length and content_length.isdigit() else None
             for chunk in response.iter_bytes(_DOWNLOAD_CHUNK):
                 total += len(chunk)
                 if total > MAX_DOWNLOAD_BYTES:
@@ -89,6 +94,8 @@ def download_bytes(url: str) -> bytes:
                         f"{url}: file exceeds {MAX_DOWNLOAD_BYTES // (1024 * 1024)} MB"
                     )
                 chunks.append(chunk)
+                if on_progress:
+                    on_progress(total, expected)
     except ProviderError:
         raise
     except Exception as exc:

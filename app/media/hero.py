@@ -17,6 +17,7 @@ import io
 import struct
 import uuid
 from dataclasses import dataclass, field
+from typing import Callable
 
 from app.media import storage
 
@@ -210,6 +211,7 @@ def reencode_image_set(
     max_width: int,
     quality: int = HERO_OUT_QUALITY,
     variant_widths: tuple[int, ...] = RESPONSIVE_IMAGE_WIDTHS,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> EncodedImageSet:
     """Normalize EXIF orientation and encode a responsive hosted image set."""
     from PIL import Image, UnidentifiedImageError
@@ -234,10 +236,15 @@ def reencode_image_set(
             selected_quality = _select_perceptual_quality(main, centre=quality)
             encoded, ext = _encode_pillow_image(main, quality=selected_quality)
             final_width, final_height = main.size
+            widths = [
+                candidate for candidate in sorted(set(variant_widths), reverse=True)
+                if 0 < candidate < final_width
+            ]
+            total_steps = 1 + len(widths)
+            if on_progress:
+                on_progress(1, total_steps)
             candidates: dict[int, bytes] = {}
-            for variant_width in sorted(set(variant_widths), reverse=True):
-                if variant_width <= 0 or variant_width >= final_width:
-                    continue
+            for step, variant_width in enumerate(widths, start=2):
                 variant = main.resize(
                     (
                         variant_width,
@@ -248,6 +255,8 @@ def reencode_image_set(
                 candidates[variant_width], _ = _encode_pillow_image(
                     variant, quality=selected_quality
                 )
+                if on_progress:
+                    on_progress(step, total_steps)
             variants: dict[int, bytes] = {}
             next_larger_size = len(encoded)
             for variant_width in sorted(candidates, reverse=True):
@@ -381,6 +390,7 @@ def save_responsive_image(
     *,
     media_dir: str,
     url_prefix: str,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> str:
     """Persist a content-addressed responsive set for both storage backends.
 
@@ -394,6 +404,7 @@ def save_responsive_image(
     widths = "_".join(str(width) for width in sorted(encoded.variants)) or "none"
     base = f"{key_base}{RESPONSIVE_IMAGE_MARKER}-{widths}"
     written: list[str] = []
+    total_writes = 1 + len(encoded.variants)
     try:
         main_url = storage.put(
             f"{base}.{encoded.ext}",
@@ -403,7 +414,9 @@ def save_responsive_image(
             url_prefix=url_prefix,
         )
         written.append(main_url)
-        for width, payload in encoded.variants.items():
+        if on_progress:
+            on_progress(1, total_writes)
+        for step, (width, payload) in enumerate(encoded.variants.items(), start=2):
             written.append(
                 storage.put(
                     f"{base}-w{width}.{encoded.ext}",
@@ -413,6 +426,8 @@ def save_responsive_image(
                     url_prefix=url_prefix,
                 )
             )
+            if on_progress:
+                on_progress(step, total_writes)
         return main_url
     except Exception as exc:
         # Content-addressed paths may already belong to a different DB row.

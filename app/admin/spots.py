@@ -344,7 +344,8 @@ def revert_override(
 
 
 def manage_spot_image(
-    spot_id, image: dict, *, db: Session, actor: str | None = "admin"
+    spot_id, image: dict, *, db: Session, actor: str | None = "admin",
+    retire_previous: bool = False,
 ) -> Any:
     """Replace the spot's hero image.
 
@@ -354,12 +355,24 @@ def manage_spot_image(
     being cut back to four fields. The rights fields url/source/license/credit
     remain mandatory.
     """
-    from app.media.lifecycle import demote_published_hero_rows
+    from app.media.lifecycle import (
+        demote_published_hero_rows, retire_replaced_hero_rows,
+        retire_usage_if_unreferenced,
+    )
 
     spot = _load(db, spot_id)
     next_image = build_image(**{k: image.get(k) for k in CANONICAL_KEYS})
+    previous = spot.image if isinstance(spot.image, dict) else None
+    old_url = previous.get("url") if previous else None
     demote_published_hero_rows(db, "spot", spot.id, keep_url=next_image["url"])
+    if retire_previous and old_url != next_image["url"]:
+        retire_replaced_hero_rows(db, "spot", spot.id, old_url)
     spot.image = next_image
+    if retire_previous and previous and old_url != next_image["url"]:
+        retire_usage_if_unreferenced(
+            db, entity_type="spot", entity_id=spot.id,
+            provider=previous.get("provider"), external_id=previous.get("external_id"),
+        )
     record_audit(db, spot.id, "image", {"url": spot.image["url"]}, actor)
     db.commit()
     db.refresh(spot)

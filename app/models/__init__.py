@@ -42,7 +42,11 @@ from app.models.weather_verification import (
     WeatherForecastSample,
     WeatherModelCalibration,
     WeatherObservation,
+    WeatherObservationImportState,
+    WeatherObservationQuarantine,
     WeatherStation,
+    WeatherStationModelResidual,
+    WeatherStationPhysicsProfile,
 )
 from app.models.forecast_system import (
     ForecastModelRun,
@@ -61,6 +65,8 @@ from app.models.weather_shadow import (
     WeatherShadowObservation, WeatherShadowRun, WeatherShadowStationBinding,
     WeatherShadowStudy,
 )
+from app.models.live_wind_ops import WeatherLiveWindJob
+from app.models.live_wind_verification import WeatherLiveWindHoldoutCase, WeatherLiveWindVerificationEvidence
 from app.models.wind_climatology import WindClimatologyCell, WindClimatologyRun, WindClimatologyV3Run, WindClimatologyV3Variant
 
 __all__ = [
@@ -101,6 +107,13 @@ __all__ = [
     "SpotWeatherSector",
     "WeatherStation",
     "WeatherObservation",
+    "WeatherObservationImportState",
+    "WeatherObservationQuarantine",
+    "WeatherStationPhysicsProfile",
+    "WeatherStationModelResidual",
+    "WeatherLiveWindJob",
+    "WeatherLiveWindVerificationEvidence",
+    "WeatherLiveWindHoldoutCase",
     "ForecastSectorBuild",
     "ForecastSectorGateEvidence",
     "ForecastVerificationScore",

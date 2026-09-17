@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
+from typing import Callable
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -56,6 +57,7 @@ logger = logging.getLogger(__name__)
 
 ENTITY_TYPES = ("spot", "region")
 ROLES = ("hero", "gallery")
+ProgressCallback = Callable[[int, str], None]
 
 
 class AdoptError(ValueError):
@@ -205,7 +207,8 @@ def _check_duplicates(
 
 
 def _store_locally(
-    db: Session, result: MediaResult, *, entity_type: str, entity_id, role: str
+    db: Session, result: MediaResult, *, entity_type: str, entity_id, role: str,
+    progress: ProgressCallback | None = None,
 ) -> dict:
     """Download, re-encode and store the file; returns the stored url + size."""
     from app.media.providers.base import download_bytes
@@ -215,8 +218,39 @@ def _store_locally(
     quality = HERO_OUT_QUALITY if role == "hero" else GALLERY_OUT_QUALITY
 
     try:
-        data = download_bytes(result.full_url)
-        encoded = reencode_image_set(data, max_width=max_width, quality=quality)
+        if progress:
+            progress(30, "Originalbild wird heruntergeladen…")
+            last_percent = 30
+            last_reported_mb = 0
+
+            def download_progress(received: int, expected: int | None) -> None:
+                nonlocal last_percent, last_reported_mb
+                received_mb = received // (1024 * 1024)
+                if expected:
+                    percent = 30 + min(15, int(received / expected * 15))
+                    if percent > last_percent:
+                        last_percent = percent
+                        progress(
+                            percent,
+                            f"Originalbild: {received / (1024 * 1024):.1f} von "
+                            f"{expected / (1024 * 1024):.1f} MB geladen…",
+                        )
+                elif received_mb > last_reported_mb:
+                    last_reported_mb = received_mb
+                    progress(30, f"Originalbild: {received_mb} MB geladen…")
+
+            data = download_bytes(result.full_url, on_progress=download_progress)
+            progress(45, "Originalbild heruntergeladen. Bildgrößen werden erstellt…")
+            encoded = reencode_image_set(
+                data, max_width=max_width, quality=quality,
+                on_progress=lambda done, total: progress(
+                    45 + int(done / total * 35),
+                    f"Bildgröße {done} von {total} erstellt…",
+                ),
+            )
+        else:
+            data = download_bytes(result.full_url)
+            encoded = reencode_image_set(data, max_width=max_width, quality=quality)
     except ProviderError as exc:
         raise AdoptError(f"Bild konnte nicht geladen werden: {exc}")
     except HeroImageError as exc:
@@ -225,10 +259,13 @@ def _store_locally(
     acquire_image_set_lock(db, encoded)
     try:
         url = save_responsive_image(
-            None,
-            encoded,
+            None, encoded,
             media_dir=settings.media_dir,
             url_prefix=settings.media_url_prefix,
+            **({"on_progress": lambda done, total: progress(
+                80 + int(done / total * 15),
+                f"Bilddatei {done} von {total} gespeichert…",
+            )} if progress else {}),
         )
     except PartialImageSetError as exc:
         db.rollback()
@@ -247,7 +284,8 @@ def _store_locally(
 
 
 def _prepare_file(
-    db: Session, result: MediaResult, *, entity_type: str, entity_id, role: str
+    db: Session, result: MediaResult, *, entity_type: str, entity_id, role: str,
+    progress: ProgressCallback | None = None,
 ) -> dict:
     """Either hotlink (Unsplash) or copy into our storage (everyone else)."""
     if result.delivery == "hotlinked":
@@ -259,6 +297,8 @@ def _prepare_file(
                 # smaller problem. Logged loudly because repeated failures do
                 # put API access at risk.
                 logger.warning("unsplash download ping failed for %s: %s", result.external_id, exc)
+        if progress:
+            progress(95, "Bildquelle verknüpft. Eintrag wird gespeichert…")
         return {
             "url": result.full_url,
             "width": result.width,
@@ -266,7 +306,8 @@ def _prepare_file(
             "delivery": "hotlinked",
         }
     return _store_locally(
-        db, result, entity_type=entity_type, entity_id=entity_id, role=role
+        db, result, entity_type=entity_type, entity_id=entity_id, role=role,
+        progress=progress,
     )
 
 
@@ -385,6 +426,7 @@ def adopt(
     provider: str,
     external_id: str,
     focal: dict | None = None,
+    progress: ProgressCallback | None = None,
 ) -> AdoptResult:
     """Take a provider photo into the catalogue as hero or gallery image."""
     if entity_type not in ENTITY_TYPES:
@@ -394,10 +436,14 @@ def adopt(
 
     entity = _load_entity(db, entity_type, entity_id)
     result = _resolve(db, provider, external_id)
+    if progress:
+        progress(15, "Bildquelle geprüft…")
     warnings = _check_gate(result, role)
     warnings.extend(_check_duplicates(
         db, provider=provider, external_id=external_id, role=role, entity_id=entity.id
     ))
+    if progress:
+        progress(25, "Lizenz und Verwendung geprüft…")
 
     if not result.geo_verified:
         # Never a block — a photo of the right place found by name is normal,
@@ -406,8 +452,11 @@ def adopt(
         warnings.append("Ortsbezug ungeprüft.")
 
     stored = _prepare_file(
-        db, result, entity_type=entity_type, entity_id=entity.id, role=role
+        db, result, entity_type=entity_type, entity_id=entity.id, role=role,
+        progress=progress,
     )
+    if progress:
+        progress(95, "Bild gespeichert. Katalog wird aktualisiert…")
 
     try:
         image = build_image(
@@ -506,6 +555,8 @@ def adopt(
         if stored["delivery"] == "hosted":
             purge_if_unreferenced(db, stored["url"])
         raise
+    if progress:
+        progress(100, "Hero-Bild übernommen." if role == "hero" else "Galeriebild übernommen.")
     return outcome
 
 

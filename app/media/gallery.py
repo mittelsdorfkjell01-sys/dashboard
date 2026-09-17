@@ -17,7 +17,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.media.image_object import build_image, is_placeholder, upgrade_legacy
-from app.media.lifecycle import mark_row_retired, purge_if_unreferenced
+from app.media.lifecycle import (
+    mark_row_retired, purge_if_unreferenced, retire_usage_if_unreferenced,
+)
 from app.models import Region, Spot, SpotImage
 
 VISIBLE = ("approved", "published_hero", "pending")
@@ -117,6 +119,13 @@ def remove(db: Session, image_id) -> None:
         raise LookupError(f"unknown image {image_id}")
     url = row.url
     mark_row_retired(db, row, status="removed")
+    retire_usage_if_unreferenced(
+        db,
+        entity_type="spot" if row.spot_id else "region",
+        entity_id=row.spot_id or row.region_id,
+        provider=row.provider,
+        external_id=row.external_id,
+    )
     db.commit()
     purge_if_unreferenced(db, url, exclude_image_id=row.id)
 

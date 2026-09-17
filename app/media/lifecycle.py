@@ -11,7 +11,7 @@ import logging
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Region, Spot, SpotImage
+from app.models import MediaUsage, Region, Spot, SpotImage
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,66 @@ def demote_published_hero_rows(
         if row.position is None:
             row.position = next_position
             next_position += 1
+
+
+def retire_replaced_hero_rows(
+    db: Session, entity_type: str, entity_id, old_url: str | None
+) -> None:
+    """Hide rows for a hero replaced by a new upload in the same transaction."""
+    if not old_url:
+        return
+    column = SpotImage.spot_id if entity_type == "spot" else SpotImage.region_id
+    rows = db.scalars(
+        select(SpotImage).where(
+            column == entity_id,
+            SpotImage.url == old_url,
+            SpotImage.status.in_(ACTIVE_ROW_STATUSES),
+        )
+    ).all()
+    for row in rows:
+        row.status = "removed"
+        row.position = None
+
+
+def retire_usage_if_unreferenced(
+    db: Session, *, entity_type: str, entity_id, provider: str | None,
+    external_id: str | None,
+) -> None:
+    """Drop a picker usage when its image is no longer active on this entity."""
+    if not provider or not external_id:
+        return
+    # SessionLocal disables autoflush; the reference query must see the new
+    # hero and retired rows from this transaction.
+    db.flush()
+    model, column = (
+        (Spot, SpotImage.spot_id) if entity_type == "spot"
+        else (Region, SpotImage.region_id)
+    )
+    entity = db.get(model, entity_id)
+    current = entity.image if entity is not None and isinstance(entity.image, dict) else None
+    usage = db.scalar(select(MediaUsage).where(
+        MediaUsage.provider == provider,
+        MediaUsage.external_id == external_id,
+        MediaUsage.entity_type == entity_type,
+        MediaUsage.entity_id == entity_id,
+    ))
+    if usage is None:
+        return
+    if current and current.get("provider") == provider and current.get("external_id") == external_id:
+        usage.role = "hero"
+        return
+    active_row = db.scalar(
+        select(SpotImage.id).where(
+            column == entity_id,
+            SpotImage.provider == provider,
+            SpotImage.external_id == external_id,
+            SpotImage.status.in_(ACTIVE_ROW_STATUSES),
+        ).limit(1)
+    )
+    if active_row is not None:
+        usage.role = "gallery"
+        return
+    db.delete(usage)
 
 
 def image_url_is_referenced(db: Session, url: str, *, exclude_image_id=None) -> bool:

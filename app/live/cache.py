@@ -35,6 +35,10 @@ class Cache(Protocol):
 
     def delete(self, key: str) -> None: ...
 
+    def acquire_lock(self, key: str, token: str, ttl: int) -> bool | None: ...
+
+    def release_lock(self, key: str, token: str) -> None: ...
+
 
 class RedisCache:
     """JSON-over-Redis cache.
@@ -75,12 +79,30 @@ class RedisCache:
         except Exception as exc:  # redis.RedisError + socket errors
             logger.warning("live cache delete failed (%s) — leaving entry to expire", type(exc).__name__)
 
+    def acquire_lock(self, key: str, token: str, ttl: int) -> bool | None:
+        try:
+            return bool(self._r.set(key, token, ex=max(1, ttl), nx=True))
+        except Exception as exc:
+            logger.warning("live cache lock failed (%s)", type(exc).__name__)
+            return None
+
+    def release_lock(self, key: str, token: str) -> None:
+        script = (
+            "if redis.call('get', KEYS[1]) == ARGV[1] then "
+            "return redis.call('del', KEYS[1]) else return 0 end"
+        )
+        try:
+            self._r.eval(script, 1, key, token)
+        except Exception as exc:
+            logger.warning("live cache unlock failed (%s)", type(exc).__name__)
+
 
 class InMemoryCache:
     """Thread-safe process-local TTL cache, lost completely on restart."""
 
     def __init__(self, clock=time.monotonic) -> None:
         self._store: dict[str, tuple[float, Any]] = {}
+        self._locks: dict[str, tuple[float, str]] = {}
         self._clock = clock
         self._lock = threading.Lock()
 
@@ -104,6 +126,23 @@ class InMemoryCache:
     def delete(self, key: str) -> None:
         with self._lock:
             self._store.pop(key, None)
+
+    def acquire_lock(self, key: str, token: str, ttl: int) -> bool:
+        if ttl <= 0:
+            return False
+        with self._lock:
+            now = self._clock()
+            current = self._locks.get(key)
+            if current is not None and current[0] > now:
+                return False
+            self._locks[key] = (now + ttl, token)
+            return True
+
+    def release_lock(self, key: str, token: str) -> None:
+        with self._lock:
+            current = self._locks.get(key)
+            if current is not None and current[1] == token:
+                self._locks.pop(key, None)
 
 
 def _pack(value: Any) -> dict[str, Any]:
@@ -140,6 +179,21 @@ class FailOpenCache:
     def delete(self, key: str) -> None:
         self.primary.delete(key)
         self.fallback.delete(key)
+
+    def acquire_lock(self, key: str, token: str, ttl: int) -> bool:
+        acquire = getattr(self.primary, "acquire_lock", None)
+        if acquire is not None:
+            acquired = acquire(key, token, ttl)
+            if acquired is not None:
+                return acquired
+        fallback_acquire = getattr(self.fallback, "acquire_lock", None)
+        return bool(fallback_acquire and fallback_acquire(key, token, ttl))
+
+    def release_lock(self, key: str, token: str) -> None:
+        for cache in (self.primary, self.fallback):
+            release = getattr(cache, "release_lock", None)
+            if release is not None:
+                release(key, token)
 
 
 _default_cache: Cache | None = None

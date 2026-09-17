@@ -1,0 +1,46 @@
+[
+  {
+    "id": "EDDH",
+    "icaoId": "EDDH",
+    "iataId": "HAM",
+    "wmoId": "10147",
+    "site": "Hamburg Arpt",
+    "lat": 53.633,
+    "lon": 9.988,
+    "elev": 8,
+    "state": "HH",
+    "country": "DE",
+    "priority": 2,
+    "siteType": ["METAR", "TAF"]
+  },
+  {
+    "id": "LFPG",
+    "icaoId": "LFPG",
+    "site": "Paris Charles de Gaulle",
+    "lat": 49.0097,
+    "lon": 2.5479,
+    "elev": 119,
+    "country": "FR",
+    "siteType": ["METAR", "TAF"]
+  },
+  {
+    "id": "KJFK",
+    "icaoId": "KJFK",
+    "site": "New York JFK",
+    "lat": 40.6398,
+    "lon": -73.7789,
+    "elev": 4,
+    "country": "US",
+    "siteType": ["METAR", "TAF"]
+  },
+  {
+    "id": "EDXX",
+    "icaoId": "EDXX",
+    "site": "No METAR",
+    "lat": 53.0,
+    "lon": 10.0,
+    "elev": 20,
+    "country": "DE",
+    "siteType": ["TAF"]
+  }
+]

@@ -263,11 +263,10 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     });
   };
 
-  const resetToNow = () => {
+  const clearPointerPreview = () => {
     if (rafRef.current != null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     pendingXRef.current = null;
     setHoverX(null);
-    setSelectedAtUtc(null);
   };
 
   return (
@@ -292,7 +291,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
           pickAt(e.clientX);
         }}
         onPointerMove={(e) => pickAt(e.clientX)}
-        onPointerLeave={resetToNow}
+        onPointerLeave={clearPointerPreview}
         role="group"
         aria-label="Meteogramm — Zeitpunkt wählen"
       >

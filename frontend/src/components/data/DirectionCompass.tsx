@@ -7,7 +7,7 @@ const CLASS_LABEL = {
   onshore: "Onshore", cross_onshore: "Cross-onshore", sideshore: "Sideshore",
   cross_offshore: "Cross-offshore", offshore: "Offshore", unavailable: null,
 } as const;
-const KIND_LABEL = { forecast: "Forecast", nowcast: "Nowcast", measurement: "Messung" } as const;
+const KIND_LABEL = { forecast: "Forecast", live_wind: "LiveWind", nowcast: "Nowcast", measurement: "Messung" } as const;
 
 function DirectionMark({ degrees, kind, reduced }: { degrees: number; kind: "wind" | "wave"; reduced: boolean }) {
   return <motion.g

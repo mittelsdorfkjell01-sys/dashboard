@@ -52,6 +52,12 @@ _ALL_SPECS = (
     IFS, GFS, AIFS, ICON_GLOBAL,
 )
 BY_ID = {spec.id: spec for spec in _ALL_SPECS}
+_DIRECT_SOURCE_FAMILIES = {
+    "gfs-0p25": ModelFamily.GFS,
+    "icon-d2": ModelFamily.REGIONAL,
+    "icon-eu": ModelFamily.REGIONAL,
+    "icon-global": ModelFamily.ICON_GLOBAL,
+}
 
 
 # (spec, (lat_min, lat_max, lon_min, lon_max)) — most specific first, continental last.
@@ -88,4 +94,6 @@ def forecast_models(latitude: float, longitude: float) -> tuple[ModelSpec, ...]:
 
 
 def family_for(model_id: str) -> ModelFamily:
+    if model_id in _DIRECT_SOURCE_FAMILIES:
+        return _DIRECT_SOURCE_FAMILIES[model_id]
     return BY_ID.get(model_id, ModelSpec(model_id, ModelFamily.OTHER)).family

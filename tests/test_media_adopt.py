@@ -419,17 +419,18 @@ def test_verify_sources_treats_an_unreachable_host_as_dead(db, spot, unsplash_fe
 # --- HTTP surface ----------------------------------------------------------
 
 def test_adopt_requires_authentication(anon_client, spot):
-    resp = anon_client.post(
-        "/admin/media/adopt",
-        json={
-            "entity_type": "spot",
-            "entity_id": str(spot.id),
-            "role": "hero",
-            "provider": "unsplash",
-            "external_id": HERO_ID,
-        },
-    )
-    assert resp.status_code in (401, 403)
+    for path in ("/admin/media/adopt", "/admin/media/adopt/stream"):
+        resp = anon_client.post(
+            path,
+            json={
+                "entity_type": "spot",
+                "entity_id": str(spot.id),
+                "role": "hero",
+                "provider": "unsplash",
+                "external_id": HERO_ID,
+            },
+        )
+        assert resp.status_code in (401, 403)
 
 
 def test_adopt_endpoint_returns_the_written_image(client, db, spot, unsplash_fetch):
@@ -448,6 +449,55 @@ def test_adopt_endpoint_returns_the_written_image(client, db, spot, unsplash_fet
     body = resp.json()
     assert body["image"]["focal"] == {"x": 40.0, "y": 55.0}
     assert body["image"]["provider"] == "unsplash"
+
+
+def test_streamed_adopt_reports_progress_and_committed_result(
+    client, db, spot, unsplash_fetch
+):
+    resp = client.post(
+        "/admin/media/adopt/stream",
+        json={
+            "entity_type": "spot", "entity_id": str(spot.id), "role": "hero",
+            "provider": "unsplash", "external_id": HERO_ID,
+        },
+    )
+    assert resp.status_code == 200
+    events = [json.loads(line) for line in resp.text.splitlines()]
+    progress = [event["percent"] for event in events if event["type"] == "progress"]
+    assert progress[0] == 0
+    assert progress[-1] == 100
+    assert progress == sorted(progress)
+    assert events[-1]["type"] == "result"
+    db.refresh(spot)
+    assert events[-1]["result"]["image"] == spot.image
+
+
+def test_streamed_hosted_adopt_reports_download_and_encoding(
+    client, spot, monkeypatch
+):
+    monkeypatch.setattr(pexels.ADAPTER, "fetch", lambda i: pexels_photo(i))
+
+    def fake_download(url, *, on_progress=None):
+        if on_progress:
+            on_progress(500, 1000)
+            on_progress(1000, 1000)
+        return jpeg_bytes(1600, 900)
+
+    monkeypatch.setattr("app.media.providers.base.download_bytes", fake_download)
+    resp = client.post(
+        "/admin/media/adopt/stream",
+        json={
+            "entity_type": "spot", "entity_id": str(spot.id), "role": "hero",
+            "provider": "pexels", "external_id": PEXELS_HERO_ID,
+        },
+    )
+    assert resp.status_code == 200
+    events = [json.loads(line) for line in resp.text.splitlines()]
+    progress = [event["percent"] for event in events if event["type"] == "progress"]
+    assert any(30 < percent < 45 for percent in progress)
+    assert any(45 < percent <= 80 for percent in progress)
+    assert progress[-1] == 100
+    assert events[-1]["type"] == "result"
 
 
 def test_duplicate_hero_is_a_409_so_the_client_can_tell_it_apart(
@@ -469,6 +519,27 @@ def test_duplicate_hero_is_a_409_so_the_client_can_tell_it_apart(
     )
     assert resp.status_code == 409, resp.text
     assert resp.json()["detail"]["code"] == "duplicate_hero"
+
+
+def test_streamed_duplicate_hero_keeps_the_409_detail(
+    client, db, spot, other_spot, unsplash_fetch
+):
+    media_adopt.adopt(
+        db, entity_type="spot", entity_id=other_spot.id, role="hero",
+        provider="unsplash", external_id=HERO_ID,
+    )
+    resp = client.post(
+        "/admin/media/adopt/stream",
+        json={
+            "entity_type": "spot", "entity_id": str(spot.id), "role": "hero",
+            "provider": "unsplash", "external_id": HERO_ID,
+        },
+    )
+    assert resp.status_code == 200
+    error = json.loads(resp.text.splitlines()[-1])
+    assert error["type"] == "error"
+    assert error["status"] == 409
+    assert error["detail"]["code"] == "duplicate_hero"
 
 
 def test_adopt_404s_for_an_unknown_entity(client, unsplash_fetch):

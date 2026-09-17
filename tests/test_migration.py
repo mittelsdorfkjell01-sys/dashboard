@@ -19,6 +19,9 @@ EXPECTED_TABLES = {
     "media_provider_budget",
     "media_garbage_candidates",
     "media_gc_state",
+    "weather_observation_quarantine",
+    "weather_observation_import_states",
+    "weather_live_wind_jobs",
 }
 
 
@@ -26,6 +29,30 @@ def test_all_tables_created(db):
     inspector = inspect(db.get_bind())
     tables = set(inspector.get_table_names())
     assert EXPECTED_TABLES.issubset(tables)
+
+
+def test_live_wind_operations_columns_present(db):
+    observation_state = {
+        column["name"]
+        for column in inspect(db.get_bind()).get_columns(
+            "weather_observation_import_states"
+        )
+    }
+    live_wind_jobs = {
+        column["name"]
+        for column in inspect(db.get_bind()).get_columns("weather_live_wind_jobs")
+    }
+    assert "next_attempt_at" in observation_state
+    assert {
+        "spot_id",
+        "cycle_at",
+        "available_at",
+        "worker_token",
+        "product_status",
+        "result_payload",
+        "exclusion_reasons",
+        "baseline_cache_hit",
+    }.issubset(live_wind_jobs)
 
 
 def test_postgis_enabled(db):
@@ -282,6 +309,139 @@ def test_migration_0051_model_matches_table(db):
     }
     model_columns = {column.name for column in ForecastSectorGateEvidence.__table__.columns}
     assert model_columns == table_columns
+
+
+def test_migration_0052_normalized_observations_down_and_up(db):
+    """The additive observation migration reverses and reapplies safely."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+
+    def normalized_storage() -> tuple[bool, set[str], set[str]]:
+        inspector = inspect(db.get_bind())
+        return (
+            inspector.has_table("weather_observation_quarantine"),
+            {
+                column["name"]
+                for column in inspector.get_columns("weather_observations")
+            },
+            {
+                column["name"]
+                for column in inspector.get_columns("weather_stations")
+            },
+        )
+
+    present, observation_columns, station_columns = normalized_storage()
+    assert present
+    assert {"wind_u_ms", "wind_v_ms", "received_at", "imported_at"} <= (
+        observation_columns
+    )
+    assert {"wigos_id", "icao_id", "measurement_height_m", "provenance"} <= (
+        station_columns
+    )
+
+    command.downgrade(cfg, "0051_sector_gate_evidence")
+    db.commit()
+    present, observation_columns, station_columns = normalized_storage()
+    assert not present
+    assert "wind_u_ms" not in observation_columns
+    assert "wigos_id" not in station_columns
+
+    command.upgrade(cfg, "head")
+    db.commit()
+    present, observation_columns, station_columns = normalized_storage()
+    assert present
+    assert "wind_u_ms" in observation_columns
+    assert "wigos_id" in station_columns
+
+
+def test_migration_0052_models_match_tables(db):
+    """Normalized observation ORM models match the migrated tables."""
+    from app.models import (
+        WeatherObservation,
+        WeatherObservationImportState,
+        WeatherObservationQuarantine,
+        WeatherStation,
+        WeatherStationModelResidual,
+        WeatherStationPhysicsProfile,
+    )
+
+    inspector = inspect(db.get_bind())
+    for model in (
+        WeatherStation,
+        WeatherObservation,
+        WeatherObservationImportState,
+        WeatherObservationQuarantine,
+        WeatherStationPhysicsProfile,
+        WeatherStationModelResidual,
+    ):
+        table_columns = {
+            column["name"] for column in inspector.get_columns(model.__tablename__)
+        }
+        model_columns = {column.name for column in model.__table__.columns}
+        assert model_columns == table_columns
+
+
+def test_migration_0053_import_state_down_and_up(db):
+    """Operational import state is additive and independently reversible."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+
+    assert inspect(db.get_bind()).has_table("weather_observation_import_states")
+    command.downgrade(cfg, "0052_normalized_wind")
+    db.commit()
+    assert not inspect(db.get_bind()).has_table("weather_observation_import_states")
+    assert inspect(db.get_bind()).has_table("weather_observations")
+    command.upgrade(cfg, "head")
+    db.commit()
+    assert inspect(db.get_bind()).has_table("weather_observation_import_states")
+
+
+def test_migration_0054_station_residual_evidence_down_and_up(db):
+    """Station profiles and residual evidence are additive and reversible."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+
+    inspector = inspect(db.get_bind())
+    assert inspector.has_table("weather_station_physics_profiles")
+    assert inspector.has_table("weather_station_model_residuals")
+    command.downgrade(cfg, "0053_observation_import_state")
+    db.commit()
+    inspector = inspect(db.get_bind())
+    assert not inspector.has_table("weather_station_physics_profiles")
+    assert not inspector.has_table("weather_station_model_residuals")
+    assert inspector.has_table("weather_observations")
+    command.upgrade(cfg, "head")
+    db.commit()
+    inspector = inspect(db.get_bind())
+    assert inspector.has_table("weather_station_physics_profiles")
+    assert inspector.has_table("weather_station_model_residuals")
 
 
 def test_migration_0003_down_and_up(db):

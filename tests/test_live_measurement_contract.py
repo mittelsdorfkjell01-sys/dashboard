@@ -15,9 +15,11 @@ from datetime import datetime, timezone
 from app.live.cache import InMemoryCache
 from app.live.public_cache import (
     get_public_live,
+    get_public_live_wind_baseline,
     get_public_measurement,
     public_measurement_key,
     set_public_live,
+    set_public_live_wind_baseline,
 )
 from app.schemas.live import LiveConditionsRead
 
@@ -65,10 +67,46 @@ def test_model_cache_never_pins_a_station_measurement():
     spot_id = uuid.uuid4()
     payload = _live_payload()
     payload["measurement"] = {"observation_type": "measurement", "wind_speed_ms": 7.0}
+    payload["live_wind"] = {"status": "baseline", "wind_speed_ms": 99.0}
     set_public_live(cache, spot_id, payload, generation="0")
     cached = get_public_live(cache, spot_id, generation="0")
     assert cached is not None
     assert cached["measurement"] is None
+    assert "live_wind" not in cached
+    restored = LiveConditionsRead.model_validate(cached)
+    assert restored.live_wind is not None
+    assert restored.live_wind.status == "unavailable"
+    assert restored.live_wind.fallback_reason == "engine_disabled"
+
+
+def test_live_wind_cache_keeps_only_the_model_baseline_and_model_identity():
+    cache = InMemoryCache()
+    spot_id = uuid.uuid4()
+    payload = {
+        "status": "baseline",
+        "station_count": 0,
+        "analyzed_at": datetime(2026, 1, 1, 12, tzinfo=timezone.utc),
+    }
+
+    set_public_live_wind_baseline(
+        cache,
+        spot_id,
+        payload,
+        model_ids=("icon_eu", "ncep_gfs_global"),
+    )
+    cached = get_public_live_wind_baseline(cache, spot_id)
+
+    assert cached["status"] == "baseline"
+    assert cached["_model_ids"] == ["icon_eu", "ncep_gfs_global"]
+    assert cached["analyzed_at"].endswith("+00:00")
+
+    set_public_live_wind_baseline(
+        cache,
+        spot_id,
+        {"status": "station_adjusted", "station_count": 1},
+        model_ids=("icon_eu",),
+    )
+    assert get_public_live_wind_baseline(cache, spot_id)["status"] == "baseline"
 
 
 def test_station_import_invalidates_the_measurement_cache_layer(db):

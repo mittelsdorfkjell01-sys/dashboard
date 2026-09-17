@@ -8,6 +8,7 @@ from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 WEATHER_CONTRACT_VERSION = "weather-v6"
+LIVE_WIND_CONTRACT_VERSION = "live-wind-v1"
 # Bump independently from the shared value/provenance contract whenever the
 # shape or horizon of the public forecast product changes. This prevents a
 # deployment from serving an older assembled forecast from Redis or reusing an
@@ -18,6 +19,51 @@ MEASUREMENT_STALE_SECONDS = 30 * 60
 ATMOSPHERE_FORECAST_STALE_SECONDS = 3 * 60 * 60
 MARINE_FORECAST_STALE_SECONDS = 6 * 60 * 60
 WMO_MAPPING_VERSION = "wmo-v1"
+
+
+def unavailable_live_wind(reason: str = "engine_disabled") -> dict:
+    """Return an honest LiveWind boundary when no model analysis is possible.
+
+    The object deliberately contains no wind value, timestamp, source, or
+    version that could be mistaken for a computed analysis.
+    """
+    reason = reason.strip()
+    if not reason:
+        raise ValueError("LiveWind fallback reason must not be empty")
+    return {
+        "contract_version": LIVE_WIND_CONTRACT_VERSION,
+        "product_type": "live_wind",
+        "status": "unavailable",
+        "analyzed_at": None,
+        "valid_at": None,
+        "wind_speed_ms": None,
+        "wind_direction_from_deg": None,
+        "wind_u_ms": None,
+        "wind_v_ms": None,
+        "gust": None,
+        "model_version": None,
+        "analysis_version": None,
+        "station_count": 0,
+        "uncertainty_ms": None,
+        "confidence": None,
+        "sources": [],
+        "applied_physics_version": None,
+        "fallback_reason": reason,
+        "model_baseline_u_ms": None,
+        "model_baseline_v_ms": None,
+        "regional_wind_u_ms": None,
+        "regional_wind_v_ms": None,
+        "correction_u_ms": None,
+        "correction_v_ms": None,
+        "model_spread_ms": None,
+        "conflict_index": None,
+        "covariance": None,
+        "evidence_strength": None,
+        "effective_station_count": None,
+        "station_contributions": [],
+        "analysis_configuration": None,
+        "local_physics_component": None,
+    }
 
 
 class Availability(StrEnum):

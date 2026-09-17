@@ -9,6 +9,7 @@ from app.weather.physics.blend import blended_factor, family_blend
 from app.weather.physics.coast import coastal_class
 from app.weather.physics.limits import clamp_combined_factor, clamp_direction_change
 from app.weather.physics.manual import select_sector
+from app.weather.live_wind_physics_profile import validate_correction_ledger
 from app.weather.vectors import normalize_direction, uv_to_wind, wind_to_uv
 
 
@@ -46,7 +47,18 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend
     involved here.
     """
     if profile is None or not profile.active:
-        return AppliedWind(speed_ms, normalize_direction(direction_deg), "coordinates", None, False)
+        return AppliedWind(
+            speed_ms,
+            normalize_direction(direction_deg),
+            "coordinates",
+            None,
+            False,
+            applied_component={
+                "component": "local_physics",
+                "status": "unavailable",
+                "reason": "active_profile_missing",
+            },
+        )
 
     tier = profile.quality_tier
     classification = (
@@ -61,12 +73,35 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend
     component = None
     limited = False
     if sector is not None:
+        metadata = _sector_metadata(getattr(sector, "note", None))
+        ledger_components = (
+            metadata.get("correction_ledger", {}).get("ordered_components")
+            or metadata.get("components")
+            or ()
+        )
+        ledger = validate_correction_ledger(ledger_components)
+        if not ledger.ok:
+            return AppliedWind(
+                speed_ms=float(speed_ms),
+                direction_deg=normalize_direction(direction_deg),
+                quality_tier=tier,
+                coastal_classification=classification,
+                correction_limited=True,
+                corrected=False,
+                applied_component={
+                    "component": "local_physics",
+                    "status": "unavailable",
+                    "reason": "double_correction_guard:" + ",".join(ledger.reasons),
+                    "sector": [sector.start_deg, sector.end_deg],
+                },
+            )
         effective = blended_factor(sector.speed_factor, blend)
         factor = clamp_combined_factor(effective, advanced)
         offset = clamp_direction_change(sector.direction_offset_deg, advanced)
         limited = factor != effective or offset != sector.direction_offset_deg
         component = {
             "component": "gwa_sector",
+            "status": "applied",
             "factor": round(factor, 4),
             "raw_factor": round(sector.speed_factor, 4),
             "blend": round(blend, 4),
@@ -74,6 +109,16 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend
             "sector": [sector.start_deg, sector.end_deg],
             "saturated": limited,
             "note": sector.note,
+            "correction_ledger": {
+                "ok": True,
+                "ordered_components": list(ledger.ordered_components),
+            },
+        }
+    else:
+        component = {
+            "component": "local_physics",
+            "status": "unavailable",
+            "reason": "direction_sector_unavailable",
         }
 
     corrected = factor != 1.0 or offset != 0.0
@@ -95,6 +140,16 @@ def apply_local_physics(speed_ms: float, direction_deg: float, profile, *, blend
         corrected=corrected,
         applied_component=component,
     )
+
+
+def _sector_metadata(note: str | None) -> dict:
+    if not note:
+        return {}
+    try:
+        parsed = json.loads(note)
+    except (ValueError, TypeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def _sector_confidence(note: str | None) -> str:

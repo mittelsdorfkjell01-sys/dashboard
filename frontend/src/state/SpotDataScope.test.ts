@@ -1,6 +1,6 @@
 import { describe,expect,it } from "vitest";
 import type { NormalizedForecastHour } from "../lib/forecastNormalization";
-import { resolveForecastSelection } from "./SpotDataScope";
+import { displayedForecast, resolveForecastSelection } from "./SpotDataScope";
 
 const hours=["2026-08-24T00:00:00.000Z","2026-08-24T03:00:00.000Z","2026-08-24T09:00:00.000Z"].map((utcKey)=>({utcKey} as NormalizedForecastHour));
 
@@ -12,5 +12,9 @@ describe("central forecast selection",()=>{
   it("uses the nearest real slot for invalid or empty requests",()=>{
     expect(resolveForecastSelection(hours,"invalid",Date.parse("2026-08-24T08:30:00Z"))).toBe(hours[2].utcKey);
     expect(resolveForecastSelection([],null)).toBeNull();
+  });
+  it("keeps the current product active until forecast scrubbing is explicit",()=>{
+    expect(displayedForecast("now", hours[1])).toBeNull();
+    expect(displayedForecast("forecast", hours[1])).toBe(hours[1]);
   });
 });

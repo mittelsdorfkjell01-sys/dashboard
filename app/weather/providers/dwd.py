@@ -9,10 +9,39 @@ from datetime import datetime, timezone
 import re
 
 import httpx
-from app.weather.providers.common import NormalizedObservation, ObservationStation, normalize_observation
+from app.weather.providers.common import (
+    NormalizedObservation,
+    ObservationStation,
+    deduplicate_observations,
+    normalize_observation,
+)
 
 DWD_NOW = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/now"
 DWD_STATIONS = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/recent/zehn_min_ff_Beschreibung_Stationen.txt"
+DWD_LICENSE = "CC BY 4.0"
+DWD_PROVENANCE = {
+    "source": "DWD Climate Data Center",
+    "product": "10-minute station wind observations",
+    "source_url": DWD_NOW,
+    "terms_url": "https://opendata.dwd.de/climate_environment/CDC/Terms_of_use.txt",
+    "country_code": "DE",
+    "commercial_reuse": True,
+    "attribution_required": True,
+    "typical_interval_minutes": 10,
+}
+
+
+def _provider_value(value):
+    cleaned = str(value or "").strip()
+    return None if cleaned in {"", "-999", "-999.0"} else cleaned
+
+
+def _direction_value(value):
+    cleaned = _provider_value(value)
+    try:
+        return 0.0 if float(cleaned) == 360 else cleaned
+    except (TypeError, ValueError):
+        return cleaned
 
 
 def parse_now_zip(payload: bytes, *, station_id: str | None = None, fetched_at=None) -> list[NormalizedObservation]:
@@ -21,32 +50,52 @@ def parse_now_zip(payload: bytes, *, station_id: str | None = None, fetched_at=N
         if name is None:
             raise ValueError("DWD archive contains no 10-minute wind product")
         text = archive.read(name).decode("latin-1")
+    received_at = fetched_at or datetime.now(timezone.utc)
+    imported_at = datetime.now(timezone.utc)
     rows = []
     for row in csv.DictReader(io.StringIO(text), delimiter=";"):
         clean = {key.strip(): (value or "").strip() for key, value in row.items() if key}
+        issues = []
         try:
-            speed = float(clean["FF_10"])
-            if speed < 0:
-                continue
             observed = datetime.strptime(clean["MESS_DATUM"], "%Y%m%d%H%M").replace(tzinfo=timezone.utc)
-            direction_raw = float(clean.get("DD_10", "-999"))
-            quality_raw = clean.get("QN", clean.get("QN_3", ""))
-            sid = station_id or clean.get("STATIONS_ID") or clean.get("STATION_ID") or "unknown"
-            rows.append(normalize_observation(
-                provider="dwd", station_id=sid, observed_at=observed,
-                wind_speed_ms=speed, wind_direction_deg=direction_raw if direction_raw >= 0 else None,
-                wind_gust_ms=None, provider_quality=quality_raw or None, fetched_at=fetched_at,
-            ))
         except (KeyError, ValueError):
-            continue
-    return rows
+            observed = None
+            issues.append("provider_parse:invalid")
+        quality_raw = clean.get("QN", clean.get("QN_3", ""))
+        payload_station_id = clean.get("STATIONS_ID") or clean.get("STATION_ID")
+        sid = payload_station_id or station_id
+        if (
+            station_id
+            and payload_station_id
+            and str(payload_station_id).zfill(5) != str(station_id).zfill(5)
+        ):
+            issues.append("station_identity:mismatch")
+        rows.append(normalize_observation(
+            provider="dwd",
+            station_id=sid,
+            observed_at=observed,
+            wind_speed_ms=_provider_value(clean.get("FF_10")),
+            wind_direction_deg=_direction_value(clean.get("DD_10")),
+            provider_quality=quality_raw or None,
+            received_at=received_at,
+            imported_at=imported_at,
+            license=DWD_LICENSE,
+            provenance=DWD_PROVENANCE,
+            raw_payload=clean,
+            extra_issues=issues,
+        ))
+    return deduplicate_observations(rows)
 
 
 def fetch_now(station_id: str, *, timeout: float = 15.0) -> list[NormalizedObservation]:
     station = str(station_id).strip().zfill(5)
     response = httpx.get(f"{DWD_NOW}/10minutenwerte_wind_{station}_now.zip", timeout=timeout)
     response.raise_for_status()
-    return parse_now_zip(response.content, station_id=station)
+    return parse_now_zip(
+        response.content,
+        station_id=station,
+        fetched_at=datetime.now(timezone.utc),
+    )
 
 
 _STATION_LINE = re.compile(
@@ -72,6 +121,9 @@ def parse_station_catalog(text: str, *, today: str | None = None) -> list[Observ
         stations.append(ObservationStation(
             provider="dwd", station_id=station_id, name=name.strip(), latitude=float(latitude),
             longitude=float(longitude), elevation_m=float(elevation), parameters=("wind_speed", "wind_dir"),
+            license=DWD_LICENSE, provenance=DWD_PROVENANCE,
+            country_code="DE", typical_interval_minutes=10,
+            commercial_reuse=True, attribution_required=True,
         ))
     return stations
 

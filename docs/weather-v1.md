@@ -42,7 +42,7 @@
 
 - DWD and DMI observation adapters require no API key. KNMI access is prepared
   through `KNMI_API_KEY`; secrets are environment-only.
-- `POST /admin/weather/spots/{id}/station/auto?provider=dwd|dmi` ranks the three
+- `POST /admin/weather/spots/{id}/station/auto?provider=dwd|dmi|awc_metar` ranks the three
   nearest wind-capable stations inside `WEATHER_STATION_MATCH_MAX_KM` and stores
   the nearest choice with its distance. Distance is only a first-stage match;
   elevation, exposure and coastal similarity must be added before bias goes live.

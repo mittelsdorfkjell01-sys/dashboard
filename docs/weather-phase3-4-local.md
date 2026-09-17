@@ -9,8 +9,9 @@ than 30 minutes old, not materially in the future, provider-accepted and
 physically plausible. Air and marine provenance always remain independent.
 
 The import foundation batches inserts with the existing station/time unique
-constraint and can publish the latest accepted value to Redis. Provider and
-station failures are isolated and retries are bounded. The CLI is dry-run only.
+constraint and invalidates the public measurement cache after a new accepted
+row. Provider and station failures are isolated and retries are bounded. The
+CLI is dry-run only.
 Retention is configurable in design but no deletion is implemented: any first
 production cleanup requires a separate review and approval.
 
@@ -18,6 +19,22 @@ Migration `0041_station_observations` is prepared and tested only against the
 disposable local test database. Production migration, catalog synchronization,
 coverage measurement and the ten-minute schedule are blocked until the database
 limit is reset and an operator explicitly approves them.
+
+Migration `0052_normalized_wind` adds nullable normalized fields to the existing
+station and accepted-observation tables and adds the separate
+`weather_observation_quarantine` audit table. It performs no backfill, rewrite,
+deletion or status change. Legacy readers can continue using `fetched_at` and
+`created_at`; new imports write `received_at`, `imported_at`, u/v and gust-period
+metadata while keeping `fetched_at` as a compatibility copy of `received_at`.
+Rejected, quarantined and raw-status rows never enter the accepted-observation
+table.
+
+Safe rollout order is migration first, then application deployment, followed by
+a dry-run and one bounded DWD/DMI import. Roll back application code before any
+schema downgrade. A downgrade drops the audit table and therefore must not run
+in production after imports unless its rows have first been retained under an
+explicitly approved data-retention procedure. No automatic production downgrade,
+cleanup or legacy-row backfill is part of this change.
 
 ## Phase 4
 

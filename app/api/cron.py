@@ -50,6 +50,23 @@ def collect_weather_shadow(db: Session = Depends(get_db)) -> dict:
     }
 
 
+@router.post(
+    "/live-wind",
+    dependencies=[Depends(_require_cron)],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def enqueue_live_wind(db: Session = Depends(get_db)) -> dict:
+    """Queue a fair bounded shadow batch; never perform provider I/O inline."""
+    from app.weather.live_wind_jobs import enqueue_live_wind_cycle
+
+    try:
+        return enqueue_live_wind_cycle(db)
+    except Exception:
+        db.rollback()
+        logger.exception("cron_live_wind_enqueue_failed")
+        return {"error": "internal_error", "public_effect": "none"}
+
+
 @router.get("/climatology", dependencies=[Depends(_require_cron)])
 def maintain_climatology(
     db: Session = Depends(get_db),
@@ -162,10 +179,14 @@ def collect_observations(db: Session = Depends(get_db)) -> dict:
     """
     settings = get_settings()
     try:
+        from app.live.cache import default_cache
         from app.weather.observation_worker import run_observation_import
 
         return run_observation_import(
-            db, limit=settings.weather_observation_cron_batch_size, dry_run=False
+            db,
+            limit=settings.weather_observation_cron_batch_size,
+            dry_run=False,
+            cache=default_cache(),
         )
     except Exception:
         db.rollback()

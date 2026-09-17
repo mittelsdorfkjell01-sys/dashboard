@@ -19,11 +19,18 @@ class WeatherStation(Base, TimestampMixin):
     spot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False)
     provider: Mapped[str] = mapped_column(String(20), nullable=False)
     provider_station_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    wigos_id: Mapped[str | None] = mapped_column(String(80))
+    icao_id: Mapped[str | None] = mapped_column(String(16))
     name: Mapped[str | None] = mapped_column(String(160))
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     distance_km: Mapped[float | None] = mapped_column(Float)
     elevation_m: Mapped[float | None] = mapped_column(Float)
+    measurement_height_m: Mapped[float | None] = mapped_column(Float)
+    license: Mapped[str | None] = mapped_column(String(160))
+    provenance: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
     elevation_difference_m: Mapped[float | None] = mapped_column(Float)
     setting_class: Mapped[str] = mapped_column(String(20), nullable=False, server_default="unknown")
     exposure_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="unknown")
@@ -40,6 +47,11 @@ class WeatherStation(Base, TimestampMixin):
         UniqueConstraint("spot_id", "provider", "provider_station_id", name="uq_weather_station_spot_provider"),
         CheckConstraint("latitude >= -90 AND latitude <= 90", name="ck_weather_station_lat"),
         CheckConstraint("longitude >= -180 AND longitude <= 180", name="ck_weather_station_lon"),
+        CheckConstraint(
+            "measurement_height_m IS NULL OR "
+            "(measurement_height_m >= 0 AND measurement_height_m <= 300)",
+            name="ck_weather_station_measurement_height",
+        ),
     )
 
 
@@ -51,10 +63,15 @@ class WeatherObservation(Base):
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     wind_speed_ms: Mapped[float] = mapped_column(Float, nullable=False)
     wind_gust_ms: Mapped[float | None] = mapped_column(Float)
+    gust_period_seconds: Mapped[int | None] = mapped_column(Integer)
     wind_direction_deg: Mapped[float | None] = mapped_column(Float)
+    wind_u_ms: Mapped[float | None] = mapped_column(Float)
+    wind_v_ms: Mapped[float | None] = mapped_column(Float)
     quality: Mapped[int | None] = mapped_column(Integer)
     provider_quality: Mapped[str | None] = mapped_column(String(80))
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    imported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     import_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="accepted")
     data_issues: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -63,6 +80,263 @@ class WeatherObservation(Base):
         UniqueConstraint("station_id", "observed_at", name="uq_weather_observation_time"),
         CheckConstraint("wind_speed_ms >= 0 AND wind_speed_ms <= 100", name="ck_weather_observation_speed"),
         CheckConstraint("wind_direction_deg IS NULL OR (wind_direction_deg >= 0 AND wind_direction_deg < 360)", name="ck_weather_observation_dir"),
+        CheckConstraint(
+            "gust_period_seconds IS NULL OR "
+            "(gust_period_seconds >= 1 AND gust_period_seconds <= 86400)",
+            name="ck_weather_observation_gust_period",
+        ),
+    )
+
+
+class WeatherObservationQuarantine(Base):
+    """Immutable audit trail for public observations unsafe to accept."""
+
+    __tablename__ = "weather_observation_quarantine"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    station_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_stations.id", ondelete="SET NULL"),
+    )
+    provider: Mapped[str] = mapped_column(Text, nullable=False)
+    provider_station_id: Mapped[str] = mapped_column(Text, nullable=False)
+    station_identity: Mapped[str] = mapped_column(Text, nullable=False)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    import_status: Mapped[str] = mapped_column(String(24), nullable=False)
+    rejection_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    data_issues: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    raw_payload: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    normalized_payload: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "import_status IN ('raw','rejected','quarantined')",
+            name="ck_weather_observation_quarantine_status",
+        ),
+        Index(
+            "ix_weather_observation_quarantine_lookup",
+            "provider",
+            "provider_station_id",
+            "observed_at",
+        ),
+        UniqueConstraint(
+            "fingerprint", name="uq_weather_observation_quarantine_fingerprint"
+        ),
+    )
+
+
+class WeatherObservationImportState(Base):
+    """Latest sanitized import outcome per configured station."""
+
+    __tablename__ = "weather_observation_import_states"
+
+    station_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_stations.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    last_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_class: Mapped[str | None] = mapped_column(String(120))
+    consecutive_failures: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    last_counts: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('success','error')",
+            name="ck_weather_observation_import_state_status",
+        ),
+        CheckConstraint(
+            "consecutive_failures >= 0",
+            name="ck_weather_observation_import_state_failures",
+        ),
+        Index(
+            "ix_weather_observation_import_state_provider_status",
+            "provider",
+            "status",
+        ),
+    )
+
+
+class WeatherStationPhysicsProfile(Base, TimestampMixin):
+    """Versioned, reviewed local-physics input for a measurement station."""
+
+    __tablename__ = "weather_station_physics_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    station_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_stations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="draft"
+    )
+    active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    quality_tier: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default="coordinates"
+    )
+    coastal_normal_deg: Mapped[float | None] = mapped_column(Float)
+    physics_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    profile: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint(
+            "station_id", "version", name="uq_weather_station_physics_profile_version"
+        ),
+        CheckConstraint(
+            "status IN ('draft','reviewed','retired')",
+            name="ck_weather_station_physics_profile_status",
+        ),
+        CheckConstraint(
+            "version >= 1", name="ck_weather_station_physics_profile_version"
+        ),
+        CheckConstraint(
+            "coastal_normal_deg IS NULL OR "
+            "(coastal_normal_deg >= 0 AND coastal_normal_deg < 360)",
+            name="ck_weather_station_physics_profile_coastal_normal",
+        ),
+        CheckConstraint(
+            "NOT active OR (status = 'reviewed' AND reviewed_at IS NOT NULL)",
+            name="ck_weather_station_physics_profile_active_reviewed",
+        ),
+        Index(
+            "uq_weather_station_physics_profile_active",
+            "station_id",
+            unique=True,
+            postgresql_where=text("active"),
+        ),
+    )
+
+
+class WeatherStationModelResidual(Base):
+    """Immutable evidence for measurement minus raw model at one station/time."""
+
+    __tablename__ = "weather_station_model_residuals"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    station_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_stations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    observation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_observations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    station_profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_station_physics_profiles.id", ondelete="SET NULL"),
+    )
+    analysis_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    calculation_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    baseline_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    baseline_bundle_hash: Mapped[str | None] = mapped_column(String(64))
+    dataset_bundle_hash: Mapped[str | None] = mapped_column(String(64))
+    dataset_manifest: Mapped[dict | None] = mapped_column(JSONB)
+    sample_hash: Mapped[str | None] = mapped_column(String(64))
+    sample_manifest: Mapped[dict | None] = mapped_column(JSONB)
+    activation_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    analyzed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    model_runs: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    model_members: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    raw_model_vector: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    expected_station_vector: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    measurement_vector: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    residual_vector: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    gust_evidence: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    station_profile_version: Mapped[int | None] = mapped_column(Integer)
+    physics_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    physics_applied: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    model_member_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    representativeness_uncertainty: Mapped[str] = mapped_column(
+        String(48), nullable=False
+    )
+    qc_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    qc_reasons: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    configuration: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "observation_id",
+            "analysis_id",
+            "calculation_version",
+            name="uq_weather_station_model_residual_evidence",
+        ),
+        CheckConstraint(
+            "qc_status IN ('accepted','degraded','rejected','unavailable')",
+            name="ck_weather_station_model_residual_qc",
+        ),
+        CheckConstraint(
+            "model_member_count >= 0",
+            name="ck_weather_station_model_residual_member_count",
+        ),
+        Index(
+            "ix_weather_station_model_residual_station_time",
+            "station_id",
+            "observed_at",
+        ),
     )
 
 

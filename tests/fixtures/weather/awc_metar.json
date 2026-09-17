@@ -1,0 +1,18 @@
+[
+  {
+    "icaoId": "EDDH",
+    "receiptTime": "2026-08-26T12:22:09.472Z",
+    "obsTime": 1787746800,
+    "reportTime": "2026-08-26T12:20:00.000Z",
+    "wdir": 290,
+    "wspd": 6,
+    "wgst": 11,
+    "qcField": 2,
+    "metarType": "METAR",
+    "rawOb": "METAR EDDH 261220Z 29006G11KT CAVOK 19/16 Q1017",
+    "lat": 53.633,
+    "lon": 9.988,
+    "elev": 8,
+    "name": "Hamburg Arpt, HH, DE"
+  }
+]

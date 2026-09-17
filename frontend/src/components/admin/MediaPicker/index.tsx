@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
-  adoptMedia,
+  adoptMediaWithProgress,
   getMediaContext,
   searchMedia,
   type ImageRecord,
@@ -38,7 +38,7 @@ import LicenseCard from "./LicenseCard";
 
 const COLUMN_COUNT = 3;
 const CHIP_DEBOUNCE_MS = 250;
-const ADOPT_TIMEOUT_SECONDS = 120;
+const ADOPT_TIMEOUT_SECONDS = 300;
 
 function elapsedLabel(seconds: number): string {
   if (seconds < 60) return `${seconds} Sek.`;
@@ -94,6 +94,8 @@ export default function MediaPicker({
   const [focal, setFocal] = useState({ x: 50, y: 50 });
   const [busy, setBusy] = useState(false);
   const [adoptCompleted, setAdoptCompleted] = useState(0);
+  const [adoptProgress, setAdoptProgress] = useState(0);
+  const [adoptMessage, setAdoptMessage] = useState<string | null>(null);
   const [adoptElapsed, setAdoptElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -250,6 +252,8 @@ export default function MediaPicker({
     setNotice(null);
     setTabs({});
     setAdoptCompleted(0);
+    setAdoptProgress(0);
+    setAdoptMessage(null);
     setAdoptElapsed(0);
   }, [open]);
 
@@ -303,6 +307,8 @@ export default function MediaPicker({
     if (selection.length === 0 || busy) return;
     setBusy(true);
     setAdoptCompleted(0);
+    setAdoptProgress(0);
+    setAdoptMessage(null);
     setAdoptElapsed(0);
     setError(null);
     const collectedWarnings: string[] = [];
@@ -318,7 +324,7 @@ export default function MediaPicker({
       for (let index = 0; index < selection.length; index++) {
         const item = selection[index];
         try {
-          const result = await adoptMedia({
+          const result = await adoptMediaWithProgress({
             entity_type: entityType,
             entity_id: entityId,
             role,
@@ -327,10 +333,16 @@ export default function MediaPicker({
             // Focal only applies to hero (first + only item); gallery rows
             // ignore it server-side.
             focal: role === "hero" ? focal : undefined,
+          }, ({ percent, message }) => {
+            setAdoptProgress(Math.floor(((index * 100) + percent) / selection.length));
+            setAdoptMessage(role === "gallery"
+              ? `Bild ${index + 1} von ${selection.length}: ${message}`
+              : message);
           });
           for (const w of result.warnings) collectedWarnings.push(w);
           if (role === "hero") adoptedHero = result.image;
           setAdoptCompleted(index + 1);
+          setAdoptProgress(Math.floor(((index + 1) / selection.length) * 100));
         } catch (err) {
           if (err instanceof ApiError && err.status === 409) {
             const outer = err.detail as { detail?: { message?: string } } | undefined;
@@ -370,16 +382,13 @@ export default function MediaPicker({
   if (!open) return null;
 
   const budgetWarning = Object.values(tabs).find((tab) => tab.budget?.warning);
-  const adoptPercent = selection.length
-    ? Math.round((adoptCompleted / selection.length) * 100)
-    : 0;
-  const adoptStatus = role === "gallery"
+  const adoptStatus = adoptMessage ?? (role === "gallery"
     ? adoptCompleted >= selection.length
       ? "Galerie wird aktualisiert…"
       : `Bild ${adoptCompleted + 1} von ${selection.length} wird verarbeitet…`
     : adoptCompleted > 0
       ? "Hero-Bild wird angezeigt…"
-      : "Hero-Bild wird geladen und verarbeitet…";
+      : "Hero-Bild wird vorbereitet…");
 
   return (
     <Modal
@@ -618,8 +627,8 @@ export default function MediaPicker({
                   <div className="mt-3 shrink-0" aria-busy="true">
                     <div className="flex items-center justify-between gap-3 text-caption text-admin-fg2">
                       <span aria-live="polite">{adoptStatus}</span>
-                      <span className="shrink-0 tabular-nums" aria-label={`Läuft seit ${elapsedLabel(adoptElapsed)}`}>
-                        {elapsedLabel(adoptElapsed)}
+                      <span className="shrink-0 tabular-nums" aria-label={`${adoptProgress} Prozent abgeschlossen, läuft seit ${elapsedLabel(adoptElapsed)}`}>
+                        {adoptProgress} % · {elapsedLabel(adoptElapsed)}
                       </span>
                     </div>
                     <div
@@ -627,22 +636,14 @@ export default function MediaPicker({
                       aria-label="Fortschritt der Bildübernahme"
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-valuenow={role === "gallery" ? adoptPercent : undefined}
-                      aria-valuetext={
-                        role === "gallery"
-                          ? `${adoptCompleted} von ${selection.length} Bildern übernommen`
-                          : "Bild wird auf dem Server geladen und verarbeitet"
-                      }
+                      aria-valuenow={adoptProgress}
+                      aria-valuetext={`${adoptProgress} Prozent. ${adoptStatus}`}
                       className="mt-2 h-2 overflow-hidden rounded-full bg-admin-border"
                     >
-                      {role === "gallery" ? (
-                        <div
-                          className="h-full rounded-full bg-admin-primary transition-[width] duration-300"
-                          style={{ width: `${adoptPercent}%` }}
-                        />
-                      ) : (
-                        <div className="admin-progress-bar h-full w-full text-admin-primary" />
-                      )}
+                      <div
+                        className="h-full rounded-full bg-admin-primary transition-[width] duration-300"
+                        style={{ width: `${adoptProgress}%` }}
+                      />
                     </div>
                     <p className="mt-1.5 text-caption text-admin-muted">
                       Je nach Bildquelle kann die Verarbeitung bis zu {ADOPT_TIMEOUT_SECONDS / 60} Minuten dauern.

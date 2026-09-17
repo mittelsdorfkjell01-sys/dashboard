@@ -69,6 +69,7 @@ export default function AdminRegionForm() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState<MediaRole | null>(null);
+  const [galleryVersion, setGalleryVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<{
     conflict: DuplicateConflict;
@@ -210,6 +211,7 @@ export default function AdminRegionForm() {
         credit: imgCredit.trim(),
       });
       setRegion(r);
+      setGalleryVersion((version) => version + 1);
       setImgUrl("");
       setImgCredit("");
       setImageBaseline(stableFormValue({ url: "", credit: "" }));
@@ -238,6 +240,7 @@ export default function AdminRegionForm() {
     try {
       const r = await uploadRegionImage(id, file, imgCredit.trim());
       setRegion(r);
+      setGalleryVersion((version) => version + 1);
       setImgCredit("");
       setImageBaseline(stableFormValue({ url: "", credit: "" }));
       markClean("image");
@@ -553,9 +556,13 @@ export default function AdminRegionForm() {
         <div className="mt-3">
           {id && (
             <GalleryManager
+              key={galleryVersion}
               entityType="region"
               entityId={id}
-              onHeroChanged={() => void loadRegion()}
+              onHeroChanged={async () => {
+                const updated = await getAdminRegion(id);
+                setRegion(updated);
+              }}
             />
           )}
         </div>
@@ -574,6 +581,7 @@ export default function AdminRegionForm() {
             } else {
               await loadRegion();
             }
+            setGalleryVersion((version) => version + 1);
             flash("Bild übernommen.");
           }}
         />

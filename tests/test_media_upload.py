@@ -17,7 +17,9 @@ from app.admin.deps import get_cds_client
 from app.config import get_settings
 from app.main import app
 from app.media import validate_hero_image
+from app.media import gallery as media_gallery
 from app.media.hero import HeroImageError
+from app.models import MediaGarbageCandidate, SpotImage
 from app.seed.seed import seed
 from tests.era5_helpers import FakeCdsClient, make_synthetic_series
 
@@ -119,6 +121,36 @@ def test_upload_valid_sets_image_record(admin, spot_id):
     assert img["credit"] == "Jo"
     assert img["url"].startswith("/media/images/")
     assert "-responsive-" in img["url"]
+
+
+def test_reupload_retires_previous_hero_and_queues_its_files(
+    admin, spot_id, db, monkeypatch
+):
+    monkeypatch.setattr(get_settings(), "media_backend", "local")
+    first = _upload(admin, spot_id, _img_bytes(1000, 700))
+    assert first.status_code == 200, first.text
+    old_url = first.json()["image"]["url"]
+    previous_row = SpotImage(
+        spot_id=uuid.UUID(spot_id),
+        url=old_url,
+        kind="gallery",
+        status="published_hero",
+        source="upload",
+        delivery="hosted",
+        credit="Jo",
+    )
+    db.add(previous_row)
+    db.commit()
+
+    second = _upload(admin, spot_id, _img_bytes(1100, 700))
+    assert second.status_code == 200, second.text
+    assert second.json()["image"]["url"] != old_url
+    db.refresh(previous_row)
+    assert previous_row.status == "removed"
+    assert all(row.url != old_url for row in media_gallery.list_gallery(db, "spot", uuid.UUID(spot_id)))
+    assert db.scalar(
+        select(MediaGarbageCandidate).where(MediaGarbageCandidate.url == old_url)
+    ) is not None
 
 
 def test_upload_below_min_accepted_for_admin(admin, spot_id):

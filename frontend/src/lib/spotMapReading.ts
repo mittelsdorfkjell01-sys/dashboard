@@ -1,8 +1,9 @@
 import type { LiveConditionsRead } from "./api";
+import { currentWindPresentation, MS_TO_KT } from "./liveWindPresentation";
 
-export const MS_TO_KT = 1 / 0.514444;
+export { MS_TO_KT } from "./liveWindPresentation";
 
-export type ObservationType = "measurement" | "nowcast" | "forecast";
+export type ObservationType = "measurement" | "nowcast" | "live_wind" | "forecast";
 export type SpotMapReading = {
   type: ObservationType;
   windDir: number | null;
@@ -25,11 +26,11 @@ export type ForecastHourLike = {
 };
 
 /** The single COMPUTED reading SpotMap shows, in priority order: the spot's
- *  scrubbed forecast hour (if the Daten tab has one selected), else the model
- *  nowcast. A real station measurement is deliberately NOT returned here: it is
+ *  scrubbed forecast hour (if the Daten tab has one selected), then LiveWind,
+ *  else the model nowcast. A real station measurement is deliberately NOT returned here: it is
  *  a separate reference product (see {@link referenceMeasurement}) and must not
- *  be presented as the computed spot wind. Until LiveWind lands, the computed
- *  reading is honestly a model nowcast. Never mixes fields from two sources. */
+ *  be presented as the computed spot wind. Never uses a raw station value as
+ *  the spot wind. */
 export function currentReading(live: LiveConditionsRead | null, selectedForecast: ForecastHourLike | null): SpotMapReading | null {
   if (selectedForecast) {
     return {
@@ -39,9 +40,23 @@ export function currentReading(live: LiveConditionsRead | null, selectedForecast
       label: `Forecast · ${selectedForecast.localTimeWithOffset}`,
     };
   }
-  if (live?.current) {
-    const c = live.current;
-    return { type: "nowcast", windDir: c.dir, windKt: c.wind, waveDir: c.swell_dir, waveM: c.swell, period: c.period, coastalNormalDeg: c.coastal_normal_deg ?? live.coastal_normal_deg ?? null, label: `Nowcast · ${live.model}` };
+  const currentWind = currentWindPresentation(live);
+  if (currentWind.status !== "unavailable") {
+    const c = live?.current;
+    return {
+      type: currentWind.source === "live_wind" ? "live_wind" : "nowcast",
+      windDir: currentWind.directionFromDeg,
+      windKt: currentWind.windKt,
+      waveDir: c?.swell_dir ?? null,
+      waveM: c?.swell ?? null,
+      period: c?.period ?? null,
+      coastalNormalDeg: c?.coastal_normal_deg ?? live?.coastal_normal_deg ?? null,
+      label: currentWind.status === "station_adjusted"
+        ? "LiveWind · stationskorrigiert"
+        : currentWind.source === "live_wind"
+          ? "Baseline · LiveWind-Modellbasis"
+          : "Baseline · Modell-Nowcast",
+    };
   }
   return null;
 }
@@ -75,4 +90,4 @@ export function referenceMeasurement(live: LiveConditionsRead | null): Reference
   };
 }
 
-export const OBSERVATION_BADGE: Record<ObservationType, string> = { measurement: "Messung", nowcast: "Nowcast", forecast: "Forecast" };
+export const OBSERVATION_BADGE: Record<ObservationType, string> = { measurement: "Messung", nowcast: "Baseline", live_wind: "LiveWind", forecast: "Forecast" };

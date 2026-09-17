@@ -69,14 +69,14 @@ standalone producers; production rollout uses `combined`.
 
 ```
 # per spot: pick the nearest official station, then approve it (admin review):
-#   POST /admin/weather/spots/{id}/station/auto?provider=dwd   (dwd|dmi)
+#   POST /admin/weather/spots/{id}/station/auto?provider=dwd   (dwd|dmi|awc_metar)
 #   -> set the station approved=True and representativeness_status="passed"
 export CRON_SECRET=...   # required for the cron endpoints
 # schedule (Vercel cron): GET /cron/observations  and  GET /cron/verification
 ```
 
-`/cron/observations` imports real station observations (DWD/DMI open data; KNMI
-needs a key). `/cron/verification` recomputes model calibration and the
+`/cron/observations` imports real station observations (DWD/DMI open data and
+AWC METAR; KNMI needs a key). `/cron/verification` recomputes model calibration and the
 raw-forecast scores, runs WP6 sector calibration once measurements exist, and
 deletes one bounded batch of forecast samples older than the configured
 retention. Forecast captures are quantised to six-hour identities by default so

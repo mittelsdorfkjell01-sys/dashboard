@@ -559,7 +559,7 @@ async def upload_image(
                 "height": encoded.height,
                 "role": "hero",
             },
-            db=db, actor=actor,
+            db=db, actor=actor, retire_previous=True,
         )
     except Exception:
         db.rollback()
@@ -1215,7 +1215,7 @@ async def upload_region_image(
                 "height": encoded.height,
                 "role": "hero",
             },
-            db=db,
+            db=db, retire_previous=True,
         )
     except Exception:
         db.rollback()

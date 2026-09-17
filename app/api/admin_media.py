@@ -13,22 +13,27 @@ of the back office and is absent entirely from the public deployment
 from __future__ import annotations
 
 import logging
+import json
+import queue
+import threading
 import uuid
+from collections.abc import Callable, Iterator
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
-
 from app.auth.deps import require_role
-from app.db.session import get_db
+from app.db.session import SessionLocal, get_db
 from app.media import adopt as media_adopt
 from app.media import gallery as media_gallery
 from app.media import search as media_search
 from app.media import worklist as media_worklist_module
 from app.media.providers import NEARBY, PROVIDER_KEYS
 from app.models import Region, Spot
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/admin/media",
@@ -114,6 +119,14 @@ def adopt_media(
     is re-resolved from the provider here. A duplicate hero is refused with 409
     so the client can tell it apart from a validation problem.
     """
+    return _adopt_media(body, db)
+
+
+def _adopt_media(
+    body: AdoptRequest,
+    db: Session,
+    progress: Callable[[int, str], None] | None = None,
+) -> dict:
     try:
         outcome = media_adopt.adopt(
             db,
@@ -123,6 +136,7 @@ def adopt_media(
             provider=body.provider,
             external_id=body.external_id,
             focal=body.focal.model_dump() if body.focal else None,
+            progress=progress,
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden.")
@@ -163,6 +177,50 @@ def adopt_media(
         "demoted_hero": outcome.demoted_hero,
         "warnings": outcome.warnings,
     }
+
+
+@router.post("/adopt/stream")
+def adopt_media_stream(body: AdoptRequest) -> StreamingResponse:
+    """Stream real adoption milestones while one authenticated request runs."""
+    events: queue.Queue[dict] = queue.Queue()
+
+    def report(percent: int, message: str) -> None:
+        events.put({"type": "progress", "percent": percent, "message": message})
+
+    def run() -> None:
+        try:
+            # Streaming outlives the request dependency scope, so own the DB
+            # session in this worker until the catalogue commit has finished.
+            with SessionLocal() as db:
+                result = _adopt_media(body, db, progress=report)
+            events.put({"type": "result", "result": result})
+        except HTTPException as exc:
+            detail = exc.detail
+            message = detail if isinstance(detail, str) else detail.get("message", "Übernahme fehlgeschlagen.")
+            events.put({
+                "type": "error", "status": exc.status_code,
+                "message": message, "detail": detail,
+            })
+        except Exception:
+            logger.exception("streamed adopt failed for %s:%s", body.provider, body.external_id)
+            events.put({"type": "error", "status": 500, "message": "Übernahme fehlgeschlagen. Bitte erneut versuchen."})
+
+    def stream() -> Iterator[str]:
+        yield json.dumps({"type": "progress", "percent": 0, "message": "Bild wird vorbereitet…"}, ensure_ascii=False) + "\n"
+        threading.Thread(target=run, daemon=True).start()
+        while True:
+            try:
+                event = events.get(timeout=10)
+            except queue.Empty:
+                event = {"type": "heartbeat"}
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+            if event["type"] in ("result", "error"):
+                break
+
+    return StreamingResponse(
+        stream(), media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/verify-sources")

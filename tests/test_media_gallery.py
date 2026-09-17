@@ -5,11 +5,16 @@ reads the same data. DB-gated, real spots and regions from the core seed.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import delete, select
 
+from app.admin import regions as admin_regions
+from app.admin import spots as admin_spots
+from app.config import get_settings
 from app.media import gallery as media_gallery
+from app.media.gc import collect_media_garbage
 from app.media.image_object import build_image
 from app.models import MediaUsage, Region, Spot, SpotImage
 from tests.conftest import require_db
@@ -135,6 +140,44 @@ def test_remove_marks_removed_rather_than_deleting(db, spot):
     assert row not in media_gallery.list_gallery(db, "spot", spot.id)
 
 
+def test_removing_hosted_gallery_image_deletes_file_after_grace(
+    db, spot, tmp_path, monkeypatch
+):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "media_backend", "local")
+    monkeypatch.setattr(settings, "media_dir", str(tmp_path))
+    target = tmp_path / "images" / "gallery-remove.avif"
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"old gallery image")
+    row = _gallery_row(db, spot, entity_type="spot")
+    row.url = "/media/images/gallery-remove.avif"
+    row.delivery = "hosted"
+    db.commit()
+
+    media_gallery.remove(db, row.id)
+    assert target.exists()
+    collect_media_garbage(db, now=datetime.now(timezone.utc) + timedelta(hours=25))
+    assert not target.exists()
+
+
+def test_removing_gallery_image_clears_picker_usage(db, spot):
+    row = _gallery_row(db, spot, entity_type="spot", external_id="removed-photo")
+    db.add(MediaUsage(
+        provider="unsplash",
+        external_id="removed-photo",
+        entity_type="spot",
+        entity_id=spot.id,
+        role="gallery",
+    ))
+    db.commit()
+
+    media_gallery.remove(db, row.id)
+
+    assert db.scalar(select(MediaUsage).where(
+        MediaUsage.external_id == "removed-photo"
+    )) is None
+
+
 def test_remove_unknown_image_is_a_lookup_error(db):
     with pytest.raises(LookupError):
         media_gallery.remove(db, uuid.uuid4())
@@ -160,6 +203,55 @@ def test_promoting_a_gallery_image_becomes_the_hero(db, spot):
     assert spot.image["url"] == row.url
     assert spot.image["credit"] == "Jo"
     assert row.status == "published_hero"
+
+
+def test_new_region_upload_retires_previous_hero_row(db, region):
+    previous = _gallery_row(
+        db, region, entity_type="region", external_id="region-previous"
+    )
+    media_gallery.promote_to_hero(db, previous.id)
+
+    admin_regions.set_region_image(
+        region.id,
+        {"url": "https://img/new-region-hero.jpg", "credit": "Jo"},
+        db=db,
+        retire_previous=True,
+    )
+
+    db.refresh(previous)
+    assert previous.status == "removed"
+    assert previous not in media_gallery.list_gallery(db, "region", region.id)
+    assert db.scalar(select(MediaUsage).where(
+        MediaUsage.external_id == "region-previous"
+    )) is None
+
+
+def test_new_spot_upload_retires_previous_picker_hero(db, spot):
+    previous = _gallery_row(
+        db, spot, entity_type="spot", external_id="spot-previous"
+    )
+    media_gallery.promote_to_hero(db, previous.id)
+
+    admin_spots.manage_spot_image(
+        spot.id,
+        {
+            "url": "/media/images/new-spot-hero.avif",
+            "source": "upload",
+            "license": "own",
+            "credit": "Jo",
+            "provider": "upload",
+            "delivery": "hosted",
+        },
+        db=db,
+        retire_previous=True,
+    )
+
+    db.refresh(previous)
+    assert previous.status == "removed"
+    assert previous not in media_gallery.list_gallery(db, "spot", spot.id)
+    assert db.scalar(select(MediaUsage).where(
+        MediaUsage.external_id == "spot-previous"
+    )) is None
 
 
 def test_promoting_demotes_the_previous_hero_into_the_gallery(db, spot):

@@ -28,6 +28,7 @@ import {
 } from "../lib/publicMap";
 import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_VOYAGER } from "../lib/basemaps";
 import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
+import { currentWindPresentation } from "../lib/liveWindPresentation";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
 
@@ -267,7 +268,10 @@ export default function MapView() {
   const { data: viewportLive } = useSpotsLive(markerLiveIds);
   const liveValues = useMemo(() => {
     const map = new Map<string, PublicSpotLiveValue>();
-    viewportLive?.forEach((reading, id) => map.set(id, { windKt: reading.current?.wind ?? null, waveM: reading.current?.swell ?? null }));
+    viewportLive?.forEach((reading, id) => {
+      const wind = currentWindPresentation(reading);
+      map.set(id, { windKt: wind.windKt, waveM: reading.current?.swell ?? null });
+    });
     return map;
   }, [viewportLive]);
 
@@ -419,7 +423,7 @@ export default function MapView() {
         </div>
       </div>
       {popupContainer && selectedSpot && createPortal(
-        <div className="w-[176px]"><SpotCard spot={selectedSpot} live={live?.get(selectedSpot.id)} /></div>,
+        <div className="w-[176px]"><SpotCard spot={selectedSpot} live={live?.get(selectedSpot.id)} preferLiveWind /></div>,
         popupContainer,
       )}
       {mapError && (
@@ -464,7 +468,7 @@ export default function MapView() {
               <p role="status" className="swd-map-list-empty">{listEmptyLabel}</p>
             ) : (
               <div className="swd-map-tile-grid">
-                {listPanelSpots.map((spot) => <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />)}
+                {listPanelSpots.map((spot) => <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} preferLiveWind />)}
               </div>
             )}
           </div>

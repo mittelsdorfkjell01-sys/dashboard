@@ -1,9 +1,16 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type { LiveConditionsRead } from "../../../lib/api";
 import type { NormalizedForecastSeries } from "../../../lib/forecastNormalization";
-import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/SpotDataScope";
+import { displayedForecast, useSpotDataScope, windUnitLabel, type WindUnit } from "../../../state/SpotDataScope";
 import { resolveDirectionSnapshot, degreesToCompass } from "../../../lib/directionSnapshot";
 import { referenceMeasurement } from "../../../lib/spotMapReading";
+import {
+  currentWindPresentation,
+  displayDirectionDeg,
+  formatAge,
+  uncertaintyBandKt,
+  VARIABLE_WIND_THRESHOLD_MS,
+} from "../../../lib/liveWindPresentation";
 import { sunTimes } from "../../../lib/sunTimes";
 import { tempColor } from "../../../lib/tempScale";
 import CompassDial from "./CompassDial";
@@ -25,21 +32,41 @@ const CLASS_LABEL: Record<string, string> = {
 export default function WindSidebar({
   forecast,
   live,
+  liveLoading = false,
+  liveError = null,
+  liveStale = false,
+  onRetryLive,
   lat,
   lng,
 }: {
   forecast: NormalizedForecastSeries | null;
   live?: LiveConditionsRead | null;
+  liveLoading?: boolean;
+  liveError?: string | null;
+  liveStale?: boolean;
+  onRetryLive?: () => void;
   lat?: number;
   lng?: number;
 }) {
-  const { selectedForecast, windUnit, forecastTimezone, forecastStale, forecastModel } = useSpotDataScope();
-  const snapshot = resolveDirectionSnapshot({ selectedForecast, live, forecastTimezone, forecastStale, forecastModel });
+  const {
+    selectedForecast,
+    setSelectedAtUtc,
+    weatherTimeMode,
+    windUnit,
+    forecastTimezone,
+    forecastStale,
+    forecastModel,
+  } = useSpotDataScope();
+  const activeForecast = displayedForecast(weatherTimeMode, selectedForecast);
+  const snapshot = resolveDirectionSnapshot({ selectedForecast: activeForecast, live, forecastTimezone, forecastStale, forecastModel });
+  const currentWind = currentWindPresentation(live);
+  const online = useOnlineStatus();
+  const forecastMode = activeForecast !== null;
 
   const day = useMemo(() => {
-    const date = selectedForecast?.localDate;
-    return forecast?.days.find((d) => (d.local_date ?? d.date) === date) ?? forecast?.days[0] ?? null;
-  }, [forecast?.days, selectedForecast?.localDate]);
+    if (!activeForecast) return null;
+    return forecast?.days.find((d) => (d.local_date ?? d.date) === activeForecast.localDate) ?? null;
+  }, [activeForecast, forecast?.days]);
 
   const wind = snapshot?.windKt ?? null;
   // Wave: same source object throughout (selected forecast hour, else live
@@ -47,17 +74,17 @@ export default function WindSidebar({
   // wave height when the decomposition is present, else the legacy flat primary
   // swell. The breakdown lists only components the model actually resolved (a
   // flat sea has no wind sea, a single swell no secondary) — never a placeholder.
-  const waveComponents = selectedForecast?.waves ?? live?.current?.waves ?? null;
-  const flatSwell = selectedForecast?.swell ?? live?.current?.swell ?? null;
+  const waveComponents = activeForecast ? activeForecast.waves ?? null : live?.current?.waves ?? null;
+  const flatSwell = activeForecast ? activeForecast.swell : live?.current?.swell ?? null;
   const wave = waveComponents?.total_wave?.significant_height_m ?? flatSwell;
   const waveParts = [
     { label: "Dünung", h: waveComponents?.primary_swell?.significant_height_m },
     { label: "Windsee", h: waveComponents?.wind_sea?.significant_height_m },
     { label: "2. Dünung", h: waveComponents?.secondary_swell?.significant_height_m },
   ].filter((p): p is { label: string; h: number } => p.h != null);
-  const uv = selectedForecast?.uv_index ?? day?.summary.uv_index_max ?? null;
-  const apparent = selectedForecast?.apparent_temperature_c ?? day?.summary.apparent_temperature_max_c ?? null;
-  const rain = selectedForecast?.precip ?? day?.summary.precipitation_sum_mm ?? null;
+  const uv = activeForecast?.uv_index ?? day?.summary.uv_index_max ?? null;
+  const apparent = activeForecast?.apparent_temperature_c ?? day?.summary.apparent_temperature_max_c ?? null;
+  const rain = activeForecast?.precip ?? day?.summary.precipitation_sum_mm ?? null;
 
   const sunHours = useMemo(() => {
     if (lat == null || lng == null) return null;
@@ -65,10 +92,8 @@ export default function WindSidebar({
     return sun ? sun.sunset - sun.sunrise : null;
   }, [lat, lng]);
 
-  const validAt = selectedForecast?.time ?? live?.time ?? null;
-  const stamp = validAt
-    ? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(new Date(validAt)) + " GMT"
-    : "Zeit unbekannt";
+  const validAt = activeForecast?.time ?? currentWind.analyzedAt;
+  const stamp = formatInstant(validAt, forecastMode ? forecastTimezone : "UTC");
 
   const dir = snapshot?.windDirectionFromDeg ?? null;
   const classification = snapshot?.windCoastalClassification;
@@ -77,7 +102,7 @@ export default function WindSidebar({
   // A nearby station reading is a SEPARATE reference product (P0.1): shown on
   // its own with the real observation time, never merged into the computed
   // reading above. Absent when no accepted measurement exists.
-  const reference = referenceMeasurement(live ?? null);
+  const reference = forecastMode ? null : referenceMeasurement(live ?? null);
   const referenceStamp = reference
     ? new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(new Date(reference.observedAt)) + " GMT"
     : null;
@@ -89,7 +114,7 @@ export default function WindSidebar({
   // renders an em-dash placeholder for a single missing reading.
   const apparentColor = apparent == null ? undefined : tempColor(apparent);
   const metrics: Array<{ label: string; icon: React.ReactNode; value: string | null; unit?: string; color?: string; glow?: boolean; sub?: React.ReactNode }> = [
-    { label: "WIND", icon: <WindIcon />, value: wind == null ? null : formatWind(wind, windUnit), unit: windUnitLabel(windUnit) },
+    { label: "WIND", icon: <WindIcon />, value: wind == null ? null : formatWindReading(wind, windUnit), unit: windUnitLabel(windUnit) },
     {
       label: "WELLE", icon: <WaveIcon />, value: wave == null ? null : wave.toFixed(1), unit: "m",
       sub: waveParts.length ? waveParts.map((p, i) => (
@@ -104,10 +129,111 @@ export default function WindSidebar({
     { label: "GEFÜHLT", icon: <TempIcon />, value: apparent == null ? null : `${Math.round(apparent)}°`, color: apparentColor, glow: true },
     { label: "REGEN", icon: <RainIcon />, value: rain == null ? null : rain.toFixed(1), unit: "mm" },
   ];
+  const uncertainty = uncertaintyBandKt(currentWind);
+  const directionState = forecastMode
+    ? wind != null && wind * 0.514444 < VARIABLE_WIND_THRESHOLD_MS
+      ? "variable"
+      : dir == null
+        ? "unavailable"
+        : "known"
+    : currentWind.directionState;
+  const currentStale = !forecastMode && (liveStale || currentWind.stale);
+  const forecastIsStale = forecastMode && (forecastStale || activeForecast?.stale === true);
+  const noCurrentData = !forecastMode && currentWind.status === "unavailable";
+  const currentLoading = noCurrentData && liveLoading;
+  const currentOffline = !forecastMode && !online;
 
   return (
-    <div className="flex h-full min-w-0 flex-col">
-      <p className="border-b border-line pb-3 text-caption tabular-nums text-muted">{stamp}</p>
+    <div
+      data-weather-time-mode={forecastMode ? "forecast" : "now"}
+      data-live-wind-status={forecastMode ? undefined : currentWind.status}
+      className="flex h-full min-w-0 flex-col"
+    >
+      <div className="border-b border-line pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-ui font-semibold text-ink">
+            {forecastMode ? "Forecast" : "Aktuelle Bedingungen"}
+          </h2>
+          {forecastMode ? (
+            <button
+              type="button"
+              onClick={() => setSelectedAtUtc(null)}
+              className="rounded-full border border-line px-2.5 py-1 text-caption font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            >
+              Jetzt
+            </button>
+          ) : (
+            <span className={`rounded-full px-2.5 py-1 text-caption font-semibold ${currentWind.status === "station_adjusted" ? "bg-green/15 text-green" : "bg-band text-ink-soft"}`}>
+              {currentWind.statusLabel}
+            </span>
+          )}
+        </div>
+
+        {currentLoading ? (
+          <div role="status" aria-live="polite" className="mt-3 space-y-2">
+            <span className="sr-only">Aktuelle Bedingungen werden geladen.</span>
+            <span aria-hidden className="block h-3 w-4/5 animate-pulse rounded bg-line" />
+            <span aria-hidden className="block h-3 w-3/5 animate-pulse rounded bg-line" />
+          </div>
+        ) : (
+          <p className="mt-2 text-caption tabular-nums text-muted">
+            {forecastMode ? "Gültig" : "Analysiert"} {stamp}
+            {!forecastMode && currentWind.ageMinutes != null && ` · ${formatAge(currentWind.ageMinutes)}`}
+          </p>
+        )}
+
+        {!forecastMode && !currentLoading && (
+          <dl className="mt-3 grid grid-cols-2 gap-x-5 gap-y-2 text-caption">
+            <div>
+              <dt className="text-muted">Unsicherheitsband</dt>
+              <dd className="mt-0.5 font-semibold tabular-nums text-ink">
+                {uncertainty
+                  ? `${formatWindReading(uncertainty[0], windUnit)}–${formatWindReading(uncertainty[1], windUnit)} ${windUnitLabel(windUnit)}`
+                  : "Nicht bestimmt"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted">Relevante Stationen</dt>
+              <dd className="mt-0.5 font-semibold tabular-nums text-ink">{currentWind.stationCount}</dd>
+            </div>
+          </dl>
+        )}
+
+        {!forecastMode && currentWind.status === "baseline" && currentWind.fallbackReason && (
+          <p className="mt-3 text-caption leading-relaxed text-muted">{currentWind.fallbackReason}</p>
+        )}
+        {!forecastMode && noCurrentData && !currentLoading && (
+          <p role="alert" className="mt-3 text-caption leading-relaxed text-orange">
+            {currentOffline
+              ? "Offline: Es ist keine gespeicherte aktuelle Analyse verfügbar."
+              : liveError || currentWind.fallbackReason}
+          </p>
+        )}
+        {!forecastMode && liveError && !noCurrentData && (
+          <p role="status" className="mt-3 text-caption leading-relaxed text-orange">
+            {currentOffline ? "Offline: Gespeicherte Analyse wird weiter angezeigt." : "Aktualisierung fehlgeschlagen; die letzte Analyse bleibt sichtbar."}
+          </p>
+        )}
+        {!forecastMode && currentOffline && !noCurrentData && !liveError && (
+          <p role="status" className="mt-3 text-caption leading-relaxed text-orange">
+            Offline: Die zuletzt geladene Analyse wird weiter angezeigt.
+          </p>
+        )}
+        {(currentStale || forecastIsStale) && (
+          <p role="alert" className="mt-3 text-caption leading-relaxed text-orange">
+            {forecastMode ? "Dieser Forecast ist veraltet." : "Diese Analyse ist veraltet und nur als Orientierung geeignet."}
+          </p>
+        )}
+        {!forecastMode && (noCurrentData || liveError) && onRetryLive && online && (
+          <button
+            type="button"
+            onClick={onRetryLive}
+            className="mt-3 text-caption font-semibold text-ink underline decoration-line underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          >
+            Aktuelle Bedingungen erneut laden
+          </button>
+        )}
+      </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-x-10 gap-y-6">
         {metrics.map(({ label, icon, value, unit, color, glow, sub }) => (
@@ -133,10 +259,16 @@ export default function WindSidebar({
 
       <div className="mt-10">
         <p className="text-sz-24 font-semibold text-ink">
-          {dir == null ? "Richtung —" : `Aus ${degreesToCompass(dir)}`}
+          {directionState === "variable"
+            ? "Wind variabel"
+            : directionState === "uncertain"
+              ? "Richtung unsicher"
+              : dir == null
+                ? "Richtung —"
+                : `Aus ${degreesToCompass(dir)}`}
         </p>
-        {dir != null && <p className="mt-1 text-caption tabular-nums text-muted">{Math.round(dir)} Grad</p>}
-        {classLabel && <p className="mt-0.5 text-caption text-muted">{classLabel}</p>}
+        {directionState === "known" && dir != null && <p className="mt-1 text-caption tabular-nums text-muted">{displayDirectionDeg(dir)} Grad</p>}
+        {directionState === "known" && classLabel && <p className="mt-0.5 text-caption text-muted">{classLabel}</p>}
       </div>
 
       {reference && (
@@ -149,10 +281,12 @@ export default function WindSidebar({
           </p>
           <p className="mt-1 text-caption tabular-nums text-ink">
             <span className="font-semibold">
-              {reference.windKt == null ? "—" : `${formatWind(reference.windKt, windUnit)} ${windUnitLabel(windUnit)}`}
+              {reference.windKt == null ? "—" : `${formatWindReading(reference.windKt, windUnit)} ${windUnitLabel(windUnit)}`}
             </span>
-            {reference.windDir != null && (
-              <span className="text-muted"> · aus {degreesToCompass(reference.windDir)} ({Math.round(reference.windDir)} Grad)</span>
+            {reference.windMs != null && reference.windMs < VARIABLE_WIND_THRESHOLD_MS ? (
+              <span className="text-muted"> · variabel</span>
+            ) : reference.windDir != null && (
+              <span className="text-muted"> · aus {degreesToCompass(reference.windDir)} ({displayDirectionDeg(reference.windDir)} Grad)</span>
             )}
           </p>
           <p className="mt-0.5 text-caption tabular-nums text-muted">Gemessen {referenceStamp}</p>
@@ -162,10 +296,59 @@ export default function WindSidebar({
       {/* Compass hero — pushed to the bottom so its lower edge sits on the map's
           bottom edge; fills the panel's existing inner width. */}
       <div className="mt-auto pt-8">
-        <CompassDial fromDeg={dir} />
+        <CompassDial fromDeg={directionState === "known" ? dir : null} />
       </div>
     </div>
   );
+}
+
+function formatInstant(instant: string | null, timezone: string): string {
+  if (!instant || !Number.isFinite(Date.parse(instant))) return "Zeit unbekannt";
+  try {
+    const value = new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: timezone,
+      timeZoneName: "short",
+    }).format(new Date(instant));
+    return value;
+  } catch {
+    return new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+      timeZoneName: "short",
+    }).format(new Date(instant));
+  }
+}
+
+function formatWindReading(windKt: number, unit: WindUnit): string {
+  return String(Math.round(unit === "ms" ? windKt * 0.514444 : windKt));
+}
+
+function useOnlineStatus(): boolean {
+  // Keep SSR and the first hydrated frame deterministic. The real browser
+  // state is synchronized immediately after mount, including a pre-existing
+  // offline state that did not emit an event while this component existed.
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const markOnline = () => setOnline(true);
+    const markOffline = () => setOnline(false);
+    setOnline(navigator.onLine);
+    window.addEventListener("online", markOnline);
+    window.addEventListener("offline", markOffline);
+    return () => {
+      window.removeEventListener("online", markOnline);
+      window.removeEventListener("offline", markOffline);
+    };
+  }, []);
+  return online;
 }
 
 // A soft glow in the value's own temperature colour (rgb → rgba).

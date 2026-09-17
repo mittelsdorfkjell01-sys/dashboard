@@ -7,7 +7,9 @@ import math
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.live.weather_contract import unavailable_live_wind
 
 
 def _finite(value, *, minimum=None, maximum=None):
@@ -214,6 +216,321 @@ class MeasurementRead(BaseModel):
         return self
 
 
+LiveWindStatus = Literal["baseline", "station_adjusted", "unavailable"]
+LiveWindFallbackLevel = Literal[
+    "station_adjusted", "model_with_local_physics", "raw_model", "unavailable"
+]
+LiveWindSourceType = Literal[
+    "model_nowcast", "station_measurement", "station_residual", "local_physics"
+]
+
+
+class LiveWindSourceRead(BaseModel):
+    """One input used by a LiveWind analysis, not the analysis value itself."""
+
+    source_type: LiveWindSourceType
+    source: str = Field(min_length=1)
+    provider: str | None = Field(default=None, min_length=1)
+    model_version: str | None = Field(default=None, min_length=1)
+    observed_at: datetime | None = None
+    valid_at: datetime | None = None
+    captured_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def timezone_aware(self):
+        for value in (self.observed_at, self.valid_at, self.captured_at):
+            if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+                raise ValueError("LiveWind source timestamps must be timezone-aware")
+        return self
+
+
+class LiveWindGustRead(BaseModel):
+    """Optional gust analysis with provenance independent from mean wind."""
+
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    wind_gust_ms: float = Field(ge=0)
+    provenance: LiveWindSourceRead
+
+
+class LiveWindCovarianceRead(BaseModel):
+    """Internal two-dimensional analysis covariance in (m/s)^2."""
+
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    uu_ms2: float = Field(ge=0)
+    uv_ms2: float
+    vv_ms2: float = Field(ge=0)
+
+    @model_validator(mode="after")
+    def positive_semidefinite(self):
+        if self.uv_ms2**2 > self.uu_ms2 * self.vv_ms2 + 1e-9:
+            raise ValueError("LiveWind covariance must be positive semidefinite")
+        return self
+
+
+class LiveWindSpeedBandRead(BaseModel):
+    """Public speed interval projected from the internal u/v covariance."""
+
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    low_ms: float = Field(ge=0)
+    high_ms: float = Field(ge=0)
+    confidence_level: float = Field(gt=0, lt=1)
+
+    @model_validator(mode="after")
+    def ordered(self):
+        if self.high_ms < self.low_ms:
+            raise ValueError("LiveWind speed uncertainty band must be ordered")
+        return self
+
+
+class LiveWindStationContributionRead(BaseModel):
+    """A station residual contribution; never contains the raw observation."""
+
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    residual_id: str = Field(min_length=1)
+    analysis_id: str = Field(min_length=1)
+    station_id: str = Field(min_length=1)
+    observation_id: str = Field(min_length=1)
+    provider: str = Field(min_length=1)
+    observed_at: datetime
+    residual_u_ms: float
+    residual_v_ms: float
+    correlation_group: str = Field(min_length=1)
+    base_weight: float = Field(ge=0)
+    robust_weight: float = Field(ge=0, le=1)
+    normalized_weight: float = Field(ge=0, le=1)
+    applied_weight: float = Field(ge=0, le=1)
+    contribution_u_ms: float
+    contribution_v_ms: float
+    residual_uncertainty_ms: float = Field(gt=0)
+    included: bool
+    exclusion_reasons: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def coherent_contribution(self):
+        if self.observed_at.tzinfo is None or self.observed_at.utcoffset() is None:
+            raise ValueError("LiveWind station contribution time must be timezone-aware")
+        if self.included and (
+            self.normalized_weight <= 0
+            or self.applied_weight <= 0
+            or self.exclusion_reasons
+        ):
+            raise ValueError("included LiveWind contribution has inconsistent weights")
+        if not self.included and self.applied_weight != 0:
+            raise ValueError("excluded LiveWind contribution must have zero applied weight")
+        return self
+
+
+class LiveWindRead(BaseModel):
+    """Separate current-wind analysis product.
+
+    The schema keeps the regional residual analysis separate from both the raw
+    model nowcast and station observations, and validates the final u/v vector.
+    """
+
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    contract_version: Literal["live-wind-v1"] = "live-wind-v1"
+    product_type: Literal["live_wind"] = "live_wind"
+    status: LiveWindStatus
+    fallback_level: LiveWindFallbackLevel | None = None
+    analyzed_at: datetime | None = None
+    valid_at: datetime | None = None
+    expires_at: datetime | None = None
+    oldest_source_at: datetime | None = None
+    max_station_age_seconds: int | None = Field(default=None, ge=0)
+    wind_speed_ms: float | None = Field(default=None, ge=0)
+    wind_direction_from_deg: float | None = Field(default=None, ge=0, lt=360)
+    wind_u_ms: float | None = None
+    wind_v_ms: float | None = None
+    gust: LiveWindGustRead | None = None
+    model_version: str | None = Field(default=None, min_length=1)
+    analysis_version: str | None = Field(default=None, min_length=1)
+    station_count: int = Field(default=0, ge=0)
+    uncertainty_ms: float | None = Field(default=None, ge=0)
+    speed_uncertainty_band_ms: LiveWindSpeedBandRead | None = None
+    direction_uncertainty_deg: float | None = Field(default=None, ge=0, le=180)
+    uncertainty_components: dict[str, float] | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    sources: list[LiveWindSourceRead] = Field(default_factory=list)
+    applied_physics_version: str | None = Field(default=None, min_length=1)
+    fallback_reason: str | None = Field(default=None, min_length=1)
+    model_baseline_u_ms: float | None = None
+    model_baseline_v_ms: float | None = None
+    regional_wind_u_ms: float | None = None
+    regional_wind_v_ms: float | None = None
+    correction_u_ms: float | None = None
+    correction_v_ms: float | None = None
+    model_spread_ms: float | None = Field(default=None, ge=0)
+    conflict_index: float | None = Field(default=None, ge=0, le=1)
+    covariance: LiveWindCovarianceRead | None = None
+    evidence_strength: float | None = Field(default=None, ge=0, le=1)
+    effective_station_count: float | None = Field(default=None, ge=0)
+    station_contributions: list[LiveWindStationContributionRead] = Field(
+        default_factory=list
+    )
+    analysis_configuration: dict | None = None
+    local_physics_component: dict | None = None
+
+    @model_validator(mode="after")
+    def valid_product_state(self):
+        for value in (
+            self.analyzed_at,
+            self.valid_at,
+            self.expires_at,
+            self.oldest_source_at,
+        ):
+            if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+                raise ValueError("LiveWind timestamps must be timezone-aware")
+
+        if self.status == "unavailable":
+            unavailable_values = (
+                self.analyzed_at,
+                self.valid_at,
+                self.expires_at,
+                self.oldest_source_at,
+                self.max_station_age_seconds,
+                self.wind_speed_ms,
+                self.wind_direction_from_deg,
+                self.wind_u_ms,
+                self.wind_v_ms,
+                self.gust,
+                self.model_version,
+                self.analysis_version,
+                self.uncertainty_ms,
+                self.speed_uncertainty_band_ms,
+                self.direction_uncertainty_deg,
+                self.uncertainty_components,
+                self.confidence,
+                self.applied_physics_version,
+                self.model_baseline_u_ms,
+                self.model_baseline_v_ms,
+                self.regional_wind_u_ms,
+                self.regional_wind_v_ms,
+                self.correction_u_ms,
+                self.correction_v_ms,
+                self.model_spread_ms,
+                self.conflict_index,
+                self.covariance,
+                self.evidence_strength,
+                self.effective_station_count,
+                self.analysis_configuration,
+                self.local_physics_component,
+            )
+            if any(value is not None for value in unavailable_values):
+                raise ValueError("unavailable LiveWind must not contain analyzed values")
+            if self.station_count != 0 or self.sources or self.station_contributions:
+                raise ValueError("unavailable LiveWind must not claim analyzed sources")
+            if self.fallback_reason is None or not self.fallback_reason.strip():
+                raise ValueError("unavailable LiveWind requires a fallback reason")
+            if self.fallback_level not in {None, "unavailable"}:
+                raise ValueError("unavailable LiveWind has an invalid fallback level")
+            return self
+
+        required = {
+            "analyzed_at": self.analyzed_at,
+            "valid_at": self.valid_at,
+            "wind_speed_ms": self.wind_speed_ms,
+            "wind_u_ms": self.wind_u_ms,
+            "wind_v_ms": self.wind_v_ms,
+            "model_version": self.model_version,
+            "analysis_version": self.analysis_version,
+            "uncertainty_ms": self.uncertainty_ms,
+            "confidence": self.confidence,
+            "applied_physics_version": self.applied_physics_version,
+        }
+        missing = [name for name, value in required.items() if value is None]
+        if missing:
+            raise ValueError(f"available LiveWind is missing: {', '.join(missing)}")
+        if not self.sources or not any(
+            source.source_type == "model_nowcast" for source in self.sources
+        ):
+            raise ValueError("available LiveWind requires a model-nowcast source")
+        if any(
+            source.source_type == "station_measurement" for source in self.sources
+        ):
+            raise ValueError("LiveWind must use station residuals, not raw measurements")
+        if self.status == "baseline" and (
+            self.station_count != 0
+            or any(
+                source.source_type in {"station_measurement", "station_residual"}
+                for source in self.sources
+            )
+            or any(item.included for item in self.station_contributions)
+        ):
+            raise ValueError("baseline LiveWind must not claim station influence")
+        if self.status == "station_adjusted" and (
+            self.station_count < 1
+            or not any(source.source_type == "station_residual" for source in self.sources)
+        ):
+            raise ValueError("station-adjusted LiveWind requires a station source")
+        included_count = sum(item.included for item in self.station_contributions)
+        if self.status == "station_adjusted" and included_count != self.station_count:
+            raise ValueError("LiveWind station count does not match contributions")
+
+        if None not in (
+            self.model_baseline_u_ms,
+            self.model_baseline_v_ms,
+            self.regional_wind_u_ms,
+            self.regional_wind_v_ms,
+            self.correction_u_ms,
+            self.correction_v_ms,
+        ):
+            if not (
+                math.isclose(
+                    self.model_baseline_u_ms + self.correction_u_ms,
+                    self.regional_wind_u_ms,
+                    abs_tol=0.01,
+                )
+                and math.isclose(
+                    self.model_baseline_v_ms + self.correction_v_ms,
+                    self.regional_wind_v_ms,
+                    abs_tol=0.01,
+                )
+            ):
+                raise ValueError("LiveWind regional vector is inconsistent")
+
+        speed = float(self.wind_speed_ms)
+        u_ms = float(self.wind_u_ms)
+        v_ms = float(self.wind_v_ms)
+        if math.isclose(speed, 0.0, abs_tol=1e-9):
+            if self.wind_direction_from_deg is not None:
+                raise ValueError("calm LiveWind must not invent a direction")
+        elif self.wind_direction_from_deg is None:
+            raise ValueError("non-calm LiveWind requires a direction")
+        else:
+            radians = math.radians(self.wind_direction_from_deg)
+            expected_u = -speed * math.sin(radians)
+            expected_v = -speed * math.cos(radians)
+            if not (
+                math.isclose(u_ms, expected_u, rel_tol=0.003, abs_tol=0.01)
+                and math.isclose(v_ms, expected_v, rel_tol=0.003, abs_tol=0.01)
+            ):
+                raise ValueError("LiveWind speed, direction, and u/v are inconsistent")
+        if not math.isclose(math.hypot(u_ms, v_ms), speed, rel_tol=1e-4, abs_tol=0.01):
+            raise ValueError("LiveWind speed and u/v magnitude are inconsistent")
+        if self.gust is not None and self.gust.wind_gust_ms < speed:
+            raise ValueError("LiveWind gust must not be below mean wind")
+        if self.speed_uncertainty_band_ms is not None and not (
+            self.speed_uncertainty_band_ms.low_ms - 1e-9
+            <= speed
+            <= self.speed_uncertainty_band_ms.high_ms + 1e-9
+        ):
+            raise ValueError("LiveWind speed must lie inside its uncertainty band")
+        if self.uncertainty_components is not None:
+            if any(
+                not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or float(value) < 0
+                for value in self.uncertainty_components.values()
+            ):
+                raise ValueError("LiveWind uncertainty components must be finite and non-negative")
+        return self
+
+
 class CurrentConditions(BaseModel):
     wind: float | None = None       # knots (consensus median)
     gust: float | None = None       # knots (consensus median)
@@ -259,7 +576,15 @@ class LiveConditionsRead(BaseModel):
     # validation silently discarded it (P0.1).
     sources: CurrentSourceMap | None = None
     measurement: MeasurementRead | None = None
+    live_wind: LiveWindRead | None = None
     current: CurrentConditions
+
+    @model_validator(mode="before")
+    @classmethod
+    def mark_inactive_live_wind(cls, data):
+        if isinstance(data, dict) and "live_wind" not in data:
+            data = {**data, "live_wind": unavailable_live_wind()}
+        return data
 
 
 class ForecastHour(BaseModel):

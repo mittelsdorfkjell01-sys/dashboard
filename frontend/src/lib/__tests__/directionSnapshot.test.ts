@@ -26,6 +26,20 @@ describe("resolveDirectionSnapshot", () => {
   it("uses the complete nowcast only without a forecast selection", () => {
     expect(resolveDirectionSnapshot({ selectedForecast: null, live, forecastTimezone: "UTC" })).toMatchObject({ kind: "nowcast", windDirectionFromDeg: 90, waveDirectionFromDeg: 180 });
   });
+  it("uses LiveWind for current wind while retaining the current sea state", () => {
+    const analyzed: LiveConditionsRead = { ...live, live_wind: {
+      contract_version: "live-wind-v1", product_type: "live_wind", status: "station_adjusted",
+      analyzed_at: "2026-08-24T13:02:00Z", valid_at: "2026-08-24T13:00:00Z",
+      wind_speed_ms: 8, wind_direction_from_deg: 274, wind_u_ms: 7.98, wind_v_ms: -0.56,
+      gust: null, model_version: "consensus-v1", analysis_version: "regional-live-wind-uv-v1",
+      station_count: 2, uncertainty_ms: 1, confidence: 0.8,
+      sources: [{ source_type: "station_residual", source: "residual:a" }],
+      applied_physics_version: "physics-v1", fallback_reason: null,
+    }};
+    expect(resolveDirectionSnapshot({ selectedForecast: null, live: analyzed, forecastTimezone: "UTC" })).toMatchObject({
+      kind: "live_wind", windDirectionFromDeg: 270, windKt: 16, waveDirectionFromDeg: 180,
+    });
+  });
   it("P0.1: a station measurement never becomes the computed directional state", () => {
     const measured: LiveConditionsRead = { ...live, measurement: {
       observation_type: "measurement", station_id: "station", provider: "DWD", provider_station_id: "123",

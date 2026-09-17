@@ -7,6 +7,7 @@ import hashlib
 import math
 import re
 import time
+from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import httpx
@@ -35,6 +36,44 @@ class NoaaGfsProvider:
     @staticmethod
     def point_indices(lat: float, lon: float) -> tuple[int, int]:
         return round((90 - lat) / 0.25), round((lon % 360) / 0.25)
+
+    @staticmethod
+    def subset_source(run_at: datetime, hour: int, bounds: tuple[float, float, float, float]) -> tuple[str, dict]:
+        """Canonical, reusable GFS tile request (west/east/south/north)."""
+        west, east, south, north = bounds
+        params = {
+            "file": f"gfs.t{run_at:%H}z.pgrb2.0p25.f{hour:03d}",
+            "dir": f"/gfs.{run_at:%Y%m%d}/{run_at:%H}/atmos",
+            "subregion": "",
+            "leftlon": west,
+            "rightlon": east,
+            "toplat": north,
+            "bottomlat": south,
+            "var_UGRD": "on",
+            "var_VGRD": "on",
+            "lev_10_m_above_ground": "on",
+        }
+        url = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
+        return f"{url}?{urlencode(sorted(params.items()))}", params
+
+    def download_subset(self, run_at: datetime, hour: int, bounds: tuple[float, float, float, float]) -> tuple[str, bytes]:
+        source_id, params = self.subset_source(run_at, hour, bounds)
+        try:
+            chunks = []
+            size = 0
+            with self.client.stream(
+                "GET", source_id.split("?", 1)[0], params=params,
+                timeout=self.timeout, headers={"User-Agent": "surfwinddata/1.0"},
+            ) as response:
+                response.raise_for_status()
+                for chunk in response.iter_bytes():
+                    size += len(chunk)
+                    if size > 8 * 1024 * 1024:
+                        raise InvalidModelData("NOAA GFS subset exceeds 8 MiB limit")
+                    chunks.append(chunk)
+        except httpx.HTTPError as exc:
+            raise ProviderUnavailable("NOAA NOMADS GRIB Filter unavailable") from exc
+        return source_id, b"".join(chunks)
 
     def fetch(self, request: ProviderRequest) -> list[NormalizedModelValue]:
         if request.model != "gfs-0p25":
@@ -282,6 +321,30 @@ class DwdIconProvider:
     @staticmethod
     def checksum(data: bytes) -> str:
         return hashlib.sha256(data).hexdigest()
+
+    @staticmethod
+    def nearest_exact_grid(data: bytes, lat: float, lon: float) -> tuple[float, float, float]:
+        """Internal exact-run sampler using the ecCodes message API available in 2.44.
+
+        Kept separate from the existing public forecast sampling path so this
+        work package does not alter its behavior or response values.
+        """
+        try:
+            from eccodes import codes_get_array, codes_new_from_message, codes_release
+        except ImportError as exc:
+            raise ProviderUnavailable("ecCodes runtime is not installed") from exc
+        gid = codes_new_from_message(data)
+        try:
+            lats = np.asarray(codes_get_array(gid, "latitudes"))
+            lons = np.asarray(codes_get_array(gid, "longitudes"))
+            values = np.asarray(codes_get_array(gid, "values"))
+            delta_lon = np.minimum(abs(lons - lon), 360 - abs(lons - lon))
+            index = int(np.argmin(
+                (lats - lat) ** 2 + (delta_lon * np.cos(np.radians(lat))) ** 2
+            ))
+            return float(values[index]), float(lats[index]), float(lons[index])
+        finally:
+            codes_release(gid)
 
     @staticmethod
     def _nearest(data: bytes, lat: float, lon: float) -> tuple[float, float, float]:

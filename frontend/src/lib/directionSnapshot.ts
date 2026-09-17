@@ -1,7 +1,8 @@
 import type { CoastalClassification, LiveConditionsRead } from "./api";
 import type { NormalizedForecastHour } from "./forecastNormalization";
+import { currentWindPresentation, displayWindKt, MS_TO_KT } from "./liveWindPresentation";
 
-export type DirectionDataKind = "forecast" | "nowcast" | "measurement";
+export type DirectionDataKind = "forecast" | "live_wind" | "nowcast" | "measurement";
 
 export type DirectionSnapshot = {
   validAtUtc: string;
@@ -76,25 +77,29 @@ export function resolveDirectionSnapshot({
   // returned here as the computed directional state — that would present it as
   // the spot wind. The sidebar/card renders it on its own via
   // ``referenceMeasurement`` (with its real ``observed_at``). The computed
-  // snapshot is the forecast hour (above) or the model nowcast (below).
-  if (live?.current && live.time) {
+  // current wind is LiveWind when available and otherwise the model nowcast.
+  const presented = currentWindPresentation(live);
+  const validAt = presented.validAt ?? presented.analyzedAt;
+  if (presented.status !== "unavailable" && live?.current && validAt) {
     const current = live.current;
     const timezone = live.provenance?.spot_timezone ?? forecastTimezone;
     return {
-      validAtUtc: live.time,
-      localLabel: localInstant(live.time, timezone),
+      validAtUtc: validAt,
+      localLabel: localInstant(validAt, timezone),
       timezone,
-      kind: "nowcast",
-      windDirectionFromDeg: finiteDirection(current.dir),
-      windKt: current.wind,
-      gustKt: current.gust,
+      kind: presented.source === "live_wind" ? "live_wind" : "nowcast",
+      windDirectionFromDeg: presented.directionFromDeg,
+      windKt: presented.windKt,
+      gustKt: presented.source === "live_wind" && live.live_wind?.gust
+        ? displayWindKt(live.live_wind.gust.wind_gust_ms * MS_TO_KT)
+        : current.gust,
       waveDirectionFromDeg: finiteDirection(current.swell_dir),
       waveHeightM: current.swell,
       wavePeriodS: current.period,
       coastalNormalDeg: finiteDirection(current.coastal_normal_deg ?? live.coastal_normal_deg),
       windCoastalClassification: current.coastal_classification ?? live.coastal_classification ?? null,
       waveCoastalClassification: current.wave_coastal_classification ?? null,
-      stale: live.provenance?.stale === true,
+      stale: presented.stale,
       quality: live.quality_tier ?? live.provenance?.quality_tier ?? null,
       provider: live.provenance?.provider ?? null,
       model: live.model,
@@ -107,4 +112,3 @@ export const COMPASS_16 = ["N", "NNO", "NO", "ONO", "O", "OSO", "SO", "SSO", "S"
 export function degreesToCompass(degrees: number): string {
   return COMPASS_16[Math.round((((degrees % 360) + 360) % 360) / 22.5) % 16];
 }
-

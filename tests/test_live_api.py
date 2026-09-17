@@ -67,6 +67,9 @@ def test_live_endpoint(client, seeded_spot_id, fake_live):
     # Public product boundary: the Surfwinddata result never exposes raw model
     # membership. Model diagnostics remain admin-only.
     assert body["models"] == []
+    assert body["live_wind"]["status"] == "baseline"
+    assert body["live_wind"]["fallback_reason"] == "station_residuals_unavailable"
+    assert body["live_wind"]["wind_speed_ms"] is not None
     assert set(body["current"]) == {
         "wind", "gust", "dir", "wind_u_ms", "wind_v_ms", "air", "sst", "swell", "period", "swell_dir",
         "wind_spread", "gust_spread", "wind_ms", "gust_ms", "waves",
@@ -93,6 +96,66 @@ def test_public_live_cache_hit_does_not_touch_database():
     )
     assert result.spot_id == spot_id
     assert "s-maxage=300" in response.headers["cache-control"]
+
+
+def test_shadow_live_wind_baseline_cache_hit_does_not_touch_database():
+    import uuid
+
+    from app.live.public_cache import (
+        set_public_live,
+        set_public_live_wind_baseline,
+    )
+
+    spot_id = uuid.uuid4()
+    cache = InMemoryCache()
+    set_public_live(
+        cache,
+        spot_id,
+        {"spot_id": str(spot_id), "model": "surfwinddata", "current": {}},
+    )
+    set_public_live_wind_baseline(
+        cache,
+        spot_id,
+        {
+            "status": "baseline",
+            "station_count": 0,
+            "analyzed_at": "2026-09-14T12:00:00+00:00",
+            "valid_at": "2026-09-14T12:00:00+00:00",
+            "wind_speed_ms": 5.0,
+            "wind_direction_from_deg": 270.0,
+            "wind_u_ms": 5.0,
+            "wind_v_ms": 0.0,
+            "model_version": "test-model-v1",
+            "analysis_version": "regional-live-wind-uv-v1",
+            "uncertainty_ms": 1.0,
+            "confidence": 0.4,
+            "sources": [
+                {
+                    "source_type": "model_nowcast",
+                    "source": "test-model",
+                    "provider": "test",
+                    "valid_at": "2026-09-14T12:00:00+00:00",
+                    "captured_at": "2026-09-14T12:00:00+00:00",
+                }
+            ],
+            "applied_physics_version": "none",
+            "fallback_reason": "station_residuals_unavailable",
+        },
+        model_ids=("icon_eu",),
+    )
+
+    class NoDb:
+        def __getattr__(self, name):
+            raise AssertionError(f"database touched: {name}")
+
+    result = get_spot_live(
+        spot_id,
+        response=Response(),
+        db=NoDb(),
+        client=object(),
+        cache=cache,
+    )
+    assert result.live_wind.status == "baseline"
 
 
 def test_public_forecast_cache_hit_does_not_touch_database():

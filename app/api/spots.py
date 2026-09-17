@@ -25,6 +25,7 @@ from app.live.deps import get_cache, get_om_client
 from app.live.public_cache import (
     get_public_forecast,
     get_public_live,
+    get_public_live_wind_baseline,
     get_public_measurement,
     public_weather_generation,
     set_public_forecast,
@@ -331,6 +332,7 @@ def get_spots_live_batch(
                         SpotWeatherProfile.elevation_m,
                         SpotWeatherProfile.coastal_normal_deg,
                         SpotWeatherProfile.quality_tier,
+                        SpotWeatherProfile.physics_version,
                         SpotWeatherProfile.reviewed_at,
                     ),
                     selectinload(SpotWeatherProfile.sectors).load_only(
@@ -379,16 +381,27 @@ def get_spots_live_batch(
     # without ever pinning it into the shared model-nowcast cache. Freshly
     # computed spots already did DB work, so we compute (and warm) their
     # measurement from the database; cache-hit spots stay DB-free.
-    missing_set = set(missing)
     for spot_id in list(results):
-        if spot_id in missing_set:
+        measurement = get_public_measurement(cache, spot_id)
+        if measurement is None and isinstance(db, Session):
             measurement = live_service.public_station_measurement(
-                db, spot_id, cache=cache
+                db,
+                spot_id,
+                cache=cache,
+                wind_direction_deg=results[spot_id].current.dir,
             )
-        else:
-            measurement = get_public_measurement(cache, spot_id)
         enriched = results[spot_id].model_dump(mode="json")
         enriched["measurement"] = measurement
+        enriched["live_wind"] = live_service.public_live_wind_analysis(
+            db,
+            spot_id,
+            get_public_live_wind_baseline(
+                cache,
+                spot_id,
+                generation=generations[spot_id],
+            ),
+            cache=cache,
+        )
         results[spot_id] = LiveConditionsRead.model_validate(enriched)
     return [results[spot_id] for spot_id in parsed if spot_id in results]
 
@@ -530,7 +543,27 @@ def get_spot_live(
         # station measurement from its own cache layer (no DB on a cache hit) so
         # single and batch stay consistent without pinning it into the nowcast.
         enriched = dict(cached)
-        enriched["measurement"] = get_public_measurement(cache, spot_id)
+        measurement = get_public_measurement(cache, spot_id)
+        if measurement is None and isinstance(db, Session):
+            measurement = live_service.public_station_measurement(
+                db,
+                spot_id,
+                cache=cache,
+                wind_direction_deg=(cached.get("current") or {}).get("dir"),
+            )
+        enriched["measurement"] = measurement
+        baseline = get_public_live_wind_baseline(
+            cache,
+            spot_id,
+            generation=generation,
+        )
+        if baseline is not None:
+            enriched["live_wind"] = live_service.public_live_wind_analysis(
+                db,
+                spot_id,
+                baseline,
+                cache=cache,
+            )
         return LiveConditionsRead.model_validate(enriched)
     if not published_spot_exists(db, spot_id):
         raise HTTPException(status_code=404, detail="Spot not found")

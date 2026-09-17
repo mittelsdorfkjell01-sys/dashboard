@@ -43,6 +43,7 @@ import {
   WATER_TYPES,
   facilityLabel,
   bottomTypeLabel,
+  normalizeBottomTypes,
   gapAnchor,
   gapLabel,
   levelLabel,
@@ -129,9 +130,25 @@ export default function AdminSpotForm() {
   );
   const [modelPref, setModelPref] = useState("");
   const [heroFile, setHeroFile] = useState<File | null>(null);
+  const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null);
+  const heroPreviewUrlRef = useRef<string | null>(null);
+  const heroPickGenerationRef = useRef(0);
   const heroInputRef = useRef<HTMLInputElement>(null);
   const [heroUploadError, setHeroUploadError] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<ImageRecord | null>(null);
+  const pickHeroFile = (file: File | null) => {
+    heroPickGenerationRef.current += 1;
+    const previous = heroPreviewUrlRef.current;
+    const next = file ? URL.createObjectURL(file) : null;
+    heroPreviewUrlRef.current = next;
+    setHeroPreviewUrl(next);
+    setHeroFile(file);
+    if (previous) URL.revokeObjectURL(previous);
+  };
+
+  useEffect(() => () => {
+    if (heroPreviewUrlRef.current) URL.revokeObjectURL(heroPreviewUrlRef.current);
+  }, []);
   const [credit, setCredit] = useState("");
   // Attribution of the *current* hero (edited in place, url + focal preserved).
   const [attrCredit, setAttrCredit] = useState("");
@@ -282,7 +299,7 @@ export default function AdminSpotForm() {
     setRegionId(s.region_id ?? "");
     setDescription((s.editorial?.description as string) ?? "");
     seedImage((s.image as ImageRecord | null) ?? null);
-    setHeroFile(null);
+    pickHeroFile(null);
     setCredit("");
     if (s.location) {
       setLat(String(s.location.lat));
@@ -304,7 +321,7 @@ export default function AdminSpotForm() {
     setStyles(synchronizeWavekiteStyle(nextSports, s.style ?? []));
     setFacing(s.facing != null ? String(s.facing) : "");
     setWaterType(s.water_type ?? []);
-    setBottomType(s.bottom_type ?? []);
+    setBottomType(normalizeBottomTypes(s.bottom_type));
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
     setFacilities(() => {
       const next = {} as Record<FacilityKind, { state: Availability; note: string }>;
@@ -508,6 +525,7 @@ export default function AdminSpotForm() {
           );
         }
         spot = await getAdminSpot(spot.id);
+        setGalleryVersion((version) => version + 1);
       }
 
       applySpot(spot);
@@ -515,7 +533,7 @@ export default function AdminSpotForm() {
       const r = await getReadiness(spot.id);
       setReadiness(r);
       setSavedId(spot.id);
-      setHeroFile(null);
+      pickHeroFile(null);
       setCredit("");
       markClean("main");
       setCaptureMainBaseline(true);
@@ -945,7 +963,22 @@ export default function AdminSpotForm() {
               ) : null
             }
           >
-            {currentImage?.url && (
+            {heroFile && heroPreviewUrl && (
+              <div className="space-y-2">
+                <p className="text-label font-medium text-admin-fg">Neues Hero-Bild</p>
+                <div className="aspect-[21/9] overflow-hidden rounded-lg bg-admin-bg">
+                  <img
+                    src={heroPreviewUrl}
+                    alt="Vorschau des neuen Hero-Bildes"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <p className="text-caption text-admin-muted">
+                  Ersetzt das bisherige Hero-Bild beim Speichern.
+                </p>
+              </div>
+            )}
+            {!heroFile && currentImage?.url && (
               <div className="space-y-6">
                 {/* Ausschnitte — Desktop und Mobile nebeneinander ab md+.
                     Beides sind Landscape-Crops derselben Datei; das vertikale
@@ -1098,11 +1131,13 @@ export default function AdminSpotForm() {
                   e.target.value = "";
                   setHeroUploadError(null);
                   if (!file) return;
+                  const pickGeneration = ++heroPickGenerationRef.current;
                   const res = await validateHeroFile(file);
+                  if (pickGeneration !== heroPickGenerationRef.current) return;
                   // Admin accepts below-minimum images (warn later on read).
                   if (res.ok || (!res.ok && res.belowMin)) {
                     markDirty("main");
-                    setHeroFile(file);
+                    pickHeroFile(file);
                   } else {
                     setHeroUploadError(res.reason);
                   }
@@ -1112,8 +1147,16 @@ export default function AdminSpotForm() {
                 Bild hochladen
               </Button>
               {heroFile && (
+                <Button variant="secondary" className="ml-2" onClick={() => {
+                  pickHeroFile(null);
+                  setCredit("");
+                }}>
+                  Auswahl verwerfen
+                </Button>
+              )}
+              {heroFile && (
                 <p className="mt-2 text-caption text-admin-muted">
-                  Übernommen: <span className="font-medium text-admin-fg">{heroFile.name}</span>
+                  Ausgewählt: <span className="font-medium text-admin-fg">{heroFile.name}</span>
                 </p>
               )}
               {heroUploadError && (

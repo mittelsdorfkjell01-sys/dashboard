@@ -169,20 +169,26 @@ test.describe("media picker", () => {
 
     // Adopt captures the request, then the spot record is served with the
     // freshly written image — mirroring what the real backend does.
-    await page.route("**/admin/media/adopt", (route) => {
+    await page.route("**/admin/media/adopt/stream", (route) => {
       adoptRequest = route.request().postDataJSON();
       spotState = SPOT_WITH_HERO;
       return new Promise((resolve) => setTimeout(resolve, adoptDelayMs)).then(() =>
         route.fulfill({
-          json: {
-            entity_type: "spot",
-            entity_id: SPOT_ID,
-            role: "hero",
-            image: SPOT_WITH_HERO.image,
-            gallery_image_id: null,
-            demoted_hero: false,
-            warnings: ["Ortsbezug ungeprüft."],
-          },
+          contentType: "application/x-ndjson",
+          body: [
+            { type: "progress", percent: 0, message: "Bild wird vorbereitet…" },
+            { type: "progress", percent: 75, message: "Bild wird gespeichert…" },
+            { type: "progress", percent: 100, message: "Hero-Bild übernommen." },
+            { type: "result", result: {
+              entity_type: "spot",
+              entity_id: SPOT_ID,
+              role: "hero",
+              image: SPOT_WITH_HERO.image,
+              gallery_image_id: null,
+              demoted_hero: false,
+              warnings: ["Ortsbezug ungeprüft."],
+            } },
+          ].map((event) => JSON.stringify(event)).join("\n") + "\n",
         })
       );
     });
@@ -213,6 +219,105 @@ test.describe("media picker", () => {
     await page.route("**/admin/spots/*/tide", (route) =>
       route.fulfill({ status: 404, json: { detail: "no tide" } })
     );
+  });
+
+  test("saving a legacy Sand value sends the canonical bottom type", async ({ page }) => {
+    spotState = { ...SPOT_WITHOUT_HERO, bottom_type: ["Sand", "sand"] };
+    let patchBody: Record<string, unknown> | null = null;
+    await page.route(`**/admin/spots/${SPOT_ID}`, (route) => {
+      patchBody = route.request().postDataJSON() as Record<string, unknown>;
+      return route.fulfill({ json: { ...spotState, bottom_type: ["sand"] } });
+    });
+
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+    await expect(page.locator("#f-bottom_type [role=checkbox]").first())
+      .toHaveAttribute("aria-checked", "true");
+    await page.getByRole("button", { name: "Änderungen speichern" }).click();
+
+    await expect.poll(() => patchBody).toMatchObject({
+      bottom_type: ["sand"],
+      expected_values: { bottom_type: ["Sand", "sand"] },
+    });
+  });
+
+  test("a selected computer upload replaces the old hero preview", async ({ page }) => {
+    spotState = SPOT_WITH_HERO;
+    let uploads = 0;
+    let galleryItems = [{
+      id: "33333333-3333-3333-3333-333333333333",
+      url: SPOT_WITH_HERO.image.url,
+      width: 1600,
+      status: "published_hero",
+      kind: "gallery",
+    }];
+    await page.route(`**/admin/media/gallery/spot/${SPOT_ID}`, (route) =>
+      route.fulfill({ json: { items: galleryItems } })
+    );
+    await page.route(`**/admin/spots/${SPOT_ID}/image/upload`, (route) => {
+      uploads += 1;
+      galleryItems = [];
+      spotState = {
+        ...SPOT_WITH_HERO,
+        image: { ...SPOT_WITH_HERO.image, url: "/media/new-hero.avif", provider: "upload" },
+      };
+      return route.fulfill({ json: spotState });
+    });
+
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+      .toBeVisible();
+    await expect(page.locator("#f-galerie").getByRole("button", { name: "Entfernen" }))
+      .toHaveCount(1);
+    await page.locator("#f-hero input[type=file]").setInputFiles({
+      name: "new-hero.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAAD0lEQVR4nGPkqrjEwMAAAAXqAVYVfiwaAAAAAElFTkSuQmCC",
+        "base64",
+      ),
+    });
+
+    await expect(page.getByAltText("Vorschau des neuen Hero-Bildes")).toBeVisible();
+    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+      .toHaveCount(0);
+    await page.getByPlaceholder("Fotograf:in / Quelle").fill("Fotografin");
+    await page.getByRole("button", { name: "Änderungen speichern" }).click();
+    await expect.poll(() => uploads).toBe(1);
+    await expect(page.getByAltText("Vorschau des neuen Hero-Bildes")).toHaveCount(0);
+    await expect(page.locator("#f-galerie").getByText("Noch keine Galeriebilder."))
+      .toBeVisible();
+  });
+
+  test("removing the current gallery hero clears its preview", async ({ page }) => {
+    spotState = SPOT_WITH_HERO;
+    const imageId = "33333333-3333-3333-3333-333333333333";
+    let galleryItems = [{
+      id: imageId,
+      url: SPOT_WITH_HERO.image.url,
+      width: 1600,
+      status: "published_hero",
+      provider: "unsplash",
+      kind: "gallery",
+    }];
+    await page.route(`**/admin/media/gallery/spot/${SPOT_ID}`, (route) =>
+      route.fulfill({ json: { items: galleryItems } })
+    );
+    await page.route(`**/admin/media/gallery/${imageId}`, (route) => {
+      galleryItems = [];
+      spotState = SPOT_WITHOUT_HERO;
+      return route.fulfill({ status: 204 });
+    });
+
+    await page.goto(`/admin/spot/${SPOT_ID}/edit`);
+    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+      .toBeVisible();
+    await page.locator("#f-galerie li").hover();
+    await page.locator("#f-galerie").getByRole("button", { name: "Entfernen" }).click();
+
+    await expect(page.locator("#f-galerie").getByText("Noch keine Galeriebilder."))
+      .toBeVisible();
+    await expect(page.locator("#f-hero").getByText("Bildposition und Drehung"))
+      .toHaveCount(0);
   });
 
   test("facility status buttons stay large and contain their labels", async ({ page }) => {
@@ -284,7 +389,8 @@ test.describe("media picker", () => {
     // Hosted providers can need several seconds for download + encoding. The
     // picker stays open and shows honest activity instead of looking frozen.
     await expect(dialog.getByRole("progressbar", { name: "Fortschritt der Bildübernahme" })).toBeVisible();
-    await expect(dialog.getByText("Hero-Bild wird geladen und verarbeitet…")).toBeVisible();
+    await expect(dialog.getByText("Hero-Bild wird vorbereitet…")).toBeVisible();
+    await expect(dialog.getByRole("progressbar", { name: "Fortschritt der Bildübernahme" })).toHaveAttribute("aria-valuenow", "0");
 
     // The request carries an identity, not a payload — everything else is
     // re-resolved server-side. The active tab on open is "nearby" (first in
@@ -353,18 +459,21 @@ test.describe("media picker", () => {
     expect(adoptRequest).toBeNull();
   });
 
-  test("a 409 duplicate hero response surfaces to the operator", async ({ page }) => {
-    await page.unroute("**/admin/media/adopt");
-    await page.route("**/admin/media/adopt", (route) =>
+  test("a 409 duplicate hero event surfaces to the operator", async ({ page }) => {
+    await page.unroute("**/admin/media/adopt/stream");
+    await page.route("**/admin/media/adopt/stream", (route) =>
       route.fulfill({
-        status: 409,
-        json: {
+        contentType: "application/x-ndjson",
+        body: JSON.stringify({
+          type: "error",
+          status: 409,
+          message: "Dieses Foto ist bereits Hero bei „Valdevaqueros“.",
           detail: {
             code: "duplicate_hero",
             message: "Dieses Foto ist bereits Hero bei „Valdevaqueros“.",
             usages: [],
           },
-        },
+        }) + "\n",
       })
     );
 

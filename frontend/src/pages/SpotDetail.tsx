@@ -54,7 +54,13 @@ export default function SpotDetail() {
 
   const { data: spot, loading, error, reload } = useSpot(spotName);
   const spotId = spot?.uuid;
-  const { data: live } = useSpotLive(activeTab === "daten" ? spotId : undefined);
+  const {
+    data: live,
+    loading: liveLoading,
+    error: liveError,
+    stale: liveStale,
+    reload: reloadLive,
+  } = useSpotLive(activeTab === "daten" ? spotId : undefined);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(activeTab === "daten" ? spotId : undefined);
   const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } =
@@ -355,6 +361,10 @@ export default function SpotDetail() {
             <DatenPage
               spot={spot}
               live={live}
+              liveLoading={liveLoading}
+              liveError={liveError}
+              liveStale={liveStale}
+              onRetryLive={reloadLive}
               forecast={forecast}
               forecastLoading={forecastLoading}
               forecastError={forecastError}

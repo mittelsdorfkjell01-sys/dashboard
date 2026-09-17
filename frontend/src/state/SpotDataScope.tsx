@@ -9,11 +9,13 @@ export type WindUnit = "kts" | "ms";
 // yet. No "both" mode: the redesign shows one focused layer at a time
 // rather than all animation simultaneously (see the map redesign brief).
 export type MapLayer = "wind" | "waves";
+export type WeatherTimeMode = "now" | "forecast";
 
 type SpotDataScopeValue = {
   selectedAtUtc: string | null;
   setSelectedAtUtc: (instant: string | null) => void;
   selectedForecast: NormalizedForecastHour | null;
+  weatherTimeMode: WeatherTimeMode;
   availableForecasts: NormalizedForecastHour[];
   forecastTimezone: string;
   forecastStale: boolean;
@@ -37,6 +39,7 @@ function storedChoice<T extends string>(key: string, allowed: readonly T[], fall
 export function SpotDataScopeProvider({ children, forecast = null }: { children: ReactNode; forecast?: NormalizedForecastSeries | null }) {
   const availableForecasts = useMemo(() => spotForecastHours(forecast), [forecast]);
   const [selectedAtUtc, setSelectedAtUtc] = useState<string | null>(null);
+  const [weatherTimeMode, setWeatherTimeMode] = useState<WeatherTimeMode>("now");
   const [sportMode, setSportModeState] = useState<SportMode>(() =>
     storedChoice("sw-sport-mode", ["wind", "surf"], "wind"),
   );
@@ -49,6 +52,7 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
     setSelectedAtUtc((current) => {
       return resolveForecastSelection(availableForecasts, current);
     });
+    if (!availableForecasts.length) setWeatherTimeMode("now");
   }, [availableForecasts]);
 
   const selectedForecast = useMemo(
@@ -56,11 +60,15 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
     [forecast, selectedAtUtc],
   );
 
-  const selectForecastAt=useCallback((instant:string|null)=>setSelectedAtUtc(resolveForecastSelection(availableForecasts,instant)),[availableForecasts]);
+  const selectForecastAt = useCallback((instant: string | null) => {
+    setWeatherTimeMode(instant == null ? "now" : "forecast");
+    setSelectedAtUtc(resolveForecastSelection(availableForecasts, instant));
+  }, [availableForecasts]);
   const value = useMemo<SpotDataScopeValue>(() => ({
     selectedAtUtc,
     setSelectedAtUtc: selectForecastAt,
     selectedForecast,
+    weatherTimeMode,
     availableForecasts,
     forecastTimezone: forecast?.timezone ?? "UTC",
     forecastStale: forecast?.stale === true,
@@ -77,9 +85,19 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
     },
     mapLayer,
     setMapLayer,
-  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, windUnit]);
+  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, weatherTimeMode, windUnit]);
 
   return <SpotDataContext.Provider value={value}>{children}</SpotDataContext.Provider>;
+}
+
+/** Only an explicit chart/scrubber selection may switch the display product
+ * from the current analysis to a forecast hour. The cursor can still rest on
+ * the nearest forecast slot while the visible mode remains "now". */
+export function displayedForecast(
+  mode: WeatherTimeMode,
+  selected: NormalizedForecastHour | null,
+): NormalizedForecastHour | null {
+  return mode === "forecast" ? selected : null;
 }
 
 export function resolveForecastSelection(hours:NormalizedForecastHour[], requested:string|null, now=Date.now()):string|null {

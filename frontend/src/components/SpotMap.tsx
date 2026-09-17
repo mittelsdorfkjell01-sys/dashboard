@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import "../map.css";
 import type { LiveConditionsRead } from "../lib/api";
 import type { NormalizedForecastSeries } from "../lib/forecastNormalization";
-import { useOptionalSpotDataScope } from "../state/SpotDataScope";
+import { displayedForecast, useOptionalSpotDataScope } from "../state/SpotDataScope";
 import { spotDotColor, type PublicMapMode } from "../lib/publicMap";
 import { windColor } from "../lib/windScale";
 import { waveColor } from "../lib/waveScale";
@@ -130,7 +130,11 @@ export default function SpotMap({
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const [mapError, setMapError] = useState(false);
-  const reading = currentReading(live, dataScope?.selectedForecast ?? null);
+  const activeForecast = displayedForecast(
+    dataScope?.weatherTimeMode ?? "now",
+    dataScope?.selectedForecast ?? null,
+  );
+  const reading = currentReading(live, activeForecast);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current || !spot.coords) return;
@@ -206,7 +210,7 @@ export default function SpotMap({
   const swatch = reading?.type && mode === "wind" ? windColor(reading.windKt) : mode === "waves" ? waveColor(reading?.waveM) : windColor(null);
 
   return (
-    <div data-forecast-utc={reading?.type === "forecast" ? dataScope?.selectedForecast?.utcKey ?? "" : ""} data-observation-type={reading?.type ?? "unavailable"} className={`swd-spot-map relative w-full overflow-hidden ${aspect} aspect-[4/5] ${rounded ? "rounded-3xl" : ""}`}>
+    <div data-forecast-utc={reading?.type === "forecast" ? activeForecast?.utcKey ?? "" : ""} data-observation-type={reading?.type ?? "unavailable"} className={`swd-spot-map relative w-full overflow-hidden ${aspect} aspect-[4/5] ${rounded ? "rounded-3xl" : ""}`}>
       <div ref={containerRef} className="h-full w-full isolate" />
 
       <FlowLayer mode={mode} reading={reading} />

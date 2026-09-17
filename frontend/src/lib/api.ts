@@ -327,6 +327,99 @@ export interface LiveMeasurement {
   provenance?: WeatherProvenance | null;
 }
 
+export type LiveWindStatus = "baseline" | "station_adjusted" | "unavailable";
+export type LiveWindSourceType = "model_nowcast" | "station_measurement" | "station_residual" | "local_physics";
+
+export interface LiveWindSource {
+  source_type: LiveWindSourceType;
+  source: string;
+  provider?: string | null;
+  model_version?: string | null;
+  observed_at?: string | null;
+  valid_at?: string | null;
+  captured_at?: string | null;
+}
+
+export interface LiveWindGust {
+  wind_gust_ms: number;
+  provenance: LiveWindSource;
+}
+
+export interface LiveWindCovariance {
+  uu_ms2: number;
+  uv_ms2: number;
+  vv_ms2: number;
+}
+
+export interface LiveWindSpeedBand {
+  low_ms: number;
+  high_ms: number;
+  confidence_level: number;
+}
+
+export interface LiveWindStationContribution {
+  residual_id: string;
+  analysis_id: string;
+  station_id: string;
+  observation_id: string;
+  provider: string;
+  observed_at: string;
+  residual_u_ms: number;
+  residual_v_ms: number;
+  correlation_group: string;
+  base_weight: number;
+  robust_weight: number;
+  normalized_weight: number;
+  applied_weight: number;
+  contribution_u_ms: number;
+  contribution_v_ms: number;
+  residual_uncertainty_ms: number;
+  included: boolean;
+  exclusion_reasons: string[];
+}
+
+export interface LiveWindAnalysis {
+  contract_version: "live-wind-v1";
+  product_type: "live_wind";
+  status: LiveWindStatus;
+  fallback_level?: "station_adjusted" | "model_with_local_physics" | "raw_model" | "unavailable" | null;
+  analyzed_at: string | null;
+  valid_at: string | null;
+  expires_at?: string | null;
+  oldest_source_at?: string | null;
+  max_station_age_seconds?: number | null;
+  wind_speed_ms: number | null;
+  wind_direction_from_deg: number | null;
+  wind_u_ms: number | null;
+  wind_v_ms: number | null;
+  gust: LiveWindGust | null;
+  model_version: string | null;
+  analysis_version: string | null;
+  station_count: number;
+  uncertainty_ms: number | null;
+  speed_uncertainty_band_ms?: LiveWindSpeedBand | null;
+  direction_uncertainty_deg?: number | null;
+  uncertainty_components?: Record<string, number> | null;
+  confidence: number | null;
+  sources: LiveWindSource[];
+  applied_physics_version: string | null;
+  fallback_reason: string | null;
+  model_baseline_u_ms?: number | null;
+  model_baseline_v_ms?: number | null;
+  regional_wind_u_ms?: number | null;
+  regional_wind_v_ms?: number | null;
+  correction_u_ms?: number | null;
+  correction_v_ms?: number | null;
+  model_spread_ms?: number | null;
+  conflict_index?: number | null;
+  covariance?: LiveWindCovariance | null;
+  evidence_strength?: number | null;
+  effective_station_count?: number | null;
+  station_contributions?: LiveWindStationContribution[];
+  analysis_configuration?: Record<string, unknown> | null;
+  local_physics_component?: Record<string, unknown> | null;
+}
+
 export type WeatherSourceType = "measurement" | "model_nowcast" | "forecast";
 export interface WeatherProvenance {
   contract_version: "weather-v6";
@@ -362,6 +455,9 @@ export interface LiveConditionsRead {
   // `current` (the nowcast): a real measurement and a model estimate must
   // look visibly different (see the map redesign brief).
   measurement?: LiveMeasurement | null;
+  // Separate current-wind analysis. It may be a model-only baseline, a
+  // residual-adjusted regional analysis, or explicitly unavailable.
+  live_wind?: LiveWindAnalysis | null;
   current: CurrentConditions;
 }
 
@@ -506,6 +602,20 @@ function cookieValue(name: string): string | undefined {
     ?.slice(name.length + 1);
 }
 
+function addAuthHeaders(path: string, method: string, headers: Record<string, string>): void {
+  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const csrf = cookieValue("swd_csrf");
+    if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf);
+  }
+  const devKey = import.meta.env.VITE_ADMIN_KEY as string | undefined;
+  if (devKey) {
+    headers["X-Admin-Key"] = devKey;
+  } else if (path.startsWith("/admin")) {
+    const key = getAdminKey();
+    if (key) headers["X-Admin-Key"] = key;
+  }
+}
+
 export async function request<T>(path: string, init?: RequestOptions): Promise<T> {
   const { timeoutMs = REQUEST_TIMEOUT_MS, ...fetchInit } = init ?? {};
   const headers: Record<string, string> = {
@@ -515,20 +625,10 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
     ...((fetchInit.headers as Record<string, string>) || {}),
   };
   const method = (fetchInit.method ?? "GET").toUpperCase();
-  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
-    const csrf = cookieValue("swd_csrf");
-    if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf);
-  }
   // LOCAL DEV break-glass: when VITE_ADMIN_KEY is set, send it on EVERY request
   // (incl. /auth/me) so the admin area works without the cookie login. Falls back
   // to a session-entered key on /admin only. Unset in prod → normal cookie auth.
-  const devKey = import.meta.env.VITE_ADMIN_KEY as string | undefined;
-  if (devKey) {
-    headers["X-Admin-Key"] = devKey;
-  } else if (path.startsWith("/admin")) {
-    const key = getAdminKey();
-    if (key) headers["X-Admin-Key"] = key;
-  }
+  addAuthHeaders(path, method, headers);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -1916,6 +2016,93 @@ export const adoptMedia = (body: AdoptMediaBody) =>
     // Hosted providers are downloaded and re-encoded server-side on adopt.
     timeoutMs: 120_000,
   });
+
+export interface AdoptProgress {
+  percent: number;
+  message: string;
+}
+
+/** Read server milestones until the catalogue write has actually committed. */
+export async function adoptMediaWithProgress(
+  body: AdoptMediaBody,
+  onProgress: (progress: AdoptProgress) => void,
+): Promise<AdoptMediaResponse> {
+  const path = "/admin/media/adopt/stream";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/x-ndjson",
+  };
+  addAuthHeaders(path, "POST", headers);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 310_000);
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers,
+      credentials: "include",
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const detail = await response.json().catch(() => null);
+      const reason = detail?.detail;
+      const message = typeof reason === "string"
+        ? reason
+        : typeof reason?.message === "string"
+          ? reason.message
+          : response.status === 504
+            ? "Server-Zeitlimit erreicht. Bitte prüfen, ob das Hero-Bild bereits übernommen wurde."
+          : `Anfrage fehlgeschlagen (${response.status}).`;
+      throw new ApiError(message, response.status, detail);
+    }
+    if (!response.body) throw new ApiError("Der Server sendet keinen Ladefortschritt.", 0, null);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = "";
+    let result: AdoptMediaResponse | null = null;
+    const handleLine = (line: string) => {
+      if (!line.trim()) return;
+      const event = JSON.parse(line) as
+        | ({ type: "progress" } & AdoptProgress)
+        | { type: "heartbeat" }
+        | { type: "result"; result: AdoptMediaResponse }
+        | { type: "error"; status: number; message: string; detail?: unknown };
+      if (event.type === "progress") onProgress(event);
+      if (event.type === "result") result = event.result;
+      if (event.type === "error") {
+        throw new ApiError(event.message, event.status, { detail: event.detail });
+      }
+    };
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      pending += decoder.decode(value, { stream: true });
+      let newline = pending.indexOf("\n");
+      while (newline >= 0) {
+        handleLine(pending.slice(0, newline));
+        pending = pending.slice(newline + 1);
+        newline = pending.indexOf("\n");
+      }
+    }
+    pending += decoder.decode();
+    if (pending.trim()) handleLine(pending);
+    if (!result) throw new ApiError("Verbindung während der Bildübernahme unterbrochen. Bitte den Eintrag prüfen.", 0, null);
+    return result;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    const timeout = error instanceof DOMException && error.name === "AbortError";
+    throw new ApiError(
+      timeout
+        ? "Zeitüberschreitung bei der Bildübernahme. Bitte den Eintrag prüfen."
+        : "Verbindung während der Bildübernahme unterbrochen. Bitte den Eintrag prüfen.",
+      0,
+      error,
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export const verifyMediaSources = (limit = 100) =>
   request<{

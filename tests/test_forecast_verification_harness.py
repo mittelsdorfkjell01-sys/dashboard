@@ -720,15 +720,17 @@ def test_gate_to_http_activation_reaches_live_and_forecast_serving(
         # product. Neither the activated physical sector nor forecast-only
         # model-bias calibration may rewrite its speed or direction.
         db.add(
-            WeatherObservation(
-                station_id=station.id,
-                observed_at=datetime.now(timezone.utc),
-                wind_speed_ms=7.0,
-                wind_gust_ms=9.0,
-                wind_direction_deg=180.0,
-                provider_quality="1",
-                import_status="accepted",
-            )
+                WeatherObservation(
+                    station_id=station.id,
+                    observed_at=datetime.now(timezone.utc),
+                    wind_speed_ms=7.0,
+                    wind_gust_ms=9.0,
+                    wind_direction_deg=180.0,
+                    wind_u_ms=0.0,
+                    wind_v_ms=7.0,
+                    provider_quality="1",
+                    import_status="accepted",
+                )
         )
         db.commit()
         invalidate_public_weather(cache, spot.id)

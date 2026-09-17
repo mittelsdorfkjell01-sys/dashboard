@@ -26,12 +26,20 @@ const WindClimatologyModule = lazy(() => import("../WindClimatologyModule"));
 export default function DatenPage({
   spot,
   live,
+  liveLoading = false,
+  liveError = null,
+  liveStale = false,
+  onRetryLive,
   forecast,
   forecastLoading,
   forecastError,
 }: {
   spot: Spot;
   live?: LiveConditionsRead | null;
+  liveLoading?: boolean;
+  liveError?: string | null;
+  liveStale?: boolean;
+  onRetryLive?: () => void;
   forecast: NormalizedForecastSeries | null;
   forecastLoading: boolean;
   forecastError?: string | null;
@@ -103,7 +111,16 @@ export default function DatenPage({
                 rounded
               />
             </Suspense>
-            <WindSidebar forecast={forecast} live={live} lat={lat} lng={lng} />
+            <WindSidebar
+              forecast={forecast}
+              live={live}
+              liveLoading={liveLoading}
+              liveError={liveError}
+              liveStale={liveStale}
+              onRetryLive={onRetryLive}
+              lat={lat}
+              lng={lng}
+            />
           </section>
 
           {/* 4) Wind months. */}

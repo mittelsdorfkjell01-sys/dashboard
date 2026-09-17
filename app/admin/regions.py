@@ -342,7 +342,9 @@ def delete_region(region_id, *, db: Session) -> None:
     purge_entity_urls(db, media_urls)
 
 
-def set_region_image(region_id, image: dict, *, db: Session) -> Any:
+def set_region_image(
+    region_id, image: dict, *, db: Session, retire_previous: bool = False
+) -> Any:
     """Replace the region hero image.
 
     Normalised through the shared image builder, so a region image carries the
@@ -357,15 +359,27 @@ def set_region_image(region_id, image: dict, *, db: Session) -> Any:
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
-    from app.media.lifecycle import demote_published_hero_rows
+    from app.media.lifecycle import (
+        demote_published_hero_rows, retire_replaced_hero_rows,
+        retire_usage_if_unreferenced,
+    )
 
     payload = {key: image.get(key) for key in CANONICAL_KEYS}
     payload["source"] = payload.get("source") or "manual"
     payload["license"] = payload.get("license") or "own"
     payload["provider"] = payload.get("provider") or "manual"
     next_image = build_image(**payload)
+    previous = region.image if isinstance(region.image, dict) else None
+    old_url = previous.get("url") if previous else None
     demote_published_hero_rows(db, "region", region.id, keep_url=next_image["url"])
+    if retire_previous and old_url != next_image["url"]:
+        retire_replaced_hero_rows(db, "region", region.id, old_url)
     region.image = next_image
+    if retire_previous and previous and old_url != next_image["url"]:
+        retire_usage_if_unreferenced(
+            db, entity_type="region", entity_id=region.id,
+            provider=previous.get("provider"), external_id=previous.get("external_id"),
+        )
     db.commit()
     db.refresh(region)
     return region

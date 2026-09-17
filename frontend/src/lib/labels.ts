@@ -44,6 +44,19 @@ export const BOTTOM_TYPE_LABELS: Record<string, string> = {
   mixed: "Gemischt (nicht näher bestimmt)",
 };
 
+/** Convert legacy display labels in stored records to the API's enum keys. */
+export function normalizeBottomTypes(values?: readonly string[] | null): string[] {
+  const normalized: string[] = [];
+  for (const value of values ?? []) {
+    const candidate = value.trim().toLowerCase();
+    const key = BOTTOM_TYPES.find(
+      (type) => type === candidate || BOTTOM_TYPE_LABELS[type].toLowerCase() === candidate,
+    ) ?? value;
+    if (!normalized.includes(key)) normalized.push(key);
+  }
+  return normalized;
+}
+
 export const WATER_CHARACTER_LABELS: Record<string, string> = {
   flach: "Flachwasser",
   chop: "Chop / Kabbelwelle",

@@ -73,6 +73,33 @@ SpotDetail
   -> data components/meteogram
 ```
 
+### Station model-error evidence
+
+```text
+normalized station observation
+  -> shared exact-run raw model baseline at station coordinates
+  -> same-run u/v time interpolation
+  -> optional reviewed station physics
+  -> measurement_uv - expected_model_uv
+  -> immutable weather_station_model_residuals evidence
+  -> robust regional u/v analysis at the target spot
+  -> local spot physics (exactly once)
+  -> separate LiveWind public product
+```
+
+Station model error lives in `app/weather/model_error.py`; robust transfer and
+uncertainty live in `app/weather/live_wind_analysis.py`. Only quality-checked
+residuals can feed LiveWind. Neither stage changes `current`, station
+measurements, raw model fields, or forecast serving.
+
+Public serving is gated in `app/weather/live_wind_rollout.py`; single and batch
+requests share `app/live/service.py`. Product-separated keys and locks live in
+`app/live/public_cache.py`. Offline local-physics candidates are built in
+`app/weather/live_wind_physics_profile.py`; spatial/temporal holdout verification
+and immutable activation evidence live in `app/weather/live_wind_verification.py`
+and `weather_live_wind_verification_evidence`. No evaluator result activates a
+candidate automatically.
+
 ### Admin spot editing
 
 ```text

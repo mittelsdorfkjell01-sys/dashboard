@@ -52,7 +52,24 @@ async function mockApi(page: Page, photos: CommunityImage[] = []) {
     if (["/spots/test", "/spots/laboe", "/spots/Alcyons"].includes(path)) return route.fulfill({ json: spot });
     if (path === "/regions/r1") return route.fulfill({ json: { id: "r1", slug: "kieler-bucht", name: "Kieler Bucht", country: "DE", center: null, description: null, image: null, season: null, defaults: null, status: "published", updated_at: "2026-08-24T00:00:00Z" } });
     if (path === "/spots/test/forecast") return route.fulfill({ json: forecast });
-    if (path === "/spots/test/live") return route.fulfill({ json: { spot_id: "test", model: "consensus", time: "2026-08-24T12:00:00Z", current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250, coastal_normal_deg: 180, coastal_classification: "cross_onshore" } } });
+    if (path === "/spots/test/live") return route.fulfill({ json: {
+      spot_id: "test", model: "consensus", time: "2026-09-14T12:00:00Z",
+      current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250, coastal_normal_deg: 180, coastal_classification: "cross_onshore" },
+      live_wind: {
+        contract_version: "live-wind-v1", product_type: "live_wind", status: "station_adjusted",
+        analyzed_at: "2026-09-14T12:05:00Z", valid_at: "2026-09-14T12:00:00Z",
+        wind_speed_ms: 10, wind_direction_from_deg: 278, wind_u_ms: 9.99, wind_v_ms: -0.35,
+        gust: null, model_version: "consensus-v1", analysis_version: "regional-live-wind-uv-v1",
+        station_count: 3, uncertainty_ms: 1, confidence: 0.8,
+        sources: [{ source_type: "station_residual", source: "residual:test" }],
+        applied_physics_version: "physics-v1", fallback_reason: null,
+      },
+      measurement: {
+        observation_type: "measurement", station_id: "station-test", provider: "DWD", provider_station_id: "01234",
+        station_name: "Küstenstation", observed_at: "2026-09-14T11:58:00Z", age_seconds: 420,
+        distance_km: 3.2, wind_speed_ms: 7, wind_gust_ms: 9, wind_direction_from_deg: 260, quality: 1,
+      },
+    } });
     if (path === "/spots/test/tides") return route.fulfill({ status: 404, json: { detail: "none" } });
     if (path === "/spots/test/ratings") return route.fulfill({ json: { items: [], aggregate: { count: 0, average: null } } });
     if (path === "/spots/test/tips") return route.fulfill({ json: [] });
@@ -177,6 +194,83 @@ test("Daten-Seite zeigt Meteogramm, Ausblick und Livewind", async ({ page }) => 
   // Live-wind sidebar metrics.
   await expect(page.getByText("UV INDEX", { exact: true })).toBeVisible();
   await expect(page.getByText("GEFÜHLT", { exact: true })).toBeVisible();
+  const current = page.locator('[data-weather-time-mode="now"]');
+  await expect(current).toHaveAttribute("data-live-wind-status", "station_adjusted");
+  await expect(current.getByText("Aktuelle Bedingungen", { exact: true })).toBeVisible();
+  await expect(current.getByText("Stationskorrigiert", { exact: true })).toBeVisible();
+  await expect(current.getByText("Relevante Stationen", { exact: true })).toBeVisible();
+  await expect(current.getByText("Küstenstation", { exact: false })).toBeVisible();
+  await expect(current.getByText(/Gemessen .*11:58/)).toBeVisible();
+  await expect(page.locator(".swd-spot-map")).toHaveAttribute("data-observation-type", "live_wind");
+});
+
+test("Forecast-Scrubbing ersetzt LiveWind nur im Forecastmodus und Jetzt stellt es wieder her", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+
+  const map = page.locator(".swd-spot-map");
+  await expect(map).toHaveAttribute("data-observation-type", "live_wind");
+  const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
+  await navigator.getByRole("button").first().click();
+
+  await expect(map).toHaveAttribute("data-observation-type", "forecast");
+  const forecastSidebar = page.locator('[data-weather-time-mode="forecast"]');
+  await expect(forecastSidebar.getByRole("heading", { name: "Forecast" })).toBeVisible();
+  await expect(forecastSidebar.getByText("Referenzmessung", { exact: false })).toHaveCount(0);
+
+  await forecastSidebar.getByRole("button", { name: "Jetzt" }).click();
+  await expect(map).toHaveAttribute("data-observation-type", "live_wind");
+  await expect(page.locator('[data-weather-time-mode="now"]')).toBeVisible();
+});
+
+test("Offline bleibt die letzte Analyse sichtbar und wird ehrlich gekennzeichnet", async ({ page, context }) => {
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+  await expect(page.locator('[data-live-wind-status="station_adjusted"]')).toBeVisible();
+  await context.setOffline(true);
+  await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+  await expect(page.getByText("Offline: Die zuletzt geladene Analyse wird weiter angezeigt.")).toBeVisible();
+});
+
+test("fehlendes LiveWind fällt sichtbar auf den Modell-Nowcast zurück", async ({ page }) => {
+  await mockApi(page);
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/test\/live$/, (route) => route.fulfill({ json: {
+    spot_id: "test", model: "consensus", time: "2026-09-14T12:00:00Z",
+    current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250 },
+    live_wind: {
+      contract_version: "live-wind-v1", product_type: "live_wind", status: "unavailable",
+      analyzed_at: null, valid_at: null, wind_speed_ms: null, wind_direction_from_deg: null,
+      wind_u_ms: null, wind_v_ms: null, gust: null, model_version: null, analysis_version: null,
+      station_count: 0, uncertainty_ms: null, confidence: null, sources: [],
+      applied_physics_version: null, fallback_reason: "station_residuals_unavailable",
+    },
+  } }));
+  await page.goto("/spot/test/daten");
+  await expect(page.locator(".swd-spot-map")).toHaveAttribute("data-observation-type", "nowcast");
+  await expect(page.locator('[data-live-wind-status="baseline"]')).toBeVisible();
+  await expect(page.getByText(/keine ausreichend aktuellen Stationsresiduen/)).toBeVisible();
+});
+
+test("Info-Locator bleibt statisch und lädt kein LiveWind", async ({ page }) => {
+  let liveRequests = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/spots/test/live") liveRequests += 1;
+  });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+  // The desktop locator is intentionally lazy-rendered. Scroll its stable
+  // semantic slot into view first so the IntersectionObserver may mount the
+  // map; waiting on the lazy child itself can never trigger that observer.
+  // A synchronous DOM scroll also avoids Playwright waiting for the tab's
+  // entrance animation while React legitimately rerenders the lazy slot.
+  const locatorRegion = page.getByRole("region", { name: "Lage" });
+  await expect(locatorRegion).toBeAttached();
+  await locatorRegion.evaluate((element) => element.scrollIntoView({ block: "center" }));
+  await expect(page.locator(".swd-locator-map")).toBeVisible();
+  await expect(page.locator(".swd-locator-map [data-observation-type]")).toHaveCount(0);
+  expect(liveRequests).toBe(0);
 });
 
 for (const width of [320, 375, 768, 1280, 1440]) {

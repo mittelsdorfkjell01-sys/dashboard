@@ -26,9 +26,8 @@ export default function GalleryManager({
 }: {
   entityType: MediaEntityType;
   entityId: string;
-  /** The entity's `image` changed (a gallery photo was promoted) — the caller
-   *  reloads its record so the hero preview stays in sync. */
-  onHeroChanged: () => void;
+  /** A gallery change may also change the hero — reload its preview. */
+  onHeroChanged: () => void | Promise<void>;
 }) {
   const [items, setItems] = useState<GalleryImage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,11 +64,16 @@ export default function GalleryManager({
   const remove = async (image: GalleryImage) => {
     setBusyId(image.id);
     setError(null);
+    let removed = false;
     try {
       await removeGalleryImage(image.id);
+      removed = true;
       setItems((prev) => (prev ? prev.filter((i) => i.id !== image.id) : prev));
+      await onHeroChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Entfernen fehlgeschlagen.");
+      setError(removed
+        ? "Bild entfernt. Das Titelbild konnte nicht aktualisiert werden."
+        : err instanceof ApiError ? err.message : "Entfernen fehlgeschlagen.");
     } finally {
       setBusyId(null);
       setConfirmRemove(null);
@@ -81,7 +85,7 @@ export default function GalleryManager({
     setError(null);
     try {
       await promoteGalleryImage(image.id);
-      onHeroChanged();
+      await onHeroChanged();
       load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Konnte nicht zum Hero gemacht werden.");

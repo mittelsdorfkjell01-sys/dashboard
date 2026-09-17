@@ -82,7 +82,11 @@ def test_disabled_sector_is_not_applied():
     result = apply_local_physics(10.0, 270.0, profile)
     assert result.speed_ms == pytest.approx(10.0)
     assert result.corrected is False
-    assert result.applied_component is None
+    assert result.applied_component == {
+        "component": "local_physics",
+        "status": "unavailable",
+        "reason": "direction_sector_unavailable",
+    }
 
 
 def test_adjacent_sector_boundary_belongs_only_to_the_sector_that_starts_there():

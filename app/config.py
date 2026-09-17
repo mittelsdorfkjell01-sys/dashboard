@@ -137,8 +137,26 @@ class Settings(BaseSettings):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
 
+    @field_validator("live_wind_enabled_region_slugs", mode="before")
+    @classmethod
+    def _split_live_wind_regions(cls, v):
+        if isinstance(v, str):
+            return sorted({item.strip().casefold() for item in v.split(",") if item.strip()})
+        return sorted({str(item).strip().casefold() for item in v if str(item).strip()})
+
     @model_validator(mode="after")
     def _validate_deployment_security(self):
+        if self.live_wind_canary_mode and (
+            self.app_env == "production" or self.database_target != "local"
+            or self.live_wind_rollout_stage != "shadow"
+            or not self.live_wind_force_baseline
+            or self.live_wind_enabled_region_slugs
+        ):
+            raise ValueError("Canary requires local non-production shadow with forced baseline")
+        if self.weather_observation_retry_max_seconds < self.weather_observation_retry_initial_seconds:
+            raise ValueError("weather observation retry max must be >= initial backoff")
+        if self.live_wind_retry_max_seconds < self.live_wind_retry_initial_seconds:
+            raise ValueError("LiveWind retry max must be >= initial backoff")
         if self.deployment_mode == "public" and self.enable_admin_api:
             raise ValueError("Public deployments must set ENABLE_ADMIN_API=false")
         if self.deployment_mode == "admin" and not self.enable_admin_api:
@@ -225,6 +243,9 @@ class Settings(BaseSettings):
     # for the coastline/fetch. Empty means microscale stays "unavailable".
     worldcover_raster_dir: str | None = None
     glo30_wbm_raster_dir: str | None = None
+    # Optional offline GLO-30 DEM tile mount used only while building rich
+    # LiveWind physics candidates. Serving never downloads or opens this mount.
+    glo30_dem_raster_dir: str | None = None
 
     # Per-model-family blend for GWA sector factors, keyed by ModelFamily value
     # (e.g. {"regional": 0.5}). Missing family = 1.0 (full factor). WP1's
@@ -242,7 +263,59 @@ class Settings(BaseSettings):
     # WP1 validation harness: bounded station-observation import per cron tick and
     # the historical window scored for raw-forecast verification.
     weather_observation_cron_batch_size: int = 25
+    weather_observation_retry_initial_seconds: int = Field(default=60, ge=10, le=3600)
+    weather_observation_retry_max_seconds: int = Field(default=3600, ge=60, le=86400)
     weather_verification_lookback_days: int = 45
+
+    # LiveWind is calculated durably in shadow by default. Only pilot/regional
+    # stages plus an explicit region allowlist may expose station adjustments;
+    # the model-only baseline remains available at every stage.
+    live_wind_rollout_stage: Literal[
+        "shadow", "internal", "pilot", "regional", "global"
+    ] = "shadow"
+    live_wind_force_baseline: bool = False
+    live_wind_canary_mode: bool = False
+    # Shared persistent mount captured before observations. Missing mount fails
+    # the internal exact-run shadow path closed; it never falls back to Current.
+    live_wind_exact_run_cache_dir: str | None = None
+    live_wind_exact_run_cache_id: str | None = None
+    live_wind_exact_run_min_free_bytes: int = Field(default=5_000_000_000, ge=0)
+    live_wind_exact_capture_tile_limit: int = Field(default=16, ge=1, le=200)
+    live_wind_exact_capture_mode: Literal["scheduled", "disabled"] = "scheduled"
+    live_wind_enabled_region_slugs: Annotated[list[str], NoDecode] = []
+    live_wind_cycle_minutes: int = Field(default=15, ge=5, le=60)
+    live_wind_enqueue_batch_size: int = Field(default=50, ge=1, le=1000)
+    live_wind_worker_batch_size: int = Field(default=25, ge=1, le=200)
+    live_wind_job_max_attempts: int = Field(default=5, ge=1, le=20)
+    live_wind_retry_initial_seconds: int = Field(default=30, ge=5, le=3600)
+    live_wind_retry_max_seconds: int = Field(default=1800, ge=30, le=86400)
+    live_wind_job_lease_seconds: int = Field(default=300, ge=30, le=3600)
+    live_wind_min_station_count: int = Field(default=2, ge=1, le=20)
+    live_wind_min_confidence: float = Field(default=0.20, ge=0, le=1)
+    live_wind_max_conflict_index: float = Field(default=0.65, ge=0, le=1)
+    live_wind_max_uncertainty_ms: float = Field(default=5.0, gt=0, le=30)
+    live_wind_max_correction_ms: float = Field(default=6.0, gt=0, le=30)
+    live_wind_import_late_minutes: int = Field(default=30, ge=5, le=1440)
+    live_wind_job_late_minutes: int = Field(default=45, ge=5, le=1440)
+    live_wind_health_window_minutes: int = Field(default=360, ge=30, le=10080)
+    live_wind_health_min_analyses: int = Field(default=10, ge=1, le=10000)
+    live_wind_readiness_min_days: int = Field(default=14, ge=2, le=180)
+    live_wind_readiness_min_analyses: int = Field(default=500, ge=10)
+    live_wind_readiness_min_wind_sectors: int = Field(default=4, ge=2, le=8)
+    live_wind_readiness_max_fallback_rate: float = Field(default=0.35, ge=0, le=1)
+    # Any public station adjustment is fail-closed until a manually selected,
+    # immutable holdout-evidence context has passed for this exact candidate.
+    live_wind_require_verification_evidence: bool = True
+    live_wind_candidate_version: str = "regional-live-wind-uv-v2"
+    live_wind_verification_context_hash: str | None = None
+    live_wind_verification_min_samples: int = Field(default=500, ge=10)
+    live_wind_verification_min_days: int = Field(default=14, ge=2)
+    live_wind_verification_min_stations: int = Field(default=10, ge=2)
+    live_wind_verification_min_uv_mae_drop_ms: float = Field(default=0.15, gt=0)
+    # No scientific subgroup harm threshold has been approved yet. None keeps
+    # public candidate activation closed even when aggregate evidence passes.
+    live_wind_verification_max_subgroup_regression_ms: float | None = Field(default=None, ge=0)
+    live_wind_verification_subgroup_policy_version: str | None = None
     # Sector activation is a scientific governance boundary, not an operator
     # convention.  These defaults are enforced again by the activation service.
     wind_sector_min_mae_drop_ms: float = Field(default=0.2, gt=0)

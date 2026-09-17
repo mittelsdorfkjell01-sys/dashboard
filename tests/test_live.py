@@ -14,6 +14,7 @@ from app.live.service import (
     confidence_for_day,
     get_forecast_series,
     get_live_conditions,
+    get_live_wind_baseline_for_spot,
 )
 from tests.live_helpers import FakeDB, FakeOpenMeteoClient, make_spot
 
@@ -138,12 +139,33 @@ def test_second_call_hits_cache_no_http():
     assert client.marine_calls == 2
 
 
+def test_shadow_baseline_fetch_skips_marine_and_station_products():
+    spot = make_spot()
+    client = FakeOpenMeteoClient()
+    baseline, model_ids = get_live_wind_baseline_for_spot(
+        spot,
+        client=client,
+        cache=InMemoryCache(),
+    )
+    assert client.forecast_calls == 1
+    assert client.marine_calls == 0
+    assert baseline["product_type"] == "live_wind"
+    assert baseline["status"] == "baseline"
+    assert baseline["station_count"] == 0
+    assert model_ids
+
+
 def test_live_conditions_shape_and_model():
     spot = make_spot(model_pref="icon_d2")
     out = get_live_conditions(
         spot.id, db=FakeDB(spot), client=FakeOpenMeteoClient(), cache=InMemoryCache()
     )
     assert out["model"] == "icon_d2"  # honoured model_pref
+    assert out["live_wind"]["status"] == "baseline"
+    assert out["live_wind"]["fallback_reason"] == "station_residuals_unavailable"
+    assert out["live_wind"]["wind_speed_ms"] == pytest.approx(10.0)
+    assert out["live_wind"]["correction_u_ms"] == 0
+    assert out["live_wind"]["correction_v_ms"] == 0
     cur = out["current"]
     assert set(cur) == {
         "wind", "gust", "dir", "wind_u_ms", "wind_v_ms", "air", "sst", "swell", "period", "swell_dir",
@@ -152,6 +174,27 @@ def test_live_conditions_shape_and_model():
     }
     assert cur["wind"] == 19.4  # 10 m/s consensus exposed as compatibility knots
     assert cur["sst"] == 20.0
+
+
+def test_station_selection_receives_the_common_target_nowcast_sector(monkeypatch):
+    selected_with = {}
+
+    def fake_measurement(
+        db, spot_id, *, cache=None, wind_direction_deg=None
+    ):
+        selected_with["wind_direction_deg"] = wind_direction_deg
+        return None
+
+    monkeypatch.setattr("app.live.service._latest_measurement", fake_measurement)
+    spot = make_spot()
+    out = get_live_conditions(
+        spot.id,
+        db=FakeDB(spot),
+        client=FakeOpenMeteoClient(),
+        cache=InMemoryCache(),
+    )
+
+    assert selected_with["wind_direction_deg"] == out["current"]["dir"]
 
 
 def test_wave_components_populate_all_four_when_provider_has_them():

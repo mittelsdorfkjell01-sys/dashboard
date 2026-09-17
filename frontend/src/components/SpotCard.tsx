@@ -5,6 +5,7 @@ import { sportLabel } from "../lib/labels";
 import { countryName } from "../lib/flags";
 import SpotImage from "./SpotImage";
 import { spotPath } from "../lib/spotRoutes";
+import { currentWindPresentation, formatAge } from "../lib/liveWindPresentation";
 
 /**
  * The one spot-tile layout used everywhere a spot is browsed: landing grid,
@@ -29,6 +30,7 @@ export default function SpotCard({
   compact = false,
   mapRail = false,
   live,
+  preferLiveWind = false,
   eager = true,
 }: {
   spot: Spot;
@@ -36,6 +38,8 @@ export default function SpotCard({
   /** Public /map rail: compact image card with its factual region line. */
   mapRail?: boolean;
   live?: LiveConditionsRead;
+  /** Wind-map surfaces may opt into the analyzed product; browse cards stay on current. */
+  preferLiveWind?: boolean;
   /** Start the image request immediately once this card is mounted. */
   eager?: boolean;
 }) {
@@ -44,14 +48,29 @@ export default function SpotCard({
     .filter(Boolean)
     .join(" · ");
 
-  const windLive = live?.current.wind;
+  const presentedWind = currentWindPresentation(live);
+  const windLive = preferLiveWind && presentedWind.status !== "unavailable"
+    ? presentedWind.windKt
+    : live?.current.wind;
   const windValue = windLive ?? spot.typicalWindKt;
   const windIsLive = windLive != null;
   const waveValue = spot.typicalWaveHeightM;
   // Map rail: "18 kn · live" / "18 kn · vor 12 Min." instead of a bare dot —
   // only when the API gave a real timestamp; no invented age otherwise.
-  const liveMinutesAgo = windIsLive && live?.time ? Math.max(0, Math.round((Date.now() - new Date(live.time).getTime()) / 60_000)) : null;
-  const liveSuffix = windIsLive ? (liveMinutesAgo !== null && liveMinutesAgo >= 1 ? `vor ${liveMinutesAgo} Min.` : "live") : null;
+  const liveTime = preferLiveWind && presentedWind.status !== "unavailable"
+    ? presentedWind.analyzedAt
+    : live?.time;
+  const liveMinutesAgo = windIsLive && liveTime ? Math.max(0, Math.round((Date.now() - new Date(liveTime).getTime()) / 60_000)) : null;
+  const liveSuffix = windIsLive
+    ? preferLiveWind
+      ? presentedWind.status === "station_adjusted"
+        ? "LiveWind"
+        : "Baseline"
+      : liveMinutesAgo !== null
+        ? formatAge(liveMinutesAgo)
+        : "live"
+    : null;
+  const adjustedLiveWind = preferLiveWind && presentedWind.status === "station_adjusted";
 
   return (
     <Link
@@ -80,7 +99,7 @@ export default function SpotCard({
           </p>
           {windValue != null && (
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              {!mapRail && windIsLive && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
+              {!mapRail && windIsLive && (!preferLiveWind || adjustedLiveWind) && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
               <span className="text-label font-semibold text-ink">{windValue}</span>
               <span className="text-caption text-ink-soft">kts</span>
               {mapRail && liveSuffix && <span className="text-caption text-muted">· {liveSuffix}</span>}

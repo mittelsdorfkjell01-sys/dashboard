@@ -48,6 +48,73 @@ router = APIRouter(
 )
 
 
+@router.get("/live-wind/operations")
+def live_wind_operations(
+    days: int = Query(default=14, ge=1, le=180),
+    include_rasters: bool = True,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Internal-only rollout metrics and provider/raster/scheduler doctors."""
+    from app.weather.live_wind_operations import build_live_wind_operations_report
+
+    return build_live_wind_operations_report(
+        db,
+        days=days,
+        include_rasters=include_rasters,
+    )
+
+
+@router.get("/live-wind/jobs")
+def live_wind_jobs(
+    status_filter: Literal[
+        "queued", "processing", "retry_wait", "succeeded", "failed"
+    ] | None = Query(default=None, alias="status"),
+    limit: int = Query(default=50, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Inspect durable shadow evidence; this endpoint is never public."""
+    from app.models import WeatherLiveWindJob
+
+    statement = select(WeatherLiveWindJob).order_by(
+        WeatherLiveWindJob.created_at.desc(), WeatherLiveWindJob.id
+    )
+    if status_filter is not None:
+        statement = statement.where(WeatherLiveWindJob.status == status_filter)
+    rows = list(db.scalars(statement.limit(limit)).all())
+    return {
+        "items": [
+            {
+                "id": str(row.id),
+                "spot_id": str(row.spot_id),
+                "region": row.region_key,
+                "terrain_class": row.terrain_class,
+                "cycle_at": row.cycle_at,
+                "rollout_stage": row.rollout_stage,
+                "status": row.status,
+                "attempt_count": row.attempt_count,
+                "available_at": row.available_at,
+                "claimed_at": row.claimed_at,
+                "finished_at": row.finished_at,
+                "error_class": row.error_class,
+                "product_status": row.product_status,
+                "station_count": row.station_count,
+                "correction_magnitude_ms": row.correction_magnitude_ms,
+                "conflict_index": row.conflict_index,
+                "uncertainty_ms": row.uncertainty_ms,
+                "confidence": row.confidence,
+                "fallback_reason": row.fallback_reason,
+                "duration_ms": row.duration_ms,
+                "baseline_cache_hit": row.baseline_cache_hit,
+                "exclusion_reasons": row.exclusion_reasons,
+                "result": row.result_payload,
+                "diagnostics": row.diagnostics,
+            }
+            for row in rows
+        ],
+        "public_effect": "none",
+    }
+
+
 class WindCellSelection(BaseModel):
     mode: Literal["automatic", "manual"]
     latitude: float | None = Field(default=None, ge=-90, le=90)
@@ -354,14 +421,19 @@ class WeatherProfileIn(BaseModel):
 
 
 class WeatherStationIn(BaseModel):
-    provider: Literal["dwd", "dmi", "knmi"]
+    provider: Literal["dwd", "dmi", "knmi", "awc_metar"]
     provider_station_id: str = Field(min_length=1, max_length=80)
+    wigos_id: str | None = Field(default=None, max_length=80)
+    icao_id: str | None = Field(default=None, max_length=16)
     name: str | None = Field(default=None, max_length=160)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     distance_km: float | None = Field(default=None, ge=0, le=100)
     active: bool = True
     elevation_m: float | None = None
+    measurement_height_m: float | None = Field(default=None, ge=0, le=300)
+    license: str | None = Field(default=None, max_length=160)
+    provenance: dict = Field(default_factory=dict)
     setting_class: Literal["coastal", "inland", "unknown"] = "unknown"
     exposure_status: Literal["passed", "limited", "failed", "unknown"] = "unknown"
     representativeness_status: Literal["passed", "failed", "unreviewed"] = "unreviewed"
@@ -892,7 +964,12 @@ def put_station(
         provider=body.provider,
         provider_station_id=body.provider_station_id,
     )
+    provider_metadata = {
+        "wigos_id", "icao_id", "measurement_height_m", "license", "provenance"
+    }
     for field, value in body.model_dump().items():
+        if field in provider_metadata and field not in body.model_fields_set:
+            continue
         setattr(station, field, value)
     spot_lat, spot_lon = live_service._spot_coords(spot)
     station.distance_km = live_service.distance_km(spot_lat, spot_lon, body.latitude, body.longitude)
@@ -903,7 +980,11 @@ def put_station(
     }, getattr(actor, "email", None) or str(actor))
     db.commit()
     db.refresh(station)
-    return {"id": str(station.id), **body.model_dump()}
+    return {
+        "id": str(station.id),
+        **body.model_dump(),
+        **{field: getattr(station, field) for field in provider_metadata},
+    }
 
 
 @router.get("/spots/{spot_id}/calibration")
@@ -928,7 +1009,15 @@ def get_calibration(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
                 "id": str(s.id),
                 "provider": s.provider,
                 "provider_station_id": s.provider_station_id,
+                "wigos_id": s.wigos_id,
+                "icao_id": s.icao_id,
                 "name": s.name,
+                "latitude": s.latitude,
+                "longitude": s.longitude,
+                "elevation_m": s.elevation_m,
+                "measurement_height_m": s.measurement_height_m,
+                "license": s.license,
+                "provenance": s.provenance,
                 "distance_km": s.distance_km,
                 "active": s.active,
                 "recommended": s.recommended, "approved": s.approved, "blocked": s.blocked,
@@ -1012,6 +1101,88 @@ def verification_runs(limit: int = Query(default=10, ge=1, le=50), db: Session =
                 "computed_at": row.computed_at.isoformat(),
             }
             for row in gates
+        ],
+    }
+
+
+@router.get("/spots/{spot_id}/station-selection")
+def station_selection(
+    spot_id: uuid.UUID,
+    wind_direction_deg: float | None = Query(default=None, ge=0, lt=360),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Explain every candidate, hard exclusion and weight; computes no correction."""
+    from app.weather.station_selection import select_stations_for_spot
+
+    try:
+        return select_stations_for_spot(
+            db, spot_id, wind_direction_deg=wind_direction_deg
+        ).payload()
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+
+
+@router.get("/observation-coverage")
+def observation_coverage(db: Session = Depends(get_db)) -> dict:
+    """Configured public-station coverage and current sanitized import errors."""
+    from app.weather.coverage import build_database_coverage_report
+
+    return build_database_coverage_report(db)
+
+
+@router.get("/stations/{station_id}/model-residuals")
+def station_model_residuals(
+    station_id: uuid.UUID,
+    limit: int = Query(default=50, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Reproducible station-minus-raw-model evidence; never a served correction."""
+    from app.models import WeatherStationModelResidual
+
+    if db.get(WeatherStation, station_id) is None:
+        raise HTTPException(status_code=404, detail="Weather station not found")
+    rows = db.scalars(
+        select(WeatherStationModelResidual)
+        .where(WeatherStationModelResidual.station_id == station_id)
+        .order_by(
+            WeatherStationModelResidual.observed_at.desc(),
+            WeatherStationModelResidual.created_at.desc(),
+        )
+        .limit(limit)
+    ).all()
+    return {
+        "station_id": str(station_id),
+        "items": [
+            {
+                "id": str(row.id),
+                "observation_id": str(row.observation_id),
+                "analysis_id": row.analysis_id,
+                "calculation_version": row.calculation_version,
+                "baseline_version": row.baseline_version,
+                "analyzed_at": row.analyzed_at.isoformat(),
+                "observed_at": row.observed_at.isoformat(),
+                "model_runs": row.model_runs,
+                "model_members": row.model_members,
+                "raw_model_vector": row.raw_model_vector,
+                "expected_station_vector": row.expected_station_vector,
+                "measurement_vector": row.measurement_vector,
+                "residual_vector": row.residual_vector,
+                "gust_evidence": row.gust_evidence,
+                "station_profile_id": (
+                    str(row.station_profile_id) if row.station_profile_id else None
+                ),
+                "station_profile_version": row.station_profile_version,
+                "physics_version": row.physics_version,
+                "physics_applied": row.physics_applied,
+                "model_member_count": row.model_member_count,
+                "representativeness_uncertainty": (
+                    row.representativeness_uncertainty
+                ),
+                "qc_status": row.qc_status,
+                "qc_reasons": row.qc_reasons,
+                "configuration": row.configuration,
+            }
+            for row in rows
         ],
     }
 
@@ -1164,19 +1335,24 @@ def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -
 @router.post("/spots/{spot_id}/station/auto")
 def auto_station(
     spot_id: uuid.UUID,
-    provider: Literal["dwd", "dmi"] = "dwd",
+    provider: Literal["dwd", "dmi", "awc_metar"] = "dwd",
     db: Session = Depends(get_db), actor: Principal = Depends(get_actor),
 ) -> dict:
-    """Select the nearest wind-capable official station; an operator still sees the choice."""
+    """Recommend catalogue entries for operator setup, not runtime analysis selection."""
     from app.config import get_settings
     from app.weather.providers.common import nearest_stations
-    from app.weather.providers import dmi, dwd
+    from app.weather.providers import awc_metar, dmi, dwd
 
     spot = db.get(Spot, spot_id)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     lat, lon = live_service._spot_coords(spot)
-    catalogue = dwd.fetch_stations() if provider == "dwd" else dmi.fetch_stations()
+    catalog_fetchers = {
+        "dwd": dwd.fetch_stations,
+        "dmi": dmi.fetch_stations,
+        "awc_metar": awc_metar.fetch_stations,
+    }
+    catalogue = catalog_fetchers[provider]()
     candidates = nearest_stations(
         lat, lon, catalogue, limit=3, max_km=get_settings().weather_station_match_max_km
     )
@@ -1201,6 +1377,11 @@ def auto_station(
     )
     station.distance_km, station.active = round(distance, 3), True
     station.elevation_m = selected.elevation_m
+    station.wigos_id = selected.wigos_id
+    station.icao_id = selected.icao_id
+    station.measurement_height_m = selected.measurement_height_m
+    station.license = selected.license
+    station.provenance = selected.provenance
     station.recommended = True
     station.approved = False
     station.representativeness_status = "unreviewed"
