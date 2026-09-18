@@ -158,18 +158,27 @@ export default function InlineTipComposer({
             className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
           >
             <CloseIcon width={15} height={15} />
-            Schließen
+            Abbrechen
           </button>
         ) : (
           <span className="text-caption text-muted">{text.length}/4000</span>
         )}
+        {/* Send as an icon (paper plane), matching the single-line composer. */}
         <button
           type="button"
           onClick={onSend}
           disabled={busy || !text.trim()}
-          className="min-h-11 px-5 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:opacity-40 disabled:no-underline"
+          aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40 disabled:hover:bg-transparent"
         >
-          {busy ? "Senden…" : "absenden"}
+          {busy ? (
+            <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-teal/25 border-t-teal" />
+          ) : (
+            <svg aria-hidden width="18" height="18" viewBox="0 0 20 20" fill="none">
+              <path d="M3 10 16.5 3.5 12 16.5l-2.2-5.1L3 10Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+              <path d="m9.8 11.4 3.2-3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          )}
         </button>
       </div>
 

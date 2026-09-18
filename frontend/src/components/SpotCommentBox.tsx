@@ -40,7 +40,15 @@ function ThreadRow({ thread, spotId, onPosted }: { thread: CommentThread; spotId
 
   return <article className="min-w-0">
     <CommentRow post={comment} />
-    {replies.length > 0 && <div className="ml-8 mt-4 space-y-4 border-l border-line/60 pl-3 lg:ml-11 lg:pl-4">{replies.map(reply => <CommentRow key={reply.id} post={reply} compact />)}</div>}
+    {replies.length > 0 && <div className="relative ml-8 mt-4 space-y-4 pl-6 lg:ml-11 lg:pl-7">
+      {/* Reddit-style thread line: a hairline rail (line-soft, finer than the
+          old border) that curves into each reply via a small rounded elbow. */}
+      <span aria-hidden className="pointer-events-none absolute left-0 top-0 bottom-5 w-px bg-line-soft" />
+      {replies.map(reply => <div key={reply.id} className="relative">
+        <span aria-hidden className="pointer-events-none absolute -left-6 top-0 h-[15px] w-[18px] rounded-bl-[10px] border-b border-l border-line-soft lg:-left-7 lg:w-[22px]" />
+        <CommentRow post={reply} compact />
+      </div>)}
+    </div>}
     <div className="ml-8 mt-2 lg:ml-11">
       {replying ? <div className="mt-2 max-w-[420px]"><InlineTipComposer spotId={spotId} parentId={parentTipId} replyToName={comment.authorName} onPosted={(tip) => { onPosted?.(tip); setReplying(false); }} onCancel={() => setReplying(false)} /></div> : <button type="button" onClick={() => setReplying(true)} className="min-h-11 text-caption font-medium text-muted transition-colors hover:text-ink">Antworten</button>}
     </div>
