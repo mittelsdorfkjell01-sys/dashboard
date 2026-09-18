@@ -60,15 +60,14 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
   }, [reduce, count]);
 
   if (count === 0) {
+    // While the catalogue loads (and for a deliberately empty selection) show a
+    // calm brand-dark field — never the old /hero-surfwind stock photo, which is
+    // not part of the admin-curated rotation and used to flash in on reload.
     return (
-      <div className="absolute inset-0 z-0" aria-hidden>
-        <HeroImage
-          src="/hero-surfwind.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(36,28,23,0.35)]" />
-      </div>
+      <div
+        className="absolute inset-0 z-0 bg-gradient-to-b from-[#2A2420] via-[#241C17] to-[#161210]"
+        aria-hidden
+      />
     );
   }
 
@@ -77,8 +76,10 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
   return (
     <>
       {/* Background reel — decorative and non-interactive (pointer-events-none),
-          so there's nothing to swipe or click; the CTA carries the only link. */}
-      <div className="pointer-events-none absolute inset-0 z-0 select-none" aria-hidden>
+          so there's nothing to swipe or click; the CTA carries the only link.
+          A brand-dark base sits under it so nothing white shows through in the
+          instant before the first selected hero decodes. */}
+      <div className="pointer-events-none absolute inset-0 z-0 select-none bg-[#161210]" aria-hidden>
         {slides.map((s, i) => {
           const active = i === index;
           // Mount only the active slide and its two neighbours (wrap-aware), so

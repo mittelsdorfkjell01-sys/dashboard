@@ -7,15 +7,9 @@
     <title>surfwind data — Wind &amp; Welle</title>
     <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin />
     <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />
-    <link
-      rel="preload"
-      as="image"
-      type="image/avif"
-      href="/hero-surfwind-960.avif"
-      imagesrcset="/hero-surfwind-640.avif 640w, /hero-surfwind-960.avif 960w, /hero-surfwind-1280.avif 1280w, /hero-surfwind-1920.avif 1920w, /hero-surfwind-2560.avif 2560w, /hero-surfwind-3840.avif 3840w"
-      imagesizes="100vw"
-      fetchpriority="high"
-    />
+    <!-- No static hero preload: the landing reel shows only admin-selected spot
+         heroes. Preloading the old /hero-surfwind fallback made it flash in on
+         every reload before the real reel arrived. -->
   </head>
   <body>
     <div id="root"></div>

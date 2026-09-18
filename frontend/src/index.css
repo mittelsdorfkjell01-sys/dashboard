@@ -86,6 +86,12 @@ html { -webkit-tap-highlight-color: transparent; }
   [data-mobile-solid-header] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    /* Touch flips the header's `progress` 0→1 in one step (IntersectionObserver,
+       to avoid a per-frame React render on scroll). Without this the frosted
+       surface would pop in instantly while the wordmark/lupe crossfade over
+       150ms. Fading the surface over the same window makes the hardening read
+       as one smooth transition instead of a hard switch. */
+    transition: opacity 200ms ease-out;
   }
 }
 

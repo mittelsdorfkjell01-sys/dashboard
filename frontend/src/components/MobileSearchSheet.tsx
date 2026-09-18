@@ -96,7 +96,6 @@ export default function MobileSearchSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(open);
   const [slidIn, setSlidIn] = useState(false);
-  const [dragging, setDragging] = useState(false);
 
   // Lock body scroll while open; move focus into the modal, contain keyboard
   // navigation, support Esc, and return focus to the control that opened it.
@@ -265,22 +264,30 @@ export default function MobileSearchSheet({
   const whereValue =
     val.whereSel?.label || val.whereText || (val.whereOpen ? "Überall" : "");
 
-  // Swipe-to-close, hand-rolled so the sheet transform stays under our control
-  // (framer's drag would re-pin it to the JS engine). Dragging the grab handle
-  // or the header drives the sheet 1:1; the scrolling body hands the gesture off
-  // once it is scrolled to the very top and the thumb travels clearly downward,
-  // so a natural pull-down closes the mask from anywhere while an upward swipe
-  // still scrolls the tiles. Moves are applied imperatively (no React re-render
-  // per frame) so the follow is as smooth as the slide.
+  // Swipe-to-close, hand-rolled and fully imperative — NO React state changes
+  // during a wipe, so the whole subtree never re-renders mid-gesture (that
+  // re-render was the residual jank). Dragging the grab handle or header drives
+  // the sheet 1:1; the scrolling body hands the gesture off once it is scrolled
+  // to the very top and the thumb travels clearly downward, so a pull-down
+  // closes from anywhere while an upward swipe still scrolls the tiles.
+  //
+  // The transform is written on the element directly and coalesced to one write
+  // per frame via rAF. On release we settle imperatively (transition + target
+  // transform) rather than relying on React: React keeps the same style object
+  // between renders (transform stays "translateY(0)"), so it would NOT rewrite
+  // our inline transform — which is exactly why a soft wipe used to stick in the
+  // middle instead of snapping back.
   const dragRef = useRef({ startY: 0, lastY: 0, lastT: 0, vy: 0, active: false });
   const bodyStart = useRef<{ y: number; id: number } | null>(null);
+  const moveRaf = useRef(0);
+  const pendingY = useRef(0);
+
+  const transformTransition = () =>
+    reduce ? "opacity 150ms ease-out" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`;
 
   const beginDrag = (clientY: number, el: HTMLElement, pointerId: number) => {
     dragRef.current = { startY: clientY, lastY: clientY, lastT: performance.now(), vy: 0, active: true };
-    // Kill the transition immediately (not only once React commits `dragging`)
-    // so the very first move follows the finger instead of easing after it.
-    if (sheetRef.current) sheetRef.current.style.transition = "none";
-    setDragging(true);
+    if (sheetRef.current) sheetRef.current.style.transition = "none"; // follow 1:1
     try {
       el.setPointerCapture(pointerId);
     } catch {
@@ -295,24 +302,36 @@ export default function MobileSearchSheet({
     if (dt > 0) d.vy = (clientY - d.lastY) / dt; // px/ms, for a flick check
     d.lastY = clientY;
     d.lastT = now;
-    if (sheetRef.current) sheetRef.current.style.transform = `translateY(${Math.max(0, clientY - d.startY)}px)`;
+    pendingY.current = clientY;
+    if (!moveRaf.current) {
+      moveRaf.current = requestAnimationFrame(() => {
+        moveRaf.current = 0;
+        const el = sheetRef.current;
+        if (el && dragRef.current.active) {
+          el.style.transform = `translateY(${Math.max(0, pendingY.current - dragRef.current.startY)}px)`;
+        }
+      });
+    }
   };
   const endDrag = () => {
     const d = dragRef.current;
     if (!d.active) return;
     d.active = false;
+    if (moveRaf.current) {
+      cancelAnimationFrame(moveRaf.current);
+      moveRaf.current = 0;
+    }
     const dy = d.lastY - d.startY;
     const closing = dy > 120 || (dy > 40 && d.vy > 0.5);
-    if (closing) {
-      // Slide out from where the finger left off (no jump back to 0 first).
-      setSlidIn(false);
-      onClose();
-    } else if (reduce && sheetRef.current) {
-      sheetRef.current.style.transform = ""; // reduced motion: reset instantly
+    const el = sheetRef.current;
+    if (el) {
+      // Re-enable the transition and give it an explicit target so it animates
+      // from the finger position — snap back to the open position, or continue
+      // down and out. (For reduced motion, transform is instant.)
+      el.style.transition = transformTransition();
+      el.style.transform = reduce ? "" : closing ? "translateY(100%)" : "translateY(0)";
     }
-    // Re-render re-enables the transition; for full motion this animates the
-    // snap-back (finger → 0) or the slide-out (finger → 100%) on the compositor.
-    setDragging(false);
+    if (closing) onClose();
   };
 
   const onBodyPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -363,12 +382,12 @@ export default function MobileSearchSheet({
   const sheetStyle: React.CSSProperties = reduce
     ? {
         willChange: "opacity",
-        transition: dragging ? "none" : "opacity 150ms ease-out",
+        transition: dragRef.current.active ? "none" : "opacity 150ms ease-out",
         opacity: slidIn ? 1 : 0,
       }
     : {
         willChange: "transform",
-        transition: dragging ? "none" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`,
+        transition: dragRef.current.active ? "none" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`,
         transform: slidIn ? "translateY(0)" : "translateY(100%)",
       };
 
