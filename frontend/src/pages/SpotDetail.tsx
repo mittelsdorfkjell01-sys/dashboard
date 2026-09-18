@@ -381,7 +381,7 @@ export default function SpotDetail() {
 }
 
 function MapPlaceholder() {
-  return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse bg-band sm:h-[440px] lg:h-full" />;
+  return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse rounded-[14px] bg-band sm:h-[440px] lg:h-full" />;
 }
 
 class LocatorMapBoundary extends Component<

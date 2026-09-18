@@ -200,7 +200,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
 
   if (unavailable) {
     return (
-      <div className="grid h-[360px] place-items-center bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
+      <div className="grid h-[360px] place-items-center rounded-[14px] bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
         <div>
           <p className="text-ui font-semibold text-ink">Karte momentan nicht verfügbar</p>
           <a
@@ -222,7 +222,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     // map.
     <div
       data-lenis-prevent={active ? "" : undefined}
-      className="swd-locator-map relative h-[360px] overflow-hidden bg-band sm:h-[440px] lg:h-full"
+      className="swd-locator-map relative h-[360px] overflow-hidden rounded-[14px] bg-band sm:h-[440px] lg:h-full"
     >
       <div ref={containerRef} className="h-full w-full" />
 

@@ -28,7 +28,7 @@ export default function SpotDescription({ text }: { text: string }) {
     <div className="mt-5 sm:mt-8">
       <p
         ref={ref}
-        className={`max-w-[65ch] text-body leading-relaxed text-ink-soft ${
+        className={`max-w-[65ch] text-ui leading-relaxed text-ink-soft ${
           expanded ? "" : "line-clamp-4 sm:line-clamp-none"
         }`}
       >

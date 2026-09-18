@@ -182,6 +182,19 @@ export const HeartFilledIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Save/bookmark — outline (not saved) and filled (saved). */
+export const BookmarkIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M6 4.5h12a1 1 0 0 1 1 1V20l-7-3.6L5 20V5.5a1 1 0 0 1 1-1Z" />
+  </svg>
+);
+
+export const BookmarkFilledIcon = (p: IconProps) => (
+  <svg {...base} {...p} fill="currentColor" stroke="none">
+    <path d="M6 4.5h12a1 1 0 0 1 1 1V20l-7-3.6L5 20V5.5a1 1 0 0 1 1-1Z" />
+  </svg>
+);
+
 /** Account settings — a gear. */
 export const GearIcon = (p: IconProps) => (
   <svg {...base} {...p}>
