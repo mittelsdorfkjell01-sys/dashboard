@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
-import { ChevronRightIcon, PinIcon } from "../lib/icons";
+import { PinIcon } from "../lib/icons";
 import type { Spot } from "../lib/types";
 
 const ADVANCE_MS = 60000;
@@ -117,20 +117,17 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(36,28,23,0.35)]" />
       </div>
 
-      {/* CTA — a compact frosted "location" pill. Names the spot on screen and
-          links to it; doubles as the photo's caption. Sits in the same centred
-          content column as the header, so its left edge lines up with the
-          "Best collection" tagline on desktop. Icon + name only, no region. */}
+      {/* CTA — a small frosted map-pin button that links to the spot on screen.
+          No visible name (the spot name stays as the accessible label); just the
+          pin, aligned to the same content column as the header. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-12 z-20 sm:bottom-16">
         <div className="mx-auto flex max-w-[1570px] px-4 sm:px-10">
           <Link
             to={spotPath(current)}
             aria-label={`Zum Spot ${current.name}`}
-            className="group pointer-events-auto inline-flex min-h-11 max-w-[70vw] items-center gap-1.5 rounded-[14px] border border-white/25 bg-black/55 py-1.5 pl-2.5 pr-2 text-white shadow-float transition-colors hover:bg-black/65 sm:min-h-0 sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
+            className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full border border-white/25 bg-black/55 text-white shadow-float transition-colors hover:bg-black/65 active:scale-[0.97] sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
           >
-            <PinIcon className="shrink-0 text-label" />
-            <span className="min-w-0 truncate text-caption font-medium">{current.name}</span>
-            <ChevronRightIcon className="shrink-0 text-label transition-transform group-hover:translate-x-0.5" />
+            <PinIcon className="text-label" />
           </Link>
         </div>
       </div>

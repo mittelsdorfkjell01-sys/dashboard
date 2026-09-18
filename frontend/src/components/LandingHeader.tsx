@@ -145,7 +145,9 @@ export default function LandingHeader({
                 transform: docked
                   ? "translateY(-50%) scale(0.54)"
                   : "translateY(-50%) translateX(calc(50vw - 1rem - 50%)) scale(1)",
-                transition: "transform 440ms cubic-bezier(0.22, 1, 0.36, 1)",
+                // Deliberately slow + eased so the glide reads as a calm settle
+                // regardless of scroll speed (it is time-based, not scroll-linked).
+                transition: "transform 820ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             >
               <Wordmark size="xl" />
