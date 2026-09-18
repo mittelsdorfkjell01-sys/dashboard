@@ -95,6 +95,15 @@ export const SPORT_LABELS: Record<string, string> = {
   surf: "Surfen",
 };
 
+// Compact labels for the spot tiles, where space is tight and up to four sports
+// share one line: "Wingfoilen" collapses to the common short form "Foil"; the
+// rest keep their names. Only the cards use these — the full labels stay
+// everywhere else (search picker, spot page, admin).
+export const SPORT_LABELS_SHORT: Record<string, string> = {
+  ...SPORT_LABELS,
+  wing: "Foil",
+};
+
 // Admin roles (Sprint A). Keys stay 'admin'/'curator' in the backend; these are
 // just the German display labels ("Moderator" is the operator-facing term).
 export const ROLE_LABELS: Record<string, string> = {
@@ -215,6 +224,7 @@ export const bottomTypeLabel = (k?: string | null) =>
 export const styleLabel = (k: string) => STYLE_LABELS[k] ?? k;
 export const facilityLabel = (k: FacilityKind) => FACILITY_LABELS[k] ?? k;
 export const sportLabel = (k: string) => SPORT_LABELS[k] ?? k;
+export const sportLabelShort = (k: string) => SPORT_LABELS_SHORT[k] ?? SPORT_LABELS[k] ?? k;
 
 export const styleList = (styles?: string[] | null) =>
   (styles ?? []).map(styleLabel).join(", ");

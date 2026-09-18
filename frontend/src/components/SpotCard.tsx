@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Spot } from "../lib/types";
 import type { LiveConditionsRead } from "../lib/api";
-import { sportLabel } from "../lib/labels";
+import { sportLabelShort } from "../lib/labels";
 import { countryName } from "../lib/flags";
 import SpotImage from "./SpotImage";
 import { spotPath } from "../lib/spotRoutes";
@@ -43,7 +43,7 @@ export default function SpotCard({
   /** Start the image request immediately once this card is mounted. */
   eager?: boolean;
 }) {
-  const sports = (spot.sports ?? []).map(sportLabel).join(" · ");
+  const sports = (spot.sports ?? []).map(sportLabelShort).join(" · ");
   const regionLine = [spot.regionName, countryName(spot.regionCountry ?? undefined)]
     .filter(Boolean)
     .join(" · ");
@@ -122,8 +122,10 @@ export default function SpotCard({
         )}
 
         {!compact && sports && (
-          <div className="mt-auto pt-1">
-            <span className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{sports}</span>
+          <div className="mt-auto min-w-0 pt-1">
+            {/* `block` so `truncate` actually clips: an inline <span> ignores
+                overflow, letting a full sports list spill past the card edge. */}
+            <span className="block truncate text-sz-11 text-muted sm:text-caption">{sports}</span>
           </div>
         )}
       </div>
