@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { SearchIcon } from "../lib/icons";
@@ -39,45 +39,43 @@ export default function LandingHeader({
    *  ink token so it doesn't vanish and fail colour contrast. */
   onLight?: boolean;
 }) {
-  // 0 (top of hero) → 1 (fully solid). Both platforms now harden *continuously*
-  // with scroll, so the bar never flips at a single point (the old "klumpy"
-  // mobile switch). Desktop keeps a React `progress` (drives the search-pill
-  // mount + padding). Touch instead writes a `--header-progress` CSS variable
-  // straight onto the header node every frame — no React render, no repaint —
-  // and the surface + mobile identity are pure CSS/transform functions of it.
-  // `docked` (past the halfway point) only gates interaction, so it flips once,
-  // not per frame.
-  const headerRef = useRef<HTMLElement>(null);
+  // Mobile: the hardening is a *triggered, time-based* animation, not coupled to
+  // scroll distance. An IntersectionObserver flips a single `docked` boolean at
+  // one point; CSS transitions then play the whole change (wordmark glide,
+  // surface, lupe) over their own fixed duration — so it looks identical whether
+  // the visitor scrolls slowly or flicks fast, and never stutters with the
+  // finger. Desktop keeps a continuous React `progress` (its search-pill grows
+  // in, and the padding tightens, as the hero recedes).
   const [progress, setProgress] = useState(0);
   const [docked, setDocked] = useState(false);
   const desktop = useDesktopViewport();
   useEffect(() => {
     if (!sticky) return;
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
-    const RANGE = 96; // travel over which the surface + identity hand over
+    const RANGE = 96;
     const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
     const nativeTouch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
 
-    const compute = () => {
+    // Touch: one trigger, then let CSS animate. No per-frame work at all.
+    if (nativeTouch && sentinel && "IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(
+        ([entry]) => setDocked(!entry.isIntersecting),
+        { rootMargin: `-${TRIGGER_Y}px 0px 0px 0px`, threshold: 0 },
+      );
+      observer.observe(sentinel);
+      return () => observer.disconnect();
+    }
+
+    // Desktop: continuous progress off scroll.
+    let frame = 0;
+    const update = () => {
+      frame = 0;
       const top = sentinel?.getBoundingClientRect().top;
       const raw =
         top != null
           ? (TRIGGER_Y + RANGE - top) / RANGE
           : (window.scrollY - (window.innerHeight * 0.5 - RANGE)) / RANGE;
-      return Math.min(1, Math.max(0, raw));
-    };
-
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const p = compute();
-      if (nativeTouch) {
-        // Imperative: continuous smoothness with zero per-frame React work.
-        headerRef.current?.style.setProperty("--header-progress", String(p));
-        setDocked((d) => (p > 0.5 !== d ? p > 0.5 : d));
-      } else {
-        setProgress(p);
-      }
+      setProgress(Math.min(1, Math.max(0, raw)));
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
@@ -92,29 +90,31 @@ export default function LandingHeader({
     };
   }, [sticky]);
 
+  // The frosted surface: desktop ramps with `progress`; mobile is a 0/1 driven
+  // by `docked` and eased by the touch-only CSS transition on the element.
+  const surfaceOpacity = desktop ? Math.min(1, progress * 3) : docked ? 1 : 0;
+
   const innerWidth = width === "body" ? "max-w-[1570px] sm:px-8" : "max-w-[1570px] sm:px-10";
 
   return (
     <header
-      ref={headerRef}
       className={`${sticky ? "fixed" : "absolute"} pointer-events-none inset-x-0 top-0 z-[1000] bg-transparent`}
-      // Desktop drives the CSS var from React; on touch it is written
-      // imperatively in the effect, so we must NOT declare it here (React would
-      // clear the imperative value on any unrelated re-render).
+      // Desktop uses the CSS var (from React `progress`) only for the padding
+      // tightening; mobile doesn't need it.
       style={sticky && desktop ? ({ "--header-progress": progress } as CSSProperties) : undefined}
     >
-      {/* The hero header hardens continuously into the same opaque material as
-          the results header while its contents move to their final positions.
-          Opacity/blur are pure functions of --header-progress, so the surface
-          ramps in 1:1 with scroll (frosted by ~⅓ of the travel). */}
+      {/* The hero header hardens into the same opaque material as the results
+          header. Desktop ramps its opacity/blur with scroll; on touch it is a
+          0/1 that the CSS transition (see index.css `[data-mobile-solid-header]`)
+          eases over its own duration when `docked` flips. */}
       {sticky && (
         <div
           aria-hidden
           className="absolute inset-0 bg-surface"
           style={{
-            opacity: "clamp(0, calc(var(--header-progress, 0) * 3), 1)",
-            backdropFilter: "blur(calc(clamp(0, calc(var(--header-progress, 0) * 3), 1) * 12px))",
-            WebkitBackdropFilter: "blur(calc(clamp(0, calc(var(--header-progress, 0) * 3), 1) * 12px))",
+            opacity: surfaceOpacity,
+            backdropFilter: desktop ? `blur(${surfaceOpacity * 12}px)` : undefined,
+            WebkitBackdropFilter: desktop ? `blur(${surfaceOpacity * 12}px)` : undefined,
           }}
           data-mobile-solid-header
         />
@@ -129,20 +129,23 @@ export default function LandingHeader({
       >
         <div className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
           {/* Mobile only: ONE wordmark that glides from centred + large (hero
-              top) to docked left + small as --header-progress rises — a single
-              transform-only motion (translate + scale) instead of crossfading
-              two separate lockups, so the identity moves rather than swaps.
-              `50%` is the element's own half-width, `50vw` half the viewport,
-              `1rem` the header's px-4 gutter: together they centre it at p=0 and
-              dock it flush-left at p=1. scale 1 → ~0.54 ≈ xl(34px) → sm(18px). */}
+              top) to docked left + small when `docked` flips — a single
+              transform-only motion (translate + scale) over a fixed duration,
+              triggered at one scroll point (not coupled to scroll distance), so
+              it plays the same whether you scroll slowly or flick fast. `50%` is
+              the element's own half-width, `50vw` half the viewport, `1rem` the
+              header's px-4 gutter: together they centre it when not docked.
+              scale 1 → 0.54 ≈ xl(34px) → sm(18px). */}
           {sticky && (
             <Link
               to="/"
               aria-label="surfwind data"
               className="pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform sm:hidden"
               style={{
-                transform:
-                  "translateY(-50%) translateX(calc((50vw - 1rem - 50%) * (1 - var(--header-progress, 0)))) scale(calc(1 - var(--header-progress, 0) * 0.46))",
+                transform: docked
+                  ? "translateY(-50%) scale(0.54)"
+                  : "translateY(-50%) translateX(calc(50vw - 1rem - 50%)) scale(1)",
+                transition: "transform 440ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             >
               <Wordmark size="xl" />
@@ -216,12 +219,12 @@ export default function LandingHeader({
               type="button"
               onClick={(event) => onMobileSearch(event.currentTarget)}
               aria-label="Suche öffnen"
-              // Fades in over the *second half* of the travel (so it appears only
-              // once the wordmark has glided clear of centre), continuously off
-              // the same CSS var; `docked` gates the tap once past halfway.
+              // Fades in when docked, with a short delay so it appears only once
+              // the wordmark has begun gliding clear of centre.
               style={{
-                opacity: "clamp(0, calc(var(--header-progress, 0) * 2 - 1), 1)",
+                opacity: docked ? 1 : 0,
                 pointerEvents: docked ? "auto" : "none",
+                transition: "opacity 260ms ease 140ms",
               }}
               className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:hidden"
             >

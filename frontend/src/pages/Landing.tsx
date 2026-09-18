@@ -44,6 +44,10 @@ export default function Landing() {
   // opening: the visitor stays exactly where they were and, on close, keeps
   // scrolling from that same point.
   const [searchOpen, setSearchOpen] = useState(false);
+  // Mobile: once the hero search pill reaches the header line it must vanish —
+  // the docked header lupe takes over — instead of scrolling up over the fixed
+  // bar. Triggered at the same sentinel/point as the header hardening.
+  const [heroSearchDocked, setHeroSearchDocked] = useState(false);
   const [mobileSearchLoaded, setMobileSearchLoaded] = useState(false);
   const mobileSearchTriggerRef = useRef<HTMLButtonElement | null>(null);
   const knownCatalogVersion = useRef<string>();
@@ -71,6 +75,22 @@ export default function Landing() {
     }
     const timer = window.setTimeout(preload, 1200);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  // Mobile only: watch the same header sentinel and fade the hero search pill
+  // out the moment it reaches the header line, so it disappears into the
+  // hardening bar (which shows the lupe) instead of scrolling up over it.
+  useEffect(() => {
+    const nativeTouch = window.matchMedia("(pointer: coarse) and (hover: none)").matches;
+    if (!nativeTouch || !("IntersectionObserver" in window)) return;
+    const sentinel = document.querySelector<HTMLElement>("[data-landing-header-sentinel]");
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroSearchDocked(!entry.isIntersecting),
+      { rootMargin: "-84px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, []);
   // Hero curation is editorial state, so the seven-day persisted catalogue and
   // the unversioned edge response must not decide which photos rotate. Resolve
@@ -194,8 +214,14 @@ export default function Landing() {
         <div className="flex justify-center px-4 pb-32 sm:px-6 sm:pb-40">
           <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
             <span data-landing-header-sentinel aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px" />
-            {/* Mobile pill; hidden (kept in layout) while the sheet is open. */}
-            <div className={`sm:hidden ${searchOpen ? "invisible" : ""}`}>
+            {/* Mobile pill; hidden (kept in layout) while the sheet is open, and
+                faded out once it reaches the header line so it vanishes into the
+                bar rather than scrolling over it. */}
+            <div
+              className={`transition-opacity duration-200 sm:hidden ${searchOpen ? "invisible" : ""} ${
+                heroSearchDocked ? "pointer-events-none opacity-0" : "opacity-100"
+              }`}
+            >
               <MobileSearchTrigger onClick={openSearch} />
             </div>
             <div className="hidden sm:block">
