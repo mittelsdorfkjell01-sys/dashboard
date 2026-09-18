@@ -540,11 +540,10 @@ def validate_gallery_image(data: bytes, content_type: str | None) -> tuple[int, 
         mb = GALLERY_MAX_BYTES // (1024 * 1024)
         raise HeroImageError(f"Datei zu groß (max. {mb} MB).")
     width, height, ext = _read_image(data)
-    if width < GALLERY_MIN_WIDTH or height < GALLERY_MIN_HEIGHT:
-        raise HeroImageError(
-            f"Zu klein: {width}×{height} px — mindestens "
-            f"{GALLERY_MIN_WIDTH}×{GALLERY_MIN_HEIGHT} px nötig."
-        )
+    # No minimum-resolution gate for community gallery photos: phone uploads
+    # (and client-downscaled ones) should always be accepted. Only format and
+    # the generous max-byte limit are enforced. GALLERY_MIN_WIDTH/HEIGHT stay
+    # defined for callers that still reference the constants.
     return width, height, ext
 
 
