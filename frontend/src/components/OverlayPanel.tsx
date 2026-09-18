@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { CloseIcon } from "../lib/icons";
 import { getLenis, prefersReducedMotion } from "../lib/lenis";
 
-const SLIDE_MS = 340;
+const SLIDE_MS = 420;
 const SLIDE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**

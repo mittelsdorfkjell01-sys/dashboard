@@ -95,16 +95,19 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
       />
       {file && (
           <div
-            className="fixed inset-0 z-[1300] grid place-items-end bg-black/40 sm:place-items-center sm:p-4"
+            className="fixed inset-0 z-[1300] grid items-start justify-items-end bg-black/40 p-3"
+            style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
             onClick={close}
           >
+            {/* Anchored to the top-right corner, so its ✕ sits where the gallery
+                close is. */}
             <div
               role="dialog"
               aria-modal="true"
               aria-label="Bild hinzufügen"
               onClick={(e) => e.stopPropagation()}
               data-lenis-prevent
-              className="w-full rounded-t-3xl bg-surface p-5 shadow-float sm:max-w-md sm:rounded-[14px] sm:p-6"
+              className="w-[min(92vw,380px)] rounded-[14px] bg-surface p-5 shadow-float"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sz-18 font-semibold text-ink">Bild hinzufügen</p>
