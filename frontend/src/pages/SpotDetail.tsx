@@ -9,6 +9,8 @@ import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
 import FavoriteButton from "../components/FavoriteButton";
+import ShareButton from "../components/ShareButton";
+import SuggestEditButton from "../components/SuggestEditButton";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotMetaGrid from "../components/SpotMetaGrid";
@@ -277,8 +279,10 @@ export default function SpotDetail() {
                       mobile it starts collapsed with a "Mehr anzeigen" toggle. */}
                   <SpotDescription text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."} />
 
-                  <div className="mt-auto pt-6 sm:pt-10">
+                  <div className="mt-auto flex flex-wrap items-center gap-3 pt-6 sm:pt-10">
                     <FavoriteButton spot={spot} />
+                    <ShareButton spot={spot} />
+                    <SuggestEditButton spot={spot} />
                   </div>
                 </div>
 

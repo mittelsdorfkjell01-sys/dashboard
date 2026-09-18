@@ -4,7 +4,9 @@ import { CloseIcon } from "../lib/icons";
 import { getLenis, prefersReducedMotion } from "../lib/lenis";
 
 const SLIDE_MS = 420;
-const SLIDE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+// iOS-sheet decel curve — a longer, softer tail than the old ease so the
+// release settles rather than snaps, which is what read as "not quite smooth".
+const SLIDE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
 
 /**
  * Shared bottom-sheet chassis for the Fotogalerie/Kommentare overlays. Slides up
@@ -205,7 +207,7 @@ export default function OverlayPanel({
     }
     const bs = bodyStart.current;
     if (!bs) return;
-    if (e.currentTarget.scrollTop <= 0 && e.clientY - bs.y > 14) {
+    if (e.currentTarget.scrollTop <= 0 && e.clientY - bs.y > 10) {
       beginDrag(bs.y, e.currentTarget, bs.id);
       moveDrag(e.clientY);
     }

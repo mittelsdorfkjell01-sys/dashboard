@@ -195,6 +195,24 @@ export const BookmarkFilledIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Share — node-and-links glyph (works cross-platform, no OS-specific arrow). */
+export const ShareIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="6" cy="12" r="2.4" />
+    <circle cx="17.5" cy="6" r="2.4" />
+    <circle cx="17.5" cy="18" r="2.4" />
+    <path d="m8.1 10.9 7.3-3.8M8.1 13.1l7.3 3.8" />
+  </svg>
+);
+
+/** Suggest an edit — a pencil. */
+export const PencilIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M4 20h4L18.5 9.5a2 2 0 0 0-2.83-2.83L5.17 17.17 4 20Z" />
+    <path d="m14.5 8.5 1.83 1.83" />
+  </svg>
+);
+
 /** Account settings — a gear. */
 export const GearIcon = (p: IconProps) => (
   <svg {...base} {...p}>

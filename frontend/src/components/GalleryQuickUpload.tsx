@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, getImageLicense, uploadSpotImage } from "../lib/api";
+import { compressImageForUpload } from "../lib/imageCompress";
 import { CloseIcon } from "../lib/icons";
 import { Button } from "./ui";
 
@@ -58,7 +59,10 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
     setBusy(true);
     setError(null);
     try {
-      await uploadSpotImage(spotId, file, "gallery", { licenseAccept: accepted, review: true });
+      // Shrink first — full-res phone photos otherwise trip the API's body-size
+      // limit (HTTP 413).
+      const toUpload = await compressImageForUpload(file);
+      await uploadSpotImage(spotId, toUpload, "gallery", { licenseAccept: accepted, review: true });
       setNotice("Danke! Dein Bild wartet auf Freigabe.");
       window.setTimeout(() => {
         close();
@@ -95,7 +99,7 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
       />
       {file && (
           <div
-            className="fixed inset-0 z-[1300] grid items-start justify-items-end bg-black/40 p-3"
+            className="fixed inset-0 z-[1300] flex items-start justify-end bg-black/40 p-3"
             style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
             onClick={close}
           >
