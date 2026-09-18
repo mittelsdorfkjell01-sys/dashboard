@@ -20,7 +20,7 @@ import {
 } from "../lib/api";
 import { HERO_REQ, validateHeroFile } from "./ImageUpload";
 import { LEVELS, SPORTS, levelLabel, sportLabel } from "../lib/labels";
-import { ChevronDownIcon, CloseIcon } from "../lib/icons";
+import { ChevronDownIcon, CloseIcon, PlusIcon } from "../lib/icons";
 import { Button, Input, Select, Textarea } from "./ui";
 import { useCommunityFeed, usePersistedState } from "../lib/hooks";
 import { coloredTileUrl } from "../lib/mapLinks";
@@ -246,14 +246,16 @@ function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd
       style={bg ? { backgroundImage: `url(${bg})` } : undefined}
     >
       <div className="absolute inset-0 bg-ink/55" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-body font-medium text-white">Noch keine Fotos von hier</p>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-body font-medium text-white">Aktuell noch kein Bild vorhanden</p>
+        {/* Plus button: opens the gallery upload form straight away. */}
         <button
           type="button"
           onClick={onAdd}
-          className="px-4 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+          aria-label="Bilder hochladen"
+          className="grid h-12 w-12 place-items-center rounded-full border border-white/40 text-white transition-colors hover:bg-white/10 active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
-          Bilder hinzufügen
+          <PlusIcon className="text-sz-22" />
         </button>
       </div>
     </div>

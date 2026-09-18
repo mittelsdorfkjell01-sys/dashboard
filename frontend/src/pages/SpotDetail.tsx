@@ -12,6 +12,7 @@ import FavoriteButton from "../components/FavoriteButton";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotMetaGrid from "../components/SpotMetaGrid";
+import SpotDescription from "../components/SpotDescription";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
@@ -272,10 +273,9 @@ export default function SpotDetail() {
                   )}
 
                   {/* The real spot description (editorial.description from the DB);
-                      falls back to a gentle note when a spot has none yet. */}
-                  <p className="mt-5 max-w-[65ch] text-body leading-relaxed text-ink-soft sm:mt-8">
-                    {spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
-                  </p>
+                      falls back to a gentle note when a spot has none yet. On
+                      mobile it starts collapsed with a "Mehr anzeigen" toggle. */}
+                  <SpotDescription text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."} />
 
                   <div className="mt-auto pt-6 sm:pt-10">
                     <FavoriteButton spot={spot} />
