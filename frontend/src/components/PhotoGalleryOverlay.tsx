@@ -91,11 +91,14 @@ export default function PhotoGalleryOverlay({
           </div>
         )}
 
-        {photos.length === 0 ? (
-          <GalleryEmptyState onAdd={onAdd} />
-        ) : (
-          <JustifiedGallery photos={photos} onOpen={setLightbox} />
-        )}
+        {/* While the upload form is open, don't also show the existing gallery
+            below it — the form is the whole focus then. */}
+        {!uploadOpen &&
+          (photos.length === 0 ? (
+            <GalleryEmptyState onAdd={onAdd} />
+          ) : (
+            <JustifiedGallery photos={photos} onOpen={setLightbox} />
+          ))}
 
       </OverlayPanel>
 
