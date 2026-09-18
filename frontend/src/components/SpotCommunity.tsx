@@ -21,6 +21,7 @@ import {
 import { HERO_REQ, validateHeroFile } from "./ImageUpload";
 import { LEVELS, SPORTS, levelLabel, sportLabel } from "../lib/labels";
 import { ChevronDownIcon, CloseIcon, PlusIcon } from "../lib/icons";
+import { GalleryQuickUpload, type GalleryQuickUploadHandle } from "./GalleryQuickUpload";
 import { Button, Input, Select, Textarea } from "./ui";
 import { useCommunityFeed, usePersistedState } from "../lib/hooks";
 import { coloredTileUrl } from "../lib/mapLinks";
@@ -109,9 +110,9 @@ function CommonsBadge({ compact = false }: { compact?: boolean }) {
 export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coords?: [number, number] }) {
   const { photos } = useCommunityFeed(spotId);
   const [heroFormOpen, setHeroFormOpen] = useState(false);
-  const [uploadFormOpen, setUploadFormOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [reportFor, setReportFor] = useState<string | null>(null);
+  const quickUploadRef = useRef<GalleryQuickUploadHandle>(null);
 
   const big = photos[0];
   const thumbs = photos.slice(1, 4);
@@ -120,7 +121,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
   return (
     <div>
       {photos.length === 0 ? (
-        <GalleryEmptyState coords={coords} onAdd={() => setUploadFormOpen(true)} />
+        <GalleryEmptyState coords={coords} onAdd={() => quickUploadRef.current?.openPicker()} />
       ) : (
         <div className="grid gap-2">
           <button
@@ -184,13 +185,10 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        {photos.length > 0 && !uploadFormOpen && (
+        {photos.length > 0 && (
           <button
             type="button"
-            onClick={() => {
-              setUploadFormOpen(true);
-              setHeroFormOpen(false);
-            }}
+            onClick={() => quickUploadRef.current?.openPicker()}
             className="px-4 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
             Bilder hinzufügen
@@ -199,10 +197,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
         {!heroFormOpen && (
           <button
             type="button"
-            onClick={() => {
-              setHeroFormOpen(true);
-              setUploadFormOpen(false);
-            }}
+            onClick={() => setHeroFormOpen(true)}
             className="text-label font-medium text-teal hover:text-teal-hover"
           >
             Titelbild vorschlagen
@@ -210,9 +205,7 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
         )}
       </div>
 
-      {uploadFormOpen && (
-        <GalleryUploadForm spotId={spotId} onCancel={() => setUploadFormOpen(false)} onDone={() => setUploadFormOpen(false)} />
-      )}
+      <GalleryQuickUpload ref={quickUploadRef} spotId={spotId} />
 
       {heroFormOpen && (
         <HeroCandidateForm spotId={spotId} onCancel={() => setHeroFormOpen(false)} onDone={() => setHeroFormOpen(false)} />

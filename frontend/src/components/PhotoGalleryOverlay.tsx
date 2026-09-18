@@ -6,7 +6,7 @@ import { resolveMediaUrl, type CommunityImage } from "../lib/api";
 import { justifyRows } from "../lib/justifyRows";
 import { CloseIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
-import { GalleryUploadForm } from "./SpotCommunity";
+import { GalleryQuickUpload, type GalleryQuickUploadHandle } from "./GalleryQuickUpload";
 import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
 import OverlayPanel from "./OverlayPanel";
 import ImageCredit from "./ImageCredit";
@@ -40,27 +40,26 @@ export default function PhotoGalleryOverlay({
   const { user } = useAuth();
   const navigate = useNavigate();
   const [lightbox, setLightbox] = useState<number | null>(null);
-  const [uploadOpen, setUploadOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const quickUploadRef = useRef<GalleryQuickUploadHandle>(null);
 
   // Reset transient sub-states whenever the whole overlay closes, so nothing
   // reopens mid-flow on the next open.
   useEffect(() => {
     if (!open) {
       setLightbox(null);
-      setUploadOpen(false);
       setAuthOpen(false);
     }
   }, [open]);
 
   const onAdd = () => {
     // Signed out → offer the same choice as comments: upload anonymously or
-    // sign in. Signed in → straight to the upload form.
+    // sign in. Signed in → straight to the phone's photo picker.
     if (!user) {
       setAuthOpen(true);
       return;
     }
-    setUploadOpen(true);
+    quickUploadRef.current?.openPicker();
   };
 
   return (
@@ -68,7 +67,7 @@ export default function PhotoGalleryOverlay({
       <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef} mobileDragToClose>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sz-28 font-semibold leading-tight text-ink sm:text-sz-32">Fotogalerie</h2>
-          {!uploadOpen && lightbox === null && (
+          {lightbox === null && spotId && (
             <button
               type="button"
               onClick={onAdd}
@@ -81,24 +80,11 @@ export default function PhotoGalleryOverlay({
           )}
         </div>
 
-        {uploadOpen && spotId && (
-          <div className="mt-6">
-            <GalleryUploadForm
-              spotId={spotId}
-              onCancel={() => setUploadOpen(false)}
-              onDone={() => setUploadOpen(false)}
-            />
-          </div>
+        {photos.length === 0 ? (
+          <GalleryEmptyState onAdd={onAdd} />
+        ) : (
+          <JustifiedGallery photos={photos} onOpen={setLightbox} />
         )}
-
-        {/* While the upload form is open, don't also show the existing gallery
-            below it — the form is the whole focus then. */}
-        {!uploadOpen &&
-          (photos.length === 0 ? (
-            <GalleryEmptyState onAdd={onAdd} />
-          ) : (
-            <JustifiedGallery photos={photos} onOpen={setLightbox} />
-          ))}
 
       </OverlayPanel>
 
@@ -109,11 +95,13 @@ export default function PhotoGalleryOverlay({
         signInText="melde dich an, um mit deinem Namen hochzuladen"
         onAnonymous={() => {
           setAuthOpen(false);
-          setUploadOpen(true);
+          quickUploadRef.current?.openPicker();
         }}
         onSignIn={() => navigate("/anmelden?mode=login")}
         onCancel={() => setAuthOpen(false)}
       />
+
+      {spotId && <GalleryQuickUpload ref={quickUploadRef} spotId={spotId} />}
 
       <Lightbox photos={photos} index={lightbox} onClose={() => setLightbox(null)} onIndex={setLightbox} />
     </>
