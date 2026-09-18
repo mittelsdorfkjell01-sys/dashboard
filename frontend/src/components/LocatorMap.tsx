@@ -96,15 +96,15 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         updateInterval: 120,
         // Retain an extra off-screen ring so short pans do not reveal the map
         // background before the next network response arrives.
-        keepBuffer: 6,
+        keepBuffer: 8,
       }) as BufferedTileLayer;
-      // Leaflet normally requests exactly the visible rectangle. A half-step
-      // zoom-out makes that old rectangle 29% smaller before the next level is
-      // ready, exposing the map background at the edges. Preload a 25% ring
-      // around the viewport so the current imagery still covers the full
-      // frame throughout that transition.
+      // Leaflet normally requests exactly the visible rectangle. A zoom-out
+      // (especially a pinch) makes that old rectangle much smaller than the
+      // frame before the next level is ready, exposing the map background at
+      // the edges. Preload a 40% ring around the viewport so the current
+      // imagery still covers the full frame throughout that transition.
       const visiblePixelBounds = tileLayer._getTiledPixelBounds.bind(tileLayer);
-      tileLayer._getTiledPixelBounds = (center) => visiblePixelBounds(center).pad(0.25);
+      tileLayer._getTiledPixelBounds = (center) => visiblePixelBounds(center).pad(0.4);
       tileLayer.addTo(map);
       tileLayerRef.current = tileLayer;
     } catch (error) {

@@ -132,6 +132,27 @@
 }
 .swd-locator-map .leaflet-tile-pane {
   filter: saturate(.9) brightness(1.04) contrast(.94);
+  /* Pin the filtered pane to its own cached compositor layer, so panning and
+     zooming just transform that layer instead of re-rasterising the colour
+     filter every frame — the main cause of the slight stutter on iOS. */
+  will-change: transform;
+  transform: translateZ(0);
+}
+/* Give the pane Leaflet actually translates during a drag a stable GPU layer
+   too, so pans stay smooth on touch. */
+.swd-locator-map .leaflet-map-pane {
+  will-change: transform;
+}
+/* A gentler, slightly longer zoom transition than Leaflet's default 0.25s —
+   makes button- and pinch-driven zoom feel more deliberate ("träge") and
+   settle smoothly rather than snapping. */
+.swd-locator-map .leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .swd-locator-map .leaflet-zoom-anim .leaflet-zoom-animated {
+    transition: none;
+  }
 }
 @media (min-width: 1024px) {
   /* SpotDetail renders its desktop body at 85%. Counter that zoom only inside
