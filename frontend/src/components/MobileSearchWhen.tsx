@@ -147,21 +147,24 @@ function DateCalendar({
                 const isSelected = iso === selected;
                 return (
                   <div key={iso} className="flex justify-center py-0.5">
-                    <motion.button
+                    {/* Plain <button>, not motion.button: the calendar mounts ~360
+                        day cells at once when the "Wann" tile opens, and that many
+                        framer instances made the expand stutter. CSS active:scale
+                        keeps the tap feedback for a fraction of the cost. */}
+                    <button
                       type="button"
                       disabled={isPast}
-                      whileTap={isPast ? undefined : { scale: 0.85 }}
                       onClick={() => onPick(iso)}
-                      className={`grid h-8 w-8 place-items-center rounded-full text-label transition-colors ${
+                      className={`grid h-8 w-8 place-items-center rounded-full text-label transition-[background-color,color,transform] active:scale-[0.85] ${
                         isSelected
                           ? "bg-teal font-semibold text-white"
                           : isPast
-                            ? "cursor-default text-ink/25"
+                            ? "cursor-default text-ink/25 active:scale-100"
                             : "text-ink hover:bg-band"
                       }`}
                     >
                       {day}
-                    </motion.button>
+                    </button>
                   </div>
                 );
               })}

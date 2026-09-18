@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   CloseIcon,
   KitesurfIcon,
@@ -113,10 +113,16 @@ export default function MobileSearchSheet({
       }
       if (e.key !== "Tab") return;
       const dialog = document.getElementById("mobile-search-dialog");
-      const focusable = dialog?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable?.length) {
+      // Collapsed accordion bodies stay in the DOM but are `inert`; exclude them
+      // (querySelectorAll ignores inert, but their controls can't take focus).
+      const focusable = dialog
+        ? Array.from(
+            dialog.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => !el.closest("[inert]"))
+        : [];
+      if (!focusable.length) {
         e.preventDefault();
         dialog?.focus();
         return;
@@ -364,16 +370,10 @@ export default function MobileSearchSheet({
     return () => window.clearTimeout(t);
   }, [open, section]);
 
-  // Bring the freshly opened tile fully into view above the action bar.
-  useEffect(() => {
-    if (!open || !section) return;
-    const t = window.setTimeout(() => {
-      document
-        .getElementById(`msheet-${section}`)
-        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [open, section]);
+  // Deliberately NO auto-scroll on section change: expanding a tile used to
+  // scrollIntoView the opened tile, which shoved the already-picked (now small)
+  // tiles above it off-screen. Tiles now expand in place; the earlier ones stay
+  // put and the visitor scrolls only if they want to.
 
   if (!mounted) return null;
 
@@ -646,6 +646,40 @@ function Section({
   headerAccessory?: ReactNode;
   children: ReactNode;
 }) {
+  // Native grid-rows 0fr→1fr accordion instead of framer's per-frame JS height:
+  // the browser animates it in one pass (smoother on iOS). Two guards keep it
+  // fast and correct:
+  //  - `render` mounts the (heavy — e.g. the 12-month calendar) body only once
+  //    the tile is first opened, and keeps it through the collapse so the close
+  //    also animates; it never mounts on the sheet's own open.
+  //  - `expanded` flips a couple of frames after mount so the mount cost is paid
+  //    before the transition starts (no first-frame hitch), and drives the row.
+  //  - `inert` drops collapsed content out of the tab order / AT (it stays in
+  //    the DOM for the animation).
+  const [render, setRender] = useState(open);
+  const [expanded, setExpanded] = useState(open);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setRender(true);
+      const outer = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setExpanded(true));
+      });
+      return () => cancelAnimationFrame(outer);
+    }
+    setExpanded(false);
+    const timer = window.setTimeout(() => setRender(false), 320);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    if (open) el.removeAttribute("inert");
+    else el.setAttribute("inert", "");
+  }, [open, render]);
+
   return (
     <div className="overflow-hidden rounded-[14px] bg-surface shadow-float">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
@@ -670,20 +704,20 @@ function Section({
         </button>
         {open && headerAccessory}
       </div>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            key="body"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="px-5 pb-5">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        ref={bodyRef}
+        style={{
+          display: "grid",
+          gridTemplateRows: expanded ? "1fr" : "0fr",
+          opacity: expanded ? 1 : 0,
+          transition:
+            "grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+      >
+        <div className="overflow-hidden">
+          <div className="px-5 pb-5">{render ? children : null}</div>
+        </div>
+      </div>
     </div>
   );
 }
