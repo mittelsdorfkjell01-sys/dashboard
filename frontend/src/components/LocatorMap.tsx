@@ -3,7 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../map.css";
 import { mapLinkProps } from "../lib/mapLinks";
-import { LinkIcon } from "../lib/icons";
+import { CloseIcon, LinkIcon } from "../lib/icons";
 import LeafletAttributionDisclosure from "./LeafletAttributionDisclosure";
 
 // Aerial imagery mirrors the reference: daylight coastline and naturally blue
@@ -46,6 +46,20 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   const pendingZoomDeltaRef = useRef(0);
   const zoomReleaseTimerRef = useRef(0);
   const [active, setActive] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  // Below lg the inline map is small, so a tap opens it fullscreen; from lg up
+  // (the wide desktop layout) it keeps the click-to-activate inline pan/zoom and
+  // its wheel-zoom tile handling unchanged.
+  const [small, setSmall] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023.98px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023.98px)");
+    const update = () => setSmall(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   const [ready, setReady] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -187,16 +201,40 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     return () => container.removeEventListener("wheel", handleWheel);
   }, [active, ready, requestZoom]);
 
-  // While active, a plain click (not a drag) locks the map again.
+  // Desktop only: while activated inline, a plain click (not a drag) locks the
+  // map again. Never runs on the touch/fullscreen path.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !active) return;
+    if (!map || !active || fullscreen) return;
     const lock = () => setActive(false);
     map.on("click", lock);
     return () => {
       map.off("click", lock);
     };
-  }, [active]);
+  }, [active, fullscreen]);
+
+  // Fullscreen: lock the page behind it and re-measure the map for its new size
+  // (on open and again on close, so the inline view redraws correctly). Esc
+  // closes it too.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = requestAnimationFrame(() => mapRef.current?.invalidateSize());
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFullscreen(false);
+        setActive(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKey);
+      requestAnimationFrame(() => mapRef.current?.invalidateSize());
+    };
+  }, [fullscreen]);
 
   if (unavailable) {
     return (
@@ -217,67 +255,101 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
   }
 
   return (
-    // Only isolate wheel input after activation. While locked, the surrounding
-    // page keeps its normal smooth scrolling even when the pointer is over the
-    // map.
-    <div
-      data-lenis-prevent={active ? "" : undefined}
-      className="swd-locator-map relative h-[360px] overflow-hidden rounded-[14px] bg-band sm:h-[440px] lg:h-full"
-    >
-      <div ref={containerRef} className="h-full w-full" />
+    <>
+      {/* Hold the inline slot's height while the map is lifted into fullscreen,
+          so the page behind (and the scroll position) doesn't shift. */}
+      {fullscreen && <div aria-hidden className="h-[360px] sm:h-[440px] lg:h-full" />}
+      <div
+        data-lenis-prevent={active ? "" : undefined}
+        className={
+          fullscreen
+            ? "swd-locator-map fixed inset-0 z-[1400] overflow-hidden bg-band"
+            : "swd-locator-map relative h-[360px] overflow-hidden rounded-[14px] bg-band sm:h-[440px] lg:h-full"
+        }
+      >
+        <div ref={containerRef} className="h-full w-full" />
 
-      {/* Locked: transparent click-catcher (no text, no hover styling). */}
-      {!active && (
-        <button
-          type="button"
-          aria-label="Karte aktivieren"
-          onClick={() => setActive(true)}
-          className="absolute inset-0 z-[450] bg-transparent"
-        />
-      )}
-
-      <div className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-3">
-        <div className="pointer-events-auto flex flex-col">
+        {/* Inline click-catcher: phones open fullscreen; desktop activates the
+            inline pan/zoom (unchanged). Hidden once active. */}
+        {!active && (
           <button
             type="button"
-            aria-label="Vergrößern"
-            onClick={() => requestZoom(0.5)}
-            className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
-          >
-            <ControlGlyph plus />
-          </button>
+            aria-label={small ? "Karte im Vollbild öffnen" : "Karte aktivieren"}
+            onClick={() => {
+              if (small) {
+                setFullscreen(true);
+                setActive(true);
+              } else {
+                setActive(true);
+              }
+            }}
+            className="absolute inset-0 z-[450] bg-transparent"
+          />
+        )}
+
+        {/* Fullscreen: a small ✕ top-right closes back to the inline map (same
+            scroll position). */}
+        {fullscreen && (
           <button
             type="button"
-            aria-label="Verkleinern"
-            onClick={() => requestZoom(-0.5)}
-            className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
+            aria-label="Vollbild schließen"
+            onClick={() => {
+              setFullscreen(false);
+              setActive(false);
+            }}
+            className="absolute right-4 z-[500] grid h-9 w-9 place-items-center rounded-full bg-ink/55 text-white transition-colors hover:bg-ink/70"
+            style={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
           >
-            <ControlGlyph />
+            <CloseIcon width={16} height={16} />
           </button>
+        )}
+
+        <div
+          className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-2"
+          style={fullscreen ? { top: "calc(1rem + env(safe-area-inset-top, 0px))" } : undefined}
+        >
+          <div className="pointer-events-auto flex flex-col">
+            <button
+              type="button"
+              aria-label="Vergrößern"
+              onClick={() => requestZoom(0.5)}
+              className="grid h-8 w-8 place-items-center text-white transition-opacity hover:opacity-65"
+            >
+              <ControlGlyph plus />
+            </button>
+            <button
+              type="button"
+              aria-label="Verkleinern"
+              onClick={() => requestZoom(-0.5)}
+              className="grid h-8 w-8 place-items-center text-white transition-opacity hover:opacity-65"
+            >
+              <ControlGlyph />
+            </button>
+          </div>
+
+          <a
+            href={link.href}
+            target={link.target}
+            rel={link.rel}
+            aria-label="In externer Karte öffnen"
+            title="In externer Karte öffnen"
+            className="pointer-events-auto grid h-8 w-8 place-items-center text-white transition-opacity hover:opacity-65"
+          >
+            <LinkIcon width={15} height={15} />
+          </a>
         </div>
 
-        <a
-          href={link.href}
-          target={link.target}
-          rel={link.rel}
-          aria-label="In externer Karte öffnen"
-          title="In externer Karte öffnen"
-          className="pointer-events-auto grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
-        >
-          <LinkIcon width={18} height={18} />
-        </a>
+        <LeafletAttributionDisclosure source="esri" tone="overlay" />
       </div>
-
-      <LeafletAttributionDisclosure source="esri" tone="overlay" />
-    </div>
+    </>
   );
 }
 
 function ControlGlyph({ plus = false }: { plus?: boolean }) {
   return (
-    <span aria-hidden className="relative block h-4 w-4">
-      <span className="absolute left-0 top-[7px] h-0.5 w-4 rounded-full bg-white" />
-      {plus && <span className="absolute left-[7px] top-0 h-4 w-0.5 rounded-full bg-white" />}
+    <span aria-hidden className="relative block h-3 w-3">
+      <span className="absolute left-0 top-[5px] h-0.5 w-3 rounded-full bg-white" />
+      {plus && <span className="absolute left-[5px] top-0 h-3 w-0.5 rounded-full bg-white" />}
     </span>
   );
 }
