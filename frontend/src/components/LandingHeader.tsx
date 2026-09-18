@@ -221,12 +221,14 @@ export default function LandingHeader({
               type="button"
               onClick={(event) => onMobileSearch(event.currentTarget)}
               aria-label="Suche öffnen"
-              // Fades in when docked, with a short delay so it appears only once
-              // the wordmark has begun gliding clear of centre.
+              // Docking: fade in after a short delay, once the wordmark has
+              // begun gliding clear of centre. Un-docking: disappear instantly,
+              // so the slow wordmark returning to centre never passes over a
+              // still-visible lupe (it sits behind the z-10 wordmark).
               style={{
                 opacity: docked ? 1 : 0,
                 pointerEvents: docked ? "auto" : "none",
-                transition: "opacity 260ms ease 140ms",
+                transition: docked ? "opacity 260ms ease 140ms" : "opacity 0s",
               }}
               className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:hidden"
             >
