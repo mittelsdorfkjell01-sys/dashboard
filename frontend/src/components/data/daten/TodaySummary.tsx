@@ -87,8 +87,10 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
           </div>
         </div>
 
-        {/* Sky arc — sunrise→sunset (sun) or sunset→next sunrise (moon). */}
-        <div className="w-full max-w-[320px] shrink-0 max-sm:hidden">
+        {/* Sky arc — sunrise→sunset (sun) or sunset→next sunrise (moon). Shown on
+            mobile too (full width, under the temperature) — it used to be
+            `max-sm:hidden`, which is why the Sonnenstand was invisible on phones. */}
+        <div className="w-full shrink-0 sm:max-w-[320px]">
           <SkyArc day={day} nextDay={nextDay} anchorUtc={anchorUtc} timezone={forecast.timezone} />
         </div>
       </div>

@@ -54,7 +54,7 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
 
   return (
     <div
-      className="grid grid-cols-5 pb-1 lg:grid-cols-10"
+      className="flex snap-x snap-mandatory overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-10 lg:overflow-visible"
       style={{ gap: TILE_GAP }}
       role="group"
       aria-label="Tagesübersicht — Tag im Stundenforecast anzeigen"
@@ -76,7 +76,7 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
             title="Im Stundenforecast anzeigen"
             onClick={() => selectDay(day)}
             style={{ height: TILE_H }}
-            className="flex min-w-0 flex-col justify-between rounded-[10px] bg-[#0E141B] px-[5px] pb-1 pt-[3px] transition-colors hover:bg-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+            className="flex min-w-0 shrink-0 basis-[calc((100%-24px)/5)] snap-start flex-col justify-between rounded-[10px] bg-[#0E141B] px-[5px] pb-1 pt-[3px] transition-colors hover:bg-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal lg:basis-auto"
           >
             <span className="flex items-baseline justify-between gap-1 whitespace-nowrap text-sz-10 leading-none tabular-nums max-[359px]:flex-col max-[359px]:items-start max-[359px]:gap-0 sm:text-sz-11 xl:text-label">
               <span className="font-medium text-ink">{weekday}</span>

@@ -59,9 +59,11 @@ describe("ForecastDayStrip", () => {
     // an invalid oversized response reaches the browser.
     expect((html.match(/<button(?: |\/?>)/g) ?? [])).toHaveLength(10);
     expect(html).toContain("Im Stundenforecast anzeigen");
-    expect(html).toContain("grid-cols-5");
+    // Mobile: one horizontally scrollable row (~5 tiles wide, snap); desktop
+    // (lg) falls back to a full-width ten-column grid.
+    expect(html).toContain("overflow-x-auto");
+    expect(html).toContain("snap-x");
     expect(html).toContain("lg:grid-cols-10");
-    expect(html).not.toContain("overflow-x-auto");
     // Weekday + date caption (2026-09-03 is a Thursday → "DO 03.09.").
     expect(html).toContain("03.09.");
     // Exactly eight fixed-slot bars (06, 08, … 20) per real hourly day.

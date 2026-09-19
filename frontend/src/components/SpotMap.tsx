@@ -109,6 +109,10 @@ export default function SpotMap({
   rounded = true,
   aspect = "sm:aspect-[21/9]",
   showModeSwitch = false,
+  fill = false,
+  interactive = false,
+  showBadge = true,
+  hideStatusOnMobile = false,
   zoom,
   mapCenter,
 }: {
@@ -118,6 +122,18 @@ export default function SpotMap({
   rounded?: boolean;
   aspect?: string;
   showModeSwitch?: boolean;
+  /** Fill the parent's height instead of holding an aspect ratio — used by the
+   *  mobile fullscreen map, which lives in a flex column above a time scrubber. */
+  fill?: boolean;
+  /** Allow pan/zoom. The embedded preview stays static; fullscreen turns this on
+   *  so the arrow field can be explored like Windfinder. */
+  interactive?: boolean;
+  /** The top-right observation badge (kind + time). Hidden in fullscreen, where
+   *  the time scrubber already carries the instant. */
+  showBadge?: boolean;
+  /** Hide the badge and legend below `lg` — the embedded Daten preview drops its
+   *  chrome on phones (tap opens the fullscreen map with real controls instead). */
+  hideStatusOnMobile?: boolean;
   /** Admin-curated preview framing (editorial.map_view) — real, editor-set
    *  data, not a guessed default. Falls back to the spot's own coordinates
    *  at a fixed zoom when unset. */
@@ -150,13 +166,14 @@ export default function SpotMap({
         zoomControl: false,
         attributionControl: false,
         fadeAnimation: false,
-        // Static preview: no interaction at all.
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
-        touchZoom: false,
-        keyboard: false,
-        boxZoom: false,
+        // Static preview by default; the fullscreen map passes `interactive` to
+        // allow pan/zoom over the arrow field.
+        dragging: interactive,
+        scrollWheelZoom: interactive,
+        doubleClickZoom: interactive,
+        touchZoom: interactive,
+        keyboard: interactive,
+        boxZoom: interactive,
       });
       L.tileLayer(TILE_URL, {
         subdomains: "a",
@@ -210,7 +227,7 @@ export default function SpotMap({
   const swatch = reading?.type && mode === "wind" ? windColor(reading.windKt) : mode === "waves" ? waveColor(reading?.waveM) : windColor(null);
 
   return (
-    <div data-forecast-utc={reading?.type === "forecast" ? activeForecast?.utcKey ?? "" : ""} data-observation-type={reading?.type ?? "unavailable"} className={`swd-spot-map relative w-full overflow-hidden ${aspect} aspect-[4/5] ${rounded ? "rounded-3xl" : ""}`}>
+    <div data-forecast-utc={reading?.type === "forecast" ? activeForecast?.utcKey ?? "" : ""} data-observation-type={reading?.type ?? "unavailable"} className={`swd-spot-map relative w-full overflow-hidden ${fill ? "h-full" : `${aspect} aspect-[4/5]`} ${rounded ? "rounded-3xl" : ""}`}>
       <div ref={containerRef} className="h-full w-full isolate" />
 
       <FlowLayer mode={mode} reading={reading} />
@@ -227,12 +244,12 @@ export default function SpotMap({
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-3 left-3 z-20">
+      <div className={`pointer-events-none absolute bottom-3 left-3 z-20 ${hideStatusOnMobile ? "max-lg:hidden" : ""}`}>
         <div className="pointer-events-auto"><MapLegend mode={mode} /></div>
       </div>
 
-      {reading && (
-        <div className="swd-spot-map-header pointer-events-none absolute right-3 top-3 z-20 flex flex-col items-end gap-1">
+      {reading && showBadge && (
+        <div className={`swd-spot-map-header pointer-events-none absolute right-3 top-3 z-20 flex flex-col items-end gap-1 ${hideStatusOnMobile ? "max-lg:hidden" : ""}`}>
           <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-line bg-surface/95 px-3 py-1.5 text-label text-ink shadow-card">
             <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: swatch }} />
             <span className="font-semibold">{OBSERVATION_BADGE[reading.type]}</span>

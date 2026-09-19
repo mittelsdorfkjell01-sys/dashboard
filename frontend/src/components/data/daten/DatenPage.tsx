@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import type { LiveConditionsRead } from "../../../lib/api";
 import type { Spot } from "../../../lib/types";
 import type { NormalizedForecastSeries } from "../../../lib/forecastNormalization";
@@ -14,6 +14,7 @@ import ForecastDayStrip from "./ForecastDayStrip";
 import WindSidebar from "./WindSidebar";
 
 const SpotMap = lazy(() => import("../../SpotMap"));
+const MapFullscreen = lazy(() => import("./MapFullscreen"));
 const WindClimatologyModule = lazy(() => import("../WindClimatologyModule"));
 
 /**
@@ -46,6 +47,7 @@ export default function DatenPage({
 }) {
   const [lat, lng] = spot.coords ?? [undefined, undefined];
   const hasForecast = !!forecast && forecast.days.length > 0;
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   return (
     <SpotDataScopeProvider forecast={forecast}>
@@ -100,17 +102,39 @@ export default function DatenPage({
 
           {/* 3) Map + live wind. */}
           <section aria-label="Karte und Livewind" className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
-            <Suspense fallback={<div className="aspect-[16/9] w-full animate-pulse rounded-2xl bg-band" />}>
-              <SpotMap
-                spot={spot}
-                live={live}
-                forecast={forecast}
-                zoom={spot.mapView?.zoom}
-                mapCenter={spot.mapView?.center}
-                aspect="sm:aspect-[16/9]"
-                rounded
-              />
-            </Suspense>
+            {/* On phones the embedded map is a chrome-free preview; tapping it
+                opens the fullscreen Windfinder-style map (layer switch + time
+                scrubber). On desktop the preview keeps its badge/legend and the
+                tap target is disabled. */}
+            <div className="relative">
+              <Suspense fallback={<div className="aspect-[16/9] w-full animate-pulse rounded-2xl bg-band" />}>
+                <SpotMap
+                  spot={spot}
+                  live={live}
+                  forecast={forecast}
+                  zoom={spot.mapView?.zoom}
+                  mapCenter={spot.mapView?.center}
+                  aspect="sm:aspect-[16/9]"
+                  rounded
+                  hideStatusOnMobile
+                />
+              </Suspense>
+              <button
+                type="button"
+                onClick={() => setMapFullscreen(true)}
+                aria-label="Windkarte im Vollbild öffnen"
+                className="absolute inset-0 z-30 grid place-items-end p-3 lg:hidden"
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/25 bg-black/45 text-white backdrop-blur-sm"
+                >
+                  <svg width={16} height={16} viewBox="0 0 20 20" fill="none">
+                    <path d="M12 3h5v5M17 3l-6 6M8 17H3v-5M3 17l6-6" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </button>
+            </div>
             <WindSidebar
               forecast={forecast}
               live={live}
@@ -132,6 +156,17 @@ export default function DatenPage({
             </div>
           </section>
         </div>
+
+        {mapFullscreen && (
+          <Suspense fallback={null}>
+            <MapFullscreen
+              spot={spot}
+              live={live}
+              forecast={forecast}
+              onClose={() => setMapFullscreen(false)}
+            />
+          </Suspense>
+        )}
       </div>
     </SpotDataScopeProvider>
   );

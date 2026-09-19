@@ -235,7 +235,7 @@ export default function WindSidebar({
         )}
       </div>
 
-      <dl className="mt-5 grid grid-cols-2 gap-x-10 gap-y-6">
+      <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:gap-x-10 sm:gap-y-6">
         {metrics.map(({ label, icon, value, unit, color, glow, sub }) => (
           <div key={label}>
             <dt className="flex items-center gap-1.5 text-caption uppercase tracking-[0.12em] text-muted">
@@ -256,20 +256,6 @@ export default function WindSidebar({
           </div>
         ))}
       </dl>
-
-      <div className="mt-10">
-        <p className="text-sz-24 font-semibold text-ink">
-          {directionState === "variable"
-            ? "Wind variabel"
-            : directionState === "uncertain"
-              ? "Richtung unsicher"
-              : dir == null
-                ? "Richtung —"
-                : `Aus ${degreesToCompass(dir)}`}
-        </p>
-        {directionState === "known" && dir != null && <p className="mt-1 text-caption tabular-nums text-muted">{displayDirectionDeg(dir)} Grad</p>}
-        {directionState === "known" && classLabel && <p className="mt-0.5 text-caption text-muted">{classLabel}</p>}
-      </div>
 
       {reference && (
         <div className="mt-6 border-t border-line pt-3">
@@ -294,9 +280,26 @@ export default function WindSidebar({
       )}
 
       {/* Compass hero — pushed to the bottom so its lower edge sits on the map's
-          bottom edge; fills the panel's existing inner width. */}
+          bottom edge; fills the panel's existing inner width. The direction now
+          reads as a compact caption under the dial instead of a large heading
+          above the metrics (removed on request). */}
       <div className="mt-auto pt-8">
         <CompassDial fromDeg={directionState === "known" ? dir : null} />
+        <p className="mt-3 text-center text-caption tabular-nums text-muted">
+          {directionState === "variable" ? (
+            "Wind variabel"
+          ) : directionState === "uncertain" ? (
+            "Richtung unsicher"
+          ) : dir == null ? (
+            "Richtung —"
+          ) : (
+            <>
+              <span className="font-semibold text-ink">Aus {degreesToCompass(dir)}</span>
+              {` · ${displayDirectionDeg(dir)}°`}
+              {classLabel ? ` · ${classLabel}` : ""}
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

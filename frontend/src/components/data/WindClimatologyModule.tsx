@@ -340,66 +340,74 @@ export function WeekChart({
         <div aria-hidden="true" className="flex h-40 w-8 shrink-0 flex-col justify-between text-right text-data-caption leading-none text-muted">
           {[100, 75, 50, 25, 0].map((value) => <span key={value}>{value}%</span>)}
         </div>
-        <div className="min-w-0 flex-1">
-          <div
-            ref={scrollerRef}
-            role="slider"
-            tabIndex={0}
-            aria-label="52 Wochen Windzuverlässigkeit, Januar bis Dezember"
-            aria-valuemin={1}
-            aria-valuemax={52}
-            aria-valuenow={selected.week}
-            aria-valuetext={selectedLabel}
-            className="relative h-40 cursor-crosshair border-b border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
-            onKeyDown={(event) => {
-              if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-                event.preventDefault();
-                selectIndex(selectedIndex - 1);
-              } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-                event.preventDefault();
-                selectIndex(selectedIndex + 1);
-              } else if (event.key === "Home") {
-                event.preventDefault();
-                selectIndex(0);
-              } else if (event.key === "End") {
-                event.preventDefault();
-                selectIndex(weeks.length - 1);
-              }
-            }}
-            onClick={(event) => {
-              const bounds = event.currentTarget.getBoundingClientRect();
-              if (bounds.width <= 0) return;
-              const position = Math.min(0.999999, Math.max(0, (event.clientX - bounds.left) / bounds.width));
-              selectIndex(Math.floor(position * weeks.length));
-            }}
-          >
-            {[25, 50, 75].map((value) => (
-              <span key={value} aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-0 border-t border-dashed border-line-soft" style={{ bottom: `${value}%` }} />
-            ))}
-            <div aria-hidden="true" className="relative z-10 flex h-full items-end">
+        {/* Horizontal scroller: on phones the 52 weekly bars keep a real minimum
+            width so each week is legible and the track scrolls month-to-month;
+            from lg the track fits the column and no longer scrolls. The click
+            math reads from the track element's own rect, so it stays correct
+            while scrolled. */}
+        <div ref={scrollerRef} className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:thin] lg:overflow-visible">
+          <div className="min-w-[680px] lg:min-w-0">
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label="52 Wochen Windzuverlässigkeit, Januar bis Dezember"
+              aria-valuemin={1}
+              aria-valuemax={52}
+              aria-valuenow={selected.week}
+              aria-valuetext={selectedLabel}
+              className="relative h-40 cursor-crosshair border-b border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+                  event.preventDefault();
+                  selectIndex(selectedIndex - 1);
+                } else if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  selectIndex(selectedIndex + 1);
+                } else if (event.key === "Home") {
+                  event.preventDefault();
+                  selectIndex(0);
+                } else if (event.key === "End") {
+                  event.preventDefault();
+                  selectIndex(weeks.length - 1);
+                }
+              }}
+              onClick={(event) => {
+                const bounds = event.currentTarget.getBoundingClientRect();
+                if (bounds.width <= 0) return;
+                const position = Math.min(0.999999, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+                selectIndex(Math.floor(position * weeks.length));
+              }}
+            >
+              {[25, 50, 75].map((value) => (
+                <span key={value} aria-hidden="true" className="pointer-events-none absolute inset-x-0 z-0 border-t border-dashed border-line-soft" style={{ bottom: `${value}%` }} />
+              ))}
+              {/* Month groups: filled bars with a small gap, but no vertical
+                  separator stroke between months (removed on request). */}
+              <div aria-hidden="true" className="relative z-10 flex h-full items-end">
+                {monthGroups.map((group, monthIndex) => (
+                  <div
+                    key={monthIndex}
+                    className="flex h-full min-w-0 items-end gap-px pr-px last:pr-0"
+                    style={{ flexBasis: 0, flexGrow: group.length }}
+                  >
+                    {group.map((week) => (
+                      <WeekBar key={week.week} week={week} isCurrent={week.week === currentWeek} isSelected={week.week === selectedWeek} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div aria-hidden="true" className="mt-1 flex">
               {monthGroups.map((group, monthIndex) => (
-                <div
-                  key={monthIndex}
-                  className="flex h-full min-w-0 items-end gap-px border-r border-line-soft pr-px last:border-r-0"
+                <span
+                  key={MONTHS[monthIndex]}
+                  className="min-w-0 text-center text-sz-10 uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider"
                   style={{ flexBasis: 0, flexGrow: group.length }}
                 >
-                  {group.map((week) => (
-                    <WeekBar key={week.week} week={week} isCurrent={week.week === currentWeek} isSelected={week.week === selectedWeek} />
-                  ))}
-                </div>
+                  {MONTHS[monthIndex].slice(0, 3)}
+                </span>
               ))}
             </div>
-          </div>
-          <div aria-hidden="true" className="mt-1 flex">
-            {monthGroups.map((group, monthIndex) => (
-              <span
-                key={MONTHS[monthIndex]}
-                className="min-w-0 text-center text-sz-10 uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider"
-                style={{ flexBasis: 0, flexGrow: group.length }}
-              >
-                {MONTHS[monthIndex].slice(0, 3)}
-              </span>
-            ))}
           </div>
         </div>
       </div>

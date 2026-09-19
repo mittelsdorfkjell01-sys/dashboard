@@ -77,17 +77,23 @@ export default function CompassDial({
             return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={ACCENT} strokeWidth={2.4} strokeLinecap="round" />;
           })()}
 
-          {/* A balanced needle centred on the pivot: bright front arm to the
-              bearing, dim back arm opposite — it spins around the middle like a
-              real compass needle. No glow. */}
+          {/* A single directional wind arrow that pivots around the centre: a
+              clean shaft with a solid arrowhead pointing to the bearing and a
+              short, dimmed tail — reads unambiguously as "wind from here" (was a
+              symmetric double-triangle needle that was easy to misread). No glow. */}
           <motion.g
             initial={false}
             animate={{ rotate: bearing }}
             transition={{ duration: reduced ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
             style={{ transformOrigin: `${C}px ${C}px` }}
           >
-            <path d={`M${C} ${C - 72} L${C + 5} ${C} L${C - 5} ${C} Z`} fill={ACCENT} />
-            <path d={`M${C} ${C + 72} L${C + 5} ${C} L${C - 5} ${C} Z`} fill={ACCENT} opacity={0.4} />
+            {/* Shaft from the tail through the pivot toward the bearing. */}
+            <line x1={C} y1={C + 46} x2={C} y2={C - 56} stroke={ACCENT} strokeWidth={3} strokeLinecap="round" />
+            {/* Dimmed tail fletch. */}
+            <line x1={C} y1={C + 46} x2={C - 6} y2={C + 34} stroke={ACCENT} strokeWidth={2.4} strokeLinecap="round" opacity={0.4} />
+            <line x1={C} y1={C + 46} x2={C + 6} y2={C + 34} stroke={ACCENT} strokeWidth={2.4} strokeLinecap="round" opacity={0.4} />
+            {/* Solid arrowhead at the bearing. */}
+            <path d={`M${C} ${C - 72} L${C - 8} ${C - 52} L${C} ${C - 58} L${C + 8} ${C - 52} Z`} fill={ACCENT} />
           </motion.g>
           {/* Hub. */}
           <circle cx={C} cy={C} r={3.4} fill="var(--sw-ink)" />

@@ -19,7 +19,24 @@ const GLYPH_INK = Math.round((GLYPH * 16) / 24);
 const WELLE_WETTER_GAP = 16;
 const WETTER_ROW_H = WELLE_WETTER_GAP + GLYPH + 16;
 const TEMP_H = 108; // temperature band height — more room for the curve
+const MOBILE_TEMP_H = 82; // compact temperature band on phones
+const MOBILE_BAR_H = 92; // compact wind band on phones
 const ROW_LABELS = ["WELLE", "WETTER", "TEMP.", "WIND", "RICHT.", "ZEIT"] as const;
+
+const MOBILE_MQ = "(max-width: 639.98px)";
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(MOBILE_MQ).matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_MQ);
+    const update = () => setMobile(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+  return mobile;
+}
 
 function fade(hex: string, alpha = 0.45): string {
   const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
@@ -42,6 +59,14 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   const model = useMemo(() => buildMeteogramModel(forecast, isSpotForecastDisplayHour), [forecast]);
   const slots = model.slots;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // On phones the instrument is too tall to take in at a glance, so the two
+  // tallest bands (temperature + wind) shrink. Only vertical scale changes —
+  // COL_W and all horizontal/marker math stay identical, so the pointer picking
+  // and the temperature-curve sampling are untouched.
+  const isMobile = useIsMobile();
+  const tempH = isMobile ? MOBILE_TEMP_H : TEMP_H;
+  const barH = isMobile ? MOBILE_BAR_H : BAR_H;
 
   const uid = useId(); // base for the active-point gradients/clips/filters
   // Continuous drag position in strip-content pixels; null after the gesture,
@@ -77,15 +102,15 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   const tScale = useMemo(() => temperatureBounds(slots), [slots]);
   const tempY = (air: number) => {
     const t = (air - tScale.min) / (tScale.max - tScale.min);
-    return TEMP_H - 10 - t * (TEMP_H - 26);
+    return tempH - 10 - t * (tempH - 26);
   };
   const cx = (i: number) => i * COL_W + COL_W / 2;
 
   // Temperature curve as smooth beziers. `runs` splits the horizon on any
   // missing hour so gaps stay open; each contiguous run is one smooth path.
   const runs = useMemo(() => temperatureRuns(slots), [slots]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
-  const tempPath = useMemo(() => smoothRuns(runs, cx, tempY), [runs, tScale.min, tScale.max]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale + tempH, tracked here
+  const tempPath = useMemo(() => smoothRuns(runs, cx, tempY), [runs, tScale.min, tScale.max, tempH]);
 
   // The single wandering, glowing point that anchors the whole TEMP row: the
   // inspected time (the cursor while dragging, else the persistent selection),
@@ -107,12 +132,12 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     const idx = Math.min(slots.length - 1, Math.max(0, Math.round(activeF)));
     const label = slots[idx]?.localTime ?? null;
     return { x: s.x, y: tempY(s.air), air: s.air, trend, label };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- tempY derives from tScale, tracked
-  }, [activeF, slots, tScale.min, tScale.max]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tempY derives from tScale + tempH, tracked
+  }, [activeF, slots, tScale.min, tScale.max, tempH]);
   // Closed area under the curve (per run), for the glow fill; clipped to the
   // past at render so it lights only the elapsed part and stays inside the band.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale, tracked here
-  const tempArea = useMemo(() => areaRuns(runs, cx, tempY, TEMP_H), [runs, tScale.min, tScale.max]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cx/tempY derive from COL_W + tScale + tempH, tracked here
+  const tempArea = useMemo(() => areaRuns(runs, cx, tempY, tempH), [runs, tScale.min, tScale.max, tempH]);
 
   // The wave/weather rows and the wind/direction/time rows don't depend on the
   // hover position — memoise them so a pointer move only re-renders the small
@@ -164,13 +189,13 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
           gust bar behind rises to the gust height in the *wind's* hue at 45%
           opacity (not the gust's own colour). Wind and gust values are
           labelled on their own bars (Figma Frame 67 / node 504-9). */}
-      <Row h={BAR_H + 16} align="end">
+      <Row h={barH + 16} align="end">
         {slots.map((s, i) => {
           const wind = s.wind;
           if (wind == null) return <Cell key={i} />;
           const gust = s.gust ?? wind;
-          const windH = Math.max(4, (wind / windMax) * BAR_H);
-          const gustH = Math.max(windH, (gust / windMax) * BAR_H);
+          const windH = Math.max(4, (wind / windMax) * barH);
+          const gustH = Math.max(windH, (gust / windMax) * barH);
           // Only label the gust when it clears the wind bar with room to read.
           const showGust = gust > wind + 0.5 && gustH - windH >= 14;
           return (
@@ -217,7 +242,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         })}
       </Row>
     </>
-  ), [slots, windMax]);
+  ), [slots, windMax, barH]);
 
   if (!slots.length) {
     return (
@@ -270,13 +295,14 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
   };
 
   return (
-    <div className="flex min-w-0 gap-3">
-      {/* Fixed row-label gutter (stays put while the strip scrolls). */}
-      <div className="shrink-0 select-none pt-1 text-data-caption uppercase tracking-[0.14em] text-muted">
+    <div className="flex min-w-0 gap-2 sm:gap-3">
+      {/* Fixed row-label gutter (stays put while the strip scrolls). Tighter
+          type + tracking on phones so it steals less width from the data. */}
+      <div className="shrink-0 select-none pt-1 text-sz-10 uppercase tracking-[0.06em] text-muted sm:text-data-caption sm:tracking-[0.14em]">
         <RowLabel h={WAVE_ROW_H}>{ROW_LABELS[0]}</RowLabel>
         <RowLabel h={WETTER_ROW_H} anchorH={WELLE_WETTER_GAP + GLYPH_INK}>{ROW_LABELS[1]}</RowLabel>
-        <RowLabel h={TEMP_H}>{ROW_LABELS[2]}</RowLabel>
-        <RowLabel h={BAR_H + 16}>{ROW_LABELS[3]}</RowLabel>
+        <RowLabel h={tempH}>{ROW_LABELS[2]}</RowLabel>
+        <RowLabel h={barH + 16}>{ROW_LABELS[3]}</RowLabel>
         <RowLabel h={26}>{ROW_LABELS[4]}</RowLabel>
         <RowLabel h={22}>{ROW_LABELS[5]}</RowLabel>
       </div>
@@ -322,16 +348,16 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
               under the line, and a handoff glow bleeds from now into the first
               dotted hours. The drag/hover selection is a quieter secondary
               marker. */}
-          <div className="relative" style={{ height: TEMP_H, width }}>
-            <svg viewBox={`0 0 ${width} ${TEMP_H}`} width={width} height={TEMP_H} preserveAspectRatio="none" className="absolute inset-0" aria-hidden>
+          <div className="relative" style={{ height: tempH, width }}>
+            <svg viewBox={`0 0 ${width} ${tempH}`} width={width} height={tempH} preserveAspectRatio="none" className="absolute inset-0" aria-hidden>
               <defs>
                 {active && (
                   <>
                     <clipPath id={`${uid}-cp`} clipPathUnits="userSpaceOnUse">
-                      <rect x={0} y={0} width={Math.max(0, active.x)} height={TEMP_H} />
+                      <rect x={0} y={0} width={Math.max(0, active.x)} height={tempH} />
                     </clipPath>
                     <clipPath id={`${uid}-cf`} clipPathUnits="userSpaceOnUse">
-                      <rect x={active.x} y={0} width={Math.max(0, width - active.x)} height={TEMP_H} />
+                      <rect x={active.x} y={0} width={Math.max(0, width - active.x)} height={tempH} />
                     </clipPath>
                     <linearGradient id={`${uid}-gp`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={active.x} y2={0}>
                       <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.42} />
@@ -345,7 +371,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                       <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.55} />
                       <stop offset="100%" stopColor="#eef1f4" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id={`${uid}-ga`} gradientUnits="userSpaceOnUse" x1={0} y1={8} x2={0} y2={TEMP_H}>
+                    <linearGradient id={`${uid}-ga`} gradientUnits="userSpaceOnUse" x1={0} y1={8} x2={0} y2={tempH}>
                       <stop offset="0%" stopColor="#eef1f4" stopOpacity={0.28} />
                       <stop offset="100%" stopColor="#eef1f4" stopOpacity={0} />
                     </linearGradient>
@@ -443,7 +469,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
               const pad = 14;
               const placeRight = active.x + pad + tw <= width;
               const tx = placeRight ? active.x + pad : active.x - pad - tw;
-              const ty = active.y < th + 14 ? Math.min(TEMP_H - th - 2, active.y + 12) : Math.max(2, active.y - th - 8);
+              const ty = active.y < th + 14 ? Math.min(tempH - th - 2, active.y + 12) : Math.max(2, active.y - th - 8);
               const trendChar = active.trend === "up" ? "↗" : active.trend === "down" ? "↘" : "→";
               const trendColor = active.trend === "up" ? "var(--sw-orange)" : active.trend === "down" ? "var(--sw-teal)" : "var(--sw-muted)";
               return (
