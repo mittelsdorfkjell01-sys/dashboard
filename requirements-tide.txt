@@ -3,5 +3,5 @@
 # External worker only. Never add these native/scientific dependencies to
 # api/requirements.txt or the Vercel request function.
 pyfes==2026.3.1
-netCDF4>=1.7,<2
+netCDF4>=1.7.4,<2
 timezonefinder>=8,<9
