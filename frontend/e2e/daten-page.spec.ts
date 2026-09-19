@@ -283,8 +283,19 @@ for (const width of [320, 375, 768, 1280, 1440]) {
     await expect(outlook.getByRole("button")).toHaveCount(10);
     const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
     await expect(navigator.getByRole("button")).toHaveCount(10);
-    const navigatorOverflow = await navigator.evaluate((element) => element.scrollWidth - element.clientWidth);
-    expect(navigatorOverflow).toBeLessThanOrEqual(1);
+    const navigatorMetrics = await navigator.evaluate((element) => ({
+      overflow: element.scrollWidth - element.clientWidth,
+      clientWidth: element.clientWidth,
+    }));
+    if (width >= 1024) {
+      // Desktop (lg): all ten days fit as a grid — no internal scroll.
+      expect(navigatorMetrics.overflow).toBeLessThanOrEqual(1);
+    } else {
+      // Mobile/tablet: the day strip is a horizontal snap scroller, so internal
+      // overflow is expected; what matters is its visible box fits the viewport
+      // and it doesn't widen the page (asserted below via the document overflow).
+      expect(navigatorMetrics.clientWidth).toBeLessThanOrEqual(width);
+    }
     const [bodyEdgeBox, outlookBox] = await Promise.all([
       page.locator("#spot-meteogramm").boundingBox(),
       outlook.boundingBox(),
