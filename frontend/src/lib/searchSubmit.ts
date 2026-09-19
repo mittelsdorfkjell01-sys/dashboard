@@ -29,7 +29,10 @@ export interface SearchValue {
   whereOpen: boolean; // explicitly "egal wo" / überall — the open place axis
   when: WhenValue;
   which: string[]; // backend sport values: surf | kitesurf | windsurf | wing
-  disciplines: string[]; // freestyle | big_air | foil
+  /** Optional second-stage variant key (windsurf:fin|foil, kitesurf:classic|foil).
+   *  Set only when the user narrows a wind/kite sport to a discipline. */
+  variant: string | null;
+  disciplines: string[]; // freestyle | big_air (riding styles)
 }
 
 export const EMPTY_SEARCH: SearchValue = {
@@ -38,6 +41,7 @@ export const EMPTY_SEARCH: SearchValue = {
   whereOpen: false,
   when: null,
   which: [],
+  variant: null,
   disciplines: [],
 };
 
@@ -102,8 +106,11 @@ export function buildSearchParams(v: SearchValue): URLSearchParams {
     }
   }
 
-  // /search takes a single sport → use the first selected discipline.
+  // /search takes a single sport → use the first selected sport. A chosen
+  // variant (Windfoil/Kitefoil/…) is sent alongside; the backend filters to
+  // spots that actually offer that variant, never merely the parent sport.
   if (v.which.length) p.set("sport", v.which[0]);
+  if (v.variant) p.set("variant", v.variant);
 
   // --- time axis ---
   const week = weekFromWhen(v.when);

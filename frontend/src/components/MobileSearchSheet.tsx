@@ -13,7 +13,7 @@ import {
   WingIcon,
 } from "../lib/icons";
 import MobileSearchWhen, { WhenToggle, type WhenTab } from "./MobileSearchWhen";
-import { sportLabel } from "../lib/labels";
+import { SPORT_VARIANTS, parentSport, sportLabel, variantLabel } from "../lib/labels";
 import { useRegions, useSpots } from "../lib/hooks";
 import { addRecent } from "../lib/recentSearches";
 import {
@@ -553,18 +553,23 @@ export default function MobileSearchSheet({
                 <div className="flex flex-col gap-2">
                   {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
                     const selected = val.which.includes(sport);
+                    const variants = SPORT_VARIANTS[sport] ?? [];
                     return (
+                      <div key={sport} className="flex flex-col">
                       <motion.button
-                        key={sport}
                         type="button"
                         whileTap={{ scale: 0.98 }}
                         onClick={() =>
-                          setVal((v) => ({
-                            ...v,
-                            which: selected
+                          setVal((v) => {
+                            const which = selected
                               ? v.which.filter((s) => s !== sport)
-                              : [...v.which, sport],
-                          }))
+                              : [...v.which, sport];
+                            const variant =
+                              v.variant && which.includes(parentSport(v.variant))
+                                ? v.variant
+                                : null;
+                            return { ...v, which, variant };
+                          })
                         }
                         aria-pressed={selected}
                         className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
@@ -588,6 +593,32 @@ export default function MobileSearchSheet({
                           )}
                         </span>
                       </motion.button>
+                      {selected && variants.length > 0 && (
+                        <div className="mb-1 ml-11 flex flex-wrap gap-2" role="group" aria-label={`${sportLabel(sport)} Variante`}>
+                          {variants.map((key) => {
+                            const on = val.variant === key;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() =>
+                                  setVal((v) => ({
+                                    ...v,
+                                    variant: v.variant === key ? null : key,
+                                  }))
+                                }
+                                aria-pressed={on}
+                                className={`rounded-full border px-3 py-1 text-caption font-medium transition-colors ${
+                                  on ? "border-teal bg-teal/10 text-teal" : "border-line text-muted hover:bg-band"
+                                }`}
+                              >
+                                {variantLabel(key)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      </div>
                     );
                   })}
                 </div>

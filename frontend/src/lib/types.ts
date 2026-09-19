@@ -2,7 +2,7 @@
 // src/data/*.ts alongside mock data; the mock data is gone (all pages read the
 // API now), the types stay.
 
-import type { FacilityMap } from "./api";
+import type { FacilityMap, VariantConditions } from "./api";
 import type { CreditSource } from "./imageCredit";
 
 // --- spot / region view models ---------------------------------------------
@@ -41,6 +41,10 @@ export interface Spot {
   slug?: string;
   regionId?: string;
   sports?: string[];
+  /** Variant keys this spot actually offers (geeignet/eingeschraenkt). */
+  variants?: string[];
+  /** Full per-variant suitability + conditions (only on the detail record). */
+  variantConditions?: Record<string, VariantConditions> | null;
   description?: string;
   level?: string[];
   waterTypes?: string[];

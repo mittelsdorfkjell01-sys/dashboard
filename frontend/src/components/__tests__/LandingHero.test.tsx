@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectLandingHeroSlides } from "../LandingHero";
+import { selectLandingHeroSlides, shuffleLandingHeroSlides } from "../LandingHero";
 import type { Spot } from "../../lib/types";
 
 function spot(id: string, overrides: Partial<Spot> = {}): Spot {
@@ -40,5 +40,29 @@ describe("selectLandingHeroSlides", () => {
 
     expect(slides).toHaveLength(12);
     expect(slides.some((slide) => slide.id === "missing-image")).toBe(false);
+  });
+});
+
+describe("shuffleLandingHeroSlides", () => {
+  it("starts from a shuffled spot and keeps every selected hero exactly once", () => {
+    const slides = [spot("a"), spot("b"), spot("c")];
+    const randomValues = [0, 0];
+
+    const shuffled = shuffleLandingHeroSlides(slides, () => randomValues.shift() ?? 0);
+
+    expect(shuffled.map((slide) => slide.id)).toEqual(["b", "c", "a"]);
+    expect(new Set(shuffled.map((slide) => slide.id)).size).toBe(slides.length);
+    expect(slides.map((slide) => slide.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("does not repeat the final hero when a new shuffled cycle starts", () => {
+    const shuffled = shuffleLandingHeroSlides(
+      [spot("a"), spot("b"), spot("c")],
+      () => 0.999,
+      "a",
+    );
+
+    expect(shuffled[0]?.id).not.toBe("a");
+    expect(new Set(shuffled.map((slide) => slide.id)).size).toBe(3);
   });
 });

@@ -8,6 +8,7 @@ import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import DeleteConfirmDialog from "../components/admin/DeleteConfirmDialog";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import CollapsibleSection from "../components/admin/CollapsibleSection";
+import VariantConditionsEditor from "../components/admin/VariantConditionsEditor";
 import FormNavBar from "../components/admin/FormNavBar";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useAdminRegions } from "../lib/hooks";
@@ -30,6 +31,7 @@ import {
   type SpotCreateBody,
   type SpotUpdateBody,
   type SpotRead,
+  type VariantConditions,
 } from "../lib/api";
 import {
   FACILITY_KINDS,
@@ -46,8 +48,10 @@ import {
   gapAnchor,
   gapLabel,
   levelLabel,
+  parentSport,
   sportLabel,
   styleLabel,
+  variantsForSports,
   waterCharacterLabel,
   waterTypeLabel,
 } from "../lib/labels";
@@ -112,6 +116,9 @@ export default function AdminSpotForm() {
   const [lon, setLon] = useState("");
   const [mapView, setMapView] = useState<MapView | null>(null);
   const [sports, setSports] = useState<string[]>([]);
+  const [variantConditions, setVariantConditions] = useState<
+    Record<string, VariantConditions>
+  >({});
   const [level, setLevel] = useState<string[]>([]);
   const [waterCharacter, setWaterCharacter] = useState<string[]>([]);
   const [styles, setStyles] = useState<string[]>([]);
@@ -207,6 +214,7 @@ export default function AdminSpotForm() {
     lon,
     mapView,
     sports,
+    variantConditions,
     level,
     waterCharacter,
     styles,
@@ -316,6 +324,7 @@ export default function AdminSpotForm() {
     }
     const nextSports = s.sports ?? [];
     setSports(nextSports);
+    setVariantConditions(s.variant_conditions ?? {});
     setLevel(s.level ?? []);
     setWaterCharacter(s.water_character ?? []);
     setStyles(synchronizeWavekiteStyle(nextSports, s.style ?? []));
@@ -383,6 +392,25 @@ export default function AdminSpotForm() {
     return ed;
   };
 
+  const buildVariantConditions = (): Record<string, VariantConditions> | null => {
+    const allowed = new Set(variantsForSports(sports));
+    const out: Record<string, VariantConditions> = {};
+    for (const [key, block] of Object.entries(variantConditions)) {
+      if (!allowed.has(key)) continue; // parent sport deselected → drop
+      const suit = block.suitability;
+      const hasData =
+        (block.wind_directions?.length ?? 0) > 0 ||
+        block.usable_depth_m != null ||
+        !!block.tide || !!block.entry || !!block.launch_area || !!block.hazards ||
+        !!block.local_rules || !!block.notes ||
+        (block.level?.length ?? 0) > 0 || (block.discipline?.length ?? 0) > 0;
+      // A bare "unbekannt" with no data is the implicit default → omit it.
+      if ((!suit || suit === "unbekannt") && !hasData) continue;
+      out[key] = block;
+    }
+    return Object.keys(out).length ? out : null;
+  };
+
   const buildFacilities = () => {
     const out: Record<string, { available: boolean; note?: string }> = {};
     for (const k of FACILITY_KINDS) {
@@ -432,6 +460,7 @@ export default function AdminSpotForm() {
       expected.lon = loaded.location?.lon ?? null;
     }
     add("sports", sports, loaded.sports ?? []);
+    add("variant_conditions", buildVariantConditions(), loaded.variant_conditions ?? null);
     add("level", level, loaded.level ?? []);
     add("water_character", waterCharacter, loaded.water_character ?? []);
     add("style", styles, loaded.style ?? []);
@@ -487,6 +516,7 @@ export default function AdminSpotForm() {
         facing: facing !== "" ? Number(facing) : null,
         facilities: buildFacilities(),
         editorial: Object.keys(buildEditorial()).length ? buildEditorial() : null,
+        variant_conditions: buildVariantConditions(),
         allow_duplicate: allowDuplicate,
       };
 
@@ -756,6 +786,14 @@ export default function AdminSpotForm() {
                     const nextSports = toggle(sports, s);
                     setSports(nextSports);
                     setStyles((current) => synchronizeWavekiteStyle(nextSports, current));
+                    // Drop variant data whose parent sport is no longer selected.
+                    setVariantConditions((current) => {
+                      const active = new Set(nextSports);
+                      const kept = Object.fromEntries(
+                        Object.entries(current).filter(([k]) => active.has(parentSport(k))),
+                      );
+                      return kept;
+                    });
                   }}
                 >
                   {sportLabel(s)}
@@ -763,6 +801,21 @@ export default function AdminSpotForm() {
               ))}
             </div>
           </CollapsibleSection>
+
+          {/* Varianten & Eignung — second stage: activate variants of the
+              selected wind-/kitesurf sports and record their suitability +
+              conditions. Only rendered when a sport with variants is active. */}
+          {variantsForSports(sports).length > 0 && (
+            <CollapsibleSection id="f-varianten" title="Varianten & Eignung">
+              <VariantConditionsEditor
+                sports={sports}
+                value={variantConditions}
+                waterCharacter={waterCharacter}
+                onChange={setVariantConditions}
+                onDirty={() => markDirty("main")}
+              />
+            </CollapsibleSection>
+          )}
 
           {/* Kategorien — five axes as chip-groups. Two-column grid from xl so
               the axes pair up instead of running down half the viewport. */}

@@ -96,12 +96,65 @@ export const SPORT_LABELS: Record<string, string> = {
 };
 
 // Compact labels for the spot tiles, where space is tight and up to four sports
-// share one line: "Wingfoilen" collapses to the common short form "Foil"; the
-// rest keep their names. Only the cards use these — the full labels stay
-// everywhere else (search picker, spot page, admin).
+// share one line. Wingfoilen collapses to "Wing" — never "Foil", which is
+// ambiguous now that Windfoil and Kitefoil are their own variants. Only the
+// cards use these; full labels stay everywhere else (search picker, spot page,
+// admin).
 export const SPORT_LABELS_SHORT: Record<string, string> = {
   ...SPORT_LABELS,
-  wing: "Foil",
+  wing: "Wing",
+};
+
+// --- sport variants (Windfoil / Kitefoil) ----------------------------------
+// Mirror app/admin/constants.py SPORT_VARIANTS. Only wind-/kitesurfing split;
+// wing (Wingfoilen) stays its own sport and surf has no foil variant.
+export const SPORT_VARIANTS: Record<string, readonly string[]> = {
+  windsurf: ["windsurf:fin", "windsurf:foil"],
+  kitesurf: ["kitesurf:classic", "kitesurf:foil"],
+};
+// Foil variants have no proven scoring parameters yet → "nicht ausreichend
+// bewertet" rather than a green forecast.
+export const FOIL_VARIANTS = ["windsurf:foil", "kitesurf:foil"] as const;
+
+export const VARIANT_LABELS: Record<string, string> = {
+  "windsurf:fin": "Finne",
+  "windsurf:foil": "Windfoil",
+  "kitesurf:classic": "Klassisch",
+  "kitesurf:foil": "Kitefoil",
+};
+// Standalone labels (e.g. filter chips) that name the discipline in full.
+export const VARIANT_LABELS_FULL: Record<string, string> = {
+  "windsurf:fin": "Windsurfen (Finne)",
+  "windsurf:foil": "Windfoilen",
+  "kitesurf:classic": "Kitesurfen (klassisch)",
+  "kitesurf:foil": "Kitefoilen",
+};
+
+export const SUITABILITY = [
+  "geeignet",
+  "eingeschraenkt",
+  "ungeeignet",
+  "unbekannt",
+] as const;
+export const SUITABILITY_LABELS: Record<string, string> = {
+  geeignet: "Geeignet",
+  eingeschraenkt: "Eingeschränkt",
+  ungeeignet: "Ungeeignet",
+  unbekannt: "Unbekannt",
+};
+
+export const parentSport = (variantKey: string): string =>
+  variantKey.split(":", 1)[0];
+export const variantLabel = (k: string) => VARIANT_LABELS[k] ?? k;
+export const variantLabelFull = (k: string) => VARIANT_LABELS_FULL[k] ?? VARIANT_LABELS[k] ?? k;
+export const suitabilityLabel = (k?: string | null) =>
+  k ? SUITABILITY_LABELS[k] ?? k : SUITABILITY_LABELS.unbekannt;
+export const variantsForSports = (sports?: readonly string[] | null): string[] => {
+  const out: string[] = [];
+  for (const sport of sports ?? [])
+    for (const key of SPORT_VARIANTS[sport] ?? [])
+      if (!out.includes(key)) out.push(key);
+  return out;
 };
 
 // Admin roles (Sprint A). Keys stay 'admin'/'curator' in the backend; these are

@@ -148,9 +148,29 @@ export interface SpotSummary {
   confidence: number | null;
   facing: number | null;
   image: ImageRecord | null;
+  /** Variant keys this spot actually offers (geeignet/eingeschraenkt). Always
+   *  populated by the backend; optional here so older fixtures still type-check. */
+  variants?: string[];
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
   wind_availability: number[] | null;
+}
+
+/** Per-variant suitability + conditions (Windfoil/Kitefoil). Missing variant =
+ *  "unbekannt" (never a positive recommendation). Mirrors the backend blob. */
+export type Suitability = "geeignet" | "eingeschraenkt" | "ungeeignet" | "unbekannt";
+export interface VariantConditions {
+  suitability?: Suitability;
+  wind_directions?: [number, number][];
+  usable_depth_m?: number | "n/a";
+  tide?: string;
+  entry?: string;
+  launch_area?: string;
+  hazards?: string;
+  local_rules?: string;
+  level?: string[];
+  discipline?: string[];
+  notes?: string;
 }
 
 export interface SpotRead extends SpotSummary {
@@ -158,6 +178,7 @@ export interface SpotRead extends SpotSummary {
   model_pref: string | null;
   editorial: Record<string, any> | null;
   overrides: Record<string, any> | null;
+  variant_conditions: Record<string, VariantConditions> | null;
   finish_rank: Rank | null;
   created_at: string;
   updated_at: string;
@@ -1835,6 +1856,7 @@ export interface SpotCreateBody {
   facilities?: FacilityMap | null;
   facing?: number | null;
   editorial?: Record<string, any> | null;
+  variant_conditions?: Record<string, VariantConditions> | null;
   allow_duplicate?: boolean;
 }
 

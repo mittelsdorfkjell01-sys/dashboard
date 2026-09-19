@@ -22,11 +22,17 @@ export interface SpotTab {
  * width, so that weight step never shifts layout.
  */
 export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const navigate = useNavigate();
   const activeIndex = Math.max(
     0,
     tabs.findIndex((t) => t.href === pathname)
+  );
+  const spotBackAvailableRef = useRef(
+    typeof location.state?.spotBackAvailable === "boolean"
+      ? location.state.spotBackAvailable
+      : location.key !== "default",
   );
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -40,7 +46,14 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
   const onClick = (e: MouseEvent<HTMLButtonElement>, href: string) => {
     if (e.button !== 0) return;
     navigate(href, {
-      state: { preserveScroll: window.scrollY },
+      // Info and Daten are two views of the same spot, not separate steps in
+      // the visitor's journey. Keep the page they came from directly behind
+      // the spot so both the header and browser back buttons leave the spot.
+      replace: true,
+      state: {
+        preserveScroll: window.scrollY,
+        spotBackAvailable: spotBackAvailableRef.current,
+      },
       preventScrollReset: true,
     });
   };

@@ -15,6 +15,7 @@ import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotMetaGrid from "../components/SpotMetaGrid";
 import SpotDescription from "../components/SpotDescription";
+import SpotVariants from "../components/SpotVariants";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
@@ -34,6 +35,15 @@ export default function SpotDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const activeTab = location.pathname.endsWith("/daten") ? "daten" : "info";
+  const spotBackAvailableRef = useRef(
+    typeof location.state?.spotBackAvailable === "boolean"
+      ? location.state.spotBackAvailable
+      : location.key !== "default",
+  );
+  // DatenPage normalizes its filter query string with another replace
+  // navigation. Keep the entry provenance outside location.state so that
+  // normalization cannot turn a direct visit into a fake back-stack entry.
+  const spotBackAvailable = spotBackAvailableRef.current;
   const reduceMotion = useReducedMotion();
 
   // Direction for the tab-content swap: which side the new content slides in
@@ -75,11 +85,11 @@ export default function SpotDetail() {
       const preserveScroll = typeof location.state?.preserveScroll === "number";
       navigate(canonical, {
         replace: true,
-        state: location.state,
+        state: { ...location.state, spotBackAvailable },
         preventScrollReset: preserveScroll,
       });
     }
-  }, [activeTab, location.pathname, location.state, navigate, spot]);
+  }, [activeTab, location.pathname, location.state, navigate, spot, spotBackAvailable]);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const galleryTriggerRef = useRef<HTMLButtonElement>(null);
@@ -119,7 +129,7 @@ export default function SpotDetail() {
     return () => observer.disconnect();
   }, [activeTab, loading, mapReady]);
 
-  const goBack = () => (location.key !== "default" ? navigate(-1) : navigate("/map"));
+  const goBack = () => (spotBackAvailable ? navigate(-1) : navigate("/map"));
 
   if (loading) {
     return (
@@ -304,6 +314,7 @@ export default function SpotDetail() {
                       </div>
                     </div>
                   )}
+                  <SpotVariants spot={spot} />
                 </aside>
                   {spot.coords ? (
                     <section ref={mapSlotRef} aria-label="Lage" className="spot-locator-compact order-3 min-w-0 lg:order-4 lg:col-span-2">

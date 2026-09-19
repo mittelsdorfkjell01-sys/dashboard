@@ -49,6 +49,9 @@ async function mockApi(page: Page, photos: CommunityImage[] = []) {
         body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#397488"/></svg>',
       });
     }
+    if (path === "/spots/version") return route.fulfill({ json: { version: "navigation-test" } });
+    if (path === "/spots" || path === "/spots/top") return route.fulfill({ json: [spot] });
+    if (path === "/spots/live") return route.fulfill({ json: [] });
     if (["/spots/test", "/spots/laboe", "/spots/Alcyons"].includes(path)) return route.fulfill({ json: spot });
     if (path === "/regions/r1") return route.fulfill({ json: { id: "r1", slug: "kieler-bucht", name: "Kieler Bucht", country: "DE", center: null, description: null, image: null, season: null, defaults: null, status: "published", updated_at: "2026-08-24T00:00:00Z" } });
     if (path === "/spots/test/forecast") return route.fulfill({ json: forecast });
@@ -78,6 +81,33 @@ async function mockApi(page: Page, photos: CommunityImage[] = []) {
     return route.fulfill({ status: 404, json: { detail: `mock missing: ${path}` } });
   });
 }
+
+test("Zurück verlässt den Spot auch nach dem Wechsel auf Daten", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await mockApi(page);
+  await page.goto("/");
+
+  await page.getByRole("link", { name: /Alcyons/ }).last().click();
+  await expect(page).toHaveURL(/\/spot\/laboe\/info$/);
+  await page.getByRole("tab", { name: "Daten" }).click();
+  await expect(page).toHaveURL(/\/spot\/laboe\/daten$/);
+
+  await page.getByRole("button", { name: "Zurück" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("Direkter Spot-Einstieg fällt nach dem Tabwechsel auf die Karte zurück", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+
+  await expect(page).toHaveURL(/\/spot\/laboe\/info$/);
+  await page.getByRole("tab", { name: "Daten" }).click();
+  await expect(page).toHaveURL(/\/spot\/laboe\/daten$/);
+  await page.getByRole("button", { name: "Zurück" }).click();
+
+  await expect(page).toHaveURL(/\/map$/);
+});
 
 test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-Frame bereit", async ({ page }) => {
   const photos: CommunityImage[] = [1, 2].map((id) => ({

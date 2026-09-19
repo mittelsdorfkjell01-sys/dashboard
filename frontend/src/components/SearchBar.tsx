@@ -12,7 +12,7 @@ import {
 import SearchWhere, { type WhereItem, type WherePick } from "./search/SearchWhere";
 import SearchWhen from "./search/SearchWhen";
 import { WhenToggle, type WhenTab } from "./MobileSearchWhen";
-import { sportLabel } from "../lib/labels";
+import { SPORT_VARIANTS, parentSport, sportLabel, variantLabel } from "../lib/labels";
 import { addRecent } from "../lib/recentSearches";
 import { useRegions, useSpots } from "../lib/hooks";
 import {
@@ -183,12 +183,17 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   };
 
   const toggleSport = (sport: string) =>
-    setVal((v) => ({
-      ...v,
-      which: v.which.includes(sport)
-        ? v.which.filter((s) => s !== sport)
-        : [...v.which, sport],
-    }));
+    setVal((v) => {
+      const on = v.which.includes(sport);
+      const which = on ? v.which.filter((s) => s !== sport) : [...v.which, sport];
+      // Drop a variant whose parent sport is no longer selected.
+      const variant =
+        v.variant && which.includes(parentSport(v.variant)) ? v.variant : null;
+      return { ...v, which, variant };
+    });
+
+  const selectVariant = (variant: string) =>
+    setVal((v) => ({ ...v, variant: v.variant === variant ? null : variant }));
 
   const onWhereKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const curLen = activeCol === "spot" ? spotItems.length : regionItems.length;
@@ -218,7 +223,9 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   };
 
   const whereText = val.whereSel?.label || val.whereText;
-  const sportText = val.which.map(sportLabel).join(", ");
+  const sportText = val.variant
+    ? [variantLabel(val.variant), ...val.which.filter((s) => s !== parentSport(val.variant!)).map(sportLabel)].join(", ")
+    : val.which.map(sportLabel).join(", ");
   const summary = [whereText, whenLabel(val.when), sportText]
     .filter(Boolean)
     .join(" · ");
@@ -424,7 +431,12 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           </div>
                         )}
                         {open === "which" && (
-                          <SportPicker selected={val.which} onToggle={toggleSport} />
+                          <SportPicker
+                            selected={val.which}
+                            variant={val.variant}
+                            onToggle={toggleSport}
+                            onSelectVariant={selectVariant}
+                          />
                         )}
                       </div>
                     </motion.div>
@@ -477,36 +489,64 @@ function SegmentButton({
   );
 }
 
-/** "Welche Sportart?" — a compact multi-select list of the four sports. */
+/** "Welche Sportart?" — the four main sports, with a second stage for the
+ *  wind-/kitesurf variants (Finne/Windfoil, klassisch/Kitefoil). Wingfoilen
+ *  stays its own sport and surf has no variant. */
 function SportPicker({
   selected,
+  variant,
   onToggle,
+  onSelectVariant,
 }: {
   selected: string[];
+  variant: string | null;
   onToggle: (sport: string) => void;
+  onSelectVariant: (variant: string) => void;
 }): ReactNode {
   return (
     <div className="flex flex-col gap-2">
       {SPORT_OPTIONS.map(({ value: sport, Icon }) => {
         const isOn = selected.includes(sport);
+        const variants = SPORT_VARIANTS[sport] ?? [];
         return (
-          <button
-            key={sport}
-            type="button"
-            onClick={() => onToggle(sport)}
-            aria-pressed={isOn}
-            className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
-          >
-            <Icon className="shrink-0 text-sz-26 text-ink" />
-            <span className="flex-1 text-sz-16 font-medium text-ink">{sportLabel(sport)}</span>
-            <span
-              className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
-                isOn ? "border-teal" : "border-line"
-              }`}
+          <div key={sport} className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => onToggle(sport)}
+              aria-pressed={isOn}
+              className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
             >
-              {isOn && <span className="h-3 w-3 rounded-full bg-teal" />}
-            </span>
-          </button>
+              <Icon className="shrink-0 text-sz-26 text-ink" />
+              <span className="flex-1 text-sz-16 font-medium text-ink">{sportLabel(sport)}</span>
+              <span
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
+                  isOn ? "border-teal" : "border-line"
+                }`}
+              >
+                {isOn && <span className="h-3 w-3 rounded-full bg-teal" />}
+              </span>
+            </button>
+            {isOn && variants.length > 0 && (
+              <div className="mb-1 ml-11 flex flex-wrap gap-2" role="group" aria-label={`${sportLabel(sport)} Variante`}>
+                {variants.map((key) => {
+                  const on = variant === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => onSelectVariant(key)}
+                      aria-pressed={on}
+                      className={`rounded-full border px-3 py-1 text-caption font-medium transition-colors ${
+                        on ? "border-teal bg-teal/10 text-teal" : "border-line text-muted hover:bg-band"
+                      }`}
+                    >
+                      {variantLabel(key)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

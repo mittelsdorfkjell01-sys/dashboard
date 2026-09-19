@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
@@ -16,15 +16,39 @@ export function selectLandingHeroSlides(spots: Spot[]): Spot[] {
     .slice(0, MAX_SLIDES);
 }
 
+/** Fisher-Yates keeps every curated spot exactly once per cycle. The optional
+ * previous id prevents the seam between two shuffled cycles from showing the
+ * same hero twice in a row. */
+export function shuffleLandingHeroSlides(
+  slides: Spot[],
+  random: () => number = Math.random,
+  previousId?: string,
+): Spot[] {
+  const shuffled = [...slides];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  if (shuffled.length > 1 && shuffled[0]?.id === previousId) {
+    const replacementIndex = shuffled.findIndex((slide, index) => index > 0 && slide.id !== previousId);
+    if (replacementIndex > 0) {
+      [shuffled[0], shuffled[replacementIndex]] = [shuffled[replacementIndex], shuffled[0]];
+    }
+  }
+  return shuffled;
+}
+
 /**
  * Landing hero. Instead of one static photo, this rotates on its own through
  * real spot heroes: each fills the whole hero screen with the same full-bleed
  * `object-cover` crop the page always used (never a 21:9 letterbox), so the
  * background reads as a live window into the catalogue.
  *
- * The reel runs automatically and is deliberately non-interactive — it can't be
- * swiped or clicked. The only control is a small text CTA at the bottom-right
- * that jumps to whichever spot is currently on screen.
+ * The reel starts on a random curated spot and runs through a shuffled deck
+ * automatically. It is deliberately non-interactive — it can't be swiped or
+ * clicked. The only control is a small text CTA at the bottom-right that jumps
+ * to whichever spot is currently on screen.
  *
  * Falls back to the static brand hero when no selected spot carries a usable
  * image (e.g. a fresh seed database or an intentionally empty selection).
@@ -40,24 +64,41 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
   }, []);
   // Only real hero photos explicitly curated in the admin Hero tab may enter
   // the reel. An empty selection deliberately uses the static brand hero.
-  const slides = useMemo(() => selectLandingHeroSlides(spots), [spots]);
+  const selectedSlides = useMemo(() => selectLandingHeroSlides(spots), [spots]);
+  const previousSelectionRef = useRef(selectedSlides);
+  const [reel, setReel] = useState(() => ({
+    slides: shuffleLandingHeroSlides(selectedSlides),
+    index: 0,
+  }));
+  useLayoutEffect(() => {
+    if (previousSelectionRef.current === selectedSlides) return;
+    previousSelectionRef.current = selectedSlides;
+    setReel({ slides: shuffleLandingHeroSlides(selectedSlides), index: 0 });
+  }, [selectedSlides]);
+
+  const { slides, index } = reel;
   const count = slides.length;
-  const [index, setIndex] = useState(0);
 
-  // Keep the index valid if the slide set shrinks between renders.
+  // Auto-advance through every spot once, then reshuffle for the next cycle.
+  // The loop stays off for reduced-motion or a single slide.
   useEffect(() => {
-    if (index >= count && count > 0) setIndex(0);
-  }, [count, index]);
-
-  // Auto-advance — always on; off only for reduced-motion or a single slide.
-  useEffect(() => {
-    if (reduce || count <= 1) return;
-    const timer = window.setInterval(
-      () => setIndex((i) => (i + 1) % count),
-      ADVANCE_MS,
-    );
-    return () => window.clearInterval(timer);
-  }, [reduce, count]);
+    if (reduce || selectedSlides.length <= 1) return;
+    const timer = window.setTimeout(() => {
+      if (reel.index + 1 < reel.slides.length) {
+        setReel({ ...reel, index: reel.index + 1 });
+        return;
+      }
+      setReel({
+        slides: shuffleLandingHeroSlides(
+          selectedSlides,
+          Math.random,
+          reel.slides[reel.index]?.id,
+        ),
+        index: 0,
+      });
+    }, ADVANCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [reduce, reel, selectedSlides]);
 
   if (count === 0) {
     // While the catalogue loads (and for a deliberately empty selection) show a
@@ -71,7 +112,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
     );
   }
 
-  const current = slides[Math.min(index, count - 1)];
+  const current = slides[index];
 
   return (
     <>
