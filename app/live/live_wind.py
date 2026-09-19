@@ -11,7 +11,7 @@ import uuid
 
 from sqlalchemy import select
 
-from app.models import WeatherStationModelResidual
+from app.models import WeatherObservation, WeatherStation, WeatherStationModelResidual
 from app.weather.live_wind_analysis import (
     REGIONAL_LIVE_WIND_VERSION,
     StationResidualInput,
@@ -209,6 +209,15 @@ def load_station_residual_inputs(
             WeatherStationModelResidual.analysis_id,
         )
     ).all()
+    station_observations = {
+        observation.id: (station, observation)
+        for station, observation in db.execute(
+            select(WeatherStation, WeatherObservation)
+            .join(WeatherObservation, WeatherObservation.station_id == WeatherStation.id)
+            .where(WeatherObservation.id.in_(observation_ids))
+        ).all()
+    }
+    from app.weather.station_approval import scope_valid
     from app.weather.exact_run import compatible_dataset_manifests
 
     newest = {}
@@ -245,6 +254,13 @@ def load_station_residual_inputs(
         elif row.baseline_version != RAW_MODEL_BASELINE_VERSION:
             # Old exact-run rows are legacy evidence, never public fallback input.
             reject("product_mismatch")
+            continue
+        pair = station_observations.get(row.observation_id)
+        cutoff_for_scope = _utc(as_of) if as_of is not None else _utc(row.analyzed_at)
+        if pair is None or cutoff_for_scope is None or not scope_valid(
+            db, pair[0], pair[1], scope="residual_source", analyzed_at=cutoff_for_scope
+        ):
+            reject("epoch_scope_or_dossier_unqualified")
             continue
         newest.setdefault(str(row.observation_id), row)
     if diagnostics_out is not None:

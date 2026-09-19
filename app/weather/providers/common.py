@@ -38,6 +38,15 @@ class ObservationStation:
     typical_interval_minutes: int | None = None
     commercial_reuse: bool | None = None
     attribution_required: bool = False
+    operator: str | None = None
+    station_type: str | None = None
+    sensor_metadata: dict = field(default_factory=dict)
+    active_from: datetime | None = None
+    active_to: datetime | None = None
+    metadata_updated_at: datetime | None = None
+    source_url: str | None = None
+    raw_payload: dict = field(default_factory=dict)
+    received_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -68,6 +77,14 @@ class NormalizedObservation:
     data_issues: tuple[str, ...] = ()
     raw_payload: dict = field(default_factory=dict)
     fingerprint: str = ""
+    published_at: datetime | None = None
+    measurement_period_seconds: int | None = None
+    averaging_period_seconds: int | None = None
+    original_speed: float | None = None
+    original_direction: float | None = None
+    original_gust: float | None = None
+    original_speed_unit: str | None = None
+    parser_version: str = "observation-normalizer-v2"
 
     @property
     def station_id(self) -> str:
@@ -152,6 +169,10 @@ def normalize_observation(
     provenance=None,
     raw_payload=None,
     extra_issues=(),
+    published_at=None,
+    measurement_period_seconds=None,
+    averaging_period_seconds=None,
+    original_speed_unit="m/s",
 ) -> NormalizedObservation:
     """Normalize one public wind observation without discarding bad input.
 
@@ -167,6 +188,9 @@ def normalize_observation(
         issues.append("imported_at:future")
     received_input = received_at if received_at is not None else fetched_at
     received = _utc(received_input, "received_at", issues, default=imported)
+    if received_input is None:
+        issues.append("received_at:unproven")
+    published = _utc(published_at, "published_at", issues)
     observed = _utc(observed_at, "observed_at", issues)
     if observed is None:
         issues.append("observed_at:missing")
@@ -179,6 +203,8 @@ def normalize_observation(
 
     provider_name = str(provider or "").strip().lower()
     original_station_id = str(station_id or "").strip()
+    if provider_name not in {"dwd", "dmi", "awc_metar", "knmi"}:
+        issues.append("provider:not_observation_source")
     if (
         not provider_name
         or len(provider_name) > 20
@@ -204,7 +230,13 @@ def normalize_observation(
         license_text = None
         issues.append("license:invalid")
 
-    speed = _number(wind_speed_ms)
+    unit = str(original_speed_unit or "").strip().lower()
+    factor = {"m/s": 1.0, "km/h": 1 / 3.6, "kt": 0.5144444444444445, "knots": 0.5144444444444445}.get(unit)
+    if factor is None:
+        issues.append("wind_unit:invalid")
+    original_speed = _number(wind_speed_ms)
+    original_gust = _number(wind_gust_ms)
+    speed = original_speed * factor if original_speed is not None and factor is not None else None
     if speed is None or not 0 <= speed <= MAX_WIND_SPEED_MS:
         speed = None
         issues.append("wind_speed:invalid")
@@ -214,7 +246,7 @@ def normalize_observation(
     ):
         direction = None
         issues.append("wind_direction:invalid")
-    gust = _number(wind_gust_ms)
+    gust = original_gust * factor if original_gust is not None and factor is not None else None
     if wind_gust_ms is not None and (
         gust is None
         or not 0 <= gust <= MAX_WIND_GUST_MS
@@ -231,6 +263,9 @@ def normalize_observation(
             issues.append("gust_period:without_gust")
         else:
             gust_period = int(value)
+    for name, period in (("measurement_period", measurement_period_seconds), ("averaging_period", averaging_period_seconds)):
+        if period is not None and (not isinstance(period, int) or isinstance(period, bool) or not 1 <= period <= 86400):
+            issues.append(f"{name}:invalid")
 
     lat = _number(latitude)
     lon = _number(longitude)
@@ -279,7 +314,9 @@ def normalize_observation(
         "observed_at:future", "received_at:invalid", "received_at:naive",
         "received_at:future", "imported_at:invalid", "imported_at:naive",
         "imported_at:future",
+        "received_at:unproven", "published_at:invalid", "published_at:naive",
         "station_identity:invalid", "station_identity:mismatch",
+        "provider:not_observation_source",
         "duplicate:conflict", "provider_parse:invalid",
     }
     warning_issues = {"observed_at:late"}
@@ -330,6 +367,13 @@ def normalize_observation(
         data_issues=tuple(dict.fromkeys(issues)),
         raw_payload=raw,
         fingerprint=_fingerprint(stable),
+        published_at=published,
+        measurement_period_seconds=measurement_period_seconds,
+        averaging_period_seconds=averaging_period_seconds,
+        original_speed=original_speed,
+        original_direction=_number(wind_direction_deg),
+        original_gust=original_gust,
+        original_speed_unit=original_speed_unit,
     )
 
 

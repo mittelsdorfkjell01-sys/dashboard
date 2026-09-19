@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
+import hashlib
 import math
 from statistics import median
 
@@ -18,7 +19,9 @@ from app.models import (
     WeatherLiveWindVerificationEvidence,
     WeatherObservation,
     WeatherObservationImportState,
+    WeatherProviderHttpResource,
     WeatherStation,
+    WeatherStationCatalogState,
     WeatherStationModelResidual,
 )
 from app.weather.coverage import build_database_coverage_report
@@ -318,6 +321,13 @@ def _provider_doctor(db, *, now: datetime, settings: Settings) -> dict:
     ).all()
     providers = {}
     alerts = []
+    catalog_states = {
+        item.provider: item
+        for item in db.scalars(select(WeatherStationCatalogState)).all()
+    }
+    dwd_resources = db.scalars(select(WeatherProviderHttpResource).where(
+        WeatherProviderHttpResource.provider == "dwd"
+    )).all()
     for provider in sorted({station.provider for station, _, _ in rows} | configured):
         items = [
             (station, state, country)
@@ -363,8 +373,63 @@ def _provider_doctor(db, *, now: datetime, settings: Settings) -> dict:
             "last_import_attempt_at": max(attempts).isoformat() if attempts else None,
             "stations_in_error": errors,
             "status": status,
+            "catalog_last_success_at": (
+                catalog_states[provider].last_success_at.isoformat()
+                if provider in catalog_states
+                and catalog_states[provider].last_success_at else None
+            ),
+            "catalog_last_error_class": (
+                catalog_states[provider].last_error_class
+                if provider in catalog_states else None
+            ),
         }
-    return {"ok": not any(item["severity"] == "critical" for item in alerts), "providers": providers, "alerts": alerts}
+        catalog = catalog_states.get(provider)
+        if provider not in {"dwd", "dmi"}:
+            continue
+        if catalog is None or catalog.last_success_at is None:
+            alerts.append({
+                "severity": "critical", "code": "station_catalog_never_succeeded",
+                "provider": provider,
+            })
+        elif _utc(catalog.last_success_at, now) < now - timedelta(
+            hours=settings.weather_station_catalog_late_hours
+        ):
+            alerts.append({
+                "severity": "critical", "code": "station_catalog_late",
+                "provider": provider,
+            })
+        elif catalog.last_error_class:
+            alerts.append({
+                "severity": "warning", "code": "station_catalog_error",
+                "provider": provider,
+                "error_class": catalog.last_error_class,
+            })
+    invalid_resources = sum(
+        len(bytes(item.payload)) != item.payload_size_bytes
+        or hashlib.sha256(bytes(item.payload)).hexdigest() != item.payload_sha256
+        for item in dwd_resources
+    )
+    if not dwd_resources:
+        alerts.append({"severity": "critical", "code": "dwd_validator_state_missing"})
+    if invalid_resources:
+        alerts.append({
+            "severity": "critical", "code": "dwd_validator_payload_corrupt",
+            "count": invalid_resources,
+        })
+    return {
+        "ok": not any(item["severity"] == "critical" for item in alerts),
+        "providers": providers,
+        "dwd_validators": {
+            "resources": len(dwd_resources),
+            "with_etag": sum(bool(item.etag) for item in dwd_resources),
+            "with_last_modified": sum(bool(item.last_modified) for item in dwd_resources),
+            "invalid_payloads": invalid_resources,
+            "last_checked_at": max(
+                (item.last_checked_at for item in dwd_resources), default=None
+            ).isoformat() if dwd_resources else None,
+        },
+        "alerts": alerts,
+    }
 
 
 def _scheduler_doctor(db, *, now: datetime, settings: Settings) -> dict:

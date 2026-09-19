@@ -144,7 +144,7 @@ def test_cycle_orders_existing_workers_and_never_touches_forecast(tmp_path, monk
             return False
 
         def scalar(self, _query):
-            return "0059_live_wind_holdout_cases"
+            return "0062_station_capture_operations"
 
     monkeypatch.setattr(session, "SessionLocal", Db)
     monkeypatch.setattr(exact_run, "ExactRunAssetCache", lambda *_args, **_kwargs: object())

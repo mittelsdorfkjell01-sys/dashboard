@@ -113,7 +113,7 @@ Apply the additive migration before starting either scheduler or worker:
 
 ```bash
 alembic upgrade head
-alembic current  # 0059_live_wind_holdout_cases (head)
+alembic current  # 0062_station_capture_operations
 alembic heads    # exactly one head
 ```
 
@@ -440,3 +440,46 @@ Do **not** begin the adaptive Forecast while any of these are true:
 - held-out LiveWind accuracy and uncertainty calibration are missing;
 - product-boundary audit reports a measurement/forecast source violation;
 - any pilot readiness or doctor check fails.
+
+# Station capture and catalog scheduling
+
+Non-production raw capture is deliberately separated into two workflows:
+
+```text
+.github/workflows/station-catalog.yml    # DWD/DMI metadata; daily
+.github/workflows/live-wind-capture.yml  # Exact-Run, then DWD/DMI observations; every 10 min
+```
+
+They run the fail-closed `scripts.station_capture_worker` against one explicitly
+named non-production database. The catalog and observation schedules have
+separate enable variables. The observation workflow captures exact GFS/ICON
+assets first and stops on failure; it contains no residual, holdout, LiveWind or
+activation command. Both require a cache-persistence artifact created in a
+different runner job. Bootstrap variables, secrets, pause/restart and first-run
+checks are specified in `docs/ops/live-wind-capture-bootstrap.md`.
+
+The authenticated `/cron/observations` and `/cron/station-catalog` routes remain
+available to existing deployments, but they are not the proof of a dedicated
+non-production capture environment. Workflow files alone do not prove that a
+self-hosted runner, database, variables, secrets or persistent mount exist.
+
+DWD validators and their validated response bytes are stored in
+`weather_provider_http_resources`. The key includes provider, exact URL and a
+canonical request-variant hash. On `304`, the stored length and SHA-256 are
+verified and the cached body is parsed again. Missing/corrupt payload forces an
+unconditional GET. A `304` never advances observation `received_at` and never
+creates a new availability event. Endpoints without `ETag`/`Last-Modified`
+continue with bounded unconditional GETs.
+
+Operations checks:
+
+```bash
+python -m scripts.exact_run_preflight --persistence verify --require-new-job \
+  --expected-probe-sha256 "$LIVE_WIND_CAPTURE_PROBE_SHA256"
+python -m scripts.station_capture_worker status
+python -m scripts.live_wind_doctor --no-rasters --fail-on-alert
+```
+
+Until an approved non-production runner and persistent database are verified,
+the operational status is `continuous_capture_not_started`. Do not infer weeks
+of evidence from backfills or change historical `received_at` values.

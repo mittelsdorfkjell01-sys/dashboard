@@ -57,9 +57,15 @@ def test_coverage_reports_country_timing_missing_metadata_duplicates_and_errors(
         [german, duplicate, french], observations, [state], now=NOW
     )
     assert report["active_station_records"] == 3
-    assert report["active_unique_stations"] == 2
-    assert report["active_wind_stations_by_country"] == {"DE": 1, "FR": 1}
-    assert report["duplicates"] == [["dwd:DE-1", "awc_metar:DE-ALIAS"]]
+    assert report["active_unique_stations"] == 3
+    assert report["active_confirmed_unique_stations"] == 3
+    assert report["verified_independent_stations"] is None
+    assert report["active_wind_stations_by_country"] == {"DE": 2, "FR": 1}
+    assert report["duplicates"] == []
+    assert report["identity_candidates"] == [{
+        "stations": ["dwd:DE-1", "awc_metar:DE-ALIAS"],
+        "reasons": ["shared_icao_sensor_unproven", "spatial_proximity"],
+    }]
     assert report["missing_elevation"] == ["awc_metar:FR-1"]
     assert report["missing_measurement_height"] == ["awc_metar:FR-1"]
     assert report["providers"]["dwd"]["typical_interval_minutes"] == 10

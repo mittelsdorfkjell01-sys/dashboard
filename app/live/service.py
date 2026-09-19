@@ -472,6 +472,7 @@ def _latest_measurement(
         spot_id,
         now=now,
         wind_direction_deg=wind_direction_deg,
+        purpose="measurement",
     )
     selected = selection.selected
     if (
