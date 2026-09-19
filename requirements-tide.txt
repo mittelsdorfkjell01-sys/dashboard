@@ -4,4 +4,4 @@
 # api/requirements.txt or the Vercel request function.
 pyfes==2026.3.1
 netCDF4>=1.7,<2
-timezonefinder>=8,<9
+timezonefinder>=8.3.0,<9
