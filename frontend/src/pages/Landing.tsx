@@ -7,6 +7,7 @@ import TopSpotsRow from "../components/TopSpotsRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
 import { useSpots } from "../lib/hooks";
+import type { Spot } from "../lib/types";
 import { getSpotCatalogVersion } from "../lib/api";
 import { MapIcon } from "../lib/icons";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
@@ -52,7 +53,6 @@ export default function Landing() {
   const mobileSearchTriggerRef = useRef<HTMLButtonElement | null>(null);
   const knownCatalogVersion = useRef<string>();
   const [catalogVersion, setCatalogVersion] = useState<string>();
-  const [catalogReady, setCatalogReady] = useState(false);
   const desktopSearch = useDesktopViewport();
   const openSearch = (trigger: HTMLButtonElement) => {
     mobileSearchTriggerRef.current = trigger;
@@ -92,11 +92,13 @@ export default function Landing() {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
-  // Hero curation is editorial state, so the seven-day persisted catalogue and
-  // the unversioned edge response must not decide which photos rotate. Resolve
-  // the current catalogue version first and keep checking it while the landing
-  // page is open. A changed hero_reel flag updates Spot.updated_at, producing a
-  // new immutable request URL and replacing the reel without a hard refresh.
+  // Hero curation is editorial state, so the unversioned edge copy that paints
+  // the reel on first load must not remain authoritative. Resolve the current
+  // catalogue version and keep checking it while the landing page is open: the
+  // token upgrades the spot request to the immutable versioned URL, so any hero
+  // curation change becomes authoritative within a moment of first paint. A
+  // changed hero_reel flag updates Spot.updated_at, producing a new immutable
+  // request URL and replacing the reel without a hard refresh.
   useEffect(() => {
     let cancelled = false;
     let timer: number | undefined;
@@ -120,7 +122,6 @@ export default function Landing() {
             setCatalogVersion(fallbackVersion);
           }
         } finally {
-          if (!cancelled) setCatalogReady(true);
           versionRequest = null;
         }
       })();
@@ -153,11 +154,29 @@ export default function Landing() {
   // Fetch all published records so a curated photo beyond the first 100 spots
   // cannot disappear from the reel. Only the first 20 cards mount initially,
   // keeping their immediate image requests bounded.
-  const { data: allSpots, loading: spotsLoading } = useSpots(
-    { limit: 500, catalog_version: catalogVersion },
-    catalogReady,
-  );
-  const spots = allSpots ?? [];
+  //
+  // Start immediately with the *unversioned* URL rather than waiting for the
+  // catalogue version to resolve: `/spots/version` carries only a 60s edge
+  // window, so on a cold visit it wakes the serverless function + Postgres and,
+  // when it gated this request, that cold round-trip sat squarely in front of
+  // the hero photo — the reported "hero takes a while to appear" on first load.
+  // The unversioned list is edge-cached six hours (set_public_cache), so it
+  // paints the reel almost immediately; once the version token arrives the
+  // request upgrades to the immutable, always-current versioned URL and the reel
+  // corrects itself. Curation therefore stays authoritative while first paint no
+  // longer blocks on a cold token lookup.
+  const { data: allSpots, loading: spotsLoading } = useSpots({
+    limit: 500,
+    catalog_version: catalogVersion,
+  });
+  // Hold the most recent non-empty catalogue so the moment the request key
+  // switches from the unversioned copy to the versioned one (SWR has no entry
+  // for the new key yet) the hero and grid keep their content instead of
+  // blanking back to the dark hero field for a frame.
+  const [spots, setSpots] = useState<Spot[]>([]);
+  useEffect(() => {
+    if (allSpots) setSpots(allSpots);
+  }, [allSpots]);
   const visibleSpots = spots.slice(0, visibleSpotLimit);
 
   // Reveal the next batch off the main thread so the tap (and each subsequent
