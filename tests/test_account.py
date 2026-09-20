@@ -95,7 +95,7 @@ def test_register_duplicate_email_has_generic_response(anon_client):
 
 def test_register_weak_password_rejected(anon_client):
     """Rejection moved from the app-layer 400 (policy message) to the schema
-    min_length=12 → 422. Either way the client sees the same red X, the code
+    min_length=8 → 422. Either way the client sees the same red X, the code
     just tells them why more precisely."""
     resp = anon_client.post("/account/register", json={
         "email": f"weak-{uuid.uuid4().hex[:8]}@example.com",

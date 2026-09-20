@@ -268,7 +268,7 @@ function PasswordForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => vo
       <Field label="Aktuelles Passwort">
         <Input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} autoComplete="current-password" />
       </Field>
-      <Field label="Neues Passwort" hint="Mindestens 12 Zeichen.">
+      <Field label="Neues Passwort" hint="Mindestens 8 Zeichen.">
         <Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" />
       </Field>
       <div className="flex flex-wrap items-center gap-3">

@@ -109,7 +109,7 @@ export default function Auth() {
               required
             />
           </Field>
-          <Field label="Passwort" required hint={mode === "register" ? "Mindestens 12 Zeichen." : undefined}>
+          <Field label="Passwort" required hint={mode === "register" ? "Mindestens 8 Zeichen." : undefined}>
             <Input
               type="password"
               value={password}

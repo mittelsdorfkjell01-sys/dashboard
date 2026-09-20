@@ -31,7 +31,7 @@ router = APIRouter(prefix="/account", tags=["account"])
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=12, max_length=1024)
+    password: str = Field(min_length=8, max_length=1024)
     display_name: str = Field(default="", alias="displayName", max_length=120)
 
     model_config = {"populate_by_name": True}
@@ -51,7 +51,7 @@ class ProfilePatch(BaseModel):
 
 class PasswordChange(BaseModel):
     old_password: str = Field(alias="oldPassword", min_length=1, max_length=1024)
-    new_password: str = Field(alias="newPassword", min_length=12, max_length=1024)
+    new_password: str = Field(alias="newPassword", min_length=8, max_length=1024)
 
     model_config = {"populate_by_name": True}
 

@@ -265,6 +265,19 @@ class Settings(BaseSettings):
     weather_observation_cron_batch_size: int = 25
     weather_observation_retry_initial_seconds: int = Field(default=60, ge=10, le=3600)
     weather_observation_retry_max_seconds: int = Field(default=3600, ge=60, le=86400)
+    weather_station_catalog_bounds: tuple[float, float, float, float] = (
+        53.0, 56.5, 7.5, 12.5
+    )
+    weather_station_catalog_spot_limit: int = Field(default=100, ge=1, le=1000)
+    weather_station_catalog_candidate_limit: int = Field(default=30, ge=1, le=100)
+    weather_station_catalog_max_km: float = Field(default=250.0, gt=0, le=1000)
+    weather_station_catalog_retry_initial_seconds: int = Field(
+        default=900, ge=60, le=86400
+    )
+    weather_station_catalog_retry_max_seconds: int = Field(
+        default=21600, ge=300, le=172800
+    )
+    weather_station_catalog_late_hours: int = Field(default=36, ge=2, le=168)
     weather_verification_lookback_days: int = 45
 
     # LiveWind is calculated durably in shadow by default. Only pilot/regional
@@ -423,7 +436,7 @@ class Settings(BaseSettings):
     # get the shorter jwt_ttl_hours above.
     app_jwt_ttl_hours: int = 720  # 30 days
     # Minimum password length enforced on registration / change (mirrors the FE).
-    app_password_min_length: int = 12
+    app_password_min_length: int = 8
     ugc_personal_data_retention_days: int = 90
     # Terminal image rows remain available to daily moderation first, then move
     # into a compressed, privacy-reduced evidence table in bounded batches.
