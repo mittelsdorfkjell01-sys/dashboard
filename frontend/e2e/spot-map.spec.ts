@@ -43,13 +43,24 @@ async function mockBackend(page: import("@playwright/test").Page, spot = spotDet
   );
 }
 
-test("spot map renders with real coordinates and legend", async ({ page }) => {
+test("spot map renders with real coordinates and legend", async ({ page }, testInfo) => {
   // The Daten-page rebuild (Figma Frame 67) shows a static map preview with no
   // layer mode-switch, so this only asserts the map + legend render.
   await mockBackend(page);
   await page.goto(`/spot/spot-map-test/daten`);
 
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
+  const embeddedMap = page.getByRole("region", { name: "Karte und Livewind" });
+  const embeddedLegend = embeddedMap.getByText("Wind (kt)");
+  if (testInfo.project.name === "chromium-mobile") {
+    await expect(embeddedLegend).toBeHidden();
+    await page.getByRole("button", { name: "Windkarte im Vollbild öffnen" }).click();
+    const fullscreen = page.getByRole("dialog", { name: "Windkarte im Vollbild" });
+    await expect(fullscreen.getByText("Wind (kt)")).toBeVisible();
+    await fullscreen.getByRole("button", { name: "Vollbild schließen" }).click();
+    await expect(fullscreen).toHaveCount(0);
+  } else {
+    await expect(embeddedLegend).toBeVisible();
+  }
   await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
   const sport = page.locator(".daten-dark").getByText("Kitesurfen", { exact: true });
   await expect(sport.locator("circle")).toHaveCount(0);
