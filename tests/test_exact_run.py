@@ -25,6 +25,7 @@ from app.weather.exact_run import (
 from app.weather.model_error import StationModelBaseline, calculate_station_model_error
 from app.weather.live_wind_rollout import verification_evidence_reasons
 from app.weather.vectors import uv_to_wind, wind_to_uv
+from scripts.exact_run_worker import exact_capture_status
 
 
 UTC = timezone.utc
@@ -110,6 +111,21 @@ def test_exact_bundle_is_first_seen_as_of_and_idempotently_cached(tmp_path):
         valid_at=OBS-timedelta(minutes=15), latitude=54.2, longitude=10.2,
         as_of=OBS,
     ).bundle_hash
+
+
+def test_exact_capture_status_reports_each_required_model(tmp_path):
+    exact_loader, _, _ = loader(tmp_path)
+    assert exact_capture_status(exact_loader, now=FIRST_SEEN)["status"] == "alert"
+
+    capture_pair(exact_loader)
+    healthy = exact_capture_status(exact_loader, now=FIRST_SEEN + timedelta(hours=1))
+    assert healthy["status"] == "healthy"
+    assert set(healthy["models"]) == {"gfs-0p25", "icon-eu"}
+    assert all(item["assets"] > 0 for item in healthy["models"].values())
+
+    stale = exact_capture_status(exact_loader, now=FIRST_SEEN + timedelta(hours=11))
+    assert stale["status"] == "alert"
+    assert {item["model"] for item in stale["alerts"]} == {"gfs-0p25", "icon-eu"}
 
 
 def test_station_and_target_share_exact_bundle_and_uv_residual(tmp_path, monkeypatch):

@@ -36,6 +36,26 @@ def station_report(db, *, now: datetime | None = None) -> dict:
     cycles = db.scalars(select(WeatherStationCaptureCycle).where(
         WeatherStationCaptureCycle.started_at >= now - timedelta(days=1)
     )).all()
+    cycle_status = {}
+    for item in sorted(cycles, key=lambda row: (row.started_at, str(row.id))):
+        key = f"{item.job_type}:{item.provider}"
+        state = cycle_status.setdefault(
+            key,
+            {
+                "last_started_at": None,
+                "last_finished_at": None,
+                "last_success_at": None,
+                "last_status": None,
+                "failures_24h": 0,
+            },
+        )
+        state["last_started_at"] = item.started_at.isoformat()
+        state["last_finished_at"] = item.finished_at.isoformat()
+        state["last_status"] = item.status
+        if item.status in {"success", "no_work"}:
+            state["last_success_at"] = item.finished_at.isoformat()
+        if item.status in {"error", "partial"}:
+            state["failures_24h"] += 1
     groups = duplicate_station_groups(stations)
     candidates = spatial_duplicate_candidates(stations)
     current_epoch_ids = {item.current_epoch_id for item in stations if item.current_epoch_id}
@@ -226,6 +246,7 @@ def station_report(db, *, now: datetime | None = None) -> dict:
                     (item.job_type, item.provider, item.status) for item in cycles
                 ).items())
             },
+            "cycle_status": cycle_status,
         },
         "station_records_by_country_provider": [
             {"country": country, "provider": provider, "count": count}
@@ -362,6 +383,11 @@ def station_report(db, *, now: datetime | None = None) -> dict:
                 )([round((item.received_at - item.observed_at).total_seconds() / 60, 1)
                    for item in observations if item.received_at and
                    getattr(by_id.get(item.station_id), "provider", None) == provider]),
+                "operational_observations_24h": sum(
+                    item.availability_class == "captured_operationally"
+                    and getattr(by_id.get(item.station_id), "provider", None) == provider
+                    for item in observations
+                ),
             }
             for provider in sorted({item.provider for item in stations} | {item.provider for item in states})
         },

@@ -45,6 +45,34 @@ worker checks that the database name exactly equals
 `LIVE_WIND_CAPTURE_ENVIRONMENT_ID`; the environment ID must use an allowed
 non-production prefix. No public/API JWT or production database secret is used.
 
+For the preferred host-local scheduler, put the same values in a root-owned
+`/etc/surfwind/live-wind-capture.env` (`chmod 600`) and also set:
+
+```text
+LIVE_WIND_REPOSITORY_DIR=/srv/surfwind/dashboard
+LIVE_WIND_DEPLOYED_COMMIT=<reviewed full commit SHA>
+```
+
+Install `ops/systemd/*.service` and `ops/systemd/*.timer` in
+`/etc/systemd/system`. The services share a nonblocking lock, verify the pinned
+clean checkout, run the cross-job cache proof, and preserve the required order.
+Enable timers only after both bootstrap jobs and the manual first cycle pass:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now surfwind-station-catalog.timer
+sudo systemctl start surfwind-station-catalog.service
+sudo systemctl start surfwind-capture.service
+sudo systemctl enable --now surfwind-capture.timer surfwind-capture-doctor.timer
+systemctl list-timers 'surfwind-*'
+systemctl --failed 'surfwind-*'
+```
+
+`surfwind-capture-doctor.service` exits nonzero and becomes a visible systemd
+alarm when either provider has no fresh operational observations/catalog cycle
+or when either GFS/ICON asset inventory is missing or stale. Provider alerts
+remain separate; one healthy provider never hides another provider's gap.
+
 ## Checkout and migration proof
 
 On the authorised runner, record the output without credentials:

@@ -75,3 +75,9 @@ jobs:
       - name: Emit sanitized capture status
         if: always()
         run: python -m scripts.station_capture_worker status
+
+      - name: Fail visibly on stale model or provider capture
+        if: always()
+        run: |
+          python -m scripts.exact_run_worker status
+          python -m scripts.station_capture_worker doctor

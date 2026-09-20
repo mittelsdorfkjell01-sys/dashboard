@@ -9,6 +9,7 @@ LiveWind analyses, forecasts, or public activation state.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from urllib.parse import urlsplit
@@ -25,6 +26,55 @@ from app.weather.station_report import station_report
 
 
 PROVIDERS = ("dwd", "dmi")
+CATALOG_MAX_AGE_HOURS = 36
+OBSERVATION_MAX_AGE_MINUTES = 90
+CAPTURE_CYCLE_MAX_AGE_MINUTES = 30
+
+
+def capture_health(report: dict, *, now: datetime | None = None) -> dict:
+    """Evaluate provider-specific capture freshness without hiding gaps."""
+    instant = now or datetime.now(timezone.utc)
+    alerts = []
+    cycles = report.get("continuous_capture", {}).get("cycle_status", {})
+    catalogs = report.get("catalogs", {})
+    providers = report.get("providers", {})
+    cursors = report.get("provider_cursors", {})
+    for provider in PROVIDERS:
+        catalog = catalogs.get(provider)
+        if not catalog or catalog.get("last_success_at") is None:
+            alerts.append({"severity": "critical", "code": "catalog_never_succeeded", "provider": provider})
+        elif float(catalog.get("age_hours") or 0) > CATALOG_MAX_AGE_HOURS:
+            alerts.append({"severity": "critical", "code": "catalog_stale", "provider": provider})
+
+        metrics = providers.get(provider) or {}
+        if int(metrics.get("operational_observations_24h") or 0) == 0:
+            alerts.append({"severity": "critical", "code": "operational_observation_missing", "provider": provider})
+        age = metrics.get("latest_observation_age_minutes")
+        if age is None or float(age) > OBSERVATION_MAX_AGE_MINUTES:
+            alerts.append({"severity": "critical", "code": "observation_stale", "provider": provider})
+
+        cycle = cycles.get(f"observations:{provider}") or {}
+        last_success = cycle.get("last_success_at")
+        try:
+            cycle_age = (instant - datetime.fromisoformat(last_success)).total_seconds() / 60
+        except (TypeError, ValueError):
+            cycle_age = None
+        if cycle_age is None or cycle_age > CAPTURE_CYCLE_MAX_AGE_MINUTES:
+            alerts.append({"severity": "critical", "code": "observation_cycle_late", "provider": provider})
+        if int(cycle.get("failures_24h") or 0):
+            alerts.append({"severity": "warning", "code": "observation_cycle_failures", "provider": provider,
+                           "count": int(cycle["failures_24h"])})
+        if (cursors.get(provider) or {}).get("paused"):
+            alerts.append({"severity": "critical", "code": "provider_paused", "provider": provider})
+    return {
+        "status": "healthy" if not any(item["severity"] == "critical" for item in alerts) else "alert",
+        "thresholds": {
+            "catalog_max_age_hours": CATALOG_MAX_AGE_HOURS,
+            "observation_max_age_minutes": OBSERVATION_MAX_AGE_MINUTES,
+            "capture_cycle_max_age_minutes": CAPTURE_CYCLE_MAX_AGE_MINUTES,
+        },
+        "alerts": alerts,
+    }
 
 
 def validate_capture_environment(settings, environ: dict[str, str]) -> dict:
@@ -95,8 +145,10 @@ def run(command: str, *, limit: int = 25) -> dict:
                 dry_run=False,
                 capture_mode="operational",
             )
-        elif command == "status":
+        elif command in {"status", "doctor"}:
             result = station_report(db)
+            if command == "doctor":
+                result["capture_health"] = capture_health(result)
         elif command in {"pause", "resume"}:
             paused = command == "pause"
             for provider in PROVIDERS:
@@ -125,7 +177,7 @@ def run(command: str, *, limit: int = 25) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "command", choices=("catalog", "observations", "status", "pause", "resume")
+        "command", choices=("catalog", "observations", "status", "doctor", "pause", "resume")
     )
     parser.add_argument("--limit", type=int, default=25)
     args = parser.parse_args()
@@ -143,6 +195,11 @@ def main() -> None:
         print(json.dumps(report, sort_keys=True, default=str))
         raise SystemExit(1) from exc
     print(json.dumps(report, sort_keys=True, default=str))
+    if (
+        args.command == "doctor"
+        and report.get("result", {}).get("capture_health", {}).get("status") != "healthy"
+    ):
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

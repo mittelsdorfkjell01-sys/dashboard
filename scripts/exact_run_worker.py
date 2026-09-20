@@ -17,7 +17,12 @@ from sqlalchemy import func, select
 from app.config import get_settings
 from app.db.session import SessionLocal
 from app.models import Spot, WeatherStation
-from app.weather.exact_run import ExactRunAssetCache, ExactRunLoader, gfs_tile
+from app.weather.exact_run import (
+    EXPECTED_MODELS,
+    ExactRunAssetCache,
+    ExactRunLoader,
+    gfs_tile,
+)
 from app.weather.model_error import run_station_model_error_analysis
 
 
@@ -67,9 +72,45 @@ def capture_exact_cycle(db, loader: ExactRunLoader, *, now: datetime, limit: int
             "status": "available" if not errors else "provider_unavailable"}
 
 
+def exact_capture_status(loader: ExactRunLoader, *, now: datetime | None = None) -> dict:
+    """Report model-specific asset freshness from immutable cache manifests."""
+    instant = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    inventory = loader.cache.inventory()
+    models = {}
+    alerts = []
+    for model in EXPECTED_MODELS:
+        assets = [item for item in inventory if item.model == model]
+        first_seen = max(
+            (item.first_seen_at for item in assets if item.first_seen_at), default=None
+        )
+        age_hours = (
+            round((instant - first_seen).total_seconds() / 3600, 2)
+            if first_seen else None
+        )
+        models[model] = {
+            "assets": len(assets),
+            "latest_run_at": max((item.run_at for item in assets), default=None),
+            "latest_first_seen_at": first_seen,
+            "age_hours": age_hours,
+        }
+        if not assets:
+            alerts.append({"severity": "critical", "code": "model_assets_missing", "model": model})
+        elif first_seen is None:
+            alerts.append({"severity": "critical", "code": "model_first_seen_missing", "model": model})
+        elif age_hours is not None and age_hours > 10:
+            alerts.append({"severity": "critical", "code": "model_capture_stale", "model": model})
+    return {
+        "status": "healthy" if not alerts else "alert",
+        "generated_at": instant,
+        "freshness_threshold_hours": 10,
+        "models": models,
+        "alerts": alerts,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("capture", "residuals"))
+    parser.add_argument("stage", choices=("capture", "residuals", "status"))
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     cfg = get_settings()
@@ -88,7 +129,7 @@ def main() -> None:
             else:
                 result = capture_exact_cycle(db, loader, now=datetime.now(timezone.utc),
                                              limit=cfg.live_wind_exact_capture_tile_limit)
-        else:
+        elif args.stage == "residuals":
             result = run_station_model_error_analysis(
                 db, loader, limit=cfg.weather_observation_cron_batch_size,
                 dry_run=args.dry_run,
@@ -96,8 +137,10 @@ def main() -> None:
                 skip_exact_attempted=True,
                 require_exact=True,
             )
+        else:
+            result = exact_capture_status(loader)
     print(json.dumps(result, sort_keys=True, default=str))
-    if result.get("errors") or result.get("status") == "provider_unavailable":
+    if result.get("errors") or result.get("status") in {"provider_unavailable", "alert"}:
         raise SystemExit(1)
 
 

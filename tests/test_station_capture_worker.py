@@ -4,7 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from scripts.station_capture_worker import validate_capture_environment
+from datetime import datetime, timezone
+
+from scripts.station_capture_worker import capture_health, validate_capture_environment
 
 
 def _settings(**overrides):
@@ -65,3 +67,26 @@ def test_capture_environment_accepts_only_explicit_nonproduction_raw_identity():
 def test_capture_environment_fails_closed(settings, environment, error):
     with pytest.raises(ValueError, match=error):
         validate_capture_environment(settings, environment)
+
+
+def test_capture_health_keeps_provider_gaps_separate():
+    now = datetime(2026, 9, 20, 0, 0, tzinfo=timezone.utc)
+    report = {
+        "continuous_capture": {"cycle_status": {
+            "observations:dwd": {"last_success_at": "2026-09-19T23:50:00+00:00", "failures_24h": 0},
+        }},
+        "catalogs": {"dwd": {"last_success_at": "2026-09-19T02:00:00+00:00", "age_hours": 22}},
+        "providers": {"dwd": {"operational_observations_24h": 3, "latest_observation_age_minutes": 15}},
+        "provider_cursors": {"dwd": {"paused": False}},
+    }
+
+    health = capture_health(report, now=now)
+
+    assert health["status"] == "alert"
+    assert not [item for item in health["alerts"] if item.get("provider") == "dwd"]
+    assert {item["code"] for item in health["alerts"] if item.get("provider") == "dmi"} == {
+        "catalog_never_succeeded",
+        "operational_observation_missing",
+        "observation_stale",
+        "observation_cycle_late",
+    }
