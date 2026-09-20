@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
@@ -7,6 +7,55 @@ import type { Spot } from "../lib/types";
 
 const ADVANCE_MS = 60000;
 const MAX_SLIDES = 12;
+
+// The landing spot list is fetched with a catalogue-version token, which forces
+// the non-persistent SWR path (see useSpots). That means the reel would sit on
+// the dark fallback until a full 500-record fetch returns on *every* reload —
+// the "hero takes especially long" report. Persist just the curated reel here
+// so a returning visitor paints a real hero the instant the component mounts,
+// exactly like the rest of the app hydrates from its cache; the fresh list then
+// corrects it in the background.
+const REEL_CACHE_KEY = "swd.hero-reel.v1";
+
+function loadCachedReel(): Spot[] {
+  try {
+    const raw = localStorage.getItem(REEL_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Spot[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCachedReel(slides: Spot[]): void {
+  try {
+    localStorage.setItem(REEL_CACHE_KEY, JSON.stringify(slides));
+  } catch {
+    /* private browsing / quota — the reel still works for this session */
+  }
+}
+
+/** Deterministic Fisher–Yates shuffle. A fixed per-mount seed gives a fresh
+ * order on each page load while staying stable across re-renders — and, because
+ * it depends only on the seed and the input order, the swap from the cached reel
+ * to the freshly fetched one (same spots, same order) keeps the same sequence,
+ * so the hero on screen never jumps when the live list arrives. */
+function shuffleWithSeed<T>(items: readonly T[], seed: number): T[] {
+  const result = [...items];
+  let state = seed >>> 0;
+  const random = () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 /** The admin selection is authoritative: unselected hero images must never
  * leak into the landing reel, including when the selection is empty. */
@@ -38,9 +87,31 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
+  // A fresh order every load (see shuffleWithSeed), fixed for this mount so the
+  // reel never reshuffles under the auto-advance.
+  const [seed] = useState(() => Math.floor(Math.random() * 0x100000000));
+
   // Only real hero photos explicitly curated in the admin Hero tab may enter
   // the reel. An empty selection deliberately uses the static brand hero.
-  const slides = useMemo(() => selectLandingHeroSlides(spots), [spots]);
+  const liveSlides = useMemo(() => selectLandingHeroSlides(spots), [spots]);
+
+  // Read the persisted reel once at mount, as an instant fallback while the live
+  // catalogue is still in flight.
+  const cachedSlidesRef = useRef<Spot[] | null>(null);
+  if (cachedSlidesRef.current === null) {
+    cachedSlidesRef.current = selectLandingHeroSlides(loadCachedReel());
+  }
+
+  // Persist the curated reel (in catalogue order, before shuffling) so the next
+  // load can paint it immediately.
+  useEffect(() => {
+    if (liveSlides.length > 0) saveCachedReel(liveSlides);
+  }, [liveSlides]);
+
+  const slides = useMemo(() => {
+    const source = liveSlides.length > 0 ? liveSlides : cachedSlidesRef.current!;
+    return shuffleWithSeed(source, seed);
+  }, [liveSlides, seed]);
   const count = slides.length;
   const [index, setIndex] = useState(0);
 
