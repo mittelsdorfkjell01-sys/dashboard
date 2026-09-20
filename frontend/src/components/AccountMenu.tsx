@@ -13,6 +13,7 @@ import {
 } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import { initialsOf } from "../lib/initials";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import ThemeToggle from "./ThemeToggle";
 
 interface NavItem {
@@ -44,6 +45,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const desktop = useDesktopViewport();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -77,8 +79,12 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
         </span>
       </button>
 
-      {/* Desktop (sm+): dropdown. */}
-      {open && (
+      {/* Only the variant for the current breakpoint is mounted. Rendering both
+          at once (CSS-hidden) kept the desktop dropdown's document `mousedown`
+          outside-click listener alive on mobile: a tap on the portaled sheet
+          counted as "outside", closing the menu on mousedown so the link's
+          click never fired — the sheet just closed and no navigation happened. */}
+      {open && desktop && (
         <DesktopDropdown
           user={user}
           onClose={close}
@@ -88,8 +94,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
         />
       )}
 
-      {/* Mobile (<sm): full-screen sheet. */}
-      {open && (
+      {open && !desktop && (
         <MobileSheet
           user={user}
           onClose={close}
