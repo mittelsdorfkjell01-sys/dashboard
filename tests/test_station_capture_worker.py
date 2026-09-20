@@ -6,7 +6,12 @@ import pytest
 
 from datetime import datetime, timezone
 
-from scripts.station_capture_worker import capture_health, validate_capture_environment
+from scripts.station_capture_worker import (
+    capture_command_status,
+    capture_doctor_report,
+    capture_health,
+    validate_capture_environment,
+)
 
 
 def _settings(**overrides):
@@ -90,3 +95,42 @@ def test_capture_health_keeps_provider_gaps_separate():
         "observation_stale",
         "observation_cycle_late",
     }
+
+
+def test_capture_doctor_contract_is_bounded():
+    """The frequent doctor must not emit the potentially huge review queue."""
+    source = {
+        "generated_at": "2026-09-20T00:00:00+00:00",
+        "continuous_capture": {"cycle_status": {}},
+        "providers": {},
+        "catalogs": {},
+        "provider_cursors": {},
+        "operational_observations_24h": 0,
+        "historical_backfill_observations_24h": 0,
+        "station_epochs": 300,
+        "pending_epoch_review": 300,
+        "unknown_measurement_height": 300,
+        "dossiers": 0,
+        "monitoring_approved": 0,
+        "residual_approved": 0,
+        "holdout_target_approved": 0,
+        "holdout_input_approved": 0,
+        "expected_residual_yield_24h": 0,
+        "station_review_queue": [{"large": "payload"}],
+    }
+
+    result = capture_doctor_report(source)
+
+    assert "station_review_queue" not in result
+    assert result["station_epochs"] == 300
+    assert result["capture_health"]["status"] == "alert"
+
+
+def test_capture_command_status_propagates_doctor_health():
+    assert capture_command_status(
+        "doctor", {"capture_health": {"status": "alert"}}
+    ) == "alert"
+    assert capture_command_status(
+        "doctor", {"capture_health": {"status": "healthy"}}
+    ) == "ok"
+    assert capture_command_status("status", {}) == "ok"

@@ -77,6 +77,37 @@ def capture_health(report: dict, *, now: datetime | None = None) -> dict:
     }
 
 
+def capture_doctor_report(source: dict) -> dict:
+    """Bound frequent health output; detailed review queues stay in daily status."""
+    keys = (
+        "continuous_capture",
+        "providers",
+        "catalogs",
+        "operational_observations_24h",
+        "historical_backfill_observations_24h",
+        "station_epochs",
+        "pending_epoch_review",
+        "unknown_measurement_height",
+        "dossiers",
+        "monitoring_approved",
+        "residual_approved",
+        "holdout_target_approved",
+        "holdout_input_approved",
+        "expected_residual_yield_24h",
+    )
+    return {
+        "generated_at": source["generated_at"],
+        "capture_health": capture_health(source),
+        **{key: source[key] for key in keys},
+    }
+
+
+def capture_command_status(command: str, result: dict) -> str:
+    if command == "doctor" and result["capture_health"]["status"] != "healthy":
+        return "alert"
+    return "ok"
+
+
 def validate_capture_environment(settings, environ: dict[str, str]) -> dict:
     """Return a sanitized identity or fail before any provider/DB mutation."""
     if settings.app_env == "production":
@@ -145,10 +176,11 @@ def run(command: str, *, limit: int = 25) -> dict:
                 dry_run=False,
                 capture_mode="operational",
             )
-        elif command in {"status", "doctor"}:
+        elif command == "status":
             result = station_report(db)
-            if command == "doctor":
-                result["capture_health"] = capture_health(result)
+        elif command == "doctor":
+            source = station_report(db)
+            result = capture_doctor_report(source)
         elif command in {"pause", "resume"}:
             paused = command == "pause"
             for provider in PROVIDERS:
@@ -163,7 +195,7 @@ def run(command: str, *, limit: int = 25) -> dict:
         else:
             raise ValueError("unsupported_capture_command")
     return {
-        "status": "ok",
+        "status": capture_command_status(command, result),
         "identity": identity,
         "command": command,
         "result": result,
