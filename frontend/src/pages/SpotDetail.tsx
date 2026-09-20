@@ -119,7 +119,9 @@ export default function SpotDetail() {
     return () => observer.disconnect();
   }, [activeTab, loading, mapReady]);
 
-  const goBack = () => (location.key !== "default" ? navigate(-1) : navigate("/map"));
+  // From a spot page the back arrow always returns to the landing page,
+  // regardless of the active tab (Info/Daten) or how the visitor arrived.
+  const goBack = () => navigate("/");
 
   if (loading) {
     return (

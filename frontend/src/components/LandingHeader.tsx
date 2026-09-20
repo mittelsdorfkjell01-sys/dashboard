@@ -23,6 +23,7 @@ export default function LandingHeader({
   mobileSpotControls = false,
   onMobileSearch,
   onLight = false,
+  showMenu = false,
 }: {
   left?: ReactNode;
   /** `"body"` snaps the bar to the 1180px content column (spot page). */
@@ -31,6 +32,8 @@ export default function LandingHeader({
   sticky?: boolean;
   /** Reduce the mobile spot hero chrome to back + menu only. */
   mobileSpotControls?: boolean;
+  /** The account/burger menu lives on the landing page only. */
+  showMenu?: boolean;
   /** Landing only: once scrolled, a compact search pill docks into the header
    *  (mobile), replacing the wordmark next to the menu. Tapping it fires this. */
   onMobileSearch?: (trigger: HTMLButtonElement) => void;
@@ -246,7 +249,7 @@ export default function LandingHeader({
               </Link>
             )}
 
-            <AccountMenu bareOnMobile={mobileSpotControls} />
+            {showMenu && <AccountMenu bareOnMobile={mobileSpotControls} />}
           </div>
         </div>
       </div>

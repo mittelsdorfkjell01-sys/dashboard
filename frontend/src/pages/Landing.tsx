@@ -206,7 +206,7 @@ export default function Landing() {
 
   return (
     <div className="relative bg-page">
-      <LandingHeader sticky onMobileSearch={openSearch} />
+      <LandingHeader sticky showMenu onMobileSearch={openSearch} />
 
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
           it paints above the page's white background but below the search bar).
