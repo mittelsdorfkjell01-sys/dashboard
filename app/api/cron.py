@@ -30,6 +30,23 @@ def _require_cron(request: Request) -> None:
     logger.info("cron_auth_accepted")
 
 
+def _maintenance_cron_skipped() -> dict | None:
+    """Skip response for a duplicate Vercel-scheduled maintenance cron.
+
+    The climatology / wind-climatology crons are registered on every project
+    that deploys the shared root ``vercel.json`` — both the public and the admin
+    Vercel projects. The work must happen on exactly one of them (the public
+    deployment, which owns the database the read endpoints serve). On any other
+    deployment ``RUN_MAINTENANCE_CRONS=false`` turns the invocation into an
+    immediate no-op so it costs no serverless function time. Returns a body when
+    the run should be skipped, or ``None`` when it should proceed.
+    """
+    if not get_settings().run_maintenance_crons:
+        logger.info("cron_maintenance_skipped_on_this_deployment")
+        return {"status": "skipped", "reason": "run_maintenance_crons_disabled"}
+    return None
+
+
 @router.post(
     "/weather-shadow",
     dependencies=[Depends(_require_cron)],
@@ -77,6 +94,10 @@ def maintain_climatology(
     batch of old terminal image cases, so media maintenance needs no second
     scheduled endpoint.
     """
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
+
     from app.media.budget import sweep_expired
     result = {}
     try:
@@ -194,6 +215,19 @@ def collect_observations(db: Session = Depends(get_db)) -> dict:
         return {"error": "internal_error"}
 
 
+@router.get("/station-catalog", dependencies=[Depends(_require_cron)])
+def refresh_station_catalog(db: Session = Depends(get_db)) -> dict:
+    """Refresh station metadata independently from observation capture."""
+    try:
+        from app.weather.station_catalog_job import run_station_catalog_refresh
+
+        return run_station_catalog_refresh(db, dry_run=False)
+    except Exception:
+        db.rollback()
+        logger.exception("cron_station_catalog_refresh_failed")
+        return {"error": "internal_error"}
+
+
 @router.get("/verification", dependencies=[Depends(_require_cron)])
 def run_verification(db: Session = Depends(get_db)) -> dict:
     """Refresh model calibration stats and the raw-forecast verification scores.
@@ -282,6 +316,10 @@ def maintain_wind_climatology(
     uses the same database as the read endpoint. Provider I/O is capped to a
     small batch; repeated cron invocations drain the full published catalogue.
     """
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
+
     from app.models import WindClimatologyRun
     from app.wind_climatology.service import backfill, process
 

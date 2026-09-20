@@ -111,6 +111,17 @@ class Settings(BaseSettings):
     # server-side pooler (e.g. Neon's pooled endpoint). False => normal pool.
     db_serverless: bool = False
 
+    # The two Vercel-scheduled maintenance crons (climatology, wind-climatology)
+    # are defined once in the shared root vercel.json, so BOTH the public and the
+    # admin Vercel projects register and fire them — doubling the heaviest
+    # serverless work (real provider I/O + DB writes at 1 GB) against the same
+    # database. They must run on exactly one deployment: the public one, which
+    # owns the database the read endpoints serve (see maintain_wind_climatology).
+    # Leave this True everywhere except the admin project, where
+    # RUN_MAINTENANCE_CRONS=false makes its duplicate invocation return at once
+    # and cost no function time. Defaults True so local/dev/tests are unaffected.
+    run_maintenance_crons: bool = True
+
     @field_validator("database_url", "test_database_url", mode="after")
     @classmethod
     def _pin_pg_driver(cls, v: str) -> str:

@@ -699,6 +699,30 @@ def test_wind_climatology_cron_processes_a_bounded_pending_batch(
     assert processed == [run.id]
 
 
+def test_maintenance_crons_skip_when_disabled_on_this_deployment(admin, monkeypatch):
+    """RUN_MAINTENANCE_CRONS=false makes the duplicate Vercel cron a no-op.
+
+    The climatology / wind-climatology crons are registered on every project
+    that deploys the shared root vercel.json, so the admin project fires them
+    too. With the flag off they must return an authenticated, immediate skip —
+    no provider I/O, no DB work — so they cost no serverless function time."""
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "cron_secret", "cron-test-secret")
+    monkeypatch.setattr(get_settings(), "run_maintenance_crons", False)
+    headers = {"Authorization": "Bearer cron-test-secret"}
+
+    for path in ("/cron/climatology", "/cron/wind-climatology"):
+        # Still secret-guarded so an unauthenticated caller cannot probe it.
+        assert admin.get(path).status_code == 401
+        response = admin.get(path, headers=headers)
+        assert response.status_code == 200, response.text
+        assert response.json() == {
+            "status": "skipped",
+            "reason": "run_maintenance_crons_disabled",
+        }
+
+
 def test_wind_climatology_only_caches_ready_public_data(admin, region_id, db):
     from app.api._http_cache import PUBLIC_CACHE_CONTROL
     from app.models import Spot
