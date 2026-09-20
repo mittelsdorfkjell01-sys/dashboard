@@ -412,7 +412,8 @@ class ExactRunAssetCache:
             else:
                 lock.unlink(missing_ok=True)
 
-    def assets(self, *, model: str, domain: str) -> tuple[ExactAsset, ...]:
+    def inventory(self) -> tuple[ExactAsset, ...]:
+        """Return every readable immutable asset, ignoring broken manifests."""
         result = []
         root = self.root / "manifests"
         if not root.exists():
@@ -422,9 +423,14 @@ class ExactRunAssetCache:
                 item = ExactAsset.from_manifest(json.loads(path.read_text(encoding="utf-8")))
             except (OSError, ValueError, KeyError, TypeError, ExactAssetError):
                 continue
-            if item.model == model and item.domain == domain:
-                result.append(item)
+            result.append(item)
         return tuple(sorted(result, key=lambda item: (item.run_at, item.valid_at, item.field, item.key)))
+
+    def assets(self, *, model: str, domain: str) -> tuple[ExactAsset, ...]:
+        return tuple(
+            item for item in self.inventory()
+            if item.model == model and item.domain == domain
+        )
 
 
 @dataclass(frozen=True)

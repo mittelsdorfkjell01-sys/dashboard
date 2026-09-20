@@ -137,6 +137,8 @@ def test_station_import_invalidates_the_measurement_cache_layer(db):
         cache.set(public_measurement_key(spot.id), {"stale": True}, 1800)
         rows = [normalize_observation(provider="dwd", station_id="00099",
                                       observed_at=datetime.now(timezone.utc),
+                                      received_at=datetime.now(timezone.utc),
+                                      imported_at=datetime.now(timezone.utc),
                                       wind_speed_ms=7.0, wind_direction_deg=180.0,
                                       provider_quality="1")]
         report = persist_batch(db, station, rows, cache=cache, dry_run=False)

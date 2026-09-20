@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import io
 import zipfile
 
@@ -34,7 +34,7 @@ def test_dmi_station_parser(monkeypatch):
     assert station.wigos_id == "0-20000-0-06123" and station.icao_id == "EKXX"
     assert station.measurement_height_m == 10
     assert station.license == "CC BY 4.0"
-    assert station.country_code == "DK"
+    assert station.country_code is None  # source fixture has no country field
     assert station.commercial_reuse is True
     assert station.attribution_required is True
 
@@ -56,7 +56,7 @@ def test_dmi_observations_are_joined_by_timestamp(monkeypatch):
     assert row.station_identity == "dmi:06123"
     assert row.wind_u_ms is not None and row.wind_v_ms is not None
     assert row.gust_period_seconds == 600
-    assert row.measurement_height_m == 10
+    assert row.measurement_height_m is None  # no per-sensor height in response
     assert row.provider_quality == "good"
     assert row.received_at.tzinfo == timezone.utc
     assert row.imported_at.tzinfo == timezone.utc
@@ -104,6 +104,21 @@ def test_dwd_preserves_rejected_and_quarantined_rows_and_deduplicates():
     assert any(row.raw_payload["MESS_DATUM"] == "bad-time" for row in rows)
     accepted = next(row for row in rows if row.import_status == "accepted")
     assert accepted.wind_direction_deg == 0
+
+
+def test_dwd_delayed_publication_preserves_real_receipt_latency():
+    rows = parse_now_zip(
+        _dwd_zip(
+            "STATIONS_ID;MESS_DATUM;QN;FF_10;DD_10;eor\n"
+            "00042;202609201200;1;7.5;270;eor\n"
+        ),
+        station_id="00042",
+        fetched_at=datetime(2026, 9, 20, 12, 34, tzinfo=timezone.utc),
+    )
+
+    assert len(rows) == 1
+    assert rows[0].received_at - rows[0].observed_at == timedelta(minutes=34)
+    assert rows[0].import_status == "accepted"
 
 
 def test_knmi_key_is_required():

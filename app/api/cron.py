@@ -194,6 +194,19 @@ def collect_observations(db: Session = Depends(get_db)) -> dict:
         return {"error": "internal_error"}
 
 
+@router.get("/station-catalog", dependencies=[Depends(_require_cron)])
+def refresh_station_catalog(db: Session = Depends(get_db)) -> dict:
+    """Refresh station metadata independently from observation capture."""
+    try:
+        from app.weather.station_catalog_job import run_station_catalog_refresh
+
+        return run_station_catalog_refresh(db, dry_run=False)
+    except Exception:
+        db.rollback()
+        logger.exception("cron_station_catalog_refresh_failed")
+        return {"error": "internal_error"}
+
+
 @router.get("/verification", dependencies=[Depends(_require_cron)])
 def run_verification(db: Session = Depends(get_db)) -> dict:
     """Refresh model calibration stats and the raw-forecast verification scores.

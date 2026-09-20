@@ -17,6 +17,7 @@ from app.models import (
     WeatherObservationImportState,
     WeatherStation,
 )
+from app.weather.observation_availability import observation_freshness
 from app.weather.providers.common import haversine_km
 from app.weather.station_identity import (
     duplicate_station_groups,
@@ -224,6 +225,7 @@ def _hard_reasons(
     *,
     now: datetime,
     policy: StationSelectionPolicy,
+    purpose: str,
 ) -> tuple[list[str], float | None, float | None]:
     station, observation = candidate.station, candidate.observation
     reasons = []
@@ -231,6 +233,13 @@ def _hard_reasons(
         reasons.append("station_inactive")
     if not getattr(station, "approved", False):
         reasons.append("station_unapproved")
+    if purpose == "residual":
+        if not getattr(station, "residual_approved", False):
+            reasons.append("station_residual_scope_unapproved")
+        if getattr(station, "identity_review_status", "unreviewed") != "passed":
+            reasons.append("station_identity_unreviewed")
+        if not getattr(station, "physical_station_group", None) or not getattr(station, "correlation_group", None):
+            reasons.append("station_dependency_group_unreviewed")
     if getattr(station, "blocked", False):
         reasons.append("station_blocked")
     if getattr(station, "representativeness_status", "unreviewed") != "passed":
@@ -250,6 +259,22 @@ def _hard_reasons(
         reasons.append("provider_quality_rejected")
     if observation is not None and getattr(observation, "import_status", None) != "accepted":
         reasons.append("import_rejected")
+    if observation is not None and purpose == "residual":
+        freshness = observation_freshness(
+            observation, analysis_cutoff_at=now, role="residual_source",
+            max_age_minutes=policy.max_age_minutes,
+        )
+        reasons.extend(freshness.reasons)
+        if getattr(observation, "qc_version", None) != "station-observation-qc-v1" or getattr(observation, "qc_flags", None):
+            reasons.append("observation_qc_unqualified")
+        if getattr(observation, "qc_stage", None) not in {"eligible_for_residuals", "eligible_for_holdout"}:
+            reasons.append("observation_qc_stage_unqualified")
+        received = _aware_utc(getattr(observation, "received_at", None))
+        imported = _aware_utc(getattr(observation, "imported_at", None))
+        if received is None or imported is None or received > now or imported > now:
+            reasons.append("observation_not_available_at_cutoff")
+    elif observation is not None and getattr(observation, "qc_version", None) and getattr(observation, "qc_flags", None):
+        reasons.append("observation_qc_unqualified")
 
     latitude = _finite(getattr(station, "latitude", None))
     longitude = _finite(getattr(station, "longitude", None))
@@ -432,15 +457,18 @@ def evaluate_station_candidates(
     *,
     now: datetime | None = None,
     policy: StationSelectionPolicy = DEFAULT_STATION_SELECTION_POLICY,
+    purpose: str = "residual",
 ) -> StationSelectionResult:
     """Gathered candidates -> hard gates -> scoring -> correlation limiting."""
+    if purpose not in {"measurement", "residual"}:
+        raise ValueError("station_selection_purpose_invalid")
     evaluated_at = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     hard = []
     distances = []
     elevation_differences = []
     for candidate in candidates:
         reasons, distance, difference = _hard_reasons(
-            candidate, target, now=evaluated_at, policy=policy
+            candidate, target, now=evaluated_at, policy=policy, purpose=purpose
         )
         hard.append(reasons)
         distances.append(distance)
@@ -572,6 +600,7 @@ def select_stations_for_spot(
     now: datetime | None = None,
     wind_direction_deg: float | None = None,
     policy: StationSelectionPolicy = DEFAULT_STATION_SELECTION_POLICY,
+    purpose: str = "residual",
 ) -> StationSelectionResult:
     """Load every configured candidate and only then run the common selector."""
     from geoalchemy2.shape import to_shape
@@ -667,4 +696,5 @@ def select_stations_for_spot(
         target,
         now=now,
         policy=policy,
+        purpose=purpose,
     )

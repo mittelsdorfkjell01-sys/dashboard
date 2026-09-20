@@ -50,14 +50,20 @@ test("spot map renders with real coordinates and legend", async ({ page }, testI
   await mockBackend(page);
   await page.goto(`/spot/spot-map-test/daten`);
 
+  const embeddedMap = page.getByRole("region", { name: "Karte und Livewind" });
+  const embeddedLegend = embeddedMap.getByText("Wind (kn)");
   await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
   if (isMobile) {
-    // On phones the embedded preview drops its badge + legend; a tap opens the
-    // fullscreen map (layer switch + time scrubber) instead.
-    await expect(page.getByRole("button", { name: "Windkarte im Vollbild öffnen" })).toBeVisible();
+    await expect(embeddedLegend).toBeHidden();
+    const openFullscreen = page.getByRole("button", { name: "Windkarte im Vollbild öffnen" });
+    await expect(openFullscreen).toBeVisible();
+    await openFullscreen.click();
+    const fullscreen = page.getByRole("dialog", { name: "Windkarte im Vollbild" });
+    await expect(fullscreen.getByText("Wind (kn)")).toBeVisible();
+    await fullscreen.getByRole("button", { name: "Vollbild schließen" }).click();
+    await expect(fullscreen).toHaveCount(0);
   } else {
-    // The legend follows the viewer's wind unit (default knots → "kn").
-    await expect(page.getByText("Wind (kn)")).toBeVisible();
+    await expect(embeddedLegend).toBeVisible();
   }
   const sport = page.locator(".daten-dark").getByText("Kitesurfen", { exact: true });
   await expect(sport.locator("circle")).toHaveCount(0);

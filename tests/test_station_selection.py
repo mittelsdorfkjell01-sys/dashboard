@@ -24,6 +24,10 @@ def station(identifier: str, *, lat=54.0, lon=10.0, **patch):
         measurement_height_m=10.0,
         active=True,
         approved=True,
+        residual_approved=True,
+        identity_review_status="passed",
+        physical_station_group=identifier,
+        correlation_group=identifier,
         blocked=False,
         representativeness_status="passed",
         setting_class="coastal",
@@ -51,6 +55,12 @@ def observation(*, age_minutes=5, speed=8.0, direction=270.0, **patch):
         wind_v_ms=v_ms,
         provider_quality="good",
         import_status="accepted",
+        qc_version="station-observation-qc-v1",
+        qc_stage="eligible_for_holdout",
+        qc_flags=[],
+        availability_class="captured_operationally",
+        received_at=NOW - timedelta(minutes=max(0, age_minutes - 1)),
+        imported_at=NOW - timedelta(minutes=max(0, age_minutes - 1)),
     )
     values.update(patch)
     return SimpleNamespace(**values)
@@ -100,6 +110,17 @@ def test_all_candidates_are_returned_with_components_and_versioned_configuration
     assert "station_blocked" in blocked.exclusion_reasons
 
 
+def test_measurement_visibility_does_not_grant_residual_eligibility():
+    reference = station("reference", residual_approved=False,
+                        identity_review_status="unreviewed")
+    reading = observation(qc_version=None, qc_flags=[])
+    candidate = StationCandidate(reference, reading)
+    assert evaluate_station_candidates([candidate], target(), now=NOW,
+                                       purpose="measurement").selected is not None
+    assert evaluate_station_candidates([candidate], target(), now=NOW,
+                                       purpose="residual").selected is None
+
+
 def test_coastal_transition_and_mountain_barrier_reduce_score():
     matching = station("matching", lon=10.2)
     inland = station("inland", lon=9.8, setting_class="inland")
@@ -139,7 +160,7 @@ def test_large_elevation_difference_and_stale_values_are_hard_excluded():
     assert result.selected is None
 
 
-def test_physical_duplicate_is_never_weighted_twice():
+def test_shared_icao_site_is_not_silently_treated_as_same_sensor():
     primary = station("airport-a", icao_id="EDDH")
     alias = station(
         "airport-b",
@@ -152,10 +173,11 @@ def test_physical_duplicate_is_never_weighted_twice():
         (primary, observation(age_minutes=4)),
         (alias, observation(age_minutes=5)),
     )
-    assert sum(item.eligible for item in result.candidates) == 1
-    duplicate = next(item for item in result.candidates if not item.eligible)
-    assert any(reason.startswith("duplicate_of:") for reason in duplicate.exclusion_reasons)
-    assert duplicate.total_weight == 0
+    assert sum(item.eligible for item in result.candidates) == 2
+    assert all(
+        not any(reason.startswith("duplicate_of:") for reason in item.exclusion_reasons)
+        for item in result.candidates
+    )
 
 
 def test_fallback_uses_second_best_after_nearest_station_fails_gate():

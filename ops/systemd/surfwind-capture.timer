@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule Surfwind nonproduction raw capture every ten minutes
+
+[Timer]
+OnCalendar=*-*-* *:03/10:00 UTC
+Persistent=true
+RandomizedDelaySec=20s
+AccuracySec=15s
+Unit=surfwind-capture.service
+
+[Install]
+WantedBy=timers.target

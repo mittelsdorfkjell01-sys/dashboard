@@ -29,6 +29,10 @@ def station(**patch):
         "id": uuid.uuid4(),
         "active": True,
         "approved": True,
+        "residual_approved": True,
+        "identity_review_status": "passed",
+        "physical_station_group": "fixture-physical",
+        "correlation_group": "fixture-correlation",
         "blocked": False,
         "representativeness_status": "passed",
     }
@@ -50,6 +54,12 @@ def observation(target_station, *, speed=12.0, direction=270.0, gust=15.0, **pat
         "gust_period_seconds": 600,
         "provider_quality": "good",
         "import_status": "accepted",
+        "qc_version": "station-observation-qc-v1",
+        "qc_stage": "eligible_for_holdout",
+        "qc_flags": [],
+        "availability_class": "captured_operationally",
+        "received_at": ANALYZED_AT,
+        "imported_at": ANALYZED_AT,
     }
     values.update(patch)
     return SimpleNamespace(**values)
@@ -327,6 +337,25 @@ def test_missing_model_member_is_visible_and_degrades_but_does_not_drop_result()
     assert "model_member_missing:ncep_gfs_global" in result.qc_reasons
     assert "single_model_member" in result.qc_reasons
     assert len(result.model_members) == 1
+
+
+def test_operational_origin_does_not_bypass_live_freshness_gate():
+    target = station()
+    measured = observation(
+        target,
+        received_at=OBSERVED_AT + timedelta(minutes=34),
+        imported_at=OBSERVED_AT + timedelta(minutes=34),
+    )
+
+    result = calculate_station_model_error(
+        target,
+        measured,
+        baseline(point("icon_eu", OBSERVED_AT)),
+        analyzed_at=OBSERVED_AT + timedelta(minutes=40),
+    )
+
+    assert result.qc_status == "rejected"
+    assert "observation_too_old_for_live_gate" in result.qc_reasons
 
 
 def test_reviewed_station_physics_changes_expected_vector_before_residual():

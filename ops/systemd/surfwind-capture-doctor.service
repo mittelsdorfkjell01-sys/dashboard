@@ -1,0 +1,16 @@
+[Unit]
+Description=Check Surfwind nonproduction capture freshness
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=surfwind
+Group=surfwind
+EnvironmentFile=/etc/surfwind/live-wind-capture.env
+RuntimeDirectory=surfwind-livewind
+RuntimeDirectoryPreserve=yes
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ExecStart=/usr/bin/flock --nonblock /run/surfwind-livewind/doctor.lock /usr/bin/env bash ${LIVE_WIND_REPOSITORY_DIR}/scripts/run_station_capture_job.sh doctor

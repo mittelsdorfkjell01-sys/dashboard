@@ -46,6 +46,16 @@ def _optional_float(value) -> float | None:
     return number if math.isfinite(number) else None
 
 
+def _optional_utc(value) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.astimezone(timezone.utc) if parsed.tzinfo is not None else None
+
+
 def _get(path: str, params: dict, *, timeout: float) -> dict:
     response = httpx.get(f"{DMI_BASE}/{path}", params=params, timeout=timeout)
     response.raise_for_status()
@@ -54,6 +64,7 @@ def _get(path: str, params: dict, *, timeout: float) -> dict:
 
 def fetch_stations(*, timeout: float = 20.0) -> list[ObservationStation]:
     payload = _get("station/items", {"status": "Active", "limit": 1000}, timeout=timeout)
+    received_at = datetime.now(timezone.utc)
     by_id: dict[str, ObservationStation] = {}
     for feature in payload.get("features") or []:
         props, geometry = feature.get("properties") or {}, feature.get("geometry") or {}
@@ -62,12 +73,16 @@ def fetch_stations(*, timeout: float = 20.0) -> list[ObservationStation]:
         if not station_id or len(coords) < 2 or props.get("status") != "Active":
             continue
         parameters = tuple(str(value) for value in (props.get("parameterId") or []))
-        if "wind_speed" not in parameters:
+        if not {"wind_speed", "wind_dir"}.issubset(parameters):
             continue
         latitude = _optional_float(coords[1])
         longitude = _optional_float(coords[0])
         if latitude is None or longitude is None:
             continue
+        active_to = _optional_utc(props.get("operationTo"))
+        # DMI documents that status=Active without a datetime filter also
+        # returns stations that were active only in the past.
+        currently_active = active_to is None or active_to >= received_at
         by_id[station_id] = ObservationStation(
             provider="dmi", station_id=station_id, name=str(props.get("name") or station_id),
             latitude=latitude, longitude=longitude,
@@ -77,13 +92,24 @@ def fetch_stations(*, timeout: float = 20.0) -> list[ObservationStation]:
             icao_id=props.get("icaoId"),
             measurement_height_m=_optional_float(
                 props.get("measurementHeight") or props.get("sensorHeight")
-            ) or 10.0,
+            ),
             license=DMI_LICENSE,
             provenance=DMI_PROVENANCE,
-            country_code="DK",
+            country_code={"DNK": "DK", "GRL": "GL", "FRO": "FO"}.get(
+                str(props.get("country") or "").upper(), None
+            ),
             typical_interval_minutes=10,
             commercial_reuse=True,
             attribution_required=True,
+            operator=props.get("owner"),
+            station_type=props.get("type"),
+            active=currently_active,
+            source_url=f"{DMI_BASE}/station/items/{station_id}",
+            raw_payload=feature,
+            received_at=received_at,
+            active_from=_optional_utc(props.get("operationFrom")),
+            active_to=active_to,
+            metadata_updated_at=_optional_utc(props.get("updated")),
         )
     return list(by_id.values())
 
@@ -187,10 +213,12 @@ def fetch_recent(station_id: str, *, period: str = "latest-day", timeout: float 
             elevation_m=props.get("stationHeight"),
             measurement_height_m=(
                 props.get("measurementHeight") or props.get("sensorHeight")
-            ) or 10.0,
+            ),
             license=DMI_LICENSE,
             provenance=DMI_PROVENANCE,
             raw_payload={"features": values["features"]},
             extra_issues=values["issues"],
+            measurement_period_seconds=600,
+            averaging_period_seconds=600,
         ))
     return deduplicate_observations(rows)

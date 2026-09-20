@@ -40,9 +40,10 @@ from app.weather.live_wind_verification import (
 from app.weather.model_error import (
     DEFAULT_MODEL_ERROR_POLICY, _interpolate_member, load_reviewed_station_physics,
 )
+from app.weather.observation_availability import observation_freshness
 from app.weather.physics.engine import apply_local_physics
 from app.weather.providers.common import haversine_km
-from app.weather.station_identity import duplicate_station_groups
+from app.weather.station_identity import duplicate_station_groups, station_identity_keys
 from app.weather.station_selection import (
     DEFAULT_STATION_SELECTION_POLICY, SpotSelectionContext, StationCandidate,
     evaluate_station_candidates,
@@ -158,13 +159,28 @@ def audit_holdout_inputs(
     for group in duplicate_station_groups(stations):
         if 0 in group:
             duplicates.update(str(stations[index].id) for index in group)
+    target_identity_hints = {key for key in station_identity_keys(target_station)
+                             if key.startswith(("wigos:", "icao:"))}
     explicit = {str(value) for value in (target_station.provenance or {}).get("dependent_station_ids", [])}
-    target_group = (target_station.provenance or {}).get("correlation_group")
+    target_group = getattr(target_station, "correlation_group", None) or (target_station.provenance or {}).get("correlation_group")
     accepted, excluded = [], []
     for station, observation, residual in sorted(
         residual_rows, key=lambda row: (str(row[0].id), str(row[1].id), str(row[2].id))
     ):
         reasons = []
+        if not getattr(station, "holdout_input_approved", False):
+            reasons.append("holdout_input_scope_unapproved")
+        if getattr(observation, "qc_version", None) != "station-observation-qc-v1" or getattr(observation, "qc_flags", None):
+            reasons.append("station_qc_unqualified")
+        if getattr(observation, "qc_stage", None) != "eligible_for_holdout":
+            reasons.append("station_holdout_qc_stage_unqualified")
+        if getattr(observation, "availability_class", None) != "captured_operationally":
+            reasons.append("station_operational_capture_unproven")
+        reasons.extend(observation_freshness(
+            observation, analysis_cutoff_at=cutoff, role="holdout_input"
+        ).reasons)
+        if getattr(observation, "epoch_id", None) != getattr(station, "current_epoch_id", None):
+            reasons.append("station_epoch_mismatch")
         reasons.extend((quality_reasons_by_observation or {}).get(str(observation.id), ()))
         reasons.extend(_station_metadata_reasons(station, cutoff))
         station_id = str(station.id)
@@ -172,11 +188,15 @@ def audit_holdout_inputs(
             reasons.append("target_station")
         if station_id in duplicates and station_id != str(target_station.id):
             reasons.append("target_api_duplicate")
+        if station_id != str(target_station.id) and target_identity_hints.intersection(
+            station_identity_keys(station)
+        ):
+            reasons.append("target_api_duplicate")
         if (station_id in explicit or str(target_station.id) in {
             str(value) for value in (station.provenance or {}).get("dependent_station_ids", [])
         }):
             reasons.append("dependent_station")
-        if target_group and target_group == (station.provenance or {}).get("correlation_group"):
+        if target_group and target_group == (getattr(station, "correlation_group", None) or (station.provenance or {}).get("correlation_group")):
             reasons.append("target_correlation_group")
         try:
             if haversine_km(
@@ -278,8 +298,10 @@ def exclude_target_dependence(stations: list[WeatherStation], target: WeatherSta
     for group in duplicate_station_groups(candidates):
         if 0 in group:
             duplicates.update(str(candidates[index].id) for index in group)
+    target_identity_hints = {key for key in station_identity_keys(target)
+                             if key.startswith(("wigos:", "icao:"))}
     dependencies = {str(value) for value in (target.provenance or {}).get("dependent_station_ids", [])}
-    target_group = (target.provenance or {}).get("correlation_group")
+    target_group = getattr(target, "correlation_group", None) or (target.provenance or {}).get("correlation_group")
     accepted, excluded = [], []
     for item in stations:
         reasons = []
@@ -288,11 +310,15 @@ def exclude_target_dependence(stations: list[WeatherStation], target: WeatherSta
             reasons.append("target_station")
         if identity in duplicates and identity != str(target.id):
             reasons.append("target_api_duplicate")
+        if identity != str(target.id) and target_identity_hints.intersection(
+            station_identity_keys(item)
+        ):
+            reasons.append("target_api_duplicate")
         if (identity in dependencies or str(target.id) in {
             str(value) for value in (item.provenance or {}).get("dependent_station_ids", [])
         }):
             reasons.append("dependent_station")
-        if target_group and target_group == (item.provenance or {}).get("correlation_group"):
+        if target_group and target_group == (getattr(item, "correlation_group", None) or (item.provenance or {}).get("correlation_group")):
             reasons.append("target_correlation_group")
         try:
             if haversine_km(target.latitude, target.longitude,
@@ -370,7 +396,16 @@ def _case_for_observation(db, loader, station, observation_meta, job, *, candida
         reasons.append("target_received_at_unproven")
     if imported_at is None:
         reasons.append("target_imported_at_unproven")
-    if (not station.approved or station.blocked or not station.active
+    from app.weather.station_approval import scope_valid
+    target_observation = db.get(WeatherObservation, observation_id)
+    if target_observation is None or not scope_valid(
+        db, station, target_observation, scope="holdout_target", analyzed_at=cutoff
+    ):
+        reasons.append("target_epoch_scope_or_dossier_unqualified")
+    if (not station.approved or not station.holdout_target_approved
+            or station.identity_review_status != "passed"
+            or not station.physical_station_group or not station.correlation_group
+            or station.blocked or not station.active
             or station.representativeness_status != "passed"):
         reasons.append("target_station_unapproved")
     reasons.extend(_station_metadata_reasons(station, cutoff))
@@ -378,6 +413,7 @@ def _case_for_observation(db, loader, station, observation_meta, job, *, candida
         reasons.append("shadow_job_available_after_cutoff")
     if station.elevation_m is None or station.measurement_height_m is None:
         reasons.append("target_station_metadata_incomplete")
+        return None, ",".join(sorted(set(reasons)))
     target, bundle, model_error, members, weights = _target_model(loader, station, observed_at, cutoff)
     if model_error:
         reasons.append(model_error)
@@ -399,6 +435,10 @@ def _case_for_observation(db, loader, station, observation_meta, job, *, candida
     as_of_stations = []
     for peer in stations:
         metadata_reasons = _station_metadata_reasons(peer, cutoff)
+        if not getattr(peer, "holdout_input_approved", False):
+            metadata_reasons = (*metadata_reasons, "holdout_input_scope_unapproved")
+        if getattr(peer, "identity_review_status", "unreviewed") != "passed":
+            metadata_reasons = (*metadata_reasons, "station_identity_unreviewed")
         if metadata_reasons:
             preexcluded.append({"station_id": str(peer.id), "reasons": list(metadata_reasons)})
         else:
@@ -412,11 +452,17 @@ def _case_for_observation(db, loader, station, observation_meta, job, *, candida
             WeatherObservation.observed_at <= cutoff,
             WeatherObservation.received_at <= cutoff,
             WeatherObservation.imported_at <= cutoff,
+            WeatherObservation.qc_version == "station-observation-qc-v1",
+            WeatherObservation.qc_stage == "eligible_for_holdout",
+            WeatherObservation.qc_flags == [],
         )
         .distinct(WeatherObservation.station_id)
         .order_by(WeatherObservation.station_id, WeatherObservation.observed_at.desc(), WeatherObservation.id)
     ).all() if ids else []
     latest = {item.station_id: item for item in observations}
+    latest = {station_id: observation for station_id, observation in latest.items()
+              if scope_valid(db, next(peer for peer in stations if peer.id == station_id),
+                             observation, scope="holdout_input", analyzed_at=cutoff)}
     _, direction = uv_to_wind(target.u_ms, target.v_ms)
     selection = evaluate_station_candidates(
         [StationCandidate(item, latest.get(item.id)) for item in stations],
@@ -627,6 +673,13 @@ def build_live_wind_holdout_cases(db, loader: ExactRunLoader, *, candidate_versi
         .join(WeatherObservation, WeatherObservation.station_id == WeatherStation.id)
         .where(WeatherObservation.observed_at >= window_start,
                WeatherObservation.observed_at <= window_end,
+               WeatherStation.holdout_target_approved.is_(True),
+               WeatherStation.identity_review_status == "passed",
+               WeatherObservation.qc_version == "station-observation-qc-v1",
+               WeatherObservation.qc_stage == "eligible_for_holdout",
+               WeatherObservation.qc_flags == [],
+               WeatherObservation.availability_class == "captured_operationally",
+               WeatherObservation.epoch_id == WeatherStation.current_epoch_id,
                exists(select(WeatherStationModelResidual.id).where(
                    WeatherStationModelResidual.observation_id == WeatherObservation.id,
                    WeatherStationModelResidual.baseline_version == EXACT_BUNDLE_VERSION,

@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule daily Surfwind nonproduction station catalog refresh
+
+[Timer]
+OnCalendar=*-*-* 02:27:00 UTC
+Persistent=true
+RandomizedDelaySec=2m
+AccuracySec=30s
+Unit=surfwind-station-catalog.service
+
+[Install]
+WantedBy=timers.target

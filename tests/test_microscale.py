@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import sys
 import uuid
+from types import SimpleNamespace
 
 import pytest
 from geoalchemy2 import WKTElement
@@ -133,10 +135,15 @@ def test_unmounted_raster_provider_returns_none():
 # --- fail-closed on missing/unreadable tiles -------------------------------
 
 
-def test_missing_rasters_fail_closed_and_never_fabricate_sectors():
+def test_missing_rasters_fail_closed_and_never_fabricate_sectors(monkeypatch):
     # Directories are configured (mounted) but the tiles do not exist: the old
     # behaviour read every cell as water and returned 12 "ok" sectors. Now a
     # missing tile yields NO factor at all.
+    monkeypatch.setitem(
+        sys.modules,
+        "rasterio",
+        SimpleNamespace(open=lambda *_args, **_kwargs: pytest.fail("rasterio imported")),
+    )
     provider = RasterSurfaceProvider("/no/such/worldcover", "/no/such/wbm")
     assert provider.mounted is True
     assert provider.sector_surface(43.66, -1.44, 0) is None
