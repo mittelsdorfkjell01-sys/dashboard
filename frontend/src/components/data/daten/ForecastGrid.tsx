@@ -4,6 +4,8 @@ import { useSpotDataScope } from "../../../state/SpotDataScope";
 import { scrollMeteogramToDay } from "./scrollMeteogramToDay";
 import WeatherGlyph, { weatherLabel } from "./WeatherGlyph";
 import { tempColor, COLDEST_TEMP_COLOR } from "../../../lib/tempScale";
+import { useOptionalUnits } from "../../../context/PrefsContext";
+import { tempValue } from "../../../lib/units";
 
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" });
 
@@ -13,6 +15,7 @@ const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "
  */
 export default function ForecastGrid({ forecast }: { forecast: NormalizedForecastSeries }) {
   const { selectedForecast, setSelectedAtUtc } = useSpotDataScope();
+  const units = useOptionalUnits();
   const days = forecast.days.slice(0, 10);
   if (!days.length) return null;
 
@@ -62,12 +65,12 @@ export default function ForecastGrid({ forecast }: { forecast: NormalizedForecas
                 {hi == null ? (
                   <span className="text-muted">—</span>
                 ) : (
-                  <span className="font-semibold" style={{ color: tempColor(hi) }}>{Math.round(hi)}°</span>
+                  <span className="font-semibold" style={{ color: tempColor(hi) }}>{tempValue(hi, units.temp)}°</span>
                 )}{" "}
                 {lo == null ? (
                   <span className="text-muted">—</span>
                 ) : (
-                  <span className="font-normal" style={{ color: COLDEST_TEMP_COLOR, opacity: 0.78 }}>{Math.round(lo)}°</span>
+                  <span className="font-normal" style={{ color: COLDEST_TEMP_COLOR, opacity: 0.78 }}>{tempValue(lo, units.temp)}°</span>
                 )}
               </span>
             </button>

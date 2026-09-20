@@ -30,7 +30,7 @@ type Props = {
 const x = (index: number) => index * SLOT + SLOT / 2;
 const y = (value: number, scale: ChartScale, top: number, bottom: number) => bottom - ((value - scale.min) / Math.max(1e-9, scale.max - scale.min)) * (bottom - top);
 const number = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(1);
-const windAxisScale = (scale: ChartScale, unit: WindUnit): ChartScale => unit === "kts" ? scale : ({ min: scale.min * 0.514444, mid: scale.mid * 0.514444, max: scale.max * 0.514444 });
+const windAxisScale = (scale: ChartScale, unit: WindUnit): ChartScale => unit === "ms" ? ({ min: scale.min * 0.514444, mid: scale.mid * 0.514444, max: scale.max * 0.514444 }) : scale;
 const dayLabel = (date: string) => new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
 
 function AxisTicks({ scale }: { scale: ChartScale }) {

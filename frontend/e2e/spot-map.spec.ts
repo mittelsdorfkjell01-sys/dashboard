@@ -43,14 +43,22 @@ async function mockBackend(page: import("@playwright/test").Page, spot = spotDet
   );
 }
 
-test("spot map renders with real coordinates and legend", async ({ page }) => {
+test("spot map renders with real coordinates and legend", async ({ page }, testInfo) => {
   // The Daten-page rebuild (Figma Frame 67) shows a static map preview with no
   // layer mode-switch, so this only asserts the map + legend render.
+  const isMobile = testInfo.project.name.includes("mobile");
   await mockBackend(page);
   await page.goto(`/spot/spot-map-test/daten`);
 
-  await expect(page.getByText("Wind (kt)")).toBeVisible();
   await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
+  if (isMobile) {
+    // On phones the embedded preview drops its badge + legend; a tap opens the
+    // fullscreen map (layer switch + time scrubber) instead.
+    await expect(page.getByRole("button", { name: "Windkarte im Vollbild öffnen" })).toBeVisible();
+  } else {
+    // The legend follows the viewer's wind unit (default knots → "kn").
+    await expect(page.getByText("Wind (kn)")).toBeVisible();
+  }
   const sport = page.locator(".daten-dark").getByText("Kitesurfen", { exact: true });
   await expect(sport.locator("circle")).toHaveCount(0);
   await expect(sport.locator("path")).toHaveCount(1);

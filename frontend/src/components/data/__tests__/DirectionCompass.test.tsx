@@ -12,19 +12,19 @@ const snapshot = (patch: Partial<DirectionSnapshot> = {}): DirectionSnapshot => 
 
 describe("DirectionCompassView", () => {
   it("renders wind mode with textual legend and accessible description", () => {
-    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot()} sportMode="wind" windUnit="kts"/>);
+    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot()} sportMode="wind" windUnit="kn"/>);
     expect(html).toContain("Richtung &amp; Anströmung");
     expect(html).toContain("Aus NW");
     expect(html).toContain("Wind aus NW, 318 Grad");
     expect(html).toContain("border-dashed");
   });
   it("renders surf mode from the same wave fields", () => {
-    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot()} sportMode="surf" windUnit="kts"/>);
+    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot()} sportMode="surf" windUnit="kn"/>);
     expect(html).toContain("Aus WNW");
     expect(html).toContain("1.8 m");
   });
   it("draws no wind mark when wind direction is absent", () => {
-    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot({ windDirectionFromDeg: null, waveDirectionFromDeg: null })} sportMode="wind" windUnit="kts"/>);
+    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot({ windDirectionFromDeg: null, waveDirectionFromDeg: null })} sportMode="wind" windUnit="kn"/>);
     expect(html).toContain("Windrichtung nicht verfügbar");
     expect(html).not.toContain("M100 21 L100 86");
   });
@@ -34,7 +34,7 @@ describe("DirectionCompassView", () => {
     expect(html).toContain("Küstenbezug nicht verfügbar");
   });
   it("uses theme tokens instead of literal hex colors", () => {
-    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot()} sportMode="wind" windUnit="kts"/>);
+    const html = renderToStaticMarkup(<DirectionCompassView snapshot={snapshot()} sportMode="wind" windUnit="kn"/>);
     expect(html).toContain("var(--sw-surface)");
     expect(html).not.toMatch(/#[0-9a-f]{3,8}/i);
   });

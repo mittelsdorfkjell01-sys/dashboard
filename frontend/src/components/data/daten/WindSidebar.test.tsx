@@ -23,15 +23,15 @@ describe("WindSidebar wave breakdown", () => {
       { total_wave: comp(0.8), wind_sea: comp(0.4), primary_swell: comp(0.6), secondary_swell: comp(0.1) },
       0.6,
     );
-    expect(html).toContain("0.8"); // headline = total significant wave height
-    expect(html).toContain("Dünung 0.6 m");
-    expect(html).toContain("Windsee 0.4 m");
-    expect(html).toContain("2. Dünung 0.1 m");
+    expect(html).toContain("0,8"); // headline = total significant wave height
+    expect(html).toContain("Dünung 0,6 m");
+    expect(html).toContain("Windsee 0,4 m");
+    expect(html).toContain("2. Dünung 0,1 m");
   });
 
   it("omits components the model did not resolve — never a placeholder", () => {
     const html = renderWith({ total_wave: comp(0.8), primary_swell: comp(0.6) }, 0.6);
-    expect(html).toContain("Dünung 0.6 m");
+    expect(html).toContain("Dünung 0,6 m");
     expect(html).not.toContain("Windsee");
     expect(html).not.toContain("2. Dünung");
   });
@@ -43,7 +43,7 @@ describe("WindSidebar wave breakdown", () => {
         <WindSidebar forecast={null} live={live} />
       </SpotDataScopeProvider>,
     );
-    expect(html).toContain("1.3"); // headline from the legacy flat primary swell
+    expect(html).toContain("1,3"); // headline from the legacy flat primary swell
     expect(html).not.toContain("Windsee");
   });
 

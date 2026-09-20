@@ -40,7 +40,7 @@ export default function SpotDataHeader({ spot }: { spot: Spot }) {
           compact
           value={windUnit}
           onChange={setWindUnit}
-          options={[{ id: "kts", label: "kts" }, { id: "ms", label: "m/s" }]}
+          options={[{ id: "kn", label: "kn" }, { id: "ms", label: "m/s" }]}
           label="Windeinheit"
         />
       </div>

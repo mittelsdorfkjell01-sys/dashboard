@@ -70,8 +70,8 @@ export default function Auth() {
               aria-pressed={mode === m}
               className={`min-h-11 rounded-[14px] py-2 text-ui font-semibold transition-colors ${
                 mode === m
-                  ? "bg-surface text-teal"
-                  : "text-muted hover:text-teal"
+                  ? "bg-surface text-ink"
+                  : "text-muted hover:text-ink"
               }`}
             >
               {m === "login" ? "Anmelden" : "Registrieren"}
@@ -141,7 +141,7 @@ export default function Auth() {
           <button
             type="button"
             onClick={() => switchMode(mode === "login" ? "register" : "login")}
-            className="inline-flex min-h-11 items-center font-semibold text-teal hover:underline"
+            className="inline-flex min-h-11 items-center font-semibold text-ink hover:underline"
           >
             {mode === "login" ? "Jetzt registrieren" : "Zur Anmeldung"}
           </button>

@@ -13,6 +13,16 @@ import {
 } from "../../../lib/liveWindPresentation";
 import { sunTimes } from "../../../lib/sunTimes";
 import { tempColor } from "../../../lib/tempScale";
+import { useOptionalUnits } from "../../../context/PrefsContext";
+import {
+  waveValue,
+  WAVE_UNIT_SUFFIX,
+  tempValue,
+  TEMP_UNIT_SUFFIX,
+  distanceValue,
+  DISTANCE_UNIT_SUFFIX,
+  windValue,
+} from "../../../lib/units";
 import CompassDial from "./CompassDial";
 
 const CLASS_LABEL: Record<string, string> = {
@@ -57,6 +67,7 @@ export default function WindSidebar({
     forecastStale,
     forecastModel,
   } = useSpotDataScope();
+  const units = useOptionalUnits();
   const activeForecast = displayedForecast(weatherTimeMode, selectedForecast);
   const snapshot = resolveDirectionSnapshot({ selectedForecast: activeForecast, live, forecastTimezone, forecastStale, forecastModel });
   const currentWind = currentWindPresentation(live);
@@ -116,17 +127,17 @@ export default function WindSidebar({
   const metrics: Array<{ label: string; icon: React.ReactNode; value: string | null; unit?: string; color?: string; glow?: boolean; sub?: React.ReactNode }> = [
     { label: "WIND", icon: <WindIcon />, value: wind == null ? null : formatWindReading(wind, windUnit), unit: windUnitLabel(windUnit) },
     {
-      label: "WELLE", icon: <WaveIcon />, value: wave == null ? null : wave.toFixed(1), unit: "m",
+      label: "WELLE", icon: <WaveIcon />, value: wave == null ? null : waveValue(wave, units.wave), unit: WAVE_UNIT_SUFFIX[units.wave],
       sub: waveParts.length ? waveParts.map((p, i) => (
         <Fragment key={p.label}>
           {i > 0 && " · "}
-          <span className="whitespace-nowrap">{p.label} {p.h.toFixed(1)} m</span>
+          <span className="whitespace-nowrap">{p.label} {waveValue(p.h, units.wave)} {WAVE_UNIT_SUFFIX[units.wave]}</span>
         </Fragment>
       )) : undefined,
     },
     { label: "UV INDEX", icon: <UvIcon />, value: uv == null ? null : String(Math.round(uv)) },
     { label: "SONNE", icon: <SunIcon />, value: sunHours == null ? null : String(Math.round(sunHours)), unit: "STD" },
-    { label: "GEFÜHLT", icon: <TempIcon />, value: apparent == null ? null : `${Math.round(apparent)}°`, color: apparentColor, glow: true },
+    { label: "GEFÜHLT", icon: <TempIcon />, value: apparent == null ? null : tempValue(apparent, units.temp), unit: TEMP_UNIT_SUFFIX[units.temp], color: apparentColor, glow: true },
     { label: "REGEN", icon: <RainIcon />, value: rain == null ? null : rain.toFixed(1), unit: "mm" },
   ];
   const uncertainty = uncertaintyBandKt(currentWind);
@@ -262,7 +273,7 @@ export default function WindSidebar({
           <p className="text-caption uppercase tracking-[0.12em] text-muted">
             Referenzmessung{reference.stationName ? ` · ${reference.stationName}` : ` · ${reference.provider}`}
             {reference.distanceKm != null && (
-              <span className="normal-case tracking-normal"> · {reference.distanceKm.toFixed(reference.distanceKm < 10 ? 1 : 0)} km entfernt</span>
+              <span className="normal-case tracking-normal"> · {distanceValue(reference.distanceKm, units.distance)} {DISTANCE_UNIT_SUFFIX[units.distance]} entfernt</span>
             )}
           </p>
           <p className="mt-1 text-caption tabular-nums text-ink">
@@ -332,7 +343,7 @@ function formatInstant(instant: string | null, timezone: string): string {
 }
 
 function formatWindReading(windKt: number, unit: WindUnit): string {
-  return String(Math.round(unit === "ms" ? windKt * 0.514444 : windKt));
+  return windValue(windKt, unit);
 }
 
 function useOnlineStatus(): boolean {

@@ -5,6 +5,8 @@ import { isSpotForecastDisplayHour } from "../../../lib/spotForecastWindow";
 import { buildMeteogramModel } from "../meteogramModel";
 import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/SpotDataScope";
 import { windColor } from "../../../lib/windScale";
+import { useOptionalUnits } from "../../../context/PrefsContext";
+import { waveValue, tempValue, windValue } from "../../../lib/units";
 import WeatherGlyph from "./WeatherGlyph";
 
 const COL_W = 30;
@@ -56,6 +58,7 @@ function fade(hex: string, alpha = 0.45): string {
  */
 export default function MeteoChart({ forecast }: { forecast: NormalizedForecastSeries }) {
   const { selectedAtUtc, setSelectedAtUtc, windUnit } = useSpotDataScope();
+  const units = useOptionalUnits();
   const model = useMemo(() => buildMeteogramModel(forecast, isSpotForecastDisplayHour), [forecast]);
   const slots = model.slots;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -151,7 +154,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
           <Cell key={i}>
             {s.swell != null && (
               <>
-                <span className="mb-0.5 leading-none text-white" style={{ fontSize: 10 }}>{s.swell.toFixed(1)}</span>
+                <span className="mb-0.5 leading-none text-white" style={{ fontSize: 10 }}>{waveValue(s.swell, units.wave)}</span>
                 <span
                   className="w-[22px] rounded-[4px]"
                   style={{ height: Math.max(3, (s.swell / waveMax) * WAVE_H), background: "var(--sw-data-swell)" }}
@@ -181,7 +184,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         ))}
       </Row>
     </>
-  ), [slots, waveMax, precipMax]);
+  ), [slots, waveMax, precipMax, units.wave]);
 
   const bottomRows = useMemo(() => (
     <>
@@ -204,12 +207,12 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                 className="relative w-[22px] rounded-[5px]"
                 style={{ height: gustH, background: fade(windColor(wind)) }}
               >
-                {showGust && <BarValue>{Math.round(gust)}</BarValue>}
+                {showGust && <BarValue>{windValue(gust, windUnit)}</BarValue>}
                 <span
                   className="absolute inset-x-0 bottom-0 rounded-[5px]"
                   style={{ height: windH, background: windColor(wind) }}
                 >
-                  <BarValue>{Math.round(wind)}</BarValue>
+                  <BarValue>{windValue(wind, windUnit)}</BarValue>
                 </span>
               </span>
             </Cell>
@@ -242,7 +245,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
         })}
       </Row>
     </>
-  ), [slots, windMax, barH]);
+  ), [slots, windMax, barH, windUnit]);
 
   if (!slots.length) {
     return (
@@ -479,7 +482,7 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
                 >
                   <span className="leading-none tabular-nums text-white/70" style={{ fontSize: 10 }}>{active.label ?? "—"} Uhr</span>
                   <span className="flex items-center gap-1.5 leading-none">
-                    <span className="font-semibold tabular-nums text-white" style={{ fontSize: 18 }}>{Math.round(active.air)}°</span>
+                    <span className="font-semibold tabular-nums text-white" style={{ fontSize: 18 }}>{tempValue(active.air, units.temp)}°</span>
                     <span className="font-medium" style={{ fontSize: 13, color: trendColor }}>{trendChar}</span>
                   </span>
                 </div>
