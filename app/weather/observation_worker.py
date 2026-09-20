@@ -585,23 +585,49 @@ def run_observation_import(db, *, providers=("dwd", "dmi", "awc_metar"), limit: 
                for provider in providers}
     enabled_providers = [provider for provider in providers
                          if cursors[provider] is None or not cursors[provider].paused]
-    stations = db.scalars(
-        select(WeatherStation)
-        .outerjoin(
-            WeatherObservationImportState,
-            WeatherObservationImportState.station_id == WeatherStation.id,
-        )
-        .where(
-            WeatherStation.active.is_(True),
-            WeatherStation.provider.in_(enabled_providers),
-            or_(
-                WeatherObservationImportState.next_attempt_at.is_(None),
-                WeatherObservationImportState.next_attempt_at <= due_at,
-            ),
-        )
-        .order_by(nullsfirst(WeatherStation.last_import_at.asc()))
-        .limit(max(1, limit))
-    ).all()
+    # Fetch a bounded queue per provider and interleave it. A single provider
+    # with many never-imported stations must not consume the global batch and
+    # starve every other source (the old query did exactly that).
+    per_provider = {}
+    batch_limit = max(1, limit)
+    for provider in enabled_providers:
+        rows = db.scalars(
+            select(WeatherStation)
+            .outerjoin(
+                WeatherObservationImportState,
+                WeatherObservationImportState.station_id == WeatherStation.id,
+            )
+            .where(
+                WeatherStation.active.is_(True),
+                WeatherStation.provider == provider,
+                or_(
+                    WeatherObservationImportState.next_attempt_at.is_(None),
+                    WeatherObservationImportState.next_attempt_at <= due_at,
+                ),
+            )
+            .order_by(nullsfirst(WeatherStation.last_import_at.asc()), WeatherStation.id)
+            .limit(batch_limit)
+        ).all()
+        # Defensive filtering also keeps lightweight test doubles honest.
+        per_provider[provider] = [row for row in rows if row.provider == provider]
+    provider_order = list(enabled_providers)
+    if batch_limit < len(provider_order) and provider_order:
+        offset = int(due_at.timestamp() // 600) % len(provider_order)
+        provider_order = provider_order[offset:] + provider_order[:offset]
+    stations = []
+    position = 0
+    while len(stations) < batch_limit:
+        added = False
+        for provider in provider_order:
+            bucket = per_provider[provider]
+            if position < len(bucket):
+                stations.append(bucket[position])
+                added = True
+                if len(stations) == batch_limit:
+                    break
+        if not added:
+            break
+        position += 1
     report = {
         "stations": len(stations), "persisted": 0, "accepted": 0,
         "rejected": 0, "quarantined": 0, "quarantine_persisted": 0,

@@ -344,6 +344,51 @@ def test_provider_failure_does_not_stop_other_sources(monkeypatch):
     assert report["provider_reports"]["dwd"]["accepted"] == 1
 
 
+def test_bounded_batch_interleaves_providers_instead_of_starving_one(monkeypatch):
+    from app.weather import observation_worker
+
+    stations = [
+        *[
+            SimpleNamespace(id=f"dwd-{index}", provider="dwd", provider_station_id=str(index))
+            for index in range(5)
+        ],
+        SimpleNamespace(id="dmi-1", provider="dmi", provider_station_id="1"),
+    ]
+
+    class Result:
+        def all(self):
+            return stations
+
+    class Db:
+        def scalars(self, _statement):
+            return Result()
+
+    calls = []
+    monkeypatch.setattr(
+        observation_worker,
+        "provider_fetchers",
+        lambda _db=None: {"dwd": object(), "dmi": object()},
+    )
+    monkeypatch.setattr(
+        observation_worker,
+        "import_station",
+        lambda station, *_args, **_kwargs: calls.append(station.provider) or {
+            "persisted": 1,
+            "accepted": 1,
+            "rejected": 0,
+            "quarantined": 0,
+        },
+    )
+
+    report = observation_worker.run_observation_import(
+        Db(), providers=("dwd", "dmi"), limit=4, dry_run=True
+    )
+
+    assert calls[:2] == ["dwd", "dmi"]
+    assert calls.count("dmi") == 1
+    assert report["stations"] == 4
+
+
 def test_import_state_records_sanitized_failure_and_recovery(db):
     import uuid
 
