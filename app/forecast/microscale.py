@@ -393,7 +393,15 @@ class RasterSurfaceProvider:
     def _sample(self, path: str, lon: float, lat: float, *, with_nodata: bool = False):
         """Sample one pixel. Returns None for an in-file NoData/non-finite value;
         raises ``_RasterUnavailable`` when the tile itself cannot be opened/read."""
+        import os
+
         if path in self._missing:
+            raise _RasterUnavailable(path)
+        # These inputs are explicitly local, persistent raster mounts.  Reject a
+        # missing tile before importing GDAL/rasterio; apart from being cheaper,
+        # this keeps the fail-closed path independent of native raster bindings.
+        if not os.path.isfile(path):
+            self._missing.add(path)
             raise _RasterUnavailable(path)
         dataset = self._open.get(path)
         if dataset is None:
