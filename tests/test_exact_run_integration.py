@@ -27,6 +27,29 @@ from app.weather.station_selection import select_stations_for_spot
 from app.live.live_wind import load_station_residual_inputs
 from tests.test_exact_run import FakeGfs, FakeIcon
 from tests.station_qualification_fixture import seed_reviewed_epoch
+from scripts.exact_run_worker import capture_exact_cycle
+
+
+def test_capture_cycle_reads_geography_spot_coordinates(db):
+    calls = []
+
+    class Loader:
+        def capture(self, **kwargs):
+            calls.append(kwargs)
+            return {
+                "assets": 1,
+                "cache_hits": 0,
+                "cache_misses": 1,
+                "errors": {},
+                "provider_duration_ms": {},
+            }
+
+    now = datetime.now(timezone.utc)
+    result = capture_exact_cycle(db, Loader(), now=now, limit=1)
+
+    assert result["status"] in {"available", "no_locations"}
+    if result["status"] == "available":
+        assert calls
 
 
 def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkeypatch):

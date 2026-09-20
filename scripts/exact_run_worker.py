@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import math
 
+from geoalchemy2 import Geometry
 from sqlalchemy import func, select
 
 from app.config import get_settings
@@ -35,7 +36,8 @@ def capture_exact_cycle(db, loader: ExactRunLoader, *, now: datetime, limit: int
         WeatherStation.active.is_(True), WeatherStation.approved.is_(True),
         WeatherStation.blocked.is_(False),
     )).all()
-    spots = db.execute(select(func.ST_Y(Spot.location), func.ST_X(Spot.location)).where(
+    point = Spot.location.cast(Geometry(geometry_type="POINT", srid=4326))
+    spots = db.execute(select(func.ST_Y(point), func.ST_X(point)).where(
         Spot.status == "published", Spot.location.is_not(None),
     )).all()
     tiles = {}
