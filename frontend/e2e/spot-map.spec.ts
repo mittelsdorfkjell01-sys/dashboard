@@ -46,22 +46,25 @@ async function mockBackend(page: import("@playwright/test").Page, spot = spotDet
 test("spot map renders with real coordinates and legend", async ({ page }, testInfo) => {
   // The Daten-page rebuild (Figma Frame 67) shows a static map preview with no
   // layer mode-switch, so this only asserts the map + legend render.
+  const isMobile = testInfo.project.name.includes("mobile");
   await mockBackend(page);
   await page.goto(`/spot/spot-map-test/daten`);
 
   const embeddedMap = page.getByRole("region", { name: "Karte und Livewind" });
-  const embeddedLegend = embeddedMap.getByText("Wind (kt)");
-  if (testInfo.project.name === "chromium-mobile") {
+  const embeddedLegend = embeddedMap.getByText("Wind (kn)");
+  await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
+  if (isMobile) {
     await expect(embeddedLegend).toBeHidden();
-    await page.getByRole("button", { name: "Windkarte im Vollbild öffnen" }).click();
+    const openFullscreen = page.getByRole("button", { name: "Windkarte im Vollbild öffnen" });
+    await expect(openFullscreen).toBeVisible();
+    await openFullscreen.click();
     const fullscreen = page.getByRole("dialog", { name: "Windkarte im Vollbild" });
-    await expect(fullscreen.getByText("Wind (kt)")).toBeVisible();
+    await expect(fullscreen.getByText("Wind (kn)")).toBeVisible();
     await fullscreen.getByRole("button", { name: "Vollbild schließen" }).click();
     await expect(fullscreen).toHaveCount(0);
   } else {
     await expect(embeddedLegend).toBeVisible();
   }
-  await expect(page.locator(".swd-spot-map .leaflet-container")).toBeVisible();
   const sport = page.locator(".daten-dark").getByText("Kitesurfen", { exact: true });
   await expect(sport.locator("circle")).toHaveCount(0);
   await expect(sport.locator("path")).toHaveCount(1);

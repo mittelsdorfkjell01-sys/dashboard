@@ -3,6 +3,8 @@ import type { NormalizedForecastSeries, NormalizedForecastDay } from "../../../l
 import { spotForecastDayHours } from "../../../lib/spotForecastWindow";
 import { useSpotDataScope } from "../../../state/SpotDataScope";
 import { tempColor } from "../../../lib/tempScale";
+import { useOptionalUnits } from "../../../context/PrefsContext";
+import { tempValue } from "../../../lib/units";
 import WeatherGlyph, { weatherLabel } from "./WeatherGlyph";
 
 // Celestial-body colours — the only chroma on the sky arc besides the glow.
@@ -23,6 +25,7 @@ const MOON_GLOW = "rgba(150, 178, 220, 0.42)";
  */
 export default function TodaySummary({ forecast }: { forecast: NormalizedForecastSeries }) {
   const { selectedForecast, selectedAtUtc, setSelectedAtUtc } = useSpotDataScope();
+  const units = useOptionalUnits();
 
   // Resolve to a day that actually carries hourly values — the shared selection
   // can land on a trend day (no hours), which would blank the readouts.
@@ -68,7 +71,7 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
           ) : (
             <span className="inline-flex flex-col items-start" style={{ color: tempColor(current) }}>
               <span className="tabular-nums" style={{ fontSize: 64, fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>
-                {Math.round(current)}°
+                {tempValue(current, units.temp)}°
               </span>
               <span className="mt-2 h-[2px] w-full rounded-full bg-current opacity-40" />
             </span>
@@ -78,10 +81,10 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
             <span className="text-muted">{condition ? weatherLabel(condition) : "—"}</span>
             <span className="flex items-center gap-3 tabular-nums">
               <span className="font-medium" style={{ color: hi == null ? undefined : tempColor(hi) }}>
-                ↑ {hi == null ? "—" : `${Math.round(hi)}°`}
+                ↑ {hi == null ? "—" : `${tempValue(hi, units.temp)}°`}
               </span>
               <span className="font-light" style={{ color: lo == null ? undefined : tempColor(lo), opacity: lo == null ? undefined : 0.85 }}>
-                ↓ {lo == null ? "—" : `${Math.round(lo)}°`}
+                ↓ {lo == null ? "—" : `${tempValue(lo, units.temp)}°`}
               </span>
             </span>
           </div>
@@ -266,6 +269,7 @@ function DayTempCourse({
   onSelect: (utc: string | null) => void;
 }) {
   const ref = useRef<SVGSVGElement>(null);
+  const units = useOptionalUnits();
   const hours = spotForecastDayHours(day).filter((h) => h.air != null);
   const W = CW;
   const H = CH;
@@ -374,7 +378,7 @@ function DayTempCourse({
             <line x1={cx} y1={cy} x2={cx} y2={baseY} stroke="var(--sw-line-soft)" strokeWidth={1} />
             <circle cx={cx} cy={cy} r={3.5} fill="var(--sw-page)" stroke="var(--sw-ink-soft)" strokeWidth={1.5} />
             <text x={cx} y={cy - 9} textAnchor="middle" fontSize={12} className="tabular-nums" fill="var(--sw-ink-soft)">
-              {Math.round(h.air as number)}°
+              {tempValue(h.air as number, units.temp)}°
             </text>
             <text x={cx} y={H - 7} textAnchor="middle" fontSize={10} className="tabular-nums" fill="var(--sw-muted)">
               {h.localTime.slice(0, 2)}

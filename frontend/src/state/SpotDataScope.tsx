@@ -1,9 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { selectedForecastHour, type NormalizedForecastHour, type NormalizedForecastSeries } from "../lib/forecastNormalization";
 import { spotForecastHours } from "../lib/spotForecastWindow";
+import { useOptionalPrefs } from "../context/PrefsContext";
+import { DEFAULT_UNITS, windValue, WIND_UNIT_SUFFIX, type WindUnit } from "../lib/units";
 
 export type SportMode = "wind" | "surf";
-export type WindUnit = "kts" | "ms";
+// Wind unit is owned by PrefsContext (the single source of truth); re-exported
+// here so the Daten components can keep importing it from the scope.
+export type { WindUnit };
 // "waves" colors by primary swell — see docs/map-redesign-backend-gaps.md
 // for why total-wave/wind-sea decomposition isn't offered as its own layer
 // yet. No "both" mode: the redesign shows one focused layer at a time
@@ -43,9 +47,12 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
   const [sportMode, setSportModeState] = useState<SportMode>(() =>
     storedChoice("sw-sport-mode", ["wind", "surf"], "wind"),
   );
-  const [windUnit, setWindUnitState] = useState<WindUnit>(() =>
-    storedChoice("sw-wind-unit", ["kts", "ms"], "kts"),
-  );
+  // Wind unit comes from the shared display preferences (PrefsContext), so the
+  // Daten page honours the account settings and vice-versa. `useOptionalPrefs`
+  // keeps the scope usable in isolated tests that mount it without the provider.
+  const prefs = useOptionalPrefs();
+  const windUnit: WindUnit = prefs?.units.wind ?? DEFAULT_UNITS.wind;
+  const setWindUnit = useCallback((unit: WindUnit) => prefs?.setUnit("wind", unit), [prefs]);
   const [mapLayer, setMapLayer] = useState<MapLayer>("wind");
 
   useEffect(() => {
@@ -79,13 +86,10 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
       window.localStorage.setItem("sw-sport-mode", mode);
     },
     windUnit,
-    setWindUnit: (unit) => {
-      setWindUnitState(unit);
-      window.localStorage.setItem("sw-wind-unit", unit);
-    },
+    setWindUnit,
     mapLayer,
     setMapLayer,
-  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, weatherTimeMode, windUnit]);
+  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, setWindUnit, weatherTimeMode, windUnit]);
 
   return <SpotDataContext.Provider value={value}>{children}</SpotDataContext.Provider>;
 }
@@ -117,10 +121,13 @@ export function useOptionalSpotDataScope(): SpotDataScopeValue | null {
   return useContext(SpotDataContext);
 }
 
-export function formatWind(kts: number, unit: WindUnit): string {
-  return unit === "ms" ? (kts * 0.514444).toFixed(1) : String(Math.round(kts));
+// Numeric wind reading in the active unit (no suffix); the suffix comes from
+// windUnitLabel so call sites render "{value} {label}". Delegates to lib/units
+// so knots/Beaufort/metres-per-second all format consistently app-wide.
+export function formatWind(kn: number, unit: WindUnit): string {
+  return windValue(kn, unit);
 }
 
 export function windUnitLabel(unit: WindUnit): string {
-  return unit === "ms" ? "m/s" : "kts";
+  return WIND_UNIT_SUFFIX[unit];
 }

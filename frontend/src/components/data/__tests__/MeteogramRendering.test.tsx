@@ -25,7 +25,7 @@ describe("Meteogram rendering grammar", () => {
     expect(legend).toContain("Modellspanne");
     expect(legend).toContain("ausgewählter Zeitpunkt");
     expect(legend).toContain("keine Daten");
-    const chart=renderToStaticMarkup(<MeteogramDetailChart model={model} selectedAtUtc={model.slots[0].utcKey} setSelectedAtUtc={()=>undefined} windUnit="kts"/>);
+    const chart=renderToStaticMarkup(<MeteogramDetailChart model={model} selectedAtUtc={model.slots[0].utcKey} setSelectedAtUtc={()=>undefined} windUnit="kn"/>);
     expect(chart).toContain(model.slots[0].localTimeWithOffset);
     expect(chart).toContain("Sicherheit mittel");
     expect(chart).not.toContain("Wellenhöhe");
@@ -34,13 +34,13 @@ describe("Meteogram rendering grammar", () => {
 
   it("marks calendar-fallback confidence distinctly from spread-backed confidence", () => {
     const calendarSource: ForecastSeries = { ...source, days: [{ ...source.days[0], confidence_source: "calendar" } as ForecastDay, source.days[1]] };
-    const chart = renderToStaticMarkup(<MeteogramDetailChart model={buildMeteogramModel(normalizeForecast(calendarSource))} selectedAtUtc={null} setSelectedAtUtc={()=>undefined} windUnit="kts"/>);
+    const chart = renderToStaticMarkup(<MeteogramDetailChart model={buildMeteogramModel(normalizeForecast(calendarSource))} selectedAtUtc={null} setSelectedAtUtc={()=>undefined} windUnit="kn"/>);
     expect(chart).toContain("Sicherheit mittel *");
   });
 
   it("renders trend days as summaries without hourly slots", () => {
     const model=buildMeteogramModel(normalizeForecast(source));
-    const trend=renderToStaticMarkup(<MeteogramTrend days={model.trendDays} windUnit="kts"/>);
+    const trend=renderToStaticMarkup(<MeteogramTrend days={model.trendDays} windUnit="kn"/>);
     expect(trend).toContain("Tagestrend · Tage 6–10");
     expect(trend).toContain("Tageswerte ohne scheinbare Stundenauflösung");
     expect(trend).not.toContain("02:00");
@@ -49,7 +49,7 @@ describe("Meteogram rendering grammar", () => {
   it("uses the same visible normalized values in the accessible table", () => {
     const model=buildMeteogramModel(normalizeForecast(source));
     const view=projectMeteogramView(model,0,"24h");
-    const table=renderToStaticMarkup(<ForecastDataTable model={view} windUnit="kts"/>);
+    const table=renderToStaticMarkup(<ForecastDataTable model={view} windUnit="kn"/>);
     expect(table).toContain("<caption");
     expect(table).toContain('scope="col"');
     expect(table).toContain('scope="row"');

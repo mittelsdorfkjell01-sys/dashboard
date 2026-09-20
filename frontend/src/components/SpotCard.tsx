@@ -6,6 +6,8 @@ import { countryName } from "../lib/flags";
 import SpotImage from "./SpotImage";
 import { spotPath } from "../lib/spotRoutes";
 import { currentWindPresentation, formatAge } from "../lib/liveWindPresentation";
+import { useOptionalUnits } from "../context/PrefsContext";
+import { windValue as fmtWindValue, WIND_UNIT_SUFFIX, waveValue as fmtWaveValue, WAVE_UNIT_SUFFIX } from "../lib/units";
 
 /**
  * The one spot-tile layout used everywhere a spot is browsed: landing grid,
@@ -48,6 +50,7 @@ export default function SpotCard({
     .filter(Boolean)
     .join(" · ");
 
+  const units = useOptionalUnits();
   const presentedWind = currentWindPresentation(live);
   const windLive = preferLiveWind && presentedWind.status !== "unavailable"
     ? presentedWind.windKt
@@ -100,8 +103,8 @@ export default function SpotCard({
           {windValue != null && (
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
               {!mapRail && windIsLive && (!preferLiveWind || adjustedLiveWind) && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
-              <span className="text-label font-semibold text-ink">{windValue}</span>
-              <span className="text-caption text-ink-soft">kts</span>
+              <span className="text-label font-semibold text-ink">{fmtWindValue(windValue, units.wind)}</span>
+              <span className="text-caption text-ink-soft">{WIND_UNIT_SUFFIX[units.wind]}</span>
               {mapRail && liveSuffix && <span className="text-caption text-muted">· {liveSuffix}</span>}
             </div>
           )}
@@ -115,8 +118,8 @@ export default function SpotCard({
           <div className="flex items-baseline justify-between gap-3">
             {regionLine && <p className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{regionLine}</p>}
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              <span className="text-label font-semibold text-ink">{waveValue ?? "—"}</span>
-              <span className="text-caption text-ink-soft">m</span>
+              <span className="text-label font-semibold text-ink">{waveValue == null ? "—" : fmtWaveValue(waveValue, units.wave)}</span>
+              <span className="text-caption text-ink-soft">{WAVE_UNIT_SUFFIX[units.wave]}</span>
             </div>
           </div>
         )}
