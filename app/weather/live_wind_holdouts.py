@@ -40,6 +40,7 @@ from app.weather.live_wind_verification import (
 from app.weather.model_error import (
     DEFAULT_MODEL_ERROR_POLICY, _interpolate_member, load_reviewed_station_physics,
 )
+from app.weather.observation_availability import observation_freshness
 from app.weather.physics.engine import apply_local_physics
 from app.weather.providers.common import haversine_km
 from app.weather.station_identity import duplicate_station_groups, station_identity_keys
@@ -175,6 +176,9 @@ def audit_holdout_inputs(
             reasons.append("station_holdout_qc_stage_unqualified")
         if getattr(observation, "availability_class", None) != "captured_operationally":
             reasons.append("station_operational_capture_unproven")
+        reasons.extend(observation_freshness(
+            observation, analysis_cutoff_at=cutoff, role="holdout_input"
+        ).reasons)
         if getattr(observation, "epoch_id", None) != getattr(station, "current_epoch_id", None):
             reasons.append("station_epoch_mismatch")
         reasons.extend((quality_reasons_by_observation or {}).get(str(observation.id), ()))

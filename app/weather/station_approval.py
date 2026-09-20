@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from app.models import AdminUser, WeatherStationApprovalAudit, WeatherStationDossier, WeatherStationEpoch
+from app.weather.observation_availability import observation_freshness
 from app.weather.station_qualification import QualificationPolicy, current_group_decisions, group_version
 
 SCOPES = {
@@ -149,6 +150,10 @@ def scope_valid(db, station, observation, *, scope: str,
     if observation.epoch_id != station.current_epoch_id:
         return False
     if observation.availability_class != "captured_operationally":
+        return False
+    if scope in {"residual_source", "holdout_input"} and not observation_freshness(
+        observation, analysis_cutoff_at=analyzed_at, role=scope
+    ).eligible:
         return False
     epoch = db.get(WeatherStationEpoch, station.current_epoch_id)
     if epoch is None or epoch.status != "reviewed":

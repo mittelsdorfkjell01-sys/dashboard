@@ -58,6 +58,7 @@ def observation(*, age_minutes=5, speed=8.0, direction=270.0, **patch):
         qc_version="station-observation-qc-v1",
         qc_stage="eligible_for_holdout",
         qc_flags=[],
+        availability_class="captured_operationally",
         received_at=NOW - timedelta(minutes=max(0, age_minutes - 1)),
         imported_at=NOW - timedelta(minutes=max(0, age_minutes - 1)),
     )

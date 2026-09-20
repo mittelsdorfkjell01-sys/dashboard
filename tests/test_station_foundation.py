@@ -87,9 +87,11 @@ def test_qc_flags_preserve_raw_and_gate_unreviewed_station():
     assert row.raw_payload == {"FF_10": "10.0"}
 
 
-def test_stale_and_stuck_sensor_are_structured_qc_reasons():
+def test_cutoff_freshness_is_not_frozen_into_intrinsic_qc():
     row = source(observed_at=NOW - timedelta(hours=2), received_at=NOW)
-    assert "observation_stale" in evaluate_observation(row, reviewed_station(), now=NOW).reasons
+    assert "observation_stale" not in evaluate_observation(
+        row, reviewed_station(), now=NOW
+    ).reasons
     current = source()
     prior = [SimpleNamespace(observed_at=NOW - timedelta(minutes=offset),
                              wind_u_ms=current.wind_u_ms, wind_v_ms=current.wind_v_ms)

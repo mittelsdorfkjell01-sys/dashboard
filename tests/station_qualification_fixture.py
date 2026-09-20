@@ -15,6 +15,25 @@ from app.weather.station_epochs import configuration_from_station, configuration
 from app.weather.station_qualification import current_group_decisions, group_version
 
 
+def persist_operational_fixture(db, station, rows, **kwargs):
+    """Persist rows as if a previously running collector received this batch."""
+    from app.weather.observation_worker import persist_batch
+
+    values = list(rows)
+    epoch = db.get(WeatherStationEpoch, station.current_epoch_id)
+    received = [item.received_at for item in values if item.received_at is not None]
+    capture_started_at = min(received) - timedelta(seconds=1)
+    return persist_batch(
+        db,
+        station,
+        values,
+        capture_started_at=capture_started_at,
+        collector_enrolled_at=epoch.first_seen_at,
+        collector_previously_attempted=True,
+        **kwargs,
+    )
+
+
 def seed_reviewed_epoch(db, station, *, before):
     config = configuration_from_station(station)
     epoch = WeatherStationEpoch(

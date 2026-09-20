@@ -1,7 +1,7 @@
 """Versioned, conservative station-observation quality decisions."""
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import math
 
 QC_VERSION = "station-observation-qc-v1"
@@ -23,7 +23,6 @@ class QualityDecision:
 
 def evaluate_observation(row, station, *, prior=(), now: datetime | None = None) -> QualityDecision:
     """Never edits raw values; eligibility requires explicit scoped approval."""
-    now = now or datetime.now(timezone.utc)
     reasons = list(row.data_issues)
     if row.import_status != "accepted":
         return QualityDecision("rejected", tuple(dict.fromkeys((*reasons, row.rejection_reason or "import_rejected"))))
@@ -33,8 +32,6 @@ def evaluate_observation(row, station, *, prior=(), now: datetime | None = None)
         reasons.append("direction_missing")
     if row.provider_quality not in GOOD_PROVIDER_FLAGS:
         reasons.append("provider_quality_untrusted")
-    if row.observed_at is None or now - row.observed_at > timedelta(minutes=30):
-        reasons.append("observation_stale")
     if row.received_at is None:
         reasons.append("received_at_unproven")
     if row.averaging_period_seconds is None:
@@ -67,7 +64,7 @@ def evaluate_observation(row, station, *, prior=(), now: datetime | None = None)
                     and all(math.hypot(item.wind_u_ms - row.wind_u_ms, item.wind_v_ms - row.wind_v_ms) < 0.05 for item in recent)):
                 reasons.append("sensor_stuck")
     reasons = tuple(dict.fromkeys(reasons))
-    critical = {"vector_missing", "direction_missing", "provider_quality_untrusted", "observation_stale", "received_at_unproven", "wind_jump", "sensor_stuck"}
+    critical = {"vector_missing", "direction_missing", "provider_quality_untrusted", "received_at_unproven", "wind_jump", "sensor_stuck"}
     if any(reason in critical for reason in reasons):
         return QualityDecision("accepted_for_storage", reasons)
     if not getattr(station, "monitoring_approved", False):

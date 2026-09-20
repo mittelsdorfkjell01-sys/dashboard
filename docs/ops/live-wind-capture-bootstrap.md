@@ -126,6 +126,21 @@ Enable the catalog schedule first, inspect one successful catalog cycle, then
 manually dispatch raw capture twice in distinct jobs. Confirm the second run is
 idempotent and preserves the first `received_at` before enabling its schedule.
 
+`availability_class` describes immutable capture origin, not LiveWind freshness:
+
+- `captured_operationally`: the station had a proven earlier collector attempt,
+  the observation is no older than its enrolled epoch, and the first HTTP
+  receipt belongs to the recorded current capture job;
+- `historical_backfill`: an explicit backfill, or an older provider sample
+  found during the station's first bootstrap poll;
+- `availability_unproven`: the first receipt, epoch enrollment or capture-job
+  relationship cannot be proven.
+
+Receipt delay never changes these meanings. In particular, a DWD value first
+received 34 minutes after its observation remains operational capture evidence,
+but fails the separate versioned 30-minute LiveWind input gate. Replays preserve
+the original origin, `received_at` and `first_seen_at`.
+
 ## Status, pause and restart
 
 ```bash
@@ -150,6 +165,8 @@ record:
 - exact asset counts/cache hits and manifest versions;
 - station-cycle counts by provider and structured errors;
 - first and last operational capture timestamps;
+- operational observations split into first-import LiveWind-usable, operational
+  but too late, historical backfill and unproven origin;
 - DWD validator state and unchanged first `received_at` on replay;
 - catalog age, epoch changes and pending review counts;
 - cache probe checksum and cross-job verification result;

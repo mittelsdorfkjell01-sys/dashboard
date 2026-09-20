@@ -17,6 +17,7 @@ from app.models import (
     WeatherObservationImportState,
     WeatherStation,
 )
+from app.weather.observation_availability import observation_freshness
 from app.weather.providers.common import haversine_km
 from app.weather.station_identity import (
     duplicate_station_groups,
@@ -259,6 +260,11 @@ def _hard_reasons(
     if observation is not None and getattr(observation, "import_status", None) != "accepted":
         reasons.append("import_rejected")
     if observation is not None and purpose == "residual":
+        freshness = observation_freshness(
+            observation, analysis_cutoff_at=now, role="residual_source",
+            max_age_minutes=policy.max_age_minutes,
+        )
+        reasons.extend(freshness.reasons)
         if getattr(observation, "qc_version", None) != "station-observation-qc-v1" or getattr(observation, "qc_flags", None):
             reasons.append("observation_qc_unqualified")
         if getattr(observation, "qc_stage", None) not in {"eligible_for_residuals", "eligible_for_holdout"}:

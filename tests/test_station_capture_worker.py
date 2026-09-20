@@ -81,7 +81,11 @@ def test_capture_health_keeps_provider_gaps_separate():
             "observations:dwd": {"last_success_at": "2026-09-19T23:50:00+00:00", "failures_24h": 0},
         }},
         "catalogs": {"dwd": {"last_success_at": "2026-09-19T02:00:00+00:00", "age_hours": 22}},
-        "providers": {"dwd": {"operational_observations_24h": 3, "latest_observation_age_minutes": 15}},
+        "providers": {"dwd": {
+            "operational_observations_24h": 3,
+            "live_usable_observations_24h": 2,
+            "latest_operational_receipt_age_minutes": 15,
+        }},
         "provider_cursors": {"dwd": {"paused": False}},
     }
 
@@ -92,9 +96,41 @@ def test_capture_health_keeps_provider_gaps_separate():
     assert {item["code"] for item in health["alerts"] if item.get("provider") == "dmi"} == {
         "catalog_never_succeeded",
         "operational_observation_missing",
-        "observation_stale",
+        "capture_receipt_stale",
+        "live_fresh_observation_missing",
         "observation_cycle_late",
     }
+
+
+def test_capture_health_keeps_late_operational_provider_alive_but_warns_live_gate():
+    now = datetime(2026, 9, 20, 12, 40, tzinfo=timezone.utc)
+    report = {
+        "continuous_capture": {"cycle_status": {
+            "observations:dwd": {
+                "last_success_at": "2026-09-20T12:35:00+00:00",
+                "failures_24h": 0,
+            },
+        }},
+        "catalogs": {"dwd": {
+            "last_success_at": "2026-09-20T02:00:00+00:00",
+            "age_hours": 10.67,
+        }},
+        "providers": {"dwd": {
+            "operational_observations_24h": 1,
+            "live_usable_observations_24h": 0,
+            "latest_operational_receipt_age_minutes": 6,
+        }},
+        "provider_cursors": {"dwd": {"paused": False}},
+    }
+
+    health = capture_health(report, now=now)
+    dwd_alerts = [item for item in health["alerts"] if item.get("provider") == "dwd"]
+
+    assert dwd_alerts == [{
+        "severity": "warning",
+        "code": "live_fresh_observation_missing",
+        "provider": "dwd",
+    }]
 
 
 def test_capture_doctor_contract_is_bounded():
@@ -106,6 +142,8 @@ def test_capture_doctor_contract_is_bounded():
         "catalogs": {},
         "provider_cursors": {},
         "operational_observations_24h": 0,
+        "live_usable_observations_24h": 0,
+        "operational_live_late_observations_24h": 0,
         "historical_backfill_observations_24h": 0,
         "station_epochs": 300,
         "pending_epoch_review": 300,

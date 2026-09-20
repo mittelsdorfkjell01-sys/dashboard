@@ -40,6 +40,11 @@ copy its values into runtime configuration without that decision.
   divided by all operationally received rows. Governance reasons such as an
   unreviewed identity or missing approval are reported separately and do not
   masquerade as sensor QC.
+- **Live-use freshness:** cutoff-relative output of
+  `live-observation-freshness-v1`; it is not stored as capture origin or frozen
+  into intrinsic QC. The dossier reports operational rows that were already
+  older than 30 minutes when first fully imported, while keeping them in the
+  operational latency and completeness denominator.
 - **Independent group:** a manually confirmed correlation group after physical
   identity and sensor relationships were reviewed. ICAO, WIGOS, proximity or
   measured correlation alone proposes a review; it never confirms a group.

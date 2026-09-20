@@ -16,6 +16,30 @@ from app.models import (
 from app.weather.station_identity import (
     duplicate_station_groups, possible_duplicate_candidates, spatial_duplicate_candidates,
 )
+from app.weather.observation_availability import (
+    LIVE_FRESHNESS_POLICY_VERSION,
+    observation_freshness,
+)
+
+
+def _live_at_first_import(observation):
+    if observation.received_at is None or observation.imported_at is None:
+        return None
+    return observation_freshness(
+        observation,
+        analysis_cutoff_at=max(observation.received_at, observation.imported_at),
+        role="live_analysis",
+    )
+
+
+def _quantile(values: list[float], probability: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    index = (len(ordered) - 1) * probability
+    lower = int(index)
+    upper = min(lower + 1, len(ordered) - 1)
+    return round(ordered[lower] + (ordered[upper] - ordered[lower]) * (index - lower), 2)
 
 
 def station_report(db, *, now: datetime | None = None) -> dict:
@@ -24,6 +48,11 @@ def station_report(db, *, now: datetime | None = None) -> dict:
     by_id = {item.id: item for item in stations}
     observations = db.scalars(select(WeatherObservation).where(
         WeatherObservation.observed_at >= now - timedelta(days=1))).all()
+    first_import_freshness = {
+        item.id: decision
+        for item in observations
+        if (decision := _live_at_first_import(item)) is not None
+    }
     states = db.scalars(select(WeatherObservationImportState)).all()
     epochs = db.scalars(select(WeatherStationEpoch)).all()
     metadata_revisions = db.scalars(select(WeatherStationMetadataRevision)).all()
@@ -230,6 +259,16 @@ def station_report(db, *, now: datetime | None = None) -> dict:
                 0.0, round(28 - elapsed_days, 2)
             ),
         })
+    operational_delays = {
+        provider: [
+            (item.received_at - item.observed_at).total_seconds() / 60
+            for item in observations
+            if item.availability_class == "captured_operationally"
+            and item.received_at is not None
+            and getattr(by_id.get(item.station_id), "provider", None) == provider
+        ]
+        for provider in {item.provider for item in stations} | {item.provider for item in states}
+    }
     return {
         "generated_at": now.isoformat(),
         "continuous_capture": {
@@ -269,6 +308,19 @@ def station_report(db, *, now: datetime | None = None) -> dict:
         "approval_decisions_by_scope": dict(sorted(Counter(item.scope for item in approvals if item.approved).items())),
         "approval_revocations": sum(not item.approved for item in approvals),
         "operational_observations_24h": sum(item.availability_class == "captured_operationally" for item in observations),
+        "live_freshness_policy_version": LIVE_FRESHNESS_POLICY_VERSION,
+        "live_usable_observations_24h": sum(
+            item.availability_class == "captured_operationally"
+            and first_import_freshness.get(item.id) is not None
+            and first_import_freshness[item.id].eligible
+            for item in observations
+        ),
+        "operational_live_late_observations_24h": sum(
+            item.availability_class == "captured_operationally"
+            and first_import_freshness.get(item.id) is not None
+            and "observation_too_old_for_live_gate" in first_import_freshness[item.id].reasons
+            for item in observations
+        ),
         "historical_backfill_observations_24h": sum(item.availability_class == "historical_backfill" for item in observations),
         "availability_unproven_observations_24h": sum(item.availability_class == "availability_unproven" for item in observations),
         "potential_holdout_target_gap_to_10": max(0, 10 - len({item.correlation_group for item in stations
@@ -366,6 +418,9 @@ def station_report(db, *, now: datetime | None = None) -> dict:
             and item.qc_stage in {"eligible_for_residuals", "eligible_for_holdout"}
             and not item.qc_flags and item.wind_u_ms is not None and item.wind_v_ms is not None
             and bool(getattr(by_id.get(item.station_id), "residual_approved", False))
+            and observation_freshness(
+                item, analysis_cutoff_at=now, role="residual_source"
+            ).eligible
             for item in observations
         ),
         "providers": {
@@ -378,13 +433,40 @@ def station_report(db, *, now: datetime | None = None) -> dict:
                     lambda latest: round((now - latest).total_seconds() / 60, 1) if latest else None
                 )(max((item.last_observation_at for item in stations
                        if item.provider == provider and item.last_observation_at), default=None)),
+                "latest_operational_receipt_age_minutes": (
+                    lambda latest: round((now - latest).total_seconds() / 60, 1) if latest else None
+                )(max((item.received_at for item in observations
+                       if item.availability_class == "captured_operationally"
+                       and item.received_at is not None
+                       and getattr(by_id.get(item.station_id), "provider", None) == provider),
+                      default=None)),
                 "receipt_delay_minutes_p50_24h_window": (
                     lambda delays: sorted(delays)[len(delays) // 2] if delays else None
                 )([round((item.received_at - item.observed_at).total_seconds() / 60, 1)
                    for item in observations if item.received_at and
                    getattr(by_id.get(item.station_id), "provider", None) == provider]),
+                "operational_receipt_delay_minutes_p50_24h": _quantile(
+                    operational_delays.get(provider, []), 0.5
+                ),
+                "operational_receipt_delay_minutes_p95_24h": _quantile(
+                    operational_delays.get(provider, []), 0.95
+                ),
                 "operational_observations_24h": sum(
                     item.availability_class == "captured_operationally"
+                    and getattr(by_id.get(item.station_id), "provider", None) == provider
+                    for item in observations
+                ),
+                "live_usable_observations_24h": sum(
+                    item.availability_class == "captured_operationally"
+                    and first_import_freshness.get(item.id) is not None
+                    and first_import_freshness[item.id].eligible
+                    and getattr(by_id.get(item.station_id), "provider", None) == provider
+                    for item in observations
+                ),
+                "operational_live_late_observations_24h": sum(
+                    item.availability_class == "captured_operationally"
+                    and first_import_freshness.get(item.id) is not None
+                    and "observation_too_old_for_live_gate" in first_import_freshness[item.id].reasons
                     and getattr(by_id.get(item.station_id), "provider", None) == provider
                     for item in observations
                 ),

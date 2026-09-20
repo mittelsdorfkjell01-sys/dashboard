@@ -20,9 +20,11 @@ from app.models import (
     WeatherObservationRevision,
     WeatherStation,
     WeatherStationCaptureCycle,
+    WeatherStationEpoch,
     WeatherStationMetadataRevision,
     WeatherStationProviderCursor,
 )
+from app.weather.observation_availability import classify_capture_origin
 from app.weather.observation_quality import evaluate_observation
 from app.weather.station_epochs import configuration_from_candidate, ensure_epoch
 from app.weather.providers.common import (
@@ -203,7 +205,10 @@ def apply_retention(db, *, approved=False, retention_days=DEFAULT_RETENTION_DAYS
 
 
 def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True,
-                  capture_mode: str = "operational"):
+                  capture_mode: str = "operational",
+                  capture_started_at: datetime | None = None,
+                  collector_enrolled_at: datetime | None = None,
+                  collector_previously_attempted: bool = False):
     if capture_mode not in {"operational", "historical_backfill"}:
         raise ValueError("unsupported_capture_mode")
     source_rows = list(rows)
@@ -273,13 +278,13 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
             prior_history = [item for item in prior_history
                              if item.observed_at >= row.observed_at - timedelta(hours=1)]
     def availability(row):
-        if capture_mode == "historical_backfill":
-            return "historical_backfill"
-        if (row.observed_at is None or row.received_at is None
-                or row.received_at.tzinfo is None or row.observed_at.tzinfo is None):
-            return "availability_unproven"
-        delay = row.received_at - row.observed_at
-        return "captured_operationally" if timedelta(minutes=-2) <= delay <= timedelta(minutes=30) else "historical_backfill"
+        return classify_capture_origin(
+            row,
+            capture_mode=capture_mode,
+            capture_started_at=capture_started_at,
+            collector_enrolled_at=collector_enrolled_at,
+            collector_previously_attempted=collector_previously_attempted,
+        )
     epoch_id = getattr(station, "current_epoch_id", None)
     report = {
         "received": len(source_rows),
@@ -436,7 +441,9 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
 
 
 def import_station(station, fetcher, db, *, cache=None, dry_run=True, attempts=2,
-                   capture_mode="operational"):
+                   capture_mode="operational", capture_started_at=None,
+                   collector_enrolled_at=None,
+                   collector_previously_attempted=False):
     last_error = None
     for _attempt in range(max(1, attempts)):
         try:
@@ -452,6 +459,9 @@ def import_station(station, fetcher, db, *, cache=None, dry_run=True, attempts=2
                 cache=cache,
                 dry_run=dry_run,
                 capture_mode=capture_mode,
+                capture_started_at=capture_started_at,
+                collector_enrolled_at=collector_enrolled_at,
+                collector_previously_attempted=collector_previously_attempted,
             )
             if not dry_run:
                 _record_import_state(db, station, report=report)
@@ -660,8 +670,24 @@ def run_observation_import(db, *, providers=("dwd", "dmi", "awc_metar"), limit: 
             provider_report["stations"] += 1
             provider_report["errors"] += 1
             continue
-        result = import_station(station, fetcher, db, cache=cache, dry_run=dry_run,
-                                capture_mode=capture_mode)
+        getter = getattr(db, "get", None)
+        prior_state = getter(WeatherObservationImportState, station.id) if getter else None
+        epoch = (
+            getter(WeatherStationEpoch, station.current_epoch_id)
+            if getter and getattr(station, "current_epoch_id", None)
+            else None
+        )
+        result = import_station(
+            station,
+            fetcher,
+            db,
+            cache=cache,
+            dry_run=dry_run,
+            capture_mode=capture_mode,
+            capture_started_at=due_at,
+            collector_enrolled_at=epoch.first_seen_at if epoch else None,
+            collector_previously_attempted=prior_state is not None,
+        )
         report["persisted"] += result.get("persisted", 0)
         report["accepted"] += result.get("accepted", 0)
         report["rejected"] += result.get("rejected", 0)

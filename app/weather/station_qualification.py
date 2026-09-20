@@ -19,6 +19,10 @@ from app.models import (
     WeatherStationMetadataRevision,
 )
 from app.weather.observation_quality import QC_VERSION, GOVERNANCE_REASONS
+from app.weather.observation_availability import (
+    LIVE_FRESHNESS_POLICY_VERSION,
+    observation_freshness,
+)
 from app.weather.station_identity import possible_duplicate_candidates
 from app.weather.providers.common import haversine_km
 
@@ -72,6 +76,15 @@ def _window_statistics(rows, start: datetime, end: datetime, interval_minutes: i
     qc_counts = Counter(str(reason) for row in rows for reason in (row.qc_flags or []))
     accepted = sum(row.import_status == "accepted" and not
                    set(row.qc_flags or []).difference(GOVERNANCE_REASONS) for row in rows)
+    live_decisions = [
+        observation_freshness(
+            row,
+            analysis_cutoff_at=max(row.received_at, row.imported_at),
+            role="live_analysis",
+        )
+        for row in rows
+        if row.received_at is not None and row.imported_at is not None
+    ]
     return {
         "expected": expected,
         "received": len(rows),
@@ -84,6 +97,12 @@ def _window_statistics(rows, start: datetime, end: datetime, interval_minutes: i
         "outage_duration_minutes": round(sum((gap - interval for gap in outages), timedelta()).total_seconds() / 60, 2) if interval else None,
         "latency_minutes": {f"p{int(q * 100)}": _quantile(latencies, q) for q in (0.5, 0.9, 0.95, 0.99)},
         "on_time_30m_share": round(sum(0 <= delay <= 30 for delay in latencies) / len(latencies), 4) if latencies else None,
+        "live_freshness_policy_version": LIVE_FRESHNESS_POLICY_VERSION,
+        "live_eligible_at_first_import": sum(item.eligible for item in live_decisions),
+        "live_late_at_first_import": sum(
+            "observation_too_old_for_live_gate" in item.reasons
+            for item in live_decisions
+        ),
         "qc_acceptance_share": round(accepted / len(rows), 4) if rows else None,
         "qc_reasons": dict(sorted(qc_counts.items())),
         "intrinsic_qc_reasons": dict(sorted((key, value) for key, value in qc_counts.items()

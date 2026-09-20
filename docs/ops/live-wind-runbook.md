@@ -290,6 +290,30 @@ Dry-run rebuild audit (read-only): group `weather_station_model_residuals` by
 pre-observation first-seen assets can produce eligible exact-run residuals;
 there is no honest backfill for old measurements lacking availability proof.
 
+### Capture origin versus analysis freshness
+
+`weather_observations.availability_class` is immutable first-receipt provenance:
+`captured_operationally`, `historical_backfill`, or `availability_unproven`.
+Operational origin requires a prior station import attempt, an enrolled station
+epoch predating the sample, and a first receipt belonging to the current capture
+job. The first bootstrap poll is conservative backfill; missing proof is
+unproven. Receipt latency alone never creates a backfill classification.
+
+Live input eligibility is recomputed for every `analysis_cutoff_at` under
+`live-observation-freshness-v1`. `observed_at`, `received_at` and `imported_at`
+must all be proven and no later than the cutoff, and the observation age at that
+cutoff must be at most 30 minutes. Residual sources, station selection and
+holdout inputs apply this rule explicitly. A hidden holdout target remains
+evaluation truth only and is opened after prediction; it is never injected as
+an input. Static intrinsic QC does not freeze a time-dependent stale flag into
+the raw observation.
+
+Existing rows are not bulk reclassified. Only a separately reviewed rebuild
+with original job, epoch and first-receipt proof could change a historical
+classification, and no such rebuild is provided by this change. This keeps the
+schema head at `0062_station_capture_operations` and avoids collision with the
+separate `0063_spot_variant_conditions` branch.
+
 ## Data mounts and doctors
 
 The current request-time LiveWind calculation uses already reviewed spot
@@ -355,6 +379,8 @@ the worker:
 | enqueue/worker success missing/late | critical after `LIVE_WIND_JOB_LATE_MINUTES=45` |
 | oldest due job | critical after 45 minutes (starvation) |
 | stations in provider error | warning immediately; persistent scheduler/provider lateness is critical |
+| operational capture receipt | critical when the newest proven operational receipt is older than 90 minutes |
+| no 30-minute-live-usable operational sample | warning; collector remains healthy, LiveWind input remains blocked |
 | station count per public correction | baseline below `LIVE_WIND_MIN_STATION_COUNT=2` |
 | confidence | baseline below `LIVE_WIND_MIN_CONFIDENCE=0.20` |
 | conflict | baseline above `LIVE_WIND_MAX_CONFLICT_INDEX=0.65` |
@@ -368,6 +394,14 @@ identities, license state, all station-selection exclusion reasons, cache hit
 rate, runtime distributions, and operational outcomes grouped by terrain and
 region. These grouped values are operational failure/fallback metrics, **not an
 accuracy score**.
+
+Station capture status separately exposes `operational_observations_24h`,
+`live_usable_observations_24h`, `operational_live_late_observations_24h`,
+`historical_backfill_observations_24h` and
+`availability_unproven_observations_24h`. Provider capture health uses the age
+of the latest operational receipt, not observation age; a regularly received
+but 34-minute-delayed DWD stream therefore stays alive while emitting the
+distinct LiveWind-freshness warning.
 
 Alert delivery is supplied by the scheduler platform: `live_wind_doctor
 --fail-on-alert` exits 2 for critical provider/scheduler alerts and makes the

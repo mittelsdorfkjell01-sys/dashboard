@@ -5,17 +5,17 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
 from app.models import WeatherStationApprovalAudit
-from app.weather.observation_worker import persist_batch
 from app.weather.station_epochs import configuration_from_station, ensure_epoch
 from app.weather.station_qualification import persist_dossier
 from app.weather.station_report import station_report
 from tests.test_station_qualification import _row, _station
+from tests.station_qualification_fixture import persist_operational_fixture
 
 
 def test_review_queue_exposes_evidence_questions_and_unapproved_role_candidates(db):
     station = _station(db)
     end = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-    persist_batch(
+    persist_operational_fixture(
         db,
         station,
         [

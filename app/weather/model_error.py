@@ -26,6 +26,7 @@ from app.models import (
 )
 from app.weather.catalog import family_for
 from app.weather.contracts import ModelFamily
+from app.weather.observation_availability import observation_freshness
 from app.weather.physics import apply_local_physics
 from app.weather.physics.blend import family_blend
 from app.weather.profiles import QUALITY_TIERS, ResolvedWeatherProfile
@@ -408,10 +409,10 @@ def _observation_gate_reasons(
         reasons.append("observation_qc_unqualified")
     if getattr(observation, "qc_stage", None) not in {"eligible_for_residuals", "eligible_for_holdout"}:
         reasons.append("observation_qc_stage_unqualified")
-    received_at = _aware_utc(getattr(observation, "received_at", None))
-    imported_at = _aware_utc(getattr(observation, "imported_at", None))
-    if received_at is None or imported_at is None or received_at > analyzed_at or imported_at > analyzed_at:
-        reasons.append("observation_not_available_at_cutoff")
+    freshness = observation_freshness(
+        observation, analysis_cutoff_at=analyzed_at, role="residual_source"
+    )
+    reasons.extend(freshness.reasons)
     if not provider_quality_acceptable(observation):
         reasons.append("provider_quality_rejected")
 
@@ -1226,6 +1227,7 @@ def run_station_model_error_analysis(
             WeatherObservation.epoch_id == WeatherStation.current_epoch_id,
             WeatherObservation.received_at <= analysis_time,
             WeatherObservation.imported_at <= analysis_time,
+            WeatherObservation.observed_at >= analysis_time - timedelta(minutes=30),
             WeatherObservation.wind_u_ms.is_not(None),
             WeatherObservation.wind_v_ms.is_not(None),
             *(

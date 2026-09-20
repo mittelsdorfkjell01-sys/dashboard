@@ -49,9 +49,11 @@ def capture_health(report: dict, *, now: datetime | None = None) -> dict:
         metrics = providers.get(provider) or {}
         if int(metrics.get("operational_observations_24h") or 0) == 0:
             alerts.append({"severity": "critical", "code": "operational_observation_missing", "provider": provider})
-        age = metrics.get("latest_observation_age_minutes")
+        age = metrics.get("latest_operational_receipt_age_minutes")
         if age is None or float(age) > OBSERVATION_MAX_AGE_MINUTES:
-            alerts.append({"severity": "critical", "code": "observation_stale", "provider": provider})
+            alerts.append({"severity": "critical", "code": "capture_receipt_stale", "provider": provider})
+        if int(metrics.get("live_usable_observations_24h") or 0) == 0:
+            alerts.append({"severity": "warning", "code": "live_fresh_observation_missing", "provider": provider})
 
         cycle = cycles.get(f"observations:{provider}") or {}
         last_success = cycle.get("last_success_at")
@@ -84,6 +86,8 @@ def capture_doctor_report(source: dict) -> dict:
         "providers",
         "catalogs",
         "operational_observations_24h",
+        "live_usable_observations_24h",
+        "operational_live_late_observations_24h",
         "historical_backfill_observations_24h",
         "station_epochs",
         "pending_epoch_review",
@@ -98,7 +102,7 @@ def capture_doctor_report(source: dict) -> dict:
     return {
         "generated_at": source["generated_at"],
         "capture_health": capture_health(source),
-        **{key: source[key] for key in keys},
+        **{key: source.get(key) for key in keys},
     }
 
 

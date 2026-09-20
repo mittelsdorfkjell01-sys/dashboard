@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import io
 import zipfile
 
@@ -104,6 +104,21 @@ def test_dwd_preserves_rejected_and_quarantined_rows_and_deduplicates():
     assert any(row.raw_payload["MESS_DATUM"] == "bad-time" for row in rows)
     accepted = next(row for row in rows if row.import_status == "accepted")
     assert accepted.wind_direction_deg == 0
+
+
+def test_dwd_delayed_publication_preserves_real_receipt_latency():
+    rows = parse_now_zip(
+        _dwd_zip(
+            "STATIONS_ID;MESS_DATUM;QN;FF_10;DD_10;eor\n"
+            "00042;202609201200;1;7.5;270;eor\n"
+        ),
+        station_id="00042",
+        fetched_at=datetime(2026, 9, 20, 12, 34, tzinfo=timezone.utc),
+    )
+
+    assert len(rows) == 1
+    assert rows[0].received_at - rows[0].observed_at == timedelta(minutes=34)
+    assert rows[0].import_status == "accepted"
 
 
 def test_knmi_key_is_required():

@@ -147,6 +147,7 @@ def test_station_and_target_share_exact_bundle_and_uv_residual(tmp_path, monkeyp
         provider_quality="good", import_status="accepted",
         qc_version="station-observation-qc-v1", qc_flags=[],
         qc_stage="eligible_for_holdout",
+        availability_class="captured_operationally",
         received_at=OBS+timedelta(minutes=1), imported_at=OBS+timedelta(minutes=1),
     )
     sampled = exact_loader(station, observation)

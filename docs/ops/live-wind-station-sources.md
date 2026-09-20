@@ -71,6 +71,13 @@ normal idempotent replay does **not** rewrite their QC history; only new
 observations after metadata/identity review can pass the new gate. Scoped
 approval requires an explicitly configured versioned temporal-quality policy;
 no threshold is silently inferred from the first pilot observations.
+
+Capture origin and LiveWind freshness are separate. A sample fetched by a
+previously running collector remains `captured_operationally` even when provider
+publication took 34 minutes; its actual latency remains in the provider and
+qualification statistics, while `live-observation-freshness-v1` rejects it for
+the 30-minute LiveWind input role. The first bootstrap poll is backfill, and
+missing job/epoch/first-receipt proof stays `availability_unproven`.
 A separately audited historical reprocessing policy is still missing. Do not
 migrate the local `surfwind` database at 0056 as part of this pilot.
 

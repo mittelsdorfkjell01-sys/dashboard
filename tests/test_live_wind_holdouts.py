@@ -29,10 +29,12 @@ from app.weather.live_wind_operations import _holdout_readiness
 from app.weather.live_wind_verification import LiveWindVerificationPolicy
 from app.config import Settings
 from app.weather.model_error import calculate_and_persist_station_model_error
-from app.weather.observation_worker import persist_batch
 from app.weather.providers.common import normalize_observation
 from tests.test_exact_run import FakeGfs, FakeIcon
-from tests.station_qualification_fixture import seed_reviewed_epoch
+from tests.station_qualification_fixture import (
+    persist_operational_fixture,
+    seed_reviewed_epoch,
+)
 
 AT = datetime(2026, 9, 16, 12, tzinfo=timezone.utc)
 
@@ -69,11 +71,11 @@ def manifest():
     }
 
 
-def row(peer, *, received=AT, created=AT, dataset=None, eligible=True,
+def row(peer, *, observed=None, received=AT, created=AT, dataset=None, eligible=True,
         source_observation_ids=()):
     dataset = dataset or manifest()
     observation = SimpleNamespace(
-        id=uuid.uuid4(), observed_at=AT - timedelta(minutes=5),
+        id=uuid.uuid4(), observed_at=observed or AT - timedelta(minutes=5),
         received_at=received, imported_at=received,
         qc_version="station-observation-qc-v1", qc_flags=[],
         qc_stage="eligible_for_holdout",
@@ -118,6 +120,19 @@ def test_target_duplicate_dependency_and_correlation_are_removed_before_engine()
     assert "dependent_station" in reasons[str(dependent.id)]
     assert "target_correlation_group" in reasons[str(correlated.id)]
     assert "target_correlation_group" in reasons[str(nearby.id)]
+
+
+def test_operational_but_old_input_is_excluded_from_holdout_analysis():
+    target = station(latitude=53.0, group="target")
+    peer = station(latitude=54.0, group="independent")
+
+    accepted, excluded = audit(
+        target,
+        [row(peer, observed=AT - timedelta(minutes=34), received=AT)],
+    )
+
+    assert accepted == ()
+    assert "observation_too_old_for_live_gate" in excluded[0]["reasons"]
 
 
 def test_target_and_aliases_are_removed_before_station_selection():
@@ -326,7 +341,7 @@ def test_real_exact_residuals_build_immutable_idempotent_case(db, tmp_path):
                 provenance={"fixture": suffix},
                 measurement_period_seconds=600, averaging_period_seconds=600,
             )
-            assert persist_batch(db, station_row, [historical], dry_run=False)["persisted"] == 1
+            assert persist_operational_fixture(db, station_row, [historical], dry_run=False)["persisted"] == 1
         normalized = normalize_observation(
             provider="dwd", station_id=station_row.provider_station_id,
             observed_at=observed, received_at=received, imported_at=received,
@@ -335,7 +350,7 @@ def test_real_exact_residuals_build_immutable_idempotent_case(db, tmp_path):
             measurement_height_m=10, license="CC BY 4.0", provenance={"fixture": suffix},
             measurement_period_seconds=600, averaging_period_seconds=600,
         )
-        assert persist_batch(db, station_row, [normalized], dry_run=False)["persisted"] == 1
+        assert persist_operational_fixture(db, station_row, [normalized], dry_run=False)["persisted"] == 1
         observation = db.scalar(select(WeatherObservation).where(
             WeatherObservation.station_id == station_row.id,
             WeatherObservation.observed_at == observed,

@@ -22,6 +22,8 @@ from app.weather.station_qualification import (
     QualificationPolicy, decide_group, persist_dossier, review_epoch,
     propose_group_candidates, temporal_quality,
 )
+from app.weather.station_report import station_report
+from tests.station_qualification_fixture import persist_operational_fixture
 
 
 def _station(db):
@@ -43,7 +45,7 @@ def _station(db):
     db.add(station)
     db.flush()
     ensure_epoch(db, station, configuration_from_station(station),
-                 first_seen_at=datetime.now(timezone.utc))
+                 first_seen_at=datetime.now(timezone.utc) - timedelta(days=2))
     db.commit()
     return station
 
@@ -65,7 +67,7 @@ def test_epoch_change_blocks_old_scope_and_preserves_raw_history(db):
     now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
     first_epoch = station.current_epoch_id
     row = _row(station, now - timedelta(minutes=10), now)
-    assert persist_batch(db, station, [row], dry_run=False)["persisted"] == 1
+    assert persist_operational_fixture(db, station, [row], dry_run=False)["persisted"] == 1
     old = db.scalar(select(WeatherObservation).where(WeatherObservation.station_id == station.id))
     assert old.epoch_id == first_epoch
     assert old.availability_class == "captured_operationally"
@@ -84,13 +86,13 @@ def test_operational_backfill_and_first_receipt_are_separate(db):
     now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
     observed = now - timedelta(minutes=10)
     fresh = _row(station, observed, now)
-    assert persist_batch(db, station, [fresh], dry_run=False)["persisted"] == 1
-    assert persist_batch(db, station, [fresh], dry_run=False)["persisted"] == 0
+    assert persist_operational_fixture(db, station, [fresh], dry_run=False)["persisted"] == 1
+    assert persist_operational_fixture(db, station, [fresh], dry_run=False)["persisted"] == 0
     stored = db.scalar(select(WeatherObservation).where(WeatherObservation.station_id == station.id))
     assert stored.received_at == now and stored.first_seen_at == now
     assert stored.availability_class == "captured_operationally"
     corrected = _row(station, observed, now + timedelta(minutes=2), speed=9)
-    assert persist_batch(db, station, [corrected], dry_run=False)["revisions_persisted"] == 1
+    assert persist_operational_fixture(db, station, [corrected], dry_run=False)["revisions_persisted"] == 1
     db.refresh(stored)
     assert stored.received_at == now and stored.wind_speed_ms == 8
     revisions = db.scalars(select(WeatherObservationRevision).where(
@@ -106,13 +108,69 @@ def test_operational_backfill_and_first_receipt_are_separate(db):
     assert historical.received_at == now
 
 
+def test_delayed_operational_receipt_is_reported_but_not_live_fresh(db):
+    station = _station(db)
+    received = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    observed = received - timedelta(minutes=34)
+    row = _row(station, observed, received)
+    before = station_report(db, now=received)
+
+    assert persist_operational_fixture(db, station, [row], dry_run=False)["persisted"] == 1
+    replay = _row(station, observed, received + timedelta(minutes=10))
+    assert persist_operational_fixture(db, station, [replay], dry_run=False)["persisted"] == 0
+
+    stored = db.scalar(select(WeatherObservation).where(
+        WeatherObservation.station_id == station.id,
+        WeatherObservation.observed_at == observed,
+    ))
+    assert stored.availability_class == "captured_operationally"
+    assert stored.received_at == received
+    assert stored.first_seen_at == received
+
+    epoch = db.get(WeatherStationEpoch, station.current_epoch_id)
+    stats = temporal_quality(db, epoch, end=received, window_days=28)
+    assert stats["operational"]["received"] == 1
+    assert stats["operational"]["live_eligible_at_first_import"] == 0
+    assert stats["operational"]["live_late_at_first_import"] == 1
+
+    report = station_report(db, now=received)
+    assert report["operational_observations_24h"] == before["operational_observations_24h"] + 1
+    assert report["live_usable_observations_24h"] == before["live_usable_observations_24h"]
+    assert report["operational_live_late_observations_24h"] == before["operational_live_late_observations_24h"] + 1
+    assert report["historical_backfill_observations_24h"] == before["historical_backfill_observations_24h"]
+    assert report["availability_unproven_observations_24h"] == before["availability_unproven_observations_24h"]
+
+
+def test_first_operational_poll_is_conservative_backfill_without_prior_attempt(db):
+    station = _station(db)
+    received = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    observed = received - timedelta(hours=2)
+    epoch = db.get(WeatherStationEpoch, station.current_epoch_id)
+
+    persist_batch(
+        db,
+        station,
+        [_row(station, observed, received)],
+        dry_run=False,
+        capture_mode="operational",
+        capture_started_at=received - timedelta(seconds=1),
+        collector_enrolled_at=epoch.first_seen_at,
+        collector_previously_attempted=False,
+    )
+
+    stored = db.scalar(select(WeatherObservation).where(
+        WeatherObservation.station_id == station.id
+    ))
+    assert stored.availability_class == "historical_backfill"
+
+
 def test_statistics_dossier_hash_and_missing_policy(db):
     station = _station(db)
     end = datetime.now(timezone.utc).replace(second=0, microsecond=0)
     times = [end - timedelta(minutes=value) for value in (30, 20, 10)]
     for minute, observed in enumerate(times):
         received = observed + timedelta(minutes=(2, 4, 6)[minute])
-        persist_batch(db, station, [_row(station, observed, received)], dry_run=False)
+        persist_operational_fixture(db, station, [_row(station, observed, received)], dry_run=False)
     historical = _row(station, end - timedelta(hours=2), end)
     persist_batch(db, station, [historical], dry_run=False, capture_mode="historical_backfill")
     epoch = db.get(WeatherStationEpoch, station.current_epoch_id)
@@ -147,7 +205,7 @@ def test_manual_epoch_group_scope_and_revocation(db):
     user = create_user(db, email=f"qual-{uuid.uuid4().hex[:8]}@example.test",
                        password="Test-admin-password-123!", role="admin")
     observed = now - timedelta(minutes=10)
-    persist_batch(db, station, [_row(station, observed, now)], dry_run=False)
+    persist_operational_fixture(db, station, [_row(station, observed, now)], dry_run=False)
     with pytest.raises(ValueError, match="authenticated_admin_reviewer_required"):
         decide_group(db, station, group_type="physical", group_key="physical-a",
                      status="confirmed", reviewer=None, reason="reviewed", evidence={"source": "fixture"})
@@ -179,6 +237,7 @@ def test_manual_epoch_group_scope_and_revocation(db):
     future = WeatherObservation(station_id=station.id, epoch_id=station.current_epoch_id,
                                 availability_class="captured_operationally",
                                 observed_at=now + timedelta(minutes=2), received_at=now + timedelta(minutes=3),
+                                imported_at=now + timedelta(minutes=3),
                                 wind_speed_ms=8)
     assert scope_valid(db, station, future, scope="residual_source", analyzed_at=now + timedelta(minutes=4))
     decide_station_scope(db, station, scope="monitoring", approved=False,
@@ -231,7 +290,7 @@ def test_import_batch_detects_stuck_sensor_over_time(db):
     now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
     rows = [_row(station, now - timedelta(minutes=minute), now, speed=8)
             for minute in (40, 30, 20, 10)]
-    assert persist_batch(db, station, rows, dry_run=False)["persisted"] == 4
+    assert persist_operational_fixture(db, station, rows, dry_run=False)["persisted"] == 4
     latest = db.scalar(select(WeatherObservation).where(
         WeatherObservation.station_id == station.id,
         WeatherObservation.observed_at == now - timedelta(minutes=10)))

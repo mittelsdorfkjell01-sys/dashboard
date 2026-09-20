@@ -26,7 +26,10 @@ from app.weather.providers.common import normalize_observation
 from app.weather.station_selection import select_stations_for_spot
 from app.live.live_wind import load_station_residual_inputs
 from tests.test_exact_run import FakeGfs, FakeIcon
-from tests.station_qualification_fixture import seed_reviewed_epoch
+from tests.station_qualification_fixture import (
+    persist_operational_fixture,
+    seed_reviewed_epoch,
+)
 from scripts.exact_run_worker import capture_exact_cycle
 
 
@@ -123,7 +126,7 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
             measurement_period_seconds=600, averaging_period_seconds=600,
         )
         assert row.import_status == "accepted"
-        imported = persist_batch(db, station, [row], dry_run=False)
+        imported = persist_operational_fixture(db, station, [row], dry_run=False)
         assert imported["persisted"] == 1
         observation = db.scalar(select(WeatherObservation).where(
             WeatherObservation.station_id == station.id))
@@ -181,7 +184,7 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
                 license="CC BY 4.0", provenance={"fixture": suffix},
                 measurement_period_seconds=600, averaging_period_seconds=600,
             )
-            assert persist_batch(db, other, [other_row], dry_run=False)["persisted"] == 1
+            assert persist_operational_fixture(db, other, [other_row], dry_run=False)["persisted"] == 1
             other_observation = db.scalar(select(WeatherObservation).where(
                 WeatherObservation.station_id == other.id))
             other_result = calculate_and_persist_station_model_error(
