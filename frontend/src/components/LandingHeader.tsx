@@ -1,4 +1,13 @@
-import { lazy, Suspense, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { Link } from "react-router-dom";
 import { INCLUDE_ADMIN } from "../lib/target";
 import { SearchIcon } from "../lib/icons";
@@ -42,16 +51,58 @@ export default function LandingHeader({
    *  ink token so it doesn't vanish and fail colour contrast. */
   onLight?: boolean;
 }) {
-  // Mobile: the hardening is a *triggered, time-based* animation, not coupled to
-  // scroll distance. An IntersectionObserver flips a single `docked` boolean at
-  // one point; CSS transitions then play the whole change (wordmark glide,
-  // surface, lupe) over their own fixed duration — so it looks identical whether
-  // the visitor scrolls slowly or flicks fast, and never stutters with the
-  // finger. Desktop keeps a continuous React `progress` (its search-pill grows
-  // in, and the padding tightens, as the hero recedes).
+  // The hardening is a *triggered, time-based* animation, not coupled to scroll
+  // distance. A single `docked` boolean flips at one point (IntersectionObserver
+  // on touch, a scroll threshold on desktop); CSS transitions then play the whole
+  // change — the wordmark glide and the search hand-off (mobile lupe / desktop
+  // pill) — over their own fixed duration, so it looks identical whether the
+  // visitor scrolls slowly or flicks fast, and the wordmark motion is now the
+  // same on mobile and desktop. Desktop additionally keeps a continuous React
+  // `progress` for the surface/tagline fade and the padding tightening.
   const [progress, setProgress] = useState(0);
   const [docked, setDocked] = useState(false);
   const desktop = useDesktopViewport();
+  // The gliding wordmark is one element pinned to the header's left edge that
+  // translates right to sit centred, then glides back on dock. `glideCenterX` is
+  // the exact distance to centre it — measured from the header row and the
+  // wordmark's own width, so it lands dead-centre on every viewport (mobile and
+  // desktop, max-width column included) instead of relying on a `50vw` formula
+  // that only holds when the content spans the whole width.
+  const rowRef = useRef<HTMLDivElement>(null);
+  const gliderRef = useRef<HTMLAnchorElement>(null);
+  const [glideCenterX, setGlideCenterX] = useState(0);
+  // The transform carries an 820ms transition for the dock/undock glide. But the
+  // measured centre also updates once the webfont finishes loading, and we must
+  // NOT let that one-time correction animate (the wordmark would visibly drift on
+  // a cold load). So the transition stays off until the first measurement has
+  // settled, then turns on together with the corrected value in the same commit
+  // — a value change made while `transition:none` does not animate.
+  const [glideReady, setGlideReady] = useState(false);
+  useLayoutEffect(() => {
+    if (!sticky) return;
+    const measure = () => {
+      const row = rowRef.current;
+      const glider = gliderRef.current;
+      if (!row || !glider) return;
+      // offsetWidth ignores the CSS transform, so the base (scale 1) width is
+      // read correctly even while the wordmark is docked and scaled down.
+      setGlideCenterX(Math.max(0, (row.clientWidth - glider.offsetWidth) / 2));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    // Re-measure once the wordmark's webfont loads, then arm the glide. Fall back
+    // to a timer so the glide still works if `document.fonts` is unavailable.
+    const arm = () => {
+      measure();
+      setGlideReady(true);
+    };
+    const timer = window.setTimeout(arm, 400);
+    document.fonts?.ready.then(arm).catch(arm);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.clearTimeout(timer);
+    };
+  }, [sticky, desktop]);
   useEffect(() => {
     if (!sticky) return;
     const TRIGGER_Y = 84; // ≈ the header bar's bottom edge in viewport px
@@ -69,7 +120,10 @@ export default function LandingHeader({
       return () => observer.disconnect();
     }
 
-    // Desktop: continuous progress off scroll.
+    // Desktop: continuous `progress` drives the surface, tagline and padding.
+    // `docked` still flips at the same single point mobile uses, so the wordmark
+    // plays the *identical* triggered glide (and the search pill fades in) on
+    // desktop rather than the old cross-fade between two wordmarks.
     let frame = 0;
     const update = () => {
       frame = 0;
@@ -79,6 +133,7 @@ export default function LandingHeader({
           ? (TRIGGER_Y + RANGE - top) / RANGE
           : (window.scrollY - (window.innerHeight * 0.5 - RANGE)) / RANGE;
       setProgress(Math.min(1, Math.max(0, raw)));
+      setDocked(top != null ? top <= TRIGGER_Y : window.scrollY > window.innerHeight * 0.5);
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
@@ -130,27 +185,33 @@ export default function LandingHeader({
             : "pt-9 sm:pt-12"
         }`}
       >
-        <div className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4">
-          {/* Mobile only: ONE wordmark that glides from centred + large (hero
-              top) to docked left + small when `docked` flips — a single
-              transform-only motion (translate + scale) over a fixed duration,
-              triggered at one scroll point (not coupled to scroll distance), so
-              it plays the same whether you scroll slowly or flick fast. `50%` is
-              the element's own half-width, `50vw` half the viewport, `1rem` the
-              header's px-4 gutter: together they centre it when not docked.
-              scale 1 → 0.54 ≈ xl(34px) → sm(18px). */}
+        <div
+          ref={rowRef}
+          className="pointer-events-auto relative grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-4"
+        >
+          {/* ONE wordmark that glides from centred + large (hero top) to docked
+              left + small when `docked` flips — a single transform-only motion
+              (translate + scale) over a fixed duration, triggered at one scroll
+              point (not coupled to scroll distance), so it plays the same whether
+              you scroll slowly or flick fast. This is now the *only* wordmark on
+              the sticky landing on both mobile and desktop (desktop dropped the
+              old cross-fade between two lockups), so the animation is identical.
+              `glideCenterX` (measured) is the translate that centres it; the dock
+              scale 0.54 takes xl → ≈18px on mobile and ≈31px (≈ md) on desktop. */}
           {sticky && (
             <Link
+              ref={gliderRef}
               to="/"
               aria-label="surfwind data"
-              className="pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform sm:hidden"
+              className="pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform"
               style={{
                 transform: docked
                   ? "translateY(-50%) scale(0.54)"
-                  : "translateY(-50%) translateX(calc(50vw - 1rem - 50%)) scale(1)",
+                  : `translateY(-50%) translateX(${glideCenterX}px) scale(1)`,
                 // Deliberately slow + eased so the glide reads as a calm settle
                 // regardless of scroll speed (it is time-based, not scroll-linked).
-                transition: "transform 820ms cubic-bezier(0.22, 1, 0.36, 1)",
+                // Off until the first measurement settles (see `glideReady`).
+                transition: glideReady ? "transform 820ms cubic-bezier(0.22, 1, 0.36, 1)" : "none",
               }}
             >
               <Wordmark size="xl" />
@@ -168,45 +229,40 @@ export default function LandingHeader({
                 >
                   Best collection of surfspots
                 </span>
-                {sticky && (
-                  // Desktop only: the docked lockup crossfades in on the left.
-                  // Mobile uses the single gliding wordmark below instead.
-                  <Link
-                    to="/"
-                    className="absolute left-0 hidden min-h-11 select-none items-center leading-none sm:inline-flex"
-                    style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
-                  >
-                    <Wordmark size="md" />
-                  </Link>
-                )}
+                {/* No docked lockup here any more: the single gliding wordmark
+                    above settles into this left slot on both mobile and desktop. */}
               </div>
             )}
           </div>
 
-          {/* Center — the wordmark, or (landing, scrolled) a docked search. On
-              desktop a compact pill expands the SearchBar overlay. Mobile
-              fades the wordmark out as `progress` rises, in step with the
-              bar hardening and the search button fading in below. */}
+          {/* Center — on the sticky landing the gliding wordmark (above) owns
+              this slot and glides out of it on dock; desktop then fades a compact
+              search pill in here (mobile fades the lupe in on the right). Only
+              non-sticky pages (legal, 404) render a static centre lockup. */}
           <div className="relative col-start-2 flex min-h-11 min-w-0 items-center justify-center justify-self-center">
-            {/* On the sticky landing this is the desktop-only centre lockup;
-                mobile uses the single gliding wordmark. Non-sticky pages (legal,
-                404) keep it on mobile too, since there is no glider there. */}
-            <Link
-              to="/"
-              style={sticky ? { opacity: 1 - progress, pointerEvents: progress > 0.5 ? "none" : "auto" } : undefined}
-              className={`min-h-11 min-w-0 select-none items-center leading-none transition-opacity duration-150 ${
-                sticky || mobileSpotControls ? "hidden sm:flex" : "flex"
-              }`}
-            >
-              <Wordmark size="xl" />
-            </Link>
+            {!sticky && (
+              <Link
+                to="/"
+                className={`min-h-11 min-w-0 select-none items-center leading-none ${
+                  mobileSpotControls ? "hidden sm:flex" : "flex"
+                }`}
+              >
+                <Wordmark size="xl" />
+              </Link>
+            )}
 
-            {/* Desktop: the compact search takes over continuously as the hero
-                identity recedes, matching ResultsHeader at the hand-off. */}
-            {sticky && desktop && progress > 0 && (
+            {/* Desktop: the compact search fades into the centre once docked,
+                after the wordmark has glided clear — the same triggered, time-
+                based hand-off the mobile lupe uses (see below), so the desktop
+                and mobile motion match. */}
+            {sticky && desktop && (
               <div
                 className="absolute hidden sm:block"
-                style={{ opacity: progress, pointerEvents: progress > 0.5 ? "auto" : "none" }}
+                style={{
+                  opacity: docked ? 1 : 0,
+                  pointerEvents: docked ? "auto" : "none",
+                  transition: docked ? "opacity 260ms ease 140ms" : "opacity 0s",
+                }}
               >
                 <Suspense fallback={<div aria-hidden className="h-10 w-48 rounded-[14px] bg-surface shadow-card" />}>
                   <SearchBar variant="pill" />
