@@ -254,8 +254,10 @@ export default function LandingHeader({
             {/* Desktop: the compact search fades into the centre once docked,
                 after the wordmark has glided clear — the same triggered, time-
                 based hand-off the mobile lupe uses (see below), so the desktop
-                and mobile motion match. */}
-            {sticky && desktop && (
+                and mobile motion match. Only mounted once the hero starts
+                receding (`progress > 0`) so it is not a second, hidden "Suchen"
+                control sitting in the DOM while the hero is at rest. */}
+            {sticky && desktop && progress > 0 && (
               <div
                 className="absolute hidden sm:block"
                 style={{
