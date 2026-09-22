@@ -180,7 +180,7 @@ class SpotSubmission(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('pending', 'approved', 'rejected', 'merged')",
+            "status IN ('pending', 'approved', 'rejected', 'merged', 'withdrawn')",
             name="ck_spot_submissions_status",
         ),
         Index("ix_submission_status", "status"),

@@ -99,7 +99,7 @@ def test_exact_dataset_identity_empty_and_legacy_upgrade(db):
                 _upgrade(url, "head")
             with target_engine.connect() as connection:
                 assert connection.execute(text(
-                    "SELECT version_num FROM alembic_version")).scalar_one() == "0059_live_wind_holdout_cases"
+                    "SELECT version_num FROM alembic_version")).scalar_one() == "0064_exact_model_points"
                 assert inspect(connection).has_table("weather_live_wind_holdout_cases")
                 columns = {item["name"] for item in inspect(connection).get_columns(
                     "weather_station_model_residuals")}
@@ -206,6 +206,20 @@ def test_disposable_0056_to_0059_keeps_legacy_residual_ineligible(db):
             assert connection.scalar(text("SELECT count(*) FROM weather_live_wind_holdout_cases")) == 0
             assert "ix_live_wind_holdout_candidate_time" in {
                 item["name"] for item in inspect(connection).get_indexes("weather_live_wind_holdout_cases")}
+        _upgrade(url, "0060_station_foundation")
+        with target_engine.connect() as connection:
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0060_station_foundation"
+        _upgrade(url, "head")
+        with target_engine.connect() as connection:
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0064_exact_model_points"
+            assert connection.scalar(text("SELECT count(*) FROM weather_observations")) == 1
+            assert connection.scalar(text("SELECT count(*) FROM weather_stations")) == 1
+            assert connection.scalar(text("SELECT residual_approved FROM weather_stations")) is False
+            assert inspect(connection).has_table("weather_observation_revisions")
+            assert inspect(connection).has_table("weather_station_metadata_revisions")
+            assert inspect(connection).has_table("weather_station_epochs")
+            assert inspect(connection).has_table("weather_station_dossiers")
+            assert connection.scalar(text("SELECT availability_class FROM weather_observations")) == "availability_unproven"
     finally:
         target_engine.dispose()
         admin.execute(text(f'DROP DATABASE "{name}" WITH (FORCE)'))

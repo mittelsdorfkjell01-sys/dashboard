@@ -14,8 +14,10 @@ interface AuthValue {
   user: Account | null;
   /** False until the initial session lookup has run (avoids UI flicker). */
   ready: boolean;
+  sessionError: string | null;
+  refreshSession: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   /** Replace the cached account after a profile edit. */
   setUser: (u: Account | null) => void;
@@ -31,34 +33,35 @@ const AuthCtx = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Account | null>(null);
   const [ready, setReady] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  const refreshSession = async () => {
+    setSessionError(null);
+    try {
+      setUser(await account.fetchSession());
+    } catch {
+      setSessionError("Dein Kontostatus konnte nicht geladen werden. Prüfe die Verbindung und versuche es erneut.");
+    } finally {
+      setReady(true);
+    }
+  };
 
   useEffect(() => {
-    let alive = true;
-    account
-      .fetchSession()
-      .then((u) => {
-        if (alive) setUser(u);
-      })
-      .catch(() => {
-        if (alive) setUser(null);
-      })
-      .finally(() => {
-        if (alive) setReady(true);
-      });
-    return () => {
-      alive = false;
-    };
+    void refreshSession();
   }, []);
 
   const value = useMemo<AuthValue>(
     () => ({
       user,
       ready,
+      sessionError,
+      refreshSession,
       async login(email, password) {
         setUser(await account.login({ email, password }));
+        setSessionError(null);
       },
-      async register(email, password, displayName) {
-        await account.register({ email, password, displayName });
+      async register(email, displayName) {
+        await account.register({ email, displayName });
       },
       async logout() {
         await account.logout();
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       setUser,
     }),
-    [user, ready]
+    [user, ready, sessionError]
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

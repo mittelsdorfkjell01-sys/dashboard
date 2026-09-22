@@ -46,6 +46,11 @@ def _season_window(month: int | None, weeks: str | None) -> dict:
 def search(
     q: str = Query(..., min_length=1, description="Free-text query (place or spot/region)"),
     sport: str | None = Query(default=None),
+    variant: str | None = Query(
+        default=None,
+        description="Sport variant key (e.g. windsurf:foil, kitesurf:foil); "
+        "filters to spots that actually offer this variant",
+    ),
     week: int | None = Query(default=None, ge=1, le=52),
     level: str | None = Query(default=None, description="Skill profile level"),
     db: Session = Depends(get_db),
@@ -56,6 +61,7 @@ def search(
     return service.search(
         q,
         sport=sport,
+        variant=variant,
         time_context=_time_context(week),
         profile=_profile(level),
         db=db,
@@ -79,6 +85,7 @@ def search_geometry(
     return service.search_geometry(
         shape,
         sport=body.sport,
+        variant=body.variant,
         time_context=_time_context(body.week),
         profile=_profile(level),
         db=db,
@@ -93,6 +100,7 @@ def map_view(
     max_lon: float = Query(...),
     max_lat: float = Query(...),
     sport: str | None = Query(default=None),
+    variant: str | None = Query(default=None),
     week: int | None = Query(default=None, ge=1, le=52),
     level: str | None = Query(default=None),
     db: Session = Depends(get_db),
@@ -109,6 +117,7 @@ def map_view(
         bounds,
         time_context=_time_context(week),
         sport=sport,
+        variant=variant,
         profile=_profile(level),
         db=db,
         scorer=scorer,

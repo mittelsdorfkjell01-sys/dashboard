@@ -1,83 +1,85 @@
-import { NavLink, Navigate, Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { type ReactNode } from "react";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { Wordmark } from "../../components/ui";
-import { HeartIcon, UserIcon, GridIcon, GearIcon, LogoutIcon } from "../../lib/icons";
-
-const TABS = [
-  { to: "/konto/profil", label: "Profil", icon: UserIcon },
-  { to: "/konto/favoriten", label: "Favoriten", icon: HeartIcon },
-  { to: "/konto/spots", label: "Hinzugefügte Spots", icon: GridIcon },
-  { to: "/konto/einstellungen", label: "Kontoeinstellungen", icon: GearIcon },
-];
+import { CloseIcon } from "../../lib/icons";
 
 /**
- * Shell for the signed-in account area: brand bar, a tab rail for the four
- * sub-pages, and an <Outlet/>. Redirects to /anmelden when signed out.
+ * Full-screen shell for the signed-in account area. Every sub-page is its own
+ * full-bleed screen opened from the account menu; a single close affordance in
+ * the top-right corner steps back to wherever the visitor came from (the menu,
+ * a spot, the landing page). Redirects to /anmelden when signed out.
+ *
+ * The old brand bar + tab rail were dropped: the account areas are now reached
+ * from the burger menu (see AccountMenu / Figma Frame 76/77), not a tab shell.
  */
 export default function AccountLayout() {
-  const { user, ready, logout } = useAuth();
+  const { user, ready, sessionError, refreshSession } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (!ready) return null;
+  if (!ready)
+    return <main role="status" className="mx-auto max-w-lg px-4 py-20 text-center text-ui text-muted">Konto wird geladen …</main>;
+  if (sessionError)
+    return (
+      <main className="mx-auto max-w-lg px-4 py-20 text-center">
+        <h1 className="text-sz-24 font-semibold text-ink">Konto derzeit nicht erreichbar</h1>
+        <p role="alert" className="mt-3 text-ui text-muted">{sessionError}</p>
+        <button type="button" onClick={() => void refreshSession()} className="mt-6 min-h-11 rounded-lg bg-ink px-5 text-ui font-semibold text-surface">Erneut versuchen</button>
+      </main>
+    );
   if (!user) {
     const redirect = encodeURIComponent(location.pathname);
     return <Navigate to={`/anmelden?redirect=${redirect}`} replace />;
   }
 
-  const onLogout = async () => {
-    await logout();
-    navigate("/");
+  // "Zurück zum Menü": the menu is a transient overlay, so step back through
+  // history; fall back to the landing page when the profile was opened directly.
+  const goBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/");
   };
 
   return (
-    <div className="min-h-screen bg-page">
-      {/* brand bar */}
-      <header className="border-b border-line bg-page/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1000px] items-center justify-between px-4 py-3.5 sm:px-8">
-          <Link to="/" className="select-none" aria-label="Zur Startseite">
-            <Wordmark size="sm" />
-          </Link>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-line px-3.5 py-1.5 text-label font-semibold text-ink transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-          >
-            <LogoutIcon className="text-sz-16" />
-            <span className="hidden sm:inline">Abmelden</span>
-          </button>
+    <div className="relative min-h-screen bg-page">
+      <button
+        type="button"
+        onClick={goBack}
+        aria-label="Zurück"
+        className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 grid h-11 w-11 place-items-center rounded-full bg-black/30 text-white ring-1 ring-white/20 backdrop-blur-sm transition-colors hover:bg-black/45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        <CloseIcon className="text-sz-22" />
+      </button>
+      <Outlet />
+    </div>
+  );
+}
+
+/**
+ * Shared padded container + title for the plain account sub-pages (Saved,
+ * Spots besucht, Spots hinzufügen, Einstellungen). Profil brings its own
+ * full-bleed hero instead of this header.
+ */
+export function AccountPage({
+  title,
+  intro,
+  action,
+  children,
+}: {
+  title: string;
+  intro?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="mx-auto max-w-[720px] px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-16">
+      <header className="mb-8 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-sz-28 font-semibold text-ink">{title}</h1>
+          {intro && <p className="mt-1 text-ui text-muted">{intro}</p>}
         </div>
+        {action}
       </header>
-
-      <main className="mx-auto max-w-[1000px] px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
-        <h1 className="text-sz-28 font-semibold text-ink sm:text-sz-32">Mein Konto</h1>
-        <p className="mt-1 text-ui text-muted">
-          Angemeldet als <span className="font-medium text-ink">{user.email}</span>
-        </p>
-
-        {/* tab rail — horizontally scrollable on phones, ink accent for the
-            active area (editorial, not the public teal). */}
-        <nav className="mt-6 flex gap-2 overflow-x-auto no-scrollbar [scrollbar-width:none]" aria-label="Konto-Bereiche">
-          {TABS.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-ui font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                  isActive ? "bg-ink text-surface" : "text-ink ring-1 ring-line hover:bg-band"
-                }`
-              }
-            >
-              <Icon className="text-sz-16" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="mt-10">
-          <Outlet />
-        </div>
-      </main>
+      {children}
     </div>
   );
 }

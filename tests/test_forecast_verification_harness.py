@@ -801,7 +801,9 @@ def test_cron_endpoints_are_guarded_and_leak_no_secret(anon_client, monkeypatch)
 def test_observation_import_is_idempotent(db, scored_spot):
     _spot, station = scored_spot
     observed = datetime.now(timezone.utc) - timedelta(hours=1)
+    received = datetime.now(timezone.utc)
     rows = [normalize_observation(provider="dwd", station_id="00042", observed_at=observed,
+                                  received_at=received, imported_at=received,
                                   wind_speed_ms=7.5, wind_direction_deg=245.0, provider_quality="1")]
     first = persist_batch(db, station, rows, dry_run=False)
     second = persist_batch(db, station, rows, dry_run=False)

@@ -6,8 +6,8 @@
 // listFavorites, listMySubmissions) because the UI reads them during render. We
 // back that with a small in-memory cache that `hydrate()` fills from the server
 // once a session is established, then broadcast FAVORITES_EVENT / SUBMISSIONS_EVENT
-// so mounted components re-read. Mutations update the cache optimistically and
-// reconcile with the server in the background.
+// so mounted components re-read. Mutations update the cache only after the
+// server confirms them.
 
 import { ApiError, request } from "./api";
 
@@ -16,6 +16,26 @@ export interface Account {
   email: string;
   displayName: string;
   createdAt: string; // ISO
+  emailVerified: boolean;
+  pendingEmail: string | null;
+  mailAvailable: boolean;
+  preferences: {
+    units?: { wind: "kn" | "bft" | "ms"; wave: "m" | "ft"; temp: "c" | "f"; distance: "km" | "mi" };
+    sports?: string[];
+    conditions?: Partial<Record<SportKey, SportConditions>>;
+    submissionEmails?: boolean;
+  };
+}
+
+export type SportKey = "surf" | "windsurf" | "kitesurf" | "wing";
+
+/** Canonical account thresholds: knots, metres and degrees Celsius. */
+export interface SportConditions {
+  windMinKn?: number | null;
+  windMaxKn?: number | null;
+  waveMinM?: number | null;
+  waveMaxM?: number | null;
+  waterTempMinC?: number | null;
 }
 
 export interface FavoriteSpot {
@@ -30,12 +50,32 @@ export interface FavoriteSpot {
 // is "pending", becomes "merged" once an admin turns it into a (draft) spot, or
 // "rejected". The UI maps these to badges with a safe fallback for any value it
 // does not recognise.
-export type SubmissionStatus = "pending" | "merged" | "rejected";
+export type SubmissionStatus = "pending" | "merged" | "rejected" | "withdrawn";
 export interface MySubmission {
   id: string;
   name: string;
   status: SubmissionStatus;
   createdAt: string;
+  updatedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  resultingSpotId?: string | null;
+  publishedSpotId?: string | null;
+  regionId?: string | null;
+  lat?: number | null;
+  lon?: number | null;
+  sports?: string[];
+}
+
+export type CollectionStatus = "idle" | "loading" | "ready" | "error";
+export interface CollectionState<T> { items: T[]; status: CollectionStatus; error: string | null; hasMore?: boolean }
+export interface AccountActivity {
+  id: string;
+  kind: "rating" | "tip" | "image" | "correction";
+  spotId: string | null;
+  createdAt: string;
+  status: string;
+  reviewNote?: string | null;
 }
 
 /** Thrown for expected, user-facing failures (duplicate email, bad password …). */
@@ -59,6 +99,11 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 
 let favCache: FavoriteSpot[] = [];
 let subsCache: MySubmission[] = [];
+let favoritesStatus: CollectionStatus = "idle";
+let submissionsStatus: CollectionStatus = "idle";
+let favoritesError: string | null = null;
+let submissionsError: string | null = null;
+let submissionsHasMore = false;
 
 function emit(name: string): void {
   window.dispatchEvent(new CustomEvent(name));
@@ -67,25 +112,47 @@ function emit(name: string): void {
 function clearCaches(): void {
   favCache = [];
   subsCache = [];
+  favoritesStatus = submissionsStatus = "idle";
+  favoritesError = submissionsError = null;
+  submissionsHasMore = false;
   emit(FAVORITES_EVENT);
   emit(SUBMISSIONS_EVENT);
 }
 
 /** Load the signed-in user's favourites + submissions into the cache. Called
- *  after a session is confirmed; failures leave the caches empty (best-effort). */
-async function hydrate(): Promise<void> {
+ *  after a session is confirmed; failures remain visible for explicit retry. */
+export async function refreshFavorites(): Promise<void> {
+  favoritesStatus = "loading";
+  favoritesError = null;
+  emit(FAVORITES_EVENT);
   try {
-    const [favs, subs] = await Promise.all([
-      request<{ items: FavoriteSpot[] }>("/account/favorites"),
-      request<{ items: MySubmission[] }>("/account/submissions"),
-    ]);
-    favCache = favs.items;
-    subsCache = subs.items;
-    emit(FAVORITES_EVENT);
-    emit(SUBMISSIONS_EVENT);
-  } catch {
-    /* not logged in / offline → caches stay empty */
+    favCache = (await call<{ items: FavoriteSpot[] }>("/account/favorites")).items;
+    favoritesStatus = "ready";
+  } catch (error) {
+    favoritesStatus = "error";
+    favoritesError = error instanceof Error ? error.message : "Favoriten konnten nicht geladen werden.";
   }
+  emit(FAVORITES_EVENT);
+}
+
+export async function refreshSubmissions(): Promise<void> {
+  submissionsStatus = "loading";
+  submissionsError = null;
+  emit(SUBMISSIONS_EVENT);
+  try {
+    const page = await call<{ items: MySubmission[]; hasMore: boolean }>("/account/submissions?limit=50&offset=0");
+    subsCache = page.items;
+    submissionsHasMore = page.hasMore;
+    submissionsStatus = "ready";
+  } catch (error) {
+    submissionsStatus = "error";
+    submissionsError = error instanceof Error ? error.message : "Vorschläge konnten nicht geladen werden.";
+  }
+  emit(SUBMISSIONS_EVENT);
+}
+
+async function hydrate(): Promise<void> {
+  await Promise.all([refreshFavorites(), refreshSubmissions()]);
 }
 
 // --- auth / session --------------------------------------------------------
@@ -108,14 +175,12 @@ export async function fetchSession(): Promise<Account | null> {
 
 export async function register(input: {
   email: string;
-  password: string;
   displayName: string;
 }): Promise<void> {
   await call<{ accepted: boolean; message: string }>("/account/register", {
     method: "POST",
     body: JSON.stringify({
       email: input.email,
-      password: input.password,
       displayName: input.displayName,
     }),
   });
@@ -143,13 +208,38 @@ export async function logout(): Promise<void> {
 
 export async function updateProfile(patch: {
   displayName?: string;
-  email?: string;
 }): Promise<Account> {
   return call<Account>("/account/profile", {
     method: "PATCH",
     body: JSON.stringify(patch),
   });
 }
+
+export const requestEmailChange = (email: string, password: string) =>
+  call<Account>("/account/email/change", { method: "POST", body: JSON.stringify({ email, password }) });
+
+export const confirmEmail = (token: string, password?: string) =>
+  call<Account>("/account/email/confirm", { method: "POST", body: JSON.stringify({ token, password }) });
+
+export const requestPasswordReset = (email: string) =>
+  call<{ accepted: boolean }>("/account/password-reset/request", { method: "POST", body: JSON.stringify({ email }) });
+
+export const confirmPasswordReset = (token: string, password: string) =>
+  call<void>("/account/password-reset/confirm", { method: "POST", body: JSON.stringify({ token, password }) });
+
+let preferencesQueue: Promise<void> = Promise.resolve();
+
+/** Serialize independent settings panels so the last server snapshot wins. */
+export function updatePreferences(patch: Account["preferences"]): Promise<Account> {
+  const operation = preferencesQueue.then(() => call<Account>("/account/preferences", {
+    method: "PATCH", body: JSON.stringify(patch),
+  }));
+  preferencesQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
+export const fetchAccountActivity = () =>
+  call<{ items: AccountActivity[] }>("/account/activity");
 
 export async function changePassword(oldPw: string, newPw: string): Promise<void> {
   await call<void>("/account/password", {
@@ -184,25 +274,27 @@ export function listFavorites(): FavoriteSpot[] {
   return favCache;
 }
 
+export function getFavoritesState(): CollectionState<FavoriteSpot> {
+  return { items: favCache, status: favoritesStatus, error: favoritesError };
+}
+
 export function isFavorite(spotId: string): boolean {
   return favCache.some((f) => f.id === spotId);
 }
 
-/** Toggle a spot's favourite state. Returns the new state synchronously
- *  (optimistic); the server call runs in the background and rolls back on
- *  failure. Callers guard on auth before invoking (see FavoriteButton). */
-export function toggleFavorite(spot: {
+/** Toggle a spot's favourite state after the server confirms the mutation. */
+export async function toggleFavorite(spot: {
   id: string;
   name: string;
   region?: string | null;
   sports?: string[];
-}): boolean {
+}): Promise<boolean> {
   const exists = favCache.some((f) => f.id === spot.id);
   if (exists) {
-    removeFavorite(spot.id);
+    await removeFavorite(spot.id);
     return false;
   }
-  const prev = favCache;
+  await call<void>(`/account/favorites/${spot.id}`, { method: "PUT" });
   favCache = [
     {
       id: spot.id,
@@ -214,21 +306,13 @@ export function toggleFavorite(spot: {
     ...favCache,
   ];
   emit(FAVORITES_EVENT);
-  request(`/account/favorites/${spot.id}`, { method: "PUT" }).catch(() => {
-    favCache = prev; // rollback
-    emit(FAVORITES_EVENT);
-  });
   return true;
 }
 
-export function removeFavorite(spotId: string): void {
-  const prev = favCache;
+export async function removeFavorite(spotId: string): Promise<void> {
+  await call<void>(`/account/favorites/${spotId}`, { method: "DELETE" });
   favCache = favCache.filter((f) => f.id !== spotId);
   emit(FAVORITES_EVENT);
-  request(`/account/favorites/${spotId}`, { method: "DELETE" }).catch(() => {
-    favCache = prev; // rollback
-    emit(FAVORITES_EVENT);
-  });
 }
 
 // --- my submissions --------------------------------------------------------
@@ -237,14 +321,51 @@ export function listMySubmissions(): MySubmission[] {
   return subsCache;
 }
 
+export function getSubmissionsState(): CollectionState<MySubmission> {
+  return { items: subsCache, status: submissionsStatus, error: submissionsError, hasMore: submissionsHasMore };
+}
+
+export async function loadMoreSubmissions(): Promise<void> {
+  if (!submissionsHasMore || submissionsStatus === "loading") return;
+  submissionsStatus = "loading";
+  emit(SUBMISSIONS_EVENT);
+  try {
+    const page = await call<{ items: MySubmission[]; hasMore: boolean }>(
+      `/account/submissions?limit=50&offset=${subsCache.length}`
+    );
+    subsCache = [...subsCache, ...page.items];
+    submissionsHasMore = page.hasMore;
+    submissionsError = null;
+    submissionsStatus = "ready";
+  } catch (error) {
+    submissionsError = error instanceof Error ? error.message : "Weitere Vorschläge konnten nicht geladen werden.";
+    submissionsStatus = "error";
+  }
+  emit(SUBMISSIONS_EVENT);
+}
+
 /** Propose a spot by name. POSTs to the server, then prepends the stored row to
  *  the cache and notifies the list. */
-export async function addSubmission(name: string): Promise<MySubmission> {
+export async function addSubmission(input: {
+  name: string; regionId?: string; lat?: number; lon?: number; sports?: string[];
+}): Promise<MySubmission> {
   const sub = await call<MySubmission>("/account/submissions", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(input),
   });
   subsCache = [sub, ...subsCache];
   emit(SUBMISSIONS_EVENT);
   return sub;
+}
+
+export async function withdrawSubmission(id: string): Promise<void> {
+  await call<void>(`/account/submissions/${id}`, { method: "DELETE" });
+  subsCache = subsCache.map((sub) => sub.id === id ? { ...sub, status: "withdrawn" } : sub);
+  emit(SUBMISSIONS_EVENT);
+}
+
+export async function findSimilarSpots(q: string): Promise<{ id: string; name: string }[]> {
+  return (await call<{ items: { id: string; name: string }[] }>(
+    `/account/submissions/similar?q=${encodeURIComponent(q)}`
+  )).items;
 }

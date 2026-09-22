@@ -12,9 +12,10 @@ case-insensitive without needing ``citext``.
 """
 
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Boolean, Integer, String, text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, Integer, String, text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -41,3 +42,7 @@ class AppUser(Base, TimestampMixin):
     session_version: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0")
     )
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    pending_email: Mapped[str | None] = mapped_column(String(255))
+    email_token_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    preferences: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))

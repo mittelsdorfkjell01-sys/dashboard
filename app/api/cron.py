@@ -205,6 +205,7 @@ def collect_observations(db: Session = Depends(get_db)) -> dict:
 
         return run_observation_import(
             db,
+            providers=tuple(settings.weather_observation_providers),
             limit=settings.weather_observation_cron_batch_size,
             dry_run=False,
             cache=default_cache(),
@@ -221,7 +222,12 @@ def refresh_station_catalog(db: Session = Depends(get_db)) -> dict:
     try:
         from app.weather.station_catalog_job import run_station_catalog_refresh
 
-        return run_station_catalog_refresh(db, dry_run=False)
+        settings = get_settings()
+        return run_station_catalog_refresh(
+            db,
+            providers=tuple(settings.weather_station_catalog_providers),
+            dry_run=False,
+        )
     except Exception:
         db.rollback()
         logger.exception("cron_station_catalog_refresh_failed")

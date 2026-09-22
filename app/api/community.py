@@ -296,6 +296,7 @@ def post_submission(
     request: Request,
     db: Session = Depends(get_db),
     limiter: RateLimiter = Depends(get_rate_limiter),
+    account: AppUser | None = Depends(optional_account),
 ) -> dict:
     check_honeypot(body.website)
     enforce(limiter, request, "submission", limit=LIMITS["submission"][0], window=LIMITS["submission"][1])
@@ -303,6 +304,7 @@ def post_submission(
         sub = service.create_submission(
             db, payload=body.payload, submitter_name=body.submitter_name,
             submitter_email=body.submitter_email, ip_hash=ip_hash(request),
+            app_user_id=account.id if account else None,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))

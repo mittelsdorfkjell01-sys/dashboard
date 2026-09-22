@@ -15,6 +15,7 @@ from app.admin.constants import (
     validate_levels,
     validate_sports,
     validate_styles,
+    validate_variant_conditions,
     validate_water_characters,
     validate_water_types,
 )
@@ -46,6 +47,7 @@ class SpotCreate(AdminWriteModel):
     facing: int | None = Field(default=None, ge=0, le=359)
     model_pref: str | None = Field(default=None, max_length=50)
     editorial: dict[str, Any] | None = None
+    variant_conditions: dict[str, Any] | None = None
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
@@ -57,6 +59,9 @@ class SpotCreate(AdminWriteModel):
     _v_water_type = field_validator("water_type")(staticmethod(validate_water_types))
     _v_style = field_validator("style")(staticmethod(validate_styles))
     _v_fac = field_validator("facilities")(staticmethod(validate_facilities))
+    _v_variants = field_validator("variant_conditions")(
+        staticmethod(validate_variant_conditions)
+    )
 
     @field_validator("name")
     @classmethod
@@ -66,7 +71,7 @@ class SpotCreate(AdminWriteModel):
             raise ValueError("Name darf nicht leer sein")
         return value
 
-    @field_validator("facilities", "editorial")
+    @field_validator("facilities", "editorial", "variant_conditions")
     @classmethod
     def _limit_json(cls, value: Any, info) -> Any:
         return _bounded_json(value, label=info.field_name)
@@ -94,6 +99,7 @@ class SpotUpdate(AdminWriteModel):
     facing: int | None = Field(default=None, ge=0, le=359)
     model_pref: str | None = Field(default=None, max_length=50)
     editorial: dict[str, Any] | None = None
+    variant_conditions: dict[str, Any] | None = None
     # Optimistic-locking token: the ``updated_at`` the client loaded. When set,
     # the route rejects the write (409) if the row changed meanwhile. Never a
     # data column — excluded from ``to_data()``.
@@ -110,6 +116,9 @@ class SpotUpdate(AdminWriteModel):
     _v_water_type = field_validator("water_type")(staticmethod(validate_water_types))
     _v_style = field_validator("style")(staticmethod(validate_styles))
     _v_fac = field_validator("facilities")(staticmethod(validate_facilities))
+    _v_variants = field_validator("variant_conditions")(
+        staticmethod(validate_variant_conditions)
+    )
 
     @model_validator(mode="after")
     def _coordinates_are_a_pair(self):
@@ -129,7 +138,7 @@ class SpotUpdate(AdminWriteModel):
             raise ValueError("Name darf nicht leer sein")
         return value
 
-    @field_validator("facilities", "editorial", "expected_values")
+    @field_validator("facilities", "editorial", "variant_conditions", "expected_values")
     @classmethod
     def _limit_json(cls, value: Any, info) -> Any:
         return _bounded_json(value, label=info.field_name)

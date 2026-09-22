@@ -2,43 +2,50 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
-  listFavorites,
-  listMySubmissions,
+  getFavoritesState,
+  getSubmissionsState,
+  refreshFavorites,
+  refreshSubmissions,
   FAVORITES_EVENT,
   SUBMISSIONS_EVENT,
   type FavoriteSpot,
   type MySubmission,
+  type CollectionState,
 } from "../../lib/account";
 import { initialsOf } from "../../lib/initials";
 import { sportLabel } from "../../lib/labels";
-import { spotPath } from "../../lib/spotRoutes";
 import {
-  HeartIcon,
-  GridIcon,
-  ChevronRightIcon,
+  BookmarkIcon,
+  SpotAddIcon,
+  PinIcon,
+  SchoolIcon,
+  MoreIcon,
   SearchIcon,
-  PlusCircleIcon,
 } from "../../lib/icons";
 
 /**
- * The signed-in visitor's private home. It shows only what the account actually
- * carries today — identity, saved (favourite) spots and proposed spots — each
- * with a clear next action when empty. Areas that are planned but not yet backed
- * by storage (description, preferred sports, own media, trips, travel reports, a
- * visited-spots map) appear as clearly-labelled "Geplant" tiles so the intended
- * structure is visible without pretending the features exist. This is the OWN
- * view; a public profile is a separate, not-yet-built surface.
+ * Profile — a full-bleed screen matching Figma Frame 77: a hero band with the
+ * avatar and saved/added/visited counts, the identity block, a "Gear" section
+ * and a "Spotsammlung" preview.
+ *
+ * What has a backend today: the saved (favourites) and added (submissions)
+ * counts. Everything else in the Figma — cover photo, avatar photo, sport +
+ * country, the gear locker, the visited-spots collection — has no storage yet,
+ * so it shows honest "Geplant" placeholders (matching the account-area
+ * decision), never invented data. Wire each block to its API as it lands.
  */
 export default function Profil() {
   const { user } = useAuth();
-  const [favs, setFavs] = useState<FavoriteSpot[]>(listFavorites);
-  const [subs, setSubs] = useState<MySubmission[]>(listMySubmissions);
+  const [favState, setFavState] = useState<CollectionState<FavoriteSpot>>(getFavoritesState);
+  const [subState, setSubState] = useState<CollectionState<MySubmission>>(getSubmissionsState);
 
   useEffect(() => {
-    const refreshFavs = () => setFavs(listFavorites());
-    const refreshSubs = () => setSubs(listMySubmissions());
+    const refreshFavs = () => setFavState(getFavoritesState());
+    const refreshSubs = () => setSubState(getSubmissionsState());
     window.addEventListener(FAVORITES_EVENT, refreshFavs);
     window.addEventListener(SUBMISSIONS_EVENT, refreshSubs);
+    void refreshFavorites();
+    void refreshSubmissions();
     return () => {
       window.removeEventListener(FAVORITES_EVENT, refreshFavs);
       window.removeEventListener(SUBMISSIONS_EVENT, refreshSubs);
@@ -47,184 +54,123 @@ export default function Profil() {
 
   if (!user) return null;
 
-  const memberSince = new Date(user.createdAt).toLocaleDateString("de-DE", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const savedCount = favState.items.length;
+  const addedCount = subState.items.length;
+  const visitedCount = 0; // No visits backend yet — see BesuchteSpots.
+  const sports = user.preferences.sports ?? [];
 
   return (
-    <div className="space-y-10">
-      {/* Identity */}
-      <section className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-ink text-sz-26 font-bold text-surface">
-          {initialsOf(user.displayName, user.email)}
-        </span>
-        <div className="min-w-0">
-          <h2 className="truncate text-sz-24 font-semibold text-ink">{user.displayName || "Willkommen"}</h2>
-          <p className="truncate text-ui text-muted">{user.email}</p>
-          <p className="mt-1 text-label text-muted">Mitglied seit {memberSince}</p>
+    <div className="mx-auto max-w-[720px] pb-[max(3rem,env(safe-area-inset-bottom))]">
+      {/* Hero band — cover photo lands here later; a calm sea gradient stands in
+          for now (a placeholder image area, not fabricated content). */}
+      <div className="relative h-52 w-full bg-gradient-to-br from-[#8fb8cc] via-[#5a8aa3] to-[#2f4f61] sm:rounded-b-[28px]" aria-hidden />
+
+      <div className="px-5">
+        {/* Avatar (overlapping the hero) + counts */}
+        <div className="flex items-end justify-between gap-4 -mt-12">
+          <span className="grid h-24 w-24 shrink-0 place-items-center rounded-full bg-ink text-sz-28 font-bold text-surface ring-4 ring-page">
+            {initialsOf(user.displayName, user.email)}
+          </span>
+          <div className="flex items-center gap-5 pb-1">
+            <StatLink to="/konto/favoriten" count={savedCount} label="gespeichert" icon={<BookmarkIcon className="text-sz-18" />} />
+            <StatLink to="/konto/spots" count={addedCount} label="hinzugefügt" icon={<SpotAddIcon className="text-sz-18" />} />
+            <StatLink to="/konto/besucht" count={visitedCount} label="besucht" icon={<PinIcon className="text-sz-18" />} />
+          </div>
         </div>
-        <Link
-          to="/konto/einstellungen"
-          className="shrink-0 self-start rounded-lg border border-line px-4 py-2 text-ui font-semibold text-ink transition-colors hover:bg-band sm:ml-auto sm:self-auto"
-        >
-          Profil bearbeiten
-        </Link>
-      </section>
 
-      {/* Description + preferred sports — planned, shown so the IA is visible. */}
-      <p className="max-w-[60ch] text-ui text-muted">
-        <span className="mr-2 inline-flex items-center rounded-full bg-band px-2 py-0.5 text-caption font-semibold uppercase tracking-wide text-muted align-middle">
-          Geplant
-        </span>
-        Eine kurze Beschreibung und deine bevorzugten Sportarten erscheinen hier, sobald
-        sie zu deinem Konto gespeichert werden.
-      </p>
+        {/* Identity */}
+        <div className="mt-4">
+          <h1 className="truncate text-sz-24 font-semibold text-ink">{user.displayName || "Willkommen"}</h1>
+          <p className="mt-1 text-ui text-muted">
+            {sports.length > 0 ? sports.map(sportLabel).join(" · ") : "Sportart folgt"}
+          </p>
+          <p className="text-ui text-muted">Land folgt</p>
+        </div>
 
-      {/* Saved spots (favourites) */}
-      <PreviewSection
-        title="Gespeicherte Spots"
-        count={favs.length}
-        to="/konto/favoriten"
-        icon={<HeartIcon className="text-sz-18" />}
-        empty={
-          <EmptyState
-            icon={<HeartIcon className="text-sz-22" />}
-            title="Noch keine gespeicherten Spots"
-            hint="Tippe an einem Spot auf das Lesezeichen, um ihn hier zu sammeln."
-            action={{ to: "/search", label: "Spots entdecken", icon: <SearchIcon className="text-sz-16" /> }}
-          />
-        }
-      >
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {favs.slice(0, 4).map((f) => (
-            <li key={f.id}>
-              <Link
-                to={spotPath(f)}
-                className="flex min-h-[52px] items-center gap-3 rounded-2xl border border-line px-4 transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        {/* Gear */}
+        <section className="mt-10">
+          <SectionHead
+            icon={<SchoolIcon className="text-sz-22" />}
+            title="Gear"
+            right={
+              <button
+                type="button"
+                aria-disabled="true"
+                title="Bearbeiten folgt"
+                className="grid h-9 w-9 place-items-center rounded-full text-muted"
               >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-body font-semibold text-ink">{f.name}</span>
-                  <span className="block truncate text-caption text-muted">
-                    {[f.region, (f.sports ?? []).map(sportLabel).join(", ")].filter(Boolean).join(" · ")}
-                  </span>
-                </span>
-                <ChevronRightIcon className="text-sz-16 text-muted" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </PreviewSection>
-
-      {/* Proposed spots */}
-      <PreviewSection
-        title="Hinzugefügte Spots"
-        count={subs.length}
-        to="/konto/spots"
-        icon={<GridIcon className="text-sz-18" />}
-        empty={
-          <EmptyState
-            icon={<GridIcon className="text-sz-22" />}
-            title="Noch keine Spots vorgeschlagen"
-            hint="Fehlt ein Spot? Schlage ihn vor — wir prüfen ihn redaktionell."
-            action={{ to: "/konto/spots", label: "Spot vorschlagen", icon: <PlusCircleIcon className="text-sz-18" /> }}
+                <MoreIcon className="text-sz-20" />
+              </button>
+            }
           />
-        }
-      >
-        <ul className="space-y-2">
-          {subs.slice(0, 3).map((s) => (
-            <li key={s.id} className="flex min-h-[52px] items-center justify-between gap-3 rounded-2xl border border-line px-4">
-              <span className="truncate text-body font-medium text-ink">{s.name}</span>
-              <span className="shrink-0 text-caption text-muted">
-                {new Date(s.createdAt).toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </PreviewSection>
+          <p className="mt-1 text-ui text-muted">Dein aktuelles Surfequipment</p>
+          <PlannedBox>
+            Dein Equipment kannst du hier bald hinterlegen — Kite, Bar, Board und Zubehör.
+          </PlannedBox>
+        </section>
 
-      {/* Planned areas — information architecture only, not usable yet. */}
-      <section>
-        <h3 className="text-sz-16 font-semibold text-ink">Bald verfügbar</h3>
-        <p className="mt-1 text-ui text-muted">Diese Bereiche folgen, sobald Speicherung, Rechte und Darstellung stehen.</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {["Meine Medien", "Fahrten", "Reiseberichte", "Besuchte Spots"].map((label) => (
-            <div
-              key={label}
-              aria-disabled="true"
-              className="rounded-2xl border border-dashed border-line px-4 py-5 text-center"
+        {/* Spotsammlung — preview of visited spots */}
+        <section className="mt-10">
+          <SectionHead
+            icon={<PinIcon className="text-sz-22" />}
+            title="Spotsammlung"
+            right={
+              <Link
+                to="/konto/besucht"
+                className="text-ui font-medium text-muted underline underline-offset-4 transition-opacity hover:opacity-70"
+              >
+                mehr ansehen
+              </Link>
+            }
+          />
+          <PlannedBox>
+            <p className="max-w-[46ch] text-ui text-muted">Die Spots, an denen du wirklich warst, sammeln sich hier.</p>
+            <Link
+              to="/search"
+              className="mt-4 inline-flex items-center gap-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
             >
-              <span className="block text-ui font-medium text-ink">{label}</span>
-              <span className="mt-1 inline-block text-caption font-semibold uppercase tracking-wide text-muted">Geplant</span>
-            </div>
-          ))}
-        </div>
-      </section>
+              <SearchIcon className="text-sz-16" />
+              Spots entdecken
+            </Link>
+          </PlannedBox>
+        </section>
+      </div>
     </div>
   );
 }
 
-function PreviewSection({
-  title,
-  count,
-  to,
-  icon,
-  empty,
-  children,
-}: {
-  title: string;
-  count: number;
-  to: string;
-  icon: ReactNode;
-  empty: ReactNode;
-  children: ReactNode;
-}) {
+function StatLink({ to, count, label, icon }: { to: string; count: number; label: string; icon: ReactNode }) {
   return (
-    <section className="border-t border-line pt-8">
-      <div className="flex items-center justify-between gap-4">
-        <h3 className="flex items-center gap-2 text-sz-16 font-semibold text-ink">
-          <span className="text-muted">{icon}</span>
-          {title}
-          <span className="text-muted">· {count}</span>
-        </h3>
-        {count > 0 && (
-          <Link
-            to={to}
-            className="shrink-0 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
-          >
-            Alle ansehen
-          </Link>
-        )}
-      </div>
-      <div className="mt-4">{count === 0 ? empty : children}</div>
-    </section>
+    <Link
+      to={to}
+      aria-label={`${count} ${label}`}
+      className="flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-ink transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+    >
+      <span className="text-sz-18 font-semibold tabular-nums">{count}</span>
+      <span className="text-muted">{icon}</span>
+    </Link>
   );
 }
 
-function EmptyState({
-  icon,
-  title,
-  hint,
-  action,
-}: {
-  icon: ReactNode;
-  title: string;
-  hint: string;
-  action: { to: string; label: string; icon: ReactNode };
-}) {
+function SectionHead({ icon, title, right }: { icon: ReactNode; title: string; right?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line px-6 py-10 text-center">
-      <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-band text-ink">{icon}</span>
-      <p className="mt-3 text-ui font-semibold text-ink">{title}</p>
-      <p className="mx-auto mt-1 max-w-[40ch] text-ui text-muted">{hint}</p>
-      <Link
-        to={action.to}
-        className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-ink px-4 text-ui font-semibold text-surface transition-colors hover:bg-ink-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-      >
-        {action.icon}
-        {action.label}
-      </Link>
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-2.5 text-sz-18 font-semibold text-ink">
+        <span className="text-ink">{icon}</span>
+        {title}
+      </h2>
+      {right}
+    </div>
+  );
+}
+
+function PlannedBox({ children }: { children: ReactNode }) {
+  return (
+    <div className="mt-3 rounded-[14px] border border-dashed border-line bg-surface px-5 py-8">
+      <span className="inline-block rounded-full bg-band px-2.5 py-1 text-caption font-semibold uppercase tracking-wide text-muted">
+        Geplant
+      </span>
+      <div className="mt-3 max-w-[46ch] text-ui text-muted">{children}</div>
     </div>
   );
 }

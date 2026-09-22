@@ -34,6 +34,10 @@ def station_identity_keys(station) -> tuple[str, ...]:
         keys.append(f"wigos:{wigos}")
     if icao:
         keys.append(f"icao:{icao}")
+    if getattr(station, "identity_review_status", "unreviewed") == "passed":
+        physical = _text(getattr(station, "physical_station_group", None))
+        if physical:
+            keys.append(f"reviewed_physical:{physical}")
     return tuple(keys)
 
 
@@ -80,7 +84,7 @@ def duplicate_station_groups(
     spatial_threshold_km: float = 0.5,
     elevation_threshold_m: float = 50.0,
 ) -> list[tuple[int, ...]]:
-    """Return transitive duplicate groups by strong ID or close coordinates."""
+    """Return confirmed strong-ID groups; proximity alone never merges records."""
     parents = list(range(len(stations)))
 
     def find(index: int) -> int:
@@ -96,26 +100,60 @@ def duplicate_station_groups(
 
     strong_keys: dict[str, int] = {}
     for index, station in enumerate(stations):
-        for key in station_identity_keys(station):
+        # ICAO and a bare WIGOS identify a site, not necessarily the same wind
+        # sensor. They remain holdout exclusion hints, never auto-confirmation.
+        keys = [key for key in station_identity_keys(station)
+                if key.startswith(("provider:", "reviewed_physical:"))]
+        sensor = (getattr(station, "sensor_metadata", None) or {}).get("sensor_instance_id")
+        if sensor and (getattr(station, "sensor_metadata", None) or {}).get("official_crosswalk"):
+            wigos = _text(getattr(station, "wigos_id", None))
+            if wigos:
+                keys.append(f"official_sensor:{wigos}:{_text(sensor)}")
+        for key in keys:
             if key in strong_keys:
                 union(index, strong_keys[key])
             else:
                 strong_keys[key] = index
 
-    for left in range(len(stations)):
-        for right in range(left + 1, len(stations)):
-            if _same_spatial_station(
-                stations[left],
-                stations[right],
-                spatial_threshold_km=spatial_threshold_km,
-                elevation_threshold_m=elevation_threshold_m,
-            ):
-                union(left, right)
-
     grouped: dict[int, list[int]] = defaultdict(list)
     for index in range(len(stations)):
         grouped[find(index)].append(index)
     return [tuple(values) for values in grouped.values() if len(values) > 1]
+
+
+def spatial_duplicate_candidates(stations: list, *, spatial_threshold_km: float = 0.5,
+                                 elevation_threshold_m: float = 50.0) -> list[tuple[int, int]]:
+    """Unreviewed proximity hints; must not establish physical identity."""
+    confirmed = {frozenset((left, right)) for group in duplicate_station_groups(stations)
+                 for left in group for right in group if left < right}
+    return [(left, right) for left in range(len(stations)) for right in range(left + 1, len(stations))
+            if frozenset((left, right)) not in confirmed and _same_spatial_station(
+                stations[left], stations[right], spatial_threshold_km=spatial_threshold_km,
+                elevation_threshold_m=elevation_threshold_m)]
+
+
+def possible_duplicate_candidates(stations: list) -> list[tuple[int, int, tuple[str, ...]]]:
+    """Unconfirmed cross-provider hints; never establish identity by themselves."""
+    confirmed = {frozenset((left, right)) for group in duplicate_station_groups(stations)
+                 for left in group for right in group if left < right}
+    spatial = set(spatial_duplicate_candidates(stations))
+    output = []
+    for left in range(len(stations)):
+        for right in range(left + 1, len(stations)):
+            if frozenset((left, right)) in confirmed:
+                continue
+            reasons = []
+            left_keys, right_keys = set(station_identity_keys(stations[left])), set(station_identity_keys(stations[right]))
+            shared = left_keys.intersection(right_keys)
+            if any(key.startswith("wigos:") for key in shared):
+                reasons.append("shared_wigos_sensor_unproven")
+            if any(key.startswith("icao:") for key in shared):
+                reasons.append("shared_icao_sensor_unproven")
+            if (left, right) in spatial:
+                reasons.append("spatial_proximity")
+            if reasons:
+                output.append((left, right, tuple(reasons)))
+    return output
 
 
 def station_display_identity(station) -> str:

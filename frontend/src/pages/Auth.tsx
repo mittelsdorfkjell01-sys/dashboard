@@ -42,10 +42,10 @@ export default function Auth() {
         await login(email, password);
         navigate(redirect, { replace: true });
       } else {
-        await register(email, password, name);
+        await register(email, name);
         setMode("login");
         setPassword("");
-        setNotice("Registrierung verarbeitet. Du kannst dich jetzt anmelden.");
+        setNotice("Prüfe dein E-Mail-Postfach. Öffne den Bestätigungslink und lege dort dein Passwort fest.");
       }
     } catch (err) {
       setError(err instanceof AccountError ? err.message : "Etwas ist schiefgelaufen.");
@@ -109,16 +109,16 @@ export default function Auth() {
               required
             />
           </Field>
-          <Field label="Passwort" required hint={mode === "register" ? "Mindestens 8 Zeichen." : undefined}>
+          {mode === "login" && <Field label="Passwort" required>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              autoComplete="current-password"
               required
             />
-          </Field>
+          </Field>}
 
           {error && (
             <p role="alert" className="rounded-[14px] bg-danger-bg px-3 py-2 text-label font-medium text-danger">
@@ -135,6 +135,8 @@ export default function Auth() {
             {busy ? "Bitte warten …" : mode === "login" ? "Anmelden" : "Konto erstellen"}
           </Button>
         </form>
+
+        {mode === "login" && <Link to="/passwort-zuruecksetzen" className="mt-3 inline-flex min-h-11 items-center text-label font-semibold text-ink underline">Passwort vergessen?</Link>}
 
         <p className="mt-5 text-center text-label text-muted">
           {mode === "login" ? "Noch kein Konto? " : "Schon registriert? "}

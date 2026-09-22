@@ -26,6 +26,7 @@ class GeometryRequest(BaseModel):
     bounds: Bounds | None = None
     # filters / context
     sport: str | None = None
+    variant: str | None = None
     week: int | None = Field(default=None, ge=1, le=52)
 
     def to_shape(self) -> dict:

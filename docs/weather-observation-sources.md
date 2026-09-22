@@ -1,13 +1,13 @@
 # Public wind-observation sources
 
-Reviewed: 2026-09-13. This is the evidence and operating record for observation
+Reviewed: 2026-09-21. This is the evidence and operating record for observation
 connectors. A provider is not enabled merely because an endpoint is reachable.
 
 ## Decision
 
 | Priority | Source | Coverage and access | Reuse evidence | Decision |
 |---|---|---|---|---|
-| 1 | NOAA Aviation Weather Center (AWC) METAR Data API | Official worldwide METAR/SPECI API and daily worldwide station cache; anonymous HTTPS | WMO core surface observations are exchanged “free and unrestricted”; WMO defines that as use, reuse and sharing without charge or conditions. NWS web information is public domain unless marked otherwise and may be used without charge for lawful purposes. Attribution is retained. | **Implemented as `awc_metar`**, filtered to European countries/ICAO regions. |
+| 1 | NOAA Aviation Weather Center (AWC) METAR Data API | Official worldwide METAR/SPECI API and daily worldwide station cache; anonymous HTTPS | The API endpoint is official, but METAR is aviation data and WMO guidance places aviation METAR under the `recommended` policy where originating-provider conditions may apply. The NWS disclaimer does not prove redistribution rights for every foreign report carried by AWC. | Connector implemented as `awc_metar`, filtered to Europe, but **not enabled by default** and not eligible for public correction until downstream commercial reuse is cleared. |
 | 2 | EUMETNET MeteoGate E-SOH | Public OGC API EDR for European land-surface observations; anonymous access was reachable during review | The collection advertises CC BY 4.0. EUMETNET states that high-value meteorological datasets are free, openly licensed, machine-readable and available through API/bulk access. | Qualified next connector. Deferred because the requested METAR priority is now covered and one new provider was requested. |
 | 3 | National services | DWD CDC and DMI Open Data already implemented | DWD and DMI provenance/terms are retained per observation. | Continue as independent sources and cross-provider evidence. |
 | 4 | Private networks | Not evaluated | Per-station rights, siting and redistribution terms vary. | Not allowed until a separate legal and quality review passes. |
@@ -27,11 +27,11 @@ disabled pending review.
   use of unmarked NWS web information without charge, forbids false ownership,
   endorsement or presenting modifications as official, and requires clients to
   respect refresh cadence and service errors.
-- WMO Unified Data Policy Resolution 1:
-  <https://wmo.int/wmo-unified-data-policy-resolution-res1>. Annex 1 includes
-  core surface observations; Annex 4 defines free and unrestricted as use,
-  reuse and sharing without charge and without conditions. Attribution is
-  strongly encouraged.
+- WMO WIS2 Cookbook aviation-data guidance:
+  <https://wmo-im.github.io/wis2-cookbook/cookbook/latest/wis2-cookbook-STABLE.html>.
+  It classifies aviation METAR examples as `recommended` data and explicitly
+  permits originating-provider use restrictions. Generic core-surface policy
+  is therefore not sufficient evidence for the AWC foreign-METAR aggregate.
 - EUMETNET MeteoGate principles and HVD statement:
   <https://www.eumetnet.eu/forecasting-and-climate/>.
 - MeteoGate architecture and access levels:
@@ -39,6 +39,9 @@ disabled pending review.
 
 ## `awc_metar` operating contract
 
+- Disabled in both automatic provider lists by default. Enabling the connector
+  requires an explicit deployment configuration and does not bypass station
+  licence, identity, measurement-height or residual-purpose gates.
 - Direct documented API use only; no HTML scraping and no API key.
 - Per-station queries are bounded to 24 hours (three hours by default). The
   worker processes a bounded configured-station batch, so it never asks the API
@@ -87,7 +90,9 @@ which the connector reports honestly. Provider-internal station IDs were
 deduplicated during parsing. Cross-provider duplicates, empirical interval and
 receipt-delay medians, and current import errors require configured database
 records and are therefore intentionally not invented in this source snapshot.
-The live read-only EDDH probe returned five normalized, accepted rows. No
+The historical live read-only EDDH probe returned five normalized rows. The
+current policy retains them for audit but does not qualify them for residuals
+because licence and measurement height remain unverified. No
 production database was queried.
 
 `GET /admin/weather/observation-coverage` reports the currently configured

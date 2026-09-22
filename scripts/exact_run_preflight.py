@@ -26,6 +26,14 @@ from app.db.session import engine
 from app.weather.exact_run import EXACT_DATASET_MANIFEST_VERSION, EXACT_LOADER_VERSION, exact_cache_preflight
 
 
+def _runner_id() -> str | None:
+    """Stable runner identity; retain the legacy Canary variable as fallback."""
+    return (
+        os.environ.get("LIVE_WIND_RUNNER_ID")
+        or os.environ.get("LIVE_WIND_CANARY_RUNNER_ID")
+    )
+
+
 def cache_persistence_probe(root: str | Path, *, mode: str, expected_id: str,
                             require_new_job: bool = False,
                             expected_sha256: str | None = None) -> dict:
@@ -48,7 +56,7 @@ def cache_persistence_probe(root: str | Path, *, mode: str, expected_id: str,
                 if not artifact.exists():
                     payload = {"cache_id": expected_id, "host": socket.gethostname(),
                                "pid": os.getpid(), "nonce": uuid.uuid4().hex,
-                               "runner_id": os.environ.get("LIVE_WIND_CANARY_RUNNER_ID"),
+                               "runner_id": _runner_id(),
                                "runner_job_id": os.environ.get("LIVE_WIND_RUNNER_JOB_ID"),
                                "created_at": datetime.now().astimezone().isoformat()}
                     body = json.dumps(payload, sort_keys=True).encode()
@@ -80,7 +88,7 @@ def cache_persistence_probe(root: str | Path, *, mode: str, expected_id: str,
                 raise ValueError("persistence_probe_external_checksum_missing")
             if payload.get("cache_id") != expected_id:
                 raise ValueError("persistence_probe_cache_identity_changed")
-            if require_new_job and payload.get("runner_id") != os.environ.get("LIVE_WIND_CANARY_RUNNER_ID"):
+            if require_new_job and payload.get("runner_id") != _runner_id():
                 raise ValueError("persistence_probe_runner_identity_changed")
             if mode == "verify" and payload.get("pid") == os.getpid() and payload.get("host") == socket.gethostname():
                 raise ValueError("persistence_probe_same_process")
@@ -101,7 +109,8 @@ def cache_persistence_probe(root: str | Path, *, mode: str, expected_id: str,
 def run_preflight(*, require_test_database: bool = False,
                   allow_migration_pending: bool = False,
                   canary: bool = False, persistence_mode: str | None = None,
-                  expected_probe_sha256: str | None = None) -> dict:
+                  expected_probe_sha256: str | None = None,
+                  require_new_job: bool = False) -> dict:
     cfg = get_settings()
     output = {"status": "failed", "checks": {}, "errors": []}
     url = make_url(cfg.database_url)
@@ -136,7 +145,7 @@ def run_preflight(*, require_test_database: bool = False,
             output["errors"].append("canary_staging_database_identity_mismatch")
         if not cfg.live_wind_force_baseline:
             output["errors"].append("canary_requires_force_baseline")
-        if not os.environ.get("LIVE_WIND_CANARY_RUNNER_ID", "").strip():
+        if not (_runner_id() or "").strip():
             output["errors"].append("canary_runner_identity_missing")
         if not os.environ.get("LIVE_WIND_CANARY_ID", "").strip():
             output["errors"].append("canary_id_missing")
@@ -149,7 +158,9 @@ def run_preflight(*, require_test_database: bool = False,
                 output["errors"].append(f"canary_nonlocal_endpoint:{variable}")
         if persistence_mode != "verify":
             output["errors"].append("canary_persistence_not_verified")
-        output["checks"]["runner_identity"] = os.environ.get("LIVE_WIND_CANARY_RUNNER_ID", "")
+        output["checks"]["runner_identity"] = _runner_id() or ""
+    if require_new_job and persistence_mode != "verify":
+        output["errors"].append("new_job_proof_requires_persistence_verify")
     if cfg.live_wind_exact_capture_mode != "scheduled":
         output["errors"].append("exact_capture_mode_not_scheduled")
     if (canary or cfg.app_env == "production") and (
@@ -220,7 +231,8 @@ def run_preflight(*, require_test_database: bool = False,
             output["checks"]["persistence"] = cache_persistence_probe(
                 cfg.live_wind_exact_run_cache_dir, mode=persistence_mode,
                 expected_id=cfg.live_wind_exact_run_cache_id or "",
-                require_new_job=canary, expected_sha256=expected_probe_sha256)
+                require_new_job=canary or require_new_job,
+                expected_sha256=expected_probe_sha256)
     except Exception as exc:
         output["errors"].append(f"cache_unavailable:{type(exc).__name__}:{exc}")
     output["status"] = "ready" if not output["errors"] else "failed"
@@ -234,6 +246,7 @@ def main() -> None:
     parser.add_argument("--canary", action="store_true")
     parser.add_argument("--persistence", choices=("create", "verify"))
     parser.add_argument("--expected-probe-sha256")
+    parser.add_argument("--require-new-job", action="store_true")
     args = parser.parse_args()
     try:
         result = run_preflight(
@@ -241,6 +254,7 @@ def main() -> None:
             allow_migration_pending=args.allow_migration_pending,
             canary=args.canary, persistence_mode=args.persistence,
             expected_probe_sha256=args.expected_probe_sha256,
+            require_new_job=args.require_new_job,
         )
     except ValueError as exc:
         result = {"status": "failed", "checks": {}, "errors": [str(exc)]}

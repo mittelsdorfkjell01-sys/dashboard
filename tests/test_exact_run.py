@@ -119,6 +119,8 @@ def test_station_and_target_share_exact_bundle_and_uv_residual(tmp_path, monkeyp
         id=uuid.uuid4(), latitude=54.2, longitude=10.2,
         active=True, approved=True, blocked=False,
         representativeness_status="passed",
+        residual_approved=True, identity_review_status="passed",
+        physical_station_group="fixture-physical", correlation_group="fixture-correlation",
     )
     measured_u, measured_v = wind_to_uv(12, 270)
     observation = SimpleNamespace(
@@ -127,6 +129,9 @@ def test_station_and_target_share_exact_bundle_and_uv_residual(tmp_path, monkeyp
         wind_u_ms=measured_u, wind_v_ms=measured_v,
         wind_gust_ms=None, gust_period_seconds=None,
         provider_quality="good", import_status="accepted",
+        qc_version="station-observation-qc-v1", qc_flags=[],
+        qc_stage="eligible_for_holdout",
+        received_at=OBS+timedelta(minutes=1), imported_at=OBS+timedelta(minutes=1),
     )
     sampled = exact_loader(station, observation)
     assert sampled.activation_eligible

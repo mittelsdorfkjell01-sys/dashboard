@@ -53,3 +53,22 @@ def decode_app_session_token(token: str) -> dict:
     if payload.get("typ") != _TYP:
         raise jwt.InvalidTokenError("not an app session token")
     return payload
+
+
+def create_account_action_token(
+    user_id: uuid.UUID, *, purpose: str, version: int, email: str | None = None
+) -> str:
+    now = dt.datetime.now(dt.timezone.utc)
+    payload = {
+        "sub": str(user_id), "typ": "app-action", "purpose": purpose,
+        "ver": version, "email": email, "iat": now,
+        "exp": now + dt.timedelta(hours=1 if purpose == "reset" else 24),
+    }
+    return jwt.encode(payload, get_settings().jwt_secret, algorithm=_ALG)
+
+
+def decode_account_action_token(token: str, purpose: str) -> dict:
+    payload = jwt.decode(token, get_settings().jwt_secret, algorithms=[_ALG])
+    if payload.get("typ") != "app-action" or payload.get("purpose") != purpose:
+        raise jwt.InvalidTokenError("wrong account action")
+    return payload

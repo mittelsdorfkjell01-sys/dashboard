@@ -28,9 +28,11 @@ const SearchResults = React.lazy(() => import("./pages/SearchResults"));
 const Impressum = React.lazy(() => import("./pages/Impressum"));
 const Datenschutz = React.lazy(() => import("./pages/Datenschutz"));
 const Auth = React.lazy(() => import("./pages/Auth"));
+const AccountAccess = React.lazy(() => import("./pages/AccountAccess"));
 const AccountLayout = React.lazy(() => import("./pages/account/AccountLayout"));
 const Profil = React.lazy(() => import("./pages/account/Profil"));
 const Favoriten = React.lazy(() => import("./pages/account/Favoriten"));
+const BesuchteSpots = React.lazy(() => import("./pages/account/BesuchteSpots"));
 const MeineSpots = React.lazy(() => import("./pages/account/MeineSpots"));
 const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
 
@@ -79,6 +81,8 @@ async function bootstrap() {
     { path: "/impressum", element: <Impressum /> },
     { path: "/datenschutz", element: <Datenschutz /> },
     { path: "/anmelden", element: <Auth /> },
+    { path: "/bestaetigen", element: <AccountAccess /> },
+    { path: "/passwort-zuruecksetzen", element: <AccountAccess /> },
     {
       path: "/konto",
       element: <AccountLayout />,
@@ -86,6 +90,7 @@ async function bootstrap() {
         { index: true, element: <Navigate to="/konto/profil" replace /> },
         { path: "profil", element: <Profil /> },
         { path: "favoriten", element: <Favoriten /> },
+        { path: "besucht", element: <BesuchteSpots /> },
         { path: "spots", element: <MeineSpots /> },
         { path: "einstellungen", element: <Einstellungen /> },
       ],
@@ -122,13 +127,13 @@ async function bootstrap() {
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <PrefsProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <PrefsProvider>
             <LenisProvider>
               <RouterProvider router={router} />
             </LenisProvider>
-          </AuthProvider>
-        </PrefsProvider>
+          </PrefsProvider>
+        </AuthProvider>
       </ErrorBoundary>
     </React.StrictMode>
   );

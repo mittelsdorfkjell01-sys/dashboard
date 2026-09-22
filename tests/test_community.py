@@ -142,7 +142,7 @@ def test_anonymous_author_identity_is_server_controlled(anon_client, spot_id, db
     assert row.app_user_id is None
 
 
-def test_authenticated_upvote_is_idempotent_and_reversible(anon_client, spot_id, db):
+def test_authenticated_upvote_is_idempotent_and_reversible(anon_client, spot_id, db, monkeypatch):
     tip = anon_client.post(f"/spots/{spot_id}/tips", json={"body": "Hilfreicher Hinweis"})
     assert tip.status_code == 201, tip.text
     tip_id = tip.json()["id"]
@@ -150,10 +150,22 @@ def test_authenticated_upvote_is_idempotent_and_reversible(anon_client, spot_id,
 
     email = f"voter-{uuid.uuid4().hex[:8]}@example.com"
     password = "pw-123456789"
+    from app.api import account as account_api
+
+    sent_tokens = []
+    monkeypatch.setattr(get_settings(), "account_smtp_host", "smtp.test")
+    monkeypatch.setattr(get_settings(), "account_smtp_from", "noreply@test.example")
+    monkeypatch.setattr(
+        account_api, "send_account_link",
+        lambda address, *, purpose, token: sent_tokens.append(token),
+    )
     registered = anon_client.post("/account/register", json={
-        "email": email, "password": password, "displayName": "Wind Voter",
+        "email": email, "displayName": "Wind Voter",
     })
     assert registered.status_code == 202, registered.text
+    assert anon_client.post("/account/email/confirm", json={
+        "token": sent_tokens[-1], "password": password,
+    }).status_code == 200
     login = anon_client.post("/account/login", json={"email": email, "password": password})
     assert login.status_code == 200, login.text
     anon_client.headers["X-CSRF-Token"] = anon_client.cookies.get(get_settings().csrf_cookie_name)
@@ -261,6 +273,26 @@ def test_submission_invalid_payload_422(anon_client):
         "submitter_name": "x",
     })
     assert resp.status_code == 422
+
+
+def test_spot_correction_is_reviewed_without_creating_a_spot(anon_client, client, spot_id, db):
+    before = db.scalar(select(func.count()).select_from(Spot))
+    response = anon_client.post("/submissions", json={
+        "payload": {
+            "kind": "spot_edit_suggestion", "spot_id": spot_id,
+            "field": "description", "message": "Die Zufahrt liegt weiter westlich.",
+        },
+    })
+    assert response.status_code == 201, response.text
+    submission_id = response.json()["id"]
+    reviewed = client.post(f"/admin/submissions/{submission_id}/approve")
+    assert reviewed.status_code == 201, reviewed.text
+    assert db.scalar(select(func.count()).select_from(Spot)) == before
+    row = db.get(SpotSubmission, uuid.UUID(submission_id))
+    assert row.status == "merged"
+    assert row.resulting_spot_id is None
+    db.delete(row)
+    db.commit()
 
 
 # --- images ----------------------------------------------------------------

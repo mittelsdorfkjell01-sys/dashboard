@@ -172,6 +172,7 @@ def test_persistence_is_idempotent_and_audits_invalid_rows(db):
         Spot,
         WeatherObservation,
         WeatherObservationQuarantine,
+        WeatherObservationRevision,
         WeatherStation,
     )
     from app.weather.observation_worker import persist_batch
@@ -236,8 +237,10 @@ def test_persistence_is_idempotent_and_audits_invalid_rows(db):
         assert first["persisted"] == 1
         assert first["rejected"] == 1 and first["quarantined"] == 1
         assert first["quarantine_persisted"] == 2
+        assert first["revisions_persisted"] == 3
         assert second["persisted"] == 0
         assert second["quarantine_persisted"] == 0
+        assert second["revisions_persisted"] == 0
 
         stored = db.scalar(select(WeatherObservation).where(
             WeatherObservation.station_id == station_row.id
@@ -258,6 +261,14 @@ def test_persistence_is_idempotent_and_audits_invalid_rows(db):
         )
         assert conflict_report["quarantined"] == 1
         assert conflict_report["quarantine_persisted"] == 1
+        assert conflict_report["revisions_persisted"] == 1
+        revisions = db.scalars(select(WeatherObservationRevision).where(
+            WeatherObservationRevision.station_id == station_row.id
+        )).all()
+        assert len(revisions) == 4
+        assert stored.raw_revision_id in {item.id for item in revisions}
+        assert any(item.revision_status == "pending_review" for item in revisions)
+        assert stored.wind_speed_ms == 7.5
         audit_rows = db.scalars(select(WeatherObservationQuarantine).where(
             WeatherObservationQuarantine.station_id == station_row.id
         )).all()
@@ -289,20 +300,23 @@ def test_provider_failure_is_bounded_and_sanitized():
 def test_provider_failure_does_not_stop_other_sources(monkeypatch):
     from app.weather import observation_worker
 
-    stations = [
-        SimpleNamespace(
+    stations = iter((
+        [SimpleNamespace(
             id="awc", provider="awc_metar", provider_station_id="EDDH"
-        ),
-        SimpleNamespace(id="dwd", provider="dwd", provider_station_id="00042"),
-    ]
+        )],
+        [SimpleNamespace(id="dwd", provider="dwd", provider_station_id="00042")],
+    ))
 
     class Result:
+        def __init__(self, rows):
+            self.rows = rows
+
         def all(self):
-            return stations
+            return self.rows
 
     class Db:
         def scalars(self, _statement):
-            return Result()
+            return Result(next(stations))
 
     calls = []
 
@@ -319,13 +333,13 @@ def test_provider_failure_does_not_stop_other_sources(monkeypatch):
         }
 
     monkeypatch.setattr(
-        observation_worker, "provider_fetchers", lambda: {
+        observation_worker, "provider_fetchers", lambda _db=None: {
             "awc_metar": object(), "dwd": object()
         }
     )
     monkeypatch.setattr(observation_worker, "import_station", fake_import)
     report = observation_worker.run_observation_import(
-        Db(), providers=("awc_metar", "dwd"), dry_run=True
+        Db(), providers=("awc_metar", "dwd"), limit=2, dry_run=True
     )
     assert calls == ["awc_metar", "dwd"]
     assert report["errors"] == 1

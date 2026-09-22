@@ -1,0 +1,44 @@
+name: Weather Station Catalog Refresh
+
+on:
+  schedule:
+    - cron: "22 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weather-station-catalog-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == 'refs/heads/main' && vars.WEATHER_STATION_CATALOG_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      WEATHER_STATION_CATALOG_ENDPOINT: ${{ vars.WEATHER_STATION_CATALOG_ENDPOINT }}
+      CRON_SECRET: ${{ secrets.LIVE_WIND_CRON_SECRET }}
+    steps:
+      - name: Validate endpoint configuration
+        shell: bash
+        run: |
+          test -n "$WEATHER_STATION_CATALOG_ENDPOINT"
+          test -n "$CRON_SECRET"
+          case "$WEATHER_STATION_CATALOG_ENDPOINT" in
+            https://*/cron/station-catalog) ;;
+            *) echo "WEATHER_STATION_CATALOG_ENDPOINT must use HTTPS and end in /cron/station-catalog" >&2; exit 1 ;;
+          esac
+
+      - name: Refresh bounded provider catalogs
+        shell: bash
+        run: |
+          response="$(curl --fail-with-body --silent --show-error \
+            --max-time 240 --retry 3 --retry-delay 5 --retry-all-errors \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "$WEATHER_STATION_CATALOG_ENDPOINT")"
+          printf '%s\n' "$response" | jq -e '
+            (has("error") | not)
+            and ([.providers[]?.status] | all(. == "success" or . == "backoff" or . == "overlap_skipped"))
+          ' >/dev/null

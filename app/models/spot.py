@@ -77,6 +77,17 @@ class Spot(Base, TimestampMixin):
     facing: Mapped[int | None] = mapped_column(SmallInteger)     # compass bearing 0..359
 
     editorial: Mapped[dict | None] = mapped_column(JSONB)
+    # Per-spot, per-variant suitability + conditions (Windfoil/Kitefoil):
+    # {"<sport>:<slug>": {"suitability": geeignet|eingeschraenkt|ungeeignet|
+    # unbekannt, "wind_directions": [[from,to]…], "usable_depth_m", "tide",
+    # "entry", "launch_area", "hazards", "local_rules", "level": […],
+    # "discipline": […], "notes"}}. A missing variant = "unbekannt" (never a
+    # positive recommendation). Common place data stays in columns/editorial;
+    # only variant-specific values live here. See app.admin.constants.
+    # none_as_null so an empty/unset blob is SQL NULL (not JSONB 'null'), which
+    # keeps the variant filter (`col[key]->>...`) and the 0063 backfill's
+    # COALESCE well-behaved.
+    variant_conditions: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))
     climatology: Mapped[dict | None] = mapped_column(JSONB)
     overrides: Mapped[dict | None] = mapped_column(JSONB)
     image: Mapped[dict | None] = mapped_column(JSONB)

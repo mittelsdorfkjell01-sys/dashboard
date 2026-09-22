@@ -30,7 +30,7 @@ AWC_BASE = "https://aviationweather.gov/api/data"
 AWC_STATION_CACHE = (
     "https://aviationweather.gov/data/cache/stations.cache.json.gz"
 )
-AWC_LICENSE = "WMO Core Data / NOAA-NWS public domain"
+AWC_LICENSE = "Originating METAR licence not verified for commercial reuse"
 AWC_USER_AGENT = "Surfwinddata/1.0 (+https://surfwinddata.com)"
 KNOT_TO_MS = 0.514444
 
@@ -42,8 +42,8 @@ AWC_PROVENANCE = {
     "api_documentation_url": "https://aviationweather.gov/data/api/",
     "terms_url": "https://www.weather.gov/disclaimer",
     "wmo_policy_url": "https://wmo.int/wmo-unified-data-policy-resolution-res1",
-    "license_status": "verified_open",
-    "commercial_reuse": True,
+    "license_status": "unverified_redistribution",
+    "commercial_reuse": False,
     "attribution": "NOAA Aviation Weather Center and originating METAR station",
     "provider_rate_limit_per_minute": 100,
     "local_rate_limit_per_minute": 90,
@@ -260,8 +260,8 @@ def parse_station_catalog(payload: object, *, europe_only: bool = True) -> list[
             country_code=country,
             active=True,
             typical_interval_minutes=60,
-            commercial_reuse=True,
-            attribution_required=False,
+            commercial_reuse=False,
+            attribution_required=True,
         )
     return sorted(stations.values(), key=lambda station: station.station_id)
 

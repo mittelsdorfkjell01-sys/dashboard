@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -42,6 +42,23 @@ class WeatherStation(Base, TimestampMixin):
     last_import_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_observation_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    country_code: Mapped[str | None] = mapped_column(String(3))
+    operator: Mapped[str | None] = mapped_column(String(160))
+    station_type: Mapped[str | None] = mapped_column(String(80))
+    sensor_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    active_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    active_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    metadata_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_url: Mapped[str | None] = mapped_column(Text)
+    metadata_payload_hash: Mapped[str | None] = mapped_column(String(64))
+    physical_station_group: Mapped[str | None] = mapped_column(String(100))
+    correlation_group: Mapped[str | None] = mapped_column(String(100))
+    identity_review_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="unreviewed")
+    monitoring_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    residual_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    holdout_target_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    holdout_input_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    current_epoch_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_epochs.id"))
 
     __table_args__ = (
         UniqueConstraint("spot_id", "provider", "provider_station_id", name="uq_weather_station_spot_provider"),
@@ -75,15 +92,212 @@ class WeatherObservation(Base):
     import_status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="accepted")
     data_issues: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    measurement_period_seconds: Mapped[int | None] = mapped_column(Integer)
+    averaging_period_seconds: Mapped[int | None] = mapped_column(Integer)
+    qc_version: Mapped[str | None] = mapped_column(String(80))
+    qc_stage: Mapped[str | None] = mapped_column(String(40))
+    qc_flags: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    raw_revision_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_observation_revisions.id"))
+    epoch_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_epochs.id"))
+    availability_class: Mapped[str] = mapped_column(String(32), nullable=False, server_default="availability_unproven")
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
         UniqueConstraint("station_id", "observed_at", name="uq_weather_observation_time"),
+        Index("ix_observation_epoch_time", "epoch_id", "observed_at"),
         CheckConstraint("wind_speed_ms >= 0 AND wind_speed_ms <= 100", name="ck_weather_observation_speed"),
         CheckConstraint("wind_direction_deg IS NULL OR (wind_direction_deg >= 0 AND wind_direction_deg < 360)", name="ck_weather_observation_dir"),
+        CheckConstraint(
+            "availability_class IN ('captured_operationally','historical_backfill','availability_unproven')",
+            name="ck_weather_observation_availability",
+        ),
         CheckConstraint(
             "gust_period_seconds IS NULL OR "
             "(gust_period_seconds >= 1 AND gust_period_seconds <= 86400)",
             name="ck_weather_observation_gust_period",
+        ),
+    )
+
+
+class WeatherStationMetadataRevision(Base):
+    """Immutable source metadata snapshot for a configured provider station."""
+
+    __tablename__ = "weather_station_metadata_revisions"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    station_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_stations.id", ondelete="CASCADE"), nullable=False)
+    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    license: Mapped[str | None] = mapped_column(String(160))
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (UniqueConstraint("station_id", "payload_hash", name="uq_weather_station_metadata_revision"),)
+
+
+class WeatherStationEpoch(Base):
+    __tablename__ = "weather_station_epochs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    station_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_stations.id", ondelete="CASCADE"), nullable=False)
+    epoch_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    configuration_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    configuration: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    metadata_revision_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_metadata_revisions.id"))
+    status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="pending_review")
+    reviewer: Mapped[str | None] = mapped_column(String(160))
+    review_reason: Mapped[str | None] = mapped_column(Text)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("station_id", "epoch_number", name="uq_station_epoch_number"),
+        UniqueConstraint("station_id", "configuration_hash", name="uq_station_epoch_configuration"),
+        CheckConstraint("status IN ('pending_review','reviewed','superseded')", name="ck_station_epoch_status"),
+        Index("ix_station_epoch_status", "station_id", "status"),
+    )
+
+
+class WeatherStationDossier(Base):
+    __tablename__ = "weather_station_dossiers"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    epoch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_epochs.id", ondelete="CASCADE"), nullable=False)
+    dossier_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    ready_for_review: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (Index("ix_dossier_epoch_generated", "epoch_id", "generated_at"),)
+
+
+class WeatherStationGroupDecision(Base):
+    __tablename__ = "weather_station_group_decisions"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    epoch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_epochs.id", ondelete="CASCADE"), nullable=False)
+    group_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    group_key: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    rule_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    evidence: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    actor: Mapped[str | None] = mapped_column(String(160))
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("group_type IN ('physical','sensor','correlation')", name="ck_station_group_type"),
+        CheckConstraint("status IN ('proposed','confirmed','rejected')", name="ck_station_group_status"),
+        Index("ix_group_decision_epoch_type_time", "epoch_id", "group_type", "decided_at"),
+        Index("uq_station_group_proposal", "epoch_id", "group_type", "group_key",
+              unique=True, postgresql_where=text("status = 'proposed'")),
+    )
+
+
+class WeatherStationProviderCursor(Base):
+    __tablename__ = "weather_station_provider_cursors"
+    provider: Mapped[str] = mapped_column(String(20), primary_key=True)
+    watermark_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    paused: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    last_cycle_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_class: Mapped[str | None] = mapped_column(String(120))
+
+
+class WeatherProviderHttpResource(Base):
+    """Validated provider representation plus its RFC 9110 validators."""
+
+    __tablename__ = "weather_provider_http_resources"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    resource_url: Mapped[str] = mapped_column(Text, nullable=False)
+    request_variant_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_variant: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    etag: Mapped[str | None] = mapped_column(Text)
+    last_modified: Mapped[str | None] = mapped_column(Text)
+    payload: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_type: Mapped[str | None] = mapped_column(Text)
+    response_received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    last_checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_not_modified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "provider", "resource_url", "request_variant_hash",
+            name="uq_weather_provider_http_resource",
+        ),
+        CheckConstraint("payload_size_bytes >= 0", name="ck_provider_http_payload_size"),
+        CheckConstraint("last_status_code IN (200, 304)", name="ck_provider_http_status"),
+        Index("ix_provider_http_checked", "provider", "last_checked_at"),
+    )
+
+
+class WeatherStationCatalogState(Base):
+    """Sanitized scheduler state for one provider's metadata catalog."""
+
+    __tablename__ = "weather_station_catalog_states"
+    provider: Mapped[str] = mapped_column(String(20), primary_key=True)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error_class: Mapped[str | None] = mapped_column(String(120))
+    consecutive_failures: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    last_counts: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "consecutive_failures >= 0", name="ck_station_catalog_failures"
+        ),
+    )
+
+
+class WeatherStationCaptureCycle(Base):
+    """Append-only provider-cycle evidence for daily operations reporting."""
+
+    __tablename__ = "weather_station_capture_cycles"
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    job_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    counts: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "job_type IN ('observations','catalog')", name="ck_station_cycle_job_type"
+        ),
+        CheckConstraint(
+            "status IN ('success','partial','error','no_work','overlap_skipped')",
+            name="ck_station_cycle_status",
+        ),
+        Index(
+            "ix_station_capture_cycle_provider_time",
+            "job_type", "provider", "started_at",
         ),
     )
 
@@ -96,6 +310,8 @@ class WeatherObservationQuarantine(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
+
+
     station_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("weather_stations.id", ondelete="SET NULL"),
@@ -137,6 +353,67 @@ class WeatherObservationQuarantine(Base):
             "fingerprint", name="uq_weather_observation_quarantine_fingerprint"
         ),
     )
+
+
+class WeatherObservationRevision(Base):
+    """Insert-only provider state. A changed value awaits explicit review."""
+
+    __tablename__ = "weather_observation_revisions"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    station_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_stations.id", ondelete="CASCADE"), nullable=False)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider_station_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    license: Mapped[str | None] = mapped_column(String(160))
+    parser_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    normalized_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    qc_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    qc_stage: Mapped[str] = mapped_column(String(40), nullable=False)
+    qc_flags: Mapped[list] = mapped_column(JSONB, nullable=False)
+    revision_status: Mapped[str] = mapped_column(String(24), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    epoch_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_epochs.id"))
+    availability_class: Mapped[str] = mapped_column(String(32), nullable=False, server_default="availability_unproven")
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revised_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint("station_id", "fingerprint", name="uq_weather_revision_station_fingerprint"),
+        Index("uq_weather_revision_current", "station_id", "observed_at", unique=True,
+              postgresql_where=text("revision_status = 'current'")),
+        Index("ix_weather_revision_station_time", "station_id", "observed_at"),
+        Index("ix_revision_epoch_time", "epoch_id", "observed_at"),
+        CheckConstraint("revision_status IN ('current','pending_review','rejected','quarantined')", name="ck_weather_revision_status"),
+        CheckConstraint(
+            "availability_class IN ('captured_operationally','historical_backfill','availability_unproven')",
+            name="ck_weather_revision_availability",
+        ),
+    )
+
+
+class WeatherStationApprovalAudit(Base):
+    __tablename__ = "weather_station_approval_audit"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    station_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_stations.id", ondelete="CASCADE"), nullable=False)
+    scope: Mapped[str] = mapped_column(String(24), nullable=False)
+    approved: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    actor: Mapped[str] = mapped_column(String(160), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    epoch_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("weather_station_epochs.id"))
+    dossier_hash: Mapped[str | None] = mapped_column(String(64))
+    policy_version: Mapped[str | None] = mapped_column(String(80))
+    group_version: Mapped[str | None] = mapped_column(String(80))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (Index("ix_station_approval_epoch_scope_time", "epoch_id", "scope", "decided_at"),)
 
 
 class WeatherObservationImportState(Base):
@@ -336,6 +613,117 @@ class WeatherStationModelResidual(Base):
             "ix_weather_station_model_residual_station_time",
             "station_id",
             "observed_at",
+        ),
+    )
+
+
+class WeatherExactModelBundle(Base):
+    """Immutable exact-run point bundle retained beyond an ephemeral GRIB job."""
+
+    __tablename__ = "weather_exact_model_bundles"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    target_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    sampled_for_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    baseline_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    loader_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    bundle_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    bundle_manifest: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    dataset_bundle_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    dataset_manifest: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    activation_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    member_statuses: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "target_kind", "target_id", "bundle_hash",
+            name="uq_weather_exact_bundle_target",
+        ),
+        CheckConstraint(
+            "target_kind IN ('station','spot')", name="ck_weather_exact_bundle_target_kind"
+        ),
+        CheckConstraint(
+            "latitude >= -90 AND latitude <= 90 AND longitude >= -180 AND longitude <= 180",
+            name="ck_weather_exact_bundle_coordinate",
+        ),
+        Index(
+            "ix_weather_exact_bundle_target_time",
+            "target_kind", "target_id", "sampled_for_at",
+        ),
+    )
+
+
+class WeatherExactModelPoint(Base):
+    """One raw u/v point belonging to a persisted exact-run bundle."""
+
+    __tablename__ = "weather_exact_model_points"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
+    )
+    bundle_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("weather_exact_model_bundles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    provider: Mapped[str] = mapped_column(String(80), nullable=False)
+    model_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    dataset_version: Mapped[str | None] = mapped_column(String(120))
+    model_run_id: Mapped[str] = mapped_column(String(180), nullable=False)
+    model_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    model_run_quality: Mapped[str] = mapped_column(String(24), nullable=False)
+    valid_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    grid_distance_km: Mapped[float] = mapped_column(Float, nullable=False)
+    u_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    v_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    source_key: Mapped[str] = mapped_column(Text, nullable=False)
+    asset_hashes: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    asset_content_hashes: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    sample_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    sampling_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    sampling_method: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_cells: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    grid_definition: Mapped[str | None] = mapped_column(Text)
+    model_height_m: Mapped[float | None] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "bundle_id", "model_id", "valid_at",
+            name="uq_weather_exact_point_bundle_model_time",
+        ),
+        CheckConstraint(
+            "model_run_quality = 'exact'", name="ck_weather_exact_point_run_quality"
+        ),
+        CheckConstraint(
+            "grid_distance_km >= 0 AND abs(u_ms) <= 100 AND abs(v_ms) <= 100",
+            name="ck_weather_exact_point_vector",
+        ),
+        Index(
+            "ix_weather_exact_point_model_time", "model_id", "model_run_at", "valid_at"
         ),
     )
 

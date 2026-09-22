@@ -272,7 +272,8 @@ def run_canary_cycle(control: CanaryControl, *, run_id: str,
                 )
                 for name, operation in stages:
                     control.assert_running(run_id=run_id)
-                    if db.scalar(text("SELECT version_num FROM alembic_version")) != "0059_live_wind_holdout_cases":
+                    from app.db.schema import EXPECTED_DB_REVISION
+                    if db.scalar(text("SELECT version_num FROM alembic_version")) != EXPECTED_DB_REVISION:
                         raise RuntimeError("canary_schema_drift")
                     exact_cache_preflight(
                         settings.live_wind_exact_run_cache_dir,

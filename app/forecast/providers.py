@@ -202,6 +202,73 @@ class NoaaGfsProvider:
         )
 
     @staticmethod
+    def parse_grib_many(
+        data: bytes, requests: list[ProviderRequest], hour: int
+    ) -> list[NormalizedModelValue]:
+        """Decode each GRIB message once and sample many requested points."""
+        import tempfile
+
+        try:
+            from eccodes import (
+                codes_get,
+                codes_grib_find_nearest_multiple,
+                codes_grib_new_from_file,
+                codes_release,
+            )
+        except ImportError as exc:
+            raise ProviderUnavailable("ecCodes runtime is not installed") from exc
+        values = [dict() for _ in requests]
+        grids: list[tuple[float, float] | None] = [None] * len(requests)
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".grib2", delete=False) as temp:
+                temp.write(data)
+                temp_path = Path(temp.name)
+            with temp_path.open("rb") as stream:
+                while (gid := codes_grib_new_from_file(stream)) is not None:
+                    try:
+                        name = str(codes_get(gid, "shortName"))
+                        nearest = codes_grib_find_nearest_multiple(
+                            gid,
+                            False,
+                            [request.latitude for request in requests],
+                            [request.longitude for request in requests],
+                        )
+                        for index, item in enumerate(nearest):
+                            values[index][name] = float(item["value"])
+                            grids[index] = (float(item["lat"]), float(item["lon"]))
+                    finally:
+                        codes_release(gid)
+        finally:
+            if temp_path is not None:
+                temp_path.unlink(missing_ok=True)
+        output = []
+        for request, sampled, grid in zip(requests, values, grids, strict=True):
+            u = sampled.get("10u", sampled.get("u10"))
+            v = sampled.get("10v", sampled.get("v10"))
+            if u is None or v is None or grid is None:
+                raise InvalidModelData("NOAA GRIB misses 10 m wind components")
+            speed, direction = uv_to_wind(u, v)
+            lon_delta = ((grid[1] - request.longitude + 180) % 360) - 180
+            output.append(NormalizedModelValue(
+                provider="NOAA/NCEP", model=request.model,
+                dataset_version="GFS 0.25", model_run=request.run_at,
+                valid_at=request.run_at + timedelta(hours=hour),
+                fetched_at=datetime.now(timezone.utc),
+                grid_point=GridPoint(
+                    latitude=grid[0], longitude=grid[1],
+                    distance_km=math.hypot(
+                        (grid[0] - request.latitude) * 111,
+                        lon_delta * 111 * math.cos(math.radians(request.latitude)),
+                    ),
+                ),
+                horizontal_resolution_km=25, horizon_hours=hour,
+                u_ms=u, v_ms=v, speed_ms=speed, direction_deg=direction,
+                source_key="noaa-gfs",
+            ))
+        return output
+
+    @staticmethod
     def parse_ascii(text: str, request: ProviderRequest) -> list[NormalizedModelValue]:
         lat_i, lon_i = NoaaGfsProvider.point_indices(
             request.latitude, request.longitude
@@ -343,6 +410,34 @@ class DwdIconProvider:
                 (lats - lat) ** 2 + (delta_lon * np.cos(np.radians(lat))) ** 2
             ))
             return float(values[index]), float(lats[index]), float(lons[index])
+        finally:
+            codes_release(gid)
+
+    @staticmethod
+    def nearest_exact_grid_many(
+        data: bytes, coordinates: list[tuple[float, float]]
+    ) -> list[tuple[float, float, float]]:
+        """Decode one ICON field once and locate all target coordinates."""
+        try:
+            from eccodes import (
+                codes_grib_find_nearest_multiple,
+                codes_new_from_message,
+                codes_release,
+            )
+        except ImportError as exc:
+            raise ProviderUnavailable("ecCodes runtime is not installed") from exc
+        gid = codes_new_from_message(data)
+        try:
+            nearest = codes_grib_find_nearest_multiple(
+                gid,
+                False,
+                [latitude for latitude, _ in coordinates],
+                [longitude for _, longitude in coordinates],
+            )
+            return [
+                (float(item["value"]), float(item["lat"]), float(item["lon"]))
+                for item in nearest
+            ]
         finally:
             codes_release(gid)
 

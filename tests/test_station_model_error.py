@@ -29,6 +29,10 @@ def station(**patch):
         "id": uuid.uuid4(),
         "active": True,
         "approved": True,
+        "residual_approved": True,
+        "identity_review_status": "passed",
+        "physical_station_group": "fixture-physical",
+        "correlation_group": "fixture-correlation",
         "blocked": False,
         "representativeness_status": "passed",
     }
@@ -50,6 +54,11 @@ def observation(target_station, *, speed=12.0, direction=270.0, gust=15.0, **pat
         "gust_period_seconds": 600,
         "provider_quality": "good",
         "import_status": "accepted",
+        "qc_version": "station-observation-qc-v1",
+        "qc_stage": "eligible_for_holdout",
+        "qc_flags": [],
+        "received_at": ANALYZED_AT,
+        "imported_at": ANALYZED_AT,
     }
     values.update(patch)
     return SimpleNamespace(**values)

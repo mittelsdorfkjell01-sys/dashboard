@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from app.admin.constants import offered_variants
 from app.schemas.common import GeoPoint
 from app.scoring.context import typical_figures
 
@@ -39,6 +40,9 @@ class SpotSummary(BaseModel):
     confidence: float | None = None
     facing: int | None = None
     image: dict[str, Any] | None = None
+    # Variant keys this spot actually offers (suitability geeignet/eingeschraenkt).
+    # Derived so tiles/filters can act on variants without the full blob.
+    variants: list[str] = []
     # Exactly one of these is set, per the spot's primary sport (see
     # _typical_figures). Never a live reading — use GET /spots/live for that.
     typical_wind_kt: float | None = None
@@ -68,6 +72,7 @@ class SpotSummary(BaseModel):
             confidence=spot.confidence,
             facing=spot.facing,
             image=spot.image,
+            variants=offered_variants(getattr(spot, "variant_conditions", None)),
             typical_wind_kt=typical_wind_kt,
             typical_wave_height_m=typical_wave_height_m,
             wind_availability=wind_availability,
@@ -98,6 +103,8 @@ class SpotRead(BaseModel):
     facing: int | None = None
     editorial: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
+    variant_conditions: dict[str, Any] | None = None
+    variants: list[str] = []
     image: dict[str, Any] | None = None
     finish_rank: str | None = None
     created_at: datetime
@@ -129,6 +136,8 @@ class SpotRead(BaseModel):
             facing=spot.facing,
             editorial=spot.editorial,
             overrides=spot.overrides,
+            variant_conditions=getattr(spot, "variant_conditions", None),
+            variants=offered_variants(getattr(spot, "variant_conditions", None)),
             image=spot.image,
             finish_rank=getattr(spot, "finish_rank", None),
             created_at=spot.created_at,

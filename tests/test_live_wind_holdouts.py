@@ -32,16 +32,20 @@ from app.weather.model_error import calculate_and_persist_station_model_error
 from app.weather.observation_worker import persist_batch
 from app.weather.providers.common import normalize_observation
 from tests.test_exact_run import FakeGfs, FakeIcon
+from tests.station_qualification_fixture import seed_reviewed_epoch
 
 AT = datetime(2026, 9, 16, 12, tzinfo=timezone.utc)
 
 
 def station(*, latitude=54.0, wigos=None, group=None, dependent=()):
+    epoch_id = uuid.uuid4()
     return SimpleNamespace(
         id=uuid.uuid4(), provider="test", provider_station_id=uuid.uuid4().hex,
+        current_epoch_id=epoch_id,
         wigos_id=wigos, icao_id=None, latitude=latitude, longitude=8.0,
         elevation_m=10.0, provenance={"correlation_group": group,
                                       "dependent_station_ids": list(dependent)},
+        holdout_input_approved=True,
         created_at=AT - timedelta(hours=1), updated_at=AT - timedelta(hours=1),
     )
 
@@ -71,6 +75,9 @@ def row(peer, *, received=AT, created=AT, dataset=None, eligible=True,
     observation = SimpleNamespace(
         id=uuid.uuid4(), observed_at=AT - timedelta(minutes=5),
         received_at=received, imported_at=received,
+        qc_version="station-observation-qc-v1", qc_flags=[],
+        qc_stage="eligible_for_holdout",
+        availability_class="captured_operationally", epoch_id=peer.current_epoch_id,
     )
     sample = {"dataset_bundle_hash": _hash(dataset), "coordinate": [54.3, 8.0]}
     residual = SimpleNamespace(
@@ -280,16 +287,26 @@ def test_real_exact_residuals_build_immutable_idempotent_case(db, tmp_path):
         spot_id=spot.id, provider="dwd", provider_station_id=f"target-{suffix}",
         latitude=54.0, longitude=10.0, elevation_m=10, measurement_height_m=10,
         setting_class="coastal", active=True, approved=True, blocked=False,
-        representativeness_status="passed", provenance={"measurement_standard": "fixture-wmo"},
+            representativeness_status="passed", provenance={"measurement_standard": "fixture-wmo"},
+            license="CC BY 4.0", monitoring_approved=True, residual_approved=True,
+            holdout_target_approved=True, holdout_input_approved=True,
+            identity_review_status="passed", physical_station_group=f"target-{suffix}",
+            correlation_group=f"target-{suffix}",
     )
     peer = WeatherStation(
         spot_id=spot.id, provider="dwd", provider_station_id=f"peer-{suffix}",
         latitude=54.4, longitude=10.2, elevation_m=10, measurement_height_m=10,
         setting_class="coastal", active=True, approved=True, blocked=False,
-        representativeness_status="passed", provenance={"measurement_standard": "fixture-wmo"},
+            representativeness_status="passed", provenance={"measurement_standard": "fixture-wmo"},
+            license="CC BY 4.0", monitoring_approved=True, residual_approved=True,
+            holdout_target_approved=True, holdout_input_approved=True,
+            identity_review_status="passed", physical_station_group=f"peer-{suffix}",
+            correlation_group=f"peer-{suffix}",
     )
     db.add_all((target, peer))
     db.commit()
+    for reviewed_station in (target, peer):
+        seed_reviewed_epoch(db, reviewed_station, before=observed - timedelta(minutes=20))
     loader = ExactRunLoader(ExactRunAssetCache(tmp_path), gfs=FakeGfs(), icon=FakeIcon())
     for station_row in (target, peer):
         report = loader.capture(
@@ -305,8 +322,9 @@ def test_real_exact_residuals_build_immutable_idempotent_case(db, tmp_path):
                 received_at=received, imported_at=received,
                 wind_speed_ms=speed, wind_direction_deg=270, provider_quality="good",
                 latitude=station_row.latitude, longitude=station_row.longitude,
-                measurement_height_m=10, license="fixture-only",
+                measurement_height_m=10, license="CC BY 4.0",
                 provenance={"fixture": suffix},
+                measurement_period_seconds=600, averaging_period_seconds=600,
             )
             assert persist_batch(db, station_row, [historical], dry_run=False)["persisted"] == 1
         normalized = normalize_observation(
@@ -314,7 +332,8 @@ def test_real_exact_residuals_build_immutable_idempotent_case(db, tmp_path):
             observed_at=observed, received_at=received, imported_at=received,
             wind_speed_ms=10, wind_direction_deg=270, provider_quality="good",
             latitude=station_row.latitude, longitude=station_row.longitude,
-            measurement_height_m=10, license="fixture-only", provenance={"fixture": suffix},
+            measurement_height_m=10, license="CC BY 4.0", provenance={"fixture": suffix},
+            measurement_period_seconds=600, averaging_period_seconds=600,
         )
         assert persist_batch(db, station_row, [normalized], dry_run=False)["persisted"] == 1
         observation = db.scalar(select(WeatherObservation).where(

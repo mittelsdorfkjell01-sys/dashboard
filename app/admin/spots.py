@@ -11,10 +11,12 @@ from app.admin.constants import (
     STATUS_ARCHIVED,
     STATUS_DRAFT,
     STATUS_LIVE,
+    parent_sport,
     validate_bottom_types,
     validate_facilities,
     validate_levels,
     synchronize_wavekite_style,
+    validate_variant_conditions,
     validate_water_characters,
     validate_water_types,
 )
@@ -56,6 +58,20 @@ def _load(db: Session, spot_id):
     if spot is None:
         raise LookupError(f"unknown spot {spot_id}")
     return spot
+
+
+def _prune_variants(conditions: dict | None, sports: list[str]) -> dict | None:
+    """Drop variant blocks whose parent sport is no longer selected.
+
+    Keeps variant data in lockstep with the ``sports`` array (mirrors how
+    ``synchronize_wavekite_style`` keeps the derived style in step), so
+    deselecting a sport in the editor never leaves orphaned variant suitability.
+    """
+    if not conditions:
+        return None
+    active = set(sports or [])
+    kept = {k: v for k, v in conditions.items() if parent_sport(k) in active}
+    return kept or None
 
 
 def create_spot(
@@ -103,6 +119,9 @@ def create_spot(
     bottom_type = validate_bottom_types(data.get("bottom_type"))
     sports, style = synchronize_wavekite_style(data.get("sports"), data.get("style"))
     facilities = validate_facilities(data.get("facilities"))
+    variant_conditions = _prune_variants(
+        validate_variant_conditions(data.get("variant_conditions")), sports
+    )
 
     spot = Spot(
         slug=available_slug(db, Spot, data.get("slug") or data["name"]),
@@ -116,6 +135,7 @@ def create_spot(
         water_character=water_character,
         style=style,
         facilities=facilities,
+        variant_conditions=variant_conditions,
         facing=data.get("facing"),
         model_pref=data.get("model_pref") or defaults.get("model_pref"),
         editorial=editorial or None,
@@ -219,6 +239,14 @@ def update_spot(
     next_sports = data.get("sports", spot.sports) or []
     next_styles = data.get("style", spot.style) or []
     spot.sports, spot.style = synchronize_wavekite_style(next_sports, next_styles)
+    if "variant_conditions" in data:
+        spot.variant_conditions = _prune_variants(
+            validate_variant_conditions(data["variant_conditions"]), spot.sports
+        )
+    elif data.get("sports") is not None:
+        # Sports changed but the client didn't resend variants — drop any block
+        # whose parent sport is no longer selected so nothing is orphaned.
+        spot.variant_conditions = _prune_variants(spot.variant_conditions, spot.sports)
     if "bottom_type" in data:
         spot.bottom_type = validate_bottom_types(data["bottom_type"])
     if "model_pref" in data:

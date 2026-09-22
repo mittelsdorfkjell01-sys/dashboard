@@ -3,14 +3,20 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { DEFAULT_UNITS, normalizeWindUnit, type Units } from "../lib/units";
+import { useAuth } from "./AuthContext";
+import { updatePreferences } from "../lib/account";
 
 interface PrefsValue {
   units: Units;
   setUnit: <K extends keyof Units>(key: K, value: Units[K]) => void;
+  retrySave: () => void;
+  saving: boolean;
+  error: string | null;
 }
 
 const KEY = "swd.prefs";
@@ -49,7 +55,29 @@ const PrefsCtx = createContext<PrefsValue | null>(null);
  * source of truth; SpotDataScope reads its wind unit from here.
  */
 export function PrefsProvider({ children }: { children: ReactNode }) {
+  const { user, setUser } = useAuth();
   const [units, setUnits] = useState<Units>(load);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hydratedUser = useRef<string | null>(null);
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const pendingSaves = useRef(0);
+  const saveVersion = useRef(0);
+  const activeUserId = useRef(user?.id);
+  activeUserId.current = user?.id;
+
+  useEffect(() => {
+    if (!user) { hydratedUser.current = null; return; }
+    if (hydratedUser.current === user.id) return;
+    hydratedUser.current = user.id;
+    if (user.preferences.units) {
+      setUnits(user.preferences.units);
+    } else {
+      void updatePreferences({ units }).then(setUser).catch(() => {
+        setError("Einheiten konnten nicht mit deinem Konto synchronisiert werden.");
+      });
+    }
+  }, [user, setUser, units]);
 
   useEffect(() => {
     try {
@@ -62,11 +90,44 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   }, [units]);
 
   const value = useMemo<PrefsValue>(
-    () => ({
-      units,
-      setUnit: (key, val) => setUnits((u) => ({ ...u, [key]: val })),
-    }),
-    [units]
+    () => {
+      const saveUnits = (next: Units) => {
+        if (!user) return;
+        const accountId = user.id;
+        const version = ++saveVersion.current;
+        pendingSaves.current += 1;
+        setSaving(true);
+        setError(null);
+        const save = saveQueue.current.then(() => updatePreferences({ units: next }));
+        saveQueue.current = save.then(() => undefined, () => undefined);
+        void save.then((updated) => {
+          if (activeUserId.current === accountId) {
+            setUser(updated);
+            if (version === saveVersion.current) setError(null);
+          }
+        }).catch(() => {
+          if (activeUserId.current === accountId && version === saveVersion.current) {
+            setError("Einheiten konnten nicht gespeichert werden. Versuche es erneut.");
+          }
+        }).finally(() => {
+          pendingSaves.current -= 1;
+          setSaving(pendingSaves.current > 0);
+        });
+      };
+      return {
+        units,
+        saving,
+        error,
+        retrySave: () => saveUnits(units),
+        setUnit: (key, val) => {
+          const next = { ...units, [key]: val };
+          setUnits(next);
+          setError(null);
+          saveUnits(next);
+        },
+      };
+    },
+    [units, user, setUser, saving, error]
   );
 
   return <PrefsCtx.Provider value={value}>{children}</PrefsCtx.Provider>;

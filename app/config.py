@@ -190,6 +190,13 @@ class Settings(BaseSettings):
                 errors.append("CORS_ORIGINS must use HTTPS in production")
             if not self.password_breach_check_enabled:
                 errors.append("PASSWORD_BREACH_CHECK_ENABLED must be true")
+            if self.account_smtp_host:
+                if not self.account_smtp_from:
+                    errors.append("ACCOUNT_SMTP_FROM is required when account SMTP is enabled")
+                if not self.account_public_origin.startswith("https://"):
+                    errors.append("ACCOUNT_PUBLIC_ORIGIN must use HTTPS when account SMTP is enabled")
+                if not self.account_smtp_starttls:
+                    errors.append("ACCOUNT_SMTP_STARTTLS must be true in production")
             if self.admin_key:
                 try:
                     expiry = datetime.fromisoformat(
@@ -274,11 +281,16 @@ class Settings(BaseSettings):
     # WP1 validation harness: bounded station-observation import per cron tick and
     # the historical window scored for raw-forecast verification.
     weather_observation_cron_batch_size: int = 25
+    # Only providers with an approved downstream-use policy belong in the
+    # automatic production cycle.  AWC/METAR is implemented but deliberately
+    # opt-in until the originating aviation-data licences are cleared.
+    weather_observation_providers: Annotated[list[str], NoDecode] = ["dwd", "dmi"]
     weather_observation_retry_initial_seconds: int = Field(default=60, ge=10, le=3600)
     weather_observation_retry_max_seconds: int = Field(default=3600, ge=60, le=86400)
     weather_station_catalog_bounds: tuple[float, float, float, float] = (
-        53.0, 56.5, 7.5, 12.5
+        29.0, 72.0, -30.0, 45.0
     )
+    weather_station_catalog_providers: Annotated[list[str], NoDecode] = ["dwd", "dmi"]
     weather_station_catalog_spot_limit: int = Field(default=100, ge=1, le=1000)
     weather_station_catalog_candidate_limit: int = Field(default=30, ge=1, le=100)
     weather_station_catalog_max_km: float = Field(default=250.0, gt=0, le=1000)
@@ -291,12 +303,13 @@ class Settings(BaseSettings):
     weather_station_catalog_late_hours: int = Field(default=36, ge=2, le=168)
     weather_verification_lookback_days: int = 45
 
-    # LiveWind is calculated durably in shadow by default. Only pilot/regional
-    # stages plus an explicit region allowlist may expose station adjustments;
-    # the model-only baseline remains available at every stage.
+    # LiveWind station corrections are publicly enabled by product decision.
+    # Every individual result still has to pass the station, vector, conflict,
+    # uncertainty and correction-magnitude quality gates.  ``force_baseline``
+    # remains the immediate kill switch.
     live_wind_rollout_stage: Literal[
         "shadow", "internal", "pilot", "regional", "global"
-    ] = "shadow"
+    ] = "global"
     live_wind_force_baseline: bool = False
     live_wind_canary_mode: bool = False
     # Shared persistent mount captured before observations. Missing mount fails
@@ -305,6 +318,7 @@ class Settings(BaseSettings):
     live_wind_exact_run_cache_id: str | None = None
     live_wind_exact_run_min_free_bytes: int = Field(default=5_000_000_000, ge=0)
     live_wind_exact_capture_tile_limit: int = Field(default=16, ge=1, le=200)
+    live_wind_exact_point_batch_size: int = Field(default=16, ge=1, le=500)
     live_wind_exact_capture_mode: Literal["scheduled", "disabled"] = "scheduled"
     live_wind_enabled_region_slugs: Annotated[list[str], NoDecode] = []
     live_wind_cycle_minutes: int = Field(default=15, ge=5, le=60)
@@ -327,9 +341,12 @@ class Settings(BaseSettings):
     live_wind_readiness_min_analyses: int = Field(default=500, ge=10)
     live_wind_readiness_min_wind_sectors: int = Field(default=4, ge=2, le=8)
     live_wind_readiness_max_fallback_rate: float = Field(default=0.35, ge=0, le=1)
-    # Any public station adjustment is fail-closed until a manually selected,
-    # immutable holdout-evidence context has passed for this exact candidate.
-    live_wind_require_verification_evidence: bool = True
+    # Provisional public operation deliberately validates through a separately
+    # agreed route, so persisted holdout and shadow-health evidence are not
+    # serving prerequisites. Set both flags to true to restore the original
+    # evidence-gated rollout without changing the product contract.
+    live_wind_require_verification_evidence: bool = False
+    live_wind_require_operational_health: bool = False
     live_wind_candidate_version: str = "regional-live-wind-uv-v2"
     live_wind_verification_context_hash: str | None = None
     live_wind_verification_min_samples: int = Field(default=500, ge=10)
@@ -448,6 +465,13 @@ class Settings(BaseSettings):
     app_jwt_ttl_hours: int = 720  # 30 days
     # Minimum password length enforced on registration / change (mirrors the FE).
     app_password_min_length: int = 8
+    account_public_origin: str = "http://localhost:5173"
+    account_smtp_host: str | None = None
+    account_smtp_port: int = 587
+    account_smtp_username: str | None = None
+    account_smtp_password: str | None = None
+    account_smtp_from: str | None = None
+    account_smtp_starttls: bool = True
     ugc_personal_data_retention_days: int = 90
     # Terminal image rows remain available to daily moderation first, then move
     # into a compressed, privacy-reduced evidence table in bounded batches.
@@ -502,6 +526,32 @@ class Settings(BaseSettings):
     # every published spot with a ready, active V3 run is eligible. This is
     # the only sanctioned pilot mechanism; never hard-code pilot spot names.
     wind_climatology_v3_public_spot_ids: Annotated[list[str], NoDecode] = []
+
+    @field_validator(
+        "weather_observation_providers",
+        "weather_station_catalog_providers",
+        mode="before",
+    )
+    @classmethod
+    def _split_weather_station_providers(cls, v):
+        if isinstance(v, str):
+            return [item.strip().lower() for item in v.split(",") if item.strip()]
+        return v
+
+    @field_validator(
+        "weather_observation_providers",
+        "weather_station_catalog_providers",
+        mode="after",
+    )
+    @classmethod
+    def _validate_weather_station_providers(cls, v):
+        allowed = {"dwd", "dmi", "awc_metar"}
+        unknown = set(v) - allowed
+        if unknown:
+            raise ValueError(f"unsupported weather station providers: {sorted(unknown)}")
+        if len(v) != len(set(v)):
+            raise ValueError("weather station providers must be unique")
+        return v
 
     @field_validator("wind_climatology_v3_public_spot_ids", mode="before")
     @classmethod

@@ -4,12 +4,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   MenuIcon,
   UserIcon,
-  HeartIcon,
-  GridIcon,
+  BookmarkIcon,
+  PinIcon,
+  SpotAddIcon,
   GearIcon,
   LogoutIcon,
   CloseIcon,
-  ChevronRightIcon,
 } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import { initialsOf } from "../lib/initials";
@@ -24,8 +24,9 @@ interface NavItem {
 
 const ACCOUNT_NAV: NavItem[] = [
   { label: "Profil", to: "/konto/profil", icon: UserIcon },
-  { label: "Favoriten", to: "/konto/favoriten", icon: HeartIcon },
-  { label: "Hinzugefügte Spots", to: "/konto/spots", icon: GridIcon },
+  { label: "Saved", to: "/konto/favoriten", icon: BookmarkIcon },
+  { label: "Spots besucht", to: "/konto/besucht", icon: PinIcon },
+  { label: "Spots hinzufügen", to: "/konto/spots", icon: SpotAddIcon },
   { label: "Einstellungen", to: "/konto/einstellungen", icon: GearIcon },
 ];
 const UTILITY: { label: string; to: string }[] = [
@@ -110,20 +111,33 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
 
 type Account = ReturnType<typeof useAuth>["user"];
 
-function ProfileHeader({ user, onNavigate }: { user: NonNullable<Account>; onNavigate: () => void }) {
+function ProfileHeader({
+  user,
+  onNavigate,
+  size = "sm",
+}: {
+  user: NonNullable<Account>;
+  onNavigate: () => void;
+  size?: "sm" | "lg";
+}) {
+  const lg = size === "lg";
   return (
     <Link
       to="/konto/profil"
       onClick={onNavigate}
       role="menuitem"
-      className="flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className={`flex items-center rounded-2xl transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${lg ? "gap-4 px-1 py-2" : "gap-3 px-2 py-2"}`}
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink text-label font-bold text-surface">
+      <span
+        className={`grid shrink-0 place-items-center rounded-full bg-ink font-bold text-surface ${lg ? "h-16 w-16 text-sz-22" : "h-11 w-11 text-label"}`}
+      >
         {initialsOf(user.displayName, user.email)}
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-ui font-semibold text-ink">{user.displayName || "Mein Profil"}</span>
-        <span className="block truncate text-caption text-muted">{user.email}</span>
+        <span className={`block truncate font-semibold text-ink ${lg ? "text-sz-22" : "text-ui"}`}>
+          {user.displayName || "Mein Profil"}
+        </span>
+        <span className={`block truncate text-muted ${lg ? "text-ui" : "text-caption"}`}>{user.email}</span>
       </span>
     </Link>
   );
@@ -286,14 +300,16 @@ function MobileSheet({
     };
   }, [onClose, returnFocusRef]);
 
+  // Editorial rows: icon + label, no chevron, generous tap targets — matching
+  // the Figma account sheet (Frame 76).
   const rowClass =
-    "flex min-h-[52px] items-center gap-3.5 rounded-2xl px-3 text-body font-medium text-ink transition-colors active:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+    "flex min-h-[56px] items-center gap-5 rounded-2xl px-3 text-body font-medium text-ink transition-colors active:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
   return createPortal(
     <div className="fixed inset-0 z-[2000] flex flex-col bg-page sm:hidden" role="dialog" aria-modal="true" aria-label="Kontomenü">
-      <div ref={panelRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
-        <div className="flex items-center justify-between pb-2">
-          <span className="text-caption font-semibold uppercase tracking-[0.14em] text-muted">Menü</span>
+      <div ref={panelRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
+        {/* Just a close affordance, top-right, as in Figma. */}
+        <div className="flex justify-end pb-4">
           <button
             ref={closeRef}
             type="button"
@@ -301,40 +317,47 @@ function MobileSheet({
             aria-label="Menü schließen"
             className="grid h-11 w-11 place-items-center rounded-full text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            <CloseIcon className="text-sz-20" />
+            <CloseIcon className="text-sz-24" />
           </button>
         </div>
 
-        {user ? <ProfileHeader user={user} onNavigate={onClose} /> : <SignInBlock signInHref={signInHref} registerHref={registerHref} onNavigate={onClose} />}
+        {user ? (
+          <ProfileHeader user={user} onNavigate={onClose} size="lg" />
+        ) : (
+          <SignInBlock signInHref={signInHref} registerHref={registerHref} onNavigate={onClose} />
+        )}
 
         {user && (
-          <nav aria-label="Konto-Bereiche" className="mt-3">
+          <nav aria-label="Konto-Bereiche" className="mt-8">
             {ACCOUNT_NAV.map(({ label, to, icon: Icon }) => (
               <Link key={to} to={to} onClick={onClose} className={rowClass}>
-                <Icon className="text-sz-22 text-muted" />
+                <Icon className="text-sz-24 text-ink" />
                 <span className="flex-1">{label}</span>
-                <ChevronRightIcon className="text-sz-18 text-muted" />
               </Link>
             ))}
           </nav>
         )}
 
-        <div className="mt-3 border-t border-line pt-3">
-          <ThemeToggle menuItem />
-          {UTILITY.map((item) => (
-            <Link key={item.label} to={item.to} onClick={onClose} className={rowClass}>
-              <span className="flex-1">{item.label}</span>
-              <ChevronRightIcon className="text-sz-18 text-muted" />
-            </Link>
-          ))}
+        {/* Darkmode switch sits on its own, set apart from the account areas. */}
+        <div className="mt-6">
+          <ThemeToggle variant="switch" />
         </div>
 
-        {user && (
-          <button type="button" onClick={onLogout} className={`${rowClass} mt-3 w-full text-left`}>
-            <LogoutIcon className="text-sz-22 text-muted" />
-            <span className="flex-1">Abmelden</span>
-          </button>
-        )}
+        {/* Legal links, pushed toward the foot of the sheet. */}
+        <div className="mt-auto pt-10">
+          {UTILITY.map((item) => (
+            <Link key={item.label} to={item.to} onClick={onClose} className={`${rowClass} pl-3`}>
+              <span className="flex-1">{item.label}</span>
+            </Link>
+          ))}
+
+          {user && (
+            <button type="button" onClick={onLogout} className={`${rowClass} mt-6 w-full text-left`}>
+              <LogoutIcon className="text-sz-24 text-ink" />
+              <span className="flex-1">abmelden</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>,
     document.body,

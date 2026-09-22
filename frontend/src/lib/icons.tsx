@@ -85,6 +85,23 @@ export const PinIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Overflow / more actions — horizontal three dots. */
+export const MoreIcon = (p: IconProps) => (
+  <svg {...base} {...p} fill="currentColor" stroke="none">
+    <circle cx="5" cy="12" r="1.8" />
+    <circle cx="12" cy="12" r="1.8" />
+    <circle cx="19" cy="12" r="1.8" />
+  </svg>
+);
+
+/** Add a spot — a map/card tile with a plus. */
+export const SpotAddIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="3.6" />
+    <path d="M12 9v6M9 12h6" />
+  </svg>
+);
+
 export const CalendarIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />

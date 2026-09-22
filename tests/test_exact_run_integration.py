@@ -26,6 +26,7 @@ from app.weather.providers.common import normalize_observation
 from app.weather.station_selection import select_stations_for_spot
 from app.live.live_wind import load_station_residual_inputs
 from tests.test_exact_run import FakeGfs, FakeIcon
+from tests.station_qualification_fixture import seed_reviewed_epoch
 
 
 def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkeypatch):
@@ -38,7 +39,9 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
         pytest.fail("Redis is required for Exact-Run integration acceptance")
 
     current = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-    observed = current.replace(minute=max(0, current.minute - 5))
+    # Keep station and target valid times in one interpolation bracket; at the
+    # top of an hour subtracting five minutes changes the logical dataset.
+    observed = current if current.minute <= 5 else current - timedelta(minutes=5)
     first_seen = observed - timedelta(minutes=1)
     run = current.replace(hour=current.hour - current.hour % 6,
                           minute=0) - timedelta(hours=6)
@@ -55,9 +58,13 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
     db.flush()
     station = WeatherStation(
         spot_id=spot.id, provider="dwd", provider_station_id=f"fixture-{suffix}",
-        latitude=54.2, longitude=9.9, measurement_height_m=10,
+        latitude=54.2, longitude=9.9, elevation_m=10, measurement_height_m=10,
         active=True, approved=True, blocked=False,
         representativeness_status="passed", setting_class="coastal",
+        license="CC BY 4.0", monitoring_approved=True, residual_approved=True,
+        holdout_target_approved=True, holdout_input_approved=True,
+        identity_review_status="passed", physical_station_group=f"station-{suffix}",
+        correlation_group=f"station-{suffix}",
     )
     db.add(station)
     db.commit()
@@ -67,15 +74,21 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
         other = WeatherStation(
             spot_id=spot.id, provider="dwd",
             provider_station_id=f"fixture-{suffix}-{index}",
-            latitude=54.2, longitude=longitude, measurement_height_m=10,
+            latitude=54.2, longitude=longitude, elevation_m=10, measurement_height_m=10,
             active=True, approved=True, blocked=False,
             representativeness_status="passed", setting_class="coastal",
+            license="CC BY 4.0", monitoring_approved=True, residual_approved=True,
+            holdout_target_approved=True, holdout_input_approved=True,
+            identity_review_status="passed", physical_station_group=f"station-{suffix}-{index}",
+            correlation_group=f"station-{suffix}-{index}",
         )
         db.add(other)
         extra_stations.append(other)
     db.commit()
 
     fake_gfs, fake_icon = FakeGfs(), FakeIcon()
+    for reviewed_station in (station, *extra_stations):
+        seed_reviewed_epoch(db, reviewed_station, before=observed)
     loader = ExactRunLoader(ExactRunAssetCache(tmp_path), gfs=fake_gfs, icon=fake_icon)
     try:
         row = normalize_observation(
@@ -83,7 +96,8 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
             observed_at=observed, received_at=current, imported_at=current,
             wind_speed_ms=12, wind_direction_deg=270, provider_quality="good",
             latitude=54.2, longitude=9.9, measurement_height_m=10,
-            license="fixture-only", provenance={"fixture": suffix},
+            license="CC BY 4.0", provenance={"fixture": suffix},
+            measurement_period_seconds=600, averaging_period_seconds=600,
         )
         assert row.import_status == "accepted"
         imported = persist_batch(db, station, [row], dry_run=False)
@@ -113,7 +127,14 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
                                        longitude=9.9, as_of=observed)
         target_bundle = loader.bundle(valid_at=current, latitude=54.2,
                                       longitude=10.2, as_of=current)
-        assert station_bundle.dataset_bundle_hash == target_bundle.dataset_bundle_hash
+        assert station_bundle.dataset_bundle_hash == target_bundle.dataset_bundle_hash, (
+            {model: {key: (station_bundle.dataset_manifest["members"][model].get(key),
+                           target_bundle.dataset_manifest["members"][model].get(key))
+                     for key in station_bundle.dataset_manifest["members"][model]
+                     if station_bundle.dataset_manifest["members"][model].get(key)
+                     != target_bundle.dataset_manifest["members"][model].get(key)}
+             for model in station_bundle.dataset_manifest["members"]}
+        )
         assert station_bundle.bundle_hash != target_bundle.bundle_hash
         assert {p.asset_content_hashes for p in station_baseline.points} != {
             p.asset_content_hashes for p in loader.sample(
@@ -134,7 +155,8 @@ def test_import_exact_residual_cross_tile_shadow_and_replay(db, tmp_path, monkey
                 observed_at=observed, received_at=current, imported_at=current,
                 wind_speed_ms=12, wind_direction_deg=270, provider_quality="good",
                 latitude=54.2, longitude=other.longitude, measurement_height_m=10,
-                license="fixture-only", provenance={"fixture": suffix},
+                license="CC BY 4.0", provenance={"fixture": suffix},
+                measurement_period_seconds=600, averaging_period_seconds=600,
             )
             assert persist_batch(db, other, [other_row], dry_run=False)["persisted"] == 1
             other_observation = db.scalar(select(WeatherObservation).where(

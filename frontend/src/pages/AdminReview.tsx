@@ -414,6 +414,23 @@ function SubmissionCard({
   const toggleSport = (k: string) =>
     setSports((cur) => (cur.includes(k) ? cur.filter((s) => s !== k) : [...cur, k]));
 
+  if (p.kind === "spot_edit_suggestion") {
+    const spotId = typeof p.spot_id === "string" ? p.spot_id : "";
+    return <Card>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="font-semibold text-ink">Korrektur zu {submission.name ?? "Spot"}</div>
+        <p className="text-label text-muted">von {submission.submitter_name} · {new Date(submission.created_at).toLocaleDateString("de-DE")}</p>
+        <p className="text-label text-ink"><span className="font-semibold">Bereich:</span> {String(p.field ?? "Sonstiges")}</p>
+        <p className="whitespace-pre-wrap text-label text-ink">{String(p.message ?? "")}</p>
+        {spotId && <Link to={`/admin/spot/${spotId}/edit`} className="inline-flex min-h-11 items-center text-label font-semibold text-ink underline">Spot im Editor öffnen</Link>}
+      </div>
+      <Actions>
+        <Approve busy={busy} onClick={() => onApprove({})}>Nach Bearbeitung als geprüft markieren</Approve>
+        <Reject busy={busy} onClick={onReject}>Ablehnen</Reject>
+      </Actions>
+    </Card>;
+  }
+
   return (
     <Card>
       <div className="min-w-0 flex-1">

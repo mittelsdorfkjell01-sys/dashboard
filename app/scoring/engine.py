@@ -87,10 +87,31 @@ class SeasonalRuleScorer:
         self, spot: Any, time_context: dict | None = None, profile: dict | None = None
     ) -> float:
         from app.scoring.climatology import _week_entry, evaluate_week_cells
-        from app.scoring.context import primary_sport, spot_editorial
+        from app.scoring.context import (
+            primary_sport,
+            scoring_sport,
+            spot_editorial,
+            variant_editorial,
+            variant_is_offered,
+        )
         from app.scoring.params import SCORING_PARAMS_V1, get_params
 
-        sport = primary_sport(spot, (profile or {}).get("sport"))
+        variant = (profile or {}).get("variant")
+        if variant:
+            # A variant-scoped request. An unproven/absent variant (unbekannt /
+            # ungeeignet) is never a positive result, and a foil variant has no
+            # proven parameters → "nicht ausreichend bewertet". Both rank at 0
+            # so the spot may still be listed but never surfaces as usable.
+            if not variant_is_offered(spot, variant):
+                return 0.0
+            sport = scoring_sport(variant)
+            if sport is None or sport not in SCORING_PARAMS_V1:
+                return 0.0
+            editorial = variant_editorial(spot, variant)
+        else:
+            sport = primary_sport(spot, (profile or {}).get("sport"))
+            editorial = spot_editorial(spot)
+
         clim = getattr(spot, "climatology", None)
         if sport in SCORING_PARAMS_V1 and isinstance(clim, dict):
             entry = _week_entry(clim, _week_of(time_context))
@@ -98,9 +119,7 @@ class SeasonalRuleScorer:
                 # Resolve via get_params so a deployed scoring_params override wins
                 # on the ranking path too (falls back to in-code params if db=None).
                 params = get_params(sport, self._db)
-                res = evaluate_week_cells(
-                    entry, spot_editorial(spot), profile, sport, params
-                )
+                res = evaluate_week_cells(entry, editorial, profile, sport, params)
                 return _clamp01(0.6 * res["gut_anteil"] + 0.4 * res["pct_usable"])
         return self._fallback.score(spot, time_context, profile)
 

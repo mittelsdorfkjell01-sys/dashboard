@@ -604,54 +604,16 @@ class ExactRunLoader:
             activation_eligible=activation_eligible,
         )
 
-    def sample(self, bundle: BaselineBundle, *, latitude: float, longitude: float) -> StationModelBaseline:
-        identity = {"version": bundle.version, "loader": bundle.loader_version,
-                    "members": bundle.members, "statuses": bundle.statuses}
-        if (_hash(identity) != bundle.bundle_hash
-                or _hash(bundle.dataset_manifest) != bundle.dataset_bundle_hash):
-            return StationModelBaseline(
-                points=(), expected_model_ids=EXPECTED_MODELS,
-                baseline_version=EXACT_BUNDLE_VERSION,
-                bundle_hash=bundle.bundle_hash, bundle_manifest=bundle.manifest(),
-                dataset_bundle_hash=bundle.dataset_bundle_hash,
-                dataset_manifest=bundle.dataset_manifest,
-                activation_eligible=False,
-                member_statuses={model: "checksum_mismatch" for model in EXPECTED_MODELS},
-            )
-        points = []
-        statuses = dict(bundle.statuses)
-        for model, member in bundle.members.items():
-            if member["domain"] != _domain(model, latitude, longitude):
-                statuses[model] = "sampling_failed"
-                continue
-            for value in member["assets"]:
-                asset = ExactAsset.from_manifest(value)
-                try:
-                    stored = self.cache.read(asset.key)
-                    if stored is None or stored[0].content_sha256 != asset.content_sha256:
-                        raise ExactAssetError("checksum_mismatch")
-                    _, data = stored
-                    request = ProviderRequest(
-                        latitude=latitude, longitude=longitude, model=model,
-                        run_at=asset.run_at, forecast_hours=(asset.lead_hours,),
-                    )
-                    if model == "gfs-0p25":
-                        sampled = self.gfs.parse_grib(data, request, asset.lead_hours)
-                        u, v = sampled.u_ms, sampled.v_ms
-                        grid = sampled.grid_point
-                        samples = {"u": {"source_cell": [grid.latitude, grid.longitude], "weight": 1.0},
-                                   "v": {"source_cell": [grid.latitude, grid.longitude], "weight": 1.0}}
-                    else:
-                        scalar, glat, glon = self.icon.nearest_exact_grid(data, latitude, longitude)
-                        u = scalar if asset.field == "u_10m" else None
-                        v = scalar if asset.field == "v_10m" else None
-                        grid = (glat, glon)
-                        samples = {asset.field: {"source_cell": [glat, glon], "weight": 1.0}}
-                    points.append((asset, u, v, grid, samples))
-                except ExactAssetError as exc:
-                    statuses[model] = exc.status
-                except Exception:
-                    statuses[model] = "sampling_failed"
+    def _sample_result(
+        self,
+        bundle: BaselineBundle,
+        *,
+        latitude: float,
+        longitude: float,
+        points: list,
+        statuses: dict[str, str],
+    ) -> StationModelBaseline:
+        """Assemble and hash already sampled raw asset values for one point."""
         by_model_time = {}
         for asset, u, v, grid, samples in points:
             group = by_model_time.setdefault((asset.model, asset.valid_at), [])
@@ -713,6 +675,156 @@ class ExactRunLoader:
             dataset_manifest=bundle.dataset_manifest,
             activation_eligible=bundle.activation_eligible and all(statuses.get(model) == "available" for model in EXPECTED_MODELS),
             member_statuses=statuses,
+        )
+
+    def sample(self, bundle: BaselineBundle, *, latitude: float, longitude: float) -> StationModelBaseline:
+        identity = {"version": bundle.version, "loader": bundle.loader_version,
+                    "members": bundle.members, "statuses": bundle.statuses}
+        if (_hash(identity) != bundle.bundle_hash
+                or _hash(bundle.dataset_manifest) != bundle.dataset_bundle_hash):
+            return StationModelBaseline(
+                points=(), expected_model_ids=EXPECTED_MODELS,
+                baseline_version=EXACT_BUNDLE_VERSION,
+                bundle_hash=bundle.bundle_hash, bundle_manifest=bundle.manifest(),
+                dataset_bundle_hash=bundle.dataset_bundle_hash,
+                dataset_manifest=bundle.dataset_manifest,
+                activation_eligible=False,
+                member_statuses={model: "checksum_mismatch" for model in EXPECTED_MODELS},
+            )
+        points = []
+        statuses = dict(bundle.statuses)
+        for model, member in bundle.members.items():
+            if member["domain"] != _domain(model, latitude, longitude):
+                statuses[model] = "sampling_failed"
+                continue
+            for value in member["assets"]:
+                asset = ExactAsset.from_manifest(value)
+                try:
+                    stored = self.cache.read(asset.key)
+                    if stored is None or stored[0].content_sha256 != asset.content_sha256:
+                        raise ExactAssetError("checksum_mismatch")
+                    _, data = stored
+                    request = ProviderRequest(
+                        latitude=latitude, longitude=longitude, model=model,
+                        run_at=asset.run_at, forecast_hours=(asset.lead_hours,),
+                    )
+                    if model == "gfs-0p25":
+                        sampled = self.gfs.parse_grib(data, request, asset.lead_hours)
+                        u, v = sampled.u_ms, sampled.v_ms
+                        grid = sampled.grid_point
+                        samples = {"u": {"source_cell": [grid.latitude, grid.longitude], "weight": 1.0},
+                                   "v": {"source_cell": [grid.latitude, grid.longitude], "weight": 1.0}}
+                    else:
+                        scalar, glat, glon = self.icon.nearest_exact_grid(data, latitude, longitude)
+                        u = scalar if asset.field == "u_10m" else None
+                        v = scalar if asset.field == "v_10m" else None
+                        grid = (glat, glon)
+                        samples = {asset.field: {"source_cell": [glat, glon], "weight": 1.0}}
+                    points.append((asset, u, v, grid, samples))
+                except ExactAssetError as exc:
+                    statuses[model] = exc.status
+                except Exception:
+                    statuses[model] = "sampling_failed"
+        return self._sample_result(
+            bundle,
+            latitude=latitude,
+            longitude=longitude,
+            points=points,
+            statuses=statuses,
+        )
+
+    def sample_many(
+        self,
+        bundle: BaselineBundle,
+        *,
+        coordinates: list[tuple[float, float]],
+    ) -> tuple[StationModelBaseline, ...]:
+        """Sample one shared tile bundle while decoding every GRIB asset once."""
+        if not coordinates:
+            return ()
+        identity = {"version": bundle.version, "loader": bundle.loader_version,
+                    "members": bundle.members, "statuses": bundle.statuses}
+        if (_hash(identity) != bundle.bundle_hash
+                or _hash(bundle.dataset_manifest) != bundle.dataset_bundle_hash):
+            return tuple(
+                self.sample(bundle, latitude=latitude, longitude=longitude)
+                for latitude, longitude in coordinates
+            )
+        points: list[list] = [[] for _ in coordinates]
+        statuses = [dict(bundle.statuses) for _ in coordinates]
+        for model, member in bundle.members.items():
+            valid_indexes = []
+            for index, (latitude, longitude) in enumerate(coordinates):
+                if member["domain"] != _domain(model, latitude, longitude):
+                    statuses[index][model] = "sampling_failed"
+                else:
+                    valid_indexes.append(index)
+            if not valid_indexes:
+                continue
+            for value in member["assets"]:
+                asset = ExactAsset.from_manifest(value)
+                try:
+                    stored = self.cache.read(asset.key)
+                    if stored is None or stored[0].content_sha256 != asset.content_sha256:
+                        raise ExactAssetError("checksum_mismatch")
+                    _, data = stored
+                    requests = [ProviderRequest(
+                        latitude=coordinates[index][0],
+                        longitude=coordinates[index][1],
+                        model=model,
+                        run_at=asset.run_at,
+                        forecast_hours=(asset.lead_hours,),
+                    ) for index in valid_indexes]
+                    if model == "gfs-0p25":
+                        batch = getattr(self.gfs, "parse_grib_many", None)
+                        sampled_values = (
+                            batch(data, requests, asset.lead_hours)
+                            if batch is not None
+                            else [self.gfs.parse_grib(data, request, asset.lead_hours)
+                                  for request in requests]
+                        )
+                        for index, sampled in zip(valid_indexes, sampled_values, strict=True):
+                            grid = sampled.grid_point
+                            source = {
+                                "u": {"source_cell": [grid.latitude, grid.longitude], "weight": 1.0},
+                                "v": {"source_cell": [grid.latitude, grid.longitude], "weight": 1.0},
+                            }
+                            points[index].append((asset, sampled.u_ms, sampled.v_ms, grid, source))
+                    else:
+                        batch = getattr(self.icon, "nearest_exact_grid_many", None)
+                        sampled_values = (
+                            batch(data, [coordinates[index] for index in valid_indexes])
+                            if batch is not None
+                            else [self.icon.nearest_exact_grid(data, *coordinates[index])
+                                  for index in valid_indexes]
+                        )
+                        for index, (scalar, glat, glon) in zip(
+                            valid_indexes, sampled_values, strict=True
+                        ):
+                            points[index].append((
+                                asset,
+                                scalar if asset.field == "u_10m" else None,
+                                scalar if asset.field == "v_10m" else None,
+                                (glat, glon),
+                                {asset.field: {
+                                    "source_cell": [glat, glon], "weight": 1.0
+                                }},
+                            ))
+                except ExactAssetError as exc:
+                    for index in valid_indexes:
+                        statuses[index][model] = exc.status
+                except Exception:
+                    for index in valid_indexes:
+                        statuses[index][model] = "sampling_failed"
+        return tuple(
+            self._sample_result(
+                bundle,
+                latitude=latitude,
+                longitude=longitude,
+                points=points[index],
+                statuses=statuses[index],
+            )
+            for index, (latitude, longitude) in enumerate(coordinates)
         )
 
     def __call__(self, station, observation) -> StationModelBaseline:

@@ -6,7 +6,7 @@ not calculate LiveWind and it never feeds a residual back into a forecast.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -389,6 +389,12 @@ def _observation_gate_reasons(
         reasons.append("station_inactive")
     if not getattr(station, "approved", False):
         reasons.append("station_unapproved")
+    if not getattr(station, "residual_approved", False):
+        reasons.append("station_residual_scope_unapproved")
+    if getattr(station, "identity_review_status", "unreviewed") != "passed":
+        reasons.append("station_identity_unreviewed")
+    if not getattr(station, "physical_station_group", None) or not getattr(station, "correlation_group", None):
+        reasons.append("station_dependency_group_unreviewed")
     if getattr(station, "blocked", False):
         reasons.append("station_blocked")
     if getattr(station, "representativeness_status", "unreviewed") != "passed":
@@ -397,6 +403,15 @@ def _observation_gate_reasons(
         reasons.append("observation_station_mismatch")
     if getattr(observation, "import_status", None) != "accepted":
         reasons.append("observation_not_accepted")
+    from app.weather.observation_quality import QC_VERSION
+    if getattr(observation, "qc_version", None) != QC_VERSION or getattr(observation, "qc_flags", None):
+        reasons.append("observation_qc_unqualified")
+    if getattr(observation, "qc_stage", None) not in {"eligible_for_residuals", "eligible_for_holdout"}:
+        reasons.append("observation_qc_stage_unqualified")
+    received_at = _aware_utc(getattr(observation, "received_at", None))
+    imported_at = _aware_utc(getattr(observation, "imported_at", None))
+    if received_at is None or imported_at is None or received_at > analyzed_at or imported_at > analyzed_at:
+        reasons.append("observation_not_available_at_cutoff")
     if not provider_quality_acceptable(observation):
         reasons.append("provider_quality_rejected")
 
@@ -1139,6 +1154,12 @@ def calculate_and_persist_station_model_error(
         policy=policy,
         blend_overrides=blend_overrides,
     )
+    from app.weather.station_approval import scope_valid
+    if not scope_valid(db, station, observation, scope="residual_source",
+                       analyzed_at=result.analyzed_at):
+        result = replace(result, qc_status="rejected", activation_eligible=False,
+                         qc_reasons=tuple(dict.fromkeys((*result.qc_reasons,
+                             "epoch_scope_or_dossier_unqualified"))))
     persist_station_model_error(db, result)
     return result
 
@@ -1191,9 +1212,20 @@ def run_station_model_error_analysis(
         .where(
             WeatherStation.active.is_(True),
             WeatherStation.approved.is_(True),
+            WeatherStation.residual_approved.is_(True),
+            WeatherStation.identity_review_status == "passed",
+            WeatherStation.physical_station_group.is_not(None),
+            WeatherStation.correlation_group.is_not(None),
             WeatherStation.blocked.is_(False),
             WeatherStation.representativeness_status == "passed",
             WeatherObservation.import_status == "accepted",
+            WeatherObservation.qc_version == "station-observation-qc-v1",
+            WeatherObservation.qc_stage.in_(("eligible_for_residuals", "eligible_for_holdout")),
+            WeatherObservation.qc_flags == [],
+            WeatherObservation.availability_class == "captured_operationally",
+            WeatherObservation.epoch_id == WeatherStation.current_epoch_id,
+            WeatherObservation.received_at <= analysis_time,
+            WeatherObservation.imported_at <= analysis_time,
             WeatherObservation.wind_u_ms.is_not(None),
             WeatherObservation.wind_v_ms.is_not(None),
             *(
@@ -1220,6 +1252,14 @@ def run_station_model_error_analysis(
     }
     for station, observation in rows:
         try:
+            from app.weather.station_approval import scope_valid
+            if not scope_valid(db, station, observation, scope="residual_source",
+                               analyzed_at=analysis_time):
+                report["rejected"] += 1
+                report["items"].append({"station_id": str(station.id),
+                                        "observation_id": str(observation.id),
+                                        "reason": "epoch_scope_or_dossier_unqualified"})
+                continue
             baseline = baseline_loader(station, observation)
             station_physics = load_reviewed_station_physics(db, station.id)
             result = calculate_station_model_error(

@@ -7,6 +7,7 @@ import pytest
 from fastapi import Response
 from sqlalchemy import event, select
 
+from app.config import Settings
 from app.live.cache import InMemoryCache
 from app.live.client import MAX_FORECAST_DAYS
 from app.live.public_cache import public_forecast_key
@@ -98,7 +99,7 @@ def test_public_live_cache_hit_does_not_touch_database():
     assert "s-maxage=300" in response.headers["cache-control"]
 
 
-def test_shadow_live_wind_baseline_cache_hit_does_not_touch_database():
+def test_shadow_live_wind_baseline_cache_hit_does_not_touch_database(monkeypatch):
     import uuid
 
     from app.live.public_cache import (
@@ -108,6 +109,10 @@ def test_shadow_live_wind_baseline_cache_hit_does_not_touch_database():
 
     spot_id = uuid.uuid4()
     cache = InMemoryCache()
+    monkeypatch.setattr(
+        "app.live.service.get_settings",
+        lambda: Settings(live_wind_rollout_stage="shadow"),
+    )
     set_public_live(
         cache,
         spot_id,

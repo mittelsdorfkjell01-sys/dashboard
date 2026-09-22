@@ -10,13 +10,21 @@ LiveWind has four non-negotiable product invariants:
 4. `forecast` is independent. This runbook does not implement or activate an
    adaptive forecast.
 
-`LIVE_WIND_ROLLOUT_STAGE=shadow` is the default. Shadow jobs persist internal
-analysis evidence in `weather_live_wind_jobs`; public endpoints do not read those
-payloads. Raw model state, measurements, station residuals and finished LiveWind
-analyses use separate cache namespaces. Measurement imports advance only the
-LiveWind input generation; new model captures advance the weather generation.
-Final analysis keys include spot, product, both generations, model/analysis/
-physics/profile versions and the rollout/verification configuration. A short
+By explicit product decision, the application default is currently provisional
+global serving: `LIVE_WIND_ROLLOUT_STAGE=global`, with persisted verification
+and shadow-health prerequisites disabled. This does not mark the candidate as
+scientifically verified. Only accepted station residuals are used, and every
+individual analysis still has to pass the station-count, confidence, conflict,
+uncertainty and correction-magnitude gates. `LIVE_WIND_FORCE_BASELINE=true`
+remains the immediate rollback.
+
+Shadow jobs may still persist internal analysis evidence in
+`weather_live_wind_jobs`; public endpoints never serve those payloads directly.
+Raw model state, measurements, station residuals and finished LiveWind analyses
+use separate cache namespaces. Measurement imports advance only the LiveWind
+input generation; new model captures advance the weather generation. Final
+analysis keys include spot, product, both generations, model/analysis/physics/
+profile versions and the complete rollout/verification configuration. A short
 distributed lock prevents cache stampedes without mixing spots or products.
 
 ## Deployment prerequisites
@@ -113,7 +121,7 @@ Apply the additive migration before starting either scheduler or worker:
 
 ```bash
 alembic upgrade head
-alembic current  # 0059_live_wind_holdout_cases (head)
+alembic current  # 0064_exact_model_points (head; station capture is 0062)
 alembic heads    # exactly one head
 ```
 
@@ -419,13 +427,14 @@ already returns the model baseline immediately with a `quality_gate:*` fallback
 reason. Never edit a shadow result into a public value and never clear the job
 table as a rollback mechanism.
 
-## Current hard blocker and adaptive Forecast decision
+## Outstanding verification and adaptive Forecast decision
 
 The repository has an internal exact-run loader, scheduled shadow path and a
 locally fixture-tested holdout builder. It has **not** been accepted on a
 self-hosted Linux runner. The persistent mount, migration, full live worker
 flow and 14+ representative days of independent evidence still require
-operational acceptance. No real pilot evidence is asserted here. Open-Meteo
+operational acceptance. Public correction is therefore explicitly provisional;
+no real pilot evidence is asserted here. Open-Meteo
 `current` remains a separate
 public model nowcast and never substitutes for an exact shadow model run.
 The exact shadow sampler uses `DwdIconProvider.nearest_exact_grid` because the
@@ -440,3 +449,74 @@ Do **not** begin the adaptive Forecast while any of these are true:
 - held-out LiveWind accuracy and uncertainty calibration are missing;
 - product-boundary audit reports a measurement/forecast source violation;
 - any pilot readiness or doctor check fails.
+
+# Station capture and catalog scheduling
+
+Non-production raw capture is deliberately separated into two workflows:
+
+```text
+.github/workflows/station-catalog.yml    # DWD/DMI metadata; daily
+.github/workflows/live-wind-capture.yml  # Exact-Run, then DWD/DMI observations; every 10 min
+```
+
+They run the fail-closed `scripts.station_capture_worker` against one explicitly
+named non-production database. The catalog and observation schedules have
+separate enable variables. The observation workflow captures exact GFS/ICON
+assets first and stops on failure; it contains no residual, holdout, LiveWind or
+activation command. Both require a cache-persistence artifact created in a
+different runner job. Bootstrap variables, secrets, pause/restart and first-run
+checks are specified in `docs/ops/live-wind-capture-bootstrap.md`.
+
+The authenticated `/cron/observations` and `/cron/station-catalog` routes remain
+available to existing deployments, but they are not the proof of a dedicated
+non-production capture environment. Workflow files alone do not prove that a
+self-hosted runner, database, variables, secrets or persistent mount exist.
+
+DWD validators and their validated response bytes are stored in
+`weather_provider_http_resources`. The key includes provider, exact URL and a
+canonical request-variant hash. On `304`, the stored length and SHA-256 are
+verified and the cached body is parsed again. Missing/corrupt payload forces an
+unconditional GET. A `304` never advances observation `received_at` and never
+creates a new availability event. Endpoints without `ETag`/`Last-Modified`
+continue with bounded unconditional GETs.
+
+Operations checks:
+
+```bash
+python -m scripts.exact_run_preflight --persistence verify --require-new-job \
+  --expected-probe-sha256 "$LIVE_WIND_CAPTURE_PROBE_SHA256"
+python -m scripts.station_capture_worker status
+python -m scripts.live_wind_doctor --no-rasters --fail-on-alert
+```
+
+Until an approved non-production runner and persistent database are verified,
+the operational status is `continuous_capture_not_started`. Do not infer weeks
+of evidence from backfills or change historical `received_at` values.
+
+## Workerless production station imports
+
+Public station observations and station catalogs do not require a persistent
+runner. The checked-in workflows
+`.github/workflows/weather-observation-import.yml` and
+`.github/workflows/weather-station-catalog-refresh.yml` run on ephemeral GitHub
+hosted runners and call the authenticated API endpoints only. Persistence,
+idempotency, provider cursors, quarantine, ETag state and retry state remain in
+PostgreSQL; the runner stores no evidence locally.
+
+Required repository configuration:
+
+- `WEATHER_OBSERVATION_IMPORT_ENABLED=true`;
+- `WEATHER_STATION_CATALOG_ENABLED=true`;
+- `WEATHER_OBSERVATION_ENDPOINT=https://<api>/cron/observations`;
+- `WEATHER_STATION_CATALOG_ENDPOINT=https://<api>/cron/station-catalog`;
+- secret `LIVE_WIND_CRON_SECRET`, equal to the API deployment's `CRON_SECRET`.
+- API environment `WEATHER_OBSERVATION_PROVIDERS=dwd,dmi` and
+  `WEATHER_STATION_CATALOG_PROVIDERS=dwd,dmi`. `awc_metar` is deliberately
+  opt-in until downstream commercial reuse is cleared.
+
+These workflows intentionally do not capture exact model assets, build
+residuals, run LiveWind analyses or mutate Forecast products. Disable either
+enable variable for an immediate scheduler pause. The persistent exact-run
+evidence workflow remains a separate concern. Catalog runs use a persistent
+per-provider spot cursor and the configured European bounds, so repeated runs
+cover all published spots instead of repeatedly processing only the first page.

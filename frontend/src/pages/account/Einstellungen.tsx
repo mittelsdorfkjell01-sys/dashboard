@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import { usePrefs } from "../../context/PrefsContext";
 import {
   updateProfile,
+  requestEmailChange,
+  updatePreferences,
   changePassword,
   deleteAccount,
   downloadAccountExport,
@@ -26,6 +28,8 @@ import {
 import { Button, Field, Input, Select } from "../../components/ui";
 import Modal from "../../components/ui/Modal";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import SportConditionsSection from "./SportConditionsSection";
+import { AccountPage } from "./AccountLayout";
 import UnsavedChangesDialog from "../../components/admin/UnsavedChangesDialog";
 import {
   useFormDirty,
@@ -50,17 +54,25 @@ export default function Einstellungen() {
     (value: boolean) => (value ? markDirty("password") : markClean("password")),
     [markClean, markDirty]
   );
+  const setEmailDirty = useCallback(
+    (value: boolean) => (value ? markDirty("email") : markClean("email")),
+    [markClean, markDirty]
+  );
+  const setConditionsDirty = useCallback(
+    (value: boolean) => (value ? markDirty("conditions") : markClean("conditions")),
+    [markClean, markDirty]
+  );
   return (
-    <>
+    <AccountPage title="Einstellungen">
       <div className="space-y-10">
-        <SportsSection />
+        <SportConditionsSection onDirtyChange={setConditionsDirty} />
         <UnitsSection />
-        <AccountSection onProfileDirty={setProfileDirty} onPasswordDirty={setPasswordDirty} />
+        <AccountSection onProfileDirty={setProfileDirty} onEmailDirty={setEmailDirty} onPasswordDirty={setPasswordDirty} />
         <PrivacySection onDirtyChange={(dirty) => setDirty("delete-account", dirty)} />
         <NotificationsSection />
       </div>
       <UnsavedChangesDialog blocker={blocker} />
-    </>
+    </AccountPage>
   );
 }
 
@@ -106,24 +118,6 @@ function Note({ kind, children }: { kind: "ok" | "err"; children: ReactNode }) {
   );
 }
 
-// --- 1) Sports & conditions (planned) --------------------------------------
-
-function SportsSection() {
-  return (
-    <Section
-      title="Sportarten & Bedingungen"
-      description="Wähle deine Disziplinen und Wunschbedingungen, damit die Seite Spots und Zeiten auf dich zuschneidet."
-    >
-      <PlannedNote>
-        Unterstützt sind Surfen, Windsurfen, Kitesurfen und Wingfoilen. Persönliche
-        Sportarten und bevorzugte Bedingungen lassen sich einstellen, sobald sie
-        serverseitig zu deinem Konto gespeichert werden — bis dahin bleibt diese
-        Auswahl bewusst leer statt eines Schalters ohne Wirkung.
-      </PlannedNote>
-    </Section>
-  );
-}
-
 // --- 2) Units & display (functional) ---------------------------------------
 
 function UnitSelect<T extends string>({
@@ -151,7 +145,7 @@ function UnitSelect<T extends string>({
 }
 
 function UnitsSection() {
-  const { units, setUnit } = usePrefs();
+  const { units, setUnit, retrySave, saving, error } = usePrefs();
   return (
     <Section
       title="Einheiten & Anzeige"
@@ -167,6 +161,8 @@ function UnitsSection() {
         Vorschau: Wind {formatWind(18, units.wind)} · Welle {formatWave(1.2, units.wave)} · Wasser{" "}
         {formatTemp(17, units.temp)} · Station {formatDistance(3.4, units.distance)}
       </div>
+      {saving && <p role="status" className="mt-2 text-caption text-muted">Einheiten werden gespeichert …</p>}
+      {error && <div role="alert" className="mt-2 text-caption text-danger">{error} <button type="button" onClick={retrySave} disabled={saving} className="min-h-11 font-semibold underline">Erneut versuchen</button></div>}
     </Section>
   );
 }
@@ -175,15 +171,18 @@ function UnitsSection() {
 
 function AccountSection({
   onProfileDirty,
+  onEmailDirty,
   onPasswordDirty,
 }: {
   onProfileDirty: (dirty: boolean) => void;
+  onEmailDirty: (dirty: boolean) => void;
   onPasswordDirty: (dirty: boolean) => void;
 }) {
   return (
     <Section title="Konto" description="Deine persönlichen Angaben und dein Passwort.">
       <div className="space-y-8">
         <ProfileForm onDirtyChange={onProfileDirty} />
+        <div className="border-t border-line pt-8"><EmailForm onDirtyChange={onEmailDirty} /></div>
         <div className="border-t border-line pt-8">
           <PasswordForm onDirtyChange={onPasswordDirty} />
         </div>
@@ -195,20 +194,19 @@ function AccountSection({
 function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
   const { user, setUser } = useAuth();
   const [name, setName] = useState(user?.displayName ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
   const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    onDirtyChange(name !== (user?.displayName ?? "") || email !== (user?.email ?? ""));
-  }, [email, name, onDirtyChange, user?.displayName, user?.email]);
+    onDirtyChange(name !== (user?.displayName ?? ""));
+  }, [name, onDirtyChange, user?.displayName]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setNote(null);
     setBusy(true);
     try {
-      const updated = await updateProfile({ displayName: name, email });
+      const updated = await updateProfile({ displayName: name });
       setUser(updated);
       setNote({ kind: "ok", msg: "Profil gespeichert." });
     } catch (err) {
@@ -223,9 +221,6 @@ function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => voi
       <Field label="Anzeigename">
         <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
       </Field>
-      <Field label="E-Mail">
-        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-      </Field>
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={busy}>
           {busy ? "Speichere …" : "Speichern"}
@@ -234,6 +229,32 @@ function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => voi
       </div>
     </form>
   );
+}
+
+function EmailForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
+  const { user, setUser } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  useEffect(() => onDirtyChange(Boolean(email || password)), [email, password, onDirtyChange]);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true); setNote(null);
+    try {
+      setUser(await requestEmailChange(email, password));
+      setEmail(""); setPassword("");
+      setNote({ kind: "ok", msg: "Bestätigungslink an die neue E-Mail-Adresse gesendet. Bis zur Bestätigung bleibt deine bisherige Adresse gültig." });
+    } catch (err) {
+      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : "Adresswechsel fehlgeschlagen." });
+    } finally { setBusy(false); }
+  };
+  return <form onSubmit={submit} className="space-y-4">
+    <p className="text-label font-semibold uppercase tracking-wide text-muted">E-Mail-Adresse ändern</p>
+    <p className="text-label text-muted">Aktuell: {user?.email}{user?.pendingEmail ? ` · Bestätigung ausstehend für ${user.pendingEmail}` : ""}</p>
+    <Field label="Neue E-Mail-Adresse"><Input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></Field>
+    <Field label="Aktuelles Passwort"><Input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></Field>
+    <div className="flex flex-wrap items-center gap-3"><Button type="submit" variant="secondary" disabled={busy || !email || !password}>{busy ? "Sende …" : "Bestätigungslink senden"}</Button>{note && <Note kind={note.kind}>{note.msg}</Note>}</div>
+  </form>;
 }
 
 function PasswordForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
@@ -291,7 +312,16 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState("");
   const dirty = useFormDirty(password, "", open);
+
+  const exportData = async () => {
+    setExportBusy(true); setExportError("");
+    try { await downloadAccountExport(); }
+    catch (err) { setExportError(err instanceof AccountError ? err.message : "Datenexport fehlgeschlagen. Bitte versuche es erneut."); }
+    finally { setExportBusy(false); }
+  };
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
@@ -333,13 +363,14 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
             Lade eine Kopie deiner Kontodaten herunter oder lösche dein Konto endgültig.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
-            <Button type="button" variant="secondary" onClick={() => void downloadAccountExport()}>
-              Datenexport herunterladen
+            <Button type="button" variant="secondary" disabled={exportBusy} onClick={() => void exportData()}>
+              {exportBusy ? "Export wird erstellt …" : "Datenexport herunterladen"}
             </Button>
             <Button type="button" variant="danger" onClick={() => setOpen(true)}>
               Konto löschen
             </Button>
           </div>
+          {exportError && <p role="alert" className="mt-2 text-label text-danger">{exportError}</p>}
         </div>
       </div>
 
@@ -387,13 +418,23 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
 // --- 5) Notifications (planned) --------------------------------------------
 
 function NotificationsSection() {
+  const { user, setUser } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const enabled = user?.preferences.submissionEmails ?? false;
+  const toggle = async () => {
+    setBusy(true); setError("");
+    try { setUser(await updatePreferences({ submissionEmails: !enabled })); }
+    catch (err) { setError(err instanceof AccountError ? err.message : "Einstellung konnte nicht gespeichert werden."); }
+    finally { setBusy(false); }
+  };
   return (
-    <Section title="Benachrichtigungen" description="Werde informiert, wenn an deinen Spots gute Bedingungen erwartet werden.">
-      <PlannedNote>
-        Benachrichtigungen erscheinen hier, sobald ein Versandkanal (E-Mail oder
-        Push) angebunden ist. Es werden nur Kanäle und Ereignisse angeboten, die
-        tatsächlich verfügbar sind.
-      </PlannedNote>
+    <Section title="Benachrichtigungen" description="Wähle, welche Nachrichten du zu deinen Vorschlägen erhalten möchtest.">
+      {!user?.mailAvailable ? <PlannedNote>E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Sobald der Versand eingerichtet ist, kannst du hier über Entscheidungen zu deinen Vorschlägen informiert werden.</PlannedNote> : <>
+      <label className="inline-flex min-h-11 items-center gap-3 text-ui text-ink"><input type="checkbox" checked={enabled} disabled={busy} onChange={() => void toggle()} />E-Mail bei Entscheidung über meinen Spot-Vorschlag</label>
+      {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
+      </>}
+      <p className="mt-2 text-caption text-muted">Wetteralarme für Favoriten folgen, sobald zuverlässige Schwellen und Versandzeiten feststehen.</p>
     </Section>
   );
 }

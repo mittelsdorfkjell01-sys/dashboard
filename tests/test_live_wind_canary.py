@@ -20,6 +20,7 @@ def test_canary_configuration_forces_shadow_baseline_and_local_database():
         Settings(database_url="postgresql+psycopg://surf:surf@db.example:5432/staging",
                  live_wind_canary_mode=True, live_wind_force_baseline=True)
     cfg = Settings(database_url=staging, live_wind_canary_mode=True,
+                   live_wind_rollout_stage="shadow",
                    live_wind_force_baseline=True)
     assert cfg.live_wind_rollout_stage == "shadow"
 
@@ -144,7 +145,7 @@ def test_cycle_orders_existing_workers_and_never_touches_forecast(tmp_path, monk
             return False
 
         def scalar(self, _query):
-            return "0059_live_wind_holdout_cases"
+            return "0064_exact_model_points"
 
     monkeypatch.setattr(session, "SessionLocal", Db)
     monkeypatch.setattr(exact_run, "ExactRunAssetCache", lambda *_args, **_kwargs: object())

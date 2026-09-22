@@ -9,13 +9,16 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import delete, exists, select
+from sqlalchemy import delete, exists, func, select
 from sqlalchemy.orm import Session
 
-from app.account.security import hash_password, verify_password
+from app.account.security import (
+    create_account_action_token, decode_account_action_token,
+    hash_password, verify_password,
+)
 from app.config import get_settings
 from app.password_policy import ensure_password_safe
-from app.models import AppUser, Favorite, LocalTip, Spot, SpotImage, SpotRating, SpotSubmission
+from app.models import AppUser, CommunityUpvote, Favorite, LocalTip, Region, Spot, SpotImage, SpotRating, SpotSubmission
 from app.models.app_user import normalize_email
 
 
@@ -52,7 +55,9 @@ def register(
     email = _validate_email(email)
     _validate_password(password)
     password_hash = hash_password(password)
-    if get_by_email(db, email) is not None:
+    if get_by_email(db, email) is not None or db.scalar(
+        select(AppUser.id).where(AppUser.pending_email == email)
+    ):
         raise EmailExistsError("Für diese E-Mail existiert bereits ein Konto.")
     user = AppUser(
         email=email,
@@ -70,6 +75,8 @@ def authenticate(db: Session, email: str, password: str) -> AppUser:
         password, user.password_hash
     ):
         raise AuthError("E-Mail oder Passwort ist falsch.")
+    if user.email_verified_at is None:
+        raise AuthError("Bitte bestätige zuerst deine E-Mail-Adresse.")
     return user
 
 
@@ -80,19 +87,131 @@ def update_profile(
     display_name: str | None = None,
     email: str | None = None,
 ) -> AppUser:
-    if email is not None:
-        new_email = _validate_email(email)
-        if new_email != user.email:
-            other = get_by_email(db, new_email)
-            if other is not None and other.id != user.id:
-                raise EmailExistsError("Diese E-Mail ist bereits vergeben.")
-            user.email = new_email
+    if email is not None and _validate_email(email) != user.email:
+        raise ValueError("E-Mail-Adressen werden über die Bestätigungsfunktion geändert.")
     if display_name is not None:
         cleaned = display_name.strip()
         if cleaned:
             user.display_name = cleaned
     db.flush()
     return user
+
+
+def start_email_change(db: Session, user: AppUser, email: str, password: str) -> str:
+    if not verify_password(password, user.password_hash):
+        raise AuthError("Das Passwort ist falsch.")
+    email = _validate_email(email)
+    if email == user.email:
+        raise ValueError("Die neue Adresse ist bereits deine aktuelle Adresse.")
+    if get_by_email(db, email) or db.scalar(select(AppUser.id).where(
+        AppUser.pending_email == email, AppUser.id != user.id
+    )):
+        raise EmailExistsError("Diese E-Mail-Adresse ist nicht verfügbar.")
+    user.pending_email = email
+    user.email_token_version += 1
+    db.flush()
+    return create_account_action_token(user.id, purpose="change_email", version=user.email_token_version, email=email)
+
+
+def registration_token(user: AppUser) -> str:
+    return create_account_action_token(user.id, purpose="verify", version=user.email_token_version, email=user.email)
+
+
+def confirm_email(db: Session, token: str, *, password: str | None = None) -> AppUser:
+    from datetime import datetime, timezone
+    from jwt import PyJWTError
+
+    for purpose in ("verify", "change_email"):
+        try:
+            payload = decode_account_action_token(token, purpose)
+            break
+        except PyJWTError:
+            continue
+    else:
+        raise AuthError("Bestätigungslink ist ungültig oder abgelaufen.")
+    try:
+        user = db.get(AppUser, uuid.UUID(payload["sub"]))
+    except (ValueError, KeyError, TypeError):
+        user = None
+    if user is None or payload.get("ver") != user.email_token_version:
+        raise AuthError("Bestätigungslink ist ungültig oder abgelaufen.")
+    if purpose == "verify":
+        if user.email_verified_at is not None or payload.get("email") != user.email or not password:
+            raise AuthError("Bestätigungslink ist ungültig oder abgelaufen.")
+        _validate_password(password)
+        # The mail recipient chooses the final password; a third party who
+        # pre-registered this address cannot later sign in with its own choice.
+        user.password_hash = hash_password(password)
+        user.email_verified_at = datetime.now(timezone.utc)
+        user.session_version += 1
+    else:
+        if not user.pending_email or payload.get("email") != user.pending_email:
+            raise AuthError("Bestätigungslink ist ungültig oder abgelaufen.")
+        user.email = user.pending_email
+        user.pending_email = None
+        user.session_version += 1
+    user.email_token_version += 1
+    db.flush()
+    return user
+
+
+def reset_token(user: AppUser) -> str:
+    return create_account_action_token(user.id, purpose="reset", version=user.session_version)
+
+
+def reset_password(db: Session, token: str, password: str) -> None:
+    from jwt import PyJWTError
+
+    try:
+        payload = decode_account_action_token(token, "reset")
+        user = db.get(AppUser, uuid.UUID(payload["sub"]))
+    except (PyJWTError, ValueError, KeyError, TypeError):
+        user = None
+    if user is None or user.email_verified_at is None or payload.get("ver") != user.session_version:
+        raise AuthError("Zurücksetzungslink ist ungültig oder abgelaufen.")
+    _validate_password(password)
+    user.password_hash = hash_password(password)
+    user.session_version += 1
+    db.flush()
+
+
+def update_preferences(db: Session, user: AppUser, preferences: dict) -> dict:
+    # Serialize concurrent patches from the same account across tabs/devices.
+    db.refresh(user, with_for_update=True)
+    user.preferences = {**(user.preferences or {}), **preferences}
+    db.flush()
+    return user.preferences
+
+
+def list_my_activity(db: Session, user: AppUser) -> dict:
+    """Recent account-owned community content for the private profile."""
+    ratings = db.scalars(select(SpotRating).where(
+        SpotRating.app_user_id == user.id
+    ).order_by(SpotRating.created_at.desc()).limit(5)).all()
+    tips = db.scalars(select(LocalTip).where(
+        LocalTip.app_user_id == user.id
+    ).order_by(LocalTip.created_at.desc()).limit(5)).all()
+    images = db.scalars(select(SpotImage).where(
+        SpotImage.app_user_id == user.id
+    ).order_by(SpotImage.created_at.desc()).limit(5)).all()
+    corrections = db.scalars(select(SpotSubmission).where(
+        SpotSubmission.app_user_id == user.id,
+        SpotSubmission.payload["kind"].astext == "spot_edit_suggestion",
+    ).order_by(SpotSubmission.created_at.desc()).limit(5)).all()
+    items = [
+        {"id": str(row.id), "kind": kind, "spotId": str(row.spot_id) if row.spot_id else None,
+         "createdAt": row.created_at.isoformat(), "status": row.status}
+        for kind, rows in (("rating", ratings), ("tip", tips), ("image", images))
+        for row in rows
+    ]
+    items.extend({
+        "id": str(row.id), "kind": "correction",
+        "spotId": (row.payload or {}).get("spot_id"),
+        "createdAt": row.created_at.isoformat(), "status": row.status,
+        "reviewNote": row.review_note,
+    } for row in corrections)
+    items.sort(key=lambda item: item["createdAt"], reverse=True)
+    return {"items": items[:8]}
 
 
 def change_password(db: Session, user: AppUser, old_pw: str, new_pw: str) -> None:
@@ -113,6 +232,7 @@ def export_account_data(db: Session, user: AppUser) -> dict:
     ).all()
     images = db.scalars(select(SpotImage).where(SpotImage.app_user_id == user.id)).all()
     favorites = db.scalars(select(Favorite).where(Favorite.app_user_id == user.id)).all()
+    upvotes = db.scalars(select(CommunityUpvote).where(CommunityUpvote.app_user_id == user.id)).all()
 
     def stamp(row) -> dict:
         data = {
@@ -129,8 +249,14 @@ def export_account_data(db: Session, user: AppUser) -> dict:
             "email": user.email,
             "display_name": user.display_name,
             "created_at": user.created_at.isoformat(),
+            "preferences": user.preferences or {},
         },
         "favorites": [{**stamp(row), "spot_id": str(row.spot_id)} for row in favorites],
+        "upvotes": [
+            {**stamp(row), "tip_id": str(row.tip_id) if row.tip_id else None,
+             "rating_id": str(row.rating_id) if row.rating_id else None}
+            for row in upvotes
+        ],
         "ratings": [
             {
                 **stamp(row), "spot_id": str(row.spot_id), "stars": row.stars,
@@ -207,7 +333,7 @@ def list_favorites(db: Session, user: AppUser) -> list[dict]:
     rows = db.execute(
         select(Favorite, Spot)
         .join(Spot, Spot.id == Favorite.spot_id)
-        .where(Favorite.app_user_id == user.id)
+        .where(Favorite.app_user_id == user.id, Spot.status == "published")
         .order_by(Favorite.created_at.desc())
     ).all()
     out: list[dict] = []
@@ -233,7 +359,7 @@ def list_favorites(db: Session, user: AppUser) -> list[dict]:
 def add_favorite(db: Session, user: AppUser, spot_id: uuid.UUID) -> bool:
     """Save a spot. Idempotent — returns True if newly added, False if it was
     already saved. Raises ValueError when the spot does not exist."""
-    if not db.execute(select(exists().where(Spot.id == spot_id))).scalar():
+    if not db.execute(select(exists().where(Spot.id == spot_id, Spot.status == "published"))).scalar():
         raise ValueError("Spot nicht gefunden.")
     already = db.execute(
         select(exists().where(
@@ -258,35 +384,78 @@ def remove_favorite(db: Session, user: AppUser, spot_id: uuid.UUID) -> None:
 
 # --- spot proposals --------------------------------------------------------
 
-def list_my_submissions(db: Session, user: AppUser) -> list[dict]:
+def list_my_submissions(db: Session, user: AppUser, *, limit: int = 50, offset: int = 0) -> list[dict]:
     """The user's spot proposals, newest first, as ``{id, name, status,
     createdAt}``. The display name comes from the stored payload."""
     subs = db.execute(
         select(SpotSubmission)
-        .where(SpotSubmission.app_user_id == user.id)
+        .where(SpotSubmission.app_user_id == user.id,
+               SpotSubmission.payload["kind"].astext.is_distinct_from("spot_edit_suggestion"))
         .order_by(SpotSubmission.created_at.desc())
+        .limit(limit).offset(offset)
     ).scalars().all()
+    resulting_ids = [s.resulting_spot_id for s in subs if s.resulting_spot_id]
+    published_ids = set(db.scalars(select(Spot.id).where(
+        Spot.id.in_(resulting_ids), Spot.status == "published"
+    )).all()) if resulting_ids else set()
     return [
         {
             "id": str(s.id),
             "name": (s.payload or {}).get("name") or "Unbenannter Spot",
             "status": s.status,
             "createdAt": s.created_at.isoformat(),
+            "updatedAt": s.updated_at.isoformat() if s.updated_at else None,
+            "reviewedAt": s.reviewed_at.isoformat() if s.reviewed_at else None,
+            "reviewNote": s.review_note,
+            "resultingSpotId": str(s.resulting_spot_id) if s.resulting_spot_id else None,
+            "publishedSpotId": str(s.resulting_spot_id)
+            if s.resulting_spot_id in published_ids else None,
+            "regionId": (s.payload or {}).get("region_id"),
+            "lat": (s.payload or {}).get("lat"),
+            "lon": (s.payload or {}).get("lon"),
+            "sports": (s.payload or {}).get("sports") or [],
         }
         for s in subs
     ]
 
 
-def create_named_submission(db: Session, user: AppUser, name: str) -> dict:
-    """Record a lightweight 'propose a spot by name' from the account page.
-
-    Unlike the full community submission (which validates a complete SpotCreate
-    payload), this stores just a name for an admin to flesh out on review — the
-    account UX only asks for a name. Owned by the account via ``app_user_id``.
-    """
-    clean = (name or "").strip() or "Unbenannter Spot"
+def create_named_submission(
+    db: Session, user: AppUser, name: str, *, region_id: uuid.UUID | None = None,
+    lat: float | None = None, lon: float | None = None, sports: list[str] | None = None,
+) -> dict:
+    """Store an account-owned proposal for editorial review."""
+    clean = " ".join((name or "").split())
+    if not clean:
+        raise ValueError("Bitte gib einen Spotnamen ein.")
+    if (lat is None) != (lon is None) or (lat is not None and region_id is None):
+        raise ValueError("Bitte gib Region und Kartenposition zusammen an.")
+    if region_id is not None and not db.scalar(select(Region.id).where(
+        Region.id == region_id, Region.status == "published"
+    )):
+        raise ValueError("Region nicht gefunden.")
+    existing = db.scalar(select(Spot.id).where(
+        func.lower(Spot.name) == clean.lower(),
+        Spot.status == "published",
+        *((Spot.region_id == region_id,) if region_id else ()),
+    ).limit(1))
+    if existing:
+        raise ValueError("Diesen Spot gibt es bereits. Bitte suche ihn zuerst im Katalog.")
+    previous = db.scalar(select(SpotSubmission.id).where(
+        SpotSubmission.app_user_id == user.id,
+        SpotSubmission.status == "pending",
+        func.lower(SpotSubmission.payload["name"].astext) == clean.lower(),
+    ).limit(1))
+    if previous:
+        raise ValueError("Du hast diesen Spot bereits vorgeschlagen.")
+    payload = {"name": clean}
+    if region_id is not None:
+        payload["region_id"] = str(region_id)
+    if lat is not None:
+        payload.update(lat=lat, lon=lon)
+    if sports:
+        payload["sports"] = sports
     sub = SpotSubmission(
-        payload={"name": clean},
+        payload=payload,
         submitter_name=user.display_name,
         submitter_email=user.email,
         app_user_id=user.id,
@@ -300,4 +469,18 @@ def create_named_submission(db: Session, user: AppUser, name: str) -> dict:
         "name": clean,
         "status": sub.status,
         "createdAt": sub.created_at.isoformat(),
+        "regionId": payload.get("region_id"),
+        "lat": lat, "lon": lon, "sports": sports or [],
+        "reviewNote": None, "reviewedAt": None,
+        "resultingSpotId": None, "publishedSpotId": None,
     }
+
+
+def withdraw_submission(db: Session, user: AppUser, submission_id: uuid.UUID) -> None:
+    sub = db.get(SpotSubmission, submission_id)
+    if sub is None or sub.app_user_id != user.id:
+        raise LookupError("Vorschlag nicht gefunden.")
+    if sub.status != "pending":
+        raise ValueError("Nur ungeprüfte Vorschläge können zurückgezogen werden.")
+    sub.status = "withdrawn"
+    db.flush()

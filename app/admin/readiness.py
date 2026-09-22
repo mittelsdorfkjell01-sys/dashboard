@@ -95,6 +95,42 @@ def climatology_ready(spot: Any, job_status: str | None) -> bool:
     return isinstance(clim, dict) and bool(clim.get("weeks"))
 
 
+def _variant_checklist(spot: Any) -> list[dict]:
+    """Recommended per-variant readiness items.
+
+    For each variant a spot actually offers (``geeignet``/``eingeschraenkt``) we
+    surface — never as a blocker — what's still missing for a *belastbare*
+    recommendation: a usable wind window, and for foil variants a usable depth.
+    ``unbekannt``/``ungeeignet`` variants add nothing (they are not offered).
+    """
+    from app.admin.constants import (
+        SPORT_FOIL_VARIANT,
+        offered_variants,
+    )
+
+    conditions = getattr(spot, "variant_conditions", None)
+    if not isinstance(conditions, dict):
+        return []
+    foil_keys = set(SPORT_FOIL_VARIANT.values())
+    items: list[dict] = []
+    for key in offered_variants(conditions):
+        block = conditions.get(key) or {}
+        items.append({
+            "field": f"variant.{key}.wind_directions",
+            "severity": "recommended",
+            "ok": is_fulfilled(block.get("wind_directions")),
+            "na": False,
+        })
+        if key in foil_keys:
+            items.append({
+                "field": f"variant.{key}.usable_depth_m",
+                "severity": "recommended",
+                "ok": is_fulfilled(block.get("usable_depth_m")),
+                "na": is_na(block.get("usable_depth_m")),
+            })
+    return items
+
+
 def build_checklist(
     spot: Any, required_fields: list[dict], *, job_status: str | None = None
 ) -> dict:
@@ -114,6 +150,8 @@ def build_checklist(
             "ok": is_fulfilled(value),
             "na": is_na(value),
         })
+
+    items.extend(_variant_checklist(spot))
 
     items.append({
         "field": "climatology", "severity": "required",
@@ -182,4 +220,12 @@ def validate_spot_readiness(spot_id, *, db) -> dict:
         ).all()
     ]
     result = build_checklist(spot, rules, job_status=_latest_job_status(db, spot_id))
-    return {"spot_id": str(spot.id), "status": spot.status, **result}
+    from app.admin.constants import variant_consistency_warnings
+
+    warnings = variant_consistency_warnings(
+        spot.sports,
+        getattr(spot, "variant_conditions", None),
+        water_character=spot.water_character,
+        level=spot.level,
+    )
+    return {"spot_id": str(spot.id), "status": spot.status, "warnings": warnings, **result}

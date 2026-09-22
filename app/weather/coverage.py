@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.weather.station_identity import (
     duplicate_station_groups,
+    possible_duplicate_candidates,
     station_display_identity,
 )
 
@@ -54,6 +55,7 @@ def build_coverage_report(
     generated_at = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     active = [station for station in stations if getattr(station, "active", False)]
     duplicate_groups = duplicate_station_groups(active)
+    identity_candidates = possible_duplicate_candidates(active)
     duplicate_indices = set()
     for group in duplicate_groups:
         canonical = sorted(
@@ -161,7 +163,13 @@ def build_coverage_report(
     return {
         "generated_at": generated_at.isoformat(),
         "active_station_records": len(active),
+        # This count only collapses identities backed by provider identity,
+        # reviewed physical groups, or an official sensor crosswalk.  A shared
+        # ICAO/WIGOS site code remains an auditable candidate, not a silently
+        # confirmed duplicate sensor.
         "active_unique_stations": len(unique_active),
+        "active_confirmed_unique_stations": len(unique_active),
+        "verified_independent_stations": None,
         "active_wind_stations_by_country": dict(sorted(countries.items())),
         "providers": providers,
         "missing_elevation": [
@@ -177,6 +185,16 @@ def build_coverage_report(
         "duplicates": [
             [station_display_identity(active[index]) for index in group]
             for group in duplicate_groups
+        ],
+        "identity_candidates": [
+            {
+                "stations": [
+                    station_display_identity(active[left]),
+                    station_display_identity(active[right]),
+                ],
+                "reasons": list(reasons),
+            }
+            for left, right, reasons in identity_candidates
         ],
         "license_status": {
             license_name: sum(

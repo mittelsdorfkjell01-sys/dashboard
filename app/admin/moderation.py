@@ -9,6 +9,8 @@ goes live without passing the normal readiness/go-live flow.
 
 from __future__ import annotations
 
+import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,16 +18,47 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin import spots as admin_spots
+from app.account.email import MailUnavailable, send_account_notice
+from app.config import get_settings
 from app.media import gallery as media_gallery
 from app.media.lifecycle import mark_row_retired, purge_if_unreferenced
 from app.models import (
+    AppUser,
     ImageReport,
     LocalTip,
     ModerationAudit,
+    Spot,
     SpotImage,
     SpotRating,
     SpotSubmission,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _notify_submitter(db: Session, sub: SpotSubmission) -> None:
+    if not sub.app_user_id:
+        return
+    user = db.get(AppUser, sub.app_user_id)
+    if user is None or user.email_verified_at is None or not (user.preferences or {}).get("submissionEmails"):
+        return
+    correction = (sub.payload or {}).get("kind") == "spot_edit_suggestion"
+    decision = ("geprüft" if sub.status == "merged" else "abgelehnt") if correction else (
+        "als Entwurf übernommen" if sub.status == "merged" else "abgelehnt"
+    )
+    name = (sub.payload or {}).get("name") or "dein Spot"
+    detail = f"\nRückmeldung: {sub.review_note}" if sub.review_note else ""
+    base = get_settings().account_public_origin.rstrip("/")
+    link = (f"{base}/spot/{(sub.payload or {}).get('spot_id')}/info" if correction
+            else f"{base}/konto/spots")
+    try:
+        send_account_notice(
+            user.email, subject="Entscheidung zu deinem Spot-Vorschlag",
+            body=f"Dein {'Korrekturvorschlag' if correction else 'Spot-Vorschlag'} „{name}“ wurde {decision}.{detail}\n\n"
+                 f"Den aktuellen Stand siehst du hier: {link}",
+        )
+    except MailUnavailable:
+        logger.warning("Account submission notice delivery failed")
 
 
 def _now() -> datetime:
@@ -245,6 +278,24 @@ def approve_submission(
     if sub.status != "pending":
         raise ValueError(f"submission already {sub.status}")
 
+    if (sub.payload or {}).get("kind") == "spot_edit_suggestion":
+        try:
+            spot = db.get(Spot, uuid.UUID(str(sub.payload["spot_id"])))
+        except (ValueError, KeyError):
+            spot = None
+        if spot is None:
+            raise LookupError("spot not found")
+        sub.status = "merged"
+        sub.reviewed_by = actor
+        sub.reviewed_at = _now()
+        record_moderation(
+            db, actor=actor, action="spot_edit_suggestion_reviewed",
+            target_type="submission", target_id=sub.id, note=f"spot {spot.id}",
+        )
+        db.commit()
+        _notify_submitter(db, sub)
+        return spot
+
     merged = {**(sub.payload or {}), **(completion or {})}
     try:
         data = SpotCreate.model_validate(merged).to_data()
@@ -269,6 +320,7 @@ def approve_submission(
     )
     db.commit()
     db.refresh(spot)
+    _notify_submitter(db, sub)
     try:
         from app.forecast.publisher import enqueue
 
@@ -304,6 +356,7 @@ def reject_submission(db: Session, submission_id, *, actor: str, note: str | Non
         target_type="submission", target_id=sub.id, note=note,
     )
     db.commit()
+    _notify_submitter(db, sub)
 
 
 # --- images ----------------------------------------------------------------

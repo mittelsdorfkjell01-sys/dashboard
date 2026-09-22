@@ -1,9 +1,13 @@
 """Idempotent normalized public-observation import and quarantine storage."""
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+import hashlib
+import json
 from typing import Iterable
+import uuid
+import httpx
 
-from sqlalchemy import delete, nullsfirst, or_, select
+from sqlalchemy import delete, nullsfirst, or_, select, text
 from sqlalchemy.dialects.postgresql import insert
 
 from app.live.cache import Cache
@@ -13,8 +17,14 @@ from app.models import (
     WeatherObservation,
     WeatherObservationImportState,
     WeatherObservationQuarantine,
+    WeatherObservationRevision,
     WeatherStation,
+    WeatherStationCaptureCycle,
+    WeatherStationMetadataRevision,
+    WeatherStationProviderCursor,
 )
+from app.weather.observation_quality import evaluate_observation
+from app.weather.station_epochs import configuration_from_candidate, ensure_epoch
 from app.weather.providers.common import (
     ObservationStation,
     deduplicate_observations,
@@ -61,6 +71,16 @@ def catalog_candidates(spots: Iterable, catalog: list[ObservationStation], *, li
                 "wigos_id": candidate.wigos_id, "icao_id": candidate.icao_id,
                 "measurement_height_m": candidate.measurement_height_m,
                 "license": candidate.license, "provenance": candidate.provenance,
+                "country_code": candidate.country_code, "operator": candidate.operator,
+                "station_type": candidate.station_type,
+                "active": candidate.active,
+                "sensor_metadata": candidate.sensor_metadata,
+                "active_from": candidate.active_from, "active_to": candidate.active_to,
+                "metadata_updated_at": candidate.metadata_updated_at,
+                "source_url": candidate.source_url,
+                "metadata_payload_hash": hashlib.sha256(json.dumps(candidate.raw_payload, sort_keys=True, default=str).encode()).hexdigest(),
+                "metadata_payload": candidate.raw_payload,
+                "metadata_received_at": candidate.received_at,
                 "elevation_difference_m": (None if elevation is None or candidate.elevation_m is None
                                             else round(candidate.elevation_m - float(elevation), 1)),
                 "recommended": True, "approved": False,
@@ -71,18 +91,96 @@ def catalog_candidates(spots: Iterable, catalog: list[ObservationStation], *, li
 
 def sync_catalog_candidates(db, candidates: list[dict], *, dry_run=True) -> dict:
     """Batch-upsert recommendations without ever granting editorial approval."""
-    report = {"received": len(candidates), "persisted": 0, "dry_run": dry_run}
+    report = {"received": len(candidates), "persisted": 0, "upserted": 0,
+              "metadata_revisions_persisted": 0, "metadata_drift": 0, "dry_run": dry_run}
     if dry_run or not candidates:
         return report
-    safe = [{**row, "active": True, "approved": False, "blocked": False} for row in candidates]
-    stmt = insert(WeatherStation).values(safe).on_conflict_do_update(
-        constraint="uq_weather_station_spot_provider",
-        set_={key: getattr(insert(WeatherStation).excluded, key) for key in (
-            "name", "latitude", "longitude", "distance_km", "elevation_m",
-            "elevation_difference_m", "wigos_id", "icao_id",
-            "measurement_height_m", "license", "provenance", "recommended")},
-    ).returning(WeatherStation.id)
-    report["persisted"] = len(db.execute(stmt).scalars().all())
+    safe = [{**{key: value for key, value in row.items()
+                if key not in {"metadata_payload", "metadata_received_at"}},
+             "active": row.get("active", True), "approved": False, "blocked": False}
+            for row in candidates]
+    previous = db.scalars(select(WeatherStation).where(
+        WeatherStation.spot_id.in_([row["spot_id"] for row in safe]),
+        WeatherStation.provider.in_([row["provider"] for row in safe]),
+    )).all()
+    existing = {(str(item.spot_id), item.provider, item.provider_station_id): item for item in previous}
+    accepted = []
+    for row in safe:
+        old = existing.get((row["spot_id"], row["provider"], row["provider_station_id"]))
+        if old and any(getattr(old, field) is not None and row.get(field) is not None
+                       and abs(float(getattr(old, field)) - float(row[field])) > tolerance
+                       for field, tolerance in (("latitude", 0.001), ("longitude", 0.001),
+                                                ("elevation_m", 5), ("measurement_height_m", 1))):
+            old.blocked = True
+            old.decision_reason = "metadata_drift_requires_review"
+            old.identity_review_status = "unreviewed"
+            if row.get("active") is False:
+                old.active = False
+            report["metadata_drift"] += 1
+            continue
+        accepted.append(row)
+    safe = accepted
+    by_key = dict(existing)
+    if safe:
+        stmt = insert(WeatherStation).values(safe).on_conflict_do_update(
+            constraint="uq_weather_station_spot_provider",
+            set_={key: getattr(insert(WeatherStation).excluded, key) for key in (
+                "name", "latitude", "longitude", "distance_km", "elevation_m",
+                "elevation_difference_m", "wigos_id", "icao_id",
+                "measurement_height_m", "license", "provenance", "recommended",
+                "country_code", "operator", "station_type", "sensor_metadata",
+                "active_from", "active_to", "metadata_updated_at", "source_url",
+                "metadata_payload_hash", "active")},
+        ).returning(WeatherStation.id)
+        report["upserted"] = len(db.execute(stmt).scalars().all())
+        report["persisted"] = sum(
+            (row["spot_id"], row["provider"], row["provider_station_id"]) not in existing
+            for row in safe
+        )
+        station_rows = db.scalars(select(WeatherStation).where(
+            WeatherStation.spot_id.in_([row["spot_id"] for row in safe]),
+            WeatherStation.provider.in_([row["provider"] for row in safe]),
+        )).all()
+        by_key.update({(str(item.spot_id), item.provider, item.provider_station_id): item
+                       for item in station_rows})
+    revisions = []
+    for candidate in candidates:
+        station = by_key.get((candidate["spot_id"], candidate["provider"], candidate["provider_station_id"]))
+        if station is None:
+            continue
+        received = candidate.get("metadata_received_at")
+        if received is None or received.tzinfo is None:
+            # No raw metadata revision can claim an invented receipt time.
+            continue
+        revisions.append({
+            "station_id": station.id,
+            "payload_hash": candidate["metadata_payload_hash"],
+            "raw_payload": candidate.get("metadata_payload") or {},
+            "source_url": candidate.get("source_url"),
+            "license": candidate.get("license"),
+            "received_at": received,
+        })
+    if revisions:
+        report["metadata_revisions_persisted"] = len(db.execute(
+            insert(WeatherStationMetadataRevision).values(revisions)
+            .on_conflict_do_nothing(constraint="uq_weather_station_metadata_revision")
+            .returning(WeatherStationMetadataRevision.id)
+        ).scalars().all())
+    report["epochs_proposed"] = 0
+    for candidate in candidates:
+        station = by_key.get((candidate["spot_id"], candidate["provider"], candidate["provider_station_id"]))
+        received = candidate.get("metadata_received_at")
+        if station is None or received is None:
+            continue
+        revision = db.scalar(select(WeatherStationMetadataRevision).where(
+            WeatherStationMetadataRevision.station_id == station.id,
+            WeatherStationMetadataRevision.payload_hash == candidate["metadata_payload_hash"],
+        ))
+        _, created = ensure_epoch(
+            db, station, configuration_from_candidate(candidate), first_seen_at=received,
+            metadata_revision_id=revision.id if revision else None,
+        )
+        report["epochs_proposed"] += int(created)
     db.commit()
     return report
 
@@ -104,8 +202,16 @@ def apply_retention(db, *, approved=False, retention_days=DEFAULT_RETENTION_DAYS
     return plan
 
 
-def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True):
+def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True,
+                  capture_mode: str = "operational"):
+    if capture_mode not in {"operational", "historical_backfill"}:
+        raise ValueError("unsupported_capture_mode")
     source_rows = list(rows)
+    if source_rows and not dry_run:
+        # Serialise competing imports of one configured station before reading
+        # its current revision. The transaction lock is released on commit/rollback.
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                   {"key": str(station.id)})
     normalized = deduplicate_observations([
         with_station_metadata(row, station) for row in source_rows
     ])
@@ -152,6 +258,29 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
         row for row in reconciled if row.import_status in {"raw", "quarantined"}
     ]
     audit_rows = [row for row in reconciled if row.import_status != "accepted"]
+    first_time = min((row.observed_at for row in reconciled if row.observed_at), default=None)
+    prior_history = db.scalars(select(WeatherObservation).where(
+        WeatherObservation.station_id == station.id,
+        WeatherObservation.observed_at >= first_time - timedelta(hours=1),
+        WeatherObservation.observed_at < first_time,
+    ).order_by(WeatherObservation.observed_at)).all() if first_time else []
+    decisions = {}
+    for row in sorted(reconciled, key=lambda item: (item.observed_at or datetime.min.replace(tzinfo=timezone.utc),
+                                                    item.fingerprint)):
+        decisions[row.fingerprint] = evaluate_observation(row, station, prior=prior_history)
+        if row.import_status == "accepted" and row.observed_at is not None:
+            prior_history.append(row)
+            prior_history = [item for item in prior_history
+                             if item.observed_at >= row.observed_at - timedelta(hours=1)]
+    def availability(row):
+        if capture_mode == "historical_backfill":
+            return "historical_backfill"
+        if (row.observed_at is None or row.received_at is None
+                or row.received_at.tzinfo is None or row.observed_at.tzinfo is None):
+            return "availability_unproven"
+        delay = row.received_at - row.observed_at
+        return "captured_operationally" if timedelta(minutes=-2) <= delay <= timedelta(minutes=30) else "historical_backfill"
+    epoch_id = getattr(station, "current_epoch_id", None)
     report = {
         "received": len(source_rows),
         "normalized": len(reconciled),
@@ -161,10 +290,52 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
         "rejected": len(rejected),
         "quarantined": len(quarantined),
         "quarantine_persisted": 0,
+        "revisions_persisted": 0,
         "dry_run": dry_run,
     }
     if dry_run:
         return report
+
+    revision_ids = {}
+    revision_values = []
+    for row in reconciled:
+        revision_id = uuid.uuid4()
+        revision_ids[row.fingerprint] = revision_id
+        raw_json = json.dumps(row.raw_payload, sort_keys=True, separators=(",", ":"), default=str).encode()
+        revision_values.append({
+            "id": revision_id, "station_id": station.id,
+            "observed_at": row.observed_at, "received_at": row.received_at,
+            "first_seen_at": row.received_at, "epoch_id": epoch_id,
+            "availability_class": availability(row),
+            "revised_at": row.received_at if existing_by_time.get(row.observed_at) is not None else None,
+            "imported_at": row.imported_at, "published_at": row.published_at,
+            "provider": row.provider, "provider_station_id": row.provider_station_id,
+            "source_url": row.provenance.get("source_url"), "license": row.license,
+            "parser_version": row.parser_version,
+            "payload_hash": hashlib.sha256(raw_json).hexdigest(),
+            "fingerprint": row.fingerprint, "raw_payload": row.raw_payload,
+            "normalized_payload": normalized_observation_payload(row),
+            "qc_version": decisions[row.fingerprint].version,
+            "qc_stage": decisions[row.fingerprint].stage,
+            "qc_flags": list(decisions[row.fingerprint].reasons),
+            "revision_status": (
+                "current" if row.import_status == "accepted" and existing_by_time.get(row.observed_at) is None
+                else "pending_review" if row.import_status == "quarantined" and "duplicate:conflict" in row.data_issues
+                else "rejected" if row.import_status == "rejected" else "quarantined"
+            ),
+        })
+    if revision_values:
+        inserted = db.execute(
+            insert(WeatherObservationRevision).values(revision_values)
+            .on_conflict_do_nothing(constraint="uq_weather_revision_station_fingerprint")
+            .returning(WeatherObservationRevision.id)
+        ).scalars().all()
+        report["revisions_persisted"] = len(inserted)
+        # An existing replay retains its original first-receipt timestamp.
+        revision_rows = db.execute(select(WeatherObservationRevision.fingerprint, WeatherObservationRevision.id)
+                                   .where(WeatherObservationRevision.station_id == station.id,
+                                          WeatherObservationRevision.fingerprint.in_(revision_ids))).all()
+        revision_ids = dict(revision_rows)
 
     metadata_rows = [
         row
@@ -201,7 +372,16 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
         "provider_quality": row.provider_quality,
         "fetched_at": row.received_at, "received_at": row.received_at,
         "imported_at": row.imported_at, "import_status": row.import_status,
+        "first_seen_at": row.received_at, "epoch_id": epoch_id,
+        "availability_class": availability(row),
         "data_issues": list(row.data_issues),
+        "published_at": row.published_at,
+        "measurement_period_seconds": row.measurement_period_seconds,
+        "averaging_period_seconds": row.averaging_period_seconds,
+        "qc_version": decisions[row.fingerprint].version,
+        "qc_stage": decisions[row.fingerprint].stage,
+        "qc_flags": list(decisions[row.fingerprint].reasons),
+        "raw_revision_id": revision_ids[row.fingerprint],
     } for row in accepted]
     if accepted_values:
         result = db.execute(
@@ -255,16 +435,23 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
     return report
 
 
-def import_station(station, fetcher, db, *, cache=None, dry_run=True, attempts=2):
+def import_station(station, fetcher, db, *, cache=None, dry_run=True, attempts=2,
+                   capture_mode="operational"):
     last_error = None
     for _attempt in range(max(1, attempts)):
         try:
+            fetched = list(fetcher(station.provider_station_id))
+            if capture_mode == "operational":
+                start, end = catchup_window(station)
+                fetched = [row for row in fetched if row.observed_at is None
+                           or start <= row.observed_at <= end + timedelta(minutes=5)]
             report = persist_batch(
                 db,
                 station,
-                fetcher(station.provider_station_id),
+                fetched,
                 cache=cache,
                 dry_run=dry_run,
+                capture_mode=capture_mode,
             )
             if not dry_run:
                 _record_import_state(db, station, report=report)
@@ -274,6 +461,8 @@ def import_station(station, fetcher, db, *, cache=None, dry_run=True, attempts=2
             rollback = getattr(db, "rollback", None)
             if rollback is not None:
                 rollback()
+            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in {429, 500, 502, 503, 504}:
+                break  # defer to next cron run; never hammer a throttled provider
     report = {
         "received": 0, "normalized": 0, "deduplicated": 0,
         "accepted": 0, "persisted": 0, "rejected": 0,
@@ -298,12 +487,15 @@ def _record_import_state(db, station, *, report: dict) -> None:
     settings = get_settings()
     next_attempt_at = None
     if failed:
+        base_delay = retry_delay_seconds(
+            failure_count,
+            initial_seconds=settings.weather_observation_retry_initial_seconds,
+            maximum_seconds=settings.weather_observation_retry_max_seconds,
+        )
+        jitter_unit = int(hashlib.sha256(f"{station.id}:{failure_count}".encode()).hexdigest()[:2], 16) / 255
         next_attempt_at = attempted_at + timedelta(
-            seconds=retry_delay_seconds(
-                failure_count,
-                initial_seconds=settings.weather_observation_retry_initial_seconds,
-                maximum_seconds=settings.weather_observation_retry_max_seconds,
-            )
+            seconds=min(settings.weather_observation_retry_max_seconds,
+                        base_delay + round(base_delay * 0.2 * jitter_unit))
         )
     # Advance the scheduling cursor on both success and failure. Otherwise a
     # down provider with NULL/old last_import_at could monopolize every bounded
@@ -358,7 +550,7 @@ def _record_import_state(db, station, *, report: dict) -> None:
     db.commit()
 
 
-def provider_fetchers() -> dict:
+def provider_fetchers(db=None) -> dict:
     """Provider id -> callable(station_id) -> list[NormalizedObservation].
 
     Imported lazily so the scheduler entry point pays the provider/httpx import
@@ -368,39 +560,86 @@ def provider_fetchers() -> dict:
     from app.weather.providers import awc_metar, dmi, dwd
 
     return {
-        "dwd": dwd.fetch_now,
+        "dwd": (
+            (lambda station_id: dwd.fetch_now(station_id, db=db))
+            if db is not None else dwd.fetch_now
+        ),
         "dmi": dmi.fetch_recent,
         "awc_metar": awc_metar.fetch_recent,
     }
 
 
-def run_observation_import(db, *, providers=("dwd", "dmi", "awc_metar"), limit: int = 25,
-                           dry_run: bool = True, cache: Cache | None = None) -> dict:
+def run_observation_import(db, *, providers=("dwd", "dmi"), limit: int = 25,
+                           dry_run: bool = True, cache: Cache | None = None,
+                           capture_mode: str = "operational") -> dict:
     """Import a bounded batch of station observations, oldest imports first.
 
     Idempotent through ``uq_weather_observation_time``; repeated runs replay the
     overlap window without creating duplicates. Accepted normalized rows and
     rejected/quarantined audit rows stay separate; neither feeds a forecast.
     """
-    fetchers = provider_fetchers()
+    fetchers = provider_fetchers(None if dry_run else db)
     due_at = datetime.now(timezone.utc)
-    stations = db.scalars(
-        select(WeatherStation)
-        .outerjoin(
-            WeatherObservationImportState,
-            WeatherObservationImportState.station_id == WeatherStation.id,
-        )
-        .where(
-            WeatherStation.active.is_(True),
-            WeatherStation.provider.in_(list(providers)),
-            or_(
-                WeatherObservationImportState.next_attempt_at.is_(None),
-                WeatherObservationImportState.next_attempt_at <= due_at,
-            ),
-        )
-        .order_by(nullsfirst(WeatherStation.last_import_at.asc()))
-        .limit(max(1, limit))
-    ).all()
+    cursor_get = getattr(db, "get", None)
+    cursors = {provider: cursor_get(WeatherStationProviderCursor, provider) if cursor_get else None
+               for provider in providers}
+    enabled_providers = [provider for provider in providers
+                         if cursors[provider] is None or not cursors[provider].paused]
+    batch_limit = max(1, limit)
+    stations = []
+    if enabled_providers:
+        base_quota, remainder = divmod(batch_limit, len(enabled_providers))
+        for provider_index, provider in enumerate(enabled_providers):
+            quota = base_quota + int(provider_index < remainder)
+            if quota == 0:
+                continue
+            stations.extend(db.scalars(
+                select(WeatherStation)
+                .outerjoin(
+                    WeatherObservationImportState,
+                    WeatherObservationImportState.station_id == WeatherStation.id,
+                )
+                .where(
+                    WeatherStation.active.is_(True),
+                    WeatherStation.provider == provider,
+                    or_(
+                        WeatherObservationImportState.next_attempt_at.is_(None),
+                        WeatherObservationImportState.next_attempt_at <= due_at,
+                    ),
+                )
+                .order_by(
+                    nullsfirst(WeatherStation.last_import_at.asc()),
+                    WeatherStation.id,
+                )
+                .limit(quota)
+            ).all())
+        remaining = batch_limit - len(stations)
+        if remaining > 0:
+            selected_ids = [station.id for station in stations]
+            fill_conditions = [
+                WeatherStation.active.is_(True),
+                WeatherStation.provider.in_(enabled_providers),
+                or_(
+                    WeatherObservationImportState.next_attempt_at.is_(None),
+                    WeatherObservationImportState.next_attempt_at <= due_at,
+                ),
+            ]
+            if selected_ids:
+                fill_conditions.append(WeatherStation.id.notin_(selected_ids))
+            stations.extend(db.scalars(
+                select(WeatherStation)
+                .outerjoin(
+                    WeatherObservationImportState,
+                    WeatherObservationImportState.station_id == WeatherStation.id,
+                )
+                .where(*fill_conditions)
+                .order_by(
+                    nullsfirst(WeatherStation.last_import_at.asc()),
+                    WeatherStation.provider,
+                    WeatherStation.id,
+                )
+                .limit(remaining)
+            ).all())
     report = {
         "stations": len(stations), "persisted": 0, "accepted": 0,
         "rejected": 0, "quarantined": 0, "quarantine_persisted": 0,
@@ -433,7 +672,8 @@ def run_observation_import(db, *, providers=("dwd", "dmi", "awc_metar"), limit: 
             provider_report["stations"] += 1
             provider_report["errors"] += 1
             continue
-        result = import_station(station, fetcher, db, cache=cache, dry_run=dry_run)
+        result = import_station(station, fetcher, db, cache=cache, dry_run=dry_run,
+                                capture_mode=capture_mode)
         report["persisted"] += result.get("persisted", 0)
         report["accepted"] += result.get("accepted", 0)
         report["rejected"] += result.get("rejected", 0)
@@ -453,4 +693,43 @@ def run_observation_import(db, *, providers=("dwd", "dmi", "awc_metar"), limit: 
         for key in ("persisted", "accepted", "rejected", "quarantined"):
             provider_report[key] += int(result.get(key, 0) or 0)
         provider_report["errors"] += int(bool(result.get("error_class")))
+    if not dry_run:
+        for provider in enabled_providers:
+            cursor = cursors[provider] or WeatherStationProviderCursor(provider=provider, paused=False)
+            provider_result = report["provider_reports"].get(provider, {})
+            cursor.last_cycle_at = due_at
+            cursor.last_error_class = "StationImportError" if provider_result.get("errors") else None
+            if provider_result.get("stations") and not provider_result.get("errors"):
+                cursor.last_success_at = due_at
+                station_watermarks = [item.last_observation_at for item in stations
+                                      if item.provider == provider and item.last_observation_at]
+                if station_watermarks:
+                    new_watermark = max(station_watermarks)
+                    if cursor.watermark_at is None or new_watermark > cursor.watermark_at:
+                        cursor.watermark_at = new_watermark
+            db.add(cursor)
+            provider_result = report["provider_reports"].get(provider, {})
+            errors = int(provider_result.get("errors", 0) or 0)
+            station_count = int(provider_result.get("stations", 0) or 0)
+            db.add(WeatherStationCaptureCycle(
+                job_type="observations",
+                provider=provider,
+                started_at=due_at,
+                finished_at=datetime.now(timezone.utc),
+                status=(
+                    "no_work" if station_count == 0
+                    else "error" if errors == station_count
+                    else "partial" if errors
+                    else "success"
+                ),
+                counts={
+                    key: int(provider_result.get(key, 0) or 0)
+                    for key in (
+                        "stations", "persisted", "accepted", "rejected",
+                        "quarantined", "errors",
+                    )
+                },
+            ))
+        db.commit()
+    report["paused_providers"] = [provider for provider in providers if provider not in enabled_providers]
     return report

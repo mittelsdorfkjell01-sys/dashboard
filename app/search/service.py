@@ -58,22 +58,30 @@ def _anchor_point(spots: list[Any], regions: list[Any]) -> dict | None:
     return None
 
 
-def _with_sport(profile: dict | None, sport: str | None) -> dict | None:
-    """Make the active sport visible to the (sport-aware) scorer.
+def _with_sport(
+    profile: dict | None, sport: str | None, variant: str | None = None
+) -> dict | None:
+    """Make the active sport/variant visible to the (sport-aware) scorer.
 
-    The scorer reads ``profile['sport']`` to decide *which* sport to score; the
-    spatial layer only uses ``sport`` to filter. Without this, a spot would be
-    scored/coloured for its first listed sport rather than the selected one.
+    The scorer reads ``profile['sport']``/``profile['variant']`` to decide *what*
+    to score; the spatial layer only uses them to filter. Without this a spot
+    would be scored/coloured for its first listed sport rather than the selected
+    one, and a foil variant would never surface as "nicht ausreichend bewertet".
     """
-    if not sport:
+    if not sport and not variant:
         return profile
-    return {**(profile or {}), "sport": sport}
+    out = {**(profile or {})}
+    if sport:
+        out["sport"] = sport
+    if variant:
+        out["variant"] = variant
+    return out
 
 
-def _rank_rows(rows, sport, time_context, profile, db, scorer) -> list[dict]:
+def _rank_rows(rows, sport, time_context, profile, db, scorer, variant=None) -> list[dict]:
     d0 = distance_decay_d0(sport, db)
     ranked = rank_nearby(
-        rows, time_context, _with_sport(profile, sport), scorer=scorer, d0_km=d0
+        rows, time_context, _with_sport(profile, sport, variant), scorer=scorer, d0_km=d0
     )
     return [_ranked_brief(r) for r in ranked]
 
@@ -84,6 +92,7 @@ def search(
     query: str,
     *,
     sport: str | None = None,
+    variant: str | None = None,
     time_context: dict | None = None,
     profile: dict | None = None,
     db: Session,
@@ -104,8 +113,8 @@ def search(
     if regionen or matched_spots:
         anchor = _anchor_point(matched_spots, regionen)
         if anchor is not None:
-            rows = search_nearby_spots(anchor, sport, db=db)
-            spots_out = _rank_rows(rows, sport, time_context, profile, db, scorer)
+            rows = search_nearby_spots(anchor, sport, db=db, variant=variant)
+            spots_out = _rank_rows(rows, sport, time_context, profile, db, scorer, variant)
         else:
             spots_out = [spot_brief(s) for s in matched_spots]
         regions_out = [_region_brief(r) for r in regionen]
@@ -121,10 +130,10 @@ def search(
         return {"regionen": [], "spots": [], "treffer": 0, "resolved": "none"}
 
     if geo["type"] == "point":
-        rows = search_nearby_spots(geo["point"], sport, db=db)
+        rows = search_nearby_spots(geo["point"], sport, db=db, variant=variant)
     else:
-        rows = bounds_query(geo["bounds"], sport, db=db)
-    spots_out = _rank_rows(rows, sport, time_context, profile, db, scorer)
+        rows = bounds_query(geo["bounds"], sport, db=db, variant=variant)
+    spots_out = _rank_rows(rows, sport, time_context, profile, db, scorer, variant)
     return {
         "regionen": [],
         "spots": spots_out,
@@ -138,6 +147,7 @@ def search_geometry(
     shape: dict,
     *,
     sport: str | None = None,
+    variant: str | None = None,
     time_context: dict | None = None,
     profile: dict | None = None,
     db: Session,
@@ -145,8 +155,8 @@ def search_geometry(
 ) -> dict:
     """Rank spots inside a drawn circle/rectangle."""
     scorer = scorer or default_scorer(db)
-    rows = search_by_geometry(shape, sport, db=db)
-    spots_out = _rank_rows(rows, sport, time_context, profile, db, scorer)
+    rows = search_by_geometry(shape, sport, db=db, variant=variant)
+    spots_out = _rank_rows(rows, sport, time_context, profile, db, scorer, variant)
     return {"shape": shape, "spots": spots_out, "treffer": len(spots_out)}
 
 
@@ -155,17 +165,19 @@ def query_map(
     *,
     time_context: dict | None = None,
     sport: str | None = None,
+    variant: str | None = None,
     profile: dict | None = None,
     db: Session,
     scorer: Scorer | None = None,
 ) -> dict:
     """Pins for a viewport bbox, coloured by value."""
     scorer = scorer or default_scorer(db)
-    rows = bounds_query(bounds, sport, db=db)
+    rows = bounds_query(bounds, sport, db=db, variant=variant)
     pins = build_pins(
-        [r[0] for r in rows], time_context, _with_sport(profile, sport), scorer=scorer
+        [r[0] for r in rows], time_context, _with_sport(profile, sport, variant),
+        scorer=scorer,
     )
-    return {"bounds": bounds, "sport": sport, "pins": pins}
+    return {"bounds": bounds, "sport": sport, "variant": variant, "pins": pins}
 
 
 def query_portfolio(

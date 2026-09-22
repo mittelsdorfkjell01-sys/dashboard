@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 
-from app.weather.station_identity import duplicate_station_groups
+from app.weather.station_identity import (
+    duplicate_station_groups, possible_duplicate_candidates, spatial_duplicate_candidates,
+)
 
 
 def station(identifier, *, provider="dwd", lat=54.0, lon=10.0, elevation=5, **patch):
@@ -17,7 +19,7 @@ def station(identifier, *, provider="dwd", lat=54.0, lon=10.0, elevation=5, **pa
     return SimpleNamespace(**values)
 
 
-def test_station_duplicates_use_provider_icao_wigos_and_spatial_identity():
+def test_station_duplicates_use_strong_ids_but_spatial_match_needs_review():
     rows = [
         station("same"),
         station("same", lat=55, lon=11),
@@ -31,10 +33,12 @@ def test_station_duplicates_use_provider_icao_wigos_and_spatial_identity():
     groups = {frozenset(group) for group in duplicate_station_groups(rows)}
     assert groups == {
         frozenset({0, 1}),
-        frozenset({2, 3}),
-        frozenset({4, 5}),
-        frozenset({6, 7}),
     }
+    assert spatial_duplicate_candidates(rows) == [(6, 7)]
+    hints = {frozenset((left, right)): reasons
+             for left, right, reasons in possible_duplicate_candidates(rows)}
+    assert "shared_icao_sensor_unproven" in hints[frozenset((2, 3))]
+    assert "shared_wigos_sensor_unproven" in hints[frozenset((4, 5))]
 
 
 def test_spatial_proximity_without_elevation_requires_near_identical_coordinates():

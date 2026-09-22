@@ -472,6 +472,7 @@ def _latest_measurement(
         spot_id,
         now=now,
         wind_direction_deg=wind_direction_deg,
+        purpose="measurement",
     )
     selected = selection.selected
     if (
@@ -586,12 +587,15 @@ def public_live_wind_analysis(
         "rollout_stage": settings.live_wind_rollout_stage,
         "enabled_regions": sorted(settings.live_wind_enabled_region_slugs),
         "require_verification_evidence": settings.live_wind_require_verification_evidence,
+        "require_operational_health": settings.live_wind_require_operational_health,
         "candidate_version": settings.live_wind_candidate_version,
         "verification_context_hash": settings.live_wind_verification_context_hash,
         "verification_min_samples": settings.live_wind_verification_min_samples,
         "verification_min_days": settings.live_wind_verification_min_days,
         "verification_min_stations": settings.live_wind_verification_min_stations,
         "verification_min_uv_mae_drop_ms": settings.live_wind_verification_min_uv_mae_drop_ms,
+        "verification_max_subgroup_regression_ms": settings.live_wind_verification_max_subgroup_regression_ms,
+        "verification_subgroup_policy_version": settings.live_wind_verification_subgroup_policy_version,
         "minimum_station_count": settings.live_wind_min_station_count,
         "minimum_confidence": settings.live_wind_min_confidence,
         "maximum_conflict": settings.live_wind_max_conflict_index,

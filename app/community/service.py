@@ -8,6 +8,7 @@ moderation status filtering lives here so every caller is consistent.
 from __future__ import annotations
 
 from datetime import datetime
+import uuid
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
@@ -279,6 +280,7 @@ def create_submission(
     submitter_name: str | None,
     submitter_email: str | None = None,
     ip_hash: str | None = None,
+    app_user_id: uuid.UUID | None = None,
 ) -> SpotSubmission:
     """Validate the payload against the admin create schema but **do not** create a
     spot — only store the proposal as ``pending`` for later review (Sprint D)."""
@@ -286,16 +288,34 @@ def create_submission(
 
     from app.schemas.admin import SpotCreate
 
-    try:
-        SpotCreate.model_validate(payload)
-    except ValidationError as exc:
-        raise ValueError(f"Ungültiger Spot-Vorschlag: {exc.error_count()} Fehler.")
+    if payload.get("kind") == "spot_edit_suggestion":
+        try:
+            spot_id = uuid.UUID(str(payload.get("spot_id")))
+        except (ValueError, TypeError) as exc:
+            raise ValueError("Ungültiger Spot für die Korrektur.") from exc
+        spot = get_published_spot(db, spot_id)
+        if spot is None:
+            raise ValueError("Spot nicht gefunden.")
+        field = payload.get("field")
+        if field not in {"name", "region", "sports", "description", "facilities", "location", "data", "other"}:
+            raise ValueError("Ungültiger Korrekturbereich.")
+        message = str(payload.get("message") or "").strip()
+        if not 3 <= len(message) <= 2000:
+            raise ValueError("Beschreibe die Änderung mit 3 bis 2000 Zeichen.")
+        payload = {"kind": "spot_edit_suggestion", "spot_id": str(spot.id),
+                   "name": spot.name, "field": field, "message": message}
+    else:
+        try:
+            SpotCreate.model_validate(payload)
+        except ValidationError as exc:
+            raise ValueError(f"Ungültiger Spot-Vorschlag: {exc.error_count()} Fehler.") from exc
 
     sub = SpotSubmission(
         payload=payload,
         submitter_name=_clean_name(submitter_name),
         submitter_email=_clean_email(submitter_email),
         ip_hash=ip_hash,
+        app_user_id=app_user_id,
     )
     db.add(sub)
     name = payload.get("name") or "unbenannt"

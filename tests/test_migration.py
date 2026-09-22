@@ -22,6 +22,11 @@ EXPECTED_TABLES = {
     "weather_observation_quarantine",
     "weather_observation_import_states",
     "weather_live_wind_jobs",
+    "weather_provider_http_resources",
+    "weather_station_catalog_states",
+    "weather_station_capture_cycles",
+    "weather_exact_model_bundles",
+    "weather_exact_model_points",
 }
 
 
@@ -53,6 +58,117 @@ def test_live_wind_operations_columns_present(db):
         "exclusion_reasons",
         "baseline_cache_hit",
     }.issubset(live_wind_jobs)
+
+
+def test_station_capture_operations_schema_present(db):
+    inspector = inspect(db.get_bind())
+    resource_columns = {
+        column["name"]
+        for column in inspector.get_columns("weather_provider_http_resources")
+    }
+    assert {
+        "provider",
+        "resource_url",
+        "request_variant_hash",
+        "etag",
+        "last_modified",
+        "payload",
+        "payload_sha256",
+        "response_received_at",
+        "last_checked_at",
+        "last_not_modified_at",
+        "last_status_code",
+    }.issubset(resource_columns)
+    assert "uq_weather_provider_http_resource" in {
+        constraint["name"]
+        for constraint in inspector.get_unique_constraints(
+            "weather_provider_http_resources"
+        )
+    }
+    indexes = {
+        index["name"]
+        for table in (
+            "weather_provider_http_resources",
+            "weather_station_capture_cycles",
+        )
+        for index in inspector.get_indexes(table)
+    }
+    assert {
+        "ix_provider_http_checked",
+        "ix_station_capture_cycle_provider_time",
+    }.issubset(indexes)
+
+
+def test_exact_model_point_schema_present(db):
+    inspector = inspect(db.get_bind())
+    assert {
+        "target_kind", "target_id", "sampled_for_at", "captured_at",
+        "bundle_hash", "dataset_bundle_hash", "dataset_manifest",
+        "activation_eligible",
+    }.issubset({
+        column["name"]
+        for column in inspector.get_columns("weather_exact_model_bundles")
+    })
+    assert {
+        "bundle_id", "model_id", "model_run_at", "valid_at", "available_at",
+        "u_ms", "v_ms", "asset_content_hashes", "sample_hash",
+        "sampling_version", "source_cells",
+    }.issubset({
+        column["name"]
+        for column in inspector.get_columns("weather_exact_model_points")
+    })
+
+
+def test_migration_0064_exact_model_points_down_and_up(db):
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+    tables = {"weather_exact_model_bundles", "weather_exact_model_points"}
+    assert all(inspect(db.get_bind()).has_table(table) for table in tables)
+    command.downgrade(cfg, "0063_spot_variant_conditions")
+    db.commit()
+    assert all(not inspect(db.get_bind()).has_table(table) for table in tables)
+    command.upgrade(cfg, "head")
+    db.commit()
+    assert all(inspect(db.get_bind()).has_table(table) for table in tables)
+
+
+def test_migration_0062_station_capture_operations_down_and_up(db):
+    """Operational capture state is additive and independently reversible."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+
+    tables = {
+        "weather_provider_http_resources",
+        "weather_station_catalog_states",
+        "weather_station_capture_cycles",
+    }
+    assert all(inspect(db.get_bind()).has_table(table) for table in tables)
+
+    command.downgrade(cfg, "0061_station_qualification")
+    db.commit()
+    assert all(not inspect(db.get_bind()).has_table(table) for table in tables)
+
+    command.upgrade(cfg, "head")
+    db.commit()
+    assert all(inspect(db.get_bind()).has_table(table) for table in tables)
 
 
 def test_postgis_enabled(db):

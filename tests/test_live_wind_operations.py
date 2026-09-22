@@ -77,6 +77,15 @@ def test_rollout_is_shadow_first_and_region_gated():
     assert rollout_decision(spot, settings=killed).reason == "force_baseline"
 
 
+def test_default_public_policy_enables_provisional_global_correction():
+    settings = Settings(_env_file=None)
+
+    assert settings.live_wind_rollout_stage == "global"
+    assert settings.live_wind_require_verification_evidence is False
+    assert settings.live_wind_require_operational_health is False
+    assert rollout_decision(_spot(), settings=settings).expose_station_adjustment is True
+
+
 def test_shadow_public_path_never_invokes_station_analysis(monkeypatch):
     def forbidden(*_args, **_kwargs):
         raise AssertionError("station analysis must stay out of shadow serving")
@@ -102,7 +111,10 @@ def test_public_activation_fails_closed_without_verification_context(monkeypatch
         object(),
         _spot(),
         baseline,
-        settings=Settings(live_wind_rollout_stage="global"),
+        settings=Settings(
+            live_wind_rollout_stage="global",
+            live_wind_require_verification_evidence=True,
+        ),
     )
 
     assert result["status"] == "baseline"
@@ -127,11 +139,15 @@ def test_persisted_evidence_still_requires_reviewed_subgroup_policy():
             return evidence
 
     missing_policy = verification_evidence_reasons(
-        Db(), settings=Settings(live_wind_verification_context_hash="a" * 64),
+        Db(), settings=Settings(
+            live_wind_require_verification_evidence=True,
+            live_wind_verification_context_hash="a" * 64,
+        ),
     )
     assert "subgroup_regression_policy_missing" in missing_policy
     regression = verification_evidence_reasons(
         Db(), settings=Settings(
+            live_wind_require_verification_evidence=True,
             live_wind_verification_context_hash="a" * 64,
             live_wind_verification_max_subgroup_regression_ms=0.1,
         ),
@@ -144,6 +160,7 @@ def test_persisted_evidence_still_requires_reviewed_subgroup_policy():
         Settings().live_wind_candidate_version, "reviewed-v1", 0.1)
     regression = verification_evidence_reasons(
         Db(), settings=Settings(
+            live_wind_require_verification_evidence=True,
             live_wind_verification_context_hash="a" * 64,
             live_wind_verification_subgroup_policy_version="reviewed-v1",
             live_wind_verification_max_subgroup_regression_ms=0.1,
@@ -169,6 +186,25 @@ def test_quality_loss_immediately_returns_the_model_baseline(monkeypatch):
     )
     assert result["status"] == "baseline"
     assert result["fallback_reason"] == "quality_gate:conflict_high"
+
+
+def test_provisional_public_path_uses_station_analysis_without_shadow_health(monkeypatch):
+    candidate = _candidate()
+    calls = []
+
+    monkeypatch.setattr(
+        "app.live.live_wind.analyze_live_wind_for_spot",
+        lambda *_args, **_kwargs: calls.append(True) or candidate,
+    )
+    result = public_live_wind(
+        object(),
+        _spot(),
+        {"status": "baseline", "fallback_reason": "station_residuals_unavailable"},
+        settings=Settings(_env_file=None),
+    )
+
+    assert calls == [True]
+    assert result is candidate
 
 
 def test_regional_health_loss_opens_automatic_baseline_circuit(monkeypatch):
@@ -200,6 +236,7 @@ def test_regional_health_loss_opens_automatic_baseline_circuit(monkeypatch):
         settings=Settings(
             live_wind_rollout_stage="global",
             live_wind_require_verification_evidence=False,
+            live_wind_require_operational_health=True,
             live_wind_health_min_analyses=2,
         ),
     )

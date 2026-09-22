@@ -280,7 +280,11 @@ def public_live_wind(
             verification_reasons,
         )
 
-    health_reasons = operational_health_reasons(db, spot, settings=cfg)
+    health_reasons = (
+        operational_health_reasons(db, spot, settings=cfg)
+        if cfg.live_wind_require_operational_health
+        else ()
+    )
     if health_reasons:
         logger.warning(
             "live_wind_public_operational_fallback",

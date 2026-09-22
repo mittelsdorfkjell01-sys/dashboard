@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
+import hashlib
 import math
 from statistics import median
 
@@ -18,8 +19,12 @@ from app.models import (
     WeatherLiveWindVerificationEvidence,
     WeatherObservation,
     WeatherObservationImportState,
+    WeatherProviderHttpResource,
     WeatherStation,
+    WeatherStationCatalogState,
     WeatherStationModelResidual,
+    WeatherExactModelBundle,
+    WeatherExactModelPoint,
 )
 from app.weather.coverage import build_database_coverage_report
 from app.weather.live_wind_verification import candidate_policy_hash
@@ -318,6 +323,13 @@ def _provider_doctor(db, *, now: datetime, settings: Settings) -> dict:
     ).all()
     providers = {}
     alerts = []
+    catalog_states = {
+        item.provider: item
+        for item in db.scalars(select(WeatherStationCatalogState)).all()
+    }
+    dwd_resources = db.scalars(select(WeatherProviderHttpResource).where(
+        WeatherProviderHttpResource.provider == "dwd"
+    )).all()
     for provider in sorted({station.provider for station, _, _ in rows} | configured):
         items = [
             (station, state, country)
@@ -363,8 +375,63 @@ def _provider_doctor(db, *, now: datetime, settings: Settings) -> dict:
             "last_import_attempt_at": max(attempts).isoformat() if attempts else None,
             "stations_in_error": errors,
             "status": status,
+            "catalog_last_success_at": (
+                catalog_states[provider].last_success_at.isoformat()
+                if provider in catalog_states
+                and catalog_states[provider].last_success_at else None
+            ),
+            "catalog_last_error_class": (
+                catalog_states[provider].last_error_class
+                if provider in catalog_states else None
+            ),
         }
-    return {"ok": not any(item["severity"] == "critical" for item in alerts), "providers": providers, "alerts": alerts}
+        catalog = catalog_states.get(provider)
+        if provider not in {"dwd", "dmi"}:
+            continue
+        if catalog is None or catalog.last_success_at is None:
+            alerts.append({
+                "severity": "critical", "code": "station_catalog_never_succeeded",
+                "provider": provider,
+            })
+        elif _utc(catalog.last_success_at, now) < now - timedelta(
+            hours=settings.weather_station_catalog_late_hours
+        ):
+            alerts.append({
+                "severity": "critical", "code": "station_catalog_late",
+                "provider": provider,
+            })
+        elif catalog.last_error_class:
+            alerts.append({
+                "severity": "warning", "code": "station_catalog_error",
+                "provider": provider,
+                "error_class": catalog.last_error_class,
+            })
+    invalid_resources = sum(
+        len(bytes(item.payload)) != item.payload_size_bytes
+        or hashlib.sha256(bytes(item.payload)).hexdigest() != item.payload_sha256
+        for item in dwd_resources
+    )
+    if not dwd_resources:
+        alerts.append({"severity": "critical", "code": "dwd_validator_state_missing"})
+    if invalid_resources:
+        alerts.append({
+            "severity": "critical", "code": "dwd_validator_payload_corrupt",
+            "count": invalid_resources,
+        })
+    return {
+        "ok": not any(item["severity"] == "critical" for item in alerts),
+        "providers": providers,
+        "dwd_validators": {
+            "resources": len(dwd_resources),
+            "with_etag": sum(bool(item.etag) for item in dwd_resources),
+            "with_last_modified": sum(bool(item.last_modified) for item in dwd_resources),
+            "invalid_payloads": invalid_resources,
+            "last_checked_at": max(
+                (item.last_checked_at for item in dwd_resources), default=None
+            ).isoformat() if dwd_resources else None,
+        },
+        "alerts": alerts,
+    }
 
 
 def _scheduler_doctor(db, *, now: datetime, settings: Settings) -> dict:
@@ -433,6 +500,70 @@ def _scheduler_doctor(db, *, now: datetime, settings: Settings) -> dict:
         "oldest_due_job_at": _utc(oldest_due, now).isoformat() if oldest_due else None,
         "failed_jobs_last_24h": failed_recent,
         "stale_processing_jobs": stale_processing,
+        "alerts": alerts,
+    }
+
+
+def _exact_point_doctor(db, *, now: datetime) -> dict:
+    """Coverage/freshness of compact exact point evidence, not raw GRIB mounts."""
+    freshness_cutoff = now - timedelta(hours=4)
+    expected_stations = int(db.scalar(
+        select(func.count()).select_from(WeatherStation).where(
+            WeatherStation.active.is_(True),
+            WeatherStation.approved.is_(True),
+            WeatherStation.residual_approved.is_(True),
+            WeatherStation.blocked.is_(False),
+        )
+    ) or 0)
+    expected_spots = int(db.scalar(
+        select(func.count()).select_from(Spot).where(Spot.status == "published")
+    ) or 0)
+    fresh = dict(db.execute(select(
+        WeatherExactModelBundle.target_kind,
+        func.count(func.distinct(WeatherExactModelBundle.target_id)),
+    ).where(
+        WeatherExactModelBundle.activation_eligible.is_(True),
+        WeatherExactModelBundle.captured_at >= freshness_cutoff,
+    ).group_by(WeatherExactModelBundle.target_kind)).all())
+    latest = db.scalar(select(func.max(WeatherExactModelBundle.captured_at)))
+    bundle_count = int(db.scalar(
+        select(func.count()).select_from(WeatherExactModelBundle)
+    ) or 0)
+    point_count = int(db.scalar(
+        select(func.count()).select_from(WeatherExactModelPoint)
+    ) or 0)
+    station_fresh = int(fresh.get("station", 0))
+    spot_fresh = int(fresh.get("spot", 0))
+    alerts = []
+    if bundle_count == 0:
+        alerts.append({"severity": "critical", "code": "exact_point_capture_missing"})
+    elif latest is None or _utc(latest, now) < freshness_cutoff:
+        alerts.append({"severity": "critical", "code": "exact_point_capture_stale"})
+    if expected_stations and station_fresh < expected_stations:
+        alerts.append({
+            "severity": "warning", "code": "exact_station_point_coverage_incomplete",
+            "covered": station_fresh, "expected": expected_stations,
+        })
+    if expected_spots and spot_fresh < expected_spots:
+        alerts.append({
+            "severity": "warning", "code": "exact_spot_point_coverage_incomplete",
+            "covered": spot_fresh, "expected": expected_spots,
+        })
+    return {
+        "ok": not any(item["severity"] == "critical" for item in alerts),
+        "freshness_hours": 4,
+        "latest_capture_at": _utc(latest, now).isoformat() if latest else None,
+        "bundles": bundle_count,
+        "points": point_count,
+        "fresh_targets": {"station": station_fresh, "spot": spot_fresh},
+        "expected_targets": {"station": expected_stations, "spot": expected_spots},
+        "coverage_ratio": {
+            "station": (
+                round(station_fresh / expected_stations, 4)
+                if expected_stations else None
+            ),
+            "spot": round(spot_fresh / expected_spots, 4) if expected_spots else None,
+        },
         "alerts": alerts,
     }
 
@@ -623,6 +754,7 @@ def build_live_wind_operations_report(
     )
     provider = _provider_doctor(db, now=generated_at, settings=cfg)
     scheduler = _scheduler_doctor(db, now=generated_at, settings=cfg)
+    exact_points = _exact_point_doctor(db, now=generated_at)
     boundary = _product_boundary_audit(jobs)
     report = {
         "generated_at": generated_at.isoformat(),
@@ -644,6 +776,14 @@ def build_live_wind_operations_report(
             "stage": cfg.live_wind_rollout_stage,
             "force_baseline": cfg.live_wind_force_baseline,
             "enabled_regions": list(cfg.live_wind_enabled_region_slugs),
+            "verification_evidence_required": cfg.live_wind_require_verification_evidence,
+            "operational_health_required": cfg.live_wind_require_operational_health,
+            "activation_basis": (
+                "verified"
+                if cfg.live_wind_require_verification_evidence
+                and cfg.live_wind_require_operational_health
+                else "provisional_external_validation"
+            ),
             "station_adjustment_public": (
                 not cfg.live_wind_force_baseline
                 and cfg.live_wind_rollout_stage in {"pilot", "regional", "global"}
@@ -655,10 +795,9 @@ def build_live_wind_operations_report(
         "model_residual_evidence": {
             "accepted_or_degraded_in_window": residual_count,
             "exact_run_eligible_in_window": exact_residual_count,
-            "production_baseline_loader": (
-                "exact-run-loader-v2" if cfg.live_wind_exact_run_cache_dir else "not_configured"
-            ),
+            "production_baseline_loader": "persisted-exact-point-loader-v1",
             "persistent_cache_configured": bool(cfg.live_wind_exact_run_cache_dir),
+            "persistent_point_bundles": exact_points["bundles"],
             "activation_blocker": exact_residual_count == 0,
             "yield_by_station_provider_country": [
                 {"provider": provider_name, "country": country, "qc_status": status,
@@ -671,7 +810,11 @@ def build_live_wind_operations_report(
             "station_age_at_receipt_minutes": _distribution(received_delays),
             "station_age_at_import_minutes": _distribution(imported_delays),
         },
-        "doctors": {"providers": provider, "scheduler": scheduler},
+        "doctors": {
+            "providers": provider,
+            "scheduler": scheduler,
+            "exact_points": exact_points,
+        },
         "product_boundary_audit": boundary,
         "adaptive_forecast": {
             "allowed": False,
@@ -680,7 +823,7 @@ def build_live_wind_operations_report(
                 ("held_out_live_wind_accuracy_evaluation_missing"
                  if holdouts["status"] != "evidence_passed" else "uncertainty_calibration_missing"),
                 "forecast_impulse_contract_not_implemented",
-                *(["reproducible_station_baseline_loader_missing"] if not cfg.live_wind_exact_run_cache_dir else []),
+                *(["reproducible_station_point_evidence_missing"] if not exact_points["bundles"] else []),
                 *(["exact_run_station_residual_evidence_missing"] if exact_residual_count == 0 else []),
             ],
         },

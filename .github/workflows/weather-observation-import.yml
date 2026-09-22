@@ -1,0 +1,44 @@
+name: Continuous Weather Observation Import
+
+on:
+  schedule:
+    - cron: "6,16,26,36,46,56 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: continuous-weather-observation-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.ref == 'refs/heads/main' && vars.WEATHER_OBSERVATION_IMPORT_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      WEATHER_OBSERVATION_ENDPOINT: ${{ vars.WEATHER_OBSERVATION_ENDPOINT }}
+      CRON_SECRET: ${{ secrets.LIVE_WIND_CRON_SECRET }}
+    steps:
+      - name: Validate endpoint configuration
+        shell: bash
+        run: |
+          test -n "$WEATHER_OBSERVATION_ENDPOINT"
+          test -n "$CRON_SECRET"
+          case "$WEATHER_OBSERVATION_ENDPOINT" in
+            https://*/cron/observations) ;;
+            *) echo "WEATHER_OBSERVATION_ENDPOINT must use HTTPS and end in /cron/observations" >&2; exit 1 ;;
+          esac
+
+      - name: Import one bounded fair station batch
+        shell: bash
+        run: |
+          response="$(curl --fail-with-body --silent --show-error \
+            --max-time 240 --retry 3 --retry-delay 5 --retry-all-errors \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "$WEATHER_OBSERVATION_ENDPOINT")"
+          printf '%s\n' "$response" | jq -e '
+            (has("error") | not)
+            and ((.errors // 0) == 0)
+          ' >/dev/null

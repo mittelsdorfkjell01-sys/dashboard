@@ -49,7 +49,8 @@ def test_awc_station_fixture_is_europe_only_and_reports_missing_sensor_height():
     stations = parse_station_catalog(_fixture("awc_stations.json"))
     assert [station.station_id for station in stations] == ["EDDH", "LFPG"]
     assert {station.country_code for station in stations} == {"DE", "FR"}
-    assert all(station.commercial_reuse is True for station in stations)
+    assert all(station.commercial_reuse is False for station in stations)
+    assert all(station.attribution_required is True for station in stations)
     assert all(station.measurement_height_m is None for station in stations)
     assert all(station.license == AWC_LICENSE for station in stations)
 
