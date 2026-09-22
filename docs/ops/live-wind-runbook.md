@@ -121,7 +121,7 @@ Apply the additive migration before starting either scheduler or worker:
 
 ```bash
 alembic upgrade head
-alembic current  # 0064_exact_model_points (head; station capture is 0062)
+alembic current  # 0065_account_experience (head; station capture is 0062)
 alembic heads    # exactly one head
 ```
 

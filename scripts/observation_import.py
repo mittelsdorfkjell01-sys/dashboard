@@ -117,10 +117,10 @@ def main() -> None:
     with SessionLocal() as db:
         from sqlalchemy import text
         head = db.scalar(text("SELECT version_num FROM alembic_version"))
-        if head != "0064_exact_model_points":
+        if head != "0065_account_experience":
             raise SystemExit(
                 f"database migration head {head!r} is not "
-                "0064_exact_model_points"
+                "0065_account_experience"
             )
         if args.command in {"catalog", "cycle"}:
             report = {"catalog": _catalog(db, args, dry_run=not args.apply)}

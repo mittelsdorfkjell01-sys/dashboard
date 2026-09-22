@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.main import app
-from app.models import Favorite, Spot, SpotSubmission
+from app.models import Favorite, Region, Spot, SpotSubmission
 from app.api import account as account_api
 
 ACCT_COOKIE = get_settings().app_auth_cookie_name
@@ -368,6 +368,9 @@ def test_proposal_stores_location_and_rejects_existing_spot(acct, spot_id, db):
     spot = db.get(Spot, uuid.UUID(spot_id))
     region_id = str(spot.region_id)
     spot.status = "published"
+    # Proposals may only target a published region (admin-created regions start
+    # as draft), so publish it alongside the spot.
+    db.get(Region, spot.region_id).status = "published"
     db.commit()
 
     duplicate = c.post("/account/submissions", json={
