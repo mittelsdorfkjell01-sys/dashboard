@@ -50,10 +50,13 @@ jobs:
       - run: python -m compileall -q app alembic
       - run: ruff check app tests scripts --select E9,F63,F7,F82
       - run: python -m pip_audit -r requirements.txt
-      # `-v` so a native segfault (exit 139) names the last-started test in the
-      # log; `-p no:cacheprovider` keeps runs reproducible. See the pre-existing
-      # segfault under investigation in the DB-backed suite.
-      - run: pytest -v -p no:cacheprovider
+      # The DB-backed suite segfaults (exit 139) inside test_microscale on the
+      # Linux runner — a native rasterio/GDAL crash that passes locally and when
+      # test_microscale runs on its own. Run the raster microscale tests in a
+      # separate process so accumulated GDAL/PROJ native state from earlier
+      # tests cannot poison them. `-v` names the crashing test if it recurs.
+      - run: pytest -v -p no:cacheprovider --ignore=tests/test_microscale.py
+      - run: pytest -v -p no:cacheprovider tests/test_microscale.py
       - run: python scripts/cleanup_media.py --grace-hours 0
       - run: python scripts/cleanup_personal_data.py
       - name: Migration round trip
