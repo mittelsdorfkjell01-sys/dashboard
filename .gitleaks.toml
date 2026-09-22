@@ -1,0 +1,15 @@
+# gitleaks configuration.
+#
+# Keep the full default rule set, but stop the generic-api-key heuristic from
+# flagging the obviously fake passwords used as fixtures in the account tests
+# (e.g. "owner-pw-123", "attacker-pw-123"). These are literal test inputs, not
+# real credentials — see tests/test_account.py.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Obvious fake passwords used only as account-test fixtures"
+regexTarget = "match"
+regexes = [
+  '''(attacker-pw|owner-pw|again-owner)-\d+''',
+]

@@ -34,7 +34,7 @@ test("all spots expand in place without a second catalogue request or scroll res
     if (url.pathname === "/spots/top" || url.pathname === "/spots/live") {
       return route.fulfill({ json: [] });
     }
-    if (url.pathname === "/auth/me") {
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     }
     return route.fulfill({ json: [] });
@@ -61,7 +61,7 @@ test("hero search remains fully visible when opened after scrolling", async ({ p
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/spots") return route.fulfill({ json: spots });
-    if (url.pathname === "/auth/me") {
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     }
     return route.fulfill({ json: [] });
@@ -93,7 +93,7 @@ test("mobile search contains focus and returns it to its trigger", async ({ page
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/spots") return route.fulfill({ json: spots });
-    if (url.pathname === "/auth/me") {
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     }
     return route.fulfill({ json: [] });

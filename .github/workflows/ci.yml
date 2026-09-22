@@ -50,7 +50,10 @@ jobs:
       - run: python -m compileall -q app alembic
       - run: ruff check app tests scripts --select E9,F63,F7,F82
       - run: python -m pip_audit -r requirements.txt
-      - run: pytest -q
+      # `-v` so a native segfault (exit 139) names the last-started test in the
+      # log; `-p no:cacheprovider` keeps runs reproducible. See the pre-existing
+      # segfault under investigation in the DB-backed suite.
+      - run: pytest -v -p no:cacheprovider
       - run: python scripts/cleanup_media.py --grace-hours 0
       - run: python scripts/cleanup_personal_data.py
       - name: Migration round trip

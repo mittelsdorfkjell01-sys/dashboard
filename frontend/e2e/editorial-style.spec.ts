@@ -50,7 +50,7 @@ async function mockSearch(page: Page) {
     const url = new URL(route.request().url());
     if (url.pathname === "/search") return route.fulfill({ json: searchResult });
     if (url.pathname === "/spots") return route.fulfill({ json: catalogueSpots });
-    if (url.pathname === "/auth/me") {
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     }
     return route.fulfill({ json: [] });
@@ -102,7 +102,7 @@ test("search is the filled-action exception and loads regions on demand", async 
       return route.fulfill({ json: [] });
     }
     if (url.pathname === "/spots/live") return route.fulfill({ json: [] });
-    if (url.pathname === "/auth/me") {
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     }
     return route.fulfill({ json: [] });

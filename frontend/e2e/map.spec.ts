@@ -19,7 +19,7 @@ async function mockBackend(
     if (url.pathname === "/spots") return route.fulfill({ json: spots });
     if (url.pathname === "/spots/version") return route.fulfill({ json: { version: "test-1" } });
     if (url.pathname === "/spots/live") return route.fulfill({ json: [] });
-    if (url.pathname === "/auth/me") return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
     return route.fulfill({ json: [] });
   });
   await page.route(/https:\/\/[a-d]\.basemaps\.cartocdn\.com\/.*\.png(?:\?.*)?$/, (route) => {
@@ -30,7 +30,14 @@ async function mockBackend(
 
 test("map loads Leaflet layout and renders spots as accessible markers", async ({ page }) => {
   const consoleErrors: string[] = [];
-  page.on("console", (msg) => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
+  page.on("console", (msg) => {
+    if (msg.type() !== "error") return;
+    // A logged-out visitor's session probe (/account/me) answers 401, which
+    // Chromium logs as a failed-resource console error. That is expected here;
+    // keep it out of the assertion while still catching every real error.
+    if (/\/(account|auth)\/me\b/.test(msg.location()?.url ?? "")) return;
+    consoleErrors.push(msg.text());
+  });
   await mockBackend(page);
 
   await page.goto("/map");

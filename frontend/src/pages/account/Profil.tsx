@@ -57,7 +57,7 @@ export default function Profil() {
   const savedCount = favState.items.length;
   const addedCount = subState.items.length;
   const visitedCount = 0; // No visits backend yet — see BesuchteSpots.
-  const sports = user.preferences.sports ?? [];
+  const sports = user.preferences?.sports ?? [];
 
   return (
     <div className="mx-auto max-w-[720px] pb-[max(3rem,env(safe-area-inset-bottom))]">

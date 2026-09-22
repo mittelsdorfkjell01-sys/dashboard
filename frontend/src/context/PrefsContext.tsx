@@ -70,7 +70,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     if (!user) { hydratedUser.current = null; return; }
     if (hydratedUser.current === user.id) return;
     hydratedUser.current = user.id;
-    if (user.preferences.units) {
+    if (user.preferences?.units) {
       setUnits(user.preferences.units);
     } else {
       void updatePreferences({ units }).then(setUser).catch(() => {
