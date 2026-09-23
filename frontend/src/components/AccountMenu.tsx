@@ -7,6 +7,7 @@ import {
   BookmarkIcon,
   PinIcon,
   SpotAddIcon,
+  SchoolIcon,
   GearIcon,
   LogoutIcon,
   CloseIcon,
@@ -24,6 +25,7 @@ interface NavItem {
 
 const ACCOUNT_NAV: NavItem[] = [
   { label: "Profil", to: "/konto/profil", icon: UserIcon },
+  { label: "Mein Setup", to: "/konto/setup", icon: SchoolIcon },
   { label: "Saved", to: "/konto/favoriten", icon: BookmarkIcon },
   { label: "Spots besucht", to: "/konto/besucht", icon: PinIcon },
   { label: "Spots hinzufügen", to: "/konto/spots", icon: SpotAddIcon },

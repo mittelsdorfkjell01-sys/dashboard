@@ -145,7 +145,6 @@ export interface SpotSummary {
   style: string[];
   facilities: FacilityMap | null;
   status: string;
-  confidence: number | null;
   facing: number | null;
   image: ImageRecord | null;
   typical_wind_kt: number | null;
@@ -563,12 +562,6 @@ export interface ForecastSeries {
   attributions?: Array<{ provider: string; text: string; url: string; licence: string }>;
 }
 
-export interface SpotSeason {
-  stage: number;
-  spot_id: string;
-  [k: string]: unknown;
-}
-
 export interface RegionSeasonResponse {
   region_id: string;
   season: {
@@ -596,6 +589,15 @@ export interface Readiness {
   ready: boolean;
   checklist: ReadinessItem[];
   gaps: string[];
+  scoring?: {
+    kitesurf: {
+      applicable: boolean;
+      recommendable: boolean;
+      ready: boolean;
+      missing: string[];
+      active_v3_run_id: string | null;
+    };
+  };
 }
 
 // --- request core ----------------------------------------------------------
@@ -730,6 +732,23 @@ export const getSpotCatalogVersion = () =>
  *  today's conditions and popularity. Stable per day, rotates daily. */
 export const getTopSpots = (limit = 5, sport?: string) =>
   request<SpotSummary[]>(`/spots/top${qs({ limit, sport })}`);
+
+export type RecommendationSurface = "now" | "next_week" | "season" | "region";
+export interface RecommendationQuery {
+  sport?: string;
+  surface: RecommendationSurface;
+  region_id?: string;
+  month?: number;
+  weeks?: string;
+  lat?: number;
+  lon?: number;
+  limit?: number;
+}
+
+export const getRecommendations = (params: RecommendationQuery) =>
+  request<SpotSummary[]>(
+    `/recommendations${qs(params as unknown as Record<string, unknown>)}`,
+  );
 
 export const getSpot = (id: string) => request<SpotRead>(`/spots/${id}`);
 
@@ -887,10 +906,6 @@ export interface ForecastJob { id: string; spot_id: string | null; status: "queu
 export const recalculateAdminForecast = (spotId: string, rebuildProfile = false) => request<ForecastJob>(`/admin/weather/spots/${spotId}/recalculate${qs({ rebuild_profile: rebuildProfile })}`, { method: "POST" });
 export const getAdminForecastJob = (jobId: string) => request<ForecastJob>(`/admin/weather/jobs/${jobId}`);
 
-/** Stage-2 season curve: pct_usable[52] + flagged good weeks. */
-export const getSpotSeason = (id: string, sport?: string) =>
-  request<SpotSeason>(`/spots/${id}/season${qs({ stage: 2, sport })}`);
-
 export const getRegionSeason = (id: string, sport?: string) =>
   request<RegionSeasonResponse>(`/regions/${id}/season${qs({ sport })}`);
 
@@ -902,7 +917,6 @@ export interface SearchSpot {
   name: string;
   location: GeoPoint;
   sports: string[];
-  score?: number | null;
   distance_m?: number | null;
 }
 
@@ -934,12 +948,160 @@ export const getSearch = (params: SearchQuery) =>
 // Open axes (Sprint 6 backend). Shapes are permissive — the UI only needs a few
 // fields and tolerates the rest.
 export interface BestRegionsResponse {
-  regions?: Array<{ id?: string; slug?: string; name?: string; coverage?: number; intensity?: number }>;
+  regions?: Array<{ id?: string; slug?: string; name?: string; center?: GeoPoint | null }>;
   window?: unknown;
   [k: string]: unknown;
 }
+
+// --- private rider-model administration ----------------------------------
+
+export type RiderModelBoardType = "twintip" | "surfboard" | "foil" | "bigair_twintip";
+export type RiderModelLevel = "beginner" | "advanced" | "expert" | "competition";
+
+export interface RiderModelParameters {
+  k_board: Record<RiderModelBoardType, number>;
+  f_lo: number;
+  f_hi: number;
+  levels: Record<RiderModelLevel, { max_kt: number; gust_tolerance_kt: number }>;
+}
+
+export interface RiderModelGear {
+  kind: "kite" | "board" | "foil";
+  size?: number | null;
+  board_type?: RiderModelBoardType | null;
+  active?: boolean;
+}
+
+export interface DefaultRiderParameters {
+  weight_kg: number;
+  level: RiderModelLevel;
+  quiver: RiderModelGear[];
+  style_weights: Record<string, number>;
+  travel_mode: "day_trip" | "weekend" | "trip" | "camper";
+}
+
+export interface RiderModelDocument {
+  version: number;
+  rider_model: RiderModelParameters;
+  default_rider: DefaultRiderParameters;
+}
+
+export interface PersonalBandPreview {
+  min_kt: number;
+  ideal_lo_kt: number;
+  ideal_hi_kt: number;
+  max_kt: number;
+  gust_tolerance_kt: number;
+  fingerprint: string;
+}
+
+export const getAdminRiderModel = () => request<RiderModelDocument>("/admin/rider-model");
+
+export const saveAdminRiderModel = (document: Omit<RiderModelDocument, "version">) =>
+  request<RiderModelDocument>("/admin/rider-model", {
+    method: "PUT", body: JSON.stringify(document),
+  });
+
+export const previewAdminRiderModel = (
+  document: Omit<RiderModelDocument, "version"> & {
+    weight_kg: number;
+    level: RiderModelLevel;
+    quiver: RiderModelGear[];
+    style_weights: Record<string, number>;
+    travel_mode: DefaultRiderParameters["travel_mode"];
+  },
+) => request<PersonalBandPreview>("/admin/rider-model/preview", {
+  method: "POST", body: JSON.stringify(document),
+});
+
+// --- recommendation evaluation and calibration --------------------------
+
+export interface RecommendationQualityRow {
+  surface: string;
+  audience: "logged_profile" | "logged_without_profile" | "anonymous";
+  params_version: number;
+  impressions: number;
+  ctr: number | null;
+  favorite_rate: number | null;
+  checkin_rate: number | null;
+  worthwhile_share: number | null;
+  checkins_with_outcome: number;
+}
+
+export interface RecommendationQuality {
+  period: { start: string; end: string; days: number };
+  rows: RecommendationQualityRow[];
+  totals: { recommendation_calculations: number; events: number };
+}
+
+export interface CalibrationPreview {
+  eligible: boolean;
+  sample_count: number;
+  minimum_profiles?: number;
+  minimum_checkins?: number;
+  proposal: Record<string, unknown> | null;
+  observations?: Array<{
+    kite_size: number;
+    board_type: string;
+    sample_count: number;
+    median_wind_kt: number;
+    p10_wind_kt: number;
+    p90_wind_kt: number;
+  }>;
+}
+
+export interface CalibrationProposal {
+  id: string;
+  sport: string;
+  kind: "default_rider" | "personal_band" | "social_weight";
+  status: "pending" | "approved" | "rejected";
+  base_params_version: number;
+  proposed_params: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+  created_by: string;
+  reviewed_by: string | null;
+  review_note: string | null;
+  activated_params_version: number | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface ScoringCalibration {
+  active_params_version: number;
+  default_rider: CalibrationPreview;
+  personal_band: CalibrationPreview;
+  social: {
+    weight?: number;
+    min_group_size?: number;
+    validated?: boolean;
+    similar_band?: boolean;
+  };
+  proposals: CalibrationProposal[];
+}
+
+export const getAdminRecommendationQuality = (days = 30) =>
+  request<RecommendationQuality>(`/admin/recommendation-quality${qs({ days })}`);
+
+export const getAdminScoringCalibration = () =>
+  request<ScoringCalibration>("/admin/scoring-calibration");
+
+export const createAdminCalibrationProposal = (
+  kind: "default_rider" | "personal_band",
+) => request<CalibrationProposal>("/admin/scoring-calibration/proposals", {
+  method: "POST",
+  body: JSON.stringify({ kind }),
+});
+
+export const decideAdminCalibrationProposal = (
+  proposalId: string,
+  decision: "approve" | "reject",
+  note?: string,
+) => request<CalibrationProposal>(
+  `/admin/scoring-calibration/proposals/${proposalId}/${decision}`,
+  { method: "POST", body: JSON.stringify({ note: note || null }) },
+);
 export interface BestWeeksResponse {
-  weeks?: Array<{ week: number; score?: number; spots_working?: number }>;
+  weeks?: Array<{ week: number }>;
   [k: string]: unknown;
 }
 
@@ -1564,6 +1726,7 @@ export interface AdminSpotsQuery {
 }
 
 export interface AdminSpotSummary extends SpotSummary {
+  confidence: number | null;
   readiness: { ready: boolean; missing_count: number; gaps: string[] };
   media_flags: MediaFlags;
 }
@@ -1788,8 +1951,24 @@ export interface Era5Status {
   [k: string]: unknown;
 }
 
+export interface QueueResult {
+  run_id?: string;
+  status: string;
+  created: boolean;
+  error?: string;
+}
+
+export interface GoLiveResult {
+  spot_id: string;
+  status: string;
+  ready?: boolean;
+  gaps?: string[];
+  wind_climatology_v2?: QueueResult;
+  wind_climatology_v3?: QueueResult;
+}
+
 export const goLiveSpot = (id: string) =>
-  request<Record<string, unknown>>(`/admin/spots/${id}/live`, {
+  request<GoLiveResult>(`/admin/spots/${id}/live`, {
     method: "POST",
     timeoutMs: 55_000,
   });

@@ -18,7 +18,7 @@ from app.account.security import (
 )
 from app.config import get_settings
 from app.password_policy import ensure_password_safe
-from app.models import AppUser, CommunityUpvote, Favorite, LocalTip, Region, Spot, SpotImage, SpotRating, SpotSubmission
+from app.models import AppUser, CommunityUpvote, Favorite, LocalTip, RecommendationLog, Region, Spot, SpotImage, SpotRating, SpotSubmission, UserEvent
 from app.models.app_user import normalize_email
 
 
@@ -233,6 +233,26 @@ def export_account_data(db: Session, user: AppUser) -> dict:
     images = db.scalars(select(SpotImage).where(SpotImage.app_user_id == user.id)).all()
     favorites = db.scalars(select(Favorite).where(Favorite.app_user_id == user.id)).all()
     upvotes = db.scalars(select(CommunityUpvote).where(CommunityUpvote.app_user_id == user.id)).all()
+    events = db.scalars(select(UserEvent).where(UserEvent.app_user_id == user.id).order_by(UserEvent.created_at)).all()
+    recommendation_rows = db.scalars(
+        select(RecommendationLog)
+        .where(RecommendationLog.app_user_id == user.id)
+        .order_by(RecommendationLog.created_at)
+    ).all()
+    from app.account import rider as rider_service
+
+    rider_profile = rider_service._profile(db, user)
+    sport_profiles = []
+    if rider_profile is not None:
+        from app.models import RiderSportProfile
+
+        rows = db.scalars(select(RiderSportProfile).where(
+            RiderSportProfile.rider_profile_id == rider_profile.id
+        ).order_by(RiderSportProfile.sport)).all()
+        sport_profiles = [
+            rider_service.sport_profile_payload(row, row.sport, rider_profile.profile_version)
+            for row in rows
+        ]
 
     def stamp(row) -> dict:
         data = {
@@ -251,6 +271,35 @@ def export_account_data(db: Session, user: AppUser) -> dict:
             "created_at": user.created_at.isoformat(),
             "preferences": user.preferences or {},
         },
+        "rider_profile": rider_service.profile_payload(rider_profile),
+        "rider_sport_profiles": sport_profiles,
+        "gear": rider_service.list_gear(db, user),
+        "events": [
+            {
+                "id": str(row.id), "type": row.type,
+                "spot_id": str(row.spot_id) if row.spot_id else None,
+                "surface": row.surface, "context": row.context or {},
+                "recommendation_log_id": (
+                    str(row.recommendation_log_id) if row.recommendation_log_id else None
+                ),
+                "created_at": row.created_at.isoformat(),
+            }
+            for row in events
+        ],
+        "recommendation_log": [
+            {
+                "id": str(row.id),
+                "spot_id": str(row.spot_id),
+                "surface": row.surface,
+                "audience_segment": row.audience_segment,
+                "window_start": row.window_start.isoformat(),
+                "components": row.components,
+                "params_version": row.params_version,
+                "profile_fingerprint": row.profile_fingerprint,
+                "created_at": row.created_at.isoformat(),
+            }
+            for row in recommendation_rows
+        ],
         "favorites": [{**stamp(row), "spot_id": str(row.spot_id)} for row in favorites],
         "upvotes": [
             {**stamp(row), "tip_id": str(row.tip_id) if row.tip_id else None,

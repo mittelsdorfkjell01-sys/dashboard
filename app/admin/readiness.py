@@ -228,4 +228,32 @@ def validate_spot_readiness(spot_id, *, db) -> dict:
         water_character=spot.water_character,
         level=spot.level,
     )
-    return {"spot_id": str(spot.id), "status": spot.status, "warnings": warnings, **result}
+    from app.models import WindClimatologyV3Run
+    from app.scoring.eligibility import recommendability_gaps
+
+    recommendation_gaps = recommendability_gaps(spot, "kitesurf", db)
+    active_v3 = db.scalar(
+        select(WindClimatologyV3Run).where(
+            WindClimatologyV3Run.spot_id == spot.id,
+            WindClimatologyV3Run.is_active.is_(True),
+        )
+    )
+    scoring_gaps = list(recommendation_gaps)
+    if active_v3 is None:
+        scoring_gaps.append("active_v3_run")
+    scoring = {
+        "kitesurf": {
+            "applicable": "kitesurf" in (spot.sports or []),
+            "recommendable": not recommendation_gaps,
+            "ready": not scoring_gaps,
+            "missing": scoring_gaps,
+            "active_v3_run_id": str(active_v3.id) if active_v3 else None,
+        }
+    }
+    return {
+        "spot_id": str(spot.id),
+        "status": spot.status,
+        "warnings": warnings,
+        "scoring": scoring,
+        **result,
+    }

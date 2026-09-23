@@ -75,8 +75,8 @@ export default function SimilarSpots({ spotId, sport }: { spotId: string; sport?
     <section aria-labelledby="similar-spots-heading">
       <div className="flex items-end justify-between gap-4 border-b border-line pb-3">
         <div>
-          <h2 id="similar-spots-heading" className="text-title font-semibold text-ink">Ähnliche Spots</h2>
-          <p className="mt-1 text-caption text-muted">Spots mit vergleichbarem Charakter</p>
+          <h2 id="similar-spots-heading" className="text-title font-semibold text-ink">Weitere Spots</h2>
+          <p className="mt-1 text-caption text-muted">Weitere Auswahl für deine Planung</p>
         </div>
       </div>
       <div className="no-scrollbar mt-5 flex snap-x-mandatory gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-5">

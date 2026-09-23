@@ -25,8 +25,6 @@ def _ranked_brief(r: dict) -> dict:
     return {
         **spot_brief(r["spot"]),
         "distance_m": round(r["distance_m"], 1) if r["distance_m"] is not None else None,
-        "score": r["score"],
-        "rank_score": r["rank_score"],
     }
 
 
@@ -83,6 +81,19 @@ def _rank_rows(rows, sport, time_context, profile, db, scorer, variant=None) -> 
     ranked = rank_nearby(
         rows, time_context, _with_sport(profile, sport, variant), scorer=scorer, d0_km=d0
     )
+    record_ranked = getattr(scorer, "record_ranked", None)
+    if callable(record_ranked):
+        for row in ranked:
+            record_ranked(row["spot"], row["score"], row["rank_score"])
+    if sport == "kitesurf":
+        from app.recommendations.service import recommendable_spot_ids
+
+        eligible = recommendable_spot_ids(
+            db, [row["spot"] for row in ranked], sport
+        )
+        # Stable partition: personalization order stays intact within both
+        # groups, while incomplete records remain discoverable at the end.
+        ranked.sort(key=lambda row: row["spot"].id not in eligible)
     return [_ranked_brief(r) for r in ranked]
 
 
@@ -270,7 +281,7 @@ def toggle_sport(
 # --- Sprint 6: open axes, time-window ranking, region reverse ---------------
 
 def _timewindow_brief(r: dict) -> dict:
-    return {**spot_brief(r["spot"]), "coverage": r["coverage"], "intensity": r["intensity"]}
+    return spot_brief(r["spot"])
 
 
 def _area_spots(area: dict, db: Session, sport: str | None) -> list:
@@ -394,8 +405,15 @@ def best_regions_for_window(
              "intensity": round(inten, 4)}
         )
     ranked.sort(key=lambda r: (-r["coverage"], -r["intensity"], r["name"]))
-    return {"sport": sport, "window": window,
-            "regions": ranked[:limit] if limit else ranked}
+    selected = ranked[:limit] if limit else ranked
+    return {
+        "sport": sport,
+        "window": window,
+        "regions": [
+            {key: row[key] for key in ("id", "slug", "name", "center")}
+            for row in selected
+        ],
+    }
 
 
 def best_weeks_for_area(
@@ -411,4 +429,9 @@ def best_weeks_for_area(
 
     spots = _area_spots(area, db, sport)
     weeks = _best_weeks(spots, sport, _with_sport(profile, sport), db=db, top=top)
-    return {"area": area, "sport": sport, "spot_count": len(spots), "weeks": weeks}
+    return {
+        "area": area,
+        "sport": sport,
+        "spot_count": len(spots),
+        "weeks": [{"week": row["week"]} for row in weeks],
+    }

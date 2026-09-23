@@ -51,10 +51,10 @@ export function useSpots(
  *  today's conditions and popularity (backend `/spots/top`), adapted with their
  *  regions. Rotates daily; same shape as {@link useSpots} so tiles are unchanged. */
 export function useTopSpots(limit = 5): AsyncStateReloadable<Spot[]> {
-  const spots = usePersistentSwr(`top-spots:${limit}`, () => api.getTopSpots(limit), {
-    storageKey: `swd.top-spots.v1.${limit}`,
-    maxAgeMs: 7 * 24 * 60 * 60 * 1000,
-  });
+  const spots = useSwr(
+    `top-spots:kitesurf:${limit}`,
+    () => api.getTopSpots(limit, "kitesurf"),
+  );
   const data = useMemo(
     () => (spots.data ? adaptSpots(spots.data, new Map()) : null),
     [spots.data],
@@ -67,6 +67,39 @@ export function useTopSpots(limit = 5): AsyncStateReloadable<Spot[]> {
     error: spots.error,
     reload: spots.reload,
   };
+}
+
+/** Personalized ordering with the same public SpotSummary card contract. */
+export function useRecommendations(
+  query: api.RecommendationQuery,
+  enabled = true,
+): AsyncStateReloadable<Spot[]> {
+  const state = useSwr(
+    enabled ? `recommendations:${JSON.stringify(query)}` : null,
+    () => api.getRecommendations(query),
+  );
+  const data = useMemo(
+    () => (state.data ? adaptSpots(state.data, new Map()) : null),
+    [state.data],
+  );
+  return { ...state, data };
+}
+
+export function useRiderSetupComplete(enabled: boolean): AsyncStateReloadable<boolean> {
+  const state = useSwr(enabled ? "rider-setup-complete:kitesurf" : null, async () => {
+    const account = await import("./account");
+    const [profile, sport, gear] = await Promise.all([
+      account.getRiderProfile(),
+      account.getRiderSportProfile("kitesurf"),
+      account.getGear("kitesurf"),
+    ]);
+    return Boolean(
+      profile.weightKg != null &&
+      sport.level &&
+      gear.some((item) => item.active && item.kind === "kite" && item.size != null),
+    );
+  });
+  return state;
 }
 
 /** A single spot (full record) + its region, adapted. */

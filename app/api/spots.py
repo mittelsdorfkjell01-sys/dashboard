@@ -15,7 +15,9 @@ from app.api._http_cache import (
     set_map_catalog_cache,
     set_public_cache,
     set_top_spots_cache,
+    set_recommendation_cache,
 )
+from app.account.deps import optional_account
 from app.db.session import get_db
 from app.discovery import service as discovery
 from app.live import service as live_service
@@ -32,16 +34,11 @@ from app.live.public_cache import (
     set_public_live,
 )
 from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
-from app.models import Spot, SpotWeatherProfile, SpotWeatherSector, WindClimatologyRun
+from app.models import AppUser, Spot, SpotWeatherProfile, SpotWeatherSector, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
 from app.schemas import SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
-from app.scoring import (
-    describe_week_entry,
-    score_climatology_curve,
-    score_live,
-)
 from app.similarity import service as similarity_service
 from app.tides import service as tide_service
 from app.tides.schemas import PublicTideRead
@@ -122,6 +119,9 @@ def list_spots(
         default=None,
         description="Cache-busting catalogue version used by live public maps",
     ),
+    account: AppUser | None = Depends(optional_account),
+    client: OpenMeteoClient = Depends(get_om_client),
+    cache: Cache = Depends(get_cache),
 ) -> list[SpotSummary]:
     """List spots (lightweight view — no legacy climatology/overrides blobs; editorial
     is loaded only to derive the tile's typical wind/wave-height figure, never
@@ -131,6 +131,12 @@ def list_spots(
     """
     # Don't load the heavy JSONB columns for a list view — editorial stays
     # (SpotSummary derives typical_wind_kt/typical_wave_height_m from it).
+    personalized_region = sport == "kitesurf" and region_id is not None
+    relationship_option = (
+        selectinload(Spot.weather_profile).selectinload(SpotWeatherProfile.sectors)
+        if personalized_region
+        else noload(Spot.weather_profile)
+    )
     stmt = (
         select(Spot)
         .where(Spot.status == PUBLISHED)
@@ -152,15 +158,13 @@ def list_spots(
                 Spot.style,
                 Spot.facilities,
                 Spot.status,
-                Spot.confidence,
                 Spot.facing,
                 Spot.editorial,
                 Spot.image,
             ),
             selectinload(Spot.region),
-            noload(Spot.weather_profile),
+            relationship_option,
         )
-        .order_by(Spot.name)
     )
     if region_id is not None:
         stmt = stmt.where(Spot.region_id == region_id)
@@ -175,13 +179,26 @@ def list_spots(
         stmt = stmt.where(Spot.style.overlap(style))
     if bottom_type:
         stmt = stmt.where(Spot.bottom_type.overlap(bottom_type))
-    stmt = stmt.limit(limit).offset(offset)
+    if personalized_region:
+        from app.recommendations.service import rank_existing_spots
+        from app.scoring.rider.resolve import resolve_rider
 
-    rows = db.scalars(stmt).all()
-    if catalog_version:
-        set_map_catalog_cache(response)
+        rows = rank_existing_spots(
+            db,
+            list(db.scalars(stmt)),
+            resolve_rider(db, account, "kitesurf"),
+            client=client,
+            cache=cache,
+            app_user_id=account.id if account else None,
+        )[offset : offset + limit]
+        set_recommendation_cache(response, private=account is not None)
     else:
-        set_public_cache(response)
+        rows = db.scalars(stmt.order_by(Spot.name).limit(limit).offset(offset)).all()
+    if not personalized_region:
+        if catalog_version:
+            set_map_catalog_cache(response)
+        else:
+            set_public_cache(response)
     return _safe_summaries(rows, db)
 
 
@@ -211,6 +228,7 @@ def list_top_spots(
     ),
     client: OpenMeteoClient = Depends(get_om_client),
     cache: Cache = Depends(get_cache),
+    account: AppUser | None = Depends(optional_account),
 ) -> list[SpotSummary]:
     """ "aktuelle Top Spots": published spots ranked by a blend of this week's
     wind forecast, today's conditions and community popularity.
@@ -219,10 +237,26 @@ def list_top_spots(
     rotates ties), so the set changes daily. Declared before ``/{spot_id}`` so
     ``/spots/top`` is matched as a literal path, not a spot id.
 
-    Non-critical widget: if the ranking can't be computed (e.g. the forecast
-    provider is unreachable), it degrades to a plain published list instead of
-    500-ing, so the landing row always renders.
+    Kitesurf uses the personalized `now` surface and returns an empty list when
+    no spot is feasible. Other sports retain the legacy featured fallback.
     """
+    if sport == "kitesurf":
+        from app.recommendations.service import RecommendationSurface, recommendations
+        from app.scoring.rider.resolve import resolve_rider
+
+        ordered = recommendations(
+            db,
+            resolve_rider(db, account, sport),
+            surface=RecommendationSurface.NOW,
+            sport=sport,
+            client=client,
+            cache=cache,
+            app_user_id=account.id if account else None,
+            limit=limit,
+        )
+        set_recommendation_cache(response, private=account is not None)
+        return _safe_summaries(ordered, db)[:limit]
+
     # Over-fetch a few extra candidates so a single spot dropped by
     # _safe_summaries (malformed data) doesn't shrink the row below `limit`.
     fetch_n = min(limit + 3, 20)
@@ -456,7 +490,11 @@ def _published_spot_by_reference(db: Session, reference: str) -> Spot | None:
     return rows[0] if rows else None
 
 
-@router.get("/{spot_reference}", response_model=SpotRead)
+@router.get(
+    "/{spot_reference}",
+    response_model=SpotRead,
+    response_model_exclude={"overrides", "finish_rank"},
+)
 def get_spot(
     spot_reference: str, response: Response, db: Session = Depends(get_db)
 ) -> SpotRead:
@@ -464,7 +502,7 @@ def get_spot(
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
     set_public_cache(response)
-    return SpotRead.from_orm_spot(spot)
+    return SpotRead.from_orm_spot(spot, public=True)
 
 
 @router.get("/{spot_reference}/wind-climatology")
@@ -663,67 +701,6 @@ def get_spot_forecast(
     )
     stored["days"] = stored["days"][:days]
     return ForecastSeriesRead.model_validate(stored)
-
-
-@router.get("/{spot_id}/badge", tags=["score"])
-def get_spot_badge(
-    spot_id: uuid.UUID,
-    sport: str | None = Query(
-        default=None, description="Defaults to the spot's first sport"
-    ),
-    level: str | None = Query(
-        default=None, description="Rider level (beginner, advanced, expert)"
-    ),
-    db: Session = Depends(get_db),
-    client: OpenMeteoClient = Depends(get_om_client),
-    cache: Cache = Depends(get_cache),
-) -> dict:
-    """Now-badge: rate current conditions (gut / mäßig / nein) for the spot."""
-    if get_published_spot(db, spot_id) is None:
-        raise HTTPException(status_code=404, detail="Spot not found")
-    profile = {"level": level} if level else None
-    try:
-        return score_live(spot_id, profile, sport, db=db, client=client, cache=cache)
-    except LookupError:
-        raise HTTPException(status_code=404, detail="Spot not found")
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-
-
-@router.get("/{spot_id}/season", tags=["score"])
-def get_spot_season(
-    spot_id: uuid.UUID,
-    stage: int = Query(default=2, ge=1, le=2),
-    sport: str | None = Query(default=None),
-    level: str | None = Query(default=None),
-    db: Session = Depends(get_db),
-) -> dict:
-    """Seasonal curve. ``stage=1`` is descriptive (no gates); ``stage=2`` scores
-    the usable-hours curve over 52 weeks."""
-    spot = get_published_spot(db, spot_id)
-    if spot is None:
-        raise HTTPException(status_code=404, detail="Spot not found")
-    if not (spot.climatology and spot.climatology.get("weeks")):
-        raise HTTPException(status_code=404, detail="Spot has no climatology")
-
-    if stage == 1:
-        weeks = sorted(spot.climatology["weeks"], key=lambda w: w.get("week", 0))
-        return {
-            "stage": 1,
-            "spot_id": spot.id,
-            "window": spot.climatology.get("window"),
-            "weeks": [describe_week_entry(w) for w in weeks],
-        }
-
-    resolved_sport = sport or (spot.sports[0] if spot.sports else None)
-    if resolved_sport is None:
-        raise HTTPException(status_code=422, detail="No sport to score")
-    profile = {"level": level} if level else None
-    try:
-        result = score_climatology_curve(spot_id, profile, resolved_sport, db=db)
-    except KeyError:
-        raise HTTPException(status_code=422, detail=f"Unknown sport {resolved_sport!r}")
-    return {"stage": 2, "spot_id": spot.id, **result}
 
 
 @router.get("/{spot_id}/similar", tags=["similarity"])

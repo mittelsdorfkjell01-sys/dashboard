@@ -7,6 +7,7 @@ import L from "leaflet";
 import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import LandingHeader from "../components/LandingHeader";
 import SpotCard from "../components/SpotCard";
+import RecommendationRow from "../components/RecommendationRow";
 import SimilarRegions from "../components/SimilarRegions";
 import SortDropdown from "../components/SortDropdown";
 import Footer from "../components/Footer";
@@ -59,7 +60,7 @@ export default function RegionDetail() {
     error: spotsError,
     reload: reloadSpots,
   } = useSpots(
-    backendRegion ? { region_id: backendRegion.id } : {}
+    backendRegion ? { region_id: backendRegion.id, sport: "kitesurf" } : {}
   );
   const { data: live } = useSpotsLive((spots ?? []).map((s) => s.id));
 
@@ -225,6 +226,14 @@ export default function RegionDetail() {
           <Lede>{description}</Lede>
         </SectionBand>
 
+        <SectionBand tone="page" pad="md" width="spotBody">
+          <RecommendationRow
+            title={`Top in ${region.name}`}
+            surface="region"
+            regionId={backendRegion.id}
+          />
+        </SectionBand>
+
         {/* No region aggregation until a V2 product rule has been defined. */}
         <SectionBand tone="band" heading="Wann hinfahren" pad="md">
           <p className="text-body text-muted">Windverfügbarkeit für Regionen: Unbekannt</p>
@@ -245,7 +254,12 @@ export default function RegionDetail() {
           ) : (
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
               {gridSpots.map((spot) => (
-                <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} />
+                <SpotCard
+                  key={spot.id}
+                  spot={spot}
+                  live={live?.get(spot.id)}
+                  surface="region"
+                />
               ))}
             </div>
           )}

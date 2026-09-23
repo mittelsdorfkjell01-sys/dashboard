@@ -446,6 +446,58 @@ def rollback(spot_id: uuid.UUID, version: int, reason: str, *, db: Session, acto
     return profile
 
 
+def normalized_tide_level(phase: str, cycle_position: float | None) -> float | None:
+    """Convert a tide phase to a datum-independent low=0/high=1 level.
+
+    FES event heights are relative to a model datum that is not shared with the
+    legacy editorial window. The scoring contract therefore uses only the
+    position between reviewed low/high events and performs no metre conversion.
+    """
+    if phase == "low":
+        return 0.0
+    if phase == "high":
+        return 1.0
+    if cycle_position is None:
+        return None
+    position = max(0.0, min(1.0, float(cycle_position)))
+    if phase == "rising":
+        return position
+    if phase == "falling":
+        return 1.0 - position
+    return None
+
+
+def current_tide_level(
+    spot_id: uuid.UUID, *, db: Session, at: datetime | None = None
+) -> float | None:
+    """Current normalized tide level for internal scoring, or ``None``.
+
+    Only an enabled profile with a reviewed anchor and surrounding valid events
+    is eligible. ``public_enabled`` is intentionally irrelevant to this internal
+    calculation.
+    """
+    profile = db.scalar(select(TideProfile).where(TideProfile.spot_id == spot_id))
+    if profile is None or not profile.enabled or profile.anchor_status != "reviewed":
+        return None
+    events = _latest_events(spot_id, db=db, include_past=False, limit=16)
+    if not events:
+        return None
+    overrides = list(
+        db.scalars(
+            select(TideEventOverride).where(
+                TideEventOverride.spot_id == spot_id,
+                TideEventOverride.active.is_(True),
+                TideEventOverride.scope == "single",
+            )
+        )
+    )
+    effective = [_admin_event(event, overrides) for event in events]
+    phase, position = phase_at(
+        [(item["event_type"], item["time"]) for item in effective], at or _utcnow()
+    )
+    return normalized_tide_level(phase, position)
+
+
 def public_tides(spot_id: uuid.UUID, *, db: Session) -> dict:
     profile = db.scalar(select(TideProfile).where(TideProfile.spot_id == spot_id))
     unavailable = "Für diesen Spot sind derzeit keine verlässlichen Gezeitenangaben verfügbar."

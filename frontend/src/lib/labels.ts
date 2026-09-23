@@ -131,6 +131,10 @@ export const GAP_LABELS: Record<string, string> = {
   "editorial.description": "Beschreibung",
   "editorial.usable_wind_directions": "Nutzbare Windrichtungen",
   "editorial.tide": "Gezeiten",
+  reviewed_sectors: "Reviewte Windsektoren",
+  facing: "Ausrichtung",
+  active_v3_run: "Aktiver V3-Lauf",
+  sport_not_offered: "Kitesurfen nicht angeboten",
   climatology: "Klimatologie",
   image: "Titelbild",
 };

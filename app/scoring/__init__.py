@@ -37,12 +37,15 @@ from app.scoring.engine import (
     default_scorer,
     distance_decay_d0,
 )
+from app.scoring.eligibility import is_recommendable, recommendability_gaps
 from app.scoring.evaluate import evaluate_conditions
 from app.scoring.gates import apply_gates
 from app.scoring.live import score_live
 from app.scoring.magnitude import grade_magnitude
 from app.scoring.params import (
     SCORING_PARAMS_V1,
+    SCORING_PARAMS_V2,
+    SCORING_PARAMS_V3,
     SCORING_PARAMS_VERSION,
     get_params,
     seed_scoring_params,
@@ -57,8 +60,12 @@ __all__ = [
     "default_scorer",
     "distance_decay_d0",
     "DEFAULT_D0_KM",
+    "is_recommendable",
+    "recommendability_gaps",
     # params
     "SCORING_PARAMS_V1",
+    "SCORING_PARAMS_V2",
+    "SCORING_PARAMS_V3",
     "SCORING_PARAMS_VERSION",
     "get_params",
     "seed_scoring_params",

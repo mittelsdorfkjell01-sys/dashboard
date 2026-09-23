@@ -122,9 +122,6 @@ def _similar_brief(r: dict) -> dict:
         "wind": typical_wind,
         "wave_height": typical_wave_height,
         "description": editorial.get("description"),
-        "distance": r["distance"],
-        "character": r["character"],
-        "season": r["season"],
     }
 
 
@@ -132,9 +129,6 @@ def _alt_brief(r: dict) -> dict:
     return {
         **spot_brief(r["spot"]),
         "distance_m": round(r["distance_m"], 1) if r["distance_m"] is not None else None,
-        "score": r["score"],
-        "rank_score": r["rank_score"],
-        "character": r["character"],
     }
 
 

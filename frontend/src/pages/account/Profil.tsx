@@ -30,7 +30,7 @@ import {
  *
  * What has a backend today: the saved (favourites) and added (submissions)
  * counts. Everything else in the Figma — cover photo, avatar photo, sport +
- * country, the gear locker, the visited-spots collection — has no storage yet,
+ * country and the visited-spots collection — has no storage yet,
  * so it shows honest "Geplant" placeholders (matching the account-area
  * decision), never invented data. Wire each block to its API as it lands.
  */
@@ -93,20 +93,23 @@ export default function Profil() {
             icon={<SchoolIcon className="text-sz-22" />}
             title="Gear"
             right={
-              <button
-                type="button"
-                aria-disabled="true"
-                title="Bearbeiten folgt"
-                className="grid h-9 w-9 place-items-center rounded-full text-muted"
+              <Link
+                to="/konto/setup"
+                aria-label="Mein Setup bearbeiten"
+                title="Mein Setup bearbeiten"
+                className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <MoreIcon className="text-sz-20" />
-              </button>
+              </Link>
             }
           />
-          <p className="mt-1 text-ui text-muted">Dein aktuelles Surfequipment</p>
-          <PlannedBox>
-            Dein Equipment kannst du hier bald hinterlegen — Kite, Bar, Board und Zubehör.
-          </PlannedBox>
+          <p className="mt-1 text-ui text-muted">Deine Kites und dein Board verwalten</p>
+          <Link
+            to="/konto/setup"
+            className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-line bg-surface px-4 text-ui font-semibold text-ink transition-colors hover:bg-band"
+          >
+            Setup öffnen
+          </Link>
         </section>
 
         {/* Spotsammlung — preview of visited spots */}

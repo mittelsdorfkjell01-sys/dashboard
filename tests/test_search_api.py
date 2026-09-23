@@ -57,7 +57,7 @@ def test_map_endpoint(client, mocked_search):
     pins = resp.json()["pins"]
     slugs = {p["slug"] for p in pins}
     assert {"laboe", "stein"}.issubset(slugs)
-    assert all("color" in p for p in pins)
+    assert all("color" not in p and "value" not in p for p in pins)
 
 
 def test_geometry_endpoint_circle(client, mocked_search):

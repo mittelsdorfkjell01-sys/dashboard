@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.account.deps import optional_account
+from app.api._http_cache import set_recommendation_cache
+from app.models import AppUser
 from app.scoring import Scorer
 from app.search import service
 from app.search.deps import get_geocoder, get_scorer
@@ -23,7 +26,17 @@ def _time_context(week: int | None) -> dict | None:
 
 
 def _profile(level: str | None) -> dict | None:
-    return {"level": level} if level else None
+    if not level:
+        return None
+    from app.admin.constants import LEVELS
+
+    canonical = {"intermediate": "advanced", "pro": "expert"}.get(level, level)
+    if canonical not in LEVELS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown level {level!r}; allowed: {list(LEVELS)}",
+        )
+    return {"level": canonical}
 
 
 def _season_window(month: int | None, weeks: str | None) -> dict:
@@ -44,6 +57,7 @@ def _season_window(month: int | None, weeks: str | None) -> dict:
 
 @router.get("/search")
 def search(
+    response: Response,
     q: str = Query(..., min_length=1, description="Free-text query (place or spot/region)"),
     sport: str | None = Query(default=None),
     variant: str | None = Query(
@@ -56,18 +70,35 @@ def search(
     db: Session = Depends(get_db),
     geocoder: Geocoder = Depends(get_geocoder),
     scorer: Scorer = Depends(get_scorer),
+    account: AppUser | None = Depends(optional_account),
 ) -> dict:
     """Resolve a query to ranked spots/regions (entities first, else geocode)."""
-    return service.search(
+    profile = _profile(level)
+    rider_scorer = None
+    if sport == "kitesurf":
+        from app.recommendations.service import RiderUtilityScorer
+        from app.scoring.rider.resolve import resolve_rider
+
+        rider = resolve_rider(db, account, sport)
+        rider_scorer = RiderUtilityScorer(scorer, rider)
+        scorer = rider_scorer
+        profile = {**rider.profile, **(profile or {})}
+        set_recommendation_cache(response, private=account is not None)
+    result = service.search(
         q,
         sport=sport,
         variant=variant,
         time_context=_time_context(week),
-        profile=_profile(level),
+        profile=profile,
         db=db,
         geocoder=geocoder,
         scorer=scorer,
     )
+    if rider_scorer is not None:
+        rider_scorer.write_log(
+            db, app_user_id=account.id if account is not None else None
+        )
+    return result
 
 
 @router.post("/search/geometry")
@@ -106,7 +137,7 @@ def map_view(
     db: Session = Depends(get_db),
     scorer: Scorer = Depends(get_scorer),
 ) -> dict:
-    """Pins for a viewport bbox, coloured by value."""
+    """Pins for a viewport bbox, privately ranked without score fields."""
     bounds = {
         "min_lon": min_lon,
         "min_lat": min_lat,

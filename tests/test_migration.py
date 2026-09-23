@@ -27,6 +27,12 @@ EXPECTED_TABLES = {
     "weather_station_capture_cycles",
     "weather_exact_model_bundles",
     "weather_exact_model_points",
+    "rider_profiles",
+    "rider_sport_profiles",
+    "gear_items",
+    "user_events",
+    "recommendation_log",
+    "scoring_calibration_proposals",
 }
 
 
@@ -34,6 +40,43 @@ def test_all_tables_created(db):
     inspector = inspect(db.get_bind())
     tables = set(inspector.get_table_names())
     assert EXPECTED_TABLES.issubset(tables)
+
+
+def test_migration_0067_rider_data_down_and_up(db):
+    """Rider/evaluation storage and current activation are reversible."""
+    from pathlib import Path
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+    tables = {"rider_profiles", "rider_sport_profiles", "gear_items", "user_events"}
+    inspector = inspect(db.get_bind())
+    assert all(inspector.has_table(table) for table in tables)
+    assert db.execute(text(
+        "SELECT count(*) FROM scoring_params WHERE version = 4 AND active"
+    )).scalar() == 4
+
+    command.downgrade(cfg, "0066_scoring_params_v2")
+    db.commit()
+    inspector = inspect(db.get_bind())
+    assert all(not inspector.has_table(table) for table in tables)
+    assert db.execute(text(
+        "SELECT count(*) FROM scoring_params WHERE version = 2 AND active"
+    )).scalar() == 4
+
+    command.upgrade(cfg, "head")
+    db.commit()
+    inspector = inspect(db.get_bind())
+    assert all(inspector.has_table(table) for table in tables)
+    assert db.execute(text(
+        "SELECT count(*) FROM scoring_params WHERE version = 4 AND active"
+    )).scalar() == 4
 
 
 def test_live_wind_operations_columns_present(db):

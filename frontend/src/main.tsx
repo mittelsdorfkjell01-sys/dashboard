@@ -35,6 +35,7 @@ const Favoriten = React.lazy(() => import("./pages/account/Favoriten"));
 const BesuchteSpots = React.lazy(() => import("./pages/account/BesuchteSpots"));
 const MeineSpots = React.lazy(() => import("./pages/account/MeineSpots"));
 const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
+const MeinSetup = React.lazy(() => import("./pages/account/MeinSetup"));
 
 function RouteFallback() {
   return <div role="status" className="grid min-h-[40vh] place-items-center text-ui text-muted">Lädt…</div>;
@@ -93,6 +94,7 @@ async function bootstrap() {
         { path: "besucht", element: <BesuchteSpots /> },
         { path: "spots", element: <MeineSpots /> },
         { path: "einstellungen", element: <Einstellungen /> },
+        { path: "setup", element: <MeinSetup /> },
       ],
     },
   ];

@@ -1,0 +1,47 @@
+name: Weather Forecast Verification
+
+on:
+  schedule:
+    - cron: "38 5 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weather-forecast-verification
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' && vars.WEATHER_VERIFICATION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WEATHER_VERIFICATION_ENDPOINT: ${{ vars.WEATHER_VERIFICATION_ENDPOINT }}
+      CRON_SECRET: ${{ secrets.WEATHER_SHADOW_CRON_SECRET }}
+    steps:
+      - name: Validate endpoint configuration
+        shell: bash
+        run: |
+          test -n "$WEATHER_VERIFICATION_ENDPOINT"
+          test -n "$CRON_SECRET"
+          case "$WEATHER_VERIFICATION_ENDPOINT" in
+            https://*/cron/verification) ;;
+            *) echo "WEATHER_VERIFICATION_ENDPOINT must use HTTPS and end in /cron/verification" >&2; exit 1 ;;
+          esac
+
+      - name: Recompute verification and enforce forecast retention
+        shell: bash
+        run: |
+          response="$(curl --fail-with-body --silent --show-error \
+            --max-time 540 --retry 2 --retry-delay 10 --retry-all-errors \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "$WEATHER_VERIFICATION_ENDPOINT")"
+          printf '%s\n' "$response" | jq -e '
+            (has("error") | not)
+            and ((.calibrations_updated | type) != "object" or (.calibrations_updated | has("error") | not))
+            and ((.verification | has("error") | not))
+            and ((.sector_calibration | has("error") | not))
+            and ((.forecast_sample_retention | has("error") | not))
+          ' >/dev/null

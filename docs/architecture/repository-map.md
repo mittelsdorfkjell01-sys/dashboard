@@ -30,6 +30,7 @@ Local defaults: frontend `5173`, API `8000`, PostgreSQL `5432`, Redis `6379`.
 | Public spots/map | `app/api/spots.py`, `app/public_catalog.py`, `app/schemas/spot.py` | `tests/test_api.py`, frontend public-map tests |
 | Regions/search | `app/api/regions.py`, `app/api/search.py`, `app/search/` | `tests/test_api.py`, search tests |
 | Admin catalogue | `app/api/admin.py`, `app/admin/` | `tests/test_admin_api.py`, admin service tests |
+| Scoring / personalization | `app/scoring/`, `app/recommendations/`, `docs/architecture/personalized-scoring.md`, `notification-readiness.md` | scoring, recommendation, evaluation and public-contract tests |
 | Live/forecast | `app/live/`, `app/api/weather_fields.py`, `app/schemas/live.py` | `tests/test_live*.py`, weather contract tests |
 | Weather physics | `app/weather/`, `app/nearshore/`, `app/spatial_fields/` | `tests/test_weather*.py`, spatial-field tests |
 | Wind climatology | `app/wind_climatology*`, `app/api/admin_weather.py` | climatology and admin-weather tests |

@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+import math
+from typing import Literal
+
+
+DirectionStatus = Literal["ok", "unusable", "unknown"]
+
 
 def angular_diff(a: float, b: float) -> float:
     """Smallest absolute difference between two bearings (degrees), in [0, 180]."""
@@ -28,19 +34,45 @@ def valid_windows(windows) -> list[dict]:
         windows = [windows]
     if not isinstance(windows, (list, tuple)):
         return []
-    return [w for w in windows if isinstance(w, dict) and "min" in w and "max" in w]
+    return [
+        w
+        for w in windows
+        if isinstance(w, dict)
+        and isinstance(w.get("min"), (int, float))
+        and not isinstance(w.get("min"), bool)
+        and isinstance(w.get("max"), (int, float))
+        and not isinstance(w.get("max"), bool)
+        and math.isfinite(float(w["min"]))
+        and math.isfinite(float(w["max"]))
+    ]
+
+
+def direction_status(deg: float | None, windows) -> DirectionStatus:
+    """Return the explicit relationship between a bearing and usable windows.
+
+    ``unknown`` means either the bearing or the window definition is missing or
+    invalid (including the editorial ``"n/a"`` sentinel). Callers may keep a
+    legacy result usable, but must never award it the same best grade as ``ok``.
+    """
+    if (
+        not isinstance(deg, (int, float))
+        or isinstance(deg, bool)
+        or not math.isfinite(float(deg))
+    ):
+        return "unknown"
+    valid = valid_windows(windows)
+    if not valid:
+        return "unknown"
+    return "ok" if any(_in_window(float(deg), w) for w in valid) else "unusable"
 
 
 def direction_in_windows(deg: float | None, windows) -> bool:
-    """True if ``deg`` falls in any usable window. ``None``/absent windows => all usable."""
-    if windows is None:
-        return True
-    if deg is None:
-        return True  # unknown direction can't fail a direction gate
-    valid = valid_windows(windows)
-    if not valid:
-        return True  # no usable constraint (e.g. "n/a") => not gated out
-    return any(_in_window(deg, w) for w in valid)
+    """Compatibility bool: only an explicitly unusable direction fails.
+
+    Missing data remains passable for legacy callers, while
+    :func:`direction_status` lets scoring cap that unknown case at ``mäßig``.
+    """
+    return direction_status(deg, windows) != "unusable"
 
 
 def is_strong_onshore(

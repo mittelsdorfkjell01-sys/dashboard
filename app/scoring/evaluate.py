@@ -23,8 +23,8 @@ def evaluate_conditions(
     ``nein`` with the failing gate reasons.
     """
     params = params or get_params(sport)
-    passed, gate_reasons = apply_gates(values, editorial, sport, params)
+    passed, gate_reasons = apply_gates(values, editorial, sport, params, profile)
     if not passed:
         return {"rating": NO, "reasons": gate_reasons}
     rating, reasons = grade_magnitude(values, editorial, profile, params, sport)
-    return {"rating": rating, "reasons": reasons}
+    return {"rating": rating, "reasons": list(dict.fromkeys(gate_reasons + reasons))}

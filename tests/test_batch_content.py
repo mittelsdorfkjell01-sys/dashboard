@@ -1,7 +1,7 @@
 """Guard test: after seed + climatology batch, the content is actually there.
 
-Fails if the batch leaves **0** spots with climatology, if the batched spot's
-``/season`` still 404s, or if ``/search/best-spots`` cannot rank it (flat/empty).
+Fails if the batch leaves **0** spots with climatology, if the protected season
+inspector cannot read it, or if ``/search/best-spots`` cannot rank it.
 This is the regression guard for the "spots invisible / unsearchable" state — it
 must not silently return.
 
@@ -76,19 +76,24 @@ def test_batch_populates_climatology_and_makes_spot_rankable(
 
     sport = seeded_spot.sports[0]
 
-    # 2) /season no longer 404s — it returns the 52-week curve
-    r = client.get(f"/spots/{seeded_spot.id}/season", params={"sport": sport})
+    # 2) The admin inspector returns a non-flat 52-week curve. The equivalent
+    # public scoring route intentionally does not exist.
+    assert client.get(f"/spots/{seeded_spot.id}/season").status_code == 404
+    r = client.get(
+        f"/admin/scoring/spots/{seeded_spot.id}/season", params={"sport": sport}
+    )
     assert r.status_code == 200, r.text
-    assert len(r.json()["weeks"]) == N_WEEKS
+    assert len(r.json()["curve"]) == N_WEEKS
+    assert any(value > 0 for value in r.json()["curve"])
 
-    # 3) /search/best-spots can rank it — it appears with a non-flat intensity
+    # 3) /search/best-spots can rank it without exposing the ranking inputs.
     r = client.get("/search/best-spots", params={"sport": sport})
     assert r.status_code == 200, r.text
     spots = r.json()["spots"]
     assert spots, "best-spots returned no candidates"
     ours = next((s for s in spots if s["slug"] == SLUG), None)
     assert ours is not None, f"{SLUG} missing from best-spots"
-    assert ours["intensity"] > 0, "batched spot ranks flat — climatology not used"
+    assert "coverage" not in ours and "intensity" not in ours
 
 
 def test_batch_skips_spot_that_already_has_climatology(

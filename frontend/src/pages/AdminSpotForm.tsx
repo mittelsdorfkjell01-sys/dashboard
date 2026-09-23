@@ -116,6 +116,7 @@ export default function AdminSpotForm() {
   const [waterCharacter, setWaterCharacter] = useState<string[]>([]);
   const [styles, setStyles] = useState<string[]>([]);
   const [facing, setFacing] = useState("");
+  const [beginnerOffshoreOk, setBeginnerOffshoreOk] = useState(false);
   const [waterType, setWaterType] = useState<string[]>([]);
   const [bottomType, setBottomType] = useState<string[]>([]);
   const [tide, setTide] = useState("");
@@ -211,6 +212,7 @@ export default function AdminSpotForm() {
     waterCharacter,
     styles,
     facing,
+    beginnerOffshoreOk,
     waterType,
     bottomType,
     tide,
@@ -320,6 +322,7 @@ export default function AdminSpotForm() {
     setWaterCharacter(s.water_character ?? []);
     setStyles(synchronizeWavekiteStyle(nextSports, s.style ?? []));
     setFacing(s.facing != null ? String(s.facing) : "");
+    setBeginnerOffshoreOk(s.editorial?.beginner_offshore_ok === true);
     setWaterType(s.water_type ?? []);
     setBottomType(normalizeBottomTypes(s.bottom_type));
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
@@ -379,6 +382,9 @@ export default function AdminSpotForm() {
     const ed: Record<string, any> = {};
     if (description.trim()) ed.description = description.trim();
     if (isSurf && tide.trim()) ed.tide = tide.trim();
+    if (sports.includes("kitesurf")) {
+      ed.beginner_offshore_ok = beginnerOffshoreOk;
+    }
     if (mapView) ed.map_view = mapView; // preview frame for the spot's flow map
     return ed;
   };
@@ -447,6 +453,7 @@ export default function AdminSpotForm() {
       description: description.trim() || null,
       tide: isSurf ? tide.trim() || null : null,
       map_view: mapView,
+      beginner_offshore_ok: sports.includes("kitesurf") ? beginnerOffshoreOk : null,
     };
     for (const [key, value] of Object.entries(nextEditorial)) {
       const oldValue = loaded.editorial?.[key] ?? null;
@@ -882,6 +889,25 @@ export default function AdminSpotForm() {
                 placeholder="45"
               />
             </Field>
+            {sports.includes("kitesurf") && (
+              <label className="flex items-start gap-3 rounded-md border border-admin-border bg-admin-bg px-3 py-3 text-label text-admin-fg2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-admin-border"
+                  checked={beginnerOffshoreOk}
+                  onChange={(event) => {
+                    markDirty("main");
+                    setBeginnerOffshoreOk(event.target.checked);
+                  }}
+                />
+                <span>
+                  Offshore für Anfänger freigeben
+                  <span className="mt-0.5 block text-caption text-muted">
+                    Nur für geschützte, fachlich geprüfte Reviere wie flache Lagunen.
+                  </span>
+                </span>
+              </label>
+            )}
             {/* Gezeiten (Tide) ausgeblendet — wird später überarbeitet. Wert
                 bleibt erhalten und wird weiterhin gespeichert. */}
           </CollapsibleSection>

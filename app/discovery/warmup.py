@@ -28,12 +28,12 @@ from __future__ import annotations
 
 import argparse
 import time
-from datetime import date
+from datetime import date, datetime, time as datetime_time, timezone
 
 from app.db.session import SessionLocal
 from app.discovery.service import top_spot_ids
-from app.live.cache import Cache
-from app.live.client import OpenMeteoClient
+from app.live.cache import Cache, default_cache
+from app.live.client import OpenMeteoClient, default_client
 
 
 def warm_once(
@@ -68,6 +68,40 @@ def warm_once(
                 results.append((sport, limit, len(ids)))
                 print(
                     f"[warm] sport={sport or 'any'} limit={limit} -> {len(ids)} spots",
+                    flush=True,
+                )
+        # Phase-D surfaces share the same forecast/cache dependencies. Warm the
+        # average-rider variants even when the legacy job is invoked with the
+        # historical `sport=any` default.
+        if any(sport in (None, "kitesurf") for sport in sports):
+            from app.recommendations.service import RecommendationSurface, recommendations
+            from app.scoring.rider.resolve import resolve_rider
+
+            recommendation_client = client or default_client()
+            recommendation_cache = cache or default_cache()
+            rider = resolve_rider(db, None, "kitesurf")
+            now = (
+                datetime.combine(today, datetime_time.min, tzinfo=timezone.utc)
+                if today is not None
+                else datetime.now(timezone.utc)
+            )
+            for surface in (
+                RecommendationSurface.NOW,
+                RecommendationSurface.NEXT_WEEK,
+                RecommendationSurface.SEASON,
+            ):
+                rows = recommendations(
+                    db,
+                    rider,
+                    surface=surface,
+                    sport="kitesurf",
+                    client=recommendation_client,
+                    cache=recommendation_cache,
+                    limit=max(limits),
+                    now=now,
+                )
+                print(
+                    f"[warm] recommendations={surface.value} -> {len(rows)} spots",
                     flush=True,
                 )
         return results

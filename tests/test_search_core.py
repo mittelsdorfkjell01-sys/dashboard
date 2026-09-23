@@ -13,6 +13,20 @@ from tests.search_helpers import FakeGeocoder, FakeScorer, make_region, make_spo
 
 # --- text index ------------------------------------------------------------
 
+
+def test_search_profile_normalizes_only_supported_legacy_levels():
+    import pytest
+    from fastapi import HTTPException
+
+    from app.api.search import _profile
+
+    assert _profile("intermediate") == {"level": "advanced"}
+    assert _profile("pro") == {"level": "expert"}
+    assert _profile("competition") == {"level": "competition"}
+    with pytest.raises(HTTPException) as exc:
+        _profile("professional")
+    assert exc.value.status_code == 422
+
 def test_normalize_folds_accents_and_case():
     assert normalize("Kieler Bùcht") == "kieler bucht"
 
@@ -143,15 +157,15 @@ def test_value_to_color_tiers():
     assert value_to_color(None) == "grey"
 
 
-def test_build_pins_uses_scorer_value():
+def test_build_pins_uses_score_only_for_server_order():
     spots = [
         make_spot("Hot", 54.41, 10.22, ["kitesurf"], slug="hot"),
         make_spot("Cold", 54.45, 10.27, ["kitesurf"], slug="cold"),
     ]
     scorer = FakeScorer({"hot": 0.9, "cold": 0.1})
     pins = build_pins(spots, None, None, scorer=scorer)
-    colors = {p["slug"]: p["color"] for p in pins}
-    assert colors == {"hot": "green", "cold": "grey"}
+    assert [pin["slug"] for pin in pins] == ["hot", "cold"]
+    assert all("value" not in pin and "color" not in pin for pin in pins)
 
 
 def test_cluster_pins_low_vs_high_zoom():

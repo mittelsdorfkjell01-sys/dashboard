@@ -12,6 +12,8 @@ from app.models.required_fields import RequiredField
 from app.models.admin_user import AdminUser
 from app.models.app_user import AppUser
 from app.models.favorite import Favorite
+from app.models.rider import GearItem, RiderProfile, RiderSportProfile, UserEvent
+from app.models.recommendation import RecommendationLog, ScoringCalibrationProposal
 from app.models.ugc import (
     SpotRating,
     LocalTip,
@@ -94,6 +96,12 @@ __all__ = [
     "AdminUser",
     "AppUser",
     "Favorite",
+    "RiderProfile",
+    "RiderSportProfile",
+    "GearItem",
+    "UserEvent",
+    "RecommendationLog",
+    "ScoringCalibrationProposal",
     "SpotRating",
     "LocalTip",
     "CommunityUpvote",

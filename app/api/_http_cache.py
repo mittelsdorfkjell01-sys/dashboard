@@ -54,6 +54,18 @@ FORECAST_CACHE_CONTROL = (
     "public, max-age=300, s-maxage=1800, stale-while-revalidate=10800"
 )
 
+RECOMMENDATIONS_CACHE_CONTROL = (
+    "public, max-age=60, s-maxage=900, stale-while-revalidate=1800"
+)
+PRIVATE_RECOMMENDATIONS_CACHE_CONTROL = "private, no-store"
+
+
+def _vary(response: Response, value: str) -> None:
+    current = [item.strip() for item in response.headers.get("Vary", "").split(",") if item.strip()]
+    if value.lower() not in {item.lower() for item in current}:
+        current.append(value)
+    response.headers["Vary"] = ", ".join(current)
+
 
 def set_public_cache(response: Response) -> None:
     """Mark ``response`` edge-cacheable for the public near-static reads."""
@@ -83,3 +95,11 @@ def set_live_cache(response: Response) -> None:
 def set_forecast_cache(response: Response) -> None:
     """Edge-cache one published forecast without changing its validity."""
     response.headers["Cache-Control"] = FORECAST_CACHE_CONTROL
+
+
+def set_recommendation_cache(response: Response, *, private: bool) -> None:
+    """Separate signed-in responses while sharing the average-rider variant."""
+    response.headers["Cache-Control"] = (
+        PRIVATE_RECOMMENDATIONS_CACHE_CONTROL if private else RECOMMENDATIONS_CACHE_CONTROL
+    )
+    _vary(response, "Cookie")

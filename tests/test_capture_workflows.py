@@ -61,13 +61,25 @@ def test_hosted_station_schedules_need_no_persistent_worker_or_database_secret()
     assert "jq -e" in catalog
     assert '.providers[]?.status' in catalog
     for workflow in (observations, catalog):
-        assert "secrets.LIVE_WIND_CRON_SECRET" in workflow
+        assert "secrets.WEATHER_SHADOW_CRON_SECRET" in workflow
         assert "DATABASE_URL" not in workflow
         assert "REDIS_URL" not in workflow
         assert "self-hosted" not in workflow
         assert "exact_run_worker" not in workflow
         assert "live_wind_worker" not in workflow
         assert "forecast" not in workflow.casefold()
+
+
+def test_weather_verification_schedule_is_daily_and_fail_closed():
+    workflow = (ROOT / ".github/workflows/weather-verification.yml").read_text(
+        encoding="utf-8"
+    )
+    assert 'cron: "38 5 * * *"' in workflow
+    assert "WEATHER_VERIFICATION_ENABLED == 'true'" in workflow
+    assert "secrets.WEATHER_SHADOW_CRON_SECRET" in workflow
+    assert "/cron/verification" in workflow
+    assert "forecast_sample_retention" in workflow
+    assert "DATABASE_URL" not in workflow
 
 
 def test_hosted_exact_point_capture_uses_ephemeral_grib_and_persistent_database():

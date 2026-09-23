@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTopSpots, useSpotsLive } from "../lib/hooks";
 import SpotCard from "./SpotCard";
-import { ErrorBanner } from "./AsyncStates";
 
 // One full-width row on desktop; tiles wrap on smaller screens.
 const GRID =
@@ -33,7 +32,7 @@ function RowSkeleton() {
  * conditions for (see SpotCard's `live` prop).
  */
 export default function TopSpotsRow() {
-  const { data: spots, loading, error, reload } = useTopSpots(MAX_TILES);
+  const { data: spots, loading, error } = useTopSpots(MAX_TILES);
   const top = (spots ?? []).slice(0, MAX_TILES);
   const [loadLive, setLoadLive] = useState(false);
   useEffect(() => {
@@ -52,19 +51,14 @@ export default function TopSpotsRow() {
   const { data: live } = useSpotsLive(top.map((s) => s.id), loadLive);
 
   if (loading) return <RowSkeleton />;
-  if (error)
-    return (
-      <div className="px-4 sm:px-10">
-        <ErrorBanner message={error} onRetry={reload} />
-      </div>
-    );
+  if (error) return null;
   if (top.length === 0) return null;
 
   return (
     <div className={GRID}>
       {top.map((spot) => (
         <div key={spot.id}>
-          <SpotCard spot={spot} live={live?.get(spot.id)} />
+          <SpotCard spot={spot} live={live?.get(spot.id)} surface="now" />
         </div>
       ))}
     </div>

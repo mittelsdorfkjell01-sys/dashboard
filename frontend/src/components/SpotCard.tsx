@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Spot } from "../lib/types";
 import type { LiveConditionsRead } from "../lib/api";
@@ -8,6 +9,9 @@ import { spotPath } from "../lib/spotRoutes";
 import { currentWindPresentation, formatAge } from "../lib/liveWindPresentation";
 import { useOptionalUnits } from "../context/PrefsContext";
 import { windValue as fmtWindValue, WIND_UNIT_SUFFIX, waveValue as fmtWaveValue, WAVE_UNIT_SUFFIX } from "../lib/units";
+import { trackEvent } from "../lib/events";
+
+const recordedImpressions = new Set<string>();
 
 /**
  * The one spot-tile layout used everywhere a spot is browsed: landing grid,
@@ -34,6 +38,7 @@ export default function SpotCard({
   live,
   preferLiveWind = false,
   eager = true,
+  surface,
 }: {
   spot: Spot;
   compact?: boolean;
@@ -44,7 +49,26 @@ export default function SpotCard({
   preferLiveWind?: boolean;
   /** Start the image request immediately once this card is mounted. */
   eager?: boolean;
+  /** Recommendation/search context for score-private interaction events. */
+  surface?: string;
 }) {
+  const linkRef = useRef<HTMLAnchorElement | null>(null);
+  useEffect(() => {
+    if (!surface || !linkRef.current || !("IntersectionObserver" in window)) return;
+    const eventKey = `${surface}:${spot.id}`;
+    if (recordedImpressions.has(eventKey)) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || entry.intersectionRatio < 0.5) return;
+        recordedImpressions.add(eventKey);
+        trackEvent("impression", { spotId: spot.id, surface });
+        observer.disconnect();
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(linkRef.current);
+    return () => observer.disconnect();
+  }, [spot.id, surface]);
   const sports = (spot.sports ?? []).map(sportLabelShort).join(" · ");
   const regionLine = [spot.regionName, countryName(spot.regionCountry ?? undefined)]
     .filter(Boolean)
@@ -77,7 +101,11 @@ export default function SpotCard({
 
   return (
     <Link
+      ref={linkRef}
       to={spotPath(spot)}
+      onClick={() => {
+        if (surface) trackEvent("click", { spotId: spot.id, surface });
+      }}
       className="group flex h-full flex-col rounded-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
       <div className={`relative overflow-hidden rounded-[14px] ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>

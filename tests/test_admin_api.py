@@ -328,6 +328,11 @@ def test_go_live_blocks_incomplete_spot(admin, region_id, db):
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
 
+    scoring = admin.get(f"/admin/spots/{sid}/readiness").json()["scoring"]["kitesurf"]
+    assert scoring["applicable"] is True
+    assert scoring["recommendable"] is False
+    assert {"reviewed_sectors", "facing", "active_v3_run"} <= set(scoring["missing"])
+
     # Publishing an editorially incomplete spot is blocked (409) — nothing
     # half-finished reaches the public site. The blocking gaps are returned.
     resp = admin.post(f"/admin/spots/{sid}/live")
@@ -352,7 +357,7 @@ def test_go_live_blocks_incomplete_spot(admin, region_id, db):
     assert body["ready"] is False and body["gaps"] == ["climatology"]
 
 
-def test_go_live_enqueues_wind_climatology_v2(admin, region_id, db):
+def test_go_live_enqueues_wind_climatology_v2_and_v3(admin, region_id, db):
     """Go-live no longer derives the legacy per-spot climatology snapshot
     synchronously (that in-memory ``compute_now`` path — and the failure/retry
     reporting built around it — was retired together with the region season
@@ -362,7 +367,7 @@ def test_go_live_enqueues_wind_climatology_v2(admin, region_id, db):
     still covered via the ``/admin/spots/{id}/era5`` path by
     test_manual_climatology_failure_can_be_retried and
     test_climatology_job_fails_permanently_after_three_attempts below."""
-    from app.models import WindClimatologyRun
+    from app.models import WindClimatologyRun, WindClimatologyV3Run
 
     spot = _create_spot(admin, region_id)
     sid = spot["id"]
@@ -380,6 +385,36 @@ def test_go_live_enqueues_wind_climatology_v2(admin, region_id, db):
     run = db.get(WindClimatologyRun, uuid.UUID(run_info["run_id"]))
     assert run is not None and run.spot_id == uuid.UUID(sid)
     assert run.status == run_info["status"] == "pending"
+
+    v3_info = body["wind_climatology_v3"]
+    assert v3_info["created"] is True
+    v3_run = db.get(WindClimatologyV3Run, uuid.UUID(v3_info["run_id"]))
+    assert v3_run is not None and v3_run.spot_id == uuid.UUID(sid)
+    assert v3_run.status == v3_info["status"] == "pending"
+
+
+def test_go_live_reports_v3_enqueue_failure_without_rollback(
+    admin, region_id, db, monkeypatch
+):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    _make_publishable(admin, sid)
+    monkeypatch.setattr(
+        "app.wind_climatology.v3_service.enqueue",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("v3 unavailable")),
+    )
+
+    response = admin.post(f"/admin/spots/{sid}/live")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "published"
+    assert body["wind_climatology_v3"] == {
+        "status": "error",
+        "created": False,
+        "error": "RuntimeError: v3 unavailable",
+    }
+    db.expire_all()
+    assert db.get(Spot, sid).status == "published"
 
 
 def test_manual_climatology_failure_can_be_retried(admin, region_id, db):

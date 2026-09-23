@@ -3,14 +3,20 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState, useTransition
 import LandingHeader from "../components/LandingHeader";
 import LandingHero from "../components/LandingHero";
 import MobileSearchTrigger from "../components/MobileSearchTrigger";
-import TopSpotsRow from "../components/TopSpotsRow";
+import RecommendationRow from "../components/RecommendationRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
-import { useSpots } from "../lib/hooks";
+import { useRiderSetupComplete, useSpots } from "../lib/hooks";
 import type { Spot } from "../lib/types";
 import { getSpotCatalogVersion } from "../lib/api";
 import { MapIcon } from "../lib/icons";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
+import { useAuth } from "../context/AuthContext";
+
+const MONTHS = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember",
+];
 
 const SearchBar = lazy(() => import("../components/SearchBar"));
 const MobileSearchSheet = lazy(() => import("../components/MobileSearchSheet"));
@@ -31,6 +37,9 @@ const SPOT_REVEAL_STEP = 40;
  */
 export default function Landing() {
   const location = useLocation();
+  const { user, ready: authReady } = useAuth();
+  const { data: setupComplete } = useRiderSetupComplete(Boolean(user));
+  const [seasonMonth, setSeasonMonth] = useState(() => new Date().getMonth() + 1);
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
   const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
@@ -268,21 +277,56 @@ export default function Landing() {
           white background) + all spots as Airbnb-style cards. The rounded sheet
           rises over the hero for a seamless transition. */}
       <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
-        {/* aktuelle Top Spots — title left, map button right, now on white. */}
-        <div className="mx-auto w-full max-w-[1570px] pt-10">
-          <div className="mb-3 flex items-center justify-between gap-4 px-4 sm:px-10">
-            <h2 className="text-sz-22 font-semibold text-ink">Aktuelle Top Spots</h2>
+        <div className="mx-auto w-full max-w-[1570px] px-4 pt-10 sm:px-10">
+          {authReady && user && setupComplete === false && (
             <Link
-              to="/map"
-              state={{ from }}
-              aria-label="Karte öffnen"
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+              to="/konto/setup"
+              className="mb-7 inline-flex min-h-11 items-center rounded-[14px] bg-band px-4 text-body font-medium text-ink transition-colors hover:bg-line/60"
             >
-              <MapIcon className="text-sz-18" />
-              <span className="hidden sm:inline">Karte</span>
+              Hinterlege deine Ausrüstung
             </Link>
-          </div>
-          <TopSpotsRow />
+          )}
+
+          <RecommendationRow
+            title={user ? "Aktuelle Top-Spots für dich" : "Aktuelle Top-Spots"}
+            surface="now"
+            action={
+              <Link
+                to="/map"
+                state={{ from }}
+                aria-label="Karte öffnen"
+                className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+              >
+                <MapIcon className="text-sz-18" />
+                <span className="hidden sm:inline">Karte</span>
+              </Link>
+            }
+          />
+          <RecommendationRow
+            title="Interessant nächste Woche"
+            surface="next_week"
+            className="mt-12"
+          />
+          <RecommendationRow
+            title={user ? "Deine Saison" : "Saison"}
+            surface="season"
+            month={seasonMonth}
+            className="mt-12"
+            action={
+              <label className="flex items-center gap-2 text-label text-muted">
+                <span className="sr-only">Monat auswählen</span>
+                <select
+                  value={seasonMonth}
+                  onChange={(event) => setSeasonMonth(Number(event.target.value))}
+                  className="min-h-11 rounded-[14px] border border-line bg-surface px-3 text-body font-medium text-ink"
+                >
+                  {MONTHS.map((month, index) => (
+                    <option key={month} value={index + 1}>{month}</option>
+                  ))}
+                </select>
+              </label>
+            }
+          />
         </div>
 
         <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">

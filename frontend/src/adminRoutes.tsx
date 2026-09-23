@@ -29,6 +29,8 @@ const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 const AdminWeatherProfiles = React.lazy(() => import("./pages/AdminWeatherProfiles"));
 const AdminWeatherProfile = React.lazy(() => import("./pages/AdminWeatherProfile"));
 const AdminTides = React.lazy(() => import("./pages/AdminTides"));
+const AdminRiderModel = React.lazy(() => import("./pages/AdminRiderModel"));
+const AdminRecommendationQuality = React.lazy(() => import("./pages/AdminRecommendationQuality"));
 
 const adminRoutes: RouteObject[] = [
   {
@@ -57,6 +59,8 @@ const adminRoutes: RouteObject[] = [
           { path: "weather", element: <AdminWeatherProfiles /> },
           { path: "weather/:spotId", element: <AdminWeatherProfile /> },
           { path: "tides", element: <AdminTides /> },
+          { path: "rider-model", element: <AdminRiderModel /> },
+          { path: "recommendation-quality", element: <AdminRecommendationQuality /> },
           { path: "regions", element: <AdminRegions /> },
           { path: "region/new", element: <AdminRegionCreate /> },
           { path: "region/:id/edit", element: <AdminRegionForm /> },

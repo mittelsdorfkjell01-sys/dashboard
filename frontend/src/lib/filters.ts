@@ -5,16 +5,17 @@ import type { Spot } from "./types";
 import type { SpotQuery } from "./api";
 import { LEVELS } from "./labels";
 
-export type SortKey = "name-asc" | "name-desc" | "level-asc" | "level-desc";
+export type SortKey = "default" | "name-asc" | "name-desc" | "level-asc" | "level-desc";
 
 export const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "default", label: "Standard" },
   { key: "name-asc", label: "Name A–Z" },
   { key: "name-desc", label: "Name Z–A" },
   { key: "level-asc", label: "Level: Anfänger → Experte" },
   { key: "level-desc", label: "Level: Experte → Anfänger" },
 ];
 
-export const DEFAULT_SORT: SortKey = "name-asc";
+export const DEFAULT_SORT: SortKey = "default";
 
 export interface FilterState {
   level?: string;
@@ -101,6 +102,8 @@ export function sortSpots(spots: Spot[], sort: SortKey): Spot[] {
     return idxs.length ? Math.min(...idxs) : 999;
   };
   switch (sort) {
+    case "default":
+      return out;
     case "name-desc":
       return out.sort((a, b) => b.name.localeCompare(a.name, "de"));
     case "level-asc":
@@ -112,7 +115,8 @@ export function sortSpots(spots: Spot[], sort: SortKey): Spot[] {
         (a, b) => levelRank(b) - levelRank(a) || a.name.localeCompare(b.name, "de")
       );
     case "name-asc":
-    default:
       return out.sort((a, b) => a.name.localeCompare(b.name, "de"));
+    default:
+      return out;
   }
 }

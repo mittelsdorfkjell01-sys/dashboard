@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.scoring import (
     SCORING_PARAMS_V1,
+    SCORING_PARAMS_V2,
     SeasonalRuleScorer,
     apply_gates,
     confidence_for,
@@ -22,6 +23,11 @@ from app.scoring.params import SWELL_BIN_REP_M, WIND_BIN_REP_KT
 from tests.search_helpers import make_spot
 
 GOOD, MOD, NO = "gut", "mäßig", "nein"
+WIND_EDITORIAL = {
+    "usable_wind_directions": {"min": 0, "max": 359},
+    "facing": 90,
+}
+SURF_EDITORIAL = {"usable_swell_directions": {"min": 0, "max": 359}}
 
 
 # --- kite gates ------------------------------------------------------------
@@ -30,7 +36,7 @@ def _kite(wind_kt, wind_dir=90, daylight=True, gust=None, editorial=None, profil
     values = {"wind_kt": wind_kt, "wind_dir": wind_dir, "daylight": daylight}
     if gust is not None:
         values["gust_kt"] = gust
-    return evaluate_conditions(values, editorial or {}, profile, "kitesurf")
+    return evaluate_conditions(values, {**WIND_EDITORIAL, **(editorial or {})}, profile, "kitesurf")
 
 
 def test_kite_ideal_direction_and_band_is_good():
@@ -54,6 +60,44 @@ def test_kite_direction_outside_usable_is_no():
     res = _kite(20, wind_dir=180, editorial=editorial)
     assert res["rating"] == NO
     assert "direction_unusable" in res["reasons"]
+
+
+def test_unknown_direction_never_becomes_good():
+    for editorial in ({"usable_wind_directions": "n/a"}, {"usable_wind_directions": None}):
+        res = _kite(20, editorial=editorial)
+        assert res["rating"] == MOD
+        assert "direction_unknown" in res["reasons"]
+    assert _kite(20, wind_dir=None)["rating"] == MOD
+
+
+def test_beginner_offshore_fails_unless_editorially_allowed():
+    editorial = {
+        "facing": 180,
+        "usable_wind_directions": {"min": 330, "max": 30},
+    }
+    blocked = _kite(18, wind_dir=0, editorial=editorial, profile={"level": "beginner"})
+    assert blocked["rating"] == NO
+    assert "offshore_for_level" in blocked["reasons"]
+
+    allowed = _kite(
+        18,
+        wind_dir=0,
+        editorial={**editorial, "beginner_offshore_ok": True},
+        profile={"level": "beginner"},
+    )
+    assert allowed["rating"] == GOOD
+
+
+def test_beginner_offshore_flag_is_strictly_validated():
+    import pytest
+
+    from app.admin.constants import validate_editorial
+
+    assert validate_editorial({"beginner_offshore_ok": True}) == {
+        "beginner_offshore_ok": True
+    }
+    with pytest.raises(ValueError):
+        validate_editorial({"beginner_offshore_ok": "yes"})
 
 
 def test_kite_night_is_no():
@@ -98,6 +142,43 @@ def test_profile_thresholds_offsets():
     assert profile_thresholds(None, "kitesurf") == {}
 
 
+def test_competition_has_own_v2_offsets_and_v1_is_unchanged():
+    assert "competition" not in SCORING_PARAMS_V1["kitesurf"]["level_offsets"]
+    assert SCORING_PARAMS_V2["kitesurf"]["level_offsets"]["competition"] == {
+        "good_min_kt": 5.0,
+        "good_max_kt": 6.0,
+    }
+
+
+def test_recommendable_requires_reviewed_sectors_and_facing():
+    from types import SimpleNamespace
+
+    from app.scoring.eligibility import is_recommendable, recommendability_gaps
+
+    spot = SimpleNamespace(id="spot-1", sports=["kitesurf"], facing=270)
+    reviewed = SimpleNamespace(
+        reviewed_at="2026-09-22",
+        sectors=[SimpleNamespace(enabled=True)],
+    )
+
+    class FakeDb:
+        def __init__(self, profile):
+            self.profile = profile
+
+        def scalar(self, _statement):
+            return self.profile
+
+    assert is_recommendable(spot, "kitesurf", FakeDb(reviewed)) is True
+    spot.facing = None
+    assert recommendability_gaps(spot, "kitesurf", FakeDb(reviewed)) == ["facing"]
+    spot.facing = 270
+    assert recommendability_gaps(spot, "kitesurf", FakeDb(None)) == ["reviewed_sectors"]
+    assert profile_thresholds("competition", "kitesurf", SCORING_PARAMS_V2["kitesurf"]) == {
+        "good_min_kt": 5.0,
+        "good_max_kt": 6.0,
+    }
+
+
 # --- surf gates ------------------------------------------------------------
 
 def _surf(swell_m, period_s=11, swell_dir=200, daylight=True, editorial=None,
@@ -106,7 +187,7 @@ def _surf(swell_m, period_s=11, swell_dir=200, daylight=True, editorial=None,
         "swell_m": swell_m, "period_s": period_s, "swell_dir": swell_dir,
         "daylight": daylight, "wind_kt": wind_kt, "wind_dir": wind_dir,
     }
-    return evaluate_conditions(values, editorial or {}, profile, "surf")
+    return evaluate_conditions(values, {**SURF_EDITORIAL, **(editorial or {})}, profile, "surf")
 
 
 def test_surf_ideal_is_good():
@@ -142,6 +223,71 @@ def test_surf_free_text_tide_does_not_crash():
     assert _surf(1.5, editorial={"tide": "n/a"})["rating"] == GOOD
 
 
+def test_missing_tide_is_unknown_instead_of_a_hard_fail():
+    result = _surf(
+        1.5,
+        editorial={"tide": {"dependence": True, "window": [0.2, 0.7]}},
+    )
+    assert result["rating"] == GOOD
+    assert "tide_unknown" in result["reasons"]
+
+
+def test_tide_phase_is_normalized_without_model_datum_heights():
+    from app.tides.service import normalized_tide_level
+
+    assert normalized_tide_level("low", 0.0) == 0.0
+    assert normalized_tide_level("high", 0.0) == 1.0
+    assert normalized_tide_level("rising", 0.25) == 0.25
+    assert normalized_tide_level("falling", 0.25) == 0.75
+
+
+def test_live_tide_value_reaches_the_tide_gate(monkeypatch):
+    from types import SimpleNamespace
+
+    from geoalchemy2.elements import WKTElement
+
+    from app.scoring.live import score_live
+
+    spot = SimpleNamespace(
+        id="spot-1",
+        sports=["surf"],
+        location=WKTElement("POINT(10 54)", srid=4326),
+        editorial={
+            **SURF_EDITORIAL,
+            "tide": {"dependence": True, "window": [0.2, 0.7]},
+        },
+        climatology=None,
+        confidence=None,
+        facing=None,
+    )
+
+    class FakeDb:
+        def get(self, _model, _spot_id):
+            return spot
+
+        def scalar(self, _statement):
+            return None
+
+    monkeypatch.setattr(
+        "app.live.service.get_live_conditions",
+        lambda *_args, **_kwargs: {
+            "current": {
+                "wind": 8,
+                "dir": 90,
+                "swell": 1.5,
+                "period": 11,
+                "swell_dir": 200,
+            }
+        },
+    )
+    monkeypatch.setattr("app.tides.service.current_tide_level", lambda *_args, **_kwargs: 0.9)
+    monkeypatch.setattr("app.scoring.live._is_daylight_now", lambda *_args: True)
+
+    result = score_live("spot-1", sport="surf", db=FakeDb())
+    assert result["rating"] == NO
+    assert "tide_out_of_window" in result["reasons"]
+
+
 # --- apply_gates directly --------------------------------------------------
 
 def test_apply_gates_returns_reasons_list():
@@ -166,7 +312,7 @@ def _wind_week(cells: dict, week=1) -> dict:
 def test_climatology_week_is_share_of_passing_hours():
     # sector 4 (=90deg, usable); bins: 0->3kt(no), 3->16kt(good), 4->21.5(good), 5->28.5(mod)
     week = _wind_week({(4, 0): 5, (4, 3): 10, (4, 4): 3, (4, 5): 2})
-    res = evaluate_week_cells(week, {}, None, "kitesurf")
+    res = evaluate_week_cells(week, WIND_EDITORIAL, None, "kitesurf")
     assert res["total_hours"] == 20
     assert res["usable_hours"] == 15   # all but the 5 too-light hours
     assert res["good_hours"] == 13     # 10 + 3
@@ -181,9 +327,9 @@ def test_climatology_consistent_with_evaluate_conditions():
     usable = 0
     for (sector, mag), hours in cells.items():
         v = {"wind_kt": WIND_BIN_REP_KT[mag], "wind_dir": sector * 22.5, "daylight": True}
-        if evaluate_conditions(v, {}, None, "kitesurf")["rating"] != NO:
+        if evaluate_conditions(v, WIND_EDITORIAL, None, "kitesurf")["rating"] != NO:
             usable += hours
-    assert evaluate_week_cells(week, {}, None, "kitesurf")["usable_hours"] == usable
+    assert evaluate_week_cells(week, WIND_EDITORIAL, None, "kitesurf")["usable_hours"] == usable
 
 
 def test_climatology_direction_gate_lowers_score():
@@ -197,7 +343,7 @@ def test_climatology_direction_gate_lowers_score():
 def test_climatology_curve_length_and_threshold():
     weeks = [_wind_week({(4, 3): 10}, week=w) for w in range(1, 53)]
     clim = {"weeks": weeks}
-    curve = climatology_curve(clim, {}, None, "kitesurf")
+    curve = climatology_curve(clim, WIND_EDITORIAL, None, "kitesurf")
     assert len(curve) == 52
     assert all(w["pct_usable"] == 1.0 for w in curve)
 
@@ -255,6 +401,10 @@ def test_seasonal_scorer_is_sport_aware():
     # spot whose climatology is great for kite but useless for surf; surf is the
     # *first* listed sport, so falling back to it (the old bug) scores ~0.
     spot = make_spot("Both", 54.4, 10.2, ["surf", "kitesurf"])
+    spot.editorial = {
+        **WIND_EDITORIAL,
+        **SURF_EDITORIAL,
+    }
     spot.climatology = {"weeks": [_both_week(w) for w in range(1, 53)]}
     scorer = SeasonalRuleScorer()
 

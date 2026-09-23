@@ -9,6 +9,7 @@ these axes imports from here rather than keeping its own copy.
 
 from __future__ import annotations
 
+import math
 from typing import Any, Iterable
 
 # Sentinel a curator sets when a field genuinely does not apply; it counts as
@@ -210,6 +211,35 @@ def validate_water_characters(values: Iterable[str] | None) -> list[str]:
 def validate_water_types(values: Iterable[str] | None) -> list[str]:
     """Normalise a ``water_type`` multi-select (ocean/sea/lake/lagoon, or ``n/a``)."""
     return _validate_multi(values, WATER_TYPES, "water_type")
+
+
+def validate_editorial(value: dict | None) -> dict | None:
+    """Validate typed editorial fields while preserving the open metadata blob."""
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise ValueError("editorial must be an object")
+    cleaned = dict(value)
+    offshore = cleaned.get("beginner_offshore_ok")
+    if offshore is not None and not isinstance(offshore, bool):
+        raise ValueError("editorial.beginner_offshore_ok must be a boolean")
+    tide = cleaned.get("tide")
+    if isinstance(tide, dict) and tide.get("window") is not None:
+        window = tide["window"]
+        valid_window = (
+            isinstance(window, (list, tuple))
+            and len(window) == 2
+            and all(
+                isinstance(item, (int, float))
+                and not isinstance(item, bool)
+                and math.isfinite(float(item))
+                for item in window
+            )
+            and 0.0 <= float(window[0]) <= float(window[1]) <= 1.0
+        )
+        if not valid_window:
+            raise ValueError("editorial.tide.window must be a normalized [0, 1] range")
+    return cleaned
 
 
 # --- sport-variant helpers -------------------------------------------------

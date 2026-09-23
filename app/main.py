@@ -15,7 +15,9 @@ from app.api import (
     auth,
     community,
     cron,
+    events,
     regions,
+    recommendations,
     search,
     spots,
     weather_fields,
@@ -101,8 +103,10 @@ if settings.media_backend == "local":
 app.include_router(spots.router)
 app.include_router(weather_fields.router)
 app.include_router(regions.router)
+app.include_router(recommendations.router)
 app.include_router(search.router)
 app.include_router(community.router)
+app.include_router(events.router)
 # Public visitor accounts also live on the public site, so this is ungated
 # (unlike the admin /auth router below).
 app.include_router(account.router)

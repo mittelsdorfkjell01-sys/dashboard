@@ -10,6 +10,7 @@
 // server confirms them.
 
 import { ApiError, request } from "./api";
+import { trackEvent } from "./events";
 
 export interface Account {
   id: string;
@@ -77,6 +78,43 @@ export interface AccountActivity {
   status: string;
   reviewNote?: string | null;
 }
+
+export type RiderLevel = "beginner" | "advanced" | "expert" | "competition";
+export type TravelMode = "day_trip" | "weekend" | "trip" | "camper";
+export type BoardType = "twintip" | "surfboard" | "foil" | "bigair_twintip";
+export type GearKind = "kite" | "board" | "foil";
+
+export interface RiderProfile {
+  weightKg: number | null;
+  homeLocation: { lat: number; lon: number } | null;
+  maxTravelKm: number | null;
+  travelMode: TravelMode;
+  availability: number[];
+  minWaterTempC: number | null;
+  excludedBottoms: string[];
+  profileVersion: number;
+}
+
+export interface RiderSportProfile {
+  sport: SportKey;
+  level: RiderLevel | null;
+  styleWeights: Record<string, number>;
+  preferredWaterCharacter: string[];
+  profileVersion: number;
+}
+
+export interface GearItem {
+  id: string;
+  sport: SportKey;
+  kind: GearKind;
+  size: number | null;
+  boardType: BoardType | null;
+  active: boolean;
+  sortOrder: number;
+  profileVersion: number;
+}
+
+export type GearItemInput = Omit<GearItem, "id" | "profileVersion">;
 
 /** Thrown for expected, user-facing failures (duplicate email, bad password …). */
 export class AccountError extends Error {}
@@ -274,6 +312,37 @@ export function listFavorites(): FavoriteSpot[] {
   return favCache;
 }
 
+// --- private rider setup --------------------------------------------------
+
+export const getRiderProfile = () => call<RiderProfile>("/account/rider-profile");
+
+export const putRiderProfile = (profile: Omit<RiderProfile, "profileVersion">) =>
+  call<RiderProfile>("/account/rider-profile", {
+    method: "PUT", body: JSON.stringify(profile),
+  });
+
+export const getRiderSportProfile = (sport: SportKey) =>
+  call<RiderSportProfile>(`/account/rider-profile/${sport}`);
+
+export const putRiderSportProfile = (
+  sport: SportKey,
+  profile: Pick<RiderSportProfile, "level" | "styleWeights" | "preferredWaterCharacter">,
+) => call<RiderSportProfile>(`/account/rider-profile/${sport}`, {
+  method: "PUT", body: JSON.stringify(profile),
+});
+
+export const getGear = async (sport?: SportKey) =>
+  (await call<{ items: GearItem[] }>(`/account/gear${sport ? `?sport=${sport}` : ""}`)).items;
+
+export const createGearItem = (item: GearItemInput) =>
+  call<GearItem>("/account/gear", { method: "POST", body: JSON.stringify(item) });
+
+export const updateGearItem = (id: string, item: GearItemInput) =>
+  call<GearItem>(`/account/gear/${id}`, { method: "PUT", body: JSON.stringify(item) });
+
+export const deleteGearItem = (id: string) =>
+  call<void>(`/account/gear/${id}`, { method: "DELETE" });
+
 export function getFavoritesState(): CollectionState<FavoriteSpot> {
   return { items: favCache, status: favoritesStatus, error: favoritesError };
 }
@@ -306,6 +375,7 @@ export async function toggleFavorite(spot: {
     ...favCache,
   ];
   emit(FAVORITES_EVENT);
+  trackEvent("favorite_add", { spotId: spot.id, surface: "spot" });
   return true;
 }
 
@@ -313,6 +383,7 @@ export async function removeFavorite(spotId: string): Promise<void> {
   await call<void>(`/account/favorites/${spotId}`, { method: "DELETE" });
   favCache = favCache.filter((f) => f.id !== spotId);
   emit(FAVORITES_EVENT);
+  trackEvent("favorite_remove", { spotId, surface: "spot" });
 }
 
 // --- my submissions --------------------------------------------------------

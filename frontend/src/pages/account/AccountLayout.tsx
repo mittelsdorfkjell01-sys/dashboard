@@ -5,7 +5,7 @@ import { CloseIcon } from "../../lib/icons";
 
 /**
  * Full-screen shell for the signed-in account area. Every sub-page is its own
- * full-bleed screen opened from the account menu; a single close affordance in
+ * full-bleed screen opened from the account menu, including Mein Setup; a single close affordance in
  * the top-right corner steps back to wherever the visitor came from (the menu,
  * a spot, the landing page). Redirects to /anmelden when signed out.
  *
@@ -56,7 +56,7 @@ export default function AccountLayout() {
 
 /**
  * Shared padded container + title for the plain account sub-pages (Saved,
- * Spots besucht, Spots hinzufügen, Einstellungen). Profil brings its own
+ * Spots besucht, Spots hinzufügen, Mein Setup, Einstellungen). Profil brings its own
  * full-bleed hero instead of this header.
  */
 export function AccountPage({

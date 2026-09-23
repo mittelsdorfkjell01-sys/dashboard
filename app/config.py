@@ -473,6 +473,11 @@ class Settings(BaseSettings):
     account_smtp_from: str | None = None
     account_smtp_starttls: bool = True
     ugc_personal_data_retention_days: int = 90
+    user_event_anon_retention_days: int = Field(default=180, ge=1, le=3650)
+    scoring_calibration_min_profiles: int = Field(default=30, ge=5, le=10000)
+    scoring_calibration_min_checkins: int = Field(default=20, ge=5, le=10000)
+    scoring_social_min_group_size: int = Field(default=20, ge=5, le=10000)
+    scoring_backtest_default_days: int = Field(default=90, ge=7, le=730)
     # Terminal image rows remain available to daily moderation first, then move
     # into a compressed, privacy-reduced evidence table in bounded batches.
     image_archive_retention_days: int = 180

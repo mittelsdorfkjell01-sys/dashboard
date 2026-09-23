@@ -12,6 +12,7 @@ from app.admin.constants import (
     STATUS_DRAFT,
     STATUS_LIVE,
     parent_sport,
+    validate_editorial,
     validate_bottom_types,
     validate_facilities,
     validate_levels,
@@ -111,6 +112,7 @@ def create_spot(
     )
     editorial = dict(defaults.get("spot_template") or {})
     editorial.update(data.get("editorial") or {})
+    editorial = validate_editorial(editorial) or {}
 
     # Enforce the controlled category vocabularies (ValueError -> 422 at the API).
     level = validate_levels(data.get("level"))
@@ -263,7 +265,7 @@ def update_spot(
         spot.facilities = validate_facilities(data["facilities"])
     if "editorial" in data and data["editorial"] is not None:
         merged = dict(spot.editorial or {})
-        for key, value in data["editorial"].items():
+        for key, value in (validate_editorial(data["editorial"]) or {}).items():
             if key in ("wind_danger", "hazards"):
                 continue
             merged[key] = value
@@ -317,7 +319,7 @@ def update_spot_metadata(
     """
     spot = _load(db, spot_id)
     merged = dict(spot.editorial or {})
-    for key, value in (editorial or {}).items():
+    for key, value in (validate_editorial(editorial) or {}).items():
         if key in ("wind_danger", "hazards"):
             continue  # explicitly dropped
         merged[key] = value

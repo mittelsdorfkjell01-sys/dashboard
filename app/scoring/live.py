@@ -45,6 +45,10 @@ def score_live(
     live = get_live_conditions(spot_id, db=db, client=client, cache=cache)
     cur = live.get("current", {})
 
+    from app.tides.service import current_tide_level
+
+    tide = current_tide_level(spot_id, db=db)
+
     point = to_shape(spot.location)
     daylight = _is_daylight_now(point.y, point.x)
 
@@ -57,6 +61,7 @@ def score_live(
         "swell_dir": cur.get("swell_dir"),
         "air": cur.get("air"),
         "sst": cur.get("sst"),
+        "tide": tide,
         "daylight": daylight,
     }
     # Resolve params with the db so a deployed scoring_params override drives the

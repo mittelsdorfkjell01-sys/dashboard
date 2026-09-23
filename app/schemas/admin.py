@@ -11,6 +11,7 @@ from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_valida
 
 from app.admin.constants import (
     validate_bottom_types,
+    validate_editorial,
     validate_facilities,
     validate_levels,
     validate_sports,
@@ -62,6 +63,7 @@ class SpotCreate(AdminWriteModel):
     _v_variants = field_validator("variant_conditions")(
         staticmethod(validate_variant_conditions)
     )
+    _v_editorial = field_validator("editorial")(staticmethod(validate_editorial))
 
     @field_validator("name")
     @classmethod
@@ -119,6 +121,7 @@ class SpotUpdate(AdminWriteModel):
     _v_variants = field_validator("variant_conditions")(
         staticmethod(validate_variant_conditions)
     )
+    _v_editorial = field_validator("editorial")(staticmethod(validate_editorial))
 
     @model_validator(mode="after")
     def _coordinates_are_a_pair(self):

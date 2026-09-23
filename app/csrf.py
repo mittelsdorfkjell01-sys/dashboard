@@ -12,6 +12,7 @@ from app.config import get_settings
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 SESSION_START_PATHS = {"/auth/login", "/account/login", "/account/register"}
+ORIGIN_PROTECTED_BEACON_PATHS = {"/events"}
 
 
 def new_csrf_token() -> str:
@@ -62,7 +63,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 return JSONResponse({"detail": "Ungültiger Request-Ursprung."}, status_code=403)
             if settings.app_env == "production" and not origin:
                 return JSONResponse({"detail": "Request-Ursprung fehlt."}, status_code=403)
-            if has_auth_cookie and not starts_session:
+            beacon_path = request.url.path.rstrip("/") in ORIGIN_PROTECTED_BEACON_PATHS
+            if has_auth_cookie and not starts_session and not beacon_path:
                 cookie_token = request.cookies.get(settings.csrf_cookie_name)
                 header_token = request.headers.get("x-csrf-token")
                 if not (

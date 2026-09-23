@@ -11,6 +11,7 @@ import SpotCommentBox from "../components/SpotCommentBox";
 import FavoriteButton from "../components/FavoriteButton";
 import ShareButton from "../components/ShareButton";
 import SuggestEditButton from "../components/SuggestEditButton";
+import SessionCheckin from "../components/SessionCheckin";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotMetaGrid from "../components/SpotMetaGrid";
@@ -286,6 +287,7 @@ export default function SpotDetail() {
                     <ShareButton spot={spot} />
                     <SuggestEditButton spot={spot} />
                   </div>
+                  {spotId && <SessionCheckin spotId={spotId} />}
                 </div>
 
                 <div ref={galleryFrameRef} className="spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2">

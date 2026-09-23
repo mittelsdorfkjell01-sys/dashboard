@@ -6,22 +6,62 @@ climatology histogram cell). Missing optional fields don't fail a gate.
 
 from __future__ import annotations
 
-from app.scoring.geometry import direction_in_windows, is_strong_onshore
+import math
+
+from app.scoring.geometry import angular_diff, direction_status, is_strong_onshore
 from app.scoring.params import get_params
 
 
-def _wind_gates(values: dict, editorial: dict, params: dict) -> list[str]:
+def _bearing(value) -> float | None:
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(float(value))
+    ):
+        return None
+    return float(value)
+
+
+def _wind_gates(
+    values: dict, editorial: dict, params: dict, profile: dict | None = None
+) -> list[str]:
     reasons: list[str] = []
+    personal = (profile or {}).get("personal_band") or {}
     band = params["wind"]
+    minimum = personal.get("min_kt", band["min_kt"])
+    maximum = personal.get("max_kt", band["max_kt"])
     w = values.get("wind_kt")
-    if w is None or w < band["min_kt"]:
+    if w is None or w < minimum:
         reasons.append("wind_too_light")
-    elif w > band["max_kt"]:
+    elif w > maximum:
         reasons.append("wind_too_strong")
+    gust = values.get("gust_kt")
+    gust_tolerance = personal.get("gust_tolerance_kt")
+    if (
+        w is not None
+        and gust is not None
+        and gust_tolerance is not None
+        and gust > w + gust_tolerance
+    ):
+        reasons.append("gust_too_strong")
 
     windows = editorial.get("usable_wind_directions", editorial.get("usable_directions"))
-    if not direction_in_windows(values.get("wind_dir"), windows):
+    status = direction_status(values.get("wind_dir"), windows)
+    if status == "unusable":
         reasons.append("direction_unusable")
+    elif status == "unknown":
+        reasons.append("direction_unknown")
+
+    if (profile or {}).get("level") == "beginner":
+        wind_dir = _bearing(values.get("wind_dir"))
+        facing = _bearing(editorial.get("facing"))
+        if wind_dir is None or facing is None:
+            reasons.append("offshore_unknown")
+        elif (
+            angular_diff(wind_dir, facing) >= 110.0
+            and editorial.get("beginner_offshore_ok") is not True
+        ):
+            reasons.append("offshore_for_level")
     return reasons
 
 
@@ -39,15 +79,31 @@ def _wave_gates(values: dict, editorial: dict, params: dict) -> list[str]:
         reasons.append("period_too_short")
 
     windows = editorial.get("usable_swell_directions", editorial.get("swell_window"))
-    if not direction_in_windows(values.get("swell_dir"), windows):
+    status = direction_status(values.get("swell_dir"), windows)
+    if status == "unusable":
         reasons.append("swell_direction_unusable")
+    elif status == "unknown":
+        reasons.append("direction_unknown")
 
     # ``editorial.tide`` may be a structured dict (dependence + window) or just a
     # free-text note ("mid", "n/a"); only the structured form drives the gate.
     tide = editorial.get("tide") or params.get("tide") or {}
     if isinstance(tide, dict) and tide.get("dependence"):
         tv, window = values.get("tide"), tide.get("window")
-        if tv is not None and window is not None and not (window[0] <= tv <= window[1]):
+        valid_window = (
+            isinstance(window, (list, tuple))
+            and len(window) == 2
+            and all(
+                isinstance(v, (int, float))
+                and not isinstance(v, bool)
+                and math.isfinite(float(v))
+                for v in window
+            )
+            and 0.0 <= float(window[0]) <= float(window[1]) <= 1.0
+        )
+        if tv is None or not valid_window:
+            reasons.append("tide_unknown")
+        elif not (window[0] <= tv <= window[1]):
             reasons.append("tide_out_of_window")
 
     if is_strong_onshore(
@@ -61,7 +117,11 @@ def _wave_gates(values: dict, editorial: dict, params: dict) -> list[str]:
 
 
 def apply_gates(
-    values: dict, editorial: dict | None, sport: str, params: dict | None = None
+    values: dict,
+    editorial: dict | None,
+    sport: str,
+    params: dict | None = None,
+    profile: dict | None = None,
 ) -> tuple[bool, list[str]]:
     """Return ``(passed, fail_reasons)`` for the hard feasibility gates.
 
@@ -77,8 +137,9 @@ def apply_gates(
         reasons.append("night")
 
     if params["sport_type"] == "wind":
-        reasons += _wind_gates(values, editorial, params)
+        reasons += _wind_gates(values, editorial, params, profile)
     else:
         reasons += _wave_gates(values, editorial, params)
 
-    return (len(reasons) == 0, reasons)
+    informational = {"direction_unknown", "offshore_unknown", "tide_unknown"}
+    return (not any(reason not in informational for reason in reasons), reasons)

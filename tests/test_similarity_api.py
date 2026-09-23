@@ -60,8 +60,11 @@ def test_similar_character_endpoint(client, laboe_id):
     assert "laboe" not in slugs                       # target excluded
     # the other flatwater beginner spots are the closest in character
     assert slugs[0] in {"stein", "schilksee"}
-    assert all(r["character"] is not None for r in body["results"])
     assert all("image" in r and "region" in r and "wind" in r for r in body["results"])
+    assert all(
+        {"character", "season", "score", "rank_score"}.isdisjoint(r)
+        for r in body["results"]
+    )
 
 
 def test_similar_season_endpoint(client, laboe_id):
@@ -69,9 +72,11 @@ def test_similar_season_endpoint(client, laboe_id):
                       params={"mode": "saison", "sport": "kitesurf"})
     assert resp.status_code == 200
     results = resp.json()["results"]
-    # spots sharing Laboe's summer window correlate highly (low season distance)
-    summer = {r["slug"]: r["season"] for r in results if r["slug"] in {"stein", "schilksee"}}
-    assert summer and all(d < 0.2 for d in summer.values())
+    assert {r["slug"] for r in results} & {"stein", "schilksee"}
+    assert all(
+        {"character", "season", "score", "rank_score"}.isdisjoint(r)
+        for r in results
+    )
 
 
 def test_similar_bad_mode_is_422(client, laboe_id):
@@ -87,6 +92,10 @@ def test_alternatives_endpoint_filters_running(client, laboe_id):
     running = {s["slug"] for s in resp.json()["alternatives"]}
     assert {"stein", "schilksee"} & running
     assert "laboe" not in running
+    assert all(
+        {"character", "season", "score", "rank_score"}.isdisjoint(item)
+        for item in resp.json()["alternatives"]
+    )
 
     # week 45 is outside everyone's window -> nothing runs
     off = client.get(f"/spots/{laboe_id}/alternatives",

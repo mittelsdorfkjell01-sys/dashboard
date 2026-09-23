@@ -15,6 +15,7 @@ import {
   triggerEra5,
   unpublishSpot,
   type Era5Status,
+  type QueueResult,
   type Rank,
   type Readiness,
 } from "../lib/api";
@@ -110,16 +111,20 @@ export default function SpotOpsPanel({
     try {
       // Publishing enforces editorial completeness: the API blocks an
       // incomplete spot with 409 + the blocking gaps (handled below).
-      const res = (await goLiveSpot(spotId)) as { ready?: boolean; gaps?: string[] };
+      const res = await goLiveSpot(spotId);
       const gaps = res.gaps ?? [];
-      const climate = (res as {
-        climatology_job?: { status?: string; detail?: string };
-      }).climatology_job;
-      if (climate?.status === "fail") {
+      const queueResults: Array<[string, QueueResult | undefined]> = [
+        ["V2", res.wind_climatology_v2],
+        ["V3", res.wind_climatology_v3],
+      ];
+      const queueFailures = queueResults.filter(
+        (entry): entry is [string, QueueResult] => entry[1]?.status === "error"
+      );
+      if (queueFailures.length > 0) {
         setError(
-          `Spot ist live, aber die Klimatologie konnte nicht berechnet werden: ${
-            climate.detail ?? "Unbekannter Fehler"
-          }`
+          `Spot ist live, aber die Klimatologie konnte nicht eingeplant werden: ${queueFailures
+            .map(([version, result]) => `${version}: ${result.error ?? "Unbekannter Fehler"}`)
+            .join(" · ")}`
         );
       }
       flash(
@@ -255,6 +260,42 @@ export default function SpotOpsPanel({
                 )
               )}
             </div>
+          </div>
+        )}
+
+        {readiness?.scoring?.kitesurf?.applicable && (
+          <div className="mb-5 rounded-md border border-admin-border bg-admin-bg px-3 py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-caption font-medium uppercase tracking-wide text-admin-muted">
+                Kite-Empfehlungen
+              </p>
+              <span
+                className={`text-label font-medium ${
+                  readiness.scoring.kitesurf.ready
+                    ? "text-admin-success"
+                    : "text-admin-warning"
+                }`}
+              >
+                {readiness.scoring.kitesurf.ready ? "bereit" : "unvollständig"}
+              </span>
+            </div>
+            <p className="mt-1 text-label text-admin-fg2">
+              {readiness.scoring.kitesurf.recommendable
+                ? "Spot ist fachlich empfehlbar."
+                : "Spot ist noch nicht empfehlbar."}
+            </p>
+            {readiness.scoring.kitesurf.missing.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {readiness.scoring.kitesurf.missing.map((gap) => (
+                  <span
+                    key={gap}
+                    className="rounded-md bg-admin-warning-bg px-2 py-0.5 text-caption font-medium text-admin-warning"
+                  >
+                    {gapLabel(gap)}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

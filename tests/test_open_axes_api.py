@@ -94,7 +94,7 @@ def test_best_spots_in_region_summer(client, sardinia_id):
     slugs = [s["slug"] for s in resp.json()["spots"]]
     # the summer spots cover July; capo-mannu (winter) should trail
     assert "sardinia-porto-pollo" in slugs[:2]
-    assert resp.json()["spots"][0]["coverage"] >= resp.json()["spots"][-1]["coverage"]
+    assert all("coverage" not in spot and "intensity" not in spot for spot in resp.json()["spots"])
 
 
 def test_best_spots_open_place_ranks_catalogue(client):
@@ -110,9 +110,7 @@ def test_best_regions_for_window(client):
     assert resp.status_code == 200
     regions = resp.json()["regions"]
     assert any(r["slug"] == "sardinia" for r in regions)
-    # ranked by coverage descending
-    covs = [r["coverage"] for r in regions]
-    assert covs == sorted(covs, reverse=True)
+    assert all("coverage" not in region and "intensity" not in region for region in regions)
 
 
 def test_areas_best_weeks_open_time(client, sardinia_id):
@@ -123,5 +121,5 @@ def test_areas_best_weeks_open_time(client, sardinia_id):
     assert resp.status_code == 200
     weeks = resp.json()["weeks"]
     assert len(weeks) == 5
-    # best weeks for Sardinia are in its good windows (summer or winter), score 1.0
-    assert weeks[0]["score"] == 1.0
+    # The public contract exposes only the ordered week identifiers.
+    assert all(set(week) == {"week"} for week in weeks)

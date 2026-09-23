@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.auth.service import authenticate
 from app.config import get_settings
+from app.db.schema import EXPECTED_DB_REVISION
 from app.db.session import SessionLocal
 from app.models import (
     WeatherStation, WeatherStationApprovalAudit, WeatherStationDossier,
@@ -117,10 +118,10 @@ def main() -> None:
     with SessionLocal() as db:
         from sqlalchemy import text
         head = db.scalar(text("SELECT version_num FROM alembic_version"))
-        if head != "0065_account_experience":
+        if head != EXPECTED_DB_REVISION:
             raise SystemExit(
                 f"database migration head {head!r} is not "
-                "0065_account_experience"
+                f"{EXPECTED_DB_REVISION}"
             )
         if args.command in {"catalog", "cycle"}:
             report = {"catalog": _catalog(db, args, dry_run=not args.apply)}

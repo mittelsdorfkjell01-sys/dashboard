@@ -26,7 +26,9 @@ export default function Datenschutz() {
             Wir verarbeiten Konto-, Favoriten-, Einreichungs- und Communitydaten zur Bereitstellung
             der Plattform. Kurzlebige, gehashte IP-Adressen dienen dem Missbrauchsschutz und werden
             nach 90 Tagen anonymisiert. Kontodaten werden bis zur Löschung des Kontos gespeichert;
-            veröffentlichte Beiträge bleiben danach anonymisiert erhalten.
+            veröffentlichte Beiträge bleiben danach anonymisiert erhalten. Eigene Interaktionsereignisse
+            sind im Datenexport enthalten und werden mit dem Konto gelöscht. Anonyme Ereignisse werden
+            standardmäßig nach 180 Tagen gelöscht.
           </p>
 
           <h2 className="text-sz-16 font-semibold text-ink">Dienste und Empfänger</h2>

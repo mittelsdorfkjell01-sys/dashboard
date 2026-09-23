@@ -16,6 +16,7 @@ import * as api from "../lib/api";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
 import { useSpots, useSpotsLive, useTopSpots, useRegions } from "../lib/hooks";
 import type { Spot } from "../lib/types";
+import { trackEvent } from "../lib/events";
 
 const MONTHS = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
@@ -60,11 +61,13 @@ function SpotRow({
   subtitle,
   spots,
   live,
+  surface = "search",
 }: {
   title: string;
   subtitle?: string;
   spots: Spot[];
   live?: Map<string, api.LiveConditionsRead>;
+  surface?: string;
 }) {
   if (spots.length === 0) return null;
   return (
@@ -76,7 +79,7 @@ function SpotRow({
       <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-3">
         {spots.map((spot) => (
           <div key={spot.id}>
-            <SpotCard spot={spot} live={live?.get(spot.id)} />
+            <SpotCard spot={spot} live={live?.get(spot.id)} surface={surface} />
           </div>
         ))}
       </div>
@@ -354,6 +357,19 @@ export default function SearchResults() {
   const regionId = params.get("region_id") ?? undefined;
   const mode = params.get("mode"); // "weeks" → the temporal best-weeks list
 
+  const eventKey = params.toString();
+  useEffect(() => {
+    const eventParams = new URLSearchParams(eventKey);
+    trackEvent("search", {
+      surface: "search",
+      context: {
+        query: (eventParams.get("q") ?? "").trim().slice(0, 120),
+        sport: eventParams.get("sport"),
+        mode: eventParams.get("mode"),
+      },
+    });
+  }, [eventKey]); // one event per navigated search URL
+
   const placeOpen = !q && !spotId && !regionId;
   const timeOpen = !week && !month;
   const placeEntity = spotId ?? regionId;
@@ -528,14 +544,14 @@ export default function SearchResults() {
                 <RegionRow title="Direkte Treffer" subtitle="Regionen zu deiner Suche" regions={directRegions} />
                 <SpotRow
                   title={directRegions.length ? "Spots" : "Direkte Treffer"}
-                  subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Passend zu deiner Suche"}
+                  subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Ergebnisse deiner Suche"}
                   spots={directSpots}
                   live={live}
                 />
                 {directSpots.length === 0 && directRegions.length === 0 && (
                   <EmptyState message="Keine direkten Treffer. Versuche einen anderen Ort oder Spotnamen." />
                 )}
-                <SpotRow title="Vergleichbares Profil" subtitle="Spots mit ähnlichem Charakter" spots={similar} live={live} />
+                <SpotRow title="Weitere Spots" subtitle="Weitere Auswahl für deine Suche" spots={similar} live={live} />
               </>
             )}
 
@@ -543,7 +559,7 @@ export default function SearchResults() {
               <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
             )}
 
-            <SpotRow title="Gerade gut" subtitle="Spots mit aktuell guten Bedingungen" spots={performing} live={live} />
+            <SpotRow title="Aktuelle Top-Spots" subtitle="Ausgewählte Spots" spots={performing} live={live} surface="now" />
 
             {discovery && <DiscoveryRegions />}
           </SplitView>
@@ -566,14 +582,14 @@ function BestRegionsRow({
   monthName: string | null;
   meta: Map<string, api.Region>;
 }) {
-  const ranking = (data?.regions ?? []).filter((r) => (r.coverage ?? 0) > 0 || (r.intensity ?? 0) > 0);
+  const ranking = data?.regions ?? [];
   if (ranking.length === 0) {
     return <EmptyState message="Noch keine Saisondaten (Klimatologie fehlt für die veröffentlichten Spots)." />;
   }
   return (
     <RegionRow
       title="Direkte Treffer"
-      subtitle={`Beste Reviere ${monthName ? `im ${monthName}` : "über die Saison"} · nach Abdeckung`}
+      subtitle={`Beste Reviere ${monthName ? `im ${monthName}` : "über die Saison"}`}
       regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
@@ -589,7 +605,7 @@ function BestRegionsRow({
   );
 }
 
-/** Season ranking of regions for the discovery view ("gerade gut performen"). */
+/** Server-ordered regions for the discovery view. */
 function DiscoveryRegions() {
   const [data, setData] = useState<api.BestRegionsResponse | null>(null);
   const [meta, setMeta] = useState<Map<string, api.Region>>(new Map());
@@ -606,14 +622,12 @@ function DiscoveryRegions() {
     if (regions) setMeta(new Map(regions.map((x) => [x.id, x])));
   }, [regions]);
 
-  const ranking = (data?.regions ?? [])
-    .filter((r) => (r.coverage ?? 0) > 0 || (r.intensity ?? 0) > 0)
-    .slice(0, 4);
+  const ranking = (data?.regions ?? []).slice(0, 4);
   if (ranking.length === 0) return null;
   return (
     <RegionRow
       title="Top-Regionen"
-      subtitle="Reviere, die gerade gut laufen"
+      subtitle="Ausgewählte Reviere"
       regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
@@ -629,31 +643,23 @@ function DiscoveryRegions() {
   );
 }
 
-/** The temporal "best weeks" answer — a bar list, reached via ?mode=weeks. */
+/** The server-ordered "best weeks" answer, reached via ?mode=weeks. */
 function BestWeeksList({ data, place }: { data: api.BestWeeksResponse; place: string }) {
-  const weeks = (data.weeks ?? []).filter((w) => (w.score ?? 0) > 0).slice(0, 12);
+  const weeks = (data.weeks ?? []).slice(0, 12);
   if (weeks.length === 0) {
     return <EmptyState message="Noch keine Saisondaten für diesen Ort (Klimatologie fehlt)." />;
   }
-  const max = Math.max(...weeks.map((w) => w.score ?? 0), 0.01);
   const best = weeks[0]?.week;
   return (
     <section>
-      <p className="mb-4 max-w-[62ch] text-body text-muted">Die besten Wochen für {place || "diesen Ort"} — nach nutzbaren Stunden.</p>
+      <p className="mb-4 max-w-[62ch] text-body text-muted">Die besten Wochen für {place || "diesen Ort"}.</p>
       <ul className="space-y-2">
         {weeks.map((w) => {
           const isBest = w.week === best;
           return (
-            <li key={w.week} className="flex items-center gap-4 rounded-[14px] border border-line bg-surface px-4 py-3">
-              <span className="w-16 shrink-0 font-medium text-ink">KW {w.week}</span>
-              <span className="h-2 flex-1 overflow-hidden rounded-full bg-line">
-                <span className={`block h-full rounded-full ${isBest ? "bg-orange" : "bg-teal"}`} style={{ width: `${Math.round(((w.score ?? 0) / max) * 100)}%` }} />
-              </span>
-              {typeof w.score === "number" && (
-                <span className="w-24 shrink-0 text-right text-label text-muted" title="Anteil der Zeit mit fahrbaren Bedingungen in dieser Woche">
-                  <span className="data-accent">{Math.round(w.score * 100)}%</span> nutzbar
-                </span>
-              )}
+            <li key={w.week} className="flex items-center gap-3 rounded-[14px] border border-line bg-surface px-4 py-3">
+              <span className={`h-2 w-2 rounded-full ${isBest ? "bg-orange" : "bg-teal"}`} />
+              <span className="font-medium text-ink">KW {w.week}</span>
             </li>
           );
         })}

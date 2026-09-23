@@ -17,7 +17,7 @@ from app.search.spatial import (
     search_nearby_spots,
 )
 from app.seed.seed import seed
-from tests.search_helpers import FakeGeocoder
+from tests.search_helpers import FakeGeocoder, FakeScorer
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -40,14 +40,18 @@ def _slugs(spots_rows):
 # --- 'Laboe' -> nearby incl. Stein, score-ranked ---------------------------
 
 def test_search_laboe_returns_nearby_incl_stein(db):
-    result = service.search("Laboe", db=db, geocoder=FakeGeocoder())
+    result = service.search(
+        "Laboe",
+        db=db,
+        geocoder=FakeGeocoder(),
+        scorer=FakeScorer({"stein": 0.9, "laboe": 0.1}),
+    )
     assert result["resolved"] == "entities"
     slugs = [s["slug"] for s in result["spots"]]
     assert "laboe" in slugs
     assert "stein" in slugs        # the neighbouring spot is pulled in
-    # results are ranked (rank_score descending)
-    scores = [s["rank_score"] for s in result["spots"]]
-    assert scores == sorted(scores, reverse=True)
+    assert slugs.index("stein") < slugs.index("laboe")
+    assert all("score" not in spot and "rank_score" not in spot for spot in result["spots"])
 
 
 def test_search_nearby_adaptive_radius(db):

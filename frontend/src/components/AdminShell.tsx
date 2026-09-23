@@ -97,6 +97,12 @@ const I = {
       <path d="M5.5 18a8 8 0 1 1 13 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  rider: (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 16c4-5 8-7 16-8M7 19c3-4 7-6 13-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="7" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  ),
 };
 
 const NAV: NavItem[] = [
@@ -111,6 +117,8 @@ const NAV: NavItem[] = [
   { to: "/admin/operations", label: "Betrieb", icon: I.operations, group: "Daten & Betrieb" },
   { to: "/admin/weather", label: "Wetterprofile", icon: I.weather, group: "Daten & Betrieb" },
   { to: "/admin/tides", label: "Tidenkorrektur", icon: I.tides, group: "Daten & Betrieb" },
+  { to: "/admin/rider-model", label: "Rider-Modell", icon: I.rider, group: "Daten & Betrieb" },
+  { to: "/admin/recommendation-quality", label: "Empfehlungsqualität", icon: I.activity, group: "Daten & Betrieb" },
   // Admin
   { to: "/admin/users", label: "Benutzer", role: "admin", icon: I.users, group: "Verwaltung" },
   { to: "/admin/activity", label: "Aktivität", icon: I.activity, group: "Verwaltung" },

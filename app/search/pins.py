@@ -1,4 +1,4 @@
-"""Map pins: spot serialisation, value-based colouring, and zoom clustering."""
+"""Map pins: private ranking, public spot serialisation, and zoom clustering."""
 
 from __future__ import annotations
 
@@ -49,19 +49,20 @@ def value_to_color(value: float | None) -> str:
 def build_pin(
     spot: Any, time_context: dict | None, profile: dict | None, *, scorer: Scorer
 ) -> dict:
-    value = float(scorer.score(spot, time_context, profile))
-    brief = spot_brief(spot)
-    return {
-        **brief,
-        "value": round(value, 4),
-        "color": value_to_color(value),
-    }
+    """Serialize one pin without exposing the score used by collection ranking."""
+    del time_context, profile, scorer
+    return spot_brief(spot)
 
 
 def build_pins(
     spots: list[Any], time_context: dict | None, profile: dict | None, *, scorer: Scorer
 ) -> list[dict]:
-    return [build_pin(s, time_context, profile, scorer=scorer) for s in spots]
+    ranked = sorted(
+        spots,
+        key=lambda spot: float(scorer.score(spot, time_context, profile)),
+        reverse=True,
+    )
+    return [spot_brief(spot) for spot in ranked]
 
 
 def _cell_size_deg(zoom: int) -> float:

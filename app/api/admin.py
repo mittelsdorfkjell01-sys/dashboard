@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+from typing import Literal
 import uuid
 from datetime import datetime, timezone
 
@@ -15,7 +17,8 @@ from fastapi import (
     Response,
     UploadFile,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, StrictInt, field_validator, model_validator
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -38,6 +41,7 @@ from app.admin.duplicates import (
 from app.admin.readiness import validate_spot_readiness
 from app.config import get_settings
 from app.db.session import get_db
+from app.live.deps import get_cache, get_om_client
 from app.api.community import ImageOut
 from app.search.deps import get_geocoder
 from app.media import (
@@ -83,6 +87,158 @@ router = APIRouter(
 )
 
 
+class RiderLevelParameters(BaseModel):
+    max_kt: float = Field(gt=0, le=80, allow_inf_nan=False)
+    gust_tolerance_kt: float = Field(ge=0, le=40, allow_inf_nan=False)
+
+    model_config = {"extra": "forbid"}
+
+
+class RiderModelParameters(BaseModel):
+    k_board: dict[str, float]
+    f_lo: float = Field(gt=0, le=2, allow_inf_nan=False)
+    f_hi: float = Field(gt=0, le=3, allow_inf_nan=False)
+    levels: dict[str, RiderLevelParameters]
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def complete_model(self) -> "RiderModelParameters":
+        from app.account.rider import BOARD_TYPES
+        from app.admin.constants import LEVELS
+
+        if set(self.k_board) != set(BOARD_TYPES):
+            raise ValueError(f"k_board must contain exactly {list(BOARD_TYPES)}")
+        if any(not 0 < value <= 10 for value in self.k_board.values()):
+            raise ValueError("k_board values must be between 0 and 10")
+        if self.f_hi < self.f_lo:
+            raise ValueError("f_hi must be greater than or equal to f_lo")
+        if set(self.levels) != set(LEVELS):
+            raise ValueError(f"levels must contain exactly {list(LEVELS)}")
+        return self
+
+
+class RiderModelGear(BaseModel):
+    kind: str
+    size: float | None = Field(default=None, gt=0, le=500, allow_inf_nan=False)
+    board_type: str | None = None
+    active: bool = True
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def valid_gear(self) -> "RiderModelGear":
+        from app.account.rider import BOARD_TYPES, GEAR_KINDS
+
+        if self.kind not in GEAR_KINDS:
+            raise ValueError("invalid gear kind")
+        if self.kind == "kite" and self.size is None:
+            raise ValueError("kite size is required")
+        if self.board_type is not None and self.board_type not in BOARD_TYPES:
+            raise ValueError("invalid board_type")
+        return self
+
+
+class DefaultRiderParameters(BaseModel):
+    weight_kg: float = Field(ge=30, le=160, allow_inf_nan=False)
+    level: str
+    quiver: list[RiderModelGear] = Field(min_length=1, max_length=30)
+    style_weights: dict[str, StrictInt] = Field(default_factory=dict, max_length=5)
+    travel_mode: str = "day_trip"
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def valid_default(self) -> "DefaultRiderParameters":
+        from app.account.rider import TRAVEL_MODES
+        from app.admin.constants import LEVELS, STYLES
+
+        if self.level not in LEVELS:
+            raise ValueError("invalid default rider level")
+        if self.travel_mode not in TRAVEL_MODES:
+            raise ValueError("invalid default rider travel_mode")
+        if not any(item.kind == "kite" and item.active for item in self.quiver):
+            raise ValueError("default rider quiver needs an active kite")
+        if set(self.style_weights) - set(STYLES) or any(
+            isinstance(value, bool) or not 0 <= value <= 3
+            for value in self.style_weights.values()
+        ):
+            raise ValueError("invalid default rider style_weights")
+        return self
+
+
+class RiderModelDocument(BaseModel):
+    rider_model: RiderModelParameters
+    default_rider: DefaultRiderParameters
+
+    model_config = {"extra": "forbid"}
+
+
+class RiderModelPreview(RiderModelDocument):
+    weight_kg: float = Field(ge=30, le=160, allow_inf_nan=False)
+    level: str
+    quiver: list[RiderModelGear] = Field(min_length=1, max_length=30)
+    style_weights: dict[str, StrictInt] = Field(default_factory=dict, max_length=5)
+    travel_mode: str = "day_trip"
+
+    @field_validator("level")
+    @classmethod
+    def valid_level(cls, value: str) -> str:
+        from app.admin.constants import LEVELS
+        if value not in LEVELS:
+            raise ValueError("invalid level")
+        return value
+
+    @model_validator(mode="after")
+    def valid_preview_preferences(self) -> "RiderModelPreview":
+        from app.account.rider import TRAVEL_MODES
+        from app.admin.constants import STYLES
+
+        if self.travel_mode not in TRAVEL_MODES:
+            raise ValueError("invalid travel_mode")
+        if set(self.style_weights) - set(STYLES) or any(
+            isinstance(value, bool) or not 0 <= value <= 3
+            for value in self.style_weights.values()
+        ):
+            raise ValueError("invalid style_weights")
+        return self
+
+
+class CalibrationProposalRequest(BaseModel):
+    kind: Literal["default_rider", "personal_band", "social_weight"]
+    social_weight: float | None = Field(default=None, ge=0, le=0.1)
+    evidence_source: Literal["backtest", "online"] | None = None
+    baseline_metric: float | None = Field(default=None, ge=0, le=1)
+    candidate_metric: float | None = Field(default=None, ge=0, le=1)
+    sample_size: int | None = Field(default=None, ge=1)
+
+    model_config = {"extra": "forbid"}
+
+
+class CalibrationDecision(BaseModel):
+    note: str | None = Field(default=None, max_length=1000)
+
+    model_config = {"extra": "forbid"}
+
+
+def _proposal_payload(row) -> dict:
+    return {
+        "id": str(row.id),
+        "sport": row.sport,
+        "kind": row.kind,
+        "status": row.status,
+        "base_params_version": row.base_params_version,
+        "proposed_params": row.proposed_params,
+        "evidence": row.evidence,
+        "created_by": row.created_by,
+        "reviewed_by": row.reviewed_by,
+        "review_note": row.review_note,
+        "activated_params_version": row.activated_params_version,
+        "created_at": row.created_at.isoformat(),
+        "reviewed_at": row.reviewed_at.isoformat() if row.reviewed_at else None,
+    }
+
+
 @router.get("/environment")
 def environment() -> dict:
     """Local/prod indicator for the back-office banner: which database this
@@ -99,6 +255,267 @@ def operations(db: Session = Depends(get_db)) -> dict:
     from app.admin import operations as admin_operations
 
     return admin_operations.operations_summary(db)
+
+
+@router.get("/rider-model")
+def get_rider_model(db: Session = Depends(get_db)) -> dict:
+    """Return the active private rider-model calibration for the admin editor."""
+    from app.models import ScoringParams
+    from app.scoring.params import (
+        DEFAULT_RIDER_KITESURF,
+        RIDER_MODEL_KITESURF,
+        SCORING_PARAMS_VERSION,
+    )
+
+    row = db.scalar(
+        select(ScoringParams)
+        .where(ScoringParams.sport == "kitesurf", ScoringParams.active.is_(True))
+        .order_by(ScoringParams.version.desc())
+    )
+    params = row.params if row and isinstance(row.params, dict) else {}
+    return {
+        "version": row.version if row else SCORING_PARAMS_VERSION,
+        "rider_model": deepcopy(
+            (params.get("rider_model") or {}).get("kitesurf", RIDER_MODEL_KITESURF)
+        ),
+        "default_rider": deepcopy(
+            (params.get("default_rider") or {}).get("kitesurf", DEFAULT_RIDER_KITESURF)
+        ),
+    }
+
+
+@router.get("/recommendation-quality")
+def recommendation_quality(
+    days: int = Query(default=30, ge=1, le=365),
+    db: Session = Depends(get_db),
+) -> dict:
+    from app.scoring.personal.metrics import recommendation_quality as calculate
+
+    return calculate(db, days=days)
+
+
+@router.get("/scoring-calibration")
+def scoring_calibration(db: Session = Depends(get_db)) -> dict:
+    from app.models import ScoringCalibrationProposal, ScoringParams
+    from app.scoring.personal.calibration import (
+        band_factor_proposal,
+        checkin_band_samples,
+        default_rider_proposal,
+    )
+
+    settings = get_settings()
+    active = db.scalar(select(ScoringParams).where(
+        ScoringParams.sport == "kitesurf", ScoringParams.active.is_(True)
+    ).order_by(ScoringParams.version.desc()))
+    if active is None:
+        raise HTTPException(status_code=409, detail="Kein aktiver Kitesurf-Parametersatz vorhanden.")
+    current_model = (active.params.get("rider_model") or {}).get("kitesurf") or {}
+    default_preview = default_rider_proposal(
+        db, minimum_profiles=settings.scoring_calibration_min_profiles
+    )
+    band_preview = band_factor_proposal(
+        checkin_band_samples(db), current_model,
+        minimum_checkins=settings.scoring_calibration_min_checkins,
+    )
+    proposals = db.scalars(
+        select(ScoringCalibrationProposal).order_by(
+            ScoringCalibrationProposal.created_at.desc()
+        ).limit(50)
+    ).all()
+    return {
+        "active_params_version": active.version,
+        "default_rider": default_preview,
+        "personal_band": band_preview,
+        "social": active.params.get("social") or {},
+        "proposals": [_proposal_payload(row) for row in proposals],
+    }
+
+
+@router.post("/scoring-calibration/proposals", status_code=201)
+def create_scoring_calibration_proposal(
+    body: CalibrationProposalRequest,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> dict:
+    from app.models import ScoringCalibrationProposal, ScoringParams
+    from app.scoring.personal.calibration import (
+        band_factor_proposal,
+        checkin_band_samples,
+        default_rider_proposal,
+    )
+
+    settings = get_settings()
+    active = db.scalar(select(ScoringParams).where(
+        ScoringParams.sport == "kitesurf", ScoringParams.active.is_(True)
+    ).order_by(ScoringParams.version.desc()))
+    if active is None:
+        raise HTTPException(status_code=409, detail="Kein aktiver Kitesurf-Parametersatz vorhanden.")
+    if body.kind == "default_rider":
+        preview = default_rider_proposal(
+            db, minimum_profiles=settings.scoring_calibration_min_profiles
+        )
+        proposed = preview.get("proposal")
+        evidence = {key: value for key, value in preview.items() if key != "proposal"}
+    elif body.kind == "personal_band":
+        current = (active.params.get("rider_model") or {}).get("kitesurf") or {}
+        preview = band_factor_proposal(
+            checkin_band_samples(db), current,
+            minimum_checkins=settings.scoring_calibration_min_checkins,
+        )
+        proposed = preview.get("proposal")
+        evidence = {key: value for key, value in preview.items() if key != "proposal"}
+    else:
+        if (
+            body.social_weight is None
+            or body.evidence_source is None
+            or body.baseline_metric is None
+            or body.candidate_metric is None
+            or body.sample_size is None
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Social-Gewicht braucht einen dokumentierten Backtest- oder Online-Vergleich.",
+            )
+        if body.sample_size < settings.scoring_social_min_group_size:
+            raise HTTPException(status_code=409, detail="Mindestdatenmenge noch nicht erreicht.")
+        improvement = body.candidate_metric - body.baseline_metric
+        if improvement <= 0:
+            raise HTTPException(status_code=409, detail="Der Vergleich zeigt keine Verbesserung.")
+        proposed = {"weight": body.social_weight, "validated": True}
+        evidence = {
+            "improved": True,
+            "source": body.evidence_source,
+            "metric": "precision_at_k" if body.evidence_source == "backtest" else "checkin_rate",
+            "baseline": body.baseline_metric,
+            "candidate": body.candidate_metric,
+            "measured_improvement": improvement,
+            "sample_size": body.sample_size,
+        }
+    if proposed is None:
+        raise HTTPException(status_code=409, detail="Mindestdatenmenge noch nicht erreicht.")
+    row = ScoringCalibrationProposal(
+        sport="kitesurf", kind=body.kind, status="pending",
+        base_params_version=active.version,
+        proposed_params=proposed,
+        evidence=evidence,
+        created_by=actor,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return _proposal_payload(row)
+
+
+@router.post("/scoring-calibration/proposals/{proposal_id}/approve")
+def approve_scoring_calibration_proposal(
+    proposal_id: uuid.UUID,
+    body: CalibrationDecision,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_role("admin")),
+) -> dict:
+    from app.models import ScoringCalibrationProposal
+    from app.scoring.personal.calibration import apply_proposal
+
+    proposal = db.get(ScoringCalibrationProposal, proposal_id)
+    if proposal is None:
+        raise HTTPException(status_code=404, detail="Vorschlag nicht gefunden.")
+    if proposal.status != "pending":
+        raise HTTPException(status_code=409, detail="Vorschlag wurde bereits entschieden.")
+    try:
+        version = apply_proposal(db, proposal, actor=principal.email, note=body.note)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return {**_proposal_payload(proposal), "activated_params_version": version}
+
+
+@router.post("/scoring-calibration/proposals/{proposal_id}/reject")
+def reject_scoring_calibration_proposal(
+    proposal_id: uuid.UUID,
+    body: CalibrationDecision,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_role("admin")),
+) -> dict:
+    from app.models import ScoringCalibrationProposal
+
+    proposal = db.get(ScoringCalibrationProposal, proposal_id)
+    if proposal is None:
+        raise HTTPException(status_code=404, detail="Vorschlag nicht gefunden.")
+    if proposal.status != "pending":
+        raise HTTPException(status_code=409, detail="Vorschlag wurde bereits entschieden.")
+    proposal.status = "rejected"
+    proposal.reviewed_by = principal.email
+    proposal.review_note = body.note
+    proposal.reviewed_at = datetime.now(timezone.utc)
+    db.commit()
+    return _proposal_payload(proposal)
+
+
+@router.put("/rider-model", status_code=201)
+def save_rider_model(
+    body: RiderModelDocument,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> dict:
+    """Publish a new immutable kitesurf parameter version and activate it."""
+    from app.models import ScoringParams
+
+    rows = db.scalars(
+        select(ScoringParams)
+        .where(ScoringParams.sport == "kitesurf")
+        .with_for_update()
+    ).all()
+    active = max((row for row in rows if row.active), key=lambda row: row.version, default=None)
+    if active is None:
+        raise HTTPException(status_code=409, detail="Kein aktiver Kitesurf-Parametersatz vorhanden.")
+    next_version = max((row.version for row in rows), default=0) + 1
+    params = deepcopy(active.params)
+    params["rider_model"] = {"kitesurf": body.rider_model.model_dump()}
+    params["default_rider"] = {"kitesurf": body.default_rider.model_dump()}
+    params.setdefault("parameter_log", []).append({
+        "version": next_version,
+        "kind": "manual_rider_model",
+        "approved_by": actor,
+        "approved_at": datetime.now(timezone.utc).isoformat(),
+    })
+    for row in rows:
+        row.active = False
+    created = ScoringParams(
+        sport="kitesurf", version=next_version, active=True, params=params
+    )
+    db.add(created)
+    db.commit()
+    return {
+        "version": next_version,
+        "rider_model": params["rider_model"]["kitesurf"],
+        "default_rider": params["default_rider"]["kitesurf"],
+    }
+
+
+@router.post("/rider-model/preview")
+def preview_rider_model(body: RiderModelPreview) -> dict:
+    """Calculate an admin-only band from the unsaved editor values."""
+    from app.scoring.rider.band import personal_band
+
+    params = {
+        "rider_model": {"kitesurf": body.rider_model.model_dump()},
+        "default_rider": {"kitesurf": body.default_rider.model_dump()},
+    }
+    profile = {
+        "weight_kg": body.weight_kg,
+        "level": body.level,
+        "quiver": [item.model_dump() for item in body.quiver],
+        "style_weights": body.style_weights,
+        "travel_mode": body.travel_mode,
+    }
+    band = personal_band(profile, "kitesurf", params)
+    return {
+        "min_kt": band.min_kt,
+        "ideal_lo_kt": band.ideal_lo_kt,
+        "ideal_hi_kt": band.ideal_hi_kt,
+        "max_kt": band.max_kt,
+        "gust_tolerance_kt": band.gust_tolerance_kt,
+        "fingerprint": band.fingerprint,
+    }
 
 
 def _as_utc(dt: datetime) -> datetime:
@@ -728,7 +1145,8 @@ def go_live(
             },
         )
 
-    # Publishing queues only V2. No legacy 52-week/P75 calculation is started.
+    # Publishing queues V2 and V3 independently. No legacy V1 climatology is
+    # generated, and neither queue may roll back the already-published spot.
     try:
         from app.wind_climatology.service import enqueue as enqueue_wind_v2
 
@@ -736,10 +1154,111 @@ def go_live(
         result["wind_climatology_v2"] = {
             "run_id": str(wind_run.id), "status": wind_run.status, "created": created
         }
-    except Exception:
+    except Exception as exc:
         db.rollback()
+        result["wind_climatology_v2"] = {
+            "status": "error",
+            "created": False,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+    try:
+        from app.wind_climatology.v3_service import enqueue as enqueue_wind_v3
+
+        wind_run, created = enqueue_wind_v3(db, spot_id)
+        result["wind_climatology_v3"] = {
+            "run_id": str(wind_run.id),
+            "status": wind_run.status,
+            "created": created,
+        }
+    except Exception as exc:
+        db.rollback()
+        result["wind_climatology_v3"] = {
+            "status": "error",
+            "created": False,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
 
     return result
+
+
+def _scoring_profile(level: str | None) -> dict | None:
+    if level is None:
+        return None
+    from app.admin.constants import LEVELS
+
+    if level not in LEVELS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown level {level!r}; allowed: {list(LEVELS)}",
+        )
+    return {"level": level}
+
+
+@router.get("/scoring/spots/{spot_id}/badge", tags=["admin-scoring"])
+def get_scoring_badge(
+    spot_id: uuid.UUID,
+    sport: str | None = Query(default=None),
+    level: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    client=Depends(get_om_client),
+    cache=Depends(get_cache),
+) -> dict:
+    """Protected inspector for the legacy categorical live score."""
+    from app.scoring import score_live
+
+    try:
+        return score_live(
+            spot_id,
+            _scoring_profile(level),
+            sport,
+            db=db,
+            client=client,
+            cache=cache,
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.get("/scoring/spots/{spot_id}/season", tags=["admin-scoring"])
+def get_scoring_season(
+    spot_id: uuid.UUID,
+    stage: int = Query(default=2, ge=1, le=2),
+    sport: str | None = Query(default=None),
+    level: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Protected inspector for descriptive and scored legacy season data."""
+    from app.scoring import describe_week_entry, score_climatology_curve
+
+    spot = db.get(Spot, spot_id)
+    if spot is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    if not (spot.climatology and spot.climatology.get("weeks")):
+        raise HTTPException(status_code=404, detail="Spot has no climatology")
+    if stage == 1:
+        weeks = sorted(spot.climatology["weeks"], key=lambda item: item.get("week", 0))
+        return {
+            "stage": 1,
+            "spot_id": spot.id,
+            "window": spot.climatology.get("window"),
+            "weeks": [describe_week_entry(week) for week in weeks],
+        }
+    resolved_sport = sport or (spot.sports[0] if spot.sports else None)
+    if resolved_sport is None:
+        raise HTTPException(status_code=422, detail="No sport to score")
+    try:
+        result = score_climatology_curve(
+            spot_id,
+            _scoring_profile(level),
+            resolved_sport,
+            db=db,
+        )
+    except KeyError:
+        raise HTTPException(status_code=422, detail=f"Unknown sport {resolved_sport!r}")
+    return {"stage": 2, "spot_id": spot.id, **result}
 
 
 @router.post("/spots/{spot_id}/unpublish")

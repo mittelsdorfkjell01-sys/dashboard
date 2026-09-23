@@ -145,7 +145,9 @@ def test_cycle_orders_existing_workers_and_never_touches_forecast(tmp_path, monk
             return False
 
         def scalar(self, _query):
-            return "0065_account_experience"
+            from app.db.schema import EXPECTED_DB_REVISION
+
+            return EXPECTED_DB_REVISION
 
     monkeypatch.setattr(session, "SessionLocal", Db)
     monkeypatch.setattr(exact_run, "ExactRunAssetCache", lambda *_args, **_kwargs: object())

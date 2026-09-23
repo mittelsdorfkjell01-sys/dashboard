@@ -18,7 +18,6 @@ const summary = (over: Partial<SpotSummary> = {}): SpotSummary => ({
   style: ["freeride"],
   facilities: { parking: { available: true } },
   status: "published",
-  confidence: null,
   facing: 45,
   image: null,
   typical_wind_kt: null,

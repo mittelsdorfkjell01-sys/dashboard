@@ -35,7 +35,7 @@ describe("filters URL (de)serialisation", () => {
 
   it("omits defaults and drops unknown sort keys", () => {
     expect(filtersToSearchParams(emptyFilters()).toString()).toBe("");
-    expect(parseFilters(new URLSearchParams("sort=bogus")).sort).toBe("name-asc");
+    expect(parseFilters(new URLSearchParams("sort=bogus")).sort).toBe("default");
   });
 
   it("maps to the server query (style only when present)", () => {
@@ -65,6 +65,14 @@ describe("client-side sort", () => {
     spot({ id: "2", name: "Alpha", level: ["expert"] }),
     spot({ id: "3", name: "Mango", level: ["advanced"] }),
   ];
+
+  it("keeps server order for the default selection", () => {
+    expect(sortSpots(spots, "default").map((s) => s.name)).toEqual([
+      "Zeta",
+      "Alpha",
+      "Mango",
+    ]);
+  });
 
   it("sorts by name asc/desc", () => {
     expect(sortSpots(spots, "name-asc").map((s) => s.name)).toEqual([

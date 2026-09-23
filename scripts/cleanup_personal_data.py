@@ -1,4 +1,4 @@
-"""Anonymize expired UGC abuse/contact metadata.
+"""Anonymize expired UGC metadata and remove expired anonymous events.
 
 Run daily from the platform scheduler. Content and account ownership remain;
 only short-lived IP hashes and optional contact addresses are removed.
@@ -10,13 +10,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sys
 
-from sqlalchemy import update
+from sqlalchemy import delete, update
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import get_settings
 from app.db.session import SessionLocal
-from app.models import ImageReport, LocalTip, SpotImage, SpotRating, SpotSubmission
+from app.models import ImageReport, LocalTip, SpotImage, SpotRating, SpotSubmission, UserEvent
 
 
 def run() -> int:
@@ -38,6 +38,16 @@ def run() -> int:
                 .values({"ip_hash": None, email_field: None})
             )
             total += result.rowcount or 0
+        event_cutoff = datetime.now(timezone.utc) - timedelta(
+            days=get_settings().user_event_anon_retention_days
+        )
+        result = db.execute(
+            delete(UserEvent).where(
+                UserEvent.app_user_id.is_(None),
+                UserEvent.created_at < event_cutoff,
+            )
+        )
+        total += result.rowcount or 0
         db.commit()
     return total
 

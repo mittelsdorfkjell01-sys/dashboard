@@ -52,9 +52,9 @@ export default function SimilarRegions({
   return (
     <section>
       <div className="mb-6 border-b border-line/70 pb-4">
-        <h2 className="text-sz-20 font-semibold text-ink sm:text-sz-24">Ähnliche Regionen</h2>
+        <h2 className="text-sz-20 font-semibold text-ink sm:text-sz-24">Weitere Regionen</h2>
         <p className="mt-1 text-ui text-muted">
-          Vergleichbare Reviere nach Charakter und Windstärke
+          Weitere Reviere entdecken
         </p>
       </div>
 

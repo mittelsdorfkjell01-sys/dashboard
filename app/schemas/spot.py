@@ -9,6 +9,14 @@ from app.schemas.common import GeoPoint
 from app.scoring.context import typical_figures
 
 
+def _public_editorial(value: Any) -> dict[str, Any] | None:
+    """Remove internal scoring controls from the public editorial payload."""
+    if not isinstance(value, dict):
+        return None
+    hidden = {"confidence_override"}
+    return {key: item for key, item in value.items() if key not in hidden}
+
+
 class SpotSummary(BaseModel):
     """Lightweight spot view for list/collection endpoints.
 
@@ -37,7 +45,6 @@ class SpotSummary(BaseModel):
     style: list[str] = []
     facilities: dict[str, Any] | None = None
     status: str
-    confidence: float | None = None
     facing: int | None = None
     image: dict[str, Any] | None = None
     # Variant keys this spot actually offers (suitability geeignet/eingeschraenkt).
@@ -69,7 +76,6 @@ class SpotSummary(BaseModel):
             style=list(spot.style or []),
             facilities=spot.facilities,
             status=spot.status,
-            confidence=spot.confidence,
             facing=spot.facing,
             image=spot.image,
             variants=offered_variants(getattr(spot, "variant_conditions", None)),
@@ -99,7 +105,6 @@ class SpotRead(BaseModel):
     style: list[str] = []
     facilities: dict[str, Any] | None = None
     status: str
-    confidence: float | None = None
     facing: int | None = None
     editorial: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
@@ -111,7 +116,7 @@ class SpotRead(BaseModel):
     updated_at: datetime
 
     @classmethod
-    def from_orm_spot(cls, spot: Any) -> "SpotRead":
+    def from_orm_spot(cls, spot: Any, *, public: bool = False) -> "SpotRead":
         """Build a read schema from an ORM spot, converting the geography column."""
         region = getattr(spot, "region", None)
         return cls(
@@ -132,9 +137,8 @@ class SpotRead(BaseModel):
             style=list(spot.style or []),
             facilities=spot.facilities,
             status=spot.status,
-            confidence=spot.confidence,
             facing=spot.facing,
-            editorial=spot.editorial,
+            editorial=_public_editorial(spot.editorial) if public else spot.editorial,
             overrides=spot.overrides,
             variant_conditions=getattr(spot, "variant_conditions", None),
             variants=offered_variants(getattr(spot, "variant_conditions", None)),

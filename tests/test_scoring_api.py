@@ -1,5 +1,4 @@
-"""DB-gated tests: scoring_params seeding, climatology scoring on a stored spot,
-and the badge/season endpoints (live mocked). Skip when the DB is down."""
+"""DB-gated scoring params, climatology, and protected inspector tests."""
 
 from __future__ import annotations
 
@@ -68,9 +67,20 @@ def test_scoring_params_seeded(db):
     ).all()
     sports = {r.sport for r in rows}
     assert {"kitesurf", "windsurf", "wing", "surf"}.issubset(sports)
-    assert all(r.version == 1 for r in rows)
+    assert all(r.version == 3 for r in rows)
+    versions = {
+        (row.sport, row.version)
+        for row in db.scalars(select(ScoringParams)).all()
+    }
+    assert all(
+        (sport, version) in versions
+        for sport in ("kitesurf", "windsurf", "wing", "surf")
+        for version in (1, 2, 3)
+    )
     kite = get_params("kitesurf", db)
     assert kite["d0_km"] == 40.0
+    assert "kitesurf" in kite["rider_model"]
+    assert "kitesurf" in kite["default_rider"]
 
 
 # --- climatology scoring on a stored spot ----------------------------------
@@ -90,17 +100,21 @@ def test_spot_confidence_on_seed_spot(db, spot_id):
 
 # --- endpoints -------------------------------------------------------------
 
-def test_season_stage2_endpoint(client, spot_id, mocked_live):
-    resp = client.get(f"/spots/{spot_id}/season", params={"stage": 2, "sport": "kitesurf"})
+def test_season_stage2_endpoint_is_admin_only(client, anon_client, spot_id, mocked_live):
+    assert anon_client.get(f"/spots/{spot_id}/season").status_code == 404
+    resp = client.get(
+        f"/admin/scoring/spots/{spot_id}/season",
+        params={"stage": 2, "sport": "kitesurf"},
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["stage"] == 2
     assert len(body["curve"]) == 52
-    assert body["scoring_params_version"] == 1
+    assert body["scoring_params_version"] == 3
 
 
 def test_season_stage1_endpoint(client, spot_id, mocked_live):
-    resp = client.get(f"/spots/{spot_id}/season", params={"stage": 1})
+    resp = client.get(f"/admin/scoring/spots/{spot_id}/season", params={"stage": 1})
     assert resp.status_code == 200
     body = resp.json()
     assert body["stage"] == 1
@@ -108,8 +122,11 @@ def test_season_stage1_endpoint(client, spot_id, mocked_live):
     assert "rating" not in body["weeks"][0]  # stage 1 is descriptive only
 
 
-def test_badge_endpoint(client, spot_id, mocked_live):
-    resp = client.get(f"/spots/{spot_id}/badge", params={"sport": "kitesurf"})
+def test_badge_endpoint_is_admin_only(client, anon_client, spot_id, mocked_live):
+    assert anon_client.get(f"/spots/{spot_id}/badge").status_code == 404
+    resp = client.get(
+        f"/admin/scoring/spots/{spot_id}/badge", params={"sport": "kitesurf"}
+    )
     assert resp.status_code == 200
     body = resp.json()
     assert body["sport"] == "kitesurf"
@@ -120,5 +137,5 @@ def test_badge_endpoint(client, spot_id, mocked_live):
 def test_badge_404_for_unknown_spot(client, mocked_live):
     import uuid
 
-    resp = client.get(f"/spots/{uuid.uuid4()}/badge")
+    resp = client.get(f"/admin/scoring/spots/{uuid.uuid4()}/badge")
     assert resp.status_code == 404

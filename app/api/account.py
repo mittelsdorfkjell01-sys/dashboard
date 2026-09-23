@@ -13,10 +13,11 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, StrictInt, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.account import rider as rider_service
 from app.account import service
 from app.account.email import MailUnavailable, send_account_link, send_account_notice
 from app.account.deps import current_account
@@ -124,6 +125,72 @@ class SubmissionRequest(BaseModel):
 
 class DeleteAccountRequest(BaseModel):
     password: str = Field(min_length=1, max_length=1024)
+
+
+class RiderLocation(BaseModel):
+    lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+
+    model_config = {"extra": "forbid"}
+
+
+class RiderProfilePut(BaseModel):
+    weight_kg: float | None = Field(default=None, alias="weightKg", ge=30, le=160, allow_inf_nan=False)
+    home_location: RiderLocation | None = Field(default=None, alias="homeLocation")
+    max_travel_km: float | None = Field(default=None, alias="maxTravelKm", ge=0, le=20000, allow_inf_nan=False)
+    travel_mode: Literal["day_trip", "weekend", "trip", "camper"] = Field(default="day_trip", alias="travelMode")
+    availability: list[StrictInt] = Field(default_factory=list, max_length=7)
+    min_water_temp_c: float | None = Field(default=None, alias="minWaterTempC", ge=-5, le=40, allow_inf_nan=False)
+    excluded_bottoms: list[Literal["sand", "rock", "reef", "mixed"]] = Field(default_factory=list, alias="excludedBottoms", max_length=4)
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+    @model_validator(mode="after")
+    def validate_days(self) -> "RiderProfilePut":
+        if any(isinstance(day, bool) or day not in range(7) for day in self.availability):
+            raise ValueError("availability must contain weekdays 0 through 6")
+        if len(set(self.availability)) != len(self.availability):
+            raise ValueError("availability must not contain duplicates")
+        return self
+
+
+class RiderSportProfilePut(BaseModel):
+    level: Literal["beginner", "advanced", "expert", "competition"]
+    style_weights: dict[str, StrictInt] = Field(default_factory=dict, alias="styleWeights", max_length=5)
+    preferred_water_character: list[
+        Literal["flach", "chop", "welle_klein", "welle_gross", "tiefes_wasser"]
+    ] = Field(default_factory=list, alias="preferredWaterCharacter", max_length=5)
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+    @model_validator(mode="after")
+    def validate_styles(self) -> "RiderSportProfilePut":
+        from app.admin.constants import STYLES
+
+        if set(self.style_weights) - set(STYLES):
+            raise ValueError("styleWeights contains an unknown style")
+        if any(isinstance(value, bool) or not 0 <= value <= 3 for value in self.style_weights.values()):
+            raise ValueError("styleWeights values must be integers from 0 through 3")
+        if len(set(self.preferred_water_character)) != len(self.preferred_water_character):
+            raise ValueError("preferredWaterCharacter must not contain duplicates")
+        return self
+
+
+class GearItemPut(BaseModel):
+    sport: Literal["surf", "windsurf", "kitesurf", "wing"]
+    kind: Literal["kite", "board", "foil"]
+    size: float | None = Field(default=None, gt=0, le=500, allow_inf_nan=False)
+    board_type: Literal["twintip", "surfboard", "foil", "bigair_twintip"] | None = Field(default=None, alias="boardType")
+    active: bool = True
+    sort_order: int = Field(default=0, alias="sortOrder", ge=0, le=10000)
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+    @model_validator(mode="after")
+    def validate_kind(self) -> "GearItemPut":
+        if self.kind == "kite" and self.size is None:
+            raise ValueError("size is required for a kite")
+        return self
 
 
 class AccountOut(BaseModel):
@@ -403,6 +470,117 @@ def delete_account(
     response = Response(status_code=204)
     _clear_session_cookie(response)
     return response
+
+
+# --- rider setup -----------------------------------------------------------
+
+@router.get("/rider-profile")
+def get_rider_profile(
+    user: AppUser = Depends(current_account), db: Session = Depends(get_db)
+) -> dict:
+    return rider_service.get_profile(db, user)
+
+
+@router.put("/rider-profile")
+def put_rider_profile(
+    body: RiderProfilePut,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        result = rider_service.put_profile(
+            db, user, body.model_dump(by_alias=False)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
+@router.get("/rider-profile/{sport}")
+def get_rider_sport_profile(
+    sport: str,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return rider_service.get_sport_profile(db, user, sport)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/rider-profile/{sport}")
+def put_rider_sport_profile(
+    sport: str,
+    body: RiderSportProfilePut,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        result = rider_service.put_sport_profile(
+            db, user, sport, body.model_dump(by_alias=False)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
+@router.get("/gear")
+def get_gear(
+    sport: str | None = None,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return {"items": rider_service.list_gear(db, user, sport)}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/gear", status_code=201)
+def create_gear(
+    body: GearItemPut,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        result = rider_service.create_gear(db, user, body.model_dump(by_alias=False))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
+@router.put("/gear/{item_id}")
+def update_gear(
+    item_id: uuid.UUID,
+    body: GearItemPut,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        result = rider_service.update_gear(db, user, item_id, body.model_dump(by_alias=False))
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
+@router.delete("/gear/{item_id}", status_code=204)
+def delete_gear(
+    item_id: uuid.UUID,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> Response:
+    try:
+        rider_service.delete_gear(db, user, item_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    db.commit()
+    return Response(status_code=204)
 
 
 # --- favourites ------------------------------------------------------------
