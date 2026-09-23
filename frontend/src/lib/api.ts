@@ -614,6 +614,16 @@ function cookieValue(name: string): string | undefined {
 }
 
 function addAuthHeaders(path: string, method: string, headers: Record<string, string>): void {
+  // Vercel deliberately refuses to edge-cache responses with `Vary: Cookie`.
+  // A signed-in account always has the readable double-submit CSRF cookie next
+  // to its httpOnly session cookie. Sending an Authorization marker on safe
+  // reads makes Vercel bypass the public CDN entry before FastAPI resolves the
+  // real account from the cookie. Anonymous recommendation/search responses can
+  // therefore be shared at the edge without risking a cached anonymous result
+  // being served in place of a personalized one.
+  if (["GET", "HEAD"].includes(method) && cookieValue("swd_csrf")) {
+    headers.Authorization = "Session";
+  }
   if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
     const csrf = cookieValue("swd_csrf");
     if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf);

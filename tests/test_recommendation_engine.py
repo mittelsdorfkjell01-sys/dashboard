@@ -90,7 +90,7 @@ def test_recommendation_cache_headers_separate_account_responses():
     set_recommendation_cache(private, private=True)
     assert public.headers["Cache-Control"].startswith("public")
     assert private.headers["Cache-Control"] == "private, no-store"
-    assert "Cookie" in public.headers["Vary"]
+    assert "Cookie" not in public.headers.get("Vary", "")
 
 
 @pytest.mark.parametrize("lat,lon", [(None, 10.0), (54.0, None), (91.0, 10.0)])

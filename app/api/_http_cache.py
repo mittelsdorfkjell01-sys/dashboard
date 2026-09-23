@@ -102,4 +102,3 @@ def set_recommendation_cache(response: Response, *, private: bool) -> None:
     response.headers["Cache-Control"] = (
         PRIVATE_RECOMMENDATIONS_CACHE_CONTROL if private else RECOMMENDATIONS_CACHE_CONTROL
     )
-    _vary(response, "Cookie")
