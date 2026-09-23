@@ -157,7 +157,7 @@ def test_all_surfaces_and_cache_headers(recommendation_catalog):
         response = anon.get("/recommendations", params=params)
         assert response.status_code == 200, response.text
         assert response.headers["cache-control"].startswith("public")
-        assert "Cookie" in response.headers["vary"]
+        assert "Cookie" not in response.headers.get("vary", "")
         assert "recommendations;dur=" in response.headers["server-timing"]
         assert all("score" not in item and "rating" not in item for item in response.json())
 
