@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from app.media.image_object import compact_image, upgrade_legacy
 from app.schemas.common import GeoPoint, GeoPolygon
 
 
@@ -43,7 +44,11 @@ class RegionRead(BaseModel):
             center=GeoPoint.from_geo(region.center),
             bounds=GeoPolygon.from_geo(region.bounds),
             description=region.description,
-            image=region.image,
+            image=(
+                compact_image(image)
+                if (image := upgrade_legacy(region.image)) is not None
+                else None
+            ),
             # Region wind availability is deliberately unknown until a V2
             # aggregation rule has been product-approved.
             season=None,

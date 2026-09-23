@@ -101,6 +101,9 @@ test("search is the filled-action exception and loads regions on demand", async 
     if (url.pathname === "/spots/top" || url.pathname === "/spots") {
       return route.fulfill({ json: [] });
     }
+    if (url.pathname === "/recommendations") {
+      return route.fulfill({ json: catalogueSpots });
+    }
     if (url.pathname === "/spots/live") return route.fulfill({ json: [] });
     if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });

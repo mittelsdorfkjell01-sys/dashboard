@@ -382,8 +382,8 @@ export default function AdminSpotForm() {
     const ed: Record<string, any> = {};
     if (description.trim()) ed.description = description.trim();
     if (isSurf && tide.trim()) ed.tide = tide.trim();
-    if (sports.includes("kitesurf")) {
-      ed.beginner_offshore_ok = beginnerOffshoreOk;
+    if (sports.includes("kitesurf") && beginnerOffshoreOk) {
+      ed.beginner_offshore_ok = true;
     }
     if (mapView) ed.map_view = mapView; // preview frame for the spot's flow map
     return ed;
@@ -453,7 +453,8 @@ export default function AdminSpotForm() {
       description: description.trim() || null,
       tide: isSurf ? tide.trim() || null : null,
       map_view: mapView,
-      beginner_offshore_ok: sports.includes("kitesurf") ? beginnerOffshoreOk : null,
+      beginner_offshore_ok:
+        sports.includes("kitesurf") && beginnerOffshoreOk ? true : null,
     };
     for (const [key, value] of Object.entries(nextEditorial)) {
       const oldValue = loaded.editorial?.[key] ?? null;

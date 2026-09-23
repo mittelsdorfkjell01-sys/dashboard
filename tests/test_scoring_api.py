@@ -10,6 +10,7 @@ from app.live.deps import get_cache, get_om_client
 from app.main import app
 from app.models import ScoringParams, Spot
 from app.scoring import get_params, score_climatology_week, spot_confidence
+from app.scoring.params import SCORING_PARAMS_VERSION
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
 
@@ -67,7 +68,7 @@ def test_scoring_params_seeded(db):
     ).all()
     sports = {r.sport for r in rows}
     assert {"kitesurf", "windsurf", "wing", "surf"}.issubset(sports)
-    assert all(r.version == 3 for r in rows)
+    assert all(r.version == SCORING_PARAMS_VERSION for r in rows)
     versions = {
         (row.sport, row.version)
         for row in db.scalars(select(ScoringParams)).all()
@@ -75,7 +76,7 @@ def test_scoring_params_seeded(db):
     assert all(
         (sport, version) in versions
         for sport in ("kitesurf", "windsurf", "wing", "surf")
-        for version in (1, 2, 3)
+        for version in range(1, SCORING_PARAMS_VERSION + 1)
     )
     kite = get_params("kitesurf", db)
     assert kite["d0_km"] == 40.0
@@ -110,7 +111,7 @@ def test_season_stage2_endpoint_is_admin_only(client, anon_client, spot_id, mock
     body = resp.json()
     assert body["stage"] == 2
     assert len(body["curve"]) == 52
-    assert body["scoring_params_version"] == 3
+    assert body["scoring_params_version"] == SCORING_PARAMS_VERSION
 
 
 def test_season_stage1_endpoint(client, spot_id, mocked_live):
