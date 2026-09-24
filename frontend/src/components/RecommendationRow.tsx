@@ -26,24 +26,35 @@ function RowSkeleton() {
 export default function RecommendationRow({
   title,
   surface,
+  sport = "kitesurf",
+  personalized = true,
   regionId,
   month,
+  weeks,
   action,
   className = "",
 }: {
   title: string;
   surface: RecommendationSurface;
+  /** Personalized only for kitesurf today; other sports fall back to the
+   *  existing per-sport scoring once the backend surfaces support them. */
+  sport?: string;
+  /** False ranks like a logged-out visitor (ignore the rider's profile). */
+  personalized?: boolean;
   regionId?: string;
   month?: number;
+  weeks?: string;
   action?: ReactNode;
   className?: string;
 }) {
   const { data, loading, error } = useRecommendations({
-    sport: "kitesurf",
+    sport,
     surface,
     region_id: regionId,
     month,
+    weeks,
     limit: MAX_TILES,
+    personalized: personalized ? undefined : false,
   });
   const spots = (data ?? []).slice(0, MAX_TILES);
   const [loadLive, setLoadLive] = useState(false);
