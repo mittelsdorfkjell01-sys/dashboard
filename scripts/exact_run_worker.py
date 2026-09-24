@@ -1,8 +1,10 @@
-"""Pre-capture exact raw wind assets, then drain station residual evidence.
+"""Capture exact raw wind assets and persist bounded point evidence.
 
-Run `capture` before importing observations and `residuals` afterwards. The
-cache directory must be a persistent read/write mount shared with the LiveWind
-shadow worker. This script never changes public API products.
+The hosted ``capture`` schedule may use a job-local raw-asset cache because it
+persists compact point bundles in PostgreSQL. Its companion schedule runs
+``persisted-residuals`` and reads those bundles without the raw cache. The
+legacy direct ``residuals`` path still requires the same read/write cache as the
+capture process. This script never changes public API products.
 """
 
 from __future__ import annotations

@@ -90,7 +90,10 @@ def test_hosted_exact_point_capture_uses_ephemeral_grib_and_persistent_database(
     assert 'cron: "1,11,21,31,41,51 * * * *"' in workflow
     assert "LIVE_WIND_POINT_CAPTURE_ENABLED" in workflow
     assert "LIVE_WIND_POINT_DATABASE_URL" in workflow
-    assert "runner.temp" in workflow
+    assert "RUNNER_TEMP" in workflow
+    assert "${{ runner.temp }}" not in workflow
+    assert 'cache_dir="$RUNNER_TEMP/live-wind-exact"' in workflow
+    assert '>> "$GITHUB_ENV"' in workflow
     assert "self-hosted" not in workflow
     assert "exact_run_worker capture" in workflow
     assert "exact_run_worker residuals" not in workflow
