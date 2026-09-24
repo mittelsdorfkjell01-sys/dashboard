@@ -166,6 +166,25 @@ def test_all_surfaces_and_cache_headers(recommendation_catalog):
     assert signed.headers["cache-control"] == "private, no-store"
 
 
+def test_personalized_false_ranks_signed_in_visitor_as_anonymous(recommendation_catalog):
+    _region, _spots, freeride_user, _big_air_user = recommendation_catalog
+    params = {"surface": "now"}
+
+    anonymous = _client().get("/recommendations", params=params)
+    ignored = _client(freeride_user).get(
+        "/recommendations", params={**params, "personalized": "false"}
+    )
+    personalized = _client(freeride_user).get("/recommendations", params=params)
+
+    assert anonymous.status_code == ignored.status_code == personalized.status_code == 200
+    # Ignoring personalization drops back to the shared, edge-cacheable variant.
+    assert ignored.headers["cache-control"].startswith("public")
+    assert "Cookie" not in ignored.headers.get("vary", "")
+    assert personalized.headers["cache-control"] == "private, no-store"
+    # ...and returns the exact anonymous ordering, not the rider's.
+    assert [row["id"] for row in ignored.json()] == [row["id"] for row in anonymous.json()]
+
+
 def test_profiles_change_only_selection_or_order(recommendation_catalog):
     region, _spots, freeride_user, big_air_user = recommendation_catalog
     params = {"surface": "region", "region_id": str(region.id)}
@@ -198,6 +217,61 @@ def test_recommendation_query_validation():
     assert client.get("/recommendations", params={"surface": "now", "limit": 25}).status_code == 422
     assert client.get("/recommendations", params={"surface": "season", "month": 7, "weeks": "1-2"}).status_code == 422
     assert client.get("/recommendations", params={"lat": 54.0}).status_code == 422
+    # A sport the surfaces do not serve is rejected; the served ones are not.
+    assert client.get("/recommendations", params={"sport": "bogus"}).status_code == 422
+
+
+@pytest.fixture
+def windsurf_catalog(db, monkeypatch):
+    suffix = uuid.uuid4().hex[:8]
+    region = Region(
+        slug=f"windsurf-{suffix}",
+        name=f"Windsurf {suffix}",
+        center=from_shape(Point(10.0, 54.0), srid=4326),
+    )
+    db.add(region)
+    db.flush()
+    spot = Spot(
+        slug=f"windsurf-spot-{suffix}",
+        name=f"Windsurf Spot {suffix}",
+        region_id=region.id,
+        location=from_shape(Point(10.0, 54.0), srid=4326),
+        sports=["windsurf"],
+        water_type=["sea"],
+        bottom_type=["sand"],
+        level=["advanced"],
+        status="published",
+        facing=180,
+        editorial={"usable_wind_directions": [{"min": 120, "max": 240}]},
+    )
+    db.add(spot)
+    db.commit()
+    cache = InMemoryCache()
+    app.dependency_overrides[get_cache] = lambda: cache
+    app.dependency_overrides[get_om_client] = lambda: object()
+    monkeypatch.setattr("app.live.service.get_forecast_series", _forecast)
+    yield region, spot
+    app.dependency_overrides.pop(get_cache, None)
+    app.dependency_overrides.pop(get_om_client, None)
+
+
+def test_non_kite_and_aggregate_are_forecast_ranked(windsurf_catalog):
+    _region, spot = windsurf_catalog
+    client = _client()
+
+    # The mocked forecast blows 21 kt from 180° — squarely in the windsurf band
+    # and the spot's usable window, so the categorical engine rates it "gut".
+    windsurf = client.get("/recommendations", params={"sport": "windsurf", "surface": "now"})
+    assert windsurf.status_code == 200, windsurf.text
+    assert windsurf.headers["cache-control"].startswith("public")
+    assert [row["id"] for row in windsurf.json()] == [str(spot.id)]
+    assert all("score" not in row and "rating" not in row for row in windsurf.json())
+
+    # The "all" aggregate spans every sport and ranks the same windsurf spot in
+    # via its best sport.
+    aggregate = client.get("/recommendations", params={"sport": "all", "surface": "now"})
+    assert aggregate.status_code == 200, aggregate.text
+    assert str(spot.id) in [row["id"] for row in aggregate.json()]
 
 
 def test_checkin_is_attributed_to_recent_recommendation(db, recommendation_catalog):

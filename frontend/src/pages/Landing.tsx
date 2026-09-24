@@ -1,22 +1,33 @@
 import { Link, useLocation } from "react-router-dom";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import LandingHeader from "../components/LandingHeader";
 import LandingHero from "../components/LandingHero";
 import MobileSearchTrigger from "../components/MobileSearchTrigger";
 import RecommendationRow from "../components/RecommendationRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
-import { useRiderSetupComplete, useSpots } from "../lib/hooks";
+import { useSpots } from "../lib/hooks";
 import type { Spot } from "../lib/types";
 import { getSpotCatalogVersion } from "../lib/api";
+import { SPORTS, sportLabel } from "../lib/labels";
 import { MapIcon } from "../lib/icons";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import { useAuth } from "../context/AuthContext";
 
-const MONTHS = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember",
-];
+type SortMode = "recommended" | "az";
+
+// The recommendation surfaces serve every sport plus the cross-sport aggregate;
+// "all" (no sport filter) ranks each spot by the single sport it is best for.
+const AGGREGATE_SPORT = "all";
+
+/** ISO week (1-53) for a date, used to build the climatology "next weeks" window. */
+function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
 
 const SearchBar = lazy(() => import("../components/SearchBar"));
 const MobileSearchSheet = lazy(() => import("../components/MobileSearchSheet"));
@@ -37,9 +48,25 @@ const SPOT_REVEAL_STEP = 40;
  */
 export default function Landing() {
   const location = useLocation();
-  const { user, ready: authReady } = useAuth();
-  const { data: setupComplete } = useRiderSetupComplete(Boolean(user));
-  const [seasonMonth, setSeasonMonth] = useState(() => new Date().getMonth() + 1);
+  const { user } = useAuth();
+  // Global landing filter (top-right): sport + sort. "" = all sports.
+  const [filterSport, setFilterSport] = useState<string>("");
+  const [sortMode, setSortMode] = useState<SortMode>("recommended");
+  // Signed-in only: rank like a logged-out visitor (ignore the rider profile).
+  const [ignorePersonalization, setIgnorePersonalization] = useState(false);
+  // Climatology "next ~2 months" window for the last recommendation row.
+  const nextWeeks = useMemo(() => {
+    const start = isoWeek(new Date());
+    return `${start}-${Math.min(52, start + 8)}`;
+  }, []);
+  // A chosen sport feeds the rows directly; "Alle Sportarten" ranks the
+  // cross-sport aggregate. Only kitesurf is truly personalized (rider band);
+  // other sports use level offsets, and the aggregate is always anonymous.
+  const rowSport = filterSport || AGGREGATE_SPORT;
+  const personalized = Boolean(user) && !ignorePersonalization;
+  const personalizedTitle = personalized && rowSport !== AGGREGATE_SPORT;
+  // The three recommendation rows only make sense in "recommended" order.
+  const showRows = sortMode === "recommended";
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
   const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
@@ -186,21 +213,29 @@ export default function Landing() {
   useEffect(() => {
     if (allSpots) setSpots(allSpots);
   }, [allSpots]);
-  const visibleSpots = spots.slice(0, visibleSpotLimit);
+  // "Alle Spots" grid honours the global filter: sport membership + sort
+  // (recommended = catalogue order, or A–Z by name).
+  const gridSpots = useMemo(() => {
+    let list = spots;
+    if (filterSport) list = list.filter((spot) => (spot.sports ?? []).includes(filterSport));
+    if (sortMode === "az") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "de"));
+    return list;
+  }, [spots, filterSport, sortMode]);
+  const visibleSpots = gridSpots.slice(0, visibleSpotLimit);
 
   // Reveal the next batch off the main thread so the tap (and each subsequent
   // scroll step) stays responsive even while dozens of cards mount.
   const revealMore = useCallback(() => {
     startRevealTransition(() =>
-      setVisibleSpotLimit((n) => Math.min(n + SPOT_REVEAL_STEP, spots.length)),
+      setVisibleSpotLimit((n) => Math.min(n + SPOT_REVEAL_STEP, gridSpots.length)),
     );
-  }, [spots.length]);
+  }, [gridSpots.length]);
 
   // While browsing the full catalogue, load more as the end of the grid nears —
   // a wide rootMargin means the next batch is ready before the visitor reaches
   // the bottom, so scrolling never stalls waiting on a render.
   useEffect(() => {
-    if (!browseAll || visibleSpotLimit >= spots.length) return;
+    if (!browseAll || visibleSpotLimit >= gridSpots.length) return;
     const sentinel = loadMoreRef.current;
     if (!sentinel || !("IntersectionObserver" in window)) return;
     const observer = new IntersectionObserver(
@@ -211,7 +246,7 @@ export default function Landing() {
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [browseAll, visibleSpotLimit, spots.length, revealMore]);
+  }, [browseAll, visibleSpotLimit, gridSpots.length, revealMore]);
 
   return (
     <div className="relative bg-page">
@@ -278,55 +313,85 @@ export default function Landing() {
           rises over the hero for a seamless transition. */}
       <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
         <div className="mx-auto w-full max-w-[1570px] px-4 pt-10 sm:px-10">
-          {authReady && user && setupComplete === false && (
-            <Link
-              to="/konto/setup"
-              className="mb-7 inline-flex min-h-11 items-center rounded-[14px] bg-band px-4 text-body font-medium text-ink transition-colors hover:bg-line/60"
-            >
-              Hinterlege deine Ausrüstung
-            </Link>
-          )}
-
-          <RecommendationRow
-            title={user ? "Aktuelle Top-Spots für dich" : "Aktuelle Top-Spots"}
-            surface="now"
-            action={
-              <Link
-                to="/map"
-                state={{ from }}
-                aria-label="Karte öffnen"
-                className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
-              >
-                <MapIcon className="text-sz-18" />
-                <span className="hidden sm:inline">Karte</span>
-              </Link>
-            }
-          />
-          <RecommendationRow
-            title="Interessant nächste Woche"
-            surface="next_week"
-            className="mt-12"
-          />
-          <RecommendationRow
-            title={user ? "Deine Saison" : "Saison"}
-            surface="season"
-            month={seasonMonth}
-            className="mt-12"
-            action={
-              <label className="flex items-center gap-2 text-label text-muted">
-                <span className="sr-only">Monat auswählen</span>
-                <select
-                  value={seasonMonth}
-                  onChange={(event) => setSeasonMonth(Number(event.target.value))}
-                  className="min-h-11 rounded-[14px] border border-line bg-surface px-3 text-body font-medium text-ink"
-                >
-                  {MONTHS.map((month, index) => (
-                    <option key={month} value={index + 1}>{month}</option>
-                  ))}
-                </select>
+          {/* Global filter (top-right): sport + sort (+ a personalization
+              toggle when signed in). Sport applies to the recommendation rows
+              and the "Alle Spots" grid; A–Z hides the ranked rows entirely. */}
+          <div className="mb-7 flex flex-wrap items-center justify-end gap-3">
+            {user && (
+              <label className="flex min-h-11 items-center gap-2 text-label text-muted">
+                <input
+                  type="checkbox"
+                  checked={ignorePersonalization}
+                  onChange={(event) => setIgnorePersonalization(event.target.checked)}
+                  className="h-4 w-4 accent-ink"
+                />
+                Personalisierung ignorieren
               </label>
-            }
-          />
+            )}
+            <label className="flex items-center gap-2 text-label text-muted">
+              <span className="sr-only">Sportart filtern</span>
+              <select
+                value={filterSport}
+                onChange={(event) => setFilterSport(event.target.value)}
+                aria-label="Sportart filtern"
+                className="min-h-11 rounded-[14px] border border-line bg-surface px-3 text-body font-medium text-ink"
+              >
+                <option value="">Alle Sportarten</option>
+                {SPORTS.map((sportKey) => (
+                  <option key={sportKey} value={sportKey}>{sportLabel(sportKey)}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-label text-muted">
+              <span className="sr-only">Sortierung</span>
+              <select
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value as SortMode)}
+                aria-label="Sortierung"
+                className="min-h-11 rounded-[14px] border border-line bg-surface px-3 text-body font-medium text-ink"
+              >
+                <option value="recommended">Empfohlen</option>
+                <option value="az">A – Z</option>
+              </select>
+            </label>
+          </div>
+
+          {showRows && (
+            <>
+              <RecommendationRow
+                title={personalizedTitle ? "Deine aktuellen Topspots" : "Aktuelle Topspots"}
+                surface="now"
+                sport={rowSport}
+                personalized={personalized}
+                action={
+                  <Link
+                    to="/map"
+                    state={{ from }}
+                    aria-label="Karte öffnen"
+                    className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+                  >
+                    <MapIcon className="text-sz-18" />
+                    <span className="hidden sm:inline">Karte</span>
+                  </Link>
+                }
+              />
+              <RecommendationRow
+                title="Topspots in der nächsten Woche"
+                surface="next_week"
+                sport={rowSport}
+                personalized={personalized}
+                className="mt-12"
+              />
+              <RecommendationRow
+                title="Topspots in der nächsten Zeit"
+                surface="season"
+                sport={rowSport}
+                personalized={personalized}
+                weeks={nextWeeks}
+                className="mt-12"
+              />
+            </>
+          )}
         </div>
 
         <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">
@@ -335,7 +400,7 @@ export default function Landing() {
             Stöbere durch die ganze Sammlung · Regionen, Windspots und Wellenspots.
           </p>
 
-          {spots.length > 0 && (
+          {gridSpots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5">
               {visibleSpots.map((spot, index) => (
                 <SpotCard key={spot.id} spot={spot} eager={index < 20} />
@@ -343,7 +408,11 @@ export default function Landing() {
             </div>
           )}
 
-          {!spotsLoading && !browseAll && visibleSpotLimit < spots.length && (
+          {filterSport && gridSpots.length === 0 && spots.length > 0 && (
+            <p className="mt-6 text-body text-muted">Keine Spots für diese Sportart.</p>
+          )}
+
+          {!spotsLoading && !browseAll && visibleSpotLimit < gridSpots.length && (
             <div className="mt-10 flex justify-center">
               <button
                 type="button"
@@ -360,7 +429,7 @@ export default function Landing() {
 
           {/* Streaming sentinel — once "Alle Spots anzeigen" is pressed, this
               marker below the grid pulls the next batch in as it nears view. */}
-          {browseAll && visibleSpotLimit < spots.length && (
+          {browseAll && visibleSpotLimit < gridSpots.length && (
             <div ref={loadMoreRef} aria-hidden className="h-px w-full" />
           )}
         </div>

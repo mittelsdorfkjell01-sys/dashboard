@@ -15,12 +15,38 @@ from app.db.session import get_db
 from app.live.cache import Cache
 from app.live.client import OpenMeteoClient
 from app.live.deps import get_cache, get_om_client
-from app.models import AppUser
+from app.models import AppUser, RiderProfile, RiderSportProfile
+from app.recommendations.multisport import (
+    AGGREGATE_SPORTS,
+    SCORED_SPORTS,
+    scored_recommendations,
+)
 from app.recommendations.service import RecommendationSurface, bucket_location, recommendations
 from app.schemas import SpotSummary
 from app.scoring.rider.resolve import resolve_rider
+from sqlalchemy import select
 
 router = APIRouter(tags=["recommendations"])
+
+# "all" is the logged-out cross-sport aggregate; the rest name a single sport.
+AGGREGATE_SPORT = "all"
+ALLOWED_SPORTS = {"kitesurf", *SCORED_SPORTS, AGGREGATE_SPORT}
+
+
+def _rider_level(db: Session, account: AppUser | None, sport: str) -> str | None:
+    """The signed-in rider's level for ``sport`` (shifts the ideal band), if any."""
+    if account is None:
+        return None
+    base = db.scalar(select(RiderProfile).where(RiderProfile.app_user_id == account.id))
+    if base is None:
+        return None
+    sport_profile = db.scalar(
+        select(RiderSportProfile).where(
+            RiderSportProfile.rider_profile_id == base.id,
+            RiderSportProfile.sport == sport,
+        )
+    )
+    return sport_profile.level if sport_profile else None
 
 
 def _weeks(value: str | None) -> tuple[int, int] | None:
@@ -46,6 +72,7 @@ def get_recommendations(
     lat: float | None = Query(default=None, ge=-90, le=90),
     lon: float | None = Query(default=None, ge=-180, le=180),
     limit: int = Query(default=12, ge=1, le=24),
+    personalized: bool = Query(default=True),
     db: Session = Depends(get_db),
     account: AppUser | None = Depends(optional_account),
     client: OpenMeteoClient = Depends(get_om_client),
@@ -53,8 +80,8 @@ def get_recommendations(
 ) -> list[SpotSummary]:
     """Return existing spot cards in personalized order, without score fields."""
     started = time.perf_counter()
-    if sport != "kitesurf":
-        raise HTTPException(status_code=422, detail="recommendations are currently available for kitesurf")
+    if sport not in ALLOWED_SPORTS:
+        raise HTTPException(status_code=422, detail="unsupported sport")
     if surface == RecommendationSurface.REGION and region_id is None:
         raise HTTPException(status_code=422, detail="region_id is required for the region surface")
     if surface != RecommendationSurface.REGION and region_id is not None:
@@ -66,22 +93,52 @@ def get_recommendations(
     if (lat is None) != (lon is None):
         raise HTTPException(status_code=422, detail="lat and lon must be supplied together")
 
-    rider = resolve_rider(db, account, sport)
-    rows = recommendations(
-        db,
-        rider,
-        surface=surface,
-        sport=sport,
-        client=client,
-        cache=cache,
-        app_user_id=account.id if account else None,
-        region_id=region_id,
-        month=month,
-        weeks=_weeks(weeks),
-        location=bucket_location(lat, lon),
-        limit=limit,
-    )
-    set_recommendation_cache(response, private=account is not None)
+    # An explicit `personalized=false` (the "Personalisierung ignorieren"
+    # toggle) ranks a signed-in visitor exactly like a logged-out one: no
+    # profile, and the shared edge-cacheable variant.
+    effective_account = account if personalized else None
+
+    if sport == "kitesurf":
+        # Personalized rider-band engine (the average-rider band when anonymous).
+        rider = resolve_rider(db, effective_account, sport)
+        rows = recommendations(
+            db,
+            rider,
+            surface=surface,
+            sport=sport,
+            client=client,
+            cache=cache,
+            app_user_id=effective_account.id if effective_account else None,
+            region_id=region_id,
+            month=month,
+            weeks=_weeks(weeks),
+            location=bucket_location(lat, lon),
+            limit=limit,
+        )
+        set_recommendation_cache(response, private=effective_account is not None)
+    else:
+        # Non-kite sports (and the "all" aggregate) rank through the existing
+        # categorical scoring. The aggregate is always anonymous; a single sport
+        # honors the signed-in rider's level when personalization is on.
+        sports = AGGREGATE_SPORTS if sport == AGGREGATE_SPORT else (sport,)
+        level = (
+            _rider_level(db, effective_account, sport)
+            if sport != AGGREGATE_SPORT
+            else None
+        )
+        rows = scored_recommendations(
+            db,
+            surface=surface,
+            sports=sports,
+            client=client,
+            cache=cache,
+            level=level,
+            region_id=region_id,
+            month=month,
+            weeks=_weeks(weeks),
+            limit=limit,
+        )
+        set_recommendation_cache(response, private=level is not None)
     response.headers["Server-Timing"] = (
         f'recommendations;dur={(time.perf_counter() - started) * 1000:.1f}'
     )

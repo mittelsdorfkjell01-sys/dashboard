@@ -753,6 +753,9 @@ export interface RecommendationQuery {
   lat?: number;
   lon?: number;
   limit?: number;
+  /** Send `false` to ignore the signed-in rider's profile (ranks like a
+   *  logged-out visitor). Omitted = server default (personalize when signed in). */
+  personalized?: boolean;
 }
 
 export const getRecommendations = (params: RecommendationQuery) =>
