@@ -21,6 +21,6 @@ python-multipart==0.0.32
 pillow==12.3.0
 pillow-avif-plugin==1.5.5
 bcrypt==5.0.0
-PyJWT==2.13.0
+PyJWT==2.15.0
 email-validator==2.2.0
 numpy==2.4.6
