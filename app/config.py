@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "postgresql+psycopg://surf:surf@localhost:5432/surfwind"
+    database_direct_url: str | None = None
     test_database_url: str = (
         "postgresql+psycopg://surf:surf@localhost:5432/surfwind_test"
     )
@@ -74,6 +75,116 @@ class Settings(BaseSettings):
     media_dir: str = "data/media"
     media_url_prefix: str = "/media"
 
+    # Immutable weather-field data plane. Local storage keeps development free;
+    # the S3-compatible backend is portable across production object stores.
+    weather_field_storage_backend: Literal["local", "s3"] = "local"
+    weather_field_storage_dir: str = "data/weather-fields"
+    weather_field_public_base_url: str = "/weather-field-assets"
+    weather_field_storage_endpoint: str = ""
+    weather_field_storage_region: str = ""
+    weather_field_storage_bucket: str = ""
+    weather_field_storage_prefix: str = ""
+    weather_field_storage_access_key: str = ""
+    weather_field_storage_secret_key: str = ""
+    weather_field_storage_addressing_style: Literal["auto", "path", "virtual"] = "auto"
+    weather_field_pipeline_enabled: bool = False
+    weather_field_public_enabled: bool = False
+    weather_field_auto_activate: bool = False
+    weather_field_scope_key: str = "europe-wind"
+    weather_field_primary_model: str = "icon-eu"
+    wave_field_scope_key: str = "europe-waves"
+    wave_field_primary_model: str = "dwd-ewam"
+    wave_field_fallback_model: str = "dwd-gwam"
+    wave_field_extended_model: str = "noaa-gfs-wave"
+    wave_field_public_enabled: bool = False
+    weather_field_processing_version: str = "field-v2.1.0"
+    wave_field_processing_version: str = "wave-v2.0.0"
+    weather_field_forecast_hours: Annotated[list[int], NoDecode] = Field(
+        default_factory=lambda: [
+            *range(0, 25),
+            *range(27, 73, 3),
+            *range(78, 121, 6),
+            *range(126, 241, 6),
+        ]
+    )
+    wave_field_forecast_hours: Annotated[list[int], NoDecode] = Field(
+        default_factory=lambda: list(range(0, 79))
+    )
+    wave_field_global_forecast_hours: Annotated[list[int], NoDecode] = Field(
+        default_factory=lambda: list(range(0, 175, 3))
+    )
+    wave_field_extended_forecast_hours: Annotated[list[int], NoDecode] = Field(
+        default_factory=lambda: list(range(168, 241, 3))
+    )
+    weather_field_worker_batch_size: int = Field(default=1, ge=1, le=4)
+    weather_field_worker_poll_seconds: int = Field(default=30, ge=5, le=300)
+    weather_field_series_rate_limit_per_minute: int = Field(default=30, ge=1, le=600)
+    weather_field_discovery_interval_seconds: int = Field(
+        default=10_800, ge=900, le=21_600
+    )
+    weather_field_health_interval_seconds: int = Field(
+        default=900, ge=60, le=21_600
+    )
+    weather_field_max_attempts: int = Field(default=3, ge=1, le=10)
+    weather_field_request_timeout_seconds: float = Field(default=45, ge=5, le=180)
+    weather_field_max_source_bytes: int = Field(
+        default=67_108_864, ge=1_000_000, le=134_217_728
+    )
+    weather_field_max_run_download_bytes: int = Field(
+        default=1_073_741_824, ge=10_000_000, le=10_737_418_240
+    )
+    weather_field_retention_runs: int = Field(default=3, ge=2, le=12)
+    weather_field_processing_stale_minutes: int = Field(default=45, ge=15, le=360)
+    weather_field_activation_min_shadow_runs: int = Field(default=3, ge=1, le=12)
+    weather_field_activation_lookback_hours: int = Field(default=30, ge=6, le=168)
+    weather_field_activation_max_download_bytes: int = Field(
+        default=402_653_184, ge=10_000_000, le=2_147_483_648
+    )
+    weather_field_activation_max_asset_bytes: int = Field(
+        default=367_001_600, ge=10_000_000, le=2_147_483_648
+    )
+    weather_field_activation_max_processing_seconds: int = Field(
+        default=300, ge=30, le=3600
+    )
+    weather_field_shadow_enabled: bool = False
+    weather_field_shadow_profile_version: str = "field-shadow-v1"
+    weather_field_shadow_pilot_config: str = "config/weather-pilot-spots.json"
+    weather_field_shadow_pilot_group: Literal["core", "extension", "all"] = "core"
+    weather_field_shadow_max_spots: int = Field(default=20, ge=1, le=200)
+    weather_field_shadow_max_samples: int = Field(default=2000, ge=1, le=20_000)
+    weather_field_shadow_max_horizon_hours: int = Field(default=72, ge=6, le=240)
+    # Phase 6 is fail-closed. ``pilot``/``regional`` require an explicit
+    # comma-separated region allow-list; ``europe`` still has to pass the same
+    # per-spot evidence and freshness gates before it can affect a snapshot.
+    weather_field_spot_rollout_stage: Literal[
+        "shadow", "pilot", "regional", "europe"
+    ] = "shadow"
+    weather_field_spot_rollout_region_slugs: str = ""
+    weather_field_spot_allow_unverified: bool = False
+    weather_field_spot_min_shadow_cycles: int = Field(default=3, ge=1, le=12)
+    weather_field_spot_min_shadow_samples: int = Field(default=72, ge=1, le=20_000)
+    weather_field_spot_min_observations: int = Field(default=24, ge=1, le=10_000)
+    weather_field_spot_evidence_lookback_hours: int = Field(
+        default=168, ge=24, le=2160
+    )
+    weather_field_spot_max_speed_mae_ms: float = Field(default=2.0, gt=0, le=20)
+    weather_field_spot_max_direction_mae_deg: float = Field(
+        default=35.0, gt=0, le=180
+    )
+    weather_field_spot_max_gust_mae_ms: float = Field(default=3.0, gt=0, le=30)
+    weather_field_spot_max_observed_speed_mae_ms: float = Field(
+        default=3.0, gt=0, le=20
+    )
+    weather_field_spot_max_observed_direction_mae_deg: float = Field(
+        default=45.0, gt=0, le=180
+    )
+    weather_field_spot_max_observed_gust_mae_ms: float = Field(
+        default=4.0, gt=0, le=30
+    )
+    weather_field_spot_max_speed_regression_ms: float = Field(
+        default=0.25, ge=0, le=5
+    )
+
     # Versioned geodata cache. HTTP request handlers enqueue work only; they
     # never download a raster inline.
     geodata_cache_dir: str = "data/geodata-cache"
@@ -110,22 +221,24 @@ class Settings(BaseSettings):
     # server). True => NullPool (open+close per checkout); pair it with a
     # server-side pooler (e.g. Neon's pooled endpoint). False => normal pool.
     db_serverless: bool = False
+    # Bounded SQLAlchemy pool for the persistent VPS process. Serverless keeps
+    # using NullPool and ignores these values.
+    db_pool_size: int = Field(default=10, ge=1, le=50)
+    db_max_overflow: int = Field(default=10, ge=0, le=50)
+    db_pool_timeout_seconds: int = Field(default=10, ge=1, le=120)
+    db_pool_recycle_seconds: int = Field(default=1800, ge=60, le=86_400)
+    # Redis remains primary; this caps the per-process fail-open cache too.
+    cache_memory_max_entries: int = Field(default=500, ge=10, le=10_000)
 
-    # The two Vercel-scheduled maintenance crons (climatology, wind-climatology)
-    # are defined once in the shared root vercel.json, so BOTH the public and the
-    # admin Vercel projects register and fire them — doubling the heaviest
-    # serverless work (real provider I/O + DB writes at 1 GB) against the same
-    # database. They must run on exactly one deployment: the public one, which
-    # owns the database the read endpoints serve (see maintain_wind_climatology).
-    # Leave this True everywhere except the admin project, where
-    # RUN_MAINTENANCE_CRONS=false makes its duplicate invocation return at once
-    # and cost no function time. Defaults True so local/dev/tests are unaffected.
-    run_maintenance_crons: bool = True
+    # Provider and retention jobs are opt-in while the product has no users.
+    # Manual cron endpoint calls therefore fail closed unless the operator
+    # explicitly enables them for a bounded measurement campaign.
+    run_maintenance_crons: bool = False
 
-    @field_validator("database_url", "test_database_url", mode="after")
+    @field_validator("database_url", "database_direct_url", "test_database_url", mode="after")
     @classmethod
-    def _pin_pg_driver(cls, v: str) -> str:
-        return _normalize_pg_driver(v)
+    def _pin_pg_driver(cls, v: str | None) -> str | None:
+        return _normalize_pg_driver(v) if v else v
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -154,6 +267,22 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return sorted({item.strip().casefold() for item in v.split(",") if item.strip()})
         return sorted({str(item).strip().casefold() for item in v if str(item).strip()})
+
+    @field_validator(
+        "weather_field_forecast_hours",
+        "wave_field_forecast_hours",
+        "wave_field_global_forecast_hours",
+        "wave_field_extended_forecast_hours",
+        mode="before",
+    )
+    @classmethod
+    def _split_weather_field_hours(cls, value):
+        if isinstance(value, str):
+            value = [item.strip() for item in value.split(",") if item.strip()]
+        hours = sorted({int(item) for item in value})
+        if not hours or hours[0] < 0 or hours[-1] > 384:
+            raise ValueError("weather field forecast hours must be between 0 and 384")
+        return hours
 
     @model_validator(mode="after")
     def _validate_deployment_security(self):
@@ -280,17 +409,22 @@ class Settings(BaseSettings):
     climatology_cron_batch_size: int = 3
     # WP1 validation harness: bounded station-observation import per cron tick and
     # the historical window scored for raw-forecast verification.
-    weather_observation_cron_batch_size: int = 25
+    weather_observation_cron_batch_size: int = 45
     # Only providers with an approved downstream-use policy belong in the
     # automatic production cycle.  AWC/METAR is implemented but deliberately
     # opt-in until the originating aviation-data licences are cleared.
-    weather_observation_providers: Annotated[list[str], NoDecode] = ["dwd", "dmi"]
+    weather_observation_providers: Annotated[list[str], NoDecode] = [
+        "dwd", "dmi", "eumetnet_esoh"
+    ]
     weather_observation_retry_initial_seconds: int = Field(default=60, ge=10, le=3600)
     weather_observation_retry_max_seconds: int = Field(default=3600, ge=60, le=86400)
     weather_station_catalog_bounds: tuple[float, float, float, float] = (
         29.0, 72.0, -30.0, 45.0
     )
-    weather_station_catalog_providers: Annotated[list[str], NoDecode] = ["dwd", "dmi"]
+    weather_station_catalog_providers: Annotated[list[str], NoDecode] = [
+        "dwd", "dmi", "eumetnet_esoh"
+    ]
+    weather_europe_campaign_station_limit: int = Field(default=240, ge=25, le=1000)
     weather_station_catalog_spot_limit: int = Field(default=100, ge=1, le=1000)
     weather_station_catalog_candidate_limit: int = Field(default=30, ge=1, le=100)
     weather_station_catalog_max_km: float = Field(default=250.0, gt=0, le=1000)
@@ -374,10 +508,17 @@ class Settings(BaseSettings):
     # Forecast captures are only a verification sample.  Quantising their
     # identity avoids treating every cache refresh as an independent model run.
     weather_forecast_sample_interval_hours: int = Field(default=6, ge=1, le=24)
-    weather_forecast_sample_retention_days: int = Field(default=400, ge=120, le=730)
+    weather_forecast_sample_retention_days: int = Field(default=120, ge=120, le=730)
     weather_forecast_sample_retention_batch_size: int = Field(
         default=5000, ge=100, le=50_000
     )
+    forecast_snapshot_retention_days: int = Field(default=7, ge=2, le=365)
+    forecast_job_retention_days: int = Field(default=7, ge=2, le=730)
+    forecast_failed_job_retention_days: int = Field(default=14, ge=2, le=730)
+    recommendation_log_retention_days: int = Field(default=30, ge=7, le=1095)
+    live_wind_job_retention_days: int = Field(default=7, ge=2, le=730)
+    live_wind_failed_job_retention_days: int = Field(default=14, ge=2, le=730)
+    operational_retention_batch_size: int = Field(default=5000, ge=100, le=50_000)
     # Fully assembled public responses. These avoid Postgres reads on cache hits;
     # forecast entries are additionally capped to the snapshot's valid_until.
     weather_public_live_cache_ttl: int = 300
@@ -385,6 +526,11 @@ class Settings(BaseSettings):
     weather_polling_enabled: bool = False
     # Strict no-budget limits for direct-source shadow processing.
     forecast_job_batch_size: int = 3
+    # A refresh cycle enqueues all due published spots but performs provider I/O
+    # for only ``forecast_job_batch_size`` rows. Each spot currently needs up to
+    # two free-provider requests (atmosphere + marine).
+    forecast_refresh_interval_seconds: int = Field(default=1800, ge=300, le=21_600)
+    forecast_refresh_request_budget: int = Field(default=200, ge=2, le=10_000)
     forecast_provider_daily_bytes: int = 250_000_000
     forecast_provider_run_bytes: int = 50_000_000
     forecast_provider_parallelism: int = 2
@@ -550,7 +696,7 @@ class Settings(BaseSettings):
     )
     @classmethod
     def _validate_weather_station_providers(cls, v):
-        allowed = {"dwd", "dmi", "awc_metar"}
+        allowed = {"dwd", "dmi", "awc_metar", "eumetnet_esoh"}
         unknown = set(v) - allowed
         if unknown:
             raise ValueError(f"unsupported weather station providers: {sorted(unknown)}")

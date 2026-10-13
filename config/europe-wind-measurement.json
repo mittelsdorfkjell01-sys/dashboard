@@ -1,0 +1,16 @@
+{
+  "campaign_id": "europe-wind-shadow-2026-10",
+  "starts_at": "2026-10-12T15:17:54Z",
+  "ends_at": "2026-11-02T15:17:54Z",
+  "provider": "eumetnet_esoh",
+  "mode": "shadow",
+  "public_effect": "none",
+  "station_limit": 240,
+  "bounds": {
+    "south": 29.0,
+    "north": 72.0,
+    "west": -30.0,
+    "east": 45.0
+  },
+  "status": "active"
+}

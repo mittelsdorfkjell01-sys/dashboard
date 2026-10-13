@@ -16,9 +16,11 @@ from app.models import (
 from app.weather.observation_worker import (
     catalog_candidates,
     retry_delay_seconds,
+    sync_campaign_stations,
     sync_catalog_candidates,
 )
-from app.weather.providers import awc_metar, dmi, dwd
+from app.weather.europe_campaign import load_campaign, select_balanced_stations
+from app.weather.providers import awc_metar, dmi, dwd, eumetnet_esoh
 from app.weather.providers.common import nearest_stations
 
 
@@ -141,6 +143,20 @@ def _refresh_provider(
         items = dmi.fetch_stations()
     elif provider == "awc_metar":
         items = awc_metar.fetch_stations(europe_only=True)
+    elif provider == "eumetnet_esoh":
+        campaign = load_campaign()
+        if campaign.phase() == "ended":
+            return {
+                "provider": provider, "status": "success",
+                "campaign_phase": "ended", "catalog_records": 0,
+                "active_records": 0, "inactive_records": 0,
+                "selected_candidates": 0, "retirements": 0,
+                "metadata_errors": 0,
+                "persistence": sync_campaign_stations(
+                    db, [], campaign_key=campaign.campaign_id, dry_run=dry_run
+                ),
+            }
+        items = eumetnet_esoh.fetch_stations()
     else:
         raise ValueError("station_catalog_provider_unsupported")
 
@@ -149,6 +165,28 @@ def _refresh_provider(
         item for item in items
         if south <= item.latitude <= north and west <= item.longitude <= east
     ]
+    if provider == "eumetnet_esoh":
+        campaign = load_campaign()
+        selected = select_balanced_stations(
+            regional,
+            bounds=bounds,
+            limit=min(campaign.station_limit, get_settings().weather_europe_campaign_station_limit),
+        )
+        persistence = sync_campaign_stations(
+            db, selected, campaign_key=campaign.campaign_id, dry_run=dry_run
+        )
+        return {
+            "provider": provider,
+            "status": "success",
+            "campaign_phase": campaign.phase(),
+            "catalog_records": len(regional),
+            "active_records": sum(item.active for item in regional),
+            "inactive_records": sum(not item.active for item in regional),
+            "selected_candidates": len(selected),
+            "retirements": 0,
+            "metadata_errors": 0,
+            "persistence": persistence,
+        }
     selected_ids = {
         item.station_id
         for spot in spots

@@ -16,7 +16,8 @@ class WeatherStation(Base, TimestampMixin):
     __tablename__ = "weather_stations"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
-    spot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"), nullable=False)
+    spot_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("spots.id", ondelete="CASCADE"))
+    campaign_key: Mapped[str | None] = mapped_column(String(80))
     provider: Mapped[str] = mapped_column(String(20), nullable=False)
     provider_station_id: Mapped[str] = mapped_column(String(80), nullable=False)
     wigos_id: Mapped[str | None] = mapped_column(String(80))
@@ -62,6 +63,17 @@ class WeatherStation(Base, TimestampMixin):
 
     __table_args__ = (
         UniqueConstraint("spot_id", "provider", "provider_station_id", name="uq_weather_station_spot_provider"),
+        CheckConstraint(
+            "spot_id IS NOT NULL OR campaign_key IS NOT NULL",
+            name="ck_weather_station_owner",
+        ),
+        Index(
+            "uq_weather_station_campaign_provider",
+            "campaign_key", "provider", "provider_station_id",
+            unique=True,
+            postgresql_where=text("campaign_key IS NOT NULL"),
+        ),
+        Index("ix_weather_station_campaign_active", "campaign_key", "active"),
         CheckConstraint("latitude >= -90 AND latitude <= 90", name="ck_weather_station_lat"),
         CheckConstraint("longitude >= -180 AND longitude <= 180", name="ck_weather_station_lon"),
         CheckConstraint(
@@ -745,6 +757,7 @@ class WeatherForecastSample(Base):
     __table_args__ = (
         UniqueConstraint("spot_id", "model_id", "issued_at", "valid_at", name="uq_weather_forecast_sample"),
         CheckConstraint("lead_hours >= 0 AND lead_hours <= 300", name="ck_weather_sample_lead"),
+        Index("ix_weather_forecast_sample_valid_at", "valid_at"),
     )
 
 
