@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from app.config import get_settings
 import pytest
 from pydantic import ValidationError
 
@@ -40,7 +41,12 @@ def test_nearshore_refuses_missing_total_wave():
         )
 
 
-def test_public_field_endpoints_are_honestly_disabled(client):
+def test_public_field_endpoints_are_honestly_disabled(client, monkeypatch):
+    # Pin the flags: a developer who turns the public fields on in their own
+    # .env to look at the map must not turn this contract red (2026-10-12).
+    settings = get_settings()
+    monkeypatch.setattr(settings, "weather_field_public_enabled", False)
+    monkeypatch.setattr(settings, "wave_field_public_enabled", False)
     for layer in ("wind", "waves", "nearshore"):
         response = client.get(f"/weather-fields/{layer}")
         assert response.status_code == 200
