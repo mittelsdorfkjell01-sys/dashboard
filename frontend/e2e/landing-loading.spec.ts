@@ -26,6 +26,11 @@ test("all spots expand in place without a second catalogue request or scroll res
   let catalogueCalls = 0;
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
+    // First paint is the bounded landing bundle; the 500-row catalogue is
+    // fetched only once the visitor asks to browse all.
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: spots.slice(0, 24), total: spots.length, version: "t-1" } });
+    }
     if (url.pathname === "/spots") {
       catalogueCalls += 1;
       expect(url.searchParams.get("limit")).toBe("500");
@@ -60,6 +65,9 @@ test("hero search remains fully visible when opened after scrolling", async ({ p
 
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: spots.slice(0, 24), total: spots.length, version: "t-1" } });
+    }
     if (url.pathname === "/spots") return route.fulfill({ json: spots });
     if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
@@ -92,6 +100,9 @@ test("mobile search contains focus and returns it to its trigger", async ({ page
 
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: spots.slice(0, 24), total: spots.length, version: "t-1" } });
+    }
     if (url.pathname === "/spots") return route.fulfill({ json: spots });
     if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
