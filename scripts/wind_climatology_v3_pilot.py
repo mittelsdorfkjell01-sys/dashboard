@@ -20,7 +20,7 @@ from app.wind_climatology.client import WindHistoryClient
 from app.wind_climatology.service import full_year_window, haversine_km
 from app.wind_climatology.v3_artifact import decode_cube, encode_cube
 from app.wind_climatology.v3_engine import aggregate_variant, prepare_hours, variant_key, variant_specs
-from app.wind_climatology.v3_service import reviewed_direction_windows
+from app.wind_climatology.v3_service import direction_windows_for_spot
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "wind-climatology-v3-pilots.json"
@@ -41,7 +41,7 @@ def run(limit: int | None = None) -> dict:
     with SessionLocal() as db:
         rows = db.execute(select(Spot, Region).join(Region, Spot.region_id == Region.id).where(Spot.slug.in_(slugs))).all()
         active_v2 = {run.spot_id: run for run in db.scalars(select(WindClimatologyRun).where(WindClimatologyRun.is_active.is_(True), WindClimatologyRun.spot_id.in_([spot.id for spot, _ in rows])))}
-        by_slug = {spot.slug: (spot, region, reviewed_direction_windows(db, spot.id), active_v2.get(spot.id)) for spot, region in rows}
+        by_slug = {spot.slug: (spot, region, direction_windows_for_spot(db, spot.id), active_v2.get(spot.id)) for spot, region in rows}
 
     results = []
     for slug in slugs:
@@ -78,7 +78,7 @@ def run(limit: int | None = None) -> dict:
                 "completeness_percent": round((expected - missing_speed) / expected * 100, 4),
                 "speed_distribution_kt": _distribution(raw["speeds_kn"], [0, 5, 10, 15, 20, 25, 30, 40, 60, 120]),
                 "direction_distribution_16_sectors": _distribution(raw["directions_deg"], np.linspace(0, 360, 17).tolist()),
-                "reviewed_direction_windows": windows, "usable_mode_available": bool(windows),
+                "usable_direction_windows": windows, "usable_mode_available": bool(windows),
                 "v2_default_summary": None if not v2_percent else {"method": "pooled_daylight_hours", "sections": len(v2_percent), "median_percent": round(float(np.median(v2_percent)), 2)},
                 "v3_default_summary": {"method": "yearly_session_reliability", "weeks": 52, "median_reliability_percent": round(float(np.median(v3_reliability)), 2), "weeks_at_or_above_50_percent": sum(value >= 50 for value in v3_reliability)},
                 "fetch_seconds": round(fetch_seconds, 3), "aggregation_seconds_default_variant": round(aggregate_seconds, 3),
@@ -96,7 +96,7 @@ def run(limit: int | None = None) -> dict:
 
     mean_variant_bytes = round(sum(row.get("single_variant_gzip_bytes", 0) for row in results) / max(1, len(results)), 2)
     mean_selection_ms = round(sum(row.get("prepared_variant_selection_ms", 0) for row in results) / max(1, len(results)), 4)
-    report = {"generated_at": datetime.now(timezone.utc).isoformat(), "mode": "real_open_meteo_read_only", "source": "Open-Meteo Historical Weather API / ERA5", "selection_reason": config["selection_reason"], "period": [start, end], "spots": results, "full_cube_benchmark": {"dataset": "Brandenburger Strand real 2006-2025 ERA5 series", "direction_mode": "all", "variants": 666, "build_seconds": 456.815, "encode_seconds_monolithic_prototype": 2.937, "monolithic_gzip_bytes": 247225, "peak_additional_memory_mb": 25.9, "monolithic_selection_ms": 1000.911, "selected_variant_gzip_bytes_mean_across_pilots": mean_variant_bytes, "selected_variant_decode_ms_mean_across_pilots": mean_selection_ms, "storage_decision": "indexed individually compressed variant artifacts; monolithic prototype rejected for selection latency", "estimated_catalogue_artifact_bytes_all_mode_51_spots": round(mean_variant_bytes * 666 * 51), "optimization_gate": "Full cube build must be vectorized before Phase 4 mass backfill."}, "summary": {"requested": len(results), "suitable": sum(bool(row.get("technically_suitable")) for row in results), "failed": sum(not row.get("technically_suitable") for row in results), "reviewed_direction_spots": sum(bool(row.get("usable_mode_available")) for row in results), "public_effect": "none", "persisted_raw_data": False}}
+    report = {"generated_at": datetime.now(timezone.utc).isoformat(), "mode": "real_open_meteo_read_only", "source": "Open-Meteo Historical Weather API / ERA5", "selection_reason": config["selection_reason"], "period": [start, end], "spots": results, "full_cube_benchmark": {"dataset": "Brandenburger Strand real 2006-2025 ERA5 series", "direction_mode": "all", "variants": 666, "build_seconds": 456.815, "encode_seconds_monolithic_prototype": 2.937, "monolithic_gzip_bytes": 247225, "peak_additional_memory_mb": 25.9, "monolithic_selection_ms": 1000.911, "selected_variant_gzip_bytes_mean_across_pilots": mean_variant_bytes, "selected_variant_decode_ms_mean_across_pilots": mean_selection_ms, "storage_decision": "indexed individually compressed variant artifacts; monolithic prototype rejected for selection latency", "estimated_catalogue_artifact_bytes_all_mode_51_spots": round(mean_variant_bytes * 666 * 51), "optimization_gate": "Full cube build must be vectorized before Phase 4 mass backfill."}, "summary": {"requested": len(results), "suitable": sum(bool(row.get("technically_suitable")) for row in results), "failed": sum(not row.get("technically_suitable") for row in results), "usable_direction_spots": sum(bool(row.get("usable_mode_available")) for row in results), "public_effect": "none", "persisted_raw_data": False}}
     JSON_REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     lines = ["# Wind climatology V3 pilot", "", f"Generated: {report['generated_at']}", "", "Read-only feasibility run; no V3 run, raw history or public value was persisted.", "", "V2 and V3 percentages below answer different questions and are not treated as interchangeable scores.", "", "| Spot | Country | Complete | V2 pooled median | V3 reliability median | Fetch | Aggregate | Peak RAM | Grid distance | Result |", "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     for row in results:

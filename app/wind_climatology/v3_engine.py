@@ -15,7 +15,7 @@ from app.era5.solar import daylight_mask
 from app.wind_climatology.v3_direction import canonical_windows, direction_matches
 from app.wind_climatology.v3_time import expected_hours_by_week, seasonal_week, utc_datetime
 
-ALGORITHM_VERSION = "wind-climatology-v3.1"
+ALGORITHM_VERSION = "wind-climatology-v3.2"
 SESSION_HOURS = 3
 SUCCESSFUL_DAYS = 2
 COMPLETENESS_THRESHOLD = 0.95
@@ -123,7 +123,9 @@ def prepare_context(hours: list[Hour], *, start_year: int, end_year: int, timezo
     return AggregationContext(grouped, expected, start_year, end_year)
 
 
-def _aggregate_context(context: AggregationContext, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: DirectionMode, windows: list[dict[str, float]]) -> dict:
+def _per_year_week(context: AggregationContext, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: DirectionMode, windows: list[dict[str, float]]) -> dict:
+    """Per-(year, week) raw stats for one variant. Retained (and serialized into
+    the artifact) so any year sub-window can be re-collapsed without re-fetching."""
     year_week = {}
     for year in range(context.start_year, context.end_year + 1):
         for week in range(1, 53):
@@ -142,11 +144,16 @@ def _aggregate_context(context: AggregationContext, *, min_wind_kn: int, max_win
             usable_days = sum(bool(items) for items in sessions_by_day)
             session_hours = sum(sum(items) for items in sessions_by_day)
             longest = max((max(items) for items in sessions_by_day if items), default=0)
-            year_week[(year, week)] = {"valid": valid, "completeness": completeness, "usable_days": usable_days, "session_hours": session_hours, "longest_session": longest}
+            year_week[(year, week)] = {"valid": valid, "usable_days": usable_days, "session_hours": session_hours, "longest_session": longest}
+    return year_week
 
+
+def _collapse(year_week: dict, start_year: int, end_year: int) -> list[dict]:
+    """Collapse per-(year, week) stats into the 52-week reliability summary over
+    [start_year, end_year]. Shared by the full run and the year-range slider."""
     weeks = []
     for week in range(1, 53):
-        samples = [year_week[(year, week)] for year in range(context.start_year, context.end_year + 1) if year_week[(year, week)]["valid"]]
+        samples = [year_week[(year, week)] for year in range(start_year, end_year + 1) if year_week[(year, week)]["valid"]]
         sample_years = len(samples)
         successful_years = sum(row["usable_days"] >= SUCCESSFUL_DAYS for row in samples)
         days = [row["usable_days"] for row in samples]
@@ -178,6 +185,43 @@ def _aggregate_context(context: AggregationContext, *, min_wind_kn: int, max_win
             "median_longest_session": round(float(median(longest)), 2) if longest and reliable else None,
             "quality_status": quality,
         })
+    return weeks
+
+
+def serialize_per_year(year_week: dict, start_year: int, end_year: int) -> dict:
+    """Compact int-only grid [52 weeks][n years][valid, usable_days, session_hours,
+    longest_session] for storage in the variant artifact (gzips well)."""
+    grid = []
+    for week in range(1, 53):
+        row = []
+        for year in range(start_year, end_year + 1):
+            entry = year_week[(year, week)]
+            row.append([1 if entry["valid"] else 0, entry["usable_days"], entry["session_hours"], entry["longest_session"]])
+        grid.append(row)
+    return {"start_year": start_year, "weeks": grid}
+
+
+def collapse_from_serialized(per_year: dict, from_year: int, to_year: int) -> list[dict]:
+    """Re-collapse a stored per-year grid over a clamped [from_year, to_year]."""
+    start = per_year["start_year"]
+    grid = per_year["weeks"]
+    n_years = len(grid[0]) if grid else 0
+    end = start + n_years - 1
+    low = max(start, min(int(from_year), end))
+    high = max(start, min(int(to_year), end))
+    if low > high:
+        low, high = high, low
+    year_week = {}
+    for week_index in range(52):
+        for year_index in range(low - start, high - start + 1):
+            valid, usable_days, session_hours, longest = grid[week_index][year_index]
+            year_week[(start + year_index, week_index + 1)] = {"valid": bool(valid), "usable_days": usable_days, "session_hours": session_hours, "longest_session": longest}
+    return _collapse(year_week, low, high)
+
+
+def _aggregate_context(context: AggregationContext, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: DirectionMode, windows: list[dict[str, float]]) -> dict:
+    year_week = _per_year_week(context, min_wind_kn=min_wind_kn, max_wind_kn=max_wind_kn, direction_mode=direction_mode, windows=windows)
+    weeks = _collapse(year_week, context.start_year, context.end_year)
     return {"min_wind_kn": min_wind_kn, "max_wind_kn": max_wind_kn, "direction_mode": direction_mode, "weeks": weeks}
 
 
@@ -186,7 +230,7 @@ def aggregate_variant(hours: list[Hour], *, start_year: int, end_year: int, time
         raise ValueError("invalid V3 wind window")
     windows = canonical_windows(usable_windows)
     if direction_mode == "usable" and not windows:
-        raise ValueError("usable mode requires reviewed direction windows")
+        raise ValueError("usable mode requires active usable directions")
     context = prepare_context(hours, start_year=start_year, end_year=end_year, timezone_name=timezone_name)
     return _aggregate_context(context, min_wind_kn=min_wind_kn, max_wind_kn=max_wind_kn, direction_mode=direction_mode, windows=windows)
 
@@ -194,7 +238,15 @@ def aggregate_variant(hours: list[Hour], *, start_year: int, end_year: int, time
 def build_variant_cube(hours: list[Hour], *, start_year: int, end_year: int, timezone_name: str = "UTC", usable_windows=None) -> dict[str, dict]:
     windows = canonical_windows(usable_windows)
     context = prepare_context(hours, start_year=start_year, end_year=end_year, timezone_name=timezone_name)
-    return {
-        variant_key(low, high, mode): _aggregate_context(context, min_wind_kn=low, max_wind_kn=high, direction_mode=mode, windows=windows)
-        for low, high, mode in variant_specs(bool(windows))
-    }
+    cube: dict[str, dict] = {}
+    for low, high, mode in variant_specs(bool(windows)):
+        year_week = _per_year_week(context, min_wind_kn=low, max_wind_kn=high, direction_mode=mode, windows=windows)
+        cube[variant_key(low, high, mode)] = {
+            "min_wind_kn": low,
+            "max_wind_kn": high,
+            "direction_mode": mode,
+            "weeks": _collapse(year_week, context.start_year, context.end_year),
+            # Per-year grid for the year-range slider (re-collapsed on demand).
+            "per_year": serialize_per_year(year_week, context.start_year, context.end_year),
+        }
+    return cube
