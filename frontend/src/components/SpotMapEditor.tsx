@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { SPOT_PIN_ANCHOR, SPOT_PIN_SIZE, spotPinSvg } from "../lib/spotPin";
 import "leaflet/dist/leaflet.css";
 import "../map.css";
 import L from "leaflet";
@@ -28,16 +29,14 @@ export interface MapView {
   zoom: number;
 }
 
-// Orange teardrop pin — the same marker the public maps use.
+// The same teardrop the public maps draw (lib/spotPin). This editor positions
+// a spot rather than presenting a published one, so it always uses the filled
+// pin — the origin treatment belongs on the public surfaces.
 const pinIcon = L.divIcon({
   className: "swd-pin",
-  html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
-        fill="#E0823C" stroke="#ffffff" stroke-width="1.4"/>
-      <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
-    </svg>`,
-  iconSize: [30, 38],
-  iconAnchor: [15, 38],
+  html: spotPinSvg(),
+  iconSize: SPOT_PIN_SIZE,
+  iconAnchor: SPOT_PIN_ANCHOR,
 });
 
 const DEFAULT_CENTER: [number, number] = [54.4, 10.2];
@@ -205,7 +204,7 @@ export default function SpotMapEditor({
         <button
           type="button"
           onClick={() => setLocked((v) => !v)}
-          className={`absolute right-2 top-2 z-[500] rounded-md border px-3 py-1.5 text-caption font-medium transition-colors ${
+          className={`absolute right-2 top-2 z-map-control rounded-md border px-3 py-1.5 text-caption font-medium transition-colors ${
             locked
               ? "border-admin-primary bg-admin-primary text-admin-primary-fg hover:bg-admin-primary-hover"
               : "border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg"

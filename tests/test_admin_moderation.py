@@ -147,6 +147,27 @@ def test_submission_approve_creates_draft_spot(client, anon_client, spot_id, db)
     assert _audit_count(db, "submission", "submission_approve") >= 1
 
 
+def test_approved_submission_keeps_community_origin_and_credit(client, anon_client, spot_id, db):
+    """Approval does not launder authorship: the spot stays a community record
+    with its submitter credited, even though it passed the same review an
+    editorial spot does."""
+    _, region_id = spot_id
+    sub_id = anon_client.post("/submissions", json={
+        "payload": {
+            "name": "Community Spot", "region_id": region_id,
+            "lat": 54.6, "lon": 10.4, "sports": ["kitesurf"],
+        },
+        "submitter_name": "Lena K.",
+    }).json()["id"]
+
+    resp = client.post(f"/admin/submissions/{sub_id}/approve")
+    assert resp.status_code == 201, resp.text
+
+    spot = db.get(Spot, uuid.UUID(resp.json()["spot_id"]))
+    assert spot.origin == "community"
+    assert spot.contributor_name == "Lena K."
+
+
 def test_name_only_submission_needs_completion_then_approves(client, spot_id, db):
     """A name-only account proposal can't approve as-is (missing region/coords);
     once the admin supplies them it becomes a draft spot, keeping the proposed

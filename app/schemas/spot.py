@@ -47,6 +47,11 @@ class SpotSummary(BaseModel):
     status: str
     facing: int | None = None
     image: dict[str, Any] | None = None
+    # Authorship of the record: "editorial" (entered by us) or "community" (an
+    # approved proposal). Not a quality tier — both pass the same review.
+    origin: str = "editorial"
+    # Credit for a community spot; None for an editorial one.
+    contributor_name: str | None = None
     # Variant keys this spot actually offers (suitability geeignet/eingeschraenkt).
     # Derived so tiles/filters can act on variants without the full blob.
     variants: list[str] = []
@@ -78,11 +83,21 @@ class SpotSummary(BaseModel):
             status=spot.status,
             facing=spot.facing,
             image=spot.image,
+            origin=getattr(spot, "origin", None) or "editorial",
+            contributor_name=getattr(spot, "contributor_name", None),
             variants=offered_variants(getattr(spot, "variant_conditions", None)),
             typical_wind_kt=typical_wind_kt,
             typical_wave_height_m=typical_wave_height_m,
             wind_availability=wind_availability,
         )
+
+
+class LandingSpots(BaseModel):
+    """Small first-paint catalogue: visible cards plus curated hero records."""
+
+    spots: list[SpotSummary]
+    total: int
+    version: str
 
 
 class SpotRead(BaseModel):
@@ -106,6 +121,8 @@ class SpotRead(BaseModel):
     facilities: dict[str, Any] | None = None
     status: str
     facing: int | None = None
+    origin: str = "editorial"
+    contributor_name: str | None = None
     editorial: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
     variant_conditions: dict[str, Any] | None = None
@@ -138,6 +155,8 @@ class SpotRead(BaseModel):
             facilities=spot.facilities,
             status=spot.status,
             facing=spot.facing,
+            origin=getattr(spot, "origin", None) or "editorial",
+            contributor_name=getattr(spot, "contributor_name", None),
             editorial=_public_editorial(spot.editorial) if public else spot.editorial,
             overrides=spot.overrides,
             variant_conditions=getattr(spot, "variant_conditions", None),

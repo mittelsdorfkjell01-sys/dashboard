@@ -44,6 +44,29 @@ export const HeartIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Swell/wave glyph — two stacked crests, used in the wind-map point panel and
+ *  its hourly forecast strip. The marine wave *value* is not yet published, so
+ *  this marks the slot visually until the wave field is activated. */
+export const WaveIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M2 15c2.2 0 2.2-2.4 4.4-2.4S8.6 15 10.8 15s2.2-2.4 4.4-2.4S17.4 15 19.6 15 22 12.6 22 12.6" />
+    <path d="M2 19.5c2.2 0 2.2-2.4 4.4-2.4s2.2 2.4 4.4 2.4 2.2-2.4 4.4-2.4 2.2 2.4 4.4 2.4" />
+  </svg>
+);
+
+/** House mark in miniature — the favicon's teardrop with its dot knocked out.
+ *  Marks a spot we entered ourselves (see components/SpotOriginMark). Filled,
+ *  not stroked, so it still reads as one shape at 12–14px. */
+export const EditorialMarkIcon = (p: IconProps) => (
+  <svg {...base} {...p} fill="currentColor" stroke="none">
+    <path
+      d="M12 2.5c4 0 6.7 2.7 6.7 7.3 0 4.7-3.4 9.9-6.7 12.7-3.3-2.8-6.7-8-6.7-12.7 0-4.6 2.7-7.3 6.7-7.3Zm0 4.8a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"
+      fillRule="evenodd"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
 export const GridIcon = (p: IconProps) => (
   <svg {...base} {...p} fill="currentColor" stroke="none">
     <rect x="3.5" y="3.5" width="7" height="7" rx="1.6" />
@@ -75,6 +98,19 @@ export const SortIcon = (p: IconProps) => (
     <path d="M4 16h5" />
     <circle cx="11.5" cy="16" r="2" />
     <path d="M14 16h6" />
+  </svg>
+);
+
+/** Sliders / adjustments — opens the filter panel (Figma Frame 78: two rails,
+ * top knob left, bottom knob right). */
+export const FilterIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M4 8h2" />
+    <circle cx="8" cy="8" r="2" />
+    <path d="M10 8h10" />
+    <path d="M4 16h10" />
+    <circle cx="16" cy="16" r="2" />
+    <path d="M18 16h2" />
   </svg>
 );
 
@@ -140,12 +176,11 @@ export const InfoIcon = (p: IconProps) => (
   </svg>
 );
 
-/** Facility: parking — compact front view, no enclosing icon tile. */
+/** Facility: parking — "P" in a rounded square. */
 export const ParkingIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="m6.5 10 1.3-4h8.4l1.3 4" />
-    <path d="M5 10h14a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1Z" />
-    <path d="M7 18.5V21M17 18.5V21M7.5 14h.01M16.5 14h.01M9.5 17h5" />
+    <rect x="3" y="3" width="18" height="18" rx="4.5" />
+    <path d="M9.3 17.5V6.5h3.7a3.2 3.2 0 0 1 0 6.4H9.3" />
   </svg>
 );
 
@@ -159,29 +194,54 @@ export const SchoolIcon = (p: IconProps) => (
   </svg>
 );
 
-/** Facility: shower — wall arm, head and evenly spaced water drops. */
+/** Facility: shower — curved wall arm, shower head and water drops. */
 export const ShowerIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M4 21V8a4 4 0 0 1 7.6-1.7" />
-    <path d="m11 8 4.5-3 3 4.5-5 2.2L11 8Z" />
-    <path d="M11.5 14.5v1M15 14v1M18.5 13.5v1M13 18v1M17 17.5v1" />
+    <path d="M5 21V8a4 4 0 0 1 4-4h5v2" />
+    <path d="M9.5 11a4.5 4.5 0 0 1 9 0Z" />
+    <path d="M11 13.8v2M14 13.8v2M17 13.8v2M12.5 16.8v1.8M15.5 16.8v1.8" />
   </svg>
 );
 
-/** Facility: gastronomy — a simple café cup with steam. */
+/** Facility: gastronomy — crossed fork and knife. */
 export const FoodIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M5 9h11v4.5a5.5 5.5 0 0 1-11 0V9Z" />
-    <path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16M4 21h15" />
-    <path d="M8 6c-1-1 .8-1.8 0-3M12 6c-1-1 .8-1.8 0-3" />
+    <path d="M16.8 4v4.2a2.2 2.2 0 0 1-4.4 0V4" />
+    <path d="M14.6 8.4v1.9L7 20" />
+    <path d="M8 4.2c1.7 0 2.7 1.5 2.7 3.4 0 1.3-.8 2.3-1.9 2.6L17 20" />
   </svg>
 );
 
-/** Facility: camping — pitched tent, entrance and ground line. */
+/** Facility: camping — pitched tent with crossed poles and entrance. */
 export const CampingIcon = (p: IconProps) => (
   <svg {...base} {...p}>
-    <path d="M12 3.5 3.5 19h17L12 3.5Z" />
-    <path d="M12 3.5V19M8.5 19l3.5-6 3.5 6M2.5 21h19" />
+    <path d="M12 5 3.5 20.5h17L12 5Z" />
+    <path d="M12 11 8.7 20.5M12 11l3.3 9.5" />
+    <path d="M10.3 3.5 13.2 6.6M13.7 3.5 10.8 6.6" />
+  </svg>
+);
+
+/** Facility: surf school — two upright surfboards on the beach with a sun.
+ *  Dedicated to the facilities panel so it doesn't touch the shared SchoolIcon
+ *  ("Mein Setup" in the account menu). */
+export const SurfSchoolIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="6" cy="6" r="2.1" />
+    <path d="M6 2v1.2M6 8.8V10M2 6h1.2M8.8 6H10M3.6 3.6l.9.9M8.4 3.6l-.9.9M3.6 8.4l.9-.9M8.4 8.4l-.9-.9" />
+    <path d="M12.5 20c-1.9-2.2-1.9-9.5 0-13.5 1.9 4 1.9 11.3 0 13.5Z" />
+    <path d="M17.5 20c-1.9-2.2-1.9-9.5 0-13.5 1.9 4 1.9 11.3 0 13.5Z" />
+    <path d="M3 20.5h18" />
+  </svg>
+);
+
+/** Spot ground / terrain (Untergrund) — a low sun, dunes and two waterlines. */
+export const GroundIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="7.5" cy="6" r="2" />
+    <path d="M7.5 2.5v1M7.5 8.5v1M4 6h1M10 6h1M5.3 3.8l.7.7M9.7 3.8l-.7.7" />
+    <path d="M2 15c2-3.2 4.5-3.2 6.5 0M8 15c2-3.4 4.7-3.4 6.7 0" />
+    <path d="M2 18.6c3-1.6 5 1.4 8 0s5-1.4 8 0" />
+    <path d="M2 21.4c3-1.6 5 1.4 8 0s5-1.4 8 0" />
   </svg>
 );
 
@@ -235,6 +295,55 @@ export const GearIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <circle cx="12" cy="12" r="3" />
     <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.3 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.7h.1A1.7 1.7 0 0 0 8.3 1V.9a2 2 0 1 1 4 0V1a1.7 1.7 0 0 0 1.2 1.7 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21.3 8H21a1.7 1.7 0 0 0 0 4h.1a1.7 1.7 0 0 0 1.2 1z" transform="translate(1 1) scale(0.92)" />
+  </svg>
+);
+
+/* ── Account navigation icons ──────────────────────────────────────────────
+ * Dedicated line icons for the account/settings menu (ACCOUNT_NAV), matching
+ * the supplied design. Kept separate from the shared UserIcon/PinIcon/etc. so
+ * swapping them here does not change those icons elsewhere in the app. Same
+ * 24-viewBox / 1em sizing as every other icon, so they render at the current
+ * nav icon size. */
+
+/** Account · Profil — outlined person (head + shoulders). */
+export const AccountProfileIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="8" r="3.2" />
+    <path d="M5.7 19.8c.7-3.7 3.2-5.9 6.3-5.9s5.6 2.2 6.3 5.9" />
+  </svg>
+);
+
+/** Account · Saved — bookmark. */
+export const AccountSavedIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M6.5 4.3h11a1 1 0 0 1 1 1V20l-6.5-4.4L5.5 20V5.3a1 1 0 0 1 1-1Z" />
+  </svg>
+);
+
+/** Account · Spots besucht — map pin with a centre dot. */
+export const AccountVisitedIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 21c4-3.9 6-7.1 6-10.5a6 6 0 1 0-12 0c0 3.4 2 6.6 6 10.5Z" />
+    <circle cx="12" cy="10.4" r="2" />
+  </svg>
+);
+
+/** Account · Spots hinzufügen — stacked cards with a plus. */
+export const AccountAddSpotsIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <rect x="3.8" y="7.6" width="12.4" height="12.4" rx="2.2" />
+    <path d="M10 11v5.6M7.2 13.8h5.6" />
+    <path d="M7.8 4.5h9.2a2.2 2.2 0 0 1 2.2 2.2V16" />
+  </svg>
+);
+
+/** Account · Einstellungen — cog with a solid hub. */
+export const AccountSettingsIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <g transform="translate(12 12) scale(0.86) translate(-12 -12)">
+      <path d="M19.58 8.86 22.22 8.84 22.22 15.16 19.58 15.14 21.46 16.99 16.99 21.46 15.14 19.58 15.16 22.22 8.84 22.22 8.86 19.58 7.01 21.46 2.54 16.99 4.42 15.14 1.78 15.16 1.78 8.84 4.42 8.86 2.54 7.01 7.01 2.54 8.86 4.42 8.84 1.78 15.16 1.78 15.14 4.42 16.99 2.54 21.46 7.01Z" />
+    </g>
+    <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" />
   </svg>
 );
 

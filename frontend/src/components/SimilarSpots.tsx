@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { API_BASE, resolveMediaUrl } from "../lib/api";
+import { API_BASE, resolveMediaUrl, type SpotOrigin } from "../lib/api";
 import { useSpotsLive } from "../lib/hooks";
 import { countryName } from "../lib/flags";
 import SpotCard from "./SpotCard";
@@ -12,6 +12,7 @@ interface SimilarSpotApi {
   region?: string | null;
   region_country?: string | null;
   image?: { url?: string | null } | null;
+  origin?: SpotOrigin;
   wind?: number | null;
   wave_height?: number | null;
   description?: string | null;
@@ -24,6 +25,7 @@ function toCardSpot(item: SimilarSpotApi): Spot {
     region: [item.region, countryName(item.region_country ?? undefined)].filter(Boolean).join(", "),
     regionName: item.region ?? undefined,
     regionCountry: item.region_country ?? null,
+    origin: item.origin ?? "editorial",
     wind: item.wind ?? 0,
     typicalWindKt: item.wind ?? null,
     typicalWaveHeightM: item.wave_height ?? null,

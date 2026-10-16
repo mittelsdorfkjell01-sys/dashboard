@@ -310,6 +310,12 @@ def approve_submission(
         allow_duplicate=allow_duplicate,
     )
 
+    # Authorship travels with the spot: an approved proposal stays a community
+    # record with its submitter credited, even though it passed the same review
+    # an editorial spot does.
+    spot.origin = "community"
+    spot.contributor_name = sub.submitter_name
+
     sub.status = "merged"
     sub.resulting_spot_id = spot.id
     sub.reviewed_by = actor
