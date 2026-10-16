@@ -127,11 +127,17 @@ def recommendation_catalog(db, monkeypatch):
         weather = SpotWeatherProfile(
             spot_id=spot.id,
             active=True,
-            reviewed_at=datetime.now(timezone.utc),
+            usable_direction_status="active",
+            usable_direction_rule_version="legacy-v3-sector-migration-v1",
+            usable_direction_sectors=[5],
+            usable_direction_windows=[{"start_deg": 120, "end_deg": 240}],
+            usable_direction_evidence={"origin": "legacy_sector_migration", "missing": []},
         )
         db.add(weather)
         db.flush()
-        db.add(SpotWeatherSector(profile_id=weather.id, start_deg=120, end_deg=240, enabled=True))
+        # A correction sector may coexist, but recommendation eligibility never
+        # reads it as a usable direction.
+        db.add(SpotWeatherSector(profile_id=weather.id, start_deg=120, end_deg=240, speed_factor=1.1, enabled=True))
         spots.append(spot)
     freeride_user = _account(db, {"freeride": 3, "big_air": 0})
     big_air_user = _account(db, {"freeride": 0, "big_air": 3})

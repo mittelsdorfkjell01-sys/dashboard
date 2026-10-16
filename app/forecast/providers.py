@@ -361,9 +361,11 @@ class DwdIconProvider:
         prefix = {
             "icon-global": "icon_global_icosahedral",
             "icon-eu": "icon-eu_europe_regular-lat-lon",
-            "icon-d2": "icon-d2_germany_regular-lat-lon",
+            "icon-d2": "icon-d2_germany_icosahedral",
         }[model]
-        return f"https://opendata.dwd.de/weather/nwp/{folder}/grib/{run_at:%H}/{variable}/{prefix}_single-level_{run_at:%Y%m%d%H}_{hour:03d}_{variable.upper()}.grib2.bz2"
+        dimension = "_2d" if model == "icon-d2" else ""
+        file_variable = variable if model == "icon-d2" else variable.upper()
+        return f"https://opendata.dwd.de/weather/nwp/{folder}/grib/{run_at:%H}/{variable}/{prefix}_single-level_{run_at:%Y%m%d%H}_{hour:03d}{dimension}_{file_variable}.grib2.bz2"
 
     def download(self, url: str) -> bytes:
         try:

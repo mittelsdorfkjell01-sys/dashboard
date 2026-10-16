@@ -99,6 +99,7 @@ def warm_once(
                     cache=recommendation_cache,
                     limit=max(limits),
                     now=now,
+                    write_audit_log=False,
                 )
                 print(
                     f"[warm] recommendations={surface.value} -> {len(rows)} spots",

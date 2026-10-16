@@ -10,8 +10,6 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-
 
 def recommendability_gaps(spot: Any, sport: str, db: Any) -> list[str]:
     """Return stable internal gap keys for recommendation eligibility."""
@@ -26,20 +24,16 @@ def recommendability_gaps(spot: Any, sport: str, db: Any) -> list[str]:
             SpotWeatherProfile.spot_id == spot.id,
             SpotWeatherProfile.active.is_(True),
         )
-        .options(selectinload(SpotWeatherProfile.sectors))
     )
-    has_reviewed_sectors = bool(
-        profile
-        and profile.reviewed_at is not None
-        and any(sector.enabled for sector in profile.sectors)
-    )
-    if not has_reviewed_sectors:
-        gaps.append("reviewed_sectors")
+    from app.weather.usable_directions import usable_direction_windows
+
+    if not usable_direction_windows(profile):
+        gaps.append("usable_directions")
     if getattr(spot, "facing", None) is None:
         gaps.append("facing")
     return gaps
 
 
 def is_recommendable(spot: Any, sport: str, db: Any) -> bool:
-    """Whether ``spot`` has the reviewed evidence required for ``sport``."""
+    """Whether ``spot`` has the direction evidence required for ``sport``."""
     return not recommendability_gaps(spot, sport, db)

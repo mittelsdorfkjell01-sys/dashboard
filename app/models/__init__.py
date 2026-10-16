@@ -33,8 +33,13 @@ from app.models.tide import (
     TideCalculationRun,
     TideEvent,
     TideEventOverride,
+    TideHarmonicSolution,
+    TideObservation,
     TideProfile,
     TideProfileRevision,
+    TideSensor,
+    TideStation,
+    TideStationAlias,
 )
 from app.models.weather_profile import SpotWeatherProfile, SpotWeatherSector
 from app.models.weather_verification import (
@@ -82,6 +87,19 @@ from app.models.weather_shadow import (
 from app.models.live_wind_ops import WeatherLiveWindJob
 from app.models.live_wind_verification import WeatherLiveWindHoldoutCase, WeatherLiveWindVerificationEvidence
 from app.models.wind_climatology import WindClimatologyCell, WindClimatologyRun, WindClimatologyV3Run, WindClimatologyV3Variant
+from app.models.weather_field import (
+    WeatherFieldAsset,
+    WeatherFieldModel,
+    WeatherFieldJob,
+    WeatherFieldPublication,
+    WeatherFieldQualityEvent,
+    WeatherFieldRun,
+)
+from app.models.weather_field_shadow import (
+    WeatherFieldShadowMetric,
+    WeatherFieldShadowRun,
+    WeatherFieldShadowSample,
+)
 
 __all__ = [
     "Base",
@@ -123,6 +141,11 @@ __all__ = [
     "TideEvent",
     "TideEventOverride",
     "TideCalculationRun",
+    "TideStation",
+    "TideStationAlias",
+    "TideSensor",
+    "TideObservation",
+    "TideHarmonicSolution",
     "SpotWeatherProfile",
     "SpotWeatherSector",
     "WeatherStation",
@@ -165,4 +188,7 @@ __all__ = [
     "WeatherShadowStationBinding", "WeatherShadowObservation",
     "WeatherShadowMatch", "WeatherShadowMetric",
     "WindClimatologyCell", "WindClimatologyRun", "WindClimatologyV3Run", "WindClimatologyV3Variant",
+    "WeatherFieldModel", "WeatherFieldJob", "WeatherFieldRun", "WeatherFieldAsset", "WeatherFieldQualityEvent",
+    "WeatherFieldPublication",
+    "WeatherFieldShadowRun", "WeatherFieldShadowSample", "WeatherFieldShadowMetric",
 ]

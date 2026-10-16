@@ -161,6 +161,7 @@ def test_authenticated_upvote_is_idempotent_and_reversible(anon_client, spot_id,
     )
     registered = anon_client.post("/account/register", json={
         "email": email, "displayName": "Wind Voter",
+        "acceptedTerms": True, "ageConfirmed": True,
     })
     assert registered.status_code == 202, registered.text
     assert anon_client.post("/account/email/confirm", json={

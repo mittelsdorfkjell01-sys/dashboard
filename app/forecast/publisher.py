@@ -18,6 +18,8 @@ from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
 from app.schemas.live import ForecastSeriesRead
 from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
 from app.weather.serving_context import serving_context_hash
+from app.config import get_settings
+from app.spatial_fields.spot_forecast import apply_spot_field_baseline, apply_spot_wave_baseline
 
 ACTIVE = ("queued", "processing")
 MAX_PUBLIC_STALE = timedelta(hours=12)
@@ -155,7 +157,7 @@ def _active_sector_versions(db, spot_id) -> list[int]:
     return sorted({int(row.version) for row in rows if is_forecast_sector(row)})
 
 
-def run_job(db, job_id, *, client=None, cache=None):
+def run_job(db, job_id, *, client=None, cache=None, field_storage=None):
     job = db.scalar(
         select(ForecastProcessingJob)
         .where(ForecastProcessingJob.id == job_id)
@@ -200,6 +202,26 @@ def run_job(db, job_id, *, client=None, cache=None):
             client=client or default_client(),
             cache=cache_backend,
         )
+        settings = get_settings()
+        field_result = apply_spot_field_baseline(
+            db,
+            spot=spot,
+            payload=payload,
+            settings=settings,
+            storage=field_storage,
+        )
+        payload = field_result.payload
+        wave_result = apply_spot_wave_baseline(
+            db,
+            spot=spot,
+            payload=payload,
+            settings=settings,
+            storage=field_storage,
+        )
+        payload = wave_result.payload
+        payload_internal = dict(payload.get("internal") or {})
+        payload_internal["wave_field"] = wave_result.diagnostics
+        payload["internal"] = payload_internal
         context_after_generation = serving_context_hash(db, target_spot_id)
         if context_after_generation != context_before:
             _mark_superseded(
@@ -240,17 +262,24 @@ def run_job(db, job_id, *, client=None, cache=None):
             physics_version=PHYSICS_VERSION,
             geo_profile_id=profile.id,
             quality_level=quality,
-            fallback_status="open_meteo_transition",
+            fallback_status=(
+                "field_primary_open_meteo_aux"
+                if field_result.applied
+                else "open_meteo_transition"
+            ),
             payload=payload,
             internal={
-                "source": "open-meteo",
+                "source": "weather-field" if field_result.applied else "open-meteo",
+                "weather_field": field_result.diagnostics,
                 "geo_profile_status": profile.status,
                 "geo_profile_quality": profile.quality,
                 "weather_serving_context": context_before,
                 "correction": correction_provenance,
                 **internal_weather,
             },
-            attributions=public_attributions({"open-meteo"}),
+            attributions=public_attributions(
+                {"open-meteo", "dwd-icon"} if field_result.applied else {"open-meteo"}
+            ),
             active=False,
         )
         db.add(snapshot)

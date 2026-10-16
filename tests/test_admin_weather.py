@@ -51,7 +51,7 @@ def test_profile_api_validates_timezone_and_advanced_gating(client, db):
 
     advanced = client.put(f"/admin/weather/spots/{spot.id}/profile", json={
         "quality_tier": "advanced", "timezone": "Europe/Berlin",
-        "elevation_m": 2, "coastal_normal_deg": 270, "reviewed": False,
+        "elevation_m": 2, "coastal_normal_deg": 270,
         "sectors": [{"start_deg": 250, "end_deg": 290, "speed_factor": 1.1}],
     })
     assert advanced.status_code == 422
@@ -64,6 +64,55 @@ def test_profile_list_is_single_admin_endpoint_and_unknown_spot_is_404(client):
     assert client.put(f"/admin/weather/spots/{uuid.uuid4()}/profile", json={"quality_tier": "coordinates"}).status_code == 404
 
 
+def test_direction_geometry_is_derived_without_review_and_correction_rows_stay_separate(client, db):
+    from app.models import Spot, SpotWeatherProfile, SpotWeatherSector
+    from app.seed.seed import seed
+    from sqlalchemy import select
+
+    seed(db)
+    spot = db.scalar(select(Spot).where(~Spot.weather_profile.has()).order_by(Spot.name))
+    assert spot is not None
+    profile = SpotWeatherProfile(spot_id=spot.id, active=True)
+    db.add(profile)
+    db.flush()
+    db.add(SpotWeatherSector(
+        profile_id=profile.id,
+        start_deg=180,
+        end_deg=225,
+        speed_factor=1.15,
+        enabled=True,
+        note="Lokale Forecast-Korrektur",
+    ))
+    db.commit()
+    payload = {
+        "geometry_version": "survey-v1",
+        "start_areas": [{
+            "name": "Hauptstart",
+            "start_area": {"type": "Polygon", "coordinates": [[[-0.001, 0], [0, 0], [0, 0.001], [-0.001, 0.001], [-0.001, 0]]]},
+            "usable_water": {"type": "Polygon", "coordinates": [[[0, 0], [0.002, 0], [0.002, 0.001], [0, 0.001], [0, 0]]]},
+            "shoreline": {"type": "LineString", "coordinates": [[0, 0], [0, 0.001]]},
+            "waterward_normal_deg": 90,
+            "source": {"label": "Vermessung", "url": "https://example.test/survey-v1"},
+        }],
+        "exclusions": [],
+        "conflicts": [],
+    }
+    response = client.put(
+        f"/admin/weather/spots/{spot.id}/wind-climatology-v3/directions/geometry",
+        json=payload,
+    )
+    assert response.status_code == 200, response.text
+    assert "reviewed_at" not in response.json()
+    assert response.json()["effective"] is True
+    assert response.json()["sectors"] == list(range(9))
+    db.expire_all()
+    stored = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot.id))
+    assert stored.reviewed_at is None
+    corrections = db.scalars(select(SpotWeatherSector).where(SpotWeatherSector.profile_id == stored.id)).all()
+    assert len(corrections) == 1
+    assert corrections[0].speed_factor == 1.15
+
+
 def test_profile_update_persists_candidates_and_invalidates_public_cache(
     client, db
 ):
@@ -74,7 +123,7 @@ def test_profile_update_persists_candidates_and_invalidates_public_cache(
     from sqlalchemy import select
 
     seed(db)
-    spot = db.scalar(select(Spot).order_by(Spot.name))
+    spot = db.scalar(select(Spot).where(~Spot.weather_profile.has()).order_by(Spot.name))
     cache = InMemoryCache()
     cache.set(public_live_key(spot.id), {"old": True}, 300)
     cache.set(public_forecast_key(spot.id), {"old": True}, 300)
@@ -94,6 +143,7 @@ def test_profile_update_persists_candidates_and_invalidates_public_cache(
 
     assert response.status_code == 200, response.text
     assert response.json()["sectors"][0]["enabled"] is False
+    assert "reviewed_at" not in response.json()
     db.expire_all()
     profile = db.scalar(
         select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot.id)

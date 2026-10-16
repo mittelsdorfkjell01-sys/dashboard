@@ -154,12 +154,20 @@ class ValueProvenance(BaseModel):
     attribution: list[dict] = Field(default_factory=list)
     uncertainty: Literal["determined", "limited", "not_determined"] = "not_determined"
     data_issues: list[str] = Field(default_factory=list)
+    # A point forecast can retain its atmospheric provenance while its marine
+    # values are overlaid from a separately published wave field.
+    marine_source: str | None = None
+    marine_provider: str | None = None
+    marine_model: str | None = None
+    marine_model_run_at: datetime | None = None
+    marine_publication_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def timezone_aware(self):
         for value in (
             self.observation_at, self.valid_at, self.captured_at,
             self.calculated_at, self.model_run_at, self.model_run, self.issued_at,
+            self.marine_model_run_at,
         ):
             if value is not None and (value.tzinfo is None or value.utcoffset() is None):
                 raise ValueError("canonical weather timestamps must be timezone-aware")
