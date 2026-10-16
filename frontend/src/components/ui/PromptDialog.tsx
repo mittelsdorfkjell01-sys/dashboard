@@ -71,7 +71,7 @@ export default function PromptDialog({
       <h2 id="prompt-title" className="text-ui font-semibold text-ink">
         {title}
       </h2>
-      {label && <label htmlFor="prompt-input" className="mt-3 block text-label text-ink-soft">{label}</label>}
+      {label && <label htmlFor="prompt-input" className="mt-3 block text-ui text-ink-soft">{label}</label>}
       <Input
         id="prompt-input"
         ref={inputRef}

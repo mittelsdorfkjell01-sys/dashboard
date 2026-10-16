@@ -29,6 +29,14 @@ export default {
           DEFAULT: "var(--sw-teal)",
           hover: "var(--sw-teal-hover)",
         },
+        // Accent *text* colour (links/icons) — same deep blue as `teal` in light
+        // mode, but a lighter blue in dark mode so it clears WCAG AA as thin text
+        // on the near-black page (plain `teal` is a fill colour and fails there).
+        // Use `text-accent` for interactive text/icons; keep `bg-teal` for fills.
+        accent: {
+          DEFAULT: "var(--sw-accent)",
+          hover: "var(--sw-accent-hover)",
+        },
         // Attention color — wordmark, map markers, the live-status pulse, the
         // best-season highlight. Never a button, never a link, never body text.
         orange: "var(--sw-orange)",
@@ -46,6 +54,20 @@ export default {
         success: {
           DEFAULT: "var(--sw-success)",
           bg: "var(--sw-success-bg)",
+        },
+        // Warning/caution status — public counterpart to admin-warning. The
+        // only allowed source for amber/caution colour on the public site
+        // ("in Prüfung" badges, soft upload/tide cautions). Never a data accent.
+        warning: {
+          DEFAULT: "var(--sw-warning)",
+          bg: "var(--sw-warning-bg)",
+        },
+        // Text on photos and the always-dark map/instrument overlays. Two
+        // steps instead of eight ad-hoc white alphas: `on-photo` for primary
+        // text and controls, `on-photo-muted` for secondary text and units.
+        "on-photo": {
+          DEFAULT: "rgb(255 255 255 / 0.92)",
+          muted: "rgb(255 255 255 / 0.66)",
         },
         // Wind-climatology-V3 weekly-reliability bar scale (low → high). The
         // 0 band reuses `line`, the 3 band reuses `teal` — chart fills, not
@@ -99,6 +121,14 @@ export default {
         sans: ["Poppins", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
         // Display face used only for the "surfwind" wordmark (local .otf).
         display: ["MADE Mountain", "Poppins", "system-ui", "sans-serif"],
+        // Figures face: Poppins for letters, Manrope for digits and numeric
+        // punctuation only (the "SW Figures" @font-face in index.css is Manrope
+        // restricted by unicode-range). Poppins ships no tabular figures;
+        // Manrope does, so `font-figures tabular-nums` keeps columns of wind,
+        // gust and wave values from jumping. Applied to the whole Daten page.
+        figures: ["SW Figures", "Poppins", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        // Full Manrope, for the rare block that is numbers end to end.
+        num: ["Manrope", "Poppins", "system-ui", "sans-serif"],
       },
       boxShadow: {
         // The only two shadows allowed on the PUBLIC site (admin has its own
@@ -118,33 +148,92 @@ export default {
         "admin-pop": "var(--a-shadow-pop)",
         "admin-dialog": "var(--a-shadow-dialog)",
       },
-      borderRadius: {
-        // Corner radius unified to a crisp 8px across cards/tiles/overlays
-        // and pill/icon buttons (avatars/dots keep rounded-full).
-        "2xl": "0.5rem", // 8px
-        "3xl": "0.5rem", // 8px
+      // Uppercase label tracking — one value for every versal eyebrow/label so
+      // they no longer drift between 0.08em…0.18em. `data-label` bakes the same
+      // 0.14em; use `tracking-caps` everywhere else instead of an arbitrary value.
+      letterSpacing: {
+        caps: "0.14em",
       },
-      // Semantic type scale — the app's recurring UI text steps as tokens
-      // (single source of truth). Font-size only, so values match the previously
-      // hard-coded `text-[Npx]` exactly; adopting them is visually a no-op while
-      // making sizes semantic and consistent. `text-[Npx]` is not allowed in new
-      // code — extend this scale instead.
+
+      // --- Layout widths ----------------------------------------------------
+      // Three container tokens instead of a dozen ad-hoc max-widths:
+      //   page    — the outer frame every public page aligns to (header, hero,
+      //             grids, footer share the same edges)
+      //   content — single-column pages (legal, FAQ, account, intro copy)
+      //   measure — a comfortable reading line for running text
+      // Component-specific widths (dialogs, compasses, popovers) stay local.
+      maxWidth: {
+        page: "1570px",
+        content: "760px",
+        measure: "62ch",
+      },
+
+      // --- Stacking layers --------------------------------------------------
+      // Named global layers. Values are the exact numbers the app used before
+      // (several sit above Leaflet's own panes: tiles 200, overlays 400,
+      // markers 600, popups 700, controls 800–1000), so the order is
+      // unchanged — only the names are new. Small numbers (z-1…z-50) remain
+      // for stacking inside one component.
+      zIndex: {
+        1: "1",
+        5: "5",
+        "map-overlay": "450", // decorative layers above map tiles
+        "map-control": "500", // in-map buttons
+        "map-ui": "600", // attribution, map chrome
+        sticky: "700", // sticky bars inside pages
+        header: "1000", // site headers
+        scrim: "1100", // overlay scrims and floating map controls
+        overlay: "1101", // the panel sitting on its scrim
+        modal: "1200", // dialogs
+        sheet: "1300", // search panels, filter sheets, upload sheets
+        fullscreen: "1400", // full-screen map / media layers
+        menu: "2000", // account menu and anything that must win
+      },
+
+      // --- Motion -----------------------------------------------------------
+      // One house easing (soft exponential settle) and three durations, backed
+      // by CSS variables in index.css so hand-written CSS uses the same values.
+      // `transition` / `transition-colors` utilities pick up the DEFAULTs.
+      transitionTimingFunction: {
+        DEFAULT: "var(--sw-ease)",
+        brand: "var(--sw-ease)",
+      },
+      transitionDuration: {
+        DEFAULT: "var(--sw-dur-fast)",
+        fast: "var(--sw-dur-fast)", // 150ms — hover, press, colour
+        base: "var(--sw-dur-base)", // 200ms — toggles, small moves
+        slow: "var(--sw-dur-slow)", // 300ms — panels, sheets
+      },
+
+      // --- Type scale -------------------------------------------------------
+      // One modular scale (ratio ≈ 1.2) on whole pixels, each step paired with
+      // its line-height and, for large sizes, a slight negative tracking that
+      // Poppins needs at display sizes:
+      //   10 · 12 · 14 · 16 · 19 · 23 · 28 · 34 · 48 · 58  (+ fluid hero)
+      // `micro` is the floor and is only for chart ticks and dense legends.
+      // `data-*` are role aliases on the same steps for the Daten instrument.
+      // Public code uses ONLY these. `text-[Npx]`, Tailwind's default sizes
+      // and the legacy keys below are not allowed in public code.
       fontSize: {
-        caption: "0.75rem", // 12px — captions, meta, legends
-        label: "0.8125rem", // 13px — control labels, chips, buttons (sm)
-        ui: "0.875rem", // 14px — default control/body-UI text
-        body: "0.9375rem", // 15px — reading copy
-        // Font-size-only steps filling the gaps between the named ramp above
-        // and the role-specific tokens below (title/lede/prose/etc. also set
-        // line-height, so they're not safe substitutes for a plain px value
-        // outside their documented role). Mechanical 1:1 migration of every
-        // remaining `text-[Npx]` call site — every value here matches what
-        // was previously hard-coded exactly, so adopting them is visually a
-        // no-op. Deliberately numeric rather than semantic: unlike
-        // caption/label/ui/body, nobody has yet audited what each of these
-        // call sites actually means, so a named role would be a guess. Treat
-        // this as a holding scale — rename entries into real roles (or fold
-        // them into an existing token) as that understanding builds up.
+        micro: ["0.625rem", { lineHeight: "1.3" }], // 10px — chart ticks, dense legends
+        caption: ["0.75rem", { lineHeight: "1.45" }], // 12px — captions, meta
+        ui: ["0.875rem", { lineHeight: "1.5" }], // 14px — controls, labels, chips, UI copy
+        body: ["1rem", { lineHeight: "1.6" }], // 16px — reading copy
+        lead: ["1.1875rem", { lineHeight: "1.5" }], // 19px — lede paragraphs, prominent values
+        title: ["1.4375rem", { lineHeight: "1.25", letterSpacing: "-0.005em" }], // 23px — card/module titles
+        heading: ["1.75rem", { lineHeight: "1.15", letterSpacing: "-0.01em" }], // 28px — section headings
+        "heading-lg": ["2.125rem", { lineHeight: "1.1", letterSpacing: "-0.015em" }], // 34px — page titles
+        display: ["3rem", { lineHeight: "1.05", letterSpacing: "-0.02em" }], // 48px — display
+        "display-lg": ["3.625rem", { lineHeight: "1", letterSpacing: "-0.02em" }], // 58px — wordmark, big display
+        hero: ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "-0.02em" }], // fluid hero title
+        "data-label": ["0.75rem", { lineHeight: "1.2", letterSpacing: "0.14em" }], // 12px — Daten: section labels, uppercase
+        "data-value": ["0.875rem", { lineHeight: "1.4" }], // 14px — Daten: table values
+        "data-caption": ["0.75rem", { lineHeight: "1.4" }], // 12px — Daten: axes, units
+
+        // --- Legacy (admin dashboard only) ----------------------------------
+        // Kept so the admin back office renders exactly as before. Public code
+        // was migrated to the scale above and must not use these.
+        label: "0.8125rem", // 13px
         "sz-8": "0.5rem", // 8px
         "sz-10": "0.625rem", // 10px
         "sz-11": "0.6875rem", // 11px
@@ -161,36 +250,35 @@ export default {
         "sz-32": "2rem", // 32px
         "sz-34": "2.125rem", // 34px
         "sz-58": "3.625rem", // 58px
-        title: ["1.375rem", { lineHeight: "1.25", letterSpacing: "0" }], // 22px — module/panel titles
-        stat: ["clamp(3rem, 5vw, 4.25rem)", { lineHeight: "0.85", letterSpacing: "0" }], // big live numbers
-        // Editorial display scale — fluid hero/section titles (travel-journal).
-        "display-1": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.02", letterSpacing: "0" }],
-        "display-2": ["clamp(1.75rem, 3.5vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "0" }],
-
-        // --- spot-page dual type system ------------------------------------
-        // The Info tab (travel-magazine) and Daten tab (weather instrument)
-        // read as two different products sharing one brand, so they get two
-        // separate type sets instead of one compromise scale.
-        "editorial-1": ["5.5rem", { lineHeight: "1.02", letterSpacing: "0" }], // 88px — Info: page title
-        "editorial-2": ["3.5rem", { lineHeight: "1.08", letterSpacing: "0" }], // 56px — Info: section headings
-        "editorial-3": ["3rem", { lineHeight: "1.08", letterSpacing: "0" }], // 48px — Info: header-card h1 (Figma Frame_9)
-        "editorial-4": ["2rem", { lineHeight: "1.1", letterSpacing: "0" }], // 32px — Info: spot name + inline score (Figma Frame_9)
-        lede: ["1.25rem", { lineHeight: "1.7" }], // 20px — Info: first paragraph
-        prose: ["1.0625rem", { lineHeight: "1.75" }], // 17px — Info: running body copy, max-w-[62ch]
-        "data-label": ["0.8125rem", { lineHeight: "1.2", letterSpacing: "0.14em" }], // 13px — Daten: section labels, uppercase
-        "data-value": ["0.875rem", { lineHeight: "1.4" }], // 14px — Daten: table values
-        "data-caption": ["0.75rem", { lineHeight: "1.4" }], // 12px — Daten: axes, units
       },
+    },
+
+    // --- Corner radius ------------------------------------------------------
+    // ONE radius for the whole public site: 14px. Every named step resolves to
+    // it, so `rounded`, `rounded-lg`, `rounded-t-xl` … all land on the same
+    // corner. Use `rounded-card` in new code. `full` stays for true circles
+    // (avatars, round icon buttons, dots, spinners, slider thumbs) — a circle
+    // is a shape, not a corner radius. Overrides Tailwind's defaults on
+    // purpose (not `extend`). The admin dashboard restores its own radii in
+    // components/admin/ui/admin-theme.css under `.admin-scope`.
+    borderRadius: {
+      none: "0",
+      DEFAULT: "0.875rem",
+      sm: "0.875rem",
+      md: "0.875rem",
+      lg: "0.875rem",
+      xl: "0.875rem",
+      "2xl": "0.875rem",
+      "3xl": "0.875rem",
+      card: "0.875rem", // 14px — canonical
+      full: "9999px",
     },
   },
   plugins: [],
 };
 
-// Verified (headless Chromium, Poppins 400, 40px, `tabular-nums` applied):
-// digit widths ranged 51px ("1") to 102px ("6") — Poppins ships no tabular
-// figures, so the OpenType feature has nothing to switch on and the CSS
-// property is a no-op. `tabular-nums` still doesn't hurt (harmless if a
-// future font adds the feature), but it cannot be relied on for column
-// alignment. The Daten-tab hour table (Sprint 6) must give numeric columns a
-// fixed width and right-align them instead — that's the only way parallel
-// rows of digits stay put here.
+// Figures: Poppins ships no tabular figures (verified in headless Chromium:
+// digit widths 51px–102px at 40px, `tabular-nums` is a no-op). Digits on the
+// Daten page therefore come from Manrope via `font-figures` (see the
+// "SW Figures" @font-face in index.css), where `tabular-nums` does work.
+// Fixed-width, right-aligned numeric columns remain good practice anyway.

@@ -3,18 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --sw-page: #F7F7F7;
-  --sw-band: #F5F3F0;
+  /* Surfaces, light → lighter: band < page < surface. All three share the
+     warm hue bias of ink/line (no pure grey), and each step is visible on
+     its own: band/page 1.11:1, page/surface 1.08:1. Muted text keeps AA on
+     every one of them (≥ 4.98:1). */
+  --sw-page: #F8F6F2;
+  --sw-band: #EFEAE2;
   --sw-surface: #FFFFFF;
   --sw-ink: #241C17;
   --sw-ink-soft: #3D332C;
   --sw-muted: #6B625B;
   --sw-line: #E6E1DA;
   --sw-line-soft: #F0EDE7;
+  /* The single brand blue. One value in both themes (see dark block): the
+     restricted action accent and the Info/Daten underline. No lighter variant
+     exists any more — this is the only colour the app may call "blue". */
   --sw-teal: #1C4E63;
   --sw-teal-hover: #163E4F;
+  /* Accent text (links/icons). Light mode: identical to --sw-teal. The dark
+     block lightens it so thin text clears WCAG AA on the dark page. */
+  --sw-accent: #1C4E63;
+  --sw-accent-hover: #163E4F;
   --sw-orange: #B45309;
-  --sw-green: #4A8159;
+  /* Data accent (windscale). Darkened from #4A8159 to clear WCAG AA (4.5:1)
+     when used as small text on --sw-page; white still reads on it as a fill. */
+  --sw-green: #3F7350;
   --sw-overlay-soft: rgba(14, 17, 20, 0.16);
   --sw-overlay-strong: rgba(14, 17, 20, 0.88);
   /* Wind-climatology-V3 weekly-reliability scale (0–29 reuses --sw-line,
@@ -29,6 +42,23 @@
   --sw-danger-border: #FCA5A5;
   --sw-success: #15803D;
   --sw-success-bg: #F0FDF4;
+  /* Warning status — the only place amber/caution colour may come from on the
+     public site (mirrors the admin's --a-warning pair). Use for "in Prüfung",
+     soft upload/tide cautions. Never a data accent. */
+  --sw-warning: #92400E;
+  --sw-warning-bg: #FEF3C7;
+
+  /* Motion — one house easing (soft exponential settle) and three durations.
+     Tailwind's `transition*` utilities default to these (see config), and
+     hand-written CSS uses the same variables. Theme-independent. */
+  --sw-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sw-dur-fast: 150ms;
+  --sw-dur-base: 200ms;
+  --sw-dur-slow: 300ms;
+
+  /* The one corner radius (mirrors `rounded-card` in tailwind.config.js) for
+     hand-written CSS such as map.css. */
+  --sw-radius: 14px;
 }
 
 html[data-theme="dark"] {
@@ -40,8 +70,15 @@ html[data-theme="dark"] {
   --sw-muted: #9B928A;
   --sw-line: #2A2F34;
   --sw-line-soft: #22262A;
-  --sw-teal: #5FA8C8;
-  --sw-teal-hover: #78B7D2;
+  /* Single brand blue — identical to the light theme by design. NOTE: on the
+     near-black dark page this deep blue has low contrast as thin text/links
+     (~2:1); it is meant for fills (chip, underline) where white sits on top. */
+  --sw-teal: #1C4E63;
+  --sw-teal-hover: #163E4F;
+  /* Lighter blue so accent text/icons clear WCAG AA on the dark page/surface
+     (≥ 6.3:1); plain --sw-teal stays the dark fill colour (white sits on it). */
+  --sw-accent: #6FA8C0;
+  --sw-accent-hover: #8CC0D6;
   --sw-orange: #E7883A;
   --sw-green: #6BA97A;
   --sw-overlay-soft: rgba(0, 0, 0, 0.42);
@@ -53,12 +90,14 @@ html[data-theme="dark"] {
   --sw-danger-border: #7F1D1D;
   --sw-success: #4ADE80;
   --sw-success-bg: #142A1B;
+  --sw-warning: #FBBF24;
+  --sw-warning-bg: #2A2110;
 }
 
 /* Reserve the scrollbar's space at all times, so locking body scroll for a
    modal/overlay (search overlay, mobile sheet) can't widen the viewport and
    nudge the page — including the fixed header — sideways. */
-html { color-scheme: light dark; scrollbar-gutter: stable; transition: background-color 200ms ease-out, color 200ms ease-out; }
+html { color-scheme: light dark; scrollbar-gutter: stable; transition: background-color var(--sw-dur-base) var(--sw-ease), color var(--sw-dur-base) var(--sw-ease); }
 html[data-theme="dark"] { color-scheme: dark; }
 
 /* The page scrolls only vertically. Any stray element wider than the viewport
@@ -91,7 +130,7 @@ html { -webkit-tap-highlight-color: transparent; }
        surface would pop in instantly while the wordmark/lupe crossfade over
        150ms. Fading the surface over the same window makes the hardening read
        as one smooth transition instead of a hard switch. */
-    transition: opacity 200ms ease-out;
+    transition: opacity var(--sw-dur-base) var(--sw-ease);
   }
 }
 
@@ -113,7 +152,6 @@ html { -webkit-tap-highlight-color: transparent; }
   border-radius: 9999px;
   background: var(--sw-teal);
   border: 3px solid var(--sw-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   margin-top: 0;
 }
@@ -124,7 +162,6 @@ html { -webkit-tap-highlight-color: transparent; }
   border-radius: 9999px;
   background: var(--sw-teal);
   border: 3px solid var(--sw-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
 .v3-range-thumb:disabled::-webkit-slider-thumb { background: var(--sw-muted); cursor: default; }
@@ -145,6 +182,17 @@ html { -webkit-tap-highlight-color: transparent; }
 @font-face { font-family: "Poppins"; src: url("/fonts/Poppins-600-latin-ext.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 @font-face { font-family: "Poppins"; src: url("/fonts/Poppins-700-latin.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: "Poppins"; src: url("/fonts/Poppins-700-latin-ext.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+/* Manrope (variable, wght 200–800, OFL) — the figures face. Self-hosted like
+   Poppins. Unlike Poppins it ships real tabular figures (`tnum`).
+   1) "Manrope": the full face, for `font-num` blocks that are all numbers. */
+@font-face { font-family: "Manrope"; src: url("/fonts/Manrope-var-latin.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Manrope"; src: url("/fonts/Manrope-var-latin-ext.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+/* 2) "SW Figures": the same file restricted to digits and numeric punctuation
+   (0–9 + , . % ° −). Put first in a stack (`font-figures`), the browser takes
+   digits from Manrope and every letter from Poppins — so "18 kn" reads as a
+   tabular Manrope 18 with a Poppins unit. Only the latin file is needed. */
+@font-face { font-family: "SW Figures"; src: url("/fonts/Manrope-var-latin.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; unicode-range: U+0030-0039, U+002B, U+002C, U+002E, U+0025, U+00B0, U+2212; }
 
 /* Wordmark display face ("surfwind data"). Local WOFF2, served from /public. */
 @font-face {
@@ -188,7 +236,7 @@ html { -webkit-tap-highlight-color: transparent; }
 
   /* Uppercase field labels: WO? / WANN? */
   .label-caps {
-    @apply text-[12px] font-medium tracking-[0.18em] text-ink-soft uppercase;
+    @apply text-caption font-medium tracking-caps text-ink-soft uppercase;
   }
 
   /* --- Design token: global keyboard focus indicator (WCAG 2.4.7) --------
@@ -245,7 +293,7 @@ html { -webkit-tap-highlight-color: transparent; }
     content: "";
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 160ms ease-out;
+    transition: transform var(--sw-dur-fast) var(--sw-ease);
   }
 
   .search-field:focus-within .search-field-label::after {
@@ -341,6 +389,10 @@ html { -webkit-tap-highlight-color: transparent; }
 
   /* Opaque caption panel for the tile overlay — neutral ink, hairline on top
      to separate it from the photo (no blur/translucency). */
+  /* Deliberately theme-independent: this caption panel always sits on top of a
+     photo, so it stays the brand-dark ink (#241C17 = --sw-ink light) with a
+     light hairline (#E6E1DA = --sw-line light) in BOTH themes. The literals are
+     intentional — a token here would flip to light-on-dark over the photo. */
   .glass {
     background-color: #241C17;
     border-top: 0.5px solid #E6E1DA;
@@ -351,12 +403,28 @@ html { -webkit-tap-highlight-color: transparent; }
     background-color: transparent;
   }
 
+  /* Decorative brand surfaces — the fixed colour fields that used to live as
+     inline bg-[#hex]/gradient utilities at call sites. Bundled here so every
+     literal brand value has one home (M4). All are intentionally theme-fixed:
+     each sits under a photo or is itself the atmosphere, so it must not flip. */
+  /* Landing hero reel: brand-dark base + top-to-bottom wash under the photos. */
+  .hero-reel-base { background-color: #161210; }
+  .hero-reel-gradient {
+    background-image: linear-gradient(to bottom, #2A2420 0%, #241C17 50%, #161210 100%);
+  }
+  /* Account cover placeholder: a calm-sea gradient standing in for a photo. */
+  .profile-cover-gradient {
+    background-image: linear-gradient(to bottom right, #8FB8CC 0%, #5A8AA3 50%, #2F4F61 100%);
+  }
+  /* Wind-map lazy-load splash — the map's own light canvas base colour. */
+  .windmap-splash { background-color: #E9EEF1; }
+
   /* Editorial hero fallback — a designed brand colour field for spots/regions
      without a hero photo (instead of an empty gradient). Paired with an animated
      wind/wave motif in the EditorialHero component. */
   .editorial-hero-fallback {
     background-image:
-      radial-gradient(120% 100% at 15% 0%, rgba(224, 130, 60, 0.28), transparent 60%),
+      radial-gradient(120% 100% at 15% 0%, color-mix(in srgb, var(--sw-orange) 32%, transparent), transparent 60%),
       linear-gradient(160deg, #241c17 0%, #3d332c 70%, #6b625b 100%);
   }
 

@@ -34,7 +34,8 @@
   --a-fg: #fafafa; /* primary text */
   --a-fg2: #a1a1aa; /* secondary text */
   --a-muted: #92929c; /* captions, meta */
-  --a-faint: #55555c; /* placeholders, disabled */
+  --a-faint: #55555c; /* disabled text only — too low-contrast (2.7:1) for
+                         placeholders, which now use --a-muted (6.1:1) */
 
   /* Accent — a single restrained thread of the surf brand's teal. */
   --a-primary: #2fa6bb;
@@ -81,6 +82,29 @@
    Brand-utility remap — themes existing admin markup + enables dark mode.
    Keep in sync with the token vocabulary the admin pages already use.
    ========================================================================= */
+
+/* Radius ------------------------------------------------------------------
+   The public site resolves every Tailwind radius step to one 14px corner
+   (tailwind.config.js). The admin keeps its own denser, stepped radii, so
+   restore them inside the scope (also covers shared ui/ primitives rendered
+   in the admin). `rounded-card` and `rounded-full` are intentionally left. */
+.admin-scope .rounded {
+  border-radius: 0.25rem;
+}
+.admin-scope .rounded-sm {
+  border-radius: 0.125rem;
+}
+.admin-scope .rounded-md {
+  border-radius: 0.375rem;
+}
+.admin-scope .rounded-lg,
+.admin-scope .rounded-2xl,
+.admin-scope .rounded-3xl {
+  border-radius: 0.5rem;
+}
+.admin-scope .rounded-xl {
+  border-radius: 0.75rem;
+}
 
 /* Text ------------------------------------------------------------------- */
 .admin-scope .text-ink {
