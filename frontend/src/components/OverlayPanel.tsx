@@ -231,7 +231,7 @@ export default function OverlayPanel({
     <>
       <div
         aria-hidden="true"
-        className="fixed inset-0 z-[1100] hidden bg-[var(--sw-overlay-soft)] backdrop-blur-[2px] sm:block"
+        className="fixed inset-0 z-scrim hidden bg-[var(--sw-overlay-soft)] backdrop-blur-[2px] sm:block"
         style={{ opacity: slidIn ? 1 : 0, transition: `opacity ${reduce ? 0 : 200}ms ease` }}
         onClick={requestClose}
       />
@@ -241,7 +241,7 @@ export default function OverlayPanel({
         aria-modal="true"
         tabIndex={-1}
         data-lenis-prevent
-        className="fixed inset-0 z-[1101] overflow-y-auto bg-page outline-none sm:inset-x-4 sm:bottom-0 sm:top-auto sm:mx-auto sm:min-h-[50vh] sm:max-h-[88vh] sm:max-w-[1570px] sm:rounded-t-3xl sm:border-x sm:border-t sm:border-line"
+        className="fixed inset-0 z-overlay overflow-y-auto bg-page outline-none sm:inset-x-4 sm:bottom-0 sm:top-auto sm:mx-auto sm:min-h-[50vh] sm:max-h-[88vh] sm:max-w-page sm:rounded-t-card sm:border-x sm:border-t sm:border-line"
         style={panelStyle}
         onPointerDown={onPanelPointerDown}
         onPointerMove={onPanelPointerMove}
@@ -253,7 +253,7 @@ export default function OverlayPanel({
             type="button"
             onClick={requestClose}
             aria-label={mobileDragToClose ? "Galerie schließen (oder herunterwischen)" : undefined}
-            className={`min-h-11 min-w-11 items-center justify-center text-label font-medium text-muted transition-colors hover:text-ink ${mobileDragToClose ? "flex sm:inline-flex" : "inline-flex gap-1.5"}`}
+            className={`min-h-11 min-w-11 items-center justify-center text-ui font-medium text-muted transition-colors hover:text-ink ${mobileDragToClose ? "flex sm:inline-flex" : "inline-flex gap-1.5"}`}
           >
             {mobileDragToClose ? <><span aria-hidden className="h-1 w-10 rounded-full bg-ink sm:hidden" /><span className="hidden items-center gap-1.5 sm:inline-flex"><CloseIcon width={15} height={15} />Schließen</span></> : <><CloseIcon width={15} height={15} />Schließen</>}
           </button>

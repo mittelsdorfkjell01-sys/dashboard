@@ -36,12 +36,15 @@ import {
   type FeedPost,
   type FeedSort,
 } from "../lib/communityFeed";
+import Checkbox from "./ui/Checkbox";
+import { useTranslation } from "react-i18next";
+import type { TranslationKey } from "../lib/i18n";
 
-const REPORT_REASONS: { key: string; label: string }[] = [
-  { key: "copyright", label: "Urheberrecht / mein Bild" },
-  { key: "inappropriate", label: "Unangemessen" },
-  { key: "wrong_spot", label: "Falscher Spot" },
-  { key: "other", label: "Sonstiges" },
+const REPORT_REASONS: { key: string; labelKey: TranslationKey }[] = [
+  { key: "copyright", labelKey: "community.report.reasons.copyright" },
+  { key: "inappropriate", labelKey: "community.report.reasons.inappropriate" },
+  { key: "wrong_spot", labelKey: "community.report.reasons.wrongSpot" },
+  { key: "other", labelKey: "community.report.reasons.other" },
 ];
 
 const COMPOSER_ID = "community-composer";
@@ -91,9 +94,10 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
  *  a community member — required by the sprint spec so the two sources never
  *  get confused for one another. */
 function CommonsBadge({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   return (
-    <span className="absolute bottom-1.5 left-1.5 rounded-[14px] bg-ink px-2 py-0.5 text-caption font-medium text-white">
-      {compact ? "Commons" : "Aus Wikimedia Commons"}
+    <span className="absolute bottom-1.5 left-1.5 rounded-card bg-ink px-2 py-0.5 text-caption font-medium text-white">
+      {compact ? t("community.commons.badge") : t("community.commons.full")}
     </span>
   );
 }
@@ -108,6 +112,7 @@ function CommonsBadge({ compact = false }: { compact?: boolean }) {
  * further down — adding a photo here doesn't require writing a rating/tip.
  */
 export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coords?: [number, number] }) {
+  const { t } = useTranslation();
   const { photos } = useCommunityFeed(spotId);
   const [heroFormOpen, setHeroFormOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -127,8 +132,8 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
           <button
             type="button"
             onClick={() => setLightboxIndex(0)}
-            aria-label={`Bild vergrößern${big.credit ? ` — ${big.credit}` : ""}`}
-            className="relative aspect-[4/5] overflow-hidden rounded-[14px]"
+            aria-label={big.credit ? t("community.gallery.enlargeCredited", { credit: big.credit }) : t("community.gallery.enlarge")}
+            className="relative aspect-[4/5] overflow-hidden rounded-card"
           >
             <img
               {...responsiveImageAttributes(
@@ -154,10 +159,12 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
                     onClick={() => setLightboxIndex(i + 1)}
                     aria-label={
                       isLast && extra > 0
-                        ? `Alle ${photos.length} Bilder ansehen`
-                        : `Bild vergrößern${img.credit ? ` — ${img.credit}` : ""}`
+                        ? t("community.gallery.viewAll", { count: photos.length })
+                        : img.credit
+                          ? t("community.gallery.enlargeCredited", { credit: img.credit })
+                          : t("community.gallery.enlarge")
                     }
-                    className="relative aspect-square overflow-hidden rounded-[14px]"
+                    className="relative aspect-square overflow-hidden rounded-card"
                   >
                     <img
                       {...responsiveImageAttributes(
@@ -189,18 +196,18 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
           <button
             type="button"
             onClick={() => quickUploadRef.current?.openPicker()}
-            className="px-4 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+            className="px-4 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
           >
-            Bilder hinzufügen
+            {t("community.gallery.addPhotos")}
           </button>
         )}
         {!heroFormOpen && (
           <button
             type="button"
             onClick={() => setHeroFormOpen(true)}
-            className="text-label font-medium text-teal hover:text-teal-hover"
+            className="text-ui font-medium text-accent hover:text-accent-hover"
           >
-            Titelbild vorschlagen
+            {t("community.gallery.suggestHero")}
           </button>
         )}
       </div>
@@ -232,23 +239,24 @@ export function CommunityGalleryMosaic({ spotId, coords }: { spotId: string; coo
  *  photos yet", so the empty state still shows *something real* about the
  *  place. */
 function GalleryEmptyState({ coords, onAdd }: { coords?: [number, number]; onAdd: () => void }) {
+  const { t } = useTranslation();
   const bg = coords ? coloredTileUrl(coords[0], coords[1], 15) : null;
   return (
     <div
-      className="relative aspect-[4/5] overflow-hidden rounded-[14px] bg-band bg-cover bg-center"
+      className="relative aspect-[4/5] overflow-hidden rounded-card bg-band bg-cover bg-center"
       style={bg ? { backgroundImage: `url(${bg})` } : undefined}
     >
       <div className="absolute inset-0 bg-ink/55" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-body font-medium text-white">Aktuell noch kein Bild vorhanden</p>
+        <p className="text-body font-medium text-white">{t("community.gallery.emptyTitle")}</p>
         {/* Plus button: opens the gallery upload form straight away. */}
         <button
           type="button"
           onClick={onAdd}
-          aria-label="Bilder hochladen"
+          aria-label={t("community.gallery.uploadAria")}
           className="grid h-12 w-12 place-items-center rounded-full border border-white/40 text-white transition-colors hover:bg-white/10 active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
-          <PlusIcon className="text-sz-22" />
+          <PlusIcon className="text-title" />
         </button>
       </div>
     </div>
@@ -271,6 +279,7 @@ function Composer({
   spotName: string;
   onPosted: () => void;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [stars, setStars] = useState(0);
   const [text, setText] = useState("");
@@ -306,10 +315,10 @@ function Composer({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (stars < 1) return setError("Bitte eine Sternebewertung wählen.");
-    if (!text.trim()) return setError("Bitte kurz schreiben, wie es war.");
-    if (!validName(author)) return setError("Bitte Vorname (oder Vor- und Nachname) angeben.");
-    if (file && !accepted) return setError("Bitte die Rechteerklärung fürs Foto bestätigen.");
+    if (stars < 1) return setError(t("community.composer.errStars"));
+    if (!text.trim()) return setError(t("community.composer.errText"));
+    if (!validName(author)) return setError(t("community.composer.errName"));
+    if (file && !accepted) return setError(t("community.composer.errLicense"));
     setError(null);
     setBusy(true);
     try {
@@ -328,22 +337,22 @@ function Composer({
       reset();
       onPosted();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Senden fehlgeschlagen.");
+      setError(err instanceof ApiError ? err.message : t("community.composer.sendFailed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-[14px] border border-line bg-surface p-4 sm:p-5">
+    <form id={COMPOSER_ID} onSubmit={submit} className="scroll-mt-24 rounded-card border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-body font-medium text-ink">Wie war's am {spotName}?</p>
+        <p className="text-body font-medium text-ink">{t("community.composer.prompt", { spot: spotName })}</p>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
             <button
               key={n}
               type="button"
-              aria-label={`${n} Sterne`}
+              aria-label={t("community.composer.starsAria", { count: n })}
               onClick={() => pickStar(n)}
               className="transition-transform hover:scale-110"
             >
@@ -359,12 +368,12 @@ function Composer({
             required
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Wie waren die Bedingungen? Was sollten andere wissen? (Pflichtfeld)"
+            placeholder={t("community.composer.textPlaceholder")}
             rows={3}
           />
           <div className="flex flex-wrap gap-3">
-            <label className="text-label text-muted">
-              Sportart
+            <label className="text-ui text-muted">
+              {t("community.composer.sport")}
               <Select value={sport} onChange={(e) => setSport(e.target.value)} className="mt-1">
                 {SPORTS.map((s) => (
                   <option key={s} value={s}>
@@ -373,8 +382,8 @@ function Composer({
                 ))}
               </Select>
             </label>
-            <label className="text-label text-muted">
-              Level
+            <label className="text-ui text-muted">
+              {t("community.composer.level")}
               <Select value={skill} onChange={(e) => setSkill(e.target.value)} className="mt-1">
                 {LEVELS.map((l) => (
                   <option key={l} value={l}>
@@ -383,8 +392,8 @@ function Composer({
                 ))}
               </Select>
             </label>
-            <label className="text-label text-muted">
-              Besuchsdatum
+            <label className="text-ui text-muted">
+              {t("community.composer.visitDate")}
               <Input
                 type="date"
                 value={visitedAt}
@@ -398,7 +407,7 @@ function Composer({
           <Input
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            placeholder="Vorname oder Vor- und Nachname (Pflichtfeld)"
+            placeholder={t("community.composer.namePlaceholder")}
             required
           />
 
@@ -407,27 +416,19 @@ function Composer({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-label text-ink"
+              className="text-ui text-ink"
             />
             {file && (
-              <label className="mt-2 flex items-start gap-2 text-label text-ink">
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={(e) => setAccepted(e.target.checked)}
-                  className="mt-0.5"
-                />
-                <span>
-                  Ich bestätige die{" "}
+              <Checkbox className="mt-2" checked={accepted} onChange={(e) => setAccepted(e.target.checked)}>
+                  {t("community.license.confirm")}{" "}
                   <button type="button" onClick={() => setShowTerms((v) => !v)} className="underline">
-                    Rechte- &amp; Einwilligungserklärung{terms ? ` (${terms.version})` : ""}
+                    {t("community.license.linkLabel")}{terms ? t("community.license.version", { version: terms.version }) : ""}
                   </button>
                   .
-                </span>
-              </label>
+                </Checkbox>
             )}
             {showTerms && terms && (
-              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
+              <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-card bg-band p-3 text-caption text-ink-soft">
                 {terms.terms}
               </pre>
             )}
@@ -435,16 +436,16 @@ function Composer({
 
           <Honeypot value={website} onChange={setWebsite} />
           {error && (
-            <p role="alert" className="text-label text-danger">
+            <p role="alert" className="text-ui text-danger">
               {error}
             </p>
           )}
           <div className="flex gap-2">
             <Button type="submit" disabled={busy}>
-              {busy ? "Senden…" : "Veröffentlichen"}
+              {busy ? t("common.sending") : t("community.composer.submit")}
             </Button>
             <Button type="button" variant="ghost" onClick={reset}>
-              Abbrechen
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -461,6 +462,7 @@ function Composer({
  *  section heading (this used to also render the gallery; that moved up to
  *  the Überblick module in Sprint 3, see `CommunityGalleryMosaic`). */
 export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string; spotName: string }) {
+  const { t } = useTranslation();
   const { posts, loading, error, reload } = useCommunityFeed(spotId);
   const [sort, setSort] = usePersistedState<FeedSort>("swd.communityFeedSort", "newest");
   // Client-side only — there's no backend counter for "helpful" (no new
@@ -486,10 +488,10 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
     <div>
       {!loading && posts.length === 0 ? (
         <>
-          <div className="rounded-[14px] border border-dashed border-line bg-surface px-6 py-8 text-center">
-            <p className="text-body font-medium text-ink">Sei der Erste, der von hier berichtet.</p>
+          <div className="rounded-card border border-dashed border-line bg-surface px-6 py-8 text-center">
+            <p className="text-body font-medium text-ink">{t("community.feed.emptyTitle")}</p>
             <p className="mx-auto mt-2 max-w-[46ch] text-caption text-muted">
-              Hilfreiche Beiträge nennen Bedingungen, Level und was andere vor Ort wissen sollten.
+              {t("community.feed.emptyBody")}
             </p>
           </div>
           <div className="mt-4">{composer}</div>
@@ -500,18 +502,18 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
 
           {posts.length > 0 && (
             <>
-              <div className="mt-6 flex items-center justify-end gap-1 text-label">
+              <div className="mt-6 flex items-center justify-end gap-1 text-ui">
                 {(["newest", "helpful"] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setSort(s)}
                     aria-pressed={sort === s}
-                    className={`rounded-[14px] px-3 py-1.5 font-medium transition-colors ${
-                      sort === s ? "bg-teal text-white" : "text-muted hover:text-teal"
+                    className={`rounded-card px-3 py-1.5 font-medium transition-colors ${
+                      sort === s ? "bg-teal text-white" : "text-muted hover:text-accent"
                     }`}
                   >
-                    {s === "newest" ? "Neueste" : "Hilfreichste"}
+                    {s === "newest" ? t("community.feed.sortNewest") : t("community.feed.sortHelpful")}
                   </button>
                 ))}
               </div>
@@ -535,7 +537,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
       )}
 
       {error && (
-        <p role="alert" className="mt-4 text-label text-danger">
+        <p role="alert" className="mt-4 text-ui text-danger">
           {error}
         </p>
       )}
@@ -560,6 +562,7 @@ function FeedPostCard({
   onHelpful: () => void;
   onReport: (imageId: string) => void;
 }) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -578,11 +581,11 @@ function FeedPostCard({
   }, [menuOpen]);
 
   return (
-    <article className="rounded-[14px] border border-line bg-surface p-4 sm:p-5">
+    <article className="rounded-card border border-line bg-surface p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-label font-semibold text-white"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-ui font-semibold text-white"
           style={{ backgroundColor: avatarColor(post.authorName) }}
         >
           {initials(post.authorName)}
@@ -592,12 +595,12 @@ function FeedPostCard({
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-body font-semibold text-ink">{post.authorName}</span>
             {post.skillLevel && (
-              <span className="rounded-[14px] bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
+              <span className="rounded-card bg-ink/5 px-2 py-0.5 text-caption font-medium text-muted">
                 {levelLabel(post.skillLevel)}
               </span>
             )}
             {post.sport && (
-              <span className="rounded-[14px] bg-band px-2 py-0.5 text-caption font-medium text-ink">
+              <span className="rounded-card bg-band px-2 py-0.5 text-caption font-medium text-ink">
                 {sportLabel(post.sport)}
               </span>
             )}
@@ -619,7 +622,7 @@ function FeedPostCard({
                 "(max-width: 639px) 100vw, 50vw",
               )}
               alt={post.photo.credit ?? ""}
-              className="mt-3 max-h-96 w-full rounded-[14px] object-cover"
+              className="mt-3 max-h-96 w-full rounded-card object-cover"
               loading="lazy"
               decoding="async"
             />
@@ -636,13 +639,13 @@ function FeedPostCard({
               onClick={onHelpful}
               disabled={voted}
               aria-pressed={voted}
-              className={`inline-flex items-center gap-1.5 rounded-[14px] border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
+              className={`inline-flex items-center gap-1.5 rounded-card border px-3 py-1.5 text-caption font-medium transition-colors disabled:cursor-default ${
                 voted
                   ? "border-green/30 bg-green/10 text-green"
-                  : "border-line text-muted hover:text-teal"
+                  : "border-line text-muted hover:text-accent"
               }`}
             >
-              Hilfreich{helpfulCount > 0 ? ` · ${helpfulCount}` : ""}
+              {helpfulCount > 0 ? t("community.post.helpfulCounted", { count: helpfulCount }) : t("community.post.helpful")}
             </button>
 
             {post.reportImageId && (
@@ -652,15 +655,15 @@ function FeedPostCard({
                   onClick={() => setMenuOpen((v) => !v)}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
-                  aria-label="Weitere Aktionen"
-                  className="grid h-11 w-11 place-items-center rounded-[14px] text-label text-muted hover:bg-ink/5 hover:text-teal sm:h-8 sm:w-8"
+                  aria-label={t("community.post.moreActions")}
+                  className="grid h-11 w-11 place-items-center rounded-card text-ui text-muted hover:bg-ink/5 hover:text-accent sm:h-8 sm:w-8"
                 >
                   ⋯
                 </button>
                 {menuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-[14px] border border-line bg-surface p-1"
+                    className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-card border border-line bg-surface p-1"
                   >
                     <button
                       type="button"
@@ -669,9 +672,9 @@ function FeedPostCard({
                         setMenuOpen(false);
                         onReport(post.reportImageId!);
                       }}
-                      className="block w-full rounded-[14px] px-3 py-2 text-left text-label text-ink hover:bg-band"
+                      className="block w-full rounded-card px-3 py-2 text-left text-ui text-ink hover:bg-band"
                     >
-                      Melden
+                      {t("community.post.report")}
                     </button>
                   </div>
                 )}
@@ -703,6 +706,7 @@ function Lightbox({
   onIndexChange: (i: number) => void;
   onReport: (imageId: string) => void;
 }) {
+  const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
   const go = useCallback(
@@ -751,9 +755,9 @@ function Lightbox({
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Bildergalerie, groß"
+      aria-label={t("community.lightbox.label")}
       tabIndex={-1}
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-ink p-4"
+      className="fixed inset-0 z-header flex items-center justify-center bg-ink p-4"
       onClick={onClose}
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX;
@@ -772,15 +776,15 @@ function Lightbox({
             e.stopPropagation();
             onReport(img.id);
           }}
-          className="rounded-[14px] bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
+          className="rounded-card bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
         >
-          Melden
+          {t("community.post.report")}
         </button>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Schließen"
-          className="grid h-11 w-11 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20"
+          aria-label={t("common.close")}
+          className="grid h-11 w-11 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <CloseIcon width={20} height={20} />
         </button>
@@ -794,8 +798,8 @@ function Lightbox({
               e.stopPropagation();
               go(-1);
             }}
-            aria-label="Vorheriges Bild"
-            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
+            aria-label={t("community.lightbox.prev")}
+            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
           >
             <ChevronDownIcon width={20} height={20} className="rotate-90" />
           </button>
@@ -805,8 +809,8 @@ function Lightbox({
               e.stopPropagation();
               go(1);
             }}
-            aria-label="Nächstes Bild"
-            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
+            aria-label={t("community.lightbox.next")}
+            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
           >
             <ChevronDownIcon width={20} height={20} className="-rotate-90" />
           </button>
@@ -822,13 +826,13 @@ function Lightbox({
               "100vw",
             )}
             alt={img.credit ?? ""}
-            className="max-h-[80vh] max-w-[92vw] rounded-[14px] object-contain"
+            className="max-h-[80vh] max-w-[92vw] rounded-card object-contain"
             decoding="async"
           />
           {img.source === "wikimedia_commons" && <CommonsBadge />}
         </div>
         {(img.credit || img.license_name) && (
-          <figcaption className="mt-3 text-center text-caption text-white/80">
+          <figcaption className="mt-3 text-center text-caption text-on-photo">
             {img.credit}
             {img.credit && img.license_name && " · "}
             {img.license_name &&
@@ -860,6 +864,7 @@ function ReportDialog({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState("copyright");
   const [note, setNote] = useState("");
   const [contact, setContact] = useState<string | null>(null);
@@ -874,42 +879,42 @@ function ReportDialog({
       setContact(res.takedown_contact);
       setTimeout(onDone, 1600);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Meldung fehlgeschlagen.");
+      setError(err instanceof ApiError ? err.message : t("community.report.failed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="mt-4 rounded-[14px] border border-line bg-band p-4">
+    <div className="mt-4 rounded-card border border-line bg-band p-4">
       <div className="flex items-center justify-between">
-        <p className="text-ui font-medium text-ink">Bild melden</p>
-        <button type="button" onClick={onClose} className="text-label text-muted hover:text-teal">
-          Schließen
+        <p className="text-ui font-medium text-ink">{t("community.report.title")}</p>
+        <button type="button" onClick={onClose} className="text-ui text-muted hover:text-accent">
+          {t("common.close")}
         </button>
       </div>
       {contact !== null ? (
-        <p role="status" className="mt-2 text-label text-green">
-          Danke, deine Meldung ist eingegangen.
-          {contact && <> Bei dringenden Rechtefragen: {contact}</>}
+        <p role="status" className="mt-2 text-ui text-green">
+          {t("community.report.thanks")}
+          {contact && <> {t("community.report.contact", { contact })}</>}
         </p>
       ) : (
         <>
           <Select value={reason} onChange={(e) => setReason(e.target.value)} className="mt-2">
             {REPORT_REASONS.map((r) => (
-              <option key={r.key} value={r.key}>{r.label}</option>
+              <option key={r.key} value={r.key}>{t(r.labelKey)}</option>
             ))}
           </Select>
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Anmerkung (optional)"
+            placeholder={t("community.report.notePlaceholder")}
             className="mt-2"
             rows={2}
           />
-          {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
+          {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
           <Button type="button" disabled={busy} onClick={submit} className="mt-3">
-            {busy ? "Senden…" : "Melden"}
+            {busy ? t("common.sending") : t("community.report.submit")}
           </Button>
         </>
       )}
@@ -931,6 +936,7 @@ export function GalleryUploadForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [credit, setCredit] = useState("");
@@ -962,7 +968,7 @@ export function GalleryUploadForm({
     e.preventDefault();
     if (!file) return;
     if (website) return; // honeypot
-    if (!accepted) return setError("Bitte die Rechteerklärung fürs Foto bestätigen.");
+    if (!accepted) return setError(t("community.composer.errLicense"));
     setBusy(true);
     setError(null);
     try {
@@ -974,33 +980,31 @@ export function GalleryUploadForm({
       pickFile(null);
       setCredit("");
       setAccepted(false);
-      setNotice("Danke! Dein Bild wartet auf Freigabe.");
+      setNotice(t("community.upload.queued"));
       setTimeout(() => {
         setNotice(null);
         onDone();
       }, 1800);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Upload fehlgeschlagen.");
+      setError(err instanceof ApiError ? err.message : t("community.upload.failed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="mt-6 rounded-[14px] border border-line p-5 sm:p-6">
+    <form onSubmit={submit} className="mt-6 rounded-card border border-line p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-title font-semibold text-ink">Bild hinzufügen</p>
-          <p className="mt-1 text-caption text-muted">
-            Wird sofort hochgeladen, ist aber erst nach kurzer Prüfung für alle sichtbar.
-          </p>
+          <p className="text-title font-semibold text-ink">{t("community.upload.title")}</p>
+          <p className="mt-1 text-caption text-muted">{t("community.upload.note")}</p>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className="shrink-0 text-label font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+          className="shrink-0 text-ui font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
         >
-          Schließen
+          {t("common.close")}
         </button>
       </div>
 
@@ -1013,12 +1017,12 @@ export function GalleryUploadForm({
       />
 
       {preview ? (
-        <div className="relative mt-4 overflow-hidden rounded-[14px] bg-band">
+        <div className="relative mt-4 overflow-hidden rounded-card bg-band">
           <img src={preview} alt="" className="aspect-[4/3] w-full object-cover" />
           <button
             type="button"
             onClick={() => pickFile(null)}
-            aria-label="Bild entfernen"
+            aria-label={t("community.upload.removeImage")}
             className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-full bg-ink/60 text-white transition-opacity hover:opacity-80 sm:h-8 sm:w-8"
           >
             <CloseIcon width={14} height={14} />
@@ -1028,7 +1032,7 @@ export function GalleryUploadForm({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-line px-4 py-10 text-center transition-colors hover:border-ink/30 hover:bg-band/40"
+          className="mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line px-4 py-10 text-center transition-colors hover:border-ink/30 hover:bg-band/40"
         >
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
             <rect x="3" y="5" width="18" height="14" rx="2.5" />
@@ -1036,42 +1040,34 @@ export function GalleryUploadForm({
             <path d="m4 17 4.5-4.5a2 2 0 0 1 2.8 0L16 17" />
             <path d="m14 15 1.8-1.8a2 2 0 0 1 2.8 0L21 15" />
           </svg>
-          <span className="text-ui font-medium text-ink">Bild auswählen</span>
-          <span className="text-caption text-muted">JPG, PNG oder WebP</span>
+          <span className="text-ui font-medium text-ink">{t("community.upload.pick")}</span>
+          <span className="text-caption text-muted">{t("community.upload.formats")}</span>
         </button>
       )}
 
       <Input
         value={credit}
         onChange={(e) => setCredit(e.target.value)}
-        placeholder="Credit: Name oder Instagram (optional)"
+        placeholder={t("community.upload.creditPlaceholder")}
         className="mt-4"
       />
-      <label className="mt-4 flex items-start gap-2.5 text-label text-ink">
-        <input
-          type="checkbox"
-          checked={accepted}
-          onChange={(e) => setAccepted(e.target.checked)}
-          className="mt-0.5 h-4 w-4 accent-ink"
-        />
-        <span>
-          Ich bestätige die{" "}
+      <Checkbox className="mt-4" checked={accepted} onChange={(e) => setAccepted(e.target.checked)}>
+          {t("community.license.confirm")}{" "}
           <button type="button" onClick={() => setShowTerms((v) => !v)} className="underline underline-offset-2">
-            Rechte- &amp; Einwilligungserklärung{terms ? ` (${terms.version})` : ""}
+            {t("community.license.linkLabel")}{terms ? t("community.license.version", { version: terms.version }) : ""}
           </button>
           .
-        </span>
-      </label>
+        </Checkbox>
       {showTerms && terms && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-card bg-band p-3 text-caption text-ink-soft">
           {terms.terms}
         </pre>
       )}
       <Honeypot value={website} onChange={setWebsite} />
-      {error && <p role="alert" className="mt-3 text-label text-danger">{error}</p>}
-      {notice && <p role="status" className="mt-3 text-label text-green">{notice}</p>}
+      {error && <p role="alert" className="mt-3 text-ui text-danger">{error}</p>}
+      {notice && <p role="status" className="mt-3 text-ui text-green">{notice}</p>}
       <Button type="submit" disabled={busy || !file || !accepted} className="mt-4">
-        {busy ? "Hochladen…" : "Hochladen"}
+        {busy ? t("community.upload.submitting") : t("community.upload.submit")}
       </Button>
     </form>
   );
@@ -1091,6 +1087,7 @@ function HeroCandidateForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [credit, setCredit] = useState("");
   const [accepted, setAccepted] = useState(false);
@@ -1110,7 +1107,7 @@ function HeroCandidateForm({
     if (f) {
       const res = await validateHeroFile(f);
       if (!res.ok) {
-        setError(res.reason ?? "Bild erfüllt die Hero-Vorgaben nicht.");
+        setError(res.reason ?? t("community.hero.invalid"));
         setFile(null);
         return;
       }
@@ -1129,66 +1126,58 @@ function HeroCandidateForm({
       setFile(null);
       setCredit("");
       setAccepted(false);
-      setNotice("Danke! Dein Titelbild-Vorschlag wartet auf Freigabe.");
+      setNotice(t("community.hero.queued"));
       setTimeout(() => {
         setNotice(null);
         onDone();
       }, 1800);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Upload fehlgeschlagen.");
+      setError(err instanceof ApiError ? err.message : t("community.upload.failed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-[14px] bg-ink/5 p-4">
+    <form onSubmit={submit} className="mt-4 rounded-card bg-ink/5 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-ui font-medium text-ink">Titelbild vorschlagen</p>
-        <button type="button" onClick={onCancel} className="text-label text-muted hover:text-teal">
-          Schließen
+        <p className="text-ui font-medium text-ink">{t("community.hero.title")}</p>
+        <button type="button" onClick={onCancel} className="text-ui text-muted hover:text-accent">
+          {t("common.close")}
         </button>
       </div>
       <p className="mt-1 text-caption text-muted">
-        Mind. {HERO_REQ.minWidth}×{HERO_REQ.minHeight} px, Querformat, JPG/PNG/WebP.
+        {t("community.hero.requirements", { width: HERO_REQ.minWidth, height: HERO_REQ.minHeight })}
       </p>
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
-        className="mt-2 text-label text-ink"
+        className="mt-2 text-ui text-ink"
       />
       <Input
         value={credit}
         onChange={(e) => setCredit(e.target.value)}
-        placeholder="Credit: Name oder Instagram (optional)"
+        placeholder={t("community.upload.creditPlaceholder")}
         className="mt-2"
       />
-      <label className="mt-3 flex items-start gap-2 text-label text-ink">
-        <input
-          type="checkbox"
-          checked={accepted}
-          onChange={(e) => setAccepted(e.target.checked)}
-          className="mt-0.5"
-        />
-        <span>
-          Ich bestätige die{" "}
+      <Checkbox className="mt-3" checked={accepted} onChange={(e) => setAccepted(e.target.checked)}>
+          {t("community.license.confirm")}{" "}
           <button type="button" onClick={() => setShowTerms((v) => !v)} className="underline">
-            Rechte- &amp; Einwilligungserklärung{terms ? ` (${terms.version})` : ""}
+            {t("community.license.linkLabel")}{terms ? t("community.license.version", { version: terms.version }) : ""}
           </button>
           .
-        </span>
-      </label>
+        </Checkbox>
       {showTerms && terms && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
+        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-card bg-band p-3 text-caption text-ink-soft">
           {terms.terms}
         </pre>
       )}
       <Honeypot value={website} onChange={setWebsite} />
-      {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
-      {notice && <p role="status" className="mt-2 text-label text-green">{notice}</p>}
+      {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
+      {notice && <p role="status" className="mt-2 text-ui text-green">{notice}</p>}
       <Button type="submit" disabled={busy || !file || !accepted} className="mt-3">
-        {busy ? "Hochladen…" : "Vorschlagen"}
+        {busy ? t("community.upload.submitting") : t("community.hero.submit")}
       </Button>
     </form>
   );

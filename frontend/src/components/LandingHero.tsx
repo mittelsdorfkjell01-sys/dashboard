@@ -3,18 +3,14 @@ import { Link } from "react-router-dom";
 import HeroImage from "./HeroImage";
 import { spotPath } from "../lib/spotRoutes";
 import { PinIcon } from "../lib/icons";
+import { hostedSrcSet, hotlinkSrcSet } from "../lib/heroSource";
 import type { Spot } from "../lib/types";
 
 const ADVANCE_MS = 60000;
 const MAX_SLIDES = 12;
 
-// The landing spot list is fetched with a catalogue-version token, which forces
-// the non-persistent SWR path (see useSpots). That means the reel would sit on
-// the dark fallback until a full 500-record fetch returns on *every* reload —
-// the "hero takes especially long" report. Persist just the curated reel here
-// so a returning visitor paints a real hero the instant the component mounts,
-// exactly like the rest of the app hydrates from its cache; the fresh list then
-// corrects it in the background.
+// Persist the small curated reel so a returning visitor paints a real hero
+// immediately while the bounded `/spots/landing` response revalidates it.
 const REEL_CACHE_KEY = "swd.hero-reel.v1";
 
 function loadCachedReel(): Spot[] {
@@ -65,6 +61,17 @@ export function selectLandingHeroSlides(spots: Spot[]): Spot[] {
     .slice(0, MAX_SLIDES);
 }
 
+/** A full-screen reel image must have a width-aware delivery path. Old hosted
+ * hero URLs predate responsive derivatives and can weigh several megabytes;
+ * showing the brand field is preferable to making one of those the LCP. */
+export function hasResponsiveHeroDelivery(spot: Spot): boolean {
+  if (!spot.hero) return false;
+  if (spot.heroDelivery === "hotlinked") {
+    return Boolean(hotlinkSrcSet(spot.hero, spot.heroCredit?.provider));
+  }
+  return Boolean(hostedSrcSet(spot.hero, spot.heroWidth));
+}
+
 /**
  * Landing hero. Instead of one static photo, this rotates on its own through
  * real spot heroes: each fills the whole hero screen with the same full-bleed
@@ -93,13 +100,18 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
 
   // Only real hero photos explicitly curated in the admin Hero tab may enter
   // the reel. An empty selection deliberately uses the static brand hero.
-  const liveSlides = useMemo(() => selectLandingHeroSlides(spots), [spots]);
+  const liveSlides = useMemo(
+    () => selectLandingHeroSlides(spots).filter(hasResponsiveHeroDelivery),
+    [spots],
+  );
 
   // Read the persisted reel once at mount, as an instant fallback while the live
   // catalogue is still in flight.
   const cachedSlidesRef = useRef<Spot[] | null>(null);
   if (cachedSlidesRef.current === null) {
-    cachedSlidesRef.current = selectLandingHeroSlides(loadCachedReel());
+    cachedSlidesRef.current = selectLandingHeroSlides(loadCachedReel()).filter(
+      hasResponsiveHeroDelivery,
+    );
   }
 
   // Persist the curated reel (in catalogue order, before shuffling) so the next
@@ -114,6 +126,21 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
   }, [liveSlides, seed]);
   const count = slides.length;
   const [index, setIndex] = useState(0);
+  const [preloadNeighbours, setPreloadNeighbours] = useState(false);
+
+  // Protect the initial LCP request and the first browsing interaction: the
+  // active hero is the only full-screen image mounted for almost the complete
+  // 60-second dwell. Warm adjacent slides shortly before the first transition,
+  // not 500 ms after load, when they used to compete with card thumbnails and
+  // made the page transfer several extra megabytes while still idle.
+  useEffect(() => {
+    if (count <= 1) return;
+    const timer = window.setTimeout(
+      () => setPreloadNeighbours(true),
+      ADVANCE_MS - 5000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [count]);
 
   // Keep the index valid if the slide set shrinks between renders.
   useEffect(() => {
@@ -136,7 +163,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
     // not part of the admin-curated rotation and used to flash in on reload.
     return (
       <div
-        className="absolute inset-0 z-0 bg-gradient-to-b from-[#2A2420] via-[#241C17] to-[#161210]"
+        className="absolute inset-0 z-0 hero-reel-gradient"
         aria-hidden
       />
     );
@@ -150,7 +177,7 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           so there's nothing to swipe or click; the CTA carries the only link.
           A brand-dark base sits under it so nothing white shows through in the
           instant before the first selected hero decodes. */}
-      <div className="pointer-events-none absolute inset-0 z-0 select-none bg-[#161210]" aria-hidden>
+      <div className="pointer-events-none absolute inset-0 z-0 select-none hero-reel-base" aria-hidden>
         {slides.map((s, i) => {
           const active = i === index;
           // Mount only the active slide and its two neighbours (wrap-aware), so
@@ -158,17 +185,18 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           // photos in the DOM at once.
           const near =
             active ||
-            i === (index + 1) % count ||
-            i === (index - 1 + count) % count;
+            (preloadNeighbours &&
+              (i === (index + 1) % count ||
+                i === (index - 1 + count) % count));
           if (!near) return null;
           return (
             // Static background: only a cross-fade between slides, no motion
             // on the image itself (no Ken Burns zoom/pan).
             <div
               key={s.id}
-              className={`absolute inset-0 transition-opacity ease-in-out ${
+              className={`absolute inset-0 transition-opacity ease-brand ${
                 active ? "opacity-100" : "opacity-0"
-              } ${reduce ? "duration-200" : "duration-[1200ms]"}`}
+              } ${reduce ? "duration-base" : "duration-[1200ms]"}`}
             >
               <HeroImage
                 src={s.hero!}
@@ -192,13 +220,13 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
           No visible name (the spot name stays as the accessible label); just the
           pin, aligned to the same content column as the header. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-12 z-20 sm:bottom-16">
-        <div className="mx-auto flex max-w-[1570px] px-4 sm:px-10">
+        <div className="mx-auto flex max-w-page px-4 sm:px-10">
           <Link
             to={spotPath(current)}
             aria-label={`Zum Spot ${current.name}`}
             className="pointer-events-auto grid h-8 w-8 place-items-center rounded-full border border-white/25 bg-black/55 text-white shadow-float transition-colors hover:bg-black/65 active:scale-[0.97] sm:bg-black/25 sm:backdrop-blur-md sm:hover:bg-black/35"
           >
-            <PinIcon className="text-label" />
+            <PinIcon className="text-ui" />
           </Link>
         </div>
       </div>

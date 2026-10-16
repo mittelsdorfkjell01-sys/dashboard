@@ -11,9 +11,10 @@ import SpotCommentBox from "../components/SpotCommentBox";
 import FavoriteButton from "../components/FavoriteButton";
 import ShareButton from "../components/ShareButton";
 import SuggestEditButton from "../components/SuggestEditButton";
-import SessionCheckin from "../components/SessionCheckin";
+import VisitedButton from "../components/VisitedButton";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
+import SpotOriginMark, { SpotOriginLine } from "../components/SpotOriginMark";
 import SpotMetaGrid from "../components/SpotMetaGrid";
 import SpotDescription from "../components/SpotDescription";
 import { EditorialHero, SectionBand } from "../components/editorial";
@@ -22,7 +23,7 @@ import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
-import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed } from "../lib/hooks";
+import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed, useSpotBestSeason } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { spotPath } from "../lib/spotRoutes";
@@ -56,7 +57,7 @@ export default function SpotDetail() {
     exit: (dir: number) => (reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir >= 0 ? -12 : 12 }),
   };
 
-  const { data: spot, loading, error, reload } = useSpot(spotName);
+  const { data: spot, loading, error, errorStatus, reload } = useSpot(spotName);
   const spotId = spot?.uuid;
   const {
     data: live,
@@ -69,6 +70,9 @@ export default function SpotDetail() {
     useSpotForecast(activeTab === "daten" ? spotId : undefined);
   const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } =
     useCommunityFeed(activeTab === "info" ? spotId : undefined);
+  // Best travel season — surfaced on both tabs (a line in the Info identity
+  // column, a jump link in the Daten header). Best-effort; null hides it.
+  const bestSeason = useSpotBestSeason(spot?.id);
   useEffect(() => {
     if (!spot) return;
     const canonical = spotPath(spot, activeTab);
@@ -129,25 +133,32 @@ export default function SpotDetail() {
       <div className="relative min-h-screen bg-page">
         <LandingHeader />
         <div className="hero-h w-full animate-pulse bg-ink-soft" />
-        <div className="mx-auto max-w-[1570px] px-4 pt-16 sm:px-8">
-          <div className="h-8 w-2/3 animate-pulse rounded bg-line" />
-          <div className="mt-4 h-4 w-full animate-pulse rounded bg-line" />
+        <div className="mx-auto max-w-page px-4 pt-16 sm:px-8">
+          <div className="h-8 w-2/3 animate-pulse rounded-card bg-line" />
+          <div className="mt-4 h-4 w-full animate-pulse rounded-card bg-line" />
         </div>
       </div>
     );
   }
 
   if (error || !spot) {
+    const notFound = errorStatus === 404 || (!error && !spot);
     return (
       <div className="grid min-h-screen place-items-center bg-page px-6 text-center">
         <div>
-          <h1 className="text-2xl font-semibold text-ink">Spot nicht gefunden</h1>
+          <h1 className="text-title font-semibold text-ink">
+            {notFound ? "Spot nicht gefunden" : "Spot momentan nicht verfügbar"}
+          </h1>
           {error && (
             <div className="mt-4 max-w-md">
-              <ErrorBanner message={error} onRetry={reload} />
+              <ErrorBanner
+                title={notFound ? "Prüfe den Namen oder kehre zur Übersicht zurück." : "Die Spotdaten konnten nicht geladen werden."}
+                message={error}
+                onRetry={reload}
+              />
             </div>
           )}
-          <Link to="/" className="mt-4 inline-block text-body text-ink underline">
+          <Link to="/" className="mt-4 inline-flex min-h-11 items-center text-body text-ink underline underline-offset-4">
             Zurück zur Übersicht
           </Link>
         </div>
@@ -180,7 +191,7 @@ export default function SpotDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center gap-1.5 bg-transparent p-0 text-ui font-medium text-white transition-colors hover:text-white/80 sm:h-auto sm:w-auto sm:justify-start sm:rounded-[14px] sm:bg-teal sm:py-2 sm:pl-2.5 sm:pr-4 sm:hover:bg-teal-hover sm:hover:text-white"
+            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center gap-1.5 bg-transparent p-0 text-ui font-medium text-white transition-colors hover:text-on-photo sm:h-auto sm:w-auto sm:justify-start sm:rounded-card sm:bg-teal sm:py-2 sm:pl-2.5 sm:pr-4 sm:hover:bg-teal-hover sm:hover:text-white"
           >
             <ChevronDownIcon width={18} height={18} className="rotate-90" />
             <span className="hidden sm:inline">Zurück</span>
@@ -203,10 +214,10 @@ export default function SpotDetail() {
           frameClassName="h-[clamp(220px,62vw,260px)] sm:aspect-[21/9] sm:h-auto"
         />
 
-        {/* Mobile remains at native scale for readable type and reliable 44px
-            touch targets. The established compact desktop composition starts
-            at lg; the full-bleed hero remains outside this wrapper. */}
-        <div className="relative [overflow-anchor:none] [zoom:1] lg:[zoom:0.85]">
+        {/* Rendered at native scale at every width. The page used to shrink its
+            desktop body with CSS zoom (0.85); the type scale and container
+            tokens now size it directly, in whole pixels. */}
+        <div className="relative [overflow-anchor:none]">
         {/* On the Daten tab the shared tab strip is scoped dark so it meets the
             dark instrument page below with no light seam (Figma Frame 67). */}
         {tabs.length > 0 && (
@@ -232,9 +243,8 @@ export default function SpotDetail() {
             >
             {/* Text / Galerie-Kachel / Facilities+Kommentar — drei Spalten */}
             <SectionBand tone="page" pad="md" width="spotBody">
-              {/* gap-x-8/gap-y-8 (32px) inflated by 1/0.85 so the zoom above renders them at their original size. */}
               <div
-                className={`spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-x-[37.65px] lg:gap-y-[58px] ${SPOT_INFO_GRID}`}
+                className={`spot-detail-content-grid grid min-w-0 gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-y-12 ${SPOT_INFO_GRID}`}
                 style={{
                   "--spot-gallery-height": galleryHeight ? `${galleryHeight}px` : undefined,
                   "--spot-gallery-right-inset": `${galleryRightInset}px`,
@@ -244,7 +254,7 @@ export default function SpotDetail() {
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
-                    <p className="text-label leading-tight text-ink-soft/80">
+                    <p className="text-ui leading-tight text-ink-soft/80">
                       {regionPart && (
                         <Link
                           to={`/region/${regionSlug(spot.region)}`}
@@ -259,7 +269,13 @@ export default function SpotDetail() {
                       {country && <span>{country}</span>}
                     </p>
                   )}
-                  <h1 className="mt-3 text-sz-28 font-semibold leading-[1.12] text-balance text-ink sm:text-sz-30">{spot.name}</h1>
+                  {/* Page title: `heading` on phones, `heading-lg` from sm. */}
+                  <h1 className="mt-3 text-heading font-semibold text-balance text-ink sm:text-heading-lg">
+                    {spot.name}
+                    {/* Origin mark trails the title on the same baseline; the
+                        written-out sentence sits at the foot of this tab. */}
+                    <SpotOriginMark origin={spot.origin} className="ml-2 align-baseline" />
+                  </h1>
 
                   {/* Sports are plain label + white check, not
                       filled pills — datengetrieben aus spot.sports. */}
@@ -268,7 +284,7 @@ export default function SpotDetail() {
                       {spot.sports.map((s) => (
                         <span
                           key={s}
-                          className="inline-flex items-center gap-1 text-label font-medium text-ink"
+                          className="inline-flex items-center gap-1 text-ui font-medium text-ink"
                         >
                           {sportLabel(s)}
                           <CheckCircleIcon checkOnly width={16} height={16} className="text-ink" />
@@ -282,12 +298,12 @@ export default function SpotDetail() {
                       mobile it starts collapsed with a "Mehr anzeigen" toggle. */}
                   <SpotDescription text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."} />
 
-                  <div className="mt-auto flex flex-wrap items-center gap-3 pt-6 sm:pt-10">
+                  <div className="mt-auto flex w-full items-center justify-center gap-4 pt-6 sm:pt-10">
                     <FavoriteButton spot={spot} />
                     <ShareButton spot={spot} />
+                    {spotId && <VisitedButton spotId={spotId} />}
                     <SuggestEditButton spot={spot} />
                   </div>
-                  {spotId && <SessionCheckin spotId={spotId} />}
                 </div>
 
                 <div ref={galleryFrameRef} className="spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2">
@@ -299,7 +315,7 @@ export default function SpotDetail() {
                 </div>
 
                 <aside aria-label="Spotprofil und Ausstattung" className="order-2 flex min-w-0 flex-col lg:order-3">
-                  <SpotMetaGrid spot={spot} />
+                  <SpotMetaGrid spot={spot} bestSeason={bestSeason} />
                   {facilities.length > 0 && (
                     <div className="mt-8 lg:mt-12">
                       <h2 className="text-ui font-semibold text-ink">Ausstattung</h2>
@@ -314,7 +330,7 @@ export default function SpotDetail() {
                       {mapReady ? (
                         <LocatorMapBoundary coords={spot.coords}>
                           <Suspense fallback={<MapPlaceholder />}>
-                            <LocatorMap coords={spot.coords} />
+                            <LocatorMap coords={spot.coords} origin={spot.origin} />
                           </Suspense>
                         </LocatorMapBoundary>
                       ) : (
@@ -340,10 +356,14 @@ export default function SpotDetail() {
 
               {spotId && (
                 // 96px visible separation after the location/community group.
-                <div className="mt-16 sm:mt-24 lg:mt-[112.94px]">
+                <div className="mt-16 sm:mt-24">
                   <SimilarSpots spotId={spotId} sport={spot.sports?.[0]} />
                 </div>
               )}
+
+              {/* Provenance, spelled out: who entered this spot. Sits with the
+                  other quiet credits at the foot of the Info tab. */}
+              <SpotOriginLine spot={spot} className="mt-12 sm:mt-16" />
             </SectionBand>
 
             <PhotoGalleryOverlay
@@ -376,6 +396,7 @@ export default function SpotDetail() {
               forecast={forecast}
               forecastLoading={forecastLoading}
               forecastError={forecastError}
+              bestSeason={bestSeason}
             />
             </motion.div>
           )}
@@ -389,7 +410,7 @@ export default function SpotDetail() {
 }
 
 function MapPlaceholder() {
-  return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse rounded-[14px] bg-band sm:h-[440px] lg:h-full" />;
+  return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse rounded-card bg-band sm:h-[440px] lg:h-full" />;
 }
 
 class LocatorMapBoundary extends Component<
@@ -414,7 +435,7 @@ class LocatorMapBoundary extends Component<
       <div className="grid h-[360px] place-items-center bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
         <div>
           <p className="text-ui font-semibold text-ink">Karte momentan nicht verfügbar</p>
-          <p className="mt-2 text-label text-muted">Die übrigen Spotinformationen funktionieren weiterhin.</p>
+          <p className="mt-2 text-ui text-muted">Die übrigen Spotinformationen funktionieren weiterhin.</p>
           <a
             href={link.href}
             target={link.target}

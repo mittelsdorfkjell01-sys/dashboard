@@ -66,7 +66,7 @@ export default function PhotoGalleryOverlay({
     <>
       <OverlayPanel open={open} onClose={onClose} triggerRef={triggerRef} mobileDragToClose>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sz-28 font-semibold leading-tight text-ink sm:text-sz-32">Fotogalerie</h2>
+          <h2 className="text-heading font-semibold leading-tight text-ink sm:text-heading-lg">Fotogalerie</h2>
           {lightbox === null && spotId && (
             <button
               type="button"
@@ -75,7 +75,7 @@ export default function PhotoGalleryOverlay({
               title="Foto hinzufügen"
               className="grid h-11 w-11 place-items-center text-ink transition-opacity hover:opacity-65"
             >
-              <PlusIcon className="text-sz-26" />
+              <PlusIcon className="text-heading" />
             </button>
           )}
         </div>
@@ -158,7 +158,7 @@ function JustifiedGallery({
                 type="button"
                 onClick={() => onOpen(index)}
                 style={{ width: tile.width, height: tile.height }}
-                className="group relative shrink-0 overflow-hidden rounded-[14px] bg-band"
+                className="group relative shrink-0 overflow-hidden rounded-card bg-band"
               >
                 <img
                   {...responsiveImageAttributes(
@@ -167,7 +167,7 @@ function JustifiedGallery({
                     "(max-width: 639px) 50vw, 33vw",
                   )}
                   alt={tile.photo.credit ?? ""}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  className="h-full w-full object-cover transition-transform duration-slow group-hover:scale-[1.03]"
                   loading="eager"
                   decoding="async"
                 />
@@ -182,8 +182,8 @@ function JustifiedGallery({
 
 function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="mt-8 grid place-items-center rounded-[14px] border border-dashed border-line bg-band/40 px-5 py-12 text-center sm:py-14">
-      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-[14px] border border-line bg-surface text-ink">
+    <div className="mt-8 grid place-items-center rounded-card border border-dashed border-line bg-band/40 px-5 py-12 text-center sm:py-14">
+      <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-card border border-line bg-surface text-ink">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2.5" />
           <circle cx="8.5" cy="10" r="1.6" />
@@ -199,9 +199,9 @@ function GalleryEmptyState({ onAdd }: { onAdd: () => void }) {
       <button
         type="button"
         onClick={onAdd}
-        className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
+        className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
       >
-        <PlusIcon className="text-sz-18" />
+        <PlusIcon className="text-lead" />
         Foto hinzufügen
       </button>
     </div>
@@ -262,7 +262,7 @@ function Lightbox({
           role="dialog"
           aria-modal="true"
           aria-label="Foto-Ansicht"
-          className="fixed inset-0 z-[1200] flex items-center justify-center bg-[var(--sw-overlay-strong)] p-4 sm:p-10"
+          className="fixed inset-0 z-modal flex items-center justify-center bg-[var(--sw-overlay-strong)] p-4 sm:p-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -273,7 +273,7 @@ function Lightbox({
             type="button"
             onClick={onClose}
             aria-label="Schließen"
-            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
+            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
           >
             <CloseIcon width={20} height={20} />
           </button>
@@ -284,7 +284,7 @@ function Lightbox({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(-1); }}
                 aria-label="Vorheriges Bild"
-                className="absolute left-3 grid h-12 w-12 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
+                className="absolute left-3 grid h-12 w-12 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:left-6"
               >
                 <ChevronLeftIcon width={22} height={22} />
               </button>
@@ -292,7 +292,7 @@ function Lightbox({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); step(1); }}
                 aria-label="Nächstes Bild"
-                className="absolute right-3 grid h-12 w-12 place-items-center rounded-[14px] bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
+                className="absolute right-3 grid h-12 w-12 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-6"
               >
                 <ChevronRightIcon width={22} height={22} />
               </button>
@@ -308,7 +308,7 @@ function Lightbox({
             )}
             alt={photo.credit ?? ""}
             decoding="async"
-            className="max-h-full max-w-full rounded-[14px] object-contain"
+            className="max-h-full max-w-full rounded-card object-contain"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -320,7 +320,7 @@ function Lightbox({
               identical. */}
           <ImageCredit
             source={fromGalleryPhoto(photo)}
-            className="absolute bottom-4 left-0 right-0 px-4 text-center text-caption text-white/70"
+            className="absolute bottom-4 left-0 right-0 px-4 text-center text-caption text-on-photo-muted"
           />
         </motion.div>
       )}

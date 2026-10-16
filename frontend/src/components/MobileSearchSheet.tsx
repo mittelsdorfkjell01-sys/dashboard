@@ -19,6 +19,8 @@ import { addRecent } from "../lib/recentSearches";
 import {
   buildSearchParams,
   EMPTY_SEARCH,
+  loadSearchDraft,
+  saveSearchDraft,
   whenLabel,
   type SearchValue,
   type WhereSelection,
@@ -71,6 +73,8 @@ export default function MobileSearchSheet({
   open,
   onClose,
   returnFocusRef,
+  whereOnly = false,
+  onResolve,
 }: {
   open: boolean;
   onClose: () => void;
@@ -79,6 +83,12 @@ export default function MobileSearchSheet({
   returnFocusRef?: { current: HTMLElement | null };
   /** Viewport-y of the collapsed pill, so the sheet grows out of it (Airbnb). */
   originY?: number | null;
+  /** Place-only search (the wind map): "Wann?" and "Welche Sportart?" are not
+   *  shown at all, because the map answers "where", not "when/what". */
+  whereOnly?: boolean;
+  /** When set, submitting hands the picked place back instead of navigating to
+   *  the results page — the wind map zooms to it on its own. */
+  onResolve?: (selection: WhereSelection | null, text: string) => void;
 }) {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
@@ -149,7 +159,7 @@ export default function MobileSearchSheet({
   // Opening always starts a fresh search, fully collapsed (equal-size tiles).
   useEffect(() => {
     if (open) {
-      setVal(EMPTY_SEARCH);
+      setVal(loadSearchDraft());
       setSection(null);
       setWhenTab("date");
       // Warm the code-split results route while the sheet is open. On slower
@@ -193,8 +203,10 @@ export default function MobileSearchSheet({
 
   // Place data — fetched only while the sheet is engaged.
   const enabled = open && (section === "where" || val.whereText.trim().length > 0);
-  const { data: spots } = useSpots({}, enabled);
-  const { data: regions } = useRegions(enabled);
+  const { data: spots, loading: spotsLoading, error: spotsError, reload: reloadSpots } = useSpots({}, enabled);
+  const { data: regions, loading: regionsLoading, error: regionsError, reload: reloadRegions } = useRegions(enabled);
+  const placeLoading = (spotsLoading || regionsLoading) && !spots && !regions;
+  const placeError = spotsError ?? regionsError;
   const q = val.whereText.trim().toLowerCase();
   const regionById = useMemo(
     () => new Map((regions ?? []).map((r) => [r.id, r])),
@@ -229,6 +241,14 @@ export default function MobileSearchSheet({
   }, [spots, regions, regionById, q]);
 
   const submit = () => {
+    // Place-only callers (the wind map) handle the pick themselves — they zoom
+    // the map to it instead of leaving for the results page.
+    if (onResolve) {
+      onResolve(val.whereSel ?? null, val.whereText.trim());
+      onClose();
+      return;
+    }
+    saveSearchDraft(val);
     navigate(`/search?${buildSearchParams(val).toString()}`);
     onClose();
   };
@@ -236,6 +256,7 @@ export default function MobileSearchSheet({
   // "Alles löschen": clear the search but stay in the sheet (Airbnb-style).
   const reset = () => {
     setVal(EMPTY_SEARCH);
+    saveSearchDraft(null);
     setSection(null);
     setWhenTab("date");
   };
@@ -263,8 +284,9 @@ export default function MobileSearchSheet({
       whereText: item.pick.label,
       whereOpen: false,
     }));
-    // Airbnb flow: after the place, advance to the date step.
-    setSection("when");
+    // Airbnb flow: after the place, advance to the date step. With no date or
+    // sport step (place-only search), there is nothing to advance to.
+    setSection(whereOnly ? null : "when");
   };
 
   const whereValue =
@@ -289,7 +311,7 @@ export default function MobileSearchSheet({
   const pendingY = useRef(0);
 
   const transformTransition = () =>
-    reduce ? "opacity 150ms ease-out" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`;
+    reduce ? "opacity 150ms ease-brand" : `transform ${SHEET_SLIDE_MS}ms ${SHEET_EASE_CSS}`;
 
   const beginDrag = (clientY: number, el: HTMLElement, pointerId: number) => {
     dragRef.current = { startY: clientY, lastY: clientY, lastT: performance.now(), vy: 0, active: true };
@@ -382,7 +404,7 @@ export default function MobileSearchSheet({
   const sheetStyle: React.CSSProperties = reduce
     ? {
         willChange: "opacity",
-        transition: dragRef.current.active ? "none" : "opacity 150ms ease-out",
+        transition: dragRef.current.active ? "none" : "opacity 150ms ease-brand",
         opacity: slidIn ? 1 : 0,
       }
     : {
@@ -395,7 +417,7 @@ export default function MobileSearchSheet({
     <div
       ref={sheetRef}
       id="mobile-search-dialog"
-      className="fixed inset-0 z-[1300] flex flex-col bg-page"
+      className="fixed inset-0 z-sheet flex flex-col bg-page"
       role="dialog"
       aria-modal="true"
       aria-label="Suche"
@@ -479,10 +501,24 @@ export default function MobileSearchSheet({
                   }
                   placeholder="Region oder Spot suchen"
                   aria-label="Region oder Spot suchen"
-                  className="search-plain w-full border-0 bg-transparent text-sz-16 text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
+                  className="search-plain w-full border-0 bg-transparent text-body text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                 />
                 <div className="mt-3">
-                  {items.length ? (
+                  {placeLoading ? (
+                    <p role="status" className="px-1.5 py-3 text-ui text-muted">Orte werden geladen …</p>
+                  ) : placeError && items.length === 0 ? (
+                    <div role="alert" className="rounded-card bg-band px-4 py-3 text-ui text-ink">
+                      <p className="font-semibold">Orte konnten nicht geladen werden.</p>
+                      <p className="mt-1 text-muted">{placeError}</p>
+                      <button
+                        type="button"
+                        onClick={() => { reloadSpots(); reloadRegions(); }}
+                        className="mt-2 min-h-11 font-semibold text-accent underline underline-offset-4"
+                      >
+                        Erneut versuchen
+                      </button>
+                    </div>
+                  ) : items.length ? (
                     <div className="flex flex-col">
                       {items.map((it) => (
                         <motion.button
@@ -490,21 +526,21 @@ export default function MobileSearchSheet({
                           type="button"
                           whileTap={{ scale: 0.98 }}
                           onClick={() => pickWhere(it)}
-                          className="flex items-center gap-3 rounded-[14px] px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
+                          className="flex items-center gap-3 rounded-card px-1.5 py-2.5 text-left transition-colors hover:bg-band active:bg-band"
                         >
                           <span className="flex w-7 shrink-0 justify-center text-ink">
                             {it.kind === "spot" ? (
-                              <PinIcon className="text-sz-22" />
+                              <PinIcon className="text-title" />
                             ) : (
-                              <MapIcon className="text-sz-22" />
+                              <MapIcon className="text-title" />
                             )}
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-sz-16 font-medium text-ink">
+                            <span className="block truncate text-body font-medium text-ink">
                               {it.label}
                             </span>
                             {it.subtitle && (
-                              <span className="block truncate text-label text-muted">
+                              <span className="block truncate text-ui text-muted">
                                 {it.subtitle}
                               </span>
                             )}
@@ -519,7 +555,10 @@ export default function MobileSearchSheet({
               </Section>
               </div>
 
-              {/* Wann? — the Datum/flexibel toggle sits in the tile header. */}
+              {/* Wann? — the Datum/flexibel toggle sits in the tile header.
+                  Omitted entirely for a place-only search (the wind map). */}
+              {!whereOnly && (
+              <>
               <div id="msheet-when">
               <Section
                 label="Wann?"
@@ -567,15 +606,15 @@ export default function MobileSearchSheet({
                           }))
                         }
                         aria-pressed={selected}
-                        className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
+                        className="flex items-center gap-4 rounded-card px-1.5 py-3 text-left transition-colors hover:bg-band"
                       >
-                        <Icon className="shrink-0 text-sz-26 text-ink" />
-                        <span className="flex-1 text-sz-16 font-medium text-ink">
+                        <Icon className="shrink-0 text-heading text-ink" />
+                        <span className="flex-1 text-body font-medium text-ink">
                           {sportLabel(sport)}
                         </span>
                         <span
                           className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
-                            selected ? "border-teal" : "border-line"
+                            selected ? "border-accent" : "border-line"
                           }`}
                         >
                           {selected && (
@@ -593,6 +632,8 @@ export default function MobileSearchSheet({
                 </div>
               </Section>
               </div>
+              </>
+              )}
             </div>
           </div>
 
@@ -610,9 +651,9 @@ export default function MobileSearchSheet({
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={submit}
-                className="inline-flex min-h-12 items-center gap-2 rounded-full bg-teal px-6 text-body font-medium text-white transition-colors hover:bg-teal-hover"
+                className="inline-flex min-h-12 items-center gap-2 rounded-card bg-teal px-6 text-body font-medium text-white transition-colors hover:bg-teal-hover"
               >
-                <SearchIcon className="text-sz-18" />
+                <SearchIcon className="text-lead" />
                 Suchen
               </motion.button>
             </div>
@@ -681,17 +722,17 @@ function Section({
   }, [open, render]);
 
   return (
-    <div className="overflow-hidden rounded-[14px] bg-surface shadow-float">
-      <div className="flex items-center justify-between gap-3 px-5 py-4">
+    <div className="overflow-hidden rounded-card bg-surface shadow-float">
+      <div className="flex items-center justify-between gap-3 px-5 py-2.5">
         <button
           type="button"
           onClick={onToggle}
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+          className="flex min-h-11 min-w-0 flex-1 items-center justify-between gap-3 text-left"
         >
           <span
-            className={`shrink-0 text-sz-16 font-semibold transition-colors ${
-              open ? "text-teal" : "text-ink"
+            className={`shrink-0 text-body font-semibold transition-colors ${
+              open ? "text-accent" : "text-ink"
             }`}
           >
             {label}

@@ -43,6 +43,20 @@ export class ApiError extends Error {
   }
 }
 
+export function publicApiErrorMessage(status: number, fallback?: string | null): string {
+  if (status === 0) return fallback || "Verbindung zum Datendienst fehlgeschlagen.";
+  if (status === 404) {
+    return fallback && !/not found/i.test(fallback)
+      ? fallback
+      : "Der angeforderte Inhalt wurde nicht gefunden.";
+  }
+  if (status === 429) return "Zu viele Anfragen auf einmal. Bitte warte kurz und versuche es erneut.";
+  if (status >= 500) {
+    return "Unser Datendienst ist gerade nicht erreichbar. Bitte versuche es in Kürze erneut.";
+  }
+  return fallback || `Anfrage fehlgeschlagen (${status}).`;
+}
+
 /** Resolve a possibly root-relative URL (e.g. "/media/…") against the API host. */
 export function resolveMediaUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
@@ -129,6 +143,8 @@ export type FacilityMap = Partial<
   Record<FacilityKind, { available: boolean; note?: string }>
 >;
 
+export type SpotOrigin = "editorial" | "community";
+
 export interface SpotSummary {
   id: string;
   slug: string;
@@ -147,6 +163,11 @@ export interface SpotSummary {
   status: string;
   facing: number | null;
   image: ImageRecord | null;
+  /** "editorial" = von uns erfasst, "community" = freigegebener Vorschlag.
+   *  Optional, damit eine noch gecachte Antwort ohne das Feld gültig bleibt —
+   *  Konsumenten behandeln ein fehlendes Feld als "editorial". */
+  origin?: SpotOrigin;
+  contributor_name?: string | null;
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
   wind_availability: number[] | null;
@@ -186,6 +207,12 @@ export interface PublicTideEvent {
   uncertainty_minutes: number;
 }
 
+export interface PublicTideSeriesPoint {
+  time: string;
+  level_normalized: number;
+  phase: "rising" | "high" | "falling" | "low";
+}
+
 export interface PublicTides {
   available: boolean;
   message: string | null;
@@ -196,7 +223,15 @@ export interface PublicTides {
   approximate: boolean;
   last_calculated_at: string | null;
   valid_until: string | null;
+  forecast_start: string | null;
+  forecast_end: string | null;
+  horizon_days: number;
+  partial: boolean;
+  datum: "relative_low_high";
+  model_name: string | null;
+  model_version: string | null;
   events: PublicTideEvent[];
+  series: PublicTideSeriesPoint[];
 }
 
 export interface TideOverride {
@@ -443,6 +478,11 @@ export interface WeatherProvenance {
   availability: AvailabilityStatus; quality_tier: string;
   uncertainty: "determined" | "limited" | "not_determined";
   data_issues: string[]; spot_timezone: string;
+  marine_source?: string | null;
+  marine_provider?: string | null;
+  marine_model?: string | null;
+  marine_model_run_at?: string | null;
+  marine_publication_id?: string | null;
 }
 
 export interface LiveConditionsRead {
@@ -596,6 +636,12 @@ export interface Readiness {
       ready: boolean;
       missing: string[];
       active_v3_run_id: string | null;
+      directions: V3Directions;
+      surfaces: Record<"now" | "next_week" | "season" | "region", {
+        eligible: boolean;
+        exclusions: string[];
+        runtime_requirements: string[];
+      }>;
     };
   };
 }
@@ -671,10 +717,13 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
     });
   } catch (e) {
     const aborted = e instanceof DOMException && e.name === "AbortError";
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
     throw new ApiError(
       aborted
         ? "Zeitüberschreitung — der Server hat nicht rechtzeitig geantwortet."
-        : "Verbindung zum Server fehlgeschlagen. Läuft das Backend?",
+        : offline
+          ? "Du bist offline. Prüfe deine Verbindung und versuche es erneut."
+          : "Verbindung zum Datendienst fehlgeschlagen. Bitte versuche es erneut.",
       0,
       e
     );
@@ -688,14 +737,15 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
     } catch {
       /* non-JSON error body */
     }
-    const msg =
+    const serverMessage =
       (detail && typeof detail === "object" && "detail" in detail
         ? typeof (detail as any).detail === "string"
           ? (detail as any).detail
           : typeof (detail as any).detail?.message === "string"
             ? (detail as any).detail.message
             : JSON.stringify((detail as any).detail)
-        : null) || `Anfrage fehlgeschlagen (${resp.status}).`;
+        : null);
+    const msg = publicApiErrorMessage(resp.status, serverMessage);
     throw new ApiError(msg, resp.status, detail);
   }
   if (resp.status === 204) return undefined as T;
@@ -735,8 +785,24 @@ export interface SpotQuery {
 export const getSpots = (params: SpotQuery = {}) =>
   request<SpotSummary[]>(`/spots${qs(params as Record<string, unknown>)}`);
 
+export interface LandingSpotsResponse {
+  spots: SpotSummary[];
+  total: number;
+  version: string;
+}
+
+export const getLandingSpots = () =>
+  request<LandingSpotsResponse>("/spots/landing");
+
+export interface SpotCatalogVersion {
+  version: string;
+  /** The published catalogue holds both editorial and community spots — only
+   *  then does the origin mark carry information (see SpotOriginContext). */
+  origins_mixed: boolean;
+}
+
 export const getSpotCatalogVersion = () =>
-  request<{ version: string }>("/spots/version");
+  request<SpotCatalogVersion>("/spots/version");
 
 /** "aktuelle Top Spots": published spots ranked by this week's wind forecast,
  *  today's conditions and popularity. Stable per day, rotates daily. */
@@ -775,12 +841,19 @@ export interface WindClimatologyRead {
   status: "ready" | "pending" | "processing" | "failed" | "unavailable";
   refresh_status?: "pending" | "processing";
   period?: { start_year: number; end_year: number };
+  available_years?: { min: number; max: number };
   model?: string; wind_height_m?: number; unit?: string; method_version?: string;
   algorithm_version?: string; updated_at?: string; attribution?: string;
   grid?: { resolution_degrees: number }; sections?: WindClimatologySection[];
 }
-export const getWindClimatology = (id: string) =>
-  request<WindClimatologyRead>(`/spots/${id}/wind-climatology`);
+export const getWindClimatology = (
+  id: string,
+  opts: { fromYear?: number; toYear?: number; signal?: AbortSignal } = {},
+) => {
+  const { fromYear, toYear, signal } = opts;
+  const params = fromYear != null && toYear != null ? qs({ from_year: fromYear, to_year: toYear }) : "";
+  return request<WindClimatologyRead>(`/spots/${id}/wind-climatology${params}`, { signal });
+};
 
 /** Phase 5: public, read-only V3 weekly reliability contract. 404 when the
  *  rollout flag is off, the spot isn't in the pilot allowlist, or there is
@@ -809,6 +882,7 @@ export interface WindClimatologyV3Read {
   status: "ready";
   algorithm_version: string;
   period: [number, number];
+  available_years: { min: number; max: number };
   model: string;
   wind_height_m: number;
   grid_resolution_degrees: number;
@@ -825,21 +899,24 @@ export interface WindClimatologyV3Query {
   minWindKn: number;
   maxWindKn: number | null;
   directionMode: WindDirectionMode;
+  fromYear?: number;
+  toYear?: number;
   signal?: AbortSignal;
 }
 export const getWindClimatologyV3 = (id: string, query: WindClimatologyV3Query) => {
-  const { minWindKn, maxWindKn, directionMode, signal } = query;
+  const { minWindKn, maxWindKn, directionMode, fromYear, toYear, signal } = query;
   const params = qs({
     min_wind_kn: minWindKn,
     max_wind_kn: maxWindKn ?? 40,
     open_upper: maxWindKn == null,
     direction_mode: directionMode,
+    ...(fromYear != null && toYear != null ? { from_year: fromYear, to_year: toYear } : {}),
   });
   return request<WindClimatologyV3Read>(`/spots/${id}/wind-climatology-v3${params}`, { signal });
 };
 
-export const getSpotTides = (id: string) =>
-  request<PublicTides>(`/spots/${id}/tides`);
+export const getSpotTides = (id: string, days = 10) =>
+  request<PublicTides>(`/spots/${id}/tides?days=${Math.max(1, Math.min(10, days))}`);
 
 export const getSpotLive = (id: string) =>
   request<LiveConditionsRead>(`/spots/${id}/live`);
@@ -886,10 +963,10 @@ export interface WeatherProfile {
   coastal_normal_deg: number | null; exposure: "sheltered" | "neutral" | "exposed" | null;
   roughness_length_m: number | null; land_reference: WeatherReferencePoint | null;
   water_reference: WeatherReferencePoint | null; quality_tier: "coordinates" | "coastal" | "extended" | "advanced";
-  physics_version: string; reviewed_at: string | null; updated_at: string; active: boolean; sectors: WeatherSector[];
+  physics_version: string; updated_at: string; active: boolean; sectors: WeatherSector[];
 }
-export type WeatherProfileInput = Omit<WeatherProfile, "id" | "spot_id" | "reviewed_at" | "updated_at"> & { reviewed: boolean; expected_updated_at?: string | null };
-export interface WeatherProfileListItem { spot_id: string; spot_name: string; region: string | null; country: string | null; quality_tier: WeatherProfile["quality_tier"] | null; profile_state: string; missing: string[]; active: boolean; reviewed_at: string | null; updated_at: string | null }
+export type WeatherProfileInput = Omit<WeatherProfile, "id" | "spot_id" | "updated_at"> & { expected_updated_at?: string | null };
+export interface WeatherProfileListItem { spot_id: string; spot_name: string; region: string | null; country: string | null; quality_tier: WeatherProfile["quality_tier"] | null; profile_state: string; missing: string[]; active: boolean; direction_status: string; direction_missing: string[]; updated_at: string | null }
 export const getAdminWeatherProfiles = (filters: { country?: string; state?: string } = {}) => request<{items: WeatherProfileListItem[]; total: number}>(`/admin/weather/profiles${qs(filters)}`);
 export const getAdminWeatherProfile = (spotId: string) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`);
 export const putAdminWeatherProfile = (spotId: string, body: WeatherProfileInput) => request<WeatherProfile>(`/admin/weather/spots/${spotId}/profile`, { method: "PUT", body: JSON.stringify(body) });
@@ -931,6 +1008,7 @@ export interface SearchSpot {
   location: GeoPoint;
   sports: string[];
   distance_m?: number | null;
+  origin?: SpotOrigin;
 }
 
 export interface SearchRegionHit {
@@ -1605,10 +1683,31 @@ export interface V3Cell {
 }
 export interface V3Status {
   state: string; stale: boolean; latest: V3RunView | null; active: V3RunView | null;
-  directions: { reviewed: boolean; windows: Array<{start_deg:number; end_deg:number}>; usable_available: boolean };
+  directions: V3Directions & { usable_available: boolean };
   cell: V3Cell | null; public_effect: "none";
 }
-export interface V3Directions { sectors: number[]; reviewed: boolean; reviewed_at: string | null; updated_at: string | null; }
+export interface V3DirectionSource { label: string; url: string; version?: string | null }
+export interface V3StartArea {
+  name: string;
+  start_area: Record<string, unknown>;
+  usable_water: Record<string, unknown>;
+  shoreline: Record<string, unknown>;
+  waterward_normal_deg: number;
+  source: V3DirectionSource;
+}
+export interface V3DirectionGeometry {
+  geometry_version: string;
+  start_areas: V3StartArea[];
+  exclusions: Array<{sector_index:number;reason:string;source:V3DirectionSource}>;
+  conflicts: string[];
+}
+export interface V3Directions {
+  status: string; effective: boolean; missing: string[]; sectors: number[];
+  windows: Array<{start_deg:number;end_deg:number}>;
+  geometry: V3DirectionGeometry | null; geometry_version: string | null;
+  rule_version: string | null; evidence: Record<string, unknown>;
+  calculated_at: string | null; updated_at?: string | null;
+}
 export interface V3Week {
   week: number; reliability_percent: number | null; sample_years: number; successful_years: number;
   median_usable_days: number | null; median_session_hours: number | null;
@@ -1622,11 +1721,75 @@ export interface V3Operations {
 }
 export const getV3Status = (spotId:string) => request<V3Status>(`/admin/weather/spots/${spotId}/wind-climatology-v3/status`);
 export const getV3Directions = (spotId:string) => request<V3Directions>(`/admin/weather/spots/${spotId}/wind-climatology-v3/directions`);
-export const putV3Directions = (spotId:string, body:{sectors:number[];reviewed:boolean;expected_updated_at?:string|null}) => request<V3Directions & {run?:{id:string;status:string;created:boolean}|null}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/directions`, {method:"PUT",body:JSON.stringify(body)});
+export const putV3DirectionGeometry = (spotId:string, body:V3DirectionGeometry & {expected_updated_at?:string|null}) => request<V3Directions & {run?:{id:string;status:string;created:boolean}|null}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/directions/geometry`, {method:"PUT",body:JSON.stringify(body)});
+export const recalculateV3Directions = (spotId:string) => request<V3Directions & {run?:{id:string;status:string;created:boolean}|null}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/directions/recalculate`, {method:"POST"});
 export const putV3Cell = (spotId:string, body:{mode:"automatic"|"manual";latitude?:number|null;longitude?:number|null}) => request<{cell:V3Cell;run:null|{id:string;status:string;created:boolean}}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/cell`, {method:"PUT",body:JSON.stringify(body)});
 export const enqueueV3 = (spotId:string) => request<{run_id:string;status:string;created:boolean}>(`/admin/weather/spots/${spotId}/wind-climatology-v3/runs`, {method:"POST"});
 export const getV3Variant = (spotId:string,min:number,max:number|null,mode:"all"|"usable") => request<V3Variant>(`/admin/weather/spots/${spotId}/wind-climatology-v3/variant?min_wind_kn=${min}&max_wind_kn=${max ?? 40}&open_upper=${max == null}&direction_mode=${mode}`);
 export const getV3Operations = () => request<V3Operations>(`/admin/weather/wind-climatology-v3/operations`);
+
+export interface WeatherFieldShadowRun {
+  id: string;
+  job_id: string;
+  publication_id: string;
+  field_run_id: string;
+  profile_version: string;
+  status: "processing" | "succeeded" | "no_data" | "failed";
+  config: Record<string, unknown>;
+  diagnostics: {
+    pilot_spots?: number;
+    samples?: number;
+    skipped?: Record<string, number>;
+    evidence_status?: string;
+    cutover_authorized?: boolean;
+    public_effect?: string;
+  };
+  started_at: string;
+  completed_at: string | null;
+  error: string | null;
+}
+
+export interface WeatherFieldShadowStatus {
+  enabled: boolean;
+  profile_version: string;
+  pilot: {
+    config: string;
+    group: string;
+    max_spots: number;
+    max_samples: number;
+    max_horizon_hours: number;
+  };
+  active_publication_id: string | null;
+  latest_run: WeatherFieldShadowRun | null;
+  cutover_authorized: false;
+}
+
+export interface WeatherFieldShadowMetric {
+  dimensions: Record<string, string>;
+  sample_count: number;
+  metrics: {
+    speed?: { bias_ms: number; mae_ms: number; rmse_ms: number; count: number } | null;
+    direction_mae_deg?: number | null;
+    direction_count?: number;
+    gust?: { bias_ms: number; mae_ms: number; rmse_ms: number; count: number } | null;
+    interpretation?: string;
+  };
+  computed_at: string;
+}
+
+export const getWeatherFieldShadowStatus = () =>
+  request<WeatherFieldShadowStatus>("/admin/weather-fields/shadow/status");
+export const getWeatherFieldShadowRuns = () =>
+  request<{ runs: WeatherFieldShadowRun[] }>("/admin/weather-fields/shadow/runs");
+export const getWeatherFieldShadowMetrics = (runId?: string) =>
+  request<{ run_id: string | null; metrics: WeatherFieldShadowMetric[] }>(
+    `/admin/weather-fields/shadow/metrics${qs({ run_id: runId })}`,
+  );
+export const enqueueWeatherFieldShadowValidation = () =>
+  request<{ job_id: string; status: string; public_effect: "none" }>(
+    "/admin/weather-fields/jobs/shadow-validation",
+    { method: "POST" },
+  );
 
 /** Lightweight spot for the admin map: coordinates + status only. */
 export interface AdminMapSpot {

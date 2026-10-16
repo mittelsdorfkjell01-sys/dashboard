@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { cardHotlinkSrcSet, hostedSrcSet, objectPosition, unsplashSized } from "../lib/heroSource";
+
+const CARD_LOAD_MARGIN = "100px 0px";
 
 /**
  * A spot's image with a branded fallback. When `src` is empty (a seed spot with
@@ -29,6 +32,45 @@ export default function SpotImage({
   /** Smaller type for tight cards (map popup / strip). */
   compact?: boolean;
 }) {
+  const placeholderRef = useRef<HTMLDivElement | null>(null);
+  const [shouldLoad, setShouldLoad] = useState(eager);
+
+  // Native loading="lazy" deliberately starts well before an image reaches the
+  // viewport. That is useful for ordinary pages, but disastrous for this dense
+  // catalogue when a legacy hero is several megabytes. Keep the image URL out
+  // of the DOM until the card is genuinely close; the aspect-ratio wrapper in
+  // SpotCard/RegionTile already reserves its space, so this does not add CLS.
+  useEffect(() => {
+    if (eager || shouldLoad || !src) return;
+    const placeholder = placeholderRef.current;
+    if (!placeholder || !("IntersectionObserver" in window)) {
+      setShouldLoad(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setShouldLoad(true);
+        observer.disconnect();
+      },
+      { rootMargin: CARD_LOAD_MARGIN },
+    );
+    observer.observe(placeholder);
+    return () => observer.disconnect();
+  }, [eager, shouldLoad, src]);
+
+  if (src && !shouldLoad) {
+    return (
+      <div
+        ref={placeholderRef}
+        role="img"
+        aria-label={name}
+        data-deferred-spot-image
+        className={`h-full w-full bg-band ${className}`}
+      />
+    );
+  }
+
   if (src) {
     const hotlinked = cardHotlinkSrcSet(src);
     const srcSet = hotlinked ?? hostedSrcSet(src, width);
@@ -59,7 +101,7 @@ export default function SpotImage({
     >
       <span
         className={`font-semibold leading-tight text-ink-soft ${
-          compact ? "text-label" : "text-body"
+          compact ? "text-ui" : "text-body"
         }`}
       >
         {name}
@@ -67,7 +109,7 @@ export default function SpotImage({
       {region && (
         <span
           className={`leading-tight text-muted ${
-            compact ? "text-sz-10" : "text-sz-11"
+            compact ? "text-micro" : "text-caption"
           }`}
         >
           {region}

@@ -4,7 +4,7 @@ import { activateAdminWeatherSectors, ApiError, getAdminForecastJob, getAdminWea
 import { useUnsavedChangesGuard } from "../lib/useUnsavedChangesGuard";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
 
-const empty: WeatherProfileInput = { timezone: null, elevation_m: null, coastal_normal_deg: null, exposure: null, roughness_length_m: null, land_reference: null, water_reference: null, quality_tier: "coordinates", physics_version: "wind-v1", active: true, reviewed: false, sectors: [] };
+const empty: WeatherProfileInput = { timezone: null, elevation_m: null, coastal_normal_deg: null, exposure: null, roughness_length_m: null, land_reference: null, water_reference: null, quality_tier: "coordinates", physics_version: "wind-v1", active: true, sectors: [] };
 const inputCls = "mt-1 h-10 w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 text-ui text-admin-fg";
 const sectionCls = "mt-5 rounded-md border border-admin-border bg-admin-surface p-5";
 const n = (value: string) => value === "" ? null : Number(value);
@@ -40,7 +40,7 @@ export default function AdminWeatherProfile() {
   const dirty = JSON.stringify(form) !== baseline;
   useEffect(() => setDirty("weather", dirty), [dirty, setDirty]);
   const load = useCallback(() => { setLoading(true); getAdminWeatherProfile(spotId).then((p) => {
-    const next: WeatherProfileInput = { ...p, reviewed: !!p.reviewed_at, expected_updated_at: p.updated_at };
+    const next: WeatherProfileInput = { ...p, expected_updated_at: p.updated_at };
     const candidates = p.sectors.filter((sector) => !sector.enabled).map((sector) => sector.version);
     const versions = p.sectors.map((sector) => sector.version);
     setActivationVersion(candidates.length ? Math.max(...candidates) : Math.max(0, ...versions) + 1);
@@ -48,7 +48,7 @@ export default function AdminWeatherProfile() {
   }).catch((e) => { if (e instanceof ApiError && e.status === 404) { setForm(empty); setBaseline(JSON.stringify(empty)); } else setMessage(e instanceof ApiError ? e.message : "Profil konnte nicht geladen werden."); }).finally(() => setLoading(false)); }, [spotId, markClean]);
   useEffect(() => load(), [load]);
   const sectorOverlap = useMemo(() => form.sectors.some((a,i) => a.enabled && form.sectors.slice(i+1).some((b) => b.enabled && weatherSectorsOverlap(a,b))), [form.sectors]);
-  const save = async () => { setSaving(true); setMessage(null); setErrors({}); try { const saved = await putAdminWeatherProfile(spotId, form); const next = { ...saved, reviewed: !!saved.reviewed_at, expected_updated_at: saved.updated_at }; setForm(next); setBaseline(JSON.stringify(next)); markClean("weather"); setMessage("Wetterprofil gespeichert."); } catch (e) { if (e instanceof ApiError) { const d = (e.detail as {detail?: unknown})?.detail; if (d && typeof d === "object") setErrors(d as Record<string,string>); else setMessage(e.message); } else setMessage("Speichern fehlgeschlagen."); } finally { setSaving(false); } };
+  const save = async () => { setSaving(true); setMessage(null); setErrors({}); try { const saved = await putAdminWeatherProfile(spotId, form); const next = { ...saved, expected_updated_at: saved.updated_at }; setForm(next); setBaseline(JSON.stringify(next)); markClean("weather"); setMessage("Wetterprofil gespeichert."); } catch (e) { if (e instanceof ApiError) { const d = (e.detail as {detail?: unknown})?.detail; if (d && typeof d === "object") setErrors(d as Record<string,string>); else setMessage(e.message); } else setMessage("Speichern fehlgeschlagen."); } finally { setSaving(false); } };
   const runDiagnostics = () => { setDiag(null); setMessage(null); getAdminWeatherDiagnostics(spotId).then(setDiag).catch((e) => setMessage(e instanceof ApiError ? e.message : "Diagnostik fehlgeschlagen.")); };
   const recalculate = async (rebuildProfile: boolean) => { setMessage(null); try { setForecastJob(await recalculateAdminForecast(spotId, rebuildProfile)); } catch (e) { setMessage(e instanceof ApiError ? e.message : "Neuberechnung konnte nicht gestartet werden."); } };
   const activateSectors = async () => {
@@ -77,10 +77,9 @@ export default function AdminWeatherProfile() {
   if (loading) return <p>Wetterprofil wird geladen …</p>;
   return <div className="max-w-5xl"><UnsavedChangesDialog blocker={blocker}/><Link to="/admin/weather" className="text-admin-primary underline">← Wetterprofile</Link><h1 className="mt-3 text-2xl font-semibold">Wetterprofil</h1>
     {message && <p role="status" className="mt-3 rounded-md border border-admin-border p-3">{message}</p>}
-    <section className={sectionCls}><h2 className="text-lg font-semibold">A. Profilstatus</h2><div className="mt-3 grid gap-3 sm:grid-cols-3">
+    <section className={sectionCls}><h2 className="text-lg font-semibold">A. Profilstatus</h2><div className="mt-3 grid gap-3 sm:grid-cols-2">
       <label>Qualitätsstufe<select className={inputCls} value={form.quality_tier} onChange={(e) => setForm({...form, quality_tier: e.target.value as WeatherProfileInput["quality_tier"]})}><option value="coordinates">Coordinates</option><option value="coastal">Basis/Küste</option><option value="extended">Extended</option>{form.quality_tier === "advanced" && <option value="advanced" disabled>Advanced (deaktiviert)</option>}</select></label>
       <label className="flex items-center gap-2 pt-7"><input type="checkbox" checked={form.active} onChange={(e) => setForm({...form, active:e.target.checked})}/> Aktiv</label>
-      <label className="flex items-center gap-2 pt-7"><input type="checkbox" checked={form.reviewed} onChange={(e) => setForm({...form, reviewed:e.target.checked})}/> Fachlich geprüft</label>
     </div>{errors.quality_tier && <p role="alert" className="text-admin-danger">{errors.quality_tier}</p>}</section>
     <section className={sectionCls}><h2 className="text-lg font-semibold">B. Basisdaten</h2><div className="mt-3 grid gap-4 sm:grid-cols-3">
       <label>IANA-Zeitzone<input className={inputCls} placeholder="Europe/Berlin" value={form.timezone ?? ""} onChange={(e) => setForm({...form, timezone:e.target.value || null})}/>{errors.timezone && <span className="text-admin-danger">{errors.timezone}</span>}</label>

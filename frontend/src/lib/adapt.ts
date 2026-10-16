@@ -83,6 +83,8 @@ export function adaptSpot(
     regionCountry: summary.region_country ?? region?.country ?? null,
     typicalWindKt: summary.typical_wind_kt ?? (typicalWind || null),
     typicalWaveHeightM: summary.typical_wave_height_m ?? null,
+    origin: s.origin ?? "editorial",
+    contributorName: s.contributor_name ?? null,
     windAvailability: summary.wind_availability ?? null,
     mapView:
       editorial?.map_view &&

@@ -93,7 +93,7 @@ export default function InlineTipComposer({
             maxLength={4000}
             placeholder="Kommentar hinzufügen …"
             aria-label="Kommentar hinzufügen"
-            className="h-11 w-full rounded-[14px] border border-line bg-page py-2 pl-4 pr-12 text-sz-16 text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-label"
+            className="h-11 w-full rounded-card border border-line bg-page py-2 pl-4 pr-12 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-ui"
           />
           {text.trim() && (
             <button
@@ -101,10 +101,10 @@ export default function InlineTipComposer({
               onClick={onSend}
               disabled={busy}
               aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
-              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-[14px] text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40"
+              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-card text-accent transition-colors hover:bg-band hover:text-accent-hover disabled:opacity-40"
             >
               {busy ? (
-                <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-teal/25 border-t-teal" />
+                <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-accent/25 border-t-accent" />
               ) : (
                 <svg aria-hidden width="18" height="18" viewBox="0 0 20 20" fill="none">
                   <path d="M3 10 16.5 3.5 12 16.5l-2.2-5.1L3 10Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -136,8 +136,8 @@ export default function InlineTipComposer({
       {replyToName && <p className="mb-2 text-caption text-muted">Antwort an {replyToName}</p>}
       {!parentId && !compact && (
         <div className="mb-3">
-          <label htmlFor="inline-comment-title" className="text-label font-medium text-ink">Überschrift <span className="text-muted">(optional)</span></label>
-          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-[14px] border border-line bg-page px-4 text-sz-16 text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body" />
+          <label htmlFor="inline-comment-title" className="text-ui font-medium text-ink">Überschrift <span className="text-muted">(optional)</span></label>
+          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-card border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body" />
           <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
         </div>
       )}
@@ -147,15 +147,15 @@ export default function InlineTipComposer({
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
         maxLength={4000}
-        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-[14px] border border-line bg-page p-4 text-sz-16 text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body"
+        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-card border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body"
       />
-      {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
       <div className="mt-2 flex items-center justify-between gap-3">
         {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex items-center gap-1.5 text-label font-medium text-muted transition-colors hover:text-ink"
+            className="inline-flex items-center gap-1.5 text-ui font-medium text-muted transition-colors hover:text-ink"
           >
             <CloseIcon width={15} height={15} />
             Abbrechen
@@ -169,10 +169,10 @@ export default function InlineTipComposer({
           onClick={onSend}
           disabled={busy || !text.trim()}
           aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] text-teal transition-colors hover:bg-band hover:text-teal-hover disabled:opacity-40 disabled:hover:bg-transparent"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-card text-accent transition-colors hover:bg-band hover:text-accent-hover disabled:opacity-40 disabled:hover:bg-transparent"
         >
           {busy ? (
-            <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-teal/25 border-t-teal" />
+            <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-accent/25 border-t-accent" />
           ) : (
             <svg aria-hidden width="18" height="18" viewBox="0 0 20 20" fill="none">
               <path d="M3 10 16.5 3.5 12 16.5l-2.2-5.1L3 10Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />

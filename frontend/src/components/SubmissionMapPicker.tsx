@@ -26,7 +26,7 @@ export default function SubmissionMapPicker({
   onPick: (lat: number, lon: number) => void;
 }) {
   return (
-    <div className="h-56 overflow-hidden rounded-[14px] border border-line" aria-label="Karte zur Auswahl der Spotposition">
+    <div className="h-56 overflow-hidden rounded-card border border-line" aria-label="Karte zur Auswahl der Spotposition">
       <MapContainer center={center} zoom={8} scrollWheelZoom={false} className="h-full w-full">
         <TileLayer url={cartoTileUrl(CARTO_VOYAGER)} attribution={CARTO_ATTRIBUTION} />
         <MapControls center={center} onPick={onPick} />

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "../map.css";
-import L from "leaflet";
+import { pinIcon } from "../lib/mapPin";
 import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import LandingHeader from "../components/LandingHeader";
 import SpotCard from "../components/SpotCard";
@@ -26,18 +26,6 @@ import {
   type FilterState,
 } from "../lib/filters";
 
-/** Navy teardrop pin — same look as the main map view. */
-const pinIcon = L.divIcon({
-  className: "swd-pin",
-  html: `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z"
-        fill="#241C17" stroke="#ffffff" stroke-width="1.4"/>
-      <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
-    </svg>`,
-  iconSize: [30, 38],
-  iconAnchor: [15, 38],
-  popupAnchor: [0, -34],
-});
 
 export default function RegionDetail() {
   const { slug } = useParams();
@@ -93,8 +81,8 @@ export default function RegionDetail() {
       <div className="relative min-h-screen bg-page">
         <LandingHeader />
         <div className="hero-h w-full animate-pulse bg-ink-soft" />
-        <div className="mx-auto max-w-[1570px] px-4 pt-16 sm:px-8">
-          <div className="mb-10 h-8 w-64 animate-pulse rounded bg-line" />
+        <div className="mx-auto max-w-page px-4 pt-16 sm:px-8">
+          <div className="mb-10 h-8 w-64 animate-pulse rounded-card bg-line" />
           <SpotGridSkeleton />
         </div>
       </div>
@@ -105,7 +93,7 @@ export default function RegionDetail() {
     return (
       <div className="relative min-h-screen bg-page">
         <LandingHeader onLight />
-        <div className="mx-auto max-w-[1570px] px-4 pt-32 sm:px-8">
+        <div className="mx-auto max-w-page px-4 pt-32 sm:px-8">
           <ErrorBanner
             message={error}
             onRetry={() => {
@@ -124,7 +112,7 @@ export default function RegionDetail() {
         <LandingHeader onLight />
         <div className="grid min-h-screen place-items-center px-6 text-center">
           <div>
-            <h1 className="text-2xl font-semibold text-ink">Region nicht gefunden</h1>
+            <h1 className="text-title font-semibold text-ink">Region nicht gefunden</h1>
             <Link to="/" className="mt-4 inline-block text-body text-ink underline">
               Zurück zur Übersicht
             </Link>
@@ -191,16 +179,16 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-[14px] border border-line bg-surface py-2 pl-2.5 pr-4 text-ui font-medium text-teal transition-colors hover:bg-band"
+            className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-card border border-line bg-surface py-2 pl-2.5 pr-4 text-ui font-medium text-accent transition-colors hover:bg-band"
           >
-            <ChevronDownIcon className="rotate-90 text-sz-18" />
+            <ChevronDownIcon className="rotate-90 text-lead" />
             Zurück
           </button>
         </EditorialHero>
 
         {/* Breadcrumb + region identity (moved off the hero) */}
-        <div className="mx-auto max-w-[1570px] px-4 pt-6 sm:px-8">
-          <nav className="text-label font-medium text-muted">
+        <div className="mx-auto max-w-page px-4 pt-6 sm:px-8">
+          <nav className="text-ui font-medium text-muted">
             <Link to="/" className="hover:underline">
               Übersicht
             </Link>
@@ -213,7 +201,7 @@ export default function RegionDetail() {
             <span className="mx-1.5 text-muted">›</span>
             <span className="text-ink">{region.name}</span>
           </nav>
-          <h1 className="mt-2 text-sz-28 font-semibold leading-tight text-balance text-ink sm:text-sz-32">
+          <h1 className="mt-2 text-heading font-semibold leading-tight text-balance text-ink sm:text-heading-lg">
             {region.name}
           </h1>
           {spotCount && (
@@ -242,7 +230,7 @@ export default function RegionDetail() {
         {/* Die Spots — same body width as the spot detail page's content frame. */}
         <SectionBand tone="page" pad="md" width="spotBody">
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line/70 pb-5">
-            <h2 className="text-sz-28 font-semibold leading-tight text-ink text-balance sm:text-sz-32">
+            <h2 className="text-heading font-semibold leading-tight text-ink text-balance sm:text-heading-lg">
               Die Spots
             </h2>
             <SortDropdown value={filters} onChange={setFilters} />
@@ -268,7 +256,7 @@ export default function RegionDetail() {
         {/* Auf der Karte */}
         {withCoords.length > 0 && (
           <SectionBand tone="band" heading="Auf der Karte">
-            <div className="overflow-hidden rounded-[14px] border border-line">
+            <div className="overflow-hidden rounded-card border border-line">
               <MapContainer
                 center={region.center}
                 zoom={7}

@@ -17,9 +17,11 @@ import { addRecent } from "../lib/recentSearches";
 import { useRegions, useSpots } from "../lib/hooks";
 import {
   buildSearchParams,
-  EMPTY_SEARCH,
+  loadSearchDraft,
+  saveSearchDraft,
   whenLabel,
   type SearchValue,
+  type WhereSelection,
 } from "../lib/searchSubmit";
 
 type Segment = "where" | "when" | "which";
@@ -50,7 +52,17 @@ const VIEWPORT_GUTTER = 24;
  *  - variant "hero": the large collapsed bar in the landing hero.
  *  - variant "pill": the compact pill docked in the header once scrolled.
  */
-export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pill" }) {
+export default function SearchBar({
+  variant = "hero",
+  whereOnly = false,
+  onResolve,
+}: {
+  variant?: "hero" | "pill";
+  /** Place-only search (the wind map): no "Wann?"/"Welche Sportart?" segments. */
+  whereOnly?: boolean;
+  /** When set, submitting hands the picked place back instead of navigating. */
+  onResolve?: (selection: WhereSelection | null, text: string) => void;
+}) {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const [expanded, setExpanded] = useState(false);
@@ -63,14 +75,16 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
     placement: "above" | "below";
   } | null>(null);
   const [open, setOpen] = useState<Segment>("where");
-  const [val, setVal] = useState<SearchValue>(EMPTY_SEARCH);
+  const [val, setVal] = useState<SearchValue>(() => loadSearchDraft());
   const [whenTab, setWhenTab] = useState<WhenTab>("date");
 
   // "Wohin?" results (owned here so ↑/↓/Enter can navigate them). Spots first,
   // then Regionen — the flat order the arrow keys move through.
   const searchDataEnabled = expanded || val.whereText.trim().length > 0;
-  const { data: spots } = useSpots({}, searchDataEnabled);
-  const { data: regions } = useRegions(searchDataEnabled);
+  const { data: spots, loading: spotsLoading, error: spotsError, reload: reloadSpots } = useSpots({}, searchDataEnabled);
+  const { data: regions, loading: regionsLoading, error: regionsError, reload: reloadRegions } = useRegions(searchDataEnabled);
+  const placeLoading = (spotsLoading || regionsLoading) && !spots && !regions;
+  const placeError = spotsError ?? regionsError;
   const q = val.whereText.trim().toLowerCase();
   const regionById = useMemo(
     () => new Map((regions ?? []).map((r) => [r.id, r])),
@@ -174,6 +188,13 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
   }, [expanded, open, shellReady]);
 
   const submit = () => {
+    // Place-only callers (the wind map) zoom to the pick themselves.
+    if (onResolve) {
+      onResolve(val.whereSel ?? null, val.whereText.trim());
+      collapse();
+      return;
+    }
+    saveSearchDraft(val);
     navigate(`/search?${buildSearchParams(val).toString()}`);
     collapse();
   };
@@ -186,8 +207,9 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
       whereText: pick.label,
       whereOpen: false,
     }));
-    // Airbnb flow: after the place, advance to the date step.
-    setOpen("when");
+    // Airbnb flow: after the place, advance to the date step. A place-only
+    // search has no later step, so it stays on the place segment.
+    setOpen(whereOnly ? "where" : "when");
   };
 
   // Switching Datum ↔ flexibel starts that mode fresh (the two are exclusive).
@@ -246,7 +268,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           layoutId={reduce ? undefined : "search-shell"}
           type="button"
           onClick={() => openExpanded()}
-          className={`flex max-w-full items-center gap-2.5 rounded-[14px] border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
+          className={`flex max-w-full items-center gap-2.5 rounded-card border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
@@ -260,7 +282,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
           ref={heroTriggerRef}
           type="button"
           onClick={() => openExpanded()}
-          className={`flex h-14 w-full items-center gap-3 rounded-[14px] border border-line bg-surface p-1 pl-5 text-left shadow-float ${
+          className={`flex h-14 w-full items-center gap-3 rounded-card border border-line bg-surface p-1 pl-5 text-left shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
@@ -272,7 +294,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
             {summary || "Jetzt suchen"}
           </span>
           <span className="grid h-12 w-12 shrink-0 place-items-center text-ink">
-            <SearchIcon className="text-sz-18" />
+            <SearchIcon className="text-lead" />
           </span>
         </button>
       )}
@@ -288,7 +310,7 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
               // Header searches rise to the top. In the landing hero the open
               // stack ends exactly at the collapsed bar's former bottom edge:
               // search shell first, active panel directly underneath.
-              className={`fixed inset-0 z-[1300] bg-black/25 ${
+              className={`fixed inset-0 z-sheet bg-black/25 ${
                 variant === "pill" ? "flex items-start justify-center px-4 pt-4 sm:pt-6" : ""
               }`}
               initial={{ opacity: 0 }}
@@ -325,26 +347,26 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                 }}
               >
                 <div className="relative">
-                  {/* Segmented bar — same radius as the tiles (rounded-[14px]). The
+                  {/* Segmented bar — same radius as the tiles (rounded-card). The
                       shared layoutId (pill trigger only) makes this grow out of
                       the header pill instead of fading in mid-page. */}
                   <motion.div
                     layoutId={variant === "pill" && !reduce ? "search-shell" : undefined}
-                    className="flex h-14 items-stretch gap-1 rounded-[14px] bg-surface p-1 shadow-float"
+                    className="flex h-14 items-stretch gap-1 rounded-card bg-surface p-1 shadow-float"
                   >
                     {/* Wohin? — the Tippleiste lives in the bar. */}
                     <label
                       onClick={() => setOpen("where")}
-                      className="relative flex h-12 flex-1 cursor-text flex-col items-start justify-center rounded-[14px] px-5 py-0 transition-colors hover:bg-band/60"
+                      className="relative flex h-12 flex-1 cursor-text flex-col items-start justify-center rounded-card px-5 py-0 transition-colors hover:bg-band/60"
                     >
                       {open === "where" && (
                         <motion.span
                           layoutId={reduce ? undefined : "search-seg"}
-                          className="absolute inset-0 rounded-[14px] bg-band"
+                          className="absolute inset-0 rounded-card bg-band"
                           transition={reduce ? { duration: 0.05 } : PANEL_TRANSITION}
                         />
                       )}
-                      <span className="relative z-10 text-caption font-semibold leading-tight text-teal">Wohin?</span>
+                      <span className="relative z-10 text-caption font-semibold leading-tight text-accent">Wohin?</span>
                       <input
                         ref={whereInputRef}
                         value={val.whereText}
@@ -358,35 +380,39 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                         placeholder="Region oder Spot suchen"
                         aria-label="Region oder Spot suchen"
                         aria-expanded={open === "where"}
-                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-label leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
+                        className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-ui leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                       />
                     </label>
 
-                    <SegmentButton
-                      label="Wann?"
-                      placeholder="Datum wählen"
-                      value={whenLabel(val.when)}
-                      active={open === "when"}
-                      reduceMotion={Boolean(reduce)}
-                      onClick={() => setOpen("when")}
-                    />
+                    {!whereOnly && (
+                      <>
+                        <SegmentButton
+                          label="Wann?"
+                          placeholder="Datum wählen"
+                          value={whenLabel(val.when)}
+                          active={open === "when"}
+                          reduceMotion={Boolean(reduce)}
+                          onClick={() => setOpen("when")}
+                        />
 
-                    <SegmentButton
-                      label="Welche Sportart?"
-                      placeholder="Sportart wählen"
-                      value={sportText}
-                      active={open === "which"}
-                      reduceMotion={Boolean(reduce)}
-                      onClick={() => setOpen("which")}
-                    />
+                        <SegmentButton
+                          label="Welche Sportart?"
+                          placeholder="Sportart wählen"
+                          value={sportText}
+                          active={open === "which"}
+                          reduceMotion={Boolean(reduce)}
+                          onClick={() => setOpen("which")}
+                        />
+                      </>
+                    )}
 
                     <button
                       type="button"
                       onClick={submit}
                       aria-label="Suchen"
-                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-teal text-white transition-colors hover:bg-teal-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+                      className="my-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-card bg-teal text-white transition-colors hover:bg-teal-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     >
-                      <SearchIcon className="text-sz-18" />
+                      <SearchIcon className="text-lead" />
                     </button>
                   </motion.div>
 
@@ -415,16 +441,32 @@ export default function SearchBar({ variant = "hero" }: { variant?: "hero" | "pi
                           shell no longer jumps vertically while switching. */}
                       <div
                         data-testid="desktop-search-panel"
-                        className="h-[350px] overflow-y-auto rounded-[14px] bg-surface p-5 shadow-float"
+                        className="h-[350px] overflow-y-auto rounded-card bg-surface p-5 shadow-float"
                       >
                         {open === "where" && (
-                          <SearchWhere
-                            spotItems={spotItems}
-                            regionItems={regionItems}
-                            activeCol={activeCol}
-                            activeRow={activeRow}
-                            onPick={pickWhere}
-                          />
+                          placeLoading ? (
+                            <p role="status" className="py-4 text-ui text-muted">Orte werden geladen …</p>
+                          ) : placeError && spotItems.length === 0 && regionItems.length === 0 ? (
+                            <div role="alert" className="rounded-card bg-band px-4 py-3 text-ui text-ink">
+                              <p className="font-semibold">Orte konnten nicht geladen werden.</p>
+                              <p className="mt-1 text-muted">{placeError}</p>
+                              <button
+                                type="button"
+                                onClick={() => { reloadSpots(); reloadRegions(); }}
+                                className="mt-2 min-h-11 font-semibold text-accent underline underline-offset-4"
+                              >
+                                Erneut versuchen
+                              </button>
+                            </div>
+                          ) : (
+                            <SearchWhere
+                              spotItems={spotItems}
+                              regionItems={regionItems}
+                              activeCol={activeCol}
+                              activeRow={activeRow}
+                              onPick={pickWhere}
+                            />
+                          )
                         )}
                         {open === "when" && (
                           <div>
@@ -479,17 +521,17 @@ function SegmentButton({
       type="button"
       onClick={onClick}
       aria-expanded={active}
-      className="relative flex h-12 flex-1 flex-col items-start justify-center rounded-[14px] px-5 py-0 text-left transition-colors hover:bg-band/60"
+      className="relative flex h-12 flex-1 flex-col items-start justify-center rounded-card px-5 py-0 text-left transition-colors hover:bg-band/60"
     >
       {active && (
         <motion.span
           layoutId={reduceMotion ? undefined : "search-seg"}
-          className="absolute inset-0 rounded-[14px] bg-band"
+          className="absolute inset-0 rounded-card bg-band"
           transition={reduceMotion ? { duration: 0.05 } : PANEL_TRANSITION}
         />
       )}
-      <span className="relative z-10 text-caption font-semibold leading-tight text-teal">{label}</span>
-      <span className={`relative z-10 truncate text-label leading-tight ${value ? "text-ink" : "text-muted"}`}>
+      <span className="relative z-10 text-caption font-semibold leading-tight text-accent">{label}</span>
+      <span className={`relative z-10 truncate text-ui leading-tight ${value ? "text-ink" : "text-muted"}`}>
         {value || placeholder}
       </span>
     </button>
@@ -514,13 +556,13 @@ function SportPicker({
             type="button"
             onClick={() => onToggle(sport)}
             aria-pressed={isOn}
-            className="flex items-center gap-4 rounded-[14px] px-1.5 py-3 text-left transition-colors hover:bg-band"
+            className="flex items-center gap-4 rounded-card px-1.5 py-3 text-left transition-colors hover:bg-band"
           >
-            <Icon className="shrink-0 text-sz-26 text-ink" />
-            <span className="flex-1 text-sz-16 font-medium text-ink">{sportLabel(sport)}</span>
+            <Icon className="shrink-0 text-heading text-ink" />
+            <span className="flex-1 text-body font-medium text-ink">{sportLabel(sport)}</span>
             <span
               className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition-colors ${
-                isOn ? "border-teal" : "border-line"
+                isOn ? "border-accent" : "border-line"
               }`}
             >
               {isOn && <span className="h-3 w-3 rounded-full bg-teal" />}

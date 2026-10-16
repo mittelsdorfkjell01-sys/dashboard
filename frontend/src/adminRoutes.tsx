@@ -28,6 +28,7 @@ const AdminWindClimatologyV3 = React.lazy(() => import("./pages/AdminWindClimato
 const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 const AdminWeatherProfiles = React.lazy(() => import("./pages/AdminWeatherProfiles"));
 const AdminWeatherProfile = React.lazy(() => import("./pages/AdminWeatherProfile"));
+const AdminWeatherFields = React.lazy(() => import("./pages/AdminWeatherFields"));
 const AdminTides = React.lazy(() => import("./pages/AdminTides"));
 const AdminRiderModel = React.lazy(() => import("./pages/AdminRiderModel"));
 const AdminRecommendationQuality = React.lazy(() => import("./pages/AdminRecommendationQuality"));
@@ -58,6 +59,7 @@ const adminRoutes: RouteObject[] = [
           { path: "hero", element: <AdminHero /> },
           { path: "weather", element: <AdminWeatherProfiles /> },
           { path: "weather/:spotId", element: <AdminWeatherProfile /> },
+          { path: "weather-fields", element: <AdminWeatherFields /> },
           { path: "tides", element: <AdminTides /> },
           { path: "rider-model", element: <AdminRiderModel /> },
           { path: "recommendation-quality", element: <AdminRecommendationQuality /> },

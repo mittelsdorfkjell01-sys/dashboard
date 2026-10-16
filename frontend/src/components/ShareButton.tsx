@@ -44,7 +44,7 @@ export default function ShareButton({ spot }: { spot: Spot }) {
       {copied ? (
         <CheckCircleIcon checkOnly width={18} height={18} className="text-green" />
       ) : (
-        <ShareIcon className="text-sz-18" />
+        <ShareIcon className="text-lead" />
       )}
     </button>
   );

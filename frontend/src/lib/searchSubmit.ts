@@ -41,6 +41,42 @@ export const EMPTY_SEARCH: SearchValue = {
   disciplines: [],
 };
 
+const SEARCH_DRAFT_KEY = "swd.search-draft.v1";
+
+function sessionStore(): Pick<Storage, "getItem" | "setItem" | "removeItem"> | null {
+  try {
+    return typeof window === "undefined" ? null : window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function loadSearchDraft(
+  storage: Pick<Storage, "getItem"> | null = sessionStore(),
+): SearchValue {
+  if (!storage) return EMPTY_SEARCH;
+  try {
+    const parsed = JSON.parse(storage.getItem(SEARCH_DRAFT_KEY) ?? "null") as Partial<SearchValue> | null;
+    if (!parsed || typeof parsed.whereText !== "string" || !Array.isArray(parsed.which)) return EMPTY_SEARCH;
+    return { ...EMPTY_SEARCH, ...parsed };
+  } catch {
+    return EMPTY_SEARCH;
+  }
+}
+
+export function saveSearchDraft(
+  value: SearchValue | null,
+  storage: Pick<Storage, "setItem" | "removeItem"> | null = sessionStore(),
+): void {
+  if (!storage) return;
+  try {
+    if (value) storage.setItem(SEARCH_DRAFT_KEY, JSON.stringify(value));
+    else storage.removeItem(SEARCH_DRAFT_KEY);
+  } catch {
+    /* Private browsing or quota: the current search still works. */
+  }
+}
+
 /** Whether the place axis is left open ("egal wo" / no concrete place). */
 export function isPlaceOpen(v: SearchValue): boolean {
   return v.whereOpen || (!v.whereSel && !v.whereText.trim());
