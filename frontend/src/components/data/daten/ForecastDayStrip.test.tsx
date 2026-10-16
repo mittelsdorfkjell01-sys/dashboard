@@ -67,7 +67,7 @@ describe("ForecastDayStrip", () => {
     // Weekday + date caption (2026-09-03 is a Thursday → "DO 03.09.").
     expect(html).toContain("03.09.");
     // Exactly eight fixed-slot bars (06, 08, … 20) per real hourly day.
-    expect((html.match(/rounded-\[3px\]/g) ?? [])).toHaveLength(10 * 8);
+    expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(10 * 8);
   });
 
   it("still renders all eight bars for a day already in progress (missing early hours)", () => {
@@ -84,6 +84,6 @@ describe("ForecastDayStrip", () => {
     );
 
     // Eight bars regardless of how many hours the day carries.
-    expect((html.match(/rounded-\[3px\]/g) ?? [])).toHaveLength(8);
+    expect((html.match(/data-wind-bar/g) ?? [])).toHaveLength(8);
   });
 });

@@ -2,6 +2,7 @@ import type { Spot } from "../../lib/types";
 import { CheckCircleIcon } from "../../lib/icons";
 import { sportLabel } from "../../lib/labels";
 import { useSpotDataScope } from "../../state/SpotDataScope";
+import Segmented from "../ui/Segmented";
 
 export default function SpotDataHeader({ spot }: { spot: Spot }) {
   const { sportMode, setSportMode, windUnit, setWindUnit } = useSpotDataScope();
@@ -17,7 +18,7 @@ export default function SpotDataHeader({ spot }: { spot: Spot }) {
         {spot.sports && spot.sports.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
             {spot.sports.map((sport) => (
-              <span key={sport} className="inline-flex items-center gap-1 text-label font-medium text-ink">
+              <span key={sport} className="inline-flex items-center gap-1 text-ui font-medium text-ink">
                 {sportLabel(sport)}
                 <CheckCircleIcon checkOnly width={16} height={16} className="text-ink" />
               </span>
@@ -29,47 +30,19 @@ export default function SpotDataHeader({ spot }: { spot: Spot }) {
           compact, so they read as a secondary setting next to the data
           rather than competing with it (audit P1). */}
       <div className="flex flex-wrap items-center gap-2 sm:justify-self-end">
-        <Toggle
-          compact
+        <Segmented
           value={sportMode}
           onChange={setSportMode}
           options={[{ id: "wind", label: "Wind" }, { id: "surf", label: "Surf" }]}
           label="Sportmodus"
         />
-        <Toggle
-          compact
+        <Segmented
           value={windUnit}
           onChange={setWindUnit}
           options={[{ id: "kn", label: "kn" }, { id: "ms", label: "m/s" }]}
           label="Windeinheit"
         />
       </div>
-    </div>
-  );
-}
-
-function Toggle<T extends string>({ value, onChange, options, label, compact = false }: {
-  value: T;
-  onChange: (value: T) => void;
-  options: Array<{ id: T; label: string }>;
-  label: string;
-  compact?: boolean;
-}) {
-  return (
-    <div role="group" aria-label={label} className="inline-flex w-fit rounded-full border border-line bg-band p-0.5">
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          aria-pressed={value === option.id}
-          onClick={() => onChange(option.id)}
-          className={`${compact ? "px-3 text-label" : "px-3.5 text-label"} min-h-11 min-w-11 rounded-full font-medium tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
-            value === option.id ? "bg-ink text-surface" : "text-muted hover:text-ink"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
     </div>
   );
 }

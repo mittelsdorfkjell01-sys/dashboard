@@ -65,7 +65,7 @@ export default function LiveRow({ live }: {
 
   return (
     <section aria-label="Wetterwerte und Herkunft">
-      <div className="flex flex-wrap items-start justify-between gap-2 px-3 py-3 text-label">
+      <div className="flex flex-wrap items-start justify-between gap-2 px-3 py-3 text-ui">
         <div>
           <p className="font-semibold text-ink">{sourceLabel}</p>
           <p className="mt-0.5 text-muted">{validAt ? new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" }).format(new Date(validAt)) : "Datenzeit unbekannt"}{!selectedForecast && ` · ${ageLabel}`}</p>
@@ -76,7 +76,7 @@ export default function LiveRow({ live }: {
           {live?.measurement && !selectedForecast && <p className="mt-2">Station {live.measurement.station_name ?? live.measurement.provider_station_id} · {live.measurement.distance_km == null ? "Entfernung unbekannt" : `${live.measurement.distance_km.toFixed(1)} km vom Spot`}. Die Station steht nicht zwingend direkt am Spot.</p>}
         </details>
       </div>
-      {(provenance?.stale || selectedForecast?.stale) && <p role="alert" className="border-y border-warning/40 bg-warning/10 px-3 py-2 text-label font-medium text-ink">Diese Daten sind veraltet. Bitte nutze sie nicht als aktuelle Lageeinschätzung.</p>}
+      {(provenance?.stale || selectedForecast?.stale) && <p role="alert" className="border-y border-warning/40 bg-warning/10 px-3 py-2 text-ui font-medium text-ink">Diese Daten sind veraltet. Bitte nutze sie nicht als aktuelle Lageeinschätzung.</p>}
     <div data-forecast-utc={selectedForecast?.utcKey??""} data-source-type={provenance?.source_type ?? "unknown"} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
       {cells.map((cell) => (
         <div key={cell.label} className={`border-b border-r border-line-soft px-3 py-2.5 text-right lg:border-b-0 ${cell.priority ? "bg-gradient-to-b from-green/[0.06] to-transparent" : ""}`}>

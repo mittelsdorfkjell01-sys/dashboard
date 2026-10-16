@@ -1,12 +1,27 @@
-import { useMemo, useState } from "react";
-import type { WindClimatologySection, WindWindowKey } from "../../lib/api";
+import { useEffect, useMemo, useState } from "react";
+import type { WindClimatologyRead, WindClimatologySection, WindWindowKey } from "../../lib/api";
 import { useWindClimatology } from "../../lib/hooks";
 import { InfoIcon } from "../../lib/icons";
 import type { Spot } from "../../lib/types";
+import YearRangeSlider from "./YearRangeSlider";
+
+type YearWindow = { fromYear: number; toYear: number };
+
+function storedYears(): YearWindow | null {
+  try {
+    const raw = sessionStorage.getItem("wind-years");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.fromYear === "number" && typeof parsed?.toYear === "number") return parsed;
+    }
+  } catch {
+    // ignore unavailable/blocked sessionStorage
+  }
+  return null;
+}
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const WINDOWS: [WindWindowKey, string][] = [["10_15", "10–15 kt"], ["15_20", "15–20 kt"], ["20_30", "20–30 kt"], ["30_plus", "30+ kt"]];
-const CHART_HEIGHT_PX = 176; // h-44
 
 export function metricValue(section: WindClimatologySection, windowKey: WindWindowKey, unit: "percent" | "hours"): number | null {
   const metric = section.windows[windowKey];
@@ -27,12 +42,32 @@ function niceCeiling(value: number, unit: "percent" | "hours"): number {
   return steps.find((step) => step >= value) ?? (unit === "percent" ? 100 : 24);
 }
 
+/** Axis ticks along the top of the bar track: ~4–5 evenly spaced, round steps up
+ *  to the scale maximum (no zero — bars start at the track's left edge). */
+function makeTicks(max: number, unit: "percent" | "hours"): number[] {
+  const steps = unit === "percent" ? [5, 10, 20, 25, 50] : [1, 2, 5, 10];
+  const raw = max / 5;
+  const step = steps.find((s) => s >= raw) ?? steps[steps.length - 1];
+  const ticks: number[] = [];
+  for (let t = step; t <= max + 1e-6; t += step) ticks.push(Math.round(t * 100) / 100);
+  return ticks;
+}
+
 export default function Climatology({ spot }: { spot: Spot }) {
-  const { data, loading, error, reload } = useWindClimatology(spot.id);
+  const [yearWindow, setYearWindow] = useState<YearWindow | null>(storedYears);
+  const { data, loading, error, reload } = useWindClimatology(spot.id, yearWindow);
   const [windowKey, setWindowKey] = useState<WindWindowKey>(storedWindow);
   const [unit, setUnit] = useState<"percent" | "hours">(() => sessionStorage.getItem("wind-unit") === "hours" ? "hours" : "percent");
   const [infoOpen, setInfoOpen] = useState(false);
-  const sections = data?.sections;
+
+  // Keep the last ready payload on screen while a new year-window request is in
+  // flight, so dragging the slider refreshes the bars in place instead of
+  // dropping to the skeleton (which looked like a full page reload).
+  const [display, setDisplay] = useState<WindClimatologyRead | null>(null);
+  useEffect(() => { if (data && data.status === "ready") setDisplay(data); }, [data]);
+  useEffect(() => { setDisplay(null); }, [spot.id]);
+  const active = data && data.status === "ready" ? data : display;
+  const sections = active?.sections;
 
   const scaleMax = useMemo(() => {
     if (!sections) return unit === "percent" ? 100 : 24;
@@ -43,59 +78,125 @@ export default function Climatology({ spot }: { spot: Spot }) {
     return niceCeiling(peak * 1.15, unit);
   }, [sections, windowKey, unit]);
 
-  if (loading) return <ClimatologyEmptyState state="loading" />;
-  if (error || !data || data.status === "failed") return <ClimatologyEmptyState state="error" onRetry={reload} />;
-  if (data.status !== "ready" || !sections) return <ClimatologyEmptyState state={data.status === "processing" || data.status === "pending" ? "pending" : "unavailable"} />;
+  if (!active || !sections) {
+    if (loading) return <ClimatologyEmptyState state="loading" />;
+    if (error || data?.status === "failed") return <ClimatologyEmptyState state="error" onRetry={reload} />;
+    return <ClimatologyEmptyState state={data?.status === "processing" || data?.status === "pending" ? "pending" : "unavailable"} />;
+  }
 
   const selectedLabel = WINDOWS.find(([key]) => key === windowKey)![1];
-  const axisTicks = [4, 3, 2, 1, 0].map((n) => Math.round((scaleMax * n) / 4));
   const selectedValues = sections.map((section) => metricValue(section, windowKey, unit));
   const hasPositiveValue = selectedValues.some((value) => value != null && value > 0);
+  const ticks = makeTicks(scaleMax, unit);
+  const refreshing = loading && !!display; // a year-window change is in flight
+  const toggleUnit = () => {
+    const next = unit === "percent" ? "hours" : "percent";
+    setUnit(next);
+    sessionStorage.setItem("wind-unit", next);
+  };
 
-  return <div className="p-4">
+  // Year-range window: only the START year moves (how far into the past); the end
+  // is always the present. A chosen window is re-aggregated server-side from the
+  // stored per-year data; the full span sends no params so the edge keeps caching.
+  const availableYears = active.available_years ?? null;
+  const fromYear = availableYears
+    ? Math.max(availableYears.min, Math.min(yearWindow?.fromYear ?? availableYears.min, availableYears.max))
+    : null;
+  const onYearChange = (nextFrom: number) => {
+    if (!availableYears) return;
+    const next = nextFrom <= availableYears.min ? null : { fromYear: nextFrom, toYear: availableYears.max };
+    setYearWindow(next);
+    try {
+      if (next) sessionStorage.setItem("wind-years", JSON.stringify(next));
+      else sessionStorage.removeItem("wind-years");
+    } catch {
+      // ignore unavailable/blocked sessionStorage
+    }
+  };
+
+  // Flush to the content column like the meteogram — no card padding of its own.
+  return <div>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h3 className="font-display text-lg text-ink">Windmonate</h3>
-      <div className="flex min-w-0 flex-wrap gap-2">
-        <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full border border-line p-1" aria-label="Windfenster">{WINDOWS.map(([key, label]) => <button key={key} type="button" onClick={() => { setWindowKey(key); sessionStorage.setItem("wind-window", key); }} aria-pressed={windowKey === key} className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${windowKey === key ? "bg-teal text-white" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
-        <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full border border-line p-1" aria-label="Einheit">{([["percent", "Prozent"], ["hours", "Stunden/Tag"]] as const).map(([key, label]) => <button key={key} type="button" onClick={() => { setUnit(key); sessionStorage.setItem("wind-unit", key); }} aria-pressed={unit === key} className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${unit === key ? "bg-teal text-white" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
+      <h3 className="text-lg font-semibold tracking-tight text-ink">Windmonate</h3>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {/* Wind-window selection. */}
+        <div className="no-scrollbar flex min-w-0 max-w-full overflow-x-auto rounded-full bg-band p-1" aria-label="Windfenster">{WINDOWS.map(([key, label]) => <button key={key} type="button" onClick={() => { setWindowKey(key); sessionStorage.setItem("wind-window", key); }} aria-pressed={windowKey === key} className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors ${windowKey === key ? "bg-ink/10 text-ink" : "text-muted hover:text-ink"}`}>{label}</button>)}</div>
+        {/* Unit toggle: one tap swaps Prozent ↔ Stunden pro Tag. */}
+        <button type="button" onClick={toggleUnit} aria-label={`Einheit umschalten, aktuell ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-band px-3 py-1.5 text-xs font-medium text-ink transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink">
+          {unit === "percent" ? "%" : "h/Tag"}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
       </div>
     </div>
-    {data.refresh_status && <p className="mt-3 text-xs text-muted">Eine aktualisierte Berechnung läuft; angezeigt bleibt die letzte vollständige Version.</p>}
+    {active.refresh_status && <p className="mt-3 text-xs text-muted">Eine aktualisierte Berechnung läuft; angezeigt bleibt die letzte vollständige Version.</p>}
 
-    <div className="mt-5 flex gap-2">
-      <div className="flex shrink-0 flex-col justify-between text-right text-data-caption text-muted" style={{ height: `${CHART_HEIGHT_PX}px` }} aria-hidden="true">
-        {axisTicks.map((tick) => <span key={tick}>{tick}{unit === "percent" ? "%" : "h"}</span>)}
+    {/* Year-range window selector — start year only; the end is always "today". */}
+    {availableYears && fromYear != null && availableYears.max > availableYears.min && (
+      <div className="mt-4 max-w-sm">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-data-label font-medium uppercase tracking-wider text-muted">Zeitraum</span>
+          <span className="text-data-value tabular-nums text-ink">{fromYear}–{availableYears.max}</span>
+        </div>
+        <YearRangeSlider fromYear={fromYear} min={availableYears.min} max={availableYears.max} onChange={onYearChange} />
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="grid grid-cols-12 gap-x-0.5 sm:gap-x-1">
-          {MONTHS.map((month, monthIndex) => (
-            <div key={month} className="min-w-0 overflow-hidden">
-              <div className="relative flex items-end gap-0.5 border-b border-line px-px" style={{ height: `${CHART_HEIGHT_PX}px` }}>
-                {[0, 25, 50, 75].map((pct) => (
-                  <span key={pct} aria-hidden="true" className="pointer-events-none absolute inset-x-0 border-t border-dashed border-line-soft" style={{ bottom: `${pct}%` }} />
-                ))}
-                {sections.slice(monthIndex * 4, monthIndex * 4 + 4).map((section) => {
-                  const value = metricValue(section, windowKey, unit);
-                  const height = value == null ? 0 : Math.max(value > 0 ? 3 : 0, (value / scaleMax) * 100);
-                  const end = section.day_end === "month_end" ? "Monatsende" : section.day_end;
-                  const percent = metricValue(section, windowKey, "percent");
-                  const hours = metricValue(section, windowKey, "hours");
-                  const valueLabel = value == null ? "keine Daten" : `${value} ${unit === "percent" ? "Prozent" : "Stunden pro Tag"}`;
-                  return <button key={section.section} type="button" className="group relative z-10 flex h-full flex-1 items-end focus:outline-none focus:ring-2 focus:ring-orange" title={`${section.day_start}.–${end} ${month}: ${percent ?? "–"}% · ${hours ?? "–"} h/Tag (${data.period!.start_year}–${data.period!.end_year})`} aria-label={`${section.day_start}. bis ${end} ${month}, ${selectedLabel}: ${valueLabel}`}>
-                    {value == null ? (
-                      <span aria-hidden="true" className="mx-auto mb-px block h-0.5 w-2/3 rounded bg-line" />
-                    ) : value === 0 ? (
-                      <span aria-hidden="true" className="mx-auto mb-px block h-0.5 w-2/3 rounded bg-teal/55" />
-                    ) : (
-                      <span className="mx-auto block w-2/3 rounded-t bg-teal transition-opacity group-hover:opacity-75" style={{ height: `${height}%` }}><span className="sr-only">{value}</span></span>
-                    )}
-                  </button>;
-                })}
-              </div>
-              <p className="overflow-hidden whitespace-nowrap pt-1 text-center text-sz-8 font-medium uppercase leading-tight text-muted sm:text-data-caption sm:tracking-wider">{month}</p>
-            </div>
+    )}
+
+    {/* Horizontal bars: month at left, strength bar in the middle, value at
+        right; the scale ticks (current unit) run along the top of the track. */}
+    <div className={`mt-5 transition-opacity ${refreshing ? "opacity-60" : ""}`}>
+      {/* Top axis — ticks in the current unit, aligned to the bar track. */}
+      <div className="flex items-end gap-3 pb-1">
+        <div className="w-9 shrink-0 sm:w-10" aria-hidden="true" />
+        <div className="relative h-4 flex-1">
+          {ticks.map((t) => (
+            <span key={t} className="absolute -translate-x-1/2 text-sz-10 tabular-nums text-muted" style={{ left: `${(t / scaleMax) * 100}%` }}>{t}</span>
           ))}
         </div>
+        <div className="w-12 shrink-0 text-right text-sz-10 font-medium uppercase tracking-wide text-muted sm:w-14">{unit === "percent" ? "%" : "Std/Tag"}</div>
+      </div>
+
+      {/* One row per month; each month's bar is split into its four half-month
+          sections (thin stacked sub-bars), so twelve rows replace forty-eight. */}
+      <div className="border-b border-line-soft">
+        {MONTHS.map((month, monthIndex) => {
+          const monthSections = sections.slice(monthIndex * 4, monthIndex * 4 + 4);
+          return (
+            <div key={month} className="flex items-stretch gap-3 border-t border-line py-1">
+              <div className="flex w-9 shrink-0 items-center text-xs font-medium text-muted sm:w-10">{month}</div>
+              <div className="flex flex-1 flex-col justify-center gap-1">
+                {monthSections.map((section) => {
+                  const value = metricValue(section, windowKey, unit);
+                  const barPct = value == null ? 0 : Math.max(value > 0 ? 1.5 : 0, (value / scaleMax) * 100);
+                  const end = section.day_end === "month_end" ? "Monatsende" : section.day_end;
+                  const valueText = value == null ? "–" : unit === "percent" ? `${Math.round(value)}%` : `${value.toFixed(1)} h`;
+                  return (
+                    <div
+                      key={section.section}
+                      title={`${section.day_start}.–${end} ${month}: ${valueText} (${active.period!.start_year}–${active.period!.end_year})`}
+                      className="relative flex h-2.5 items-center"
+                    >
+                      {ticks.map((t) => (
+                        <span key={t} aria-hidden="true" className="pointer-events-none absolute inset-y-0 w-px bg-line-soft/60" style={{ left: `${(t / scaleMax) * 100}%` }} />
+                      ))}
+                      {value == null ? (
+                        <span aria-hidden="true" className="relative h-px w-2 rounded bg-line" />
+                      ) : (
+                        <span className="relative h-full rounded-sm bg-teal" style={{ width: `${barPct}%`, minWidth: value > 0 ? 4 : 2 }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex w-14 shrink-0 flex-col justify-center gap-1 text-right sm:w-16">
+                {monthSections.map((section) => {
+                  const value = metricValue(section, windowKey, unit);
+                  const valueText = value == null ? "–" : unit === "percent" ? `${Math.round(value)}%` : `${value.toFixed(1)} h`;
+                  return <span key={section.section} className="flex h-2.5 items-center justify-end text-sz-10 leading-none tabular-nums text-ink">{valueText}</span>;
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
 
@@ -121,7 +222,7 @@ export default function Climatology({ spot }: { spot: Spot }) {
     {infoOpen && (
       <div id="climatology-info">
         <p className="text-xs leading-relaxed text-muted">Windrichtung und lokale Bedingungen sind nicht berücksichtigt. Die Stunden müssen nicht zusammenhängend auftreten.</p>
-        <p className="mt-2 text-xs text-muted">ERA5 · 10-Meter-Wind · {data.period?.start_year}–{data.period?.end_year} · Tageslichtstunden · ca. {data.grid?.resolution_degrees}° Raster · {data.updated_at ? new Date(data.updated_at).toLocaleDateString("de-DE") : ""} · Open-Meteo / ERA5</p>
+        <p className="mt-2 text-xs text-muted">ERA5 · 10-Meter-Wind · {active.period?.start_year}–{active.period?.end_year} · Tageslichtstunden · ca. {active.grid?.resolution_degrees}° Raster · {active.updated_at ? new Date(active.updated_at).toLocaleDateString("de-DE") : ""} · Open-Meteo / ERA5</p>
       </div>
     )}
   </div>;
@@ -139,8 +240,8 @@ function ClimatologyEmptyState({ state, onRetry }: {
   }[state];
 
   return (
-    <div className="p-4" aria-live="polite">
-      <h3 className="font-display text-lg text-ink">Windmonate</h3>
+    <div aria-live="polite">
+      <h3 className="text-lg font-semibold tracking-tight text-ink">Windmonate</h3>
       <div className="mt-5 grid grid-cols-12 gap-x-0.5 sm:gap-x-1" aria-hidden="true">
         {MONTHS.map((month, i) => (
           <div key={month} className="min-w-0 overflow-hidden">

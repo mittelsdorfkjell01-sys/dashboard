@@ -1,13 +1,13 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { gzipSync } from "node:zlib";
 import type { CommunityImage } from "../src/lib/api";
 
-// Regression coverage for the rebuilt Daten page (Figma Frame 67): the dark
-// instrument composition — meteogram, today summary + 10-day outlook, map +
-// live-wind sidebar, wind-months field. Replaces the retired
-// meteogram-accessibility / public-tides specs, whose subjects (hourly
-// meteogram controls, data table, direction-compass card, tide panel) were
-// intentionally removed in the rebuild.
+// Regression coverage for the rebuilt Daten page (Figma Frame 67 / 79): the
+// dark instrument composition — meteogram, today summary + 10-day outlook,
+// wind-months field. The page carries no map of its own since 2026-10-10: the
+// "Karte" button links into the one weather map, framed on the spot and locked
+// to the wind field.
 
 const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
@@ -40,7 +40,22 @@ const hourly = forecastDates.map((date, day) => ({
 }));
 const forecast = { spot_id: "test", model: "consensus", product: "Surfwinddata Forecast", generated_at: "2026-09-05T08:00:00Z", updated_at: "2026-09-05T08:00:00Z", timezone: "Europe/Berlin", stale: false, availability: { atmosphere: "available", solar: "available", marine: "available" }, days: hourly };
 
-async function mockApi(page: Page, photos: CommunityImage[] = []) {
+function weatherFieldTile(z: number, x: number, y: number): Buffer {
+  const width = 130;
+  const variables = [
+    { name: "wind_u", dtype: "int16", scale: .05, offset: 0, nodata: -32768 },
+    { name: "wind_v", dtype: "int16", scale: .05, offset: 0, nodata: -32768 },
+    { name: "wind_gust", dtype: "int16", scale: .05, offset: 0, nodata: -32768 },
+  ];
+  const header = Buffer.from(JSON.stringify({ schema: "swd-field-tile-v2", width, height: width, layout: "planar", byte_order: "little", variables, valid_time: hourly[0].hours[0].time, z, x, y, overlap: 1 }));
+  const prefix = Buffer.alloc(8); prefix.write("SWF2", 0); prefix.writeUInt32LE(header.length, 4);
+  const cells = width * width;
+  const body = Buffer.alloc(cells * 2 * variables.length);
+  [100, 40, 160].forEach((value, variable) => { for (let index = 0; index < cells; index += 1) body.writeInt16LE(value, (variable * cells + index) * 2); });
+  return gzipSync(Buffer.concat([prefix, header, body]));
+}
+
+async function mockApi(page: Page, photos: CommunityImage[] = [], withWeatherField = false) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.startsWith("/media/gallery-")) {
@@ -70,6 +85,76 @@ async function mockApi(page: Page, photos: CommunityImage[] = []) {
         distance_km: 3.2, wind_speed_ms: 7, wind_gust_ms: 9, wind_direction_from_deg: 260, quality: 1,
       },
     } });
+    if (withWeatherField && path === "/weather-fields/wind") return route.fulfill({ json: {
+      enabled: true, public: true, status: "fresh", publication_id: "publication-test", generation: 1,
+      manifest_url: "/weather-field-assets/europe-wind/icon-eu/manifest.json",
+      manifest: {
+        contract_version: "weather-field-v2", publication_id: "publication-test", provider: "dwd", model: "icon-eu",
+        model_run: "2026-09-05T00:00:00Z", published_at: "2026-09-05T01:00:00Z",
+        valid_times: hourly.flatMap((day) => day.hours.map((hour) => hour.time)),
+        coverage: { west: -23.5, south: 29.5, east: 45, north: 70.5 },
+        variables: [
+          { name: "wind_u", unit: "m/s", semantic: "eastward", height_m: 10 },
+          { name: "wind_v", unit: "m/s", semantic: "northward", height_m: 10 },
+          { name: "wind_gust", unit: "m/s", semantic: "magnitude", height_m: 10 },
+        ],
+        compression: "gzip", quality_status: "validated",
+        freshness: { status: "fresh", age_seconds: 3600, expected_next_run_at: "2026-09-05T06:00:00Z" },
+        attribution: [{ provider: "Deutscher Wetterdienst", text: "DWD Open Data", url: "https://opendata.dwd.de/", licence: "GeoNutzV" }],
+        field_template: "/weather-field-assets/europe-wind/icon-eu/assets/{valid_time}/{z}/{x}/{y}.swf2.gz",
+        tile_scheme: { tile_size: 128, overlap: 1, lod: [
+          { source_zoom: 4, consumer_zoom_min: 0, consumer_zoom_max: 5, source_decimation: 1 },
+          { source_zoom: 5, consumer_zoom_min: 6, consumer_zoom_max: 16, source_decimation: 1 },
+        ] },
+      },
+    } });
+    if (withWeatherField && path === "/weather-fields/waves") return route.fulfill({ json: {
+      enabled: true, public: true, status: "fresh", publication_id: "wave-publication-test", generation: 1,
+      manifest_url: "/weather-field-assets/europe-wave/ewam/manifest.json",
+      manifest: {
+        contract_version: "weather-field-v2", publication_id: "wave-publication-test", provider: "dwd", model: "ewam",
+        model_run: "2026-09-05T00:00:00Z", published_at: "2026-09-05T01:00:00Z",
+        valid_times: hourly.flatMap((day) => day.hours.map((hour) => hour.time)),
+        coverage: { west: -23.5, south: 29.5, east: 45, north: 70.5 },
+        variables: [
+          { name: "wave_u", unit: "m/s", semantic: "eastward" },
+          { name: "wave_v", unit: "m/s", semantic: "northward" },
+          { name: "total_wave_height", unit: "m", semantic: "magnitude" },
+        ],
+        compression: "gzip", quality_status: "validated",
+        freshness: { status: "fresh", age_seconds: 3600, expected_next_run_at: "2026-09-05T06:00:00Z" },
+        attribution: [{ provider: "Deutscher Wetterdienst", text: "DWD Open Data", url: "https://opendata.dwd.de/", licence: "GeoNutzV" }],
+        field_template: "/weather-field-assets/europe-wave/ewam/assets/{valid_time}/{z}/{x}/{y}.swf2.gz",
+        tile_scheme: { tile_size: 128, overlap: 1, lod: [
+          { source_zoom: 4, consumer_zoom_min: 0, consumer_zoom_max: 5, source_decimation: 1 },
+          { source_zoom: 5, consumer_zoom_min: 6, consumer_zoom_max: 16, source_decimation: 1 },
+        ] },
+      },
+    } });
+    if (withWeatherField && path === "/weather-fields/waves/sample") {
+      const validAt = new URL(route.request().url()).searchParams.get("valid_at") ?? hourly[0].hours[0].time;
+      return route.fulfill({ json: {
+        product: "model_wave", publication_id: "wave-publication-test", generation: 1, run_id: "wave-run-test", provider: "dwd", model: "ewam",
+        model_run: "2026-09-05T00:00:00Z", valid_at: validAt, latitude: 54.4, longitude: 10.2,
+        wave_u: 0.4, wave_v: 0.9, total_wave_height_m: 1.4, total_wave_direction_from_deg: 300, total_wave_period_s: 7,
+        wind_sea_height_m: 0.8, wind_sea_direction_from_deg: 290, wind_sea_period_s: 4,
+        primary_swell_height_m: 1.1, primary_swell_direction_from_deg: 310, primary_swell_period_s: 9,
+        interpolation: "bilinear_uv", freshness: "fresh",
+      } });
+    }
+    if (withWeatherField && path === "/weather-fields/wind/sample") {
+      const validAt = new URL(route.request().url()).searchParams.get("valid_at") ?? hourly[0].hours[0].time;
+      return route.fulfill({ json: {
+        product: "model_wind", publication_id: "publication-test", generation: 1, run_id: "run-test", provider: "dwd", model: "icon-eu",
+        model_run: "2026-09-05T00:00:00Z", valid_at: validAt, latitude: 54.4, longitude: 10.2,
+        u_ms: 5, v_ms: 2, speed_ms: 5.385, direction_from_deg: 248, gust_ms: 8, interpolation: "bilinear_uv", freshness: "fresh",
+      } });
+    }
+    if (withWeatherField && path.startsWith("/weather-field-assets/")) {
+      const match = path.match(/\/(\d+)\/(\d+)\/(\d+)\.swf2\.gz$/);
+      if (!match) return route.fulfill({ status: 404 });
+      return route.fulfill({ body: weatherFieldTile(Number(match[1]), Number(match[2]), Number(match[3])), contentType: "application/gzip" });
+    }
     if (path === "/spots/test/tides") return route.fulfill({ status: 404, json: { detail: "none" } });
     if (path === "/spots/test/ratings") return route.fulfill({ json: { items: [], aggregate: { count: 0, average: null } } });
     if (path === "/spots/test/tips") return route.fulfill({ json: [] });
@@ -77,6 +162,12 @@ async function mockApi(page: Page, photos: CommunityImage[] = []) {
     if (path.startsWith("/spots/test/wind-climatology")) return route.fulfill({ status: 404, json: { detail: "none" } });
     return route.fulfill({ status: 404, json: { detail: `mock missing: ${path}` } });
   });
+  if (withWeatherField) {
+    await page.route(/https:\/\/[a-d]\.basemaps\.cartocdn\.com\/.*\.png(?:\?.*)?$/, (route) => route.fulfill({
+      body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+      contentType: "image/png",
+    }));
+  }
 }
 
 test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-Frame bereit", async ({ page }) => {
@@ -112,8 +203,13 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
 
 test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }) => {
   let delayReplacementTiles = false;
+  const replacementZoomLevels = new Set<string>();
   await page.route("https://server.arcgisonline.com/**", async (route) => {
-    if (delayReplacementTiles) await new Promise((resolve) => setTimeout(resolve, 650));
+    if (delayReplacementTiles) {
+      const path = new URL(route.request().url()).pathname.split("/");
+      replacementZoomLevels.add(path.at(-3) ?? "");
+      await new Promise((resolve) => setTimeout(resolve, 650));
+    }
     await route.fulfill({
       contentType: "image/svg+xml",
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
@@ -142,9 +238,9 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   );
   expect(edgeBlend).toBe("none");
 
-  // A slow replacement level must not uncover the map while several wheel
-  // inputs are still being animated. The already loaded level stays scaled
-  // beneath it until the new tiles are ready.
+  // Slow replacement levels must neither uncover the map nor block the next
+  // wheel gesture. The old implementation serialised gestures behind tile
+  // loading (up to 1.8 s), which made precision trackpads feel unresponsive.
   await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible();
   delayReplacementTiles = true;
   await map.getByRole("button", { name: "Karte aktivieren" }).click();
@@ -153,9 +249,9 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   expect(box).not.toBeNull();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
   await page.mouse.wheel(0, 120);
-  await page.waitForTimeout(35);
+  await page.waitForTimeout(300);
   await page.mouse.wheel(0, 120);
-  await page.waitForTimeout(80);
+  await expect.poll(() => replacementZoomLevels.size, { timeout: 400 }).toBeGreaterThanOrEqual(1);
 
   const uncoveredSamples = await map.locator(".leaflet-container").evaluate((container) => {
     const mapRect = container.getBoundingClientRect();
@@ -178,78 +274,52 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   expect(uncoveredSamples).toEqual([]);
 });
 
-test("Daten-Seite zeigt Meteogramm, Ausblick und Livewind", async ({ page }) => {
+test("Daten-Seite zeigt Meteogramm und Ausblick", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await mockApi(page);
   await page.goto("/spot/test/daten");
   await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
-  // Meteogram row labels + the direction/time axes.
-  await expect(page.getByText("WELLE", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("RICHT.", { exact: true })).toBeVisible();
+  // Meteogram row labels + the direction/time axes (rendered capitalised, shown
+  // uppercase via CSS — assert the DOM text).
+  await expect(page.getByText("Welle", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Richt", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" })).toBeVisible();
   // The complete 10-day outlook renders through the last hourly day.
   await expect(page.getByText("SA 05.09", { exact: true })).toBeVisible();
   await expect(page.getByText("MO 14.09", { exact: true })).toBeVisible();
   await expect(page.locator("#spot-meteogram-scroll [data-forecast-day]")).toHaveCount(10);
-  // Live-wind sidebar metrics.
-  await expect(page.getByText("UV INDEX", { exact: true })).toBeVisible();
-  await expect(page.getByText("GEFÜHLT", { exact: true })).toBeVisible();
-  const current = page.locator('[data-weather-time-mode="now"]');
-  await expect(current).toHaveAttribute("data-live-wind-status", "station_adjusted");
-  await expect(current.getByText("Aktuelle Bedingungen", { exact: true })).toBeVisible();
-  await expect(current.getByText("Stationskorrigiert", { exact: true })).toBeVisible();
-  await expect(current.getByText("Relevante Stationen", { exact: true })).toBeVisible();
-  await expect(current.getByText("Küstenstation", { exact: false })).toBeVisible();
-  await expect(current.getByText(/Gemessen .*11:58/)).toBeVisible();
-  await expect(page.locator(".swd-spot-map")).toHaveAttribute("data-observation-type", "live_wind");
 });
 
-test("Forecast-Scrubbing ersetzt LiveWind nur im Forecastmodus und Jetzt stellt es wieder her", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+test("Die Daten-Seite hat keine eigene Karte mehr, sondern führt auf die Wetterkarte", async ({ page }) => {
+  // One map for the whole site: the spot's own MapLibre/Leaflet overlay was
+  // deleted (2026-10-10). "Karte" now opens the shared weather map, framed on
+  // the spot and locked to the wind field — nothing to toggle to on a spot.
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+
+  await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  await expect(page.locator(".swd-spot-field-map")).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Windkarte und aktuelle Bedingungen" })).toHaveCount(0);
+
+  const link = page.getByRole("link", { name: "Karte öffnen" });
+  const href = await link.getAttribute("href");
+  expect(href).toContain("mode=wind");
+  expect(href).toContain("toggle=0");
+
+  await link.click();
+  await expect(page).toHaveURL(/\/map\?/);
+  await expect(page.getByRole("group", { name: "Kartenmodus" })).toHaveCount(0);
+});
+
+test("Meteogramm zeigt Temperatur nur als Zahl ohne Balken", async ({ page }) => {
   await mockApi(page);
   await page.goto("/spot/test/daten");
 
-  const map = page.locator(".swd-spot-map");
-  await expect(map).toHaveAttribute("data-observation-type", "live_wind");
-  const navigator = page.getByRole("group", { name: "Tagesübersicht — Tag im Stundenforecast anzeigen" });
-  await navigator.getByRole("button").first().click();
-
-  await expect(map).toHaveAttribute("data-observation-type", "forecast");
-  const forecastSidebar = page.locator('[data-weather-time-mode="forecast"]');
-  await expect(forecastSidebar.getByRole("heading", { name: "Forecast" })).toBeVisible();
-  await expect(forecastSidebar.getByText("Referenzmessung", { exact: false })).toHaveCount(0);
-
-  await forecastSidebar.getByRole("button", { name: "Jetzt" }).click();
-  await expect(map).toHaveAttribute("data-observation-type", "live_wind");
-  await expect(page.locator('[data-weather-time-mode="now"]')).toBeVisible();
-});
-
-test("Offline bleibt die letzte Analyse sichtbar und wird ehrlich gekennzeichnet", async ({ page, context }) => {
-  await mockApi(page);
-  await page.goto("/spot/test/daten");
-  await expect(page.locator('[data-live-wind-status="station_adjusted"]')).toBeVisible();
-  await context.setOffline(true);
-  await page.evaluate(() => window.dispatchEvent(new Event("offline")));
-  await expect(page.getByText("Offline: Die zuletzt geladene Analyse wird weiter angezeigt.")).toBeVisible();
-});
-
-test("fehlendes LiveWind fällt sichtbar auf den Modell-Nowcast zurück", async ({ page }) => {
-  await mockApi(page);
-  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/test\/live$/, (route) => route.fulfill({ json: {
-    spot_id: "test", model: "consensus", time: "2026-09-14T12:00:00Z",
-    current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250 },
-    live_wind: {
-      contract_version: "live-wind-v1", product_type: "live_wind", status: "unavailable",
-      analyzed_at: null, valid_at: null, wind_speed_ms: null, wind_direction_from_deg: null,
-      wind_u_ms: null, wind_v_ms: null, gust: null, model_version: null, analysis_version: null,
-      station_count: 0, uncertainty_ms: null, confidence: null, sources: [],
-      applied_physics_version: null, fallback_reason: "station_residuals_unavailable",
-    },
-  } }));
-  await page.goto("/spot/test/daten");
-  await expect(page.locator(".swd-spot-map")).toHaveAttribute("data-observation-type", "nowcast");
-  await expect(page.locator('[data-live-wind-status="baseline"]')).toBeVisible();
-  await expect(page.getByText(/keine ausreichend aktuellen Stationsresiduen/)).toBeVisible();
+  const temperatures = page.locator(".swd-meteogram-temperature");
+  await expect.poll(() => temperatures.count()).toBeGreaterThan(0);
+  await expect(temperatures.first()).toContainText(/\d+°/);
+  await expect(temperatures.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
 test("Info-Locator bleibt statisch und lädt kein LiveWind", async ({ page }) => {

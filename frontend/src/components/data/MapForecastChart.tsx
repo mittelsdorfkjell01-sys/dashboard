@@ -56,14 +56,14 @@ export default function MapForecastChart({ forecast }: { forecast: NormalizedFor
                     const pct = b.wind == null ? 4 : Math.max(6, (b.wind / weekMaxKts) * 100);
                     return (
                       <div key={j} className="flex h-full w-2.5 flex-col justify-end" title={`${b.label} Uhr`}>
-                        <div className="w-full rounded-t-[2px]" style={{ height: `${pct}%`, backgroundColor: windColor(b.wind) }} />
+                        <div className="w-full rounded-t-card" style={{ height: `${pct}%`, backgroundColor: windColor(b.wind) }} />
                       </div>
                     );
                   })}
                 </div>
                 <div className="flex flex-col items-center gap-1 border-t border-line pt-1.5">
                   {day.dir != null ? <WindArrow dir={day.dir} size={14} className="text-ink-soft" /> : <span className="text-line" aria-hidden="true">—</span>}
-                  <span className="text-label font-semibold tabular-nums text-ink">{day.maxWind != null ? formatWind(day.maxWind, windUnit) : "—"}</span>
+                  <span className="text-ui font-semibold tabular-nums text-ink">{day.maxWind != null ? formatWind(day.maxWind, windUnit) : "—"}</span>
                 </div>
               </button>
             );

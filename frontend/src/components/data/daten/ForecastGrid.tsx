@@ -51,7 +51,7 @@ export default function ForecastGrid({ forecast }: { forecast: NormalizedForecas
               onClick={() => selectDay(day)}
               className="flex min-h-11 w-full min-w-0 flex-col items-center gap-2 text-center transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:cursor-default disabled:opacity-100"
             >
-              <span className={`whitespace-nowrap text-sz-11 leading-none tabular-nums sm:text-caption xl:text-label ${selected ? "text-teal" : "text-ink"}`}>{label}</span>
+              <span className={`whitespace-nowrap text-caption leading-none tabular-nums sm:text-caption xl:text-ui ${selected ? "text-teal" : "text-ink"}`}>{label}</span>
               <span aria-hidden="true">
                 <WeatherGlyph condition={day.summary.weather_condition} size={40} className="h-7 w-7 sm:h-9 sm:w-9 lg:h-8 lg:w-8 xl:h-10 xl:w-10" />
               </span>
@@ -61,7 +61,7 @@ export default function ForecastGrid({ forecast }: { forecast: NormalizedForecas
                   held back (normal weight, reduced opacity) and always the coolest
                   tone, so a low never reads as warm even on a hot day. The °
                   inherits its number's colour. */}
-              <span className="whitespace-nowrap text-sz-11 leading-tight tabular-nums sm:text-caption xl:text-label">
+              <span className="whitespace-nowrap text-caption leading-tight tabular-nums sm:text-caption xl:text-ui">
                 {hi == null ? (
                   <span className="text-muted">—</span>
                 ) : (

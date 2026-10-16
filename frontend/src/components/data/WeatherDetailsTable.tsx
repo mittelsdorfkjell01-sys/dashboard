@@ -53,7 +53,7 @@ export default function WeatherDetailsTable({ forecast }: { forecast: Normalized
         {forecast.availability?.marine === "available" && <><td className="border-b border-line-soft px-2.5 py-2 text-right">{value(hour.swell, " m", 1)} · {value(hour.period, " s", 1)}</td><td className="border-b border-line-soft px-2.5 py-2 text-right">{value(hour.sst, " °C", 1)}</td></>}
       </tr>; })}</tbody>
     </table></div>}
-    {forecast.availability?.marine === "available_stale" && <p role="status" className="px-2 text-label text-muted">Marinewerte stammen vom letzten verfügbaren Stand.</p>}
+    {forecast.availability?.marine === "available_stale" && <p role="status" className="px-2 text-ui text-muted">Marinewerte stammen vom letzten verfügbaren Stand.</p>}
   </div>;
 }
 const formatDay = (date: string) => new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));

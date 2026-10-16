@@ -15,10 +15,10 @@ export default function MeteogramTrend({ days, windUnit }: { days: NormalizedFor
     <div className="overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" tabIndex={0} role="region" aria-label="Tagestrend horizontal scrollen">
       <div className="grid min-w-[620px] grid-flow-col auto-cols-fr divide-x divide-line">
         {days.map((day) => { const summary=day.summary; return <div key={day.date} className="px-3 py-2 first:pl-0 last:pr-0">
-          <p className="text-label font-semibold text-ink">{dayLabel(day.local_date ?? day.date)}</p>
+          <p className="text-ui font-semibold text-ink">{dayLabel(day.local_date ?? day.date)}</p>
           <p className="mt-0.5 text-caption text-muted">Sicherheit {day.confidence ?? "nicht verfügbar"}</p>
           <dl className="mt-3 space-y-1.5 text-caption tabular-nums">
-            <div className="flex justify-between gap-3"><dt className="text-muted">Wind Ø / max.</dt><dd className="font-medium text-ink"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-[2px]" style={{backgroundColor:windColor(summary.wind_avg)}} />{windValue(summary.wind_avg,windUnit)} / {windValue(summary.wind_max,windUnit)}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted">Wind Ø / max.</dt><dd className="font-medium text-ink"><span className="mr-1 inline-block h-2.5 w-2.5 rounded-card" style={{backgroundColor:windColor(summary.wind_avg)}} />{windValue(summary.wind_avg,windUnit)} / {windValue(summary.wind_max,windUnit)}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">Böe</dt><dd className="font-medium text-ink">{windValue(summary.gust_max,windUnit)}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted">Temperatur</dt><dd className="font-medium text-ink">{value(summary.air_min,"°C")}–{value(summary.air_max,"°C")}</dd></div>
             {summary.swell_max != null&&<div className="flex justify-between gap-3"><dt className="text-muted">Wellenhöhe</dt><dd className="font-medium text-ink">{value(summary.swell_max,"m",1)}</dd></div>}

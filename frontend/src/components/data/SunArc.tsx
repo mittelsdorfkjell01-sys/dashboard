@@ -27,7 +27,7 @@ export default function SunArc({ lat, lng }: { lat: number; lng: number }) {
     return (
       <div>
         <p className="text-caption font-medium uppercase tracking-wider text-muted">Licht</p>
-        <p className="mt-2 text-label text-muted">Für diesen Breitengrad lässt sich kein Sonnenauf-/-untergang berechnen.</p>
+        <p className="mt-2 text-ui text-muted">Für diesen Breitengrad lässt sich kein Sonnenauf-/-untergang berechnen.</p>
       </div>
     );
   }
@@ -65,11 +65,11 @@ export default function SunArc({ lat, lng }: { lat: number; lng: number }) {
       <div className="mt-1 flex max-w-xs justify-between">
         <div>
           <p className="text-caption uppercase tracking-wider text-muted">Aufgang</p>
-          <p className="text-label font-semibold tabular-nums text-ink">{formatHour(sunrise)}</p>
+          <p className="text-ui font-semibold tabular-nums text-ink">{formatHour(sunrise)}</p>
         </div>
         <div className="text-right">
           <p className="text-caption uppercase tracking-wider text-muted">Untergang</p>
-          <p className="text-label font-semibold tabular-nums text-ink">{formatHour(sunset)}</p>
+          <p className="text-ui font-semibold tabular-nums text-ink">{formatHour(sunset)}</p>
         </div>
       </div>
       <p className="mt-2 max-w-xs text-caption text-muted">Näherungswert (±wenige Minuten), berechnet aus Position und Datum.</p>

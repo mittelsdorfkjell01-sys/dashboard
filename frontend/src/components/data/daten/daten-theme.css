@@ -35,9 +35,28 @@
   --sw-data-swell: #557D9A; /* waves / swell — steel blue (Figma Frame 67) */
   --sw-data-temp: #94D2FF;  /* air temperature — sky blue (Figma Frame 67) */
   --sw-data-rain: #6FA8DC;  /* precipitation — cool light blue */
+  /* Status + overlay tokens. The Daten canvas is ALWAYS dark, even when the
+     site theme is light, so the light-theme values from :root would show up
+     here (dark-red text at 2.8:1, near-white error fills, a pale scrim).
+     Redeclare the dark values so errors/overlays read correctly on the
+     near-black instrument surface regardless of the site theme. */
+  --sw-danger: #F87171;
+  --sw-danger-bg: #2A1414;
+  --sw-danger-border: #7F1D1D;
+  --sw-success: #4ADE80;
+  --sw-success-bg: #142A1B;
+  --sw-warning: #FBBF24;
+  --sw-warning-bg: #2A2110;
+  --sw-overlay-soft: rgba(0, 0, 0, 0.42);
+  --sw-overlay-strong: rgba(0, 0, 0, 0.92);
   color-scheme: dark;
   background: var(--sw-page);
   color: var(--sw-ink);
+  /* Figures: digits from Manrope (tabular), letters stay Poppins — so wind,
+     gust, wave and temperature columns hold still as values change. Same
+     stack as Tailwind's `font-figures`. */
+  font-family: "SW Figures", "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 /* One-shot "draw-on" for the TodaySummary hourly temperature line. Uses SVG
@@ -54,19 +73,4 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .daten-draw-line { animation: none; stroke-dashoffset: 0; }
-}
-
-/* Slow, quiet "live" pulse for the meteogram now-aura. Scales/fades the large
-   radial bloom so the current moment reads as alive without drawing the eye. */
-@keyframes daten-now-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(0.92); }
-  50% { opacity: 0.9; transform: scale(1.08); }
-}
-.daten-now-pulse {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: daten-now-pulse 3.4s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .daten-now-pulse { animation: none; }
 }
