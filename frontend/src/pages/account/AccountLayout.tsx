@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { CloseIcon } from "../../lib/icons";
 
@@ -13,18 +14,19 @@ import { CloseIcon } from "../../lib/icons";
  * from the burger menu (see AccountMenu / Figma Frame 76/77), not a tab shell.
  */
 export default function AccountLayout() {
+  const { t } = useTranslation();
   const { user, ready, sessionError, refreshSession } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   if (!ready)
-    return <main role="status" className="mx-auto max-w-lg px-4 py-20 text-center text-ui text-muted">Konto wird geladen …</main>;
+    return <main role="status" className="mx-auto max-w-lg px-4 py-20 text-center text-ui text-muted">{t("account.loading")}</main>;
   if (sessionError)
     return (
       <main className="mx-auto max-w-lg px-4 py-20 text-center">
-        <h1 className="text-sz-24 font-semibold text-ink">Konto derzeit nicht erreichbar</h1>
+        <h1 className="text-title font-semibold text-ink">{t("account.unavailableTitle")}</h1>
         <p role="alert" className="mt-3 text-ui text-muted">{sessionError}</p>
-        <button type="button" onClick={() => void refreshSession()} className="mt-6 min-h-11 rounded-lg bg-ink px-5 text-ui font-semibold text-surface">Erneut versuchen</button>
+        <button type="button" onClick={() => void refreshSession()} className="mt-6 min-h-11 rounded-card bg-ink px-5 text-ui font-semibold text-surface">{t("common.retry")}</button>
       </main>
     );
   if (!user) {
@@ -44,10 +46,10 @@ export default function AccountLayout() {
       <button
         type="button"
         onClick={goBack}
-        aria-label="Zurück"
+        aria-label={t("common.back")}
         className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 grid h-11 w-11 place-items-center rounded-full bg-black/30 text-white ring-1 ring-white/20 backdrop-blur-sm transition-colors hover:bg-black/45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
-        <CloseIcon className="text-sz-22" />
+        <CloseIcon className="text-title" />
       </button>
       <Outlet />
     </div>
@@ -71,10 +73,10 @@ export function AccountPage({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto max-w-[720px] px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-16">
+    <div className="mx-auto max-w-content px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-16">
       <header className="mb-8 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-sz-28 font-semibold text-ink">{title}</h1>
+          <h1 className="text-heading font-semibold text-ink">{title}</h1>
           {intro && <p className="mt-1 text-ui text-muted">{intro}</p>}
         </div>
         {action}

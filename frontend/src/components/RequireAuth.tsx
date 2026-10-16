@@ -29,7 +29,7 @@ export default function RequireAuth({
       <div role="alert" className="mx-auto grid min-h-[50vh] max-w-md place-items-center p-6 text-center">
         <div>
           <p className="text-body font-medium text-ink">Dashboard nicht erreichbar</p>
-          <p className="mt-2 text-label text-muted">{error}</p>
+          <p className="mt-2 text-ui text-muted">{error}</p>
           <button
             type="button"
             onClick={() => void refresh()}
@@ -56,7 +56,7 @@ export default function RequireAuth({
     return (
       <div className="mx-auto max-w-md p-10 text-center">
         <p className="text-body font-medium text-ink">Keine Berechtigung</p>
-        <p className="mt-2 text-label text-muted">
+        <p className="mt-2 text-ui text-muted">
           Dieser Bereich ist Administrator:innen vorbehalten.
         </p>
       </div>

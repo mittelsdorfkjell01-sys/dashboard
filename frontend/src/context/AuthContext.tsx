@@ -17,7 +17,11 @@ interface AuthValue {
   sessionError: string | null;
   refreshSession: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, displayName: string) => Promise<void>;
+  register: (
+    email: string,
+    displayName: string,
+    consent: { acceptedTerms: boolean; ageConfirmed: boolean },
+  ) => Promise<void>;
   logout: () => Promise<void>;
   /** Replace the cached account after a profile edit. */
   setUser: (u: Account | null) => void;
@@ -60,8 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(await account.login({ email, password }));
         setSessionError(null);
       },
-      async register(email, displayName) {
-        await account.register({ email, displayName });
+      async register(email, displayName, consent) {
+        await account.register({ email, displayName, ...consent });
       },
       async logout() {
         await account.logout();

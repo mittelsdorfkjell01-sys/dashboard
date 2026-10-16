@@ -11,11 +11,11 @@ import { AccountPage } from "./AccountLayout";
 export default function BesuchteSpots() {
   return (
     <AccountPage title="Spots besucht">
-      <div className="rounded-[14px] border border-dashed border-line bg-surface px-6 py-14 text-center">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-[14px] bg-band text-ink">
-          <PinIcon className="text-sz-24" />
+      <div className="rounded-card border border-dashed border-line bg-surface px-6 py-14 text-center">
+        <span className="mx-auto grid h-14 w-14 place-items-center rounded-card bg-band text-ink">
+          <PinIcon className="text-title" />
         </span>
-        <h2 className="mt-4 text-sz-17 font-semibold text-ink">Noch keine besuchten Spots</h2>
+        <h2 className="mt-4 text-body font-semibold text-ink">Noch keine besuchten Spots</h2>
         <p className="mx-auto mt-1 max-w-[38ch] text-ui text-muted">
           Hier sammeln sich die Spots, an denen du wirklich warst. Diese Funktion kommt bald.
         </p>
@@ -23,7 +23,7 @@ export default function BesuchteSpots() {
           to="/search"
           className="mt-5 inline-flex items-center gap-2 px-4 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
         >
-          <SearchIcon className="text-sz-16" />
+          <SearchIcon className="text-body" />
           Spots entdecken
         </Link>
       </div>

@@ -114,15 +114,15 @@ export default function SportConditionsSection({ onDirtyChange }: { onDirtyChang
   const current = active ? profiles[active] ?? {} : {};
   return (
     <section className="border-t border-line pt-8 first:border-t-0 first:pt-0" aria-labelledby="sport-conditions-title">
-      <h2 id="sport-conditions-title" className="text-sz-18 font-semibold text-ink">Sportarten & Bedingungen</h2>
-      <p className="mt-1 max-w-[60ch] text-ui text-muted">Wähle deine Sportarten und lege fest, welche Bedingungen für dich passen.</p>
+      <h2 id="sport-conditions-title" className="text-lead font-semibold text-ink">Sportarten & Bedingungen</h2>
+      <p className="mt-1 max-w-measure text-ui text-muted">Wähle deine Sportarten und lege fest, welche Bedingungen für dich passen.</p>
       <form onSubmit={save} className="mt-5 space-y-6">
         <fieldset>
-          <legend className="text-label font-semibold text-ink">Meine Sportarten</legend>
+          <legend className="text-ui font-semibold text-ink">Meine Sportarten</legend>
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {SPORTS.map((sport) => {
               const checked = sports.includes(sport);
-              return <label key={sport} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-[14px] border px-3 text-label font-medium text-ink transition-colors focus-within:ring-2 focus-within:ring-teal ${checked ? "border-teal bg-band" : "border-line bg-surface hover:bg-band"}`}>
+              return <label key={sport} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-card border px-3 text-ui font-medium text-ink transition-colors focus-within:ring-2 focus-within:ring-accent ${checked ? "border-accent bg-band" : "border-line bg-surface hover:bg-band"}`}>
                 <input type="checkbox" checked={checked} disabled={busy} onChange={() => toggleSport(sport)} className="h-4 w-4 accent-teal" />
                 {sportLabel(sport)}
               </label>;
@@ -130,26 +130,26 @@ export default function SportConditionsSection({ onDirtyChange }: { onDirtyChang
           </div>
         </fieldset>
 
-        {sports.length === 0 ? <p className="rounded-[14px] border border-dashed border-line px-4 py-5 text-ui text-muted">Wähle eine Sportart, um persönliche Bedingungen festzulegen.</p> : <div className="border-t border-line pt-6">
+        {sports.length === 0 ? <p className="rounded-card border border-dashed border-line px-4 py-5 text-ui text-muted">Wähle eine Sportart, um persönliche Bedingungen festzulegen.</p> : <div className="border-t border-line pt-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-body font-semibold text-ink">Meine Bedingungen</h3>
             <p className="text-caption text-muted">Alle Grenzwerte sind optional.</p>
           </div>
           {sports.length > 1 && <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Sportart für Bedingungen wählen">
-            {sports.map((sport) => <button key={sport} type="button" disabled={busy} onClick={() => setActive(sport)} aria-pressed={active === sport} className={`min-h-11 rounded-full px-4 text-label font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${active === sport ? "bg-ink text-surface" : "bg-band text-ink hover:bg-line"}`}>{sportLabel(sport)}</button>)}
+            {sports.map((sport) => <button key={sport} type="button" disabled={busy} onClick={() => setActive(sport)} aria-pressed={active === sport} className={`min-h-11 rounded-card px-4 text-ui font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${active === sport ? "bg-ink text-surface" : "bg-band text-ink hover:bg-line"}`}>{sportLabel(sport)}</button>)}
           </div>}
-          {active && <div role="group" className="mt-4 rounded-[14px] bg-band p-4 sm:p-5" aria-label={`Bedingungen für ${sportLabel(active)}`}>
-            <p className="mb-4 text-label font-semibold text-ink">{sportLabel(active)}</p>
+          {active && <div role="group" className="mt-4 rounded-card bg-band p-4 sm:p-5" aria-label={`Bedingungen für ${sportLabel(active)}`}>
+            <p className="mb-4 text-ui font-semibold text-ink">{sportLabel(active)}</p>
             <div className="grid gap-5 sm:grid-cols-2">
               <fieldset className="space-y-2">
-                <legend className="text-label font-semibold text-ink">Wind · kn</legend>
+                <legend className="text-ui font-semibold text-ink">Wind · kn</legend>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Ab"><Input type="number" min={0} max={80} step="any" inputMode="decimal" value={current.windMinKn ?? ""} disabled={busy} onChange={(event) => setCondition(active, "windMinKn", event.target.value)} /></Field>
                   <Field label="Bis"><Input type="number" min={0} max={80} step="any" inputMode="decimal" value={current.windMaxKn ?? ""} disabled={busy} onChange={(event) => setCondition(active, "windMaxKn", event.target.value)} /></Field>
                 </div>
               </fieldset>
               <fieldset className="space-y-2">
-                <legend className="text-label font-semibold text-ink">Wellen · m</legend>
+                <legend className="text-ui font-semibold text-ink">Wellen · m</legend>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Ab"><Input type="number" min={0} max={12} step="any" inputMode="decimal" value={current.waveMinM ?? ""} disabled={busy} onChange={(event) => setCondition(active, "waveMinM", event.target.value)} /></Field>
                   <Field label="Bis"><Input type="number" min={0} max={12} step="any" inputMode="decimal" value={current.waveMaxM ?? ""} disabled={busy} onChange={(event) => setCondition(active, "waveMaxM", event.target.value)} /></Field>
@@ -161,8 +161,8 @@ export default function SportConditionsSection({ onDirtyChange }: { onDirtyChang
           <p className="mt-3 text-caption text-muted">Leere Felder schränken deine Bedingungen nicht ein. Die Grenzwerte gibst du in kn, m und °C ein.</p>
         </div>}
 
-        {invalid && <p role="alert" className="text-label text-danger">{invalid}</p>}
-        {note && <p role={note.kind === "error" ? "alert" : "status"} className={`text-label font-medium ${note.kind === "error" ? "text-danger" : "text-success"}`}>{note.text}</p>}
+        {invalid && <p role="alert" className="text-ui text-danger">{invalid}</p>}
+        {note && <p role={note.kind === "error" ? "alert" : "status"} className={`text-ui font-medium ${note.kind === "error" ? "text-danger" : "text-success"}`}>{note.text}</p>}
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" disabled={!dirty || Boolean(invalid) || busy}>{busy ? "Speichere …" : "Bedingungen speichern"}</Button>
           {dirty && <Button type="button" variant="ghost" onClick={reset} disabled={busy}>Verwerfen</Button>}

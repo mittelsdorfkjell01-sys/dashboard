@@ -214,12 +214,16 @@ export async function fetchSession(): Promise<Account | null> {
 export async function register(input: {
   email: string;
   displayName: string;
+  acceptedTerms: boolean;
+  ageConfirmed: boolean;
 }): Promise<void> {
   await call<{ accepted: boolean; message: string }>("/account/register", {
     method: "POST",
     body: JSON.stringify({
       email: input.email,
       displayName: input.displayName,
+      acceptedTerms: input.acceptedTerms,
+      ageConfirmed: input.ageConfirmed,
     }),
   });
 }
