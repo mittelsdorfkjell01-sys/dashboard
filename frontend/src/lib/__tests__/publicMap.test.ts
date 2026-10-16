@@ -2,15 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   parsePublicMapUrl,
   publicMapSearch,
-  spotDotColor,
+  SPOT_DOT_COLOR,
   spotFeatures,
   sortViewportSpots,
   spotCountLabel,
   PUBLIC_SPOT_CLUSTER_RADIUS,
   PUBLIC_SPOT_CLUSTER_MAX_ZOOM,
 } from "../publicMap";
-import { windColor } from "../windScale";
-import { waveColor } from "../waveScale";
 import type { Spot } from "../types";
 
 const spot = (over: Partial<Spot> = {}): Spot => ({
@@ -52,14 +50,11 @@ describe("public map URL state", () => {
 });
 
 describe("marker colour", () => {
-  it("uses the shared wind/wave scales for the active mode", () => {
-    expect(spotDotColor("wind", { windKt: 22, waveM: null })).toBe(windColor(22));
-    expect(spotDotColor("waves", { windKt: null, waveM: 1.4 })).toBe(waveColor(1.4));
-  });
-
-  it("falls back to the scale's neutral colour when no live value exists", () => {
-    expect(spotDotColor("wind", undefined)).toBe(windColor(null));
-    expect(spotDotColor("waves", { windKt: 10, waveM: null })).toBe(waveColor(null));
+  it("is one dark mark for every spot, not a live-wind tint", () => {
+    // 2026-10-11: the dots say WHERE a spot is; the wind is the field's and
+    // the forecast sheet's job. One disc, no ring, in the dark house mark —
+    // both public grounds are light again (2026-10-12).
+    expect(SPOT_DOT_COLOR).toBe("#1A1F24");
   });
 });
 

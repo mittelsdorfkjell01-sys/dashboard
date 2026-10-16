@@ -3,12 +3,22 @@ import { InfoIcon } from "../lib/icons";
 
 type AttributionSource = "carto" | "esri";
 
+/**
+ * The map's sources, behind a small `i` (2026-10-11): the glyph alone, no
+ * button surface, like every other mark on the map — and the panel unfolds to
+ * the LEFT of it rather than over the map above, so the bottom edge stays one
+ * line and nothing jumps upward when it opens.
+ */
 export default function LeafletAttributionDisclosure({
   source,
   tone = "light",
+  className = "",
 }: {
   source: AttributionSource;
   tone?: "light" | "overlay";
+  /** Extra class on the outer dock — lets a map move the glyph out of the way
+   *  of its own bottom furniture (the wind map's forecast sheet). */
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -17,7 +27,7 @@ export default function LeafletAttributionDisclosure({
 
   return (
     <div
-      className="pointer-events-none absolute bottom-2 right-2 z-[600] flex max-w-[calc(100%-1rem)] flex-col items-end gap-2"
+      className={`pointer-events-none absolute bottom-2 right-2 z-map-ui flex max-w-[calc(100%-1rem)] items-center gap-1.5 ${className}`}
       onKeyDown={(event) => {
         if (event.key !== "Escape" || !open) return;
         setOpen(false);
@@ -28,7 +38,7 @@ export default function LeafletAttributionDisclosure({
         <aside
           id={panelId}
           aria-label="Kartenquellen"
-          className={`pointer-events-auto max-w-[280px] rounded-lg border px-3 py-2 text-caption leading-relaxed shadow-card ${
+          className={`pointer-events-auto max-w-[280px] rounded-card border px-2.5 py-1.5 text-micro leading-relaxed shadow-card ${
             overlay
               ? "border-white/20 bg-black/85 text-white"
               : "border-line bg-surface/95 text-ink"
@@ -65,13 +75,9 @@ export default function LeafletAttributionDisclosure({
         aria-controls={panelId}
         title={open ? "Kartenquellen ausblenden" : "Kartenquellen anzeigen"}
         onClick={() => setOpen((current) => !current)}
-        className={`pointer-events-auto grid h-11 w-11 place-items-center rounded-full border shadow-card transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-          overlay
-            ? "border-white/25 bg-black/75 text-white hover:bg-black/90"
-            : "border-line bg-surface/95 text-ink hover:bg-band"
-        }`}
+        className="swd-map-sources-glyph pointer-events-auto grid h-6 w-6 shrink-0 place-items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        <InfoIcon width={19} height={19} />
+        <InfoIcon width={14} height={14} />
       </button>
     </div>
   );
