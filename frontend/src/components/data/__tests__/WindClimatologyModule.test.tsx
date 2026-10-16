@@ -8,8 +8,8 @@ import {
   normalizeSelection,
   reliabilityBand,
   groupByMonth,
-  formatMonthDayRange,
 } from "../WindClimatologyModule";
+import { formatMonthDayRange } from "../../../lib/bestSeason";
 import type { WindClimatologyV3Week } from "../../../lib/api";
 
 function week(index: number, overrides: Partial<WindClimatologyV3Week> = {}): WindClimatologyV3Week {

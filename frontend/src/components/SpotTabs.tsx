@@ -50,7 +50,7 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
       <div
         role="tablist"
         aria-label="Spot-Ansicht"
-        className="mx-auto flex max-w-[1570px] justify-center px-4 sm:px-8"
+        className="mx-auto flex max-w-page justify-center px-4 sm:px-8"
       >
         {tabs.map((tab, i) => {
           const active = i === activeIndex;
@@ -65,14 +65,14 @@ export default function SpotTabs({ tabs }: { tabs: SpotTab[] }) {
               tabIndex={active ? 0 : -1}
               onClick={(e) => onClick(e, tab.href)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className="relative flex h-12 min-w-[140px] items-center justify-center px-4 text-label"
+              className="relative flex h-12 min-w-[140px] items-center justify-center px-4 text-ui"
             >
               <span className="relative grid">
                 <span aria-hidden="true" className="invisible col-start-1 row-start-1 font-medium">
                   {tab.label}
                 </span>
                 <span
-                  className={`col-start-1 row-start-1 text-center transition-colors duration-200 ${
+                  className={`col-start-1 row-start-1 text-center transition-colors duration-base ${
                     active ? "font-medium text-ink" : "font-normal text-ink-soft"
                   }`}
                 >

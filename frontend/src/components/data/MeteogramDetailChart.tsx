@@ -34,12 +34,12 @@ const windAxisScale = (scale: ChartScale, unit: WindUnit): ChartScale => unit ==
 const dayLabel = (date: string) => new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
 
 function AxisTicks({ scale }: { scale: ChartScale }) {
-  return <span className="flex h-full flex-col justify-between text-xs font-medium tabular-nums text-muted"><span>{number(scale.max)}</span><span>{number(scale.mid)}</span><span>{number(scale.min)}</span></span>;
+  return <span className="flex h-full flex-col justify-between text-caption font-medium tabular-nums text-muted"><span>{number(scale.max)}</span><span>{number(scale.mid)}</span><span>{number(scale.min)}</span></span>;
 }
 
 function AxisRow({ label, unit, scale, className = "" }: { label: string; unit?: string; scale?: ChartScale; className?: string }) {
   return <div className={`flex min-h-0 justify-between gap-2 border-b border-line px-3 py-2 ${className}`}>
-    <span className="text-xs font-semibold leading-tight text-ink">{label}{unit&&<small className="mt-0.5 block font-normal text-muted">{unit}</small>}</span>
+    <span className="text-caption font-semibold leading-tight text-ink">{label}{unit&&<small className="mt-0.5 block font-normal text-muted">{unit}</small>}</span>
     {scale&&<AxisTicks scale={scale}/>} 
   </div>;
 }

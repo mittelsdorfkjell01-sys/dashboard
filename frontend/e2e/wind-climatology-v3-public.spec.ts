@@ -100,7 +100,7 @@ async function baseRoutes(page: Page, opts: { v3: "ready" | "404"; usableAvailab
 test("V3 module loads with the default 15–20 kt window and matching selection summary", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("Wann ist regelmäßig Wind?")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).toBeVisible();
   await expect(page.getByText("15–20 kt · passende Richtung · 2006–2025")).toBeVisible();
 });
 
@@ -150,14 +150,14 @@ test("a spot without an active V3 run falls back to the V2 climatology view", as
   await baseRoutes(page, { v3: "404" });
   await page.goto("/spot/test/daten");
   await expect(page.getByRole("heading", { name: "Windmonate" })).toBeVisible();
-  await expect(page.getByText("Wann ist regelmäßig Wind?")).not.toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).not.toBeVisible();
 });
 
 test("mobile: chart keeps the complete year visible and the page never scrolls sideways", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("Wann ist regelmäßig Wind?")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
@@ -178,7 +178,7 @@ test("chart supports keyboard week selection without 52 tab stops", async ({ pag
 test("V3 module has no serious/critical accessibility violations", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("Wann ist regelmäßig Wind?")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).toBeVisible();
   const results = await new AxeBuilder({ page }).include('[aria-label*="52 Wochen"]').analyze();
   expect(results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""))).toEqual([]);
 });

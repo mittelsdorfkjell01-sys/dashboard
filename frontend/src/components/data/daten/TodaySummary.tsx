@@ -1,10 +1,10 @@
 import { useMemo, useRef } from "react";
 import type { NormalizedForecastSeries, NormalizedForecastDay } from "../../../lib/forecastNormalization";
 import { spotForecastDayHours } from "../../../lib/spotForecastWindow";
-import { useSpotDataScope } from "../../../state/SpotDataScope";
+import { useSpotDataScope, windUnitLabel } from "../../../state/SpotDataScope";
 import { tempColor } from "../../../lib/tempScale";
 import { useOptionalUnits } from "../../../context/PrefsContext";
-import { tempValue } from "../../../lib/units";
+import { tempValue, formatWind, formatWave, windValue } from "../../../lib/units";
 import WeatherGlyph, { weatherLabel } from "./WeatherGlyph";
 
 // Celestial-body colours — the only chroma on the sky arc besides the glow.
@@ -16,15 +16,15 @@ const MOON_GLOW = "rgba(150, 178, 220, 0.42)";
 
 /**
  * Day-detail view (Daten-page middle band, left column). Content on the page —
- * no card, no border, no surface: the big current temperature (tinted on the
- * absolute temperature scale) with condition and high/low, a sun/moon sky arc,
+ * no card, no border, no surface: the big wind speed of the selected hour with
+ * condition and temperature high/low, a sun/moon sky arc,
  * and the day's hourly temperature course. Header, sky body and course marker
  * all resolve to the SAME instant (the shared selection, which defaults to now),
  * so the three parts tell one time. Colour lives only on temperature and on the
  * celestial body's glow; everything else is quiet grey hairlines.
  */
 export default function TodaySummary({ forecast }: { forecast: NormalizedForecastSeries }) {
-  const { selectedForecast, selectedAtUtc, setSelectedAtUtc } = useSpotDataScope();
+  const { selectedForecast, selectedAtUtc, setSelectedAtUtc, windUnit } = useSpotDataScope();
   const units = useOptionalUnits();
 
   // Resolve to a day that actually carries hourly values — the shared selection
@@ -56,46 +56,59 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
       : dayHours[Math.floor(dayHours.length / 2)]?.utcKey) ?? null;
   const anchorHour = dayHours.find((h) => h.utcKey === anchorUtc) ?? null;
 
-  const current = anchorHour?.air ?? null;
   const hi = day?.summary.air_max ?? day?.summary.temperature_max_c ?? null;
   const lo = day?.summary.air_min ?? day?.summary.temperature_min_c ?? null;
   const condition = anchorHour?.weather_condition ?? day?.summary.weather_condition;
+  const wind = anchorHour?.wind ?? null;
+  const gust = anchorHour?.gust ?? null;
+  const swell = anchorHour?.swell ?? null;
 
   return (
-    <div className="flex flex-col gap-10">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
-        {/* Header — big current temperature, condition, high/low. */}
-        <div className="flex min-w-0 flex-col gap-3">
-          {current == null ? (
-            <span className="text-muted tabular-nums" style={{ fontSize: 64, fontWeight: 300, lineHeight: 1 }}>—</span>
+    <div className="flex flex-col gap-6">
+      {/* Header — big wind speed (left) with the selected-hour readouts (gust,
+          wave) in one right-aligned row beside it, above a full-width line;
+          below the line, the condition icon + name and the day high/low. */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-end justify-between gap-4">
+          {wind == null ? (
+            <span className="text-muted tabular-nums text-display-lg font-light leading-none">—</span>
           ) : (
-            <span className="inline-flex flex-col items-start" style={{ color: tempColor(current) }}>
-              <span className="tabular-nums" style={{ fontSize: 64, fontWeight: 300, lineHeight: 1, letterSpacing: "-0.02em" }}>
-                {tempValue(current, units.temp)}°
-              </span>
-              <span className="mt-2 h-[2px] w-full rounded-full bg-current opacity-40" />
+            <span className="flex items-baseline gap-1.5 leading-none" aria-label={`Wind ${formatWind(wind, windUnit)}`}>
+              <span className="tabular-nums text-display-lg font-light leading-none text-ink">{windValue(wind, windUnit)}</span>
+              <span className="text-ui text-muted">{windUnitLabel(windUnit)}</span>
             </span>
           )}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-ui">
-            <WeatherGlyph condition={condition} size={26} />
-            <span className="text-muted">{condition ? weatherLabel(condition) : "—"}</span>
-            <span className="flex items-center gap-3 tabular-nums">
-              <span className="font-medium" style={{ color: hi == null ? undefined : tempColor(hi) }}>
-                ↑ {hi == null ? "—" : `${tempValue(hi, units.temp)}°`}
-              </span>
-              <span className="font-light" style={{ color: lo == null ? undefined : tempColor(lo), opacity: lo == null ? undefined : 0.85 }}>
-                ↓ {lo == null ? "—" : `${tempValue(lo, units.temp)}°`}
-              </span>
-            </span>
+
+          {/* Böe / Welle — one row, side by side, right-aligned, bottom-aligned
+              so they sit directly above the line. */}
+          <div className="flex shrink-0 flex-wrap items-baseline justify-end gap-x-4 gap-y-1 text-ui tabular-nums">
+            <span className="text-muted">Böe <span className="font-medium text-ink">{gust == null ? "—" : formatWind(gust, windUnit)}</span></span>
+            <span className="text-muted">Welle <span className="font-medium text-ink">{swell == null ? "—" : formatWave(swell, units.wave)}</span></span>
           </div>
         </div>
 
-        {/* Sky arc — sunrise→sunset (sun) or sunset→next sunrise (moon). Shown on
-            mobile too (full width, under the temperature) — it used to be
-            `max-sm:hidden`, which is why the Sonnenstand was invisible on phones. */}
-        <div className="w-full shrink-0 sm:max-w-[320px]">
-          <SkyArc day={day} nextDay={nextDay} anchorUtc={anchorUtc} timezone={forecast.timezone} />
+        {/* Full-width divider directly under the big number. */}
+        <div className="border-t border-line" />
+
+        {/* Below the line: condition icon + name, and the day high / low. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-ui">
+          <WeatherGlyph condition={condition} size={26} />
+          <span className="text-muted">{condition ? weatherLabel(condition) : "—"}</span>
+          <span className="flex items-center gap-3 tabular-nums">
+            <span className="font-medium" style={{ color: hi == null ? undefined : tempColor(hi) }}>
+              ↑ {hi == null ? "—" : `${tempValue(hi, units.temp)}°`}
+            </span>
+            <span className="font-light" style={{ color: lo == null ? undefined : tempColor(lo), opacity: lo == null ? undefined : 0.85 }}>
+              ↓ {lo == null ? "—" : `${tempValue(lo, units.temp)}°`}
+            </span>
+          </span>
         </div>
+      </div>
+
+      {/* Sky arc — sunrise→sunset (sun) or sunset→next sunrise (moon). Full width,
+          so it reads exactly as wide as the temperature course directly below it. */}
+      <div className="w-full max-w-[900px]">
+        <SkyArc day={day} nextDay={nextDay} anchorUtc={anchorUtc} timezone={forecast.timezone} />
       </div>
 
       {day && <DayTempCourse day={day} anchorUtc={anchorUtc} onSelect={setSelectedAtUtc} />}
@@ -105,13 +118,15 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
 
 // ── Sky arc ────────────────────────────────────────────────────────────────
 
-const AW = 330;
+// Wide, flat viewBox so the arc scales to the full column width (matching the
+// temperature course's 900-wide viewBox) without becoming tall.
+const AW = 900;
 const HORIZON = 112;
 // Cubic Bézier control points; endpoints sit on the horizon.
-const P0 = [38, HORIZON] as const;
-const P1 = [112, 20] as const;
-const P2 = [242, 20] as const;
-const P3 = [316, HORIZON] as const;
+const P0 = [60, HORIZON] as const;
+const P1 = [300, 20] as const;
+const P2 = [600, 20] as const;
+const P3 = [840, HORIZON] as const;
 const cube = (t: number): readonly [number, number] => {
   const m = 1 - t;
   return [
@@ -214,10 +229,24 @@ function SkyArc({
       <path d={fullArc} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth={1.5} strokeLinecap="round" />
       <path d={geom.traveled} fill="none" stroke="rgba(255,255,255,0.42)" strokeWidth={1.5} strokeLinecap="round" />
 
-      {/* Celestial body: bloom + soft core + sharp core (no hard circle). */}
-      <circle cx={geom.cx} cy={geom.cy} r={22} fill="url(#sky-bloom)" />
-      <circle cx={geom.cx} cy={geom.cy} r={7} fill={core} filter="url(#sky-soft)" opacity={0.9} />
-      <circle cx={geom.cx} cy={geom.cy} r={4.5} fill={core} />
+      {/* Celestial body. The daytime sun is a bright bloom + soft/sharp core; the
+          night moon is a dim crescent (carved by an offset disc in the sky colour)
+          that glows much less than the sun. */}
+      {geom.isNight ? (
+        <>
+          <circle cx={geom.cx} cy={geom.cy} r={13} fill="url(#sky-bloom)" opacity={0.6} />
+          <g>
+            <circle cx={geom.cx} cy={geom.cy} r={6} fill={core} />
+            <circle cx={geom.cx + 2.8} cy={geom.cy - 1.8} r={6} fill="var(--sw-page)" />
+          </g>
+        </>
+      ) : (
+        <>
+          <circle cx={geom.cx} cy={geom.cy} r={22} fill="url(#sky-bloom)" />
+          <circle cx={geom.cx} cy={geom.cy} r={7} fill={core} filter="url(#sky-soft)" opacity={0.9} />
+          <circle cx={geom.cx} cy={geom.cy} r={4.5} fill={core} />
+        </>
+      )}
 
       {/* Edge time marks. */}
       <text x={P0[0]} y={HORIZON + 14} textAnchor="middle" fontSize={9} className="tabular-nums" fill="var(--sw-muted)">

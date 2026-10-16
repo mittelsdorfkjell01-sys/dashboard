@@ -3,7 +3,11 @@ import { useSearchParams } from "react-router-dom";
 import type { WindClimatologyV3Read, WindClimatologyV3Week, WindDirectionMode } from "../../lib/api";
 import { usePersistedState, useWindClimatologyV3, type WindClimatologyV3Selection } from "../../lib/hooks";
 import type { Spot } from "../../lib/types";
+import { formatMonthDayRange } from "../../lib/bestSeason";
 import WindWindowSlider, { WIND_WINDOW_MAX, WIND_WINDOW_MIN, formatWindWindow } from "./WindWindowSlider";
+import YearRangeSlider from "./YearRangeSlider";
+
+type YearWindow = { fromYear: number; toYear: number };
 
 const ClimatologyV2 = lazy(() => import("./Climatology"));
 
@@ -83,13 +87,6 @@ export function groupByMonth(weeks: WindClimatologyV3Week[]): WindClimatologyV3W
   return groups;
 }
 
-export function formatMonthDayRange(startDate: string, endDate: string): string {
-  const [startMonth, startDay] = startDate.split("-").map(Number);
-  const [endMonth, endDay] = endDate.split("-").map(Number);
-  if (startMonth === endMonth) return `${startDay}.–${endDay}. ${MONTHS[startMonth - 1]}`;
-  return `${startDay}. ${MONTHS[startMonth - 1]} – ${endDay}. ${MONTHS[endMonth - 1]}`;
-}
-
 function formatDateRange(week: WindClimatologyV3Week): string {
   return formatMonthDayRange(week.date_range.start, week.date_range.end);
 }
@@ -104,8 +101,9 @@ export default function WindClimatologyModule({ spot }: { spot: Spot }) {
   const [selection, setSelection] = useState<WindClimatologyV3Selection>(() =>
     normalizeSelection({ ...stored, ...selectionFromUrl(searchParams) }),
   );
+  const [yearWindow, setYearWindow] = useState<{ fromYear: number; toYear: number } | null>(null);
 
-  const v3 = useWindClimatologyV3(spot.id, selection, true);
+  const v3 = useWindClimatologyV3(spot.id, selection, true, yearWindow);
 
   // Default to the spot's usable-direction filter once we learn it exists,
   // unless the user (or an explicit URL) already made a direction choice.
@@ -154,6 +152,8 @@ export default function WindClimatologyModule({ spot }: { spot: Spot }) {
         directionExplicitRef.current = true;
         setSelection(normalizeSelection(next));
       }}
+      yearWindow={yearWindow}
+      onYearWindowChange={setYearWindow}
     />
   );
 }
@@ -175,7 +175,7 @@ function V3Skeleton() {
 function V3ErrorState({ message }: { message: string }) {
   return (
     <div className="p-4" role="alert">
-      <h3 className="font-display text-lg text-ink">Wann ist regelmäßig Wind?</h3>
+      <h3 className="font-display text-lg text-ink">Beste Reisezeit</h3>
       <p className="mt-2 text-sm text-muted">Die Windzuverlässigkeit konnte nicht geladen werden. {message}</p>
     </div>
   );
@@ -184,12 +184,14 @@ function V3ErrorState({ message }: { message: string }) {
 // --- main panel: header, controls, chart, detail, methodology --------------
 
 function V3Panel({
-  data, switching, selection, onSelectionChange,
+  data, switching, selection, onSelectionChange, yearWindow, onYearWindowChange,
 }: {
   data: WindClimatologyV3Read;
   switching: boolean;
   selection: WindClimatologyV3Selection;
   onSelectionChange: (next: WindClimatologyV3Selection) => void;
+  yearWindow: YearWindow | null;
+  onYearWindowChange: (next: YearWindow | null) => void;
 }) {
   const currentWeek = seasonalWeekForToday();
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
@@ -213,12 +215,21 @@ function V3Panel({
   const monthGroups = groupByMonth(data.weeks);
   const directionSummary = data.direction.selected_mode === "usable" ? "passende Richtung" : "alle Richtungen";
 
+  // Year-range window: only the start year moves; the end is always the present.
+  // Re-aggregated server-side from stored per-year data.
+  const availableYears = data.available_years ?? null;
+  const fromYear = availableYears
+    ? Math.max(availableYears.min, Math.min(yearWindow?.fromYear ?? availableYears.min, availableYears.max))
+    : null;
+  const onYearChange = (nextFrom: number) =>
+    onYearWindowChange(availableYears && nextFrom > availableYears.min ? { fromYear: nextFrom, toYear: availableYears.max } : null);
+
   return (
     <div className="p-4">
       <div ref={liveRegionRef} aria-live="polite" className="sr-only" />
 
-      <h3 className="font-display text-lg text-ink">Wann ist regelmäßig Wind?</h3>
-      <p className="mt-1 text-sm text-muted">Historische Wahrscheinlichkeit für mindestens zwei Windtage mit jeweils drei zusammenhängenden brauchbaren Stunden.</p>
+      <h3 className="font-display text-lg text-ink">Beste Reisezeit</h3>
+      <p className="mt-1 text-sm text-muted">Wann regelmäßig Wind weht: historische Wahrscheinlichkeit für mindestens zwei Windtage mit jeweils drei zusammenhängenden brauchbaren Stunden.</p>
       {data.best_season ? (
         <p className="mt-1 text-sm font-medium text-orange">Beste Planungszeit: {formatMonthDayRange(data.best_season.start_date, data.best_season.end_date)}</p>
       ) : (
@@ -228,6 +239,16 @@ function V3Panel({
       <p className="mt-3 text-data-value text-ink-soft">
         {formatWindWindow(data.selection.min_wind_kn, data.selection.max_wind_kn)} · {directionSummary} · {data.period[0]}–{data.period[1]}
       </p>
+
+      {availableYears && fromYear != null && availableYears.max > availableYears.min && (
+        <div className="mt-4 max-w-sm">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-data-label font-medium uppercase tracking-wider text-muted">Zeitraum</span>
+            <span className="text-data-value tabular-nums text-ink">{fromYear}–{availableYears.max}</span>
+          </div>
+          <YearRangeSlider fromYear={fromYear} min={availableYears.min} max={availableYears.max} onChange={onYearChange} />
+        </div>
+      )}
 
       <div className="mt-4">
         <span className="text-data-label font-medium uppercase tracking-wider text-muted">Windfenster</span>

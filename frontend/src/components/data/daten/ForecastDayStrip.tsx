@@ -13,10 +13,10 @@ const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "
 // visible: two rows of five on compact screens and one row of ten on desktop.
 // Bars flex to fill each tile; only their count, gaps and height are fixed.
 const BAR_HOURS = [6, 8, 10, 12, 14, 16, 18, 20]; // 8 fixed local-hour slots (06..20)
-const BAR_GAP = 3; // gap between bars (px)
+const BAR_GAP = 2; // gap between bars (px)
 const BAR_BAND_H = 30; // bar-band / max bar height (px)
-const TILE_H = 57;
-const TILE_GAP = 6; // gap between day tiles (px)
+const TILE_H = 52;
+const TILE_GAP = 2; // gap between day tiles (px)
 const MAX_DAYS = 10;
 
 /**
@@ -76,9 +76,9 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
             title="Im Stundenforecast anzeigen"
             onClick={() => selectDay(day)}
             style={{ height: TILE_H }}
-            className="flex min-w-0 shrink-0 basis-[calc((100%-24px)/5)] snap-start flex-col justify-between rounded-[10px] bg-[#0E141B] px-[5px] pb-1 pt-[3px] transition-colors hover:bg-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal lg:basis-auto"
+            className="flex min-w-0 shrink-0 basis-[calc((100%-8px)/5)] snap-start flex-col gap-1 rounded-card bg-[#0E141B] px-[5px] pb-1 pt-[3px] transition-colors hover:bg-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal lg:basis-auto"
           >
-            <span className="flex items-baseline justify-between gap-1 whitespace-nowrap text-sz-10 leading-none tabular-nums max-[359px]:flex-col max-[359px]:items-start max-[359px]:gap-0 sm:text-sz-11 xl:text-label">
+            <span className="flex items-baseline justify-between gap-1 whitespace-nowrap text-micro leading-none tabular-nums max-[359px]:flex-col max-[359px]:items-start max-[359px]:gap-0 sm:text-caption xl:text-ui">
               <span className="font-medium text-ink">{weekday}</span>
               <span className="text-muted">{dayMonth}</span>
             </span>
@@ -86,7 +86,8 @@ export default function ForecastDayStrip({ forecast }: { forecast: NormalizedFor
               {bars.map((wind, i) => (
                 <span
                   key={i}
-                  className="min-w-0 flex-1 rounded-[3px]"
+                  data-wind-bar
+                  className="min-w-0 flex-1 rounded-card"
                   style={{
                     height: wind == null ? 3 : Math.max(3, (wind / windMax) * BAR_BAND_H),
                     background: wind == null ? "var(--sw-line)" : windColor(wind),
