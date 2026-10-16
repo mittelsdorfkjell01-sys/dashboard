@@ -152,11 +152,11 @@ export default function LandingHeader({
   // by `docked` and eased by the touch-only CSS transition on the element.
   const surfaceOpacity = desktop ? Math.min(1, progress * 3) : docked ? 1 : 0;
 
-  const innerWidth = width === "body" ? "max-w-[1570px] sm:px-8" : "max-w-[1570px] sm:px-10";
+  const innerWidth = width === "body" ? "max-w-page sm:px-8" : "max-w-page sm:px-10";
 
   return (
     <header
-      className={`${sticky ? "fixed" : "absolute"} pointer-events-none inset-x-0 top-0 z-[1000] bg-transparent`}
+      className={`${sticky ? "fixed" : "absolute"} pointer-events-none inset-x-0 top-0 z-header bg-transparent`}
       // Desktop uses the CSS var (from React `progress`) only for the padding
       // tightening; mobile doesn't need it.
       style={sticky && desktop ? ({ "--header-progress": progress } as CSSProperties) : undefined}
@@ -222,8 +222,8 @@ export default function LandingHeader({
             {left ?? (
               <div className="relative flex min-h-11 items-center">
                 <span
-                  className={`hidden select-none whitespace-nowrap text-caption font-medium uppercase tracking-[0.14em] sm:block ${
-                    onLight ? "text-ink-soft" : "text-white/90"
+                  className={`hidden select-none whitespace-nowrap text-caption font-medium uppercase tracking-caps sm:block ${
+                    onLight ? "text-ink-soft" : "text-on-photo"
                   }`}
                   style={sticky ? { opacity: 1 - progress } : undefined}
                 >
@@ -266,7 +266,7 @@ export default function LandingHeader({
                   transition: docked ? "opacity 260ms ease 140ms" : "opacity 0s",
                 }}
               >
-                <Suspense fallback={<div aria-hidden className="h-10 w-48 rounded-[14px] bg-surface shadow-card" />}>
+                <Suspense fallback={<div aria-hidden className="h-10 w-48 rounded-card bg-surface shadow-card" />}>
                   <SearchBar variant="pill" />
                 </Suspense>
               </div>
@@ -293,7 +293,7 @@ export default function LandingHeader({
               }}
               className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:hidden"
             >
-              <SearchIcon className="text-sz-18" />
+              <SearchIcon className="text-lead" />
             </button>
           )}
 
@@ -301,7 +301,7 @@ export default function LandingHeader({
             {INCLUDE_ADMIN && (
               <Link
                 to="/admin/spot/new"
-                className="hidden text-sz-16 font-medium text-ink transition-opacity hover:opacity-70 sm:block"
+                className="hidden text-body font-medium text-ink transition-opacity hover:opacity-70 sm:block"
               >
                 Füge Spots hinzu
               </Link>

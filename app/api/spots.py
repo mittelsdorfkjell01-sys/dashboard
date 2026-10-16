@@ -27,9 +27,14 @@ from app.live.deps import get_cache, get_om_client
 from app.live.public_cache import (
     get_public_forecast,
     get_public_live,
+    get_public_live_many,
     get_public_live_wind_baseline,
+    get_public_live_wind_baselines_many,
     get_public_measurement,
+    get_public_measurements_many,
+    public_live_wind_input_generations,
     public_weather_generation,
+    public_weather_generations,
     set_public_forecast,
     set_public_live,
 )
@@ -37,7 +42,7 @@ from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT
 from app.models import AppUser, Spot, SpotWeatherProfile, SpotWeatherSector, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
-from app.schemas import SpotRead, SpotSummary
+from app.schemas import LandingSpots, SpotRead, SpotSummary
 from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
 from app.similarity import service as similarity_service
 from app.tides import service as tide_service
@@ -47,12 +52,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/spots", tags=["spots"])
 
+LANDING_CARD_LIMIT = 24
+LANDING_HERO_LIMIT = 12
+
 
 @router.get("/{spot_id}/tides", response_model=PublicTideRead, tags=["tides"])
-def get_spot_tides(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> PublicTideRead:
+def get_spot_tides(
+    spot_id: uuid.UUID,
+    days: int = Query(default=10, ge=1, le=10),
+    db: Session = Depends(get_db),
+) -> PublicTideRead:
     if get_published_spot(db, spot_id) is None:
         raise HTTPException(status_code=404, detail="Spot not found")
-    return PublicTideRead.model_validate(tide_service.public_tides(spot_id, db=db))
+    return PublicTideRead.model_validate(tide_service.public_tides(spot_id, days=days, db=db))
 
 
 def _wind_availability(db: Session, rows: list[Spot]) -> dict[uuid.UUID, list[float]]:
@@ -91,6 +103,71 @@ def _safe_summaries(rows: list[Spot], db: Session) -> list[SpotSummary]:
                 getattr(s, "slug", None),
             )
     return out
+
+
+def _summary_options():
+    """Columns/relationships shared by small public collection responses."""
+    return (
+        defer(Spot.climatology),
+        defer(Spot.overrides),
+        defer(Spot.era5_cell),
+        load_only(
+            Spot.id,
+            Spot.slug,
+            Spot.name,
+            Spot.region_id,
+            Spot.location,
+            Spot.sports,
+            Spot.water_type,
+            Spot.bottom_type,
+            Spot.level,
+            Spot.water_character,
+            Spot.style,
+            Spot.facilities,
+            Spot.status,
+            Spot.facing,
+            Spot.editorial,
+            Spot.variant_conditions,
+            Spot.image,
+        ),
+        selectinload(Spot.region),
+        noload(Spot.weather_profile),
+    )
+
+
+@router.get("/landing", response_model=LandingSpots)
+def landing_spots(response: Response, db: Session = Depends(get_db)) -> LandingSpots:
+    """Return only what the landing page needs before the visitor browses all.
+
+    The first cards stay alphabetic while curated hero records are appended if
+    they sit beyond that window. This replaces the former 500-row first-paint
+    request without losing an editor-selected hero image.
+    """
+    base = select(Spot).where(Spot.status == PUBLISHED).options(*_summary_options())
+    initial = list(
+        db.scalars(base.order_by(Spot.name).limit(LANDING_CARD_LIMIT)).all()
+    )
+    heroes = list(
+        db.scalars(
+            base.where(Spot.image["hero_reel"].as_boolean().is_(True))
+            .order_by(Spot.name)
+            .limit(LANDING_HERO_LIMIT)
+        ).all()
+    )
+    initial_ids = {row.id for row in initial}
+    rows = initial + [spot for spot in heroes if spot.id not in initial_ids]
+    count, latest = db.execute(
+        select(func.count(Spot.id), func.max(Spot.updated_at)).where(
+            Spot.status == PUBLISHED
+        )
+    ).one()
+    set_public_cache(response)
+    latest_token = latest.isoformat() if latest is not None else "none"
+    return LandingSpots(
+        spots=_safe_summaries(rows, db),
+        total=count,
+        version=f"{count}:{latest_token}",
+    )
 
 
 @router.get("", response_model=list[SpotSummary])
@@ -160,6 +237,7 @@ def list_spots(
                 Spot.status,
                 Spot.facing,
                 Spot.editorial,
+                Spot.variant_conditions,
                 Spot.image,
             ),
             selectinload(Spot.region),
@@ -206,16 +284,27 @@ def list_spots(
 def spot_catalog_version(
     response: Response,
     db: Session = Depends(get_db),
-) -> dict[str, str]:
-    """Return a cheap change token for automatic public-map refreshes."""
-    count, latest = db.execute(
-        select(func.count(Spot.id), func.max(Spot.updated_at)).where(
-            Spot.status == PUBLISHED
-        )
+) -> dict[str, str | bool]:
+    """Return a cheap change token for automatic public-map refreshes.
+
+    Carries ``origins_mixed`` alongside it: whether the published catalogue
+    holds both editorial and community spots. While it is all ours, the origin
+    mark would sit on every spot and inform about nothing, so the public
+    surfaces keep it hidden until the first community spot is live.
+    """
+    count, latest, community = db.execute(
+        select(
+            func.count(Spot.id),
+            func.max(Spot.updated_at),
+            func.count(Spot.id).filter(Spot.origin == "community"),
+        ).where(Spot.status == PUBLISHED)
     ).one()
     set_catalog_version_cache(response)
     latest_token = latest.isoformat() if latest is not None else "none"
-    return {"version": f"{count}:{latest_token}"}
+    return {
+        "version": f"{count}:{latest_token}",
+        "origins_mixed": bool(community) and community < count,
+    }
 
 
 @router.get("/top", response_model=list[SpotSummary])
@@ -337,13 +426,10 @@ def get_spots_live_batch(
 
     results: dict[uuid.UUID, LiveConditionsRead] = {}
     missing: list[uuid.UUID] = []
-    generations = {
-        spot_id: public_weather_generation(cache, spot_id) for spot_id in parsed
-    }
+    generations = public_weather_generations(cache, parsed)
+    cached_live = get_public_live_many(cache, generations)
     for spot_id in parsed:
-        cached = get_public_live(
-            cache, spot_id, generation=generations[spot_id]
-        )
+        cached = cached_live.get(spot_id)
         if cached is None:
             missing.append(spot_id)
             continue
@@ -415,8 +501,14 @@ def get_spots_live_batch(
     # without ever pinning it into the shared model-nowcast cache. Freshly
     # computed spots already did DB work, so we compute (and warm) their
     # measurement from the database; cache-hit spots stay DB-free.
-    for spot_id in list(results):
-        measurement = get_public_measurement(cache, spot_id)
+    result_ids = list(results)
+    cached_measurements = get_public_measurements_many(cache, result_ids)
+    cached_baselines = get_public_live_wind_baselines_many(
+        cache, {spot_id: generations[spot_id] for spot_id in result_ids}
+    )
+    input_generations = public_live_wind_input_generations(cache, result_ids)
+    for spot_id in result_ids:
+        measurement = cached_measurements.get(spot_id)
         if measurement is None and isinstance(db, Session):
             measurement = live_service.public_station_measurement(
                 db,
@@ -429,12 +521,10 @@ def get_spots_live_batch(
         enriched["live_wind"] = live_service.public_live_wind_analysis(
             db,
             spot_id,
-            get_public_live_wind_baseline(
-                cache,
-                spot_id,
-                generation=generations[spot_id],
-            ),
+            cached_baselines.get(spot_id),
             cache=cache,
+            weather_generation=generations[spot_id],
+            input_generation=input_generations[spot_id],
         )
         results[spot_id] = LiveConditionsRead.model_validate(enriched)
     return [results[spot_id] for spot_id in parsed if spot_id in results]
@@ -507,17 +597,29 @@ def get_spot(
 
 @router.get("/{spot_reference}/wind-climatology")
 def get_wind_climatology(
-    spot_reference: str, response: Response, db: Session = Depends(get_db)
+    spot_reference: str,
+    response: Response,
+    db: Session = Depends(get_db),
+    from_year: int | None = Query(None, ge=1940, le=2100),
+    to_year: int | None = Query(None, ge=1940, le=2100),
 ) -> dict:
-    """Public V2 wind availability; never exposes cell warnings or run errors."""
+    """Public V2 wind availability; never exposes cell warnings or run errors.
+
+    ``from_year``/``to_year`` serve a user-chosen year sub-window, re-aggregated
+    from the active run's stored per-year bins (no provider fetch)."""
     spot = _published_spot_by_reference(db, spot_reference)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
-    from app.wind_climatology.service import public_state
+    from app.wind_climatology.service import public_state, windowed_public
 
-    payload = public_state(db, spot.id)
+    if from_year is not None and to_year is not None:
+        payload = windowed_public(db, spot.id, from_year, to_year) or public_state(db, spot.id)
+    else:
+        payload = public_state(db, spot.id)
     if payload.get("status") == "ready":
         set_public_cache(response)
+        period = payload.get("period") or {}
+        response.headers["ETag"] = f'"wind-climatology-v2:{spot.id}:{period.get("start_year")}-{period.get("end_year")}:{payload.get("algorithm_version", "")}"'
     else:
         # A missing/pending dataset is transient. Caching that placeholder at
         # the edge would hide a newly completed worker run for up to a day.
@@ -534,11 +636,14 @@ def get_wind_climatology_v3(
     max_wind_kn: int | None = Query(20, ge=6, le=40),
     open_upper: bool = Query(False),
     direction_mode: Literal["all", "usable"] = Query("all"),
+    from_year: int | None = Query(None, ge=1940, le=2100),
+    to_year: int | None = Query(None, ge=1940, le=2100),
 ) -> dict:
     """Public, read-only V3 weekly reliability contract.
 
     Serves exactly one prepared variant of the active, ready V3 run, gated by
-    the wind-climatology-v3 public rollout flag/allowlist. Never triggers a
+    the wind-climatology-v3 public rollout flag/allowlist. ``from_year``/``to_year``
+    re-collapse the stored per-year grid for a chosen window. Never triggers a
     calculation, never queries a provider, never exposes run errors/warnings.
     """
     spot = _published_spot_by_reference(db, spot_reference)
@@ -554,6 +659,8 @@ def get_wind_climatology_v3(
             min_wind_kn=min_wind_kn,
             max_wind_kn=None if open_upper else max_wind_kn,
             direction_mode=direction_mode,
+            from_year=from_year,
+            to_year=to_year,
         )
     except LookupError:
         raise HTTPException(status_code=404, detail="Wind climatology V3 not available for this spot")

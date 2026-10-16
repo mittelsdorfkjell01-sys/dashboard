@@ -1,7 +1,8 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CloseIcon, UserIcon } from "../lib/icons";
+import { useFocusTrap } from "../lib/useFocusTrap";
 
 /**
  * Auth choice shown when someone submits a comment while signed out
@@ -29,6 +30,8 @@ export default function CommentAuthChoiceDialog({
   signInText?: string;
 }) {
   const reduce = useReducedMotion();
+  const cardRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, cardRef);
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +44,7 @@ export default function CommentAuthChoiceDialog({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[1200] grid place-items-center bg-ink/25 p-4 backdrop-blur-[3px]"
+          className="fixed inset-0 z-modal grid place-items-center bg-ink/25 p-4 backdrop-blur-[3px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -49,10 +52,12 @@ export default function CommentAuthChoiceDialog({
           onClick={onCancel}
         >
           <motion.div
+            ref={cardRef}
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="w-full max-w-[520px] rounded-[14px] border border-line bg-surface p-6 shadow-float sm:p-7"
+            tabIndex={-1}
+            className="w-full max-w-[520px] rounded-card border border-line bg-surface p-6 shadow-float outline-none sm:p-7"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -63,7 +68,7 @@ export default function CommentAuthChoiceDialog({
             <p className="mt-1 text-body text-muted">Dein Entwurf bleibt bei beiden Optionen erhalten.</p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-teal" />} title="Anmelden" primary>
+              <ChoiceCard onClick={onSignIn} icon={<UserIcon width={26} height={26} className="text-accent" />} title="Anmelden" primary>
                 {signInText}
               </ChoiceCard>
               <ChoiceCard onClick={onAnonymous} icon={<ThinProfileIcon />} title="Anonym weitermachen">
@@ -75,7 +80,7 @@ export default function CommentAuthChoiceDialog({
               <button
                 type="button"
                 onClick={onCancel}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-card px-3 text-ui font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 Schließen
@@ -106,9 +111,9 @@ function ChoiceCard({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex h-full min-h-[150px] flex-col items-start rounded-[14px] border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${primary ? "border-teal/40 bg-teal/5 hover:bg-teal/10" : "border-line bg-page hover:border-teal/40 hover:bg-band"}`}
+      className={`group flex h-full min-h-[150px] flex-col items-start rounded-card border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${primary ? "border-accent/40 bg-teal/5 hover:bg-teal/10" : "border-line bg-page hover:border-accent/40 hover:bg-band"}`}
     >
-      <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-teal">{icon}</span>
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-accent">{icon}</span>
       <span className="mt-3 min-w-0">
         <span className="block text-body font-semibold text-ink">{title}</span>
         <span className="mt-0.5 block text-caption leading-relaxed text-muted">{children}</span>

@@ -24,6 +24,30 @@ export default defineConfig(({ command, mode }) => {
     "";
   return {
     plugins: [react()],
+    optimizeDeps: {
+      // MapLibre ships its worker as a sibling ESM asset. Pre-bundling the
+      // package rewrites that URL into Vite's deps cache where the worker does
+      // not exist, leaving the weather map without a renderer in dev/tests.
+      exclude: ["maplibre-gl"],
+    },
+    build: {
+      rolldownOptions: {
+        output: {
+          // Keep the optional Wind mode's map engine out of the feature
+          // chunk. Spot mode never downloads either chunk, while Wind mode
+          // can cache the comparatively stable vendor payload separately.
+          codeSplitting: {
+            groups: [
+              {
+                name: "maplibre",
+                test: /node_modules[\\/]maplibre-gl/,
+                maxSize: 750_000,
+              },
+            ],
+          },
+        },
+      },
+    },
     define: {
       __INCLUDE_ADMIN__: JSON.stringify(command === "serve" || adminBuild),
       __ADMIN_DEPLOY__: JSON.stringify(command === "build" && adminBuild),

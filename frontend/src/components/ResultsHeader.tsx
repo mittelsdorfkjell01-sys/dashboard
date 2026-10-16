@@ -30,9 +30,9 @@ export default function ResultsHeader() {
   return (
     <>
     <header
-      className="pointer-events-none fixed inset-x-0 top-0 z-[1000] bg-surface"
+      className="pointer-events-none fixed inset-x-0 top-0 z-header bg-surface"
     >
-      <div className="mx-auto max-w-[1570px] px-4 py-5 sm:px-8 sm:pt-6 sm:pb-2">
+      <div className="mx-auto max-w-page px-4 py-5 sm:px-8 sm:pt-6 sm:pb-2">
         <div className="pointer-events-auto relative grid grid-cols-[auto_1fr_auto] items-center gap-4">
           <Link
             to="/"
@@ -43,7 +43,7 @@ export default function ResultsHeader() {
 
           <div className="hidden min-w-0 justify-center sm:flex">
             {desktop && (
-              <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-[14px] bg-surface shadow-card" />}>
+              <Suspense fallback={<div aria-hidden className="h-11 w-48 rounded-card bg-surface shadow-card" />}>
                 <SearchBar variant="pill" />
               </Suspense>
             )}
@@ -58,7 +58,7 @@ export default function ResultsHeader() {
             aria-label="Suche öffnen"
             className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center text-ink active:scale-[0.97] sm:hidden"
           >
-            <SearchIcon className="text-sz-18" />
+            <SearchIcon className="text-lead" />
           </button>
 
           <div className="justify-self-end">

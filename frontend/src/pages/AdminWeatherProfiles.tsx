@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ApiError, getAdminWeatherProfiles, type WeatherProfileListItem } from "../lib/api";
 import { Badge, PageHeader } from "../components/admin/ui";
 
-const stateLabel: Record<string, string> = { none: "Kein Profil", coordinates: "Nur Koordinaten", incomplete: "Basis unvollständig", complete: "Basis vollständig", advanced_draft: "Advanced-Entwurf", advanced_released: "Advanced freigegeben" };
+const stateLabel: Record<string, string> = { none: "Kein Profil", coordinates: "Nur Koordinaten", incomplete: "Basis unvollständig", complete: "Basis vollständig", advanced: "Advanced" };
 
 export default function AdminWeatherProfiles() {
   const [country, setCountry] = useState("");
@@ -34,8 +34,8 @@ export default function AdminWeatherProfiles() {
         <tbody>{items.map((item) => <tr key={item.spot_id} className="border-t border-admin-border">
           <td className="p-3"><span className="font-medium">{item.spot_name}</span><span className="block text-caption text-admin-muted">{item.region ?? "Ohne Region"}</span></td>
           <td className="p-3">{item.country ?? "—"}</td>
-          <td className="p-3"><Badge tone={item.profile_state === "advanced_released" || item.profile_state === "complete" ? "success" : item.profile_state === "none" ? "danger" : "warning"}>{stateLabel[item.profile_state] ?? item.profile_state}</Badge></td>
-          <td className="p-3 text-caption">{item.missing.join(", ") || "—"}</td>
+          <td className="p-3"><Badge tone={item.profile_state === "advanced" || item.profile_state === "complete" ? "success" : item.profile_state === "none" ? "danger" : "warning"}>{stateLabel[item.profile_state] ?? item.profile_state}</Badge></td>
+          <td className="p-3 text-caption">{[...item.missing, ...item.direction_missing].join(", ") || "—"}</td>
           <td className="p-3 text-caption">{item.updated_at ? new Date(item.updated_at).toLocaleString("de-DE") : "—"}</td>
           <td className="p-3"><Link className="text-admin-primary underline" to={`/admin/weather/${item.spot_id}`}>Profil & Diagnostik</Link></td>
         </tr>)}</tbody>

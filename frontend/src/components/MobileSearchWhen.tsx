@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
 import type { WhenDuration, WhenValue } from "../lib/searchSubmit";
 
 /**
@@ -48,25 +49,25 @@ export function WhenToggle({
   onChange: (t: WhenTab) => void;
 }) {
   return (
-    <div className="relative inline-flex shrink-0 rounded-full bg-teal p-1">
+    <div className="relative inline-flex shrink-0 rounded-card bg-teal p-0.5">
       {(["date", "flex"] as const).map((t) => (
         <button
           key={t}
           type="button"
           onClick={() => onChange(t)}
           aria-pressed={tab === t}
-          className="relative rounded-full px-4 py-1 text-caption font-medium"
+          className="relative rounded-card px-3.5 py-0.5 text-caption font-medium"
         >
           {tab === t && (
             <motion.span
               layoutId="when-toggle-pill"
-              className="absolute inset-0 rounded-full bg-surface"
+              className="absolute inset-0 rounded-card bg-surface"
               transition={{ type: "spring", stiffness: 500, damping: 38 }}
             />
           )}
           <span
             className={`relative transition-colors ${
-              tab === t ? "text-ink" : "text-white/90"
+              tab === t ? "text-ink" : "text-on-photo"
             }`}
           >
             {t === "date" ? "Datum" : "flexibel"}
@@ -97,8 +98,9 @@ export default function MobileSearchWhen({
       >
         {tab === "date" ? (
           <DateCalendar
-            selected={value?.mode === "range" ? value.from : undefined}
-            onPick={(iso) => onChange({ mode: "range", from: iso })}
+            selectedFrom={value?.mode === "range" ? value.from : undefined}
+            selectedTo={value?.mode === "range" ? value.to : undefined}
+            onPick={(from, to) => onChange({ mode: "range", from, to })}
           />
         ) : (
           <FlexPicker value={value} onChange={onChange} />
@@ -109,29 +111,60 @@ export default function MobileSearchWhen({
 }
 
 function DateCalendar({
-  selected,
+  selectedFrom,
+  selectedTo,
   onPick,
 }: {
-  selected?: string;
-  onPick: (iso: string) => void;
+  selectedFrom?: string;
+  selectedTo?: string;
+  onPick: (from: string, to?: string) => void;
 }) {
   const today = new Date();
   const todayY = today.getFullYear();
   const todayM = today.getMonth();
   const todayD = today.getDate();
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(todayY, todayM + i, 1);
-    return { year: d.getFullYear(), month0: d.getMonth() };
-  });
+  const [monthOffset, setMonthOffset] = useState(0);
+  const visibleMonth = new Date(todayY, todayM + monthOffset, 1);
+  const year = visibleMonth.getFullYear();
+  const month0 = visibleMonth.getMonth();
+  const dateIso = (date: Date) => isoOf(date.getFullYear(), date.getMonth(), date.getDate());
+  const addDays = (date: Date, days: number) => {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+  };
+  const weekendStart = addDays(today, (6 - today.getDay() + 7) % 7);
 
   return (
     <div>
-      {months.map(({ year, month0 }) => (
-        <div key={`${year}-${month0}`} className="mb-5">
-          <p className="mb-1.5 px-1 text-body font-semibold text-ink">
-            {MONTHS_FULL[month0]} {year}
-          </p>
-          <div className="grid grid-cols-7 text-center text-sz-11 font-medium text-muted">
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        <button type="button" onClick={() => onPick(dateIso(today))} className="min-h-11 rounded-card border border-line px-2 text-caption font-medium text-ink">Heute</button>
+        <button type="button" onClick={() => onPick(dateIso(weekendStart), dateIso(addDays(weekendStart, 1)))} className="min-h-11 rounded-card border border-line px-2 text-caption font-medium text-ink">Wochenende</button>
+        <button type="button" onClick={() => onPick(dateIso(today), dateIso(addDays(today, 6)))} className="min-h-11 rounded-card border border-line px-2 text-caption font-medium text-ink">7 Tage</button>
+      </div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          disabled={monthOffset === 0}
+          onClick={() => setMonthOffset((value) => Math.max(0, value - 1))}
+          className="min-h-11 rounded-card px-3 text-ui font-semibold text-ink disabled:opacity-30"
+        >
+          Zurück
+        </button>
+        <p aria-live="polite" className="text-center text-body font-semibold text-ink">
+          {MONTHS_FULL[month0]} {year}
+        </p>
+        <button
+          type="button"
+          disabled={monthOffset === 11}
+          onClick={() => setMonthOffset((value) => Math.min(11, value + 1))}
+          className="min-h-11 rounded-card px-3 text-ui font-semibold text-ink disabled:opacity-30"
+        >
+          Weiter
+        </button>
+      </div>
+      <div>
+          <div className="grid grid-cols-7 text-center text-caption font-medium text-muted">
             {WEEKDAYS.map((w) => (
               <span key={w} className="pb-1">
                 {w}
@@ -144,20 +177,20 @@ function DateCalendar({
                 const iso = isoOf(year, month0, day);
                 const isPast =
                   year === todayY && month0 === todayM && day < todayD;
-                const isSelected = iso === selected;
+                const isSelected = iso === selectedFrom || iso === selectedTo;
+                const isInRange = Boolean(selectedFrom && selectedTo && iso > selectedFrom && iso < selectedTo);
                 return (
                   <div key={iso} className="flex justify-center py-0.5">
-                    {/* Plain <button>, not motion.button: the calendar mounts ~360
-                        day cells at once when the "Wann" tile opens, and that many
-                        framer instances made the expand stutter. CSS active:scale
-                        keeps the tap feedback for a fraction of the cost. */}
                     <button
                       type="button"
                       disabled={isPast}
                       onClick={() => onPick(iso)}
-                      className={`grid h-8 w-8 place-items-center rounded-full text-label transition-[background-color,color,transform] active:scale-[0.85] ${
+                      aria-label={`${day}. ${MONTHS_FULL[month0]} ${year}`}
+                      className={`grid h-11 w-11 place-items-center rounded-full text-ui transition-[background-color,color,transform] active:scale-[0.9] ${
                         isSelected
                           ? "bg-teal font-semibold text-white"
+                          : isInRange
+                            ? "bg-band font-medium text-ink"
                           : isPast
                             ? "cursor-default text-ink/25 active:scale-100"
                             : "text-ink hover:bg-band"
@@ -170,7 +203,6 @@ function DateCalendar({
               })}
             </div>
           </div>
-        ))}
     </div>
   );
 }
@@ -192,7 +224,7 @@ function FlexPicker({
   };
 
   const chip = (active: boolean) =>
-    `rounded-[14px] border px-4 py-2.5 text-ui font-medium transition-colors ${
+    `min-h-11 rounded-card border px-4 py-2.5 text-ui font-medium transition-colors ${
       active
         ? "border-teal bg-teal text-white"
         : "border-line text-ink hover:bg-band"
@@ -200,7 +232,7 @@ function FlexPicker({
 
   return (
     <div>
-      <p className="text-label font-medium text-muted">Monat</p>
+      <p className="text-ui font-medium text-muted">Monat</p>
       <div className="mt-2 grid grid-cols-4 gap-2">
         {MONTHS_ABBR.map((label, i) => {
           const m = i + 1;
@@ -219,7 +251,7 @@ function FlexPicker({
         })}
       </div>
 
-      <p className="mt-4 text-label font-medium text-muted">Zeitspanne</p>
+      <p className="mt-4 text-ui font-medium text-muted">Zeitspanne</p>
       <div className="mt-2 space-y-2">
         <motion.button
           type="button"

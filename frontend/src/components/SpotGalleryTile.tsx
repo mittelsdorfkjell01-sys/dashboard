@@ -52,7 +52,7 @@ export default function SpotGalleryTile({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
 
-      <button ref={galleryTriggerRef} type="button" onClick={onOpenGallery} aria-label="Fotogalerie öffnen" className="absolute inset-0 z-[5] cursor-zoom-in [-webkit-tap-highlight-color:transparent]" />
+      <button ref={galleryTriggerRef} type="button" onClick={onOpenGallery} aria-label="Fotogalerie öffnen" className="absolute inset-0 z-5 cursor-zoom-in [-webkit-tap-highlight-color:transparent]" />
 
       {photos.length > 1 && (
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
@@ -60,7 +60,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(-1)}
             aria-label="Vorheriges Bild"
-            className="grid h-11 w-11 place-items-center rounded-[14px] bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
+            className="grid h-11 w-11 place-items-center rounded-card bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
           >
             <ChevronLeftIcon width={18} height={18} />
           </button>
@@ -68,7 +68,7 @@ export default function SpotGalleryTile({
             type="button"
             onClick={() => go(1)}
             aria-label="Nächstes Bild"
-            className="grid h-11 w-11 place-items-center rounded-[14px] bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
+            className="grid h-11 w-11 place-items-center rounded-card bg-teal/80 text-white transition-colors hover:bg-teal sm:h-9 sm:w-9"
           >
             <ChevronRightIcon width={18} height={18} />
           </button>
@@ -77,7 +77,7 @@ export default function SpotGalleryTile({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-5 text-white">
         <p className="text-title font-semibold text-balance">Community-Galerie</p>
-        <p className="mt-1 text-body text-white/85">Füge deine Bilder hinzu</p>
+        <p className="mt-1 text-body text-on-photo">Füge deine Bilder hinzu</p>
       </div>
     </div>
   );

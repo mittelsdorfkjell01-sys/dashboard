@@ -116,6 +116,7 @@ const NAV: NavItem[] = [
   // Backend
   { to: "/admin/operations", label: "Betrieb", icon: I.operations, group: "Daten & Betrieb" },
   { to: "/admin/weather", label: "Wetterprofile", icon: I.weather, group: "Daten & Betrieb" },
+  { to: "/admin/weather-fields", label: "Windfeld-Shadow", icon: I.weather, group: "Daten & Betrieb" },
   { to: "/admin/tides", label: "Tidenkorrektur", icon: I.tides, group: "Daten & Betrieb" },
   { to: "/admin/rider-model", label: "Rider-Modell", icon: I.rider, group: "Daten & Betrieb" },
   { to: "/admin/recommendation-quality", label: "Empfehlungsqualität", icon: I.activity, group: "Daten & Betrieb" },

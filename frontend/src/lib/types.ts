@@ -2,7 +2,7 @@
 // src/data/*.ts alongside mock data; the mock data is gone (all pages read the
 // API now), the types stay.
 
-import type { FacilityMap } from "./api";
+import type { FacilityMap, SpotOrigin } from "./api";
 import type { CreditSource } from "./imageCredit";
 
 // --- spot / region view models ---------------------------------------------
@@ -64,6 +64,13 @@ export interface Spot {
   typicalWindKt?: number | null;
   /** Typical wave height, m — set for surf spots instead of typicalWindKt. */
   typicalWaveHeightM?: number | null;
+  /** Herkunft des Eintrags: "editorial" = von uns erfasst, "community" = ein
+   *  freigegebener Vorschlag. Keine Qualitätsstufe — beide gehen durch dieselbe
+   *  Freigabe; die Oberfläche nutzt sie nur zur Kennzeichnung und für das
+   *  Credit (siehe SpotOriginMark). */
+  origin?: SpotOrigin;
+  /** Name der Person, die einen Community-Spot eingetragen hat. */
+  contributorName?: string | null;
   /** Weighted monthly daylight availability for 15–20 kt from active V2. */
   windAvailability?: number[] | null;
 }

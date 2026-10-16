@@ -107,7 +107,7 @@ export default function ImageFocalEditor({
             <label htmlFor="hero-rotation-range" className="text-ui font-semibold text-admin-fg">
               Bild gerade drehen
             </label>
-            <output htmlFor="hero-rotation-range" className="min-w-12 text-right text-label tabular-nums text-admin-fg2">
+            <output htmlFor="hero-rotation-range" className="min-w-12 text-right text-ui tabular-nums text-admin-fg2">
               {angle > 0 ? "+" : ""}{angle.toFixed(1)}°
             </output>
           </div>
@@ -133,7 +133,7 @@ export default function ImageFocalEditor({
               type="button"
               onClick={() => setAngle(0)}
               disabled={angle === 0 || rotationBusy}
-              className="min-h-11 text-label font-medium text-admin-fg2 underline-offset-4 hover:underline disabled:opacity-45"
+              className="min-h-11 text-ui font-medium text-admin-fg2 underline-offset-4 hover:underline disabled:opacity-45"
             >
               Auf 0° zurücksetzen
             </button>
@@ -141,7 +141,7 @@ export default function ImageFocalEditor({
               type="button"
               onClick={saveRotation}
               disabled={angle === savedAngle || rotationBusy}
-              className="min-h-11 rounded-md bg-admin-primary px-4 text-label font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
+              className="min-h-11 rounded-md bg-admin-primary px-4 text-ui font-medium text-admin-primary-fg transition-colors hover:bg-admin-primary-hover disabled:opacity-50"
             >
               {rotationBusy ? "Speichern…" : "Drehung speichern"}
             </button>

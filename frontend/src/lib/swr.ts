@@ -13,6 +13,7 @@ const errMessage = (e: unknown) =>
 interface Entry<T> {
   data?: T;
   error?: string;
+  errorStatus?: number;
   inflight?: Promise<void>;
   ts?: number;
 }
@@ -57,12 +58,13 @@ export function revalidate<T>(
     })
     .catch((err) => {
       const cur = store.get(key) as Entry<T> | undefined;
+      const errorStatus = err instanceof ApiError ? err.status : 0;
       // Keep stale data on a background failure; only surface an error when
       // there is nothing cached to show.
       if (cur && cur.data !== undefined) {
-        storeEntry(key, { data: cur.data, error: errMessage(err), ts: cur.ts });
+        storeEntry(key, { data: cur.data, error: errMessage(err), errorStatus, ts: cur.ts });
       } else {
-        storeEntry(key, { error: errMessage(err), ts: Date.now() });
+        storeEntry(key, { error: errMessage(err), errorStatus, ts: Date.now() });
       }
     })
     .finally(() => notify(key));
@@ -98,6 +100,7 @@ export interface SwrState<T> {
   refreshing: boolean;
   stale: boolean;
   error: string | null;
+  errorStatus: number | null;
   reload: () => void;
 }
 
@@ -235,6 +238,7 @@ export function useSwr<T>(
     refreshing: !!entry?.inflight && hasData,
     stale: hasData && expired,
     error: entry?.error ?? null,
+    errorStatus: entry?.errorStatus ?? null,
     reload: () => {
       if (key) void revalidate(key, fetcher);
     },

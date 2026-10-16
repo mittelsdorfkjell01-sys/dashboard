@@ -8,11 +8,6 @@ export type SportMode = "wind" | "surf";
 // Wind unit is owned by PrefsContext (the single source of truth); re-exported
 // here so the Daten components can keep importing it from the scope.
 export type { WindUnit };
-// "waves" colors by primary swell — see docs/map-redesign-backend-gaps.md
-// for why total-wave/wind-sea decomposition isn't offered as its own layer
-// yet. No "both" mode: the redesign shows one focused layer at a time
-// rather than all animation simultaneously (see the map redesign brief).
-export type MapLayer = "wind" | "waves";
 export type WeatherTimeMode = "now" | "forecast";
 
 type SpotDataScopeValue = {
@@ -28,8 +23,6 @@ type SpotDataScopeValue = {
   setSportMode: (mode: SportMode) => void;
   windUnit: WindUnit;
   setWindUnit: (unit: WindUnit) => void;
-  mapLayer: MapLayer;
-  setMapLayer: (layer: MapLayer) => void;
 };
 
 const SpotDataContext = createContext<SpotDataScopeValue | null>(null);
@@ -53,7 +46,6 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
   const prefs = useOptionalPrefs();
   const windUnit: WindUnit = prefs?.units.wind ?? DEFAULT_UNITS.wind;
   const setWindUnit = useCallback((unit: WindUnit) => prefs?.setUnit("wind", unit), [prefs]);
-  const [mapLayer, setMapLayer] = useState<MapLayer>("wind");
 
   useEffect(() => {
     setSelectedAtUtc((current) => {
@@ -87,9 +79,7 @@ export function SpotDataScopeProvider({ children, forecast = null }: { children:
     },
     windUnit,
     setWindUnit,
-    mapLayer,
-    setMapLayer,
-  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, mapLayer, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, setWindUnit, weatherTimeMode, windUnit]);
+  }), [availableForecasts, forecast?.model, forecast?.stale, forecast?.timezone, selectForecastAt, selectedAtUtc, selectedForecast, sportMode, setWindUnit, weatherTimeMode, windUnit]);
 
   return <SpotDataContext.Provider value={value}>{children}</SpotDataContext.Provider>;
 }

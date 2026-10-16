@@ -47,6 +47,16 @@ def test_list_spots_structure_and_coords(client):
     assert "kitesurf" in los_lances["sports"]
 
 
+def test_landing_spots_is_bounded_and_reports_catalogue(client):
+    response = client.get("/spots/landing")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] >= len(body["spots"])
+    assert len(body["spots"]) <= 36
+    assert body["version"].startswith(f'{body["total"]}:')
+    assert "s-maxage=21600" in response.headers["cache-control"]
+
+
 def test_spot_catalog_version_changes_with_public_markers(client, db):
     before = client.get("/spots/version")
     assert before.status_code == 200
@@ -70,6 +80,42 @@ def test_spot_catalog_version_changes_with_public_markers(client, db):
     finally:
         db.delete(spot)
         db.commit()
+
+
+def test_catalog_version_reports_mixed_origins_only_once_both_exist(client, db):
+    """The origin mark gates on this flag: while the published catalogue is all
+    editorial it would sit on every spot and inform about nothing, so the
+    endpoint reports a mixed catalogue only once a community spot is live."""
+    assert client.get("/spots/version").json()["origins_mixed"] is False
+
+    region = db.scalar(select(Region).where(Region.slug == "tarifa"))
+    spot = Spot(
+        slug="community-origin-test",
+        name="Community Origin Test",
+        region_id=region.id,
+        location=_point(36.2, -5.8),
+        sports=["kitesurf"],
+        status="published",
+        origin="community",
+        contributor_name="Lena K.",
+    )
+    db.add(spot)
+    db.commit()
+    try:
+        assert client.get("/spots/version").json()["origins_mixed"] is True
+        summary = next(
+            row for row in client.get("/spots").json() if row["slug"] == spot.slug
+        )
+        assert summary["origin"] == "community"
+        assert summary["contributor_name"] == "Lena K."
+    finally:
+        db.delete(spot)
+        db.commit()
+
+
+def test_published_spots_are_editorial_by_default(client):
+    rows = client.get("/spots").json()
+    assert rows and all(row["origin"] == "editorial" for row in rows)
 
 
 def test_live_map_catalogue_is_cached_by_immutable_version(client):

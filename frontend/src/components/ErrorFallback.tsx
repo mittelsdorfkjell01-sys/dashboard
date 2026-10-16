@@ -18,7 +18,7 @@ export default function ErrorFallback({
         <a href="/" className="mb-6 inline-block">
           <Wordmark size="lg" />
         </a>
-        <h1 className="text-sz-22 font-semibold text-ink">{title}</h1>
+        <h1 className="text-title font-semibold text-ink">{title}</h1>
         <p className="mx-auto mt-2 max-w-sm text-ui text-muted">{detail}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Button onClick={() => window.location.reload()}>Neu laden</Button>

@@ -33,13 +33,13 @@ export function ErrorBanner({
       role="alert"
       className="rounded-2xl border border-line bg-surface px-5 py-4 text-ui text-ink-soft"
     >
-      <p className="font-semibold text-orange">{title}</p>
+      <p className="font-semibold text-danger">{title}</p>
       <p className="mt-1 text-muted">{message}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 min-h-11 text-label font-semibold text-ink hover:underline hover:underline-offset-4"
+          className="mt-3 min-h-11 text-ui font-semibold text-ink hover:underline hover:underline-offset-4"
         >
           Erneut versuchen
         </button>

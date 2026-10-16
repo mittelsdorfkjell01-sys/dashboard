@@ -6,10 +6,10 @@ import MobileSearchTrigger from "../components/MobileSearchTrigger";
 import RecommendationRow from "../components/RecommendationRow";
 import SpotCard from "../components/SpotCard";
 import Footer from "../components/Footer";
-import { useSpots } from "../lib/hooks";
-import type { Spot } from "../lib/types";
-import { getSpotCatalogVersion } from "../lib/api";
-import { SPORTS, sportLabel } from "../lib/labels";
+import { ErrorBanner } from "../components/AsyncStates";
+import LandingFilters from "../components/LandingFilters";
+import { useLandingSpots, useSpots } from "../lib/hooks";
+import { countryName } from "../lib/flags";
 import { MapIcon } from "../lib/icons";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import { useAuth } from "../context/AuthContext";
@@ -31,7 +31,6 @@ function isoWeek(date: Date): number {
 
 const SearchBar = lazy(() => import("../components/SearchBar"));
 const MobileSearchSheet = lazy(() => import("../components/MobileSearchSheet"));
-const CATALOG_POLL_MS = 60_000;
 // "Alle Spots anzeigen" used to jump the grid from 20 to the full catalogue
 // (up to 500 cards) in a single render — a long synchronous mount/layout that
 // froze the tap for a second or more. Reveal one screen's worth at a time
@@ -49,8 +48,11 @@ const SPOT_REVEAL_STEP = 40;
 export default function Landing() {
   const location = useLocation();
   const { user } = useAuth();
-  // Global landing filter (top-right): sport + sort. "" = all sports.
+  // Global landing filters (opened from the "Filter" panel, top-right). "" = no
+  // constraint on that axis; sort defaults to "recommended".
   const [filterSport, setFilterSport] = useState<string>("");
+  const [filterCountry, setFilterCountry] = useState<string>("");
+  const [filterLevel, setFilterLevel] = useState<string>("");
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
   // Signed-in only: rank like a logged-out visitor (ignore the rider profile).
   const [ignorePersonalization, setIgnorePersonalization] = useState(false);
@@ -87,8 +89,6 @@ export default function Landing() {
   const [heroSearchDocked, setHeroSearchDocked] = useState(false);
   const [mobileSearchLoaded, setMobileSearchLoaded] = useState(false);
   const mobileSearchTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const knownCatalogVersion = useRef<string>();
-  const [catalogVersion, setCatalogVersion] = useState<string>();
   const desktopSearch = useDesktopViewport();
   const openSearch = (trigger: HTMLButtonElement) => {
     mobileSearchTriggerRef.current = trigger;
@@ -128,99 +128,45 @@ export default function Landing() {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
-  // Hero curation is editorial state, so the unversioned edge copy that paints
-  // the reel on first load must not remain authoritative. Resolve the current
-  // catalogue version and keep checking it while the landing page is open: the
-  // token upgrades the spot request to the immutable versioned URL, so any hero
-  // curation change becomes authoritative within a moment of first paint. A
-  // changed hero_reel flag updates Spot.updated_at, producing a new immutable
-  // request URL and replacing the reel without a hard refresh.
-  useEffect(() => {
-    let cancelled = false;
-    let timer: number | undefined;
-    let versionRequest: Promise<void> | null = null;
+  // First paint is a bounded bundle: 24 alphabetic cards plus any curated hero
+  // records. The 500-row catalogue is fetched only after the visitor asks to
+  // browse/filter/sort it, keeping payload, DB serialization and React work off
+  // the critical path.
+  const landing = useLandingSpots();
+  const anyFilterActive = Boolean(filterSport) || Boolean(filterCountry) || Boolean(filterLevel);
+  const fullCatalogueEnabled = browseAll || anyFilterActive || sortMode === "az";
+  const fullCatalogue = useSpots({ limit: 500 }, fullCatalogueEnabled);
+  const spots = useMemo(
+    () => fullCatalogue.data ?? landing.data?.spots ?? [],
+    [fullCatalogue.data, landing.data],
+  );
+  const catalogueTotal = landing.data?.total ?? spots.length;
+  const spotsLoading = landing.loading || (fullCatalogueEnabled && fullCatalogue.loading && !fullCatalogue.data);
+  const spotsError = spots.length === 0 ? (landing.error ?? fullCatalogue.error) : undefined;
+  const reloadSpots = fullCatalogueEnabled ? fullCatalogue.reload : landing.reload;
+  // Land options for the filter panel: distinct countries present in the loaded
+  // catalogue, sorted by their display name.
+  const countryOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const spot of spots) {
+      const code = spot.regionCountry;
+      if (code && !seen.has(code)) seen.set(code, countryName(code) ?? code);
+    }
+    return [...seen.entries()]
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "de"));
+  }, [spots]);
 
-    const checkVersion = async () => {
-      if (document.visibilityState === "hidden" || versionRequest) return versionRequest;
-      versionRequest = (async () => {
-        try {
-          const { version } = await getSpotCatalogVersion();
-          if (!cancelled && version !== knownCatalogVersion.current) {
-            knownCatalogVersion.current = version;
-            setCatalogVersion(version);
-          }
-        } catch {
-          // If the lightweight version lookup alone fails, still try the list
-          // through a unique URL instead of reviving a stale persisted reel.
-          if (!cancelled && !knownCatalogVersion.current) {
-            const fallbackVersion = `landing-${Date.now()}`;
-            knownCatalogVersion.current = fallbackVersion;
-            setCatalogVersion(fallbackVersion);
-          }
-        } finally {
-          versionRequest = null;
-        }
-      })();
-      return versionRequest;
-    };
-
-    const schedule = () => {
-      if (cancelled) return;
-      timer = window.setTimeout(async () => {
-        await checkVersion();
-        schedule();
-      }, CATALOG_POLL_MS);
-    };
-    const refreshNow = () => {
-      if (document.visibilityState !== "hidden") void checkVersion();
-    };
-
-    void checkVersion();
-    schedule();
-    document.addEventListener("visibilitychange", refreshNow);
-    window.addEventListener("online", refreshNow);
-    return () => {
-      cancelled = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", refreshNow);
-      window.removeEventListener("online", refreshNow);
-    };
-  }, []);
-
-  // Fetch all published records so a curated photo beyond the first 100 spots
-  // cannot disappear from the reel. Only the first 20 cards mount initially,
-  // keeping their immediate image requests bounded.
-  //
-  // Start immediately with the *unversioned* URL rather than waiting for the
-  // catalogue version to resolve: `/spots/version` carries only a 60s edge
-  // window, so on a cold visit it wakes the serverless function + Postgres and,
-  // when it gated this request, that cold round-trip sat squarely in front of
-  // the hero photo — the reported "hero takes a while to appear" on first load.
-  // The unversioned list is edge-cached six hours (set_public_cache), so it
-  // paints the reel almost immediately; once the version token arrives the
-  // request upgrades to the immutable, always-current versioned URL and the reel
-  // corrects itself. Curation therefore stays authoritative while first paint no
-  // longer blocks on a cold token lookup.
-  const { data: allSpots, loading: spotsLoading } = useSpots({
-    limit: 500,
-    catalog_version: catalogVersion,
-  });
-  // Hold the most recent non-empty catalogue so the moment the request key
-  // switches from the unversioned copy to the versioned one (SWR has no entry
-  // for the new key yet) the hero and grid keep their content instead of
-  // blanking back to the dark hero field for a frame.
-  const [spots, setSpots] = useState<Spot[]>([]);
-  useEffect(() => {
-    if (allSpots) setSpots(allSpots);
-  }, [allSpots]);
-  // "Alle Spots" grid honours the global filter: sport membership + sort
-  // (recommended = catalogue order, or A–Z by name).
+  // "Alle Spots" grid honours the global filters: sport membership + land +
+  // level, then sort (recommended = catalogue order, or A–Z by name).
   const gridSpots = useMemo(() => {
     let list = spots;
     if (filterSport) list = list.filter((spot) => (spot.sports ?? []).includes(filterSport));
+    if (filterCountry) list = list.filter((spot) => spot.regionCountry === filterCountry);
+    if (filterLevel) list = list.filter((spot) => (spot.level ?? []).includes(filterLevel));
     if (sortMode === "az") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "de"));
     return list;
-  }, [spots, filterSport, sortMode]);
+  }, [spots, filterSport, filterCountry, filterLevel, sortMode]);
   const visibleSpots = gridSpots.slice(0, visibleSpotLimit);
 
   // Reveal the next batch off the main thread so the tap (and each subsequent
@@ -255,7 +201,7 @@ export default function Landing() {
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so
           it paints above the page's white background but below the search bar).
           No `isolate` here — an isolated stacking context would trap the search
-          bar (z-1200) *below* the portal scrim (z-1100), so clicking "Wann" would
+          bar (z-modal) *below* the portal scrim (z-scrim), so clicking "Wann" would
           hit the scrim and close instead of switching the panel. */}
       {/* `svh`, not `dvh`: the small-viewport height is fixed, so when iOS
           Safari's URL bar collapses on scroll the hero does NOT grow and its
@@ -275,13 +221,13 @@ export default function Landing() {
             entry and docks into the header once scrolled (see LandingHeader);
             the inline SearchBar dropdown takes over from sm. */}
         <div className="flex justify-center px-4 pb-32 sm:px-6 sm:pb-40">
-          <div id="landing-search" className="relative z-[1200] w-full max-w-[760px]">
+          <div id="landing-search" className="relative z-modal w-full max-w-content">
             <span data-landing-header-sentinel aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px" />
             {/* Mobile pill; hidden (kept in layout) while the sheet is open, and
                 faded out once it reaches the header line so it vanishes into the
                 bar rather than scrolling over it. */}
             <div
-              className={`transition-opacity duration-200 sm:hidden ${searchOpen ? "invisible" : ""} ${
+              className={`transition-opacity duration-base sm:hidden ${searchOpen ? "invisible" : ""} ${
                 heroSearchDocked ? "pointer-events-none opacity-0" : "opacity-100"
               }`}
             >
@@ -289,7 +235,7 @@ export default function Landing() {
             </div>
             <div className="hidden sm:block">
               {desktopSearch && (
-                <Suspense fallback={<div aria-hidden className="h-14 w-full rounded-[14px] bg-surface/90 shadow-float" />}>
+                <Suspense fallback={<div aria-hidden className="h-14 w-full rounded-card bg-surface/90 shadow-float" />}>
                   <SearchBar />
                 </Suspense>
               )}
@@ -311,49 +257,55 @@ export default function Landing() {
       {/* 2 — Extended white section: aktuelle Top Spots (moved here onto the
           white background) + all spots as Airbnb-style cards. The rounded sheet
           rises over the hero for a seamless transition. */}
-      <section className="relative z-10 -mt-5 rounded-t-3xl bg-page">
-        <div className="mx-auto w-full max-w-[1570px] px-4 pt-10 sm:px-10">
-          {/* Global filter (top-right): sport + sort (+ a personalization
-              toggle when signed in). Sport applies to the recommendation rows
-              and the "Alle Spots" grid; A–Z hides the ranked rows entirely. */}
-          <div className="mb-7 flex flex-wrap items-center justify-end gap-3">
-            {user && (
-              <label className="flex min-h-11 items-center gap-2 text-label text-muted">
-                <input
-                  type="checkbox"
-                  checked={ignorePersonalization}
-                  onChange={(event) => setIgnorePersonalization(event.target.checked)}
-                  className="h-4 w-4 accent-ink"
-                />
-                Personalisierung ignorieren
-              </label>
+      <section className="relative z-10 -mt-5 rounded-t-card bg-page">
+        <div className="mx-auto w-full max-w-page px-4 pt-10 sm:px-10">
+          {/* Header row: the first-row heading (recommended mode) on the left
+              and the filter icon on the right, on the same line. In A–Z mode the
+              ranked rows are hidden, so only the filter icon remains. The single
+              "Filter" button opens a panel with sort + sport + land + level (+ a
+              personalization toggle when signed in). Sport applies to the rows
+              and the "Alle Spots" grid; land/level narrow the grid. */}
+          <div className="mb-6 flex min-h-11 items-center justify-between gap-4">
+            {showRows ? (
+              <h2 className="text-lead font-semibold text-ink">
+                {personalizedTitle ? "Deine aktuellen Topspots" : "Aktuelle Topspots"}
+              </h2>
+            ) : (
+              <span aria-hidden />
             )}
-            <label className="flex items-center gap-2 text-label text-muted">
-              <span className="sr-only">Sportart filtern</span>
-              <select
-                value={filterSport}
-                onChange={(event) => setFilterSport(event.target.value)}
-                aria-label="Sportart filtern"
-                className="min-h-11 rounded-[14px] border border-line bg-surface px-3 text-body font-medium text-ink"
-              >
-                <option value="">Alle Sportarten</option>
-                {SPORTS.map((sportKey) => (
-                  <option key={sportKey} value={sportKey}>{sportLabel(sportKey)}</option>
-                ))}
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-label text-muted">
-              <span className="sr-only">Sortierung</span>
-              <select
-                value={sortMode}
-                onChange={(event) => setSortMode(event.target.value as SortMode)}
-                aria-label="Sortierung"
-                className="min-h-11 rounded-[14px] border border-line bg-surface px-3 text-body font-medium text-ink"
-              >
-                <option value="recommended">Empfohlen</option>
-                <option value="az">A – Z</option>
-              </select>
-            </label>
+            <div className="flex items-center gap-2">
+              {showRows && (
+                <Link
+                  to="/map"
+                  state={{ from }}
+                  aria-label="Karte öffnen"
+                  className="hidden min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 lg:inline-flex"
+                >
+                  <MapIcon className="text-lead" />
+                  <span className="hidden sm:inline">Karte</span>
+                </Link>
+              )}
+              <LandingFilters
+                sort={sortMode}
+                onSort={setSortMode}
+                sport={filterSport}
+                onSport={setFilterSport}
+                country={filterCountry}
+                onCountry={setFilterCountry}
+                countries={countryOptions}
+                level={filterLevel}
+                onLevel={setFilterLevel}
+                showPersonalization={Boolean(user)}
+                ignorePersonalization={ignorePersonalization}
+                onIgnorePersonalization={setIgnorePersonalization}
+                onReset={() => {
+                  setSortMode("recommended");
+                  setFilterSport("");
+                  setFilterCountry("");
+                  setFilterLevel("");
+                }}
+              />
+            </div>
           </div>
 
           {showRows && (
@@ -363,23 +315,15 @@ export default function Landing() {
                 surface="now"
                 sport={rowSport}
                 personalized={personalized}
-                action={
-                  <Link
-                    to="/map"
-                    state={{ from }}
-                    aria-label="Karte öffnen"
-                    className="inline-flex min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
-                  >
-                    <MapIcon className="text-sz-18" />
-                    <span className="hidden sm:inline">Karte</span>
-                  </Link>
-                }
+                defer
+                hideHeader
               />
               <RecommendationRow
                 title="Topspots in der nächsten Woche"
                 surface="next_week"
                 sport={rowSport}
                 personalized={personalized}
+                defer
                 className="mt-12"
               />
               <RecommendationRow
@@ -387,6 +331,7 @@ export default function Landing() {
                 surface="season"
                 sport={rowSport}
                 personalized={personalized}
+                defer
                 weeks={nextWeeks}
                 className="mt-12"
               />
@@ -394,25 +339,32 @@ export default function Landing() {
           )}
         </div>
 
-        <div className="mx-auto max-w-[1570px] px-4 pb-16 pt-12 sm:px-8">
-          <h2 className="text-sz-22 font-semibold text-ink">Alle Spots entdecken</h2>
-          <p className="mt-1 text-body text-muted">
-            Stöbere durch die ganze Sammlung · Regionen, Windspots und Wellenspots.
-          </p>
+        <div className="mx-auto max-w-page px-4 pb-16 pt-12 sm:px-8">
+          <h2 className="text-lead font-semibold text-ink">Alle Spots entdecken</h2>
+
+          {spotsError && spots.length === 0 && (
+            <div className="mt-6 max-w-2xl">
+              <ErrorBanner
+                title="Die Spots sind gerade nicht erreichbar."
+                message={spotsError}
+                onRetry={reloadSpots}
+              />
+            </div>
+          )}
 
           {gridSpots.length > 0 && (
             <div className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5">
-              {visibleSpots.map((spot, index) => (
-                <SpotCard key={spot.id} spot={spot} eager={index < 20} />
+              {visibleSpots.map((spot) => (
+                <SpotCard key={spot.id} spot={spot} eager={false} />
               ))}
             </div>
           )}
 
-          {filterSport && gridSpots.length === 0 && spots.length > 0 && (
-            <p className="mt-6 text-body text-muted">Keine Spots für diese Sportart.</p>
+          {anyFilterActive && gridSpots.length === 0 && spots.length > 0 && (
+            <p className="mt-6 text-body text-muted">Keine Spots für diese Auswahl.</p>
           )}
 
-          {!spotsLoading && !browseAll && visibleSpotLimit < gridSpots.length && (
+          {!spotsLoading && !browseAll && catalogueTotal > visibleSpotLimit && (
             <div className="mt-10 flex justify-center">
               <button
                 type="button"
@@ -434,6 +386,17 @@ export default function Landing() {
           )}
         </div>
       </section>
+
+      {/* Mobile: floating map access, bottom-centre — mirrors the results page's
+          "Karte" pill instead of a fixed icon in the topspots row header. */}
+      <Link
+        to="/map"
+        state={{ from }}
+        aria-label="Karte öffnen"
+        className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-page px-4 py-2 text-ui font-normal text-white shadow-float lg:hidden"
+      >
+        Karte <MapIcon className="text-body" />
+      </Link>
 
       <Footer />
     </div>

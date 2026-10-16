@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRecommendations, useSpotsLive } from "../lib/hooks";
 import type { RecommendationSurface } from "../lib/api";
 import SpotCard from "./SpotCard";
+import { ErrorBanner } from "./AsyncStates";
 
 const GRID =
   "grid auto-rows-fr grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5";
@@ -12,10 +13,10 @@ function RowSkeleton() {
     <div className={GRID} aria-hidden>
       {Array.from({ length: MAX_TILES }).map((_, index) => (
         <div key={index}>
-          <div className="aspect-video animate-pulse rounded-[14px] bg-band" />
+          <div className="aspect-video animate-pulse rounded-card bg-band" />
           <div className="space-y-2 pt-3">
-            <div className="h-3.5 w-2/3 animate-pulse rounded bg-band" />
-            <div className="h-2 w-1/3 animate-pulse rounded bg-band" />
+            <div className="h-3.5 w-2/3 animate-pulse rounded-card bg-band" />
+            <div className="h-2 w-1/3 animate-pulse rounded-card bg-band" />
           </div>
         </div>
       ))}
@@ -33,6 +34,8 @@ export default function RecommendationRow({
   weeks,
   action,
   className = "",
+  defer = false,
+  hideHeader = false,
 }: {
   title: string;
   surface: RecommendationSurface;
@@ -46,8 +49,36 @@ export default function RecommendationRow({
   weeks?: string;
   action?: ReactNode;
   className?: string;
+  /** Delay network and live-weather work until the row approaches the viewport. */
+  defer?: boolean;
+  /** Suppress the row's own title/action header (rendered by the parent instead). */
+  hideHeader?: boolean;
 }) {
-  const { data, loading, error } = useRecommendations({
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [inRange, setInRange] = useState(!defer);
+
+  useEffect(() => {
+    if (!defer || inRange) return;
+    const section = sectionRef.current;
+    if (!section || !("IntersectionObserver" in window)) {
+      setInRange(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInRange(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [defer, inRange]);
+
+  const requestEnabled = !defer || inRange;
+  const { data, loading, error, reload } = useRecommendations({
     sport,
     surface,
     region_id: regionId,
@@ -55,7 +86,7 @@ export default function RecommendationRow({
     weeks,
     limit: MAX_TILES,
     personalized: personalized ? undefined : false,
-  });
+  }, requestEnabled);
   const spots = (data ?? []).slice(0, MAX_TILES);
   const [loadLive, setLoadLive] = useState(false);
 
@@ -64,18 +95,41 @@ export default function RecommendationRow({
     const timer = window.setTimeout(() => setLoadLive(true), 800);
     return () => window.clearTimeout(timer);
   }, [spots.length]);
-  const { data: live } = useSpotsLive(spots.map((spot) => spot.id), loadLive);
+  const { data: live } = useSpotsLive(spots.map((spot) => spot.id), requestEnabled && loadLive);
 
-  useEffect(() => {
-    if (error) console.error(`Recommendation surface ${surface} failed`, error);
-  }, [error, surface]);
+  if (!requestEnabled) {
+    return (
+      <section ref={sectionRef} className={className} data-recommendation-surface={surface}>
+        {!hideHeader && (
+          <div className="mb-4 flex min-h-11 items-center justify-between gap-4">
+            <h2 className="text-lead font-semibold text-ink">{title}</h2>
+            {action}
+          </div>
+        )}
+        <RowSkeleton />
+      </section>
+    );
+  }
 
-  if (!loading && (error || spots.length === 0)) return null;
+  if (!loading && error) {
+    return (
+      <section ref={sectionRef} className={className} data-recommendation-surface={surface}>
+        {!hideHeader && (
+          <div className="mb-4 flex min-h-11 items-center justify-between gap-4">
+            <h2 className="text-lead font-semibold text-ink">{title}</h2>
+            {action}
+          </div>
+        )}
+        <ErrorBanner title="Empfehlungen konnten nicht geladen werden." message={error} onRetry={reload} />
+      </section>
+    );
+  }
+  if (!loading && spots.length === 0) return null;
 
   return (
-    <section className={className} data-recommendation-surface={surface}>
+    <section ref={sectionRef} className={className} data-recommendation-surface={surface}>
       <div className="mb-4 flex min-h-11 items-center justify-between gap-4">
-        <h2 className="text-sz-22 font-semibold text-ink">{title}</h2>
+        <h2 className="text-title font-semibold text-ink">{title}</h2>
         {action}
       </div>
       {loading ? (
@@ -88,6 +142,7 @@ export default function RecommendationRow({
               spot={spot}
               live={live?.get(spot.id)}
               surface={surface}
+              eager={false}
             />
           ))}
         </div>

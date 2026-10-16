@@ -14,27 +14,34 @@ import type { Spot } from "../lib/types";
 import { countryName } from "../lib/flags";
 import { spotPath } from "../lib/spotRoutes";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
+import { useSpotOriginsMixed } from "../context/SpotOriginContext";
 import {
   parsePublicMapUrl,
   publicMapSearch,
   PUBLIC_SPOT_CLUSTER_MAX_ZOOM,
   PUBLIC_SPOT_CLUSTER_RADIUS,
-  spotDotColor,
+  SPOT_DOT_COLOR,
   spotFeatures,
   sortViewportSpots,
   spotCountLabel,
-  type PublicSpotLiveValue,
   type PublicSpotProperties,
 } from "../lib/publicMap";
-import { cartoTileUrl, CARTO_ATTRIBUTION, CARTO_VOYAGER } from "../lib/basemaps";
+import { cartoTileUrl, prefersRetinaTiles, CARTO_ATTRIBUTION, CARTO_VOYAGER_LABELS, CARTO_VOYAGER_NOLABELS } from "../lib/basemaps";
 import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
-import { currentWindPresentation } from "../lib/liveWindPresentation";
+import ExplorerModeToggle from "../weather-map/ExplorerModeToggle";
+import { parseFieldUrlState, updateFieldUrl, type ExplorerMode } from "../weather-map/fieldUrlState";
+import { EUROPE_COUNTRY_LABELS, PLACE_LABEL_MIN_ZOOM } from "../weather-map/countryLabels";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
+const WindExplorer = lazy(() => import("../weather-map/WindExplorer"));
 
-// Voyager keeps the map light and quiet while giving water and land distinct,
-// travel-map colours. CSS applies the final muted Surfwinddata treatment.
-const TILE_URL = cartoTileUrl(CARTO_VOYAGER);
+// The spot map is LIGHT again (2026-10-12): the dark ground was tried for a
+// day and read as soot even once it was tinted blue. Back to Voyager's native
+// travel palette — pale blue water, warm land, restrained detail — with its
+// own dark haloed labels on top and no colour filter at all. @2x where the
+// screen can show it, so the coast stays sharp.
+const TILE_URL = cartoTileUrl(CARTO_VOYAGER_NOLABELS, { retina: prefersRetinaTiles() });
+const LABEL_TILE_URL = cartoTileUrl(CARTO_VOYAGER_LABELS, { retina: prefersRetinaTiles() });
 const TILE_ATTRIBUTION = CARTO_ATTRIBUTION;
 
 // Background catalogue check, not a live feed: 60s is plenty to notice a
@@ -52,18 +59,19 @@ const SINGLE_SPOT_ZOOM = 13.5;
 const CLUSTER_MAX_ZOOM = 15.5;
 // Coalesce a burst of moveends into one live-wind fetch instead of one per settle.
 const VIEWPORT_DEBOUNCE_MS = 300;
-// Clustered world/continent views do not benefit from hundreds of individual
-// live readings. Start once markers are meaningfully separated and cap the
-// request fan-out to three batches (useSpotsLive batches 20 ids/request).
-const LIVE_VALUES_MIN_ZOOM = 6;
-const LIVE_VALUES_MAX_SPOTS = 60;
 // The map is deliberately always light — it never follows the site's dark
 // mode. See the `--sw-*`/`--map-*` token overrides scoped to `.swd-public-map`.
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 type ClusterOrPoint = Supercluster.ClusterFeature<Supercluster.AnyProps> | Supercluster.PointFeature<PublicSpotProperties>;
 
-export default function MapView() {
+function SpotExplorer({
+  active,
+  onModeChange,
+}: {
+  active: boolean;
+  onModeChange: (mode: ExplorerMode) => void;
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,7 +87,6 @@ export default function MapView() {
   const initialCoordinates = useRef<[number, number][]>([]);
   const [mapReady, setMapReady] = useState(false);
   const [viewportIds, setViewportIds] = useState<string[]>([]);
-  const [viewportZoom, setViewportZoom] = useState(3);
   const [selectedId, setSelectedId] = useState<string | undefined>(() => parsePublicMapUrl(window.location.search)?.spot);
   const [tilesOpen, setTilesOpen] = useState(false);
   const [popupContainer, setPopupContainer] = useState<HTMLDivElement | null>(null);
@@ -87,7 +94,7 @@ export default function MapView() {
   const [catalogReady, setCatalogReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const knownVersion = useRef<string>();
-  const { data: spots, loading: spotsLoading } = useSpots(
+  const { data: spots, loading: spotsLoading, error: spotsError, reload: reloadSpots } = useSpots(
     { limit: 500, catalog_version: catalogVersion },
     catalogReady,
   );
@@ -142,6 +149,8 @@ export default function MapView() {
   // instead of loading a temporary world view and replacing every tile.
   const mapCanInitialize = initialView.current !== null || (catalogReady && !spotsLoading);
   const spotById = useMemo(() => new Map(withCoords.map((spot) => [spot.id, spot])), [withCoords]);
+  // Gate for the origin treatment: no mark while every spot is ours.
+  const originsMixed = useSpotOriginsMixed();
   useEffect(() => { if (selectedId && spots && !spotById.has(selectedId)) setSelectedId(undefined); }, [selectedId, spotById, spots]);
 
   const viewportTimer = useRef<number>();
@@ -157,7 +166,6 @@ export default function MapView() {
     window.clearTimeout(viewportTimer.current);
     viewportTimer.current = window.setTimeout(() => {
       const bounds = map.getBounds();
-      setViewportZoom(zoom);
       setViewportIds(withCoords.filter((spot) => bounds.contains([spot.coords[0], spot.coords[1]])).map((spot) => spot.id));
     }, VIEWPORT_DEBOUNCE_MS);
   }, [selectedId, withCoords]);
@@ -169,6 +177,8 @@ export default function MapView() {
     const saved = initialView.current;
     let map: L.Map;
     let tileLayer: L.TileLayer;
+    let labelLayer: L.TileLayer;
+    let countryLabels: L.LayerGroup;
     let revealTimer = 0;
     let readyFrame = 0;
     try {
@@ -214,6 +224,28 @@ export default function MapView() {
         updateInterval: 120,
         keepBuffer: 4,
       }).addTo(map);
+      // CARTO's raster labels cannot distinguish countries from cities. Keep
+      // them out until street-level context is useful; the sparse country
+      // markers below carry the continental overview on their own.
+      labelLayer = L.tileLayer(LABEL_TILE_URL, {
+        subdomains: "a",
+        attribution: TILE_ATTRIBUTION,
+        minZoom: PLACE_LABEL_MIN_ZOOM,
+        maxZoom: 20,
+        detectRetina: false,
+        updateWhenIdle: false,
+        updateWhenZooming: true,
+        keepBuffer: 3,
+        pane: "overlayPane",
+      }).addTo(map);
+      countryLabels = L.layerGroup(EUROPE_COUNTRY_LABELS.map(([name, longitude, latitude]) => L.marker(
+        [latitude, longitude],
+        {
+          interactive: false,
+          keyboard: false,
+          icon: L.divIcon({ className: "swd-country-label-marker", html: `<span>${name}</span>` }),
+        },
+      ))).addTo(map);
     } catch (err) {
       console.error("Public map: failed to construct Leaflet map", err);
       setMapError(true);
@@ -222,12 +254,35 @@ export default function MapView() {
     mapRef.current = map;
     markersLayer.current = L.layerGroup().addTo(map);
     const markersForCleanup = markerCache.current;
+    const syncCountryLabels = () => {
+      if (map.getZoom() < PLACE_LABEL_MIN_ZOOM) {
+        if (!map.hasLayer(countryLabels)) countryLabels.addTo(map);
+      } else if (map.hasLayer(countryLabels)) map.removeLayer(countryLabels);
+    };
+    map.on("zoomend", syncCountryLabels);
+    syncCountryLabels();
+    // Keep Leaflet's cached pixel size in step with the container. On mobile the
+    // visual viewport changes height when the address bar collapses and width on
+    // rotation; without this the map keeps its first-measured size and leaves a
+    // bare strip (showing through to whatever is behind the app) along the edge
+    // that grew. A ResizeObserver catches both, where a one-shot invalidateSize
+    // at init cannot. The resize runs in the next frame — never synchronously
+    // inside the observer callback — so Leaflet's own relayout can't re-enter the
+    // observer and trip the "ResizeObserver loop" error.
+    let resizeFrame = 0;
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => { if (mapRef.current === map) map.invalidateSize({ animate: false }); });
+    });
+    resizeObserver.observe(container);
     // Background click closes whichever bottom panel is open (marker clicks call
     // stopPropagation via Leaflet's own layer events, so they don't bubble here).
     map.on("click", () => { setSelectedId(undefined); setTilesOpen(false); });
     const revealMap = () => {
       window.clearTimeout(revealTimer);
       tileLayer.off("load", revealMap);
+      map.off("zoomend", syncCountryLabels);
+      labelLayer.remove();
       setMapReady(true);
     };
     // Reveal the map as one composed surface after its first visible tile set
@@ -244,6 +299,8 @@ export default function MapView() {
       window.clearTimeout(revealTimer);
       tileLayer.off("load", revealMap);
       window.clearTimeout(viewportTimer.current);
+      resizeObserver.disconnect();
+      cancelAnimationFrame(resizeFrame);
       map.remove();
       mapRef.current = null;
       markersLayer.current = null;
@@ -260,20 +317,23 @@ export default function MapView() {
     return () => { map.off("moveend", commitViewport); };
   }, [mapReady, commitViewport]);
 
-  // Live wind readings for currently-visible spots → marker colours.
-  const markerLiveIds = useMemo(
-    () => viewportZoom >= LIVE_VALUES_MIN_ZOOM ? viewportIds.slice(0, LIVE_VALUES_MAX_SPOTS) : [],
-    [viewportIds, viewportZoom],
-  );
-  const { data: viewportLive } = useSpotsLive(markerLiveIds);
-  const liveValues = useMemo(() => {
-    const map = new Map<string, PublicSpotLiveValue>();
-    viewportLive?.forEach((reading, id) => {
-      const wind = currentWindPresentation(reading);
-      map.set(id, { windKt: wind.windKt, waveM: reading.current?.swell ?? null });
+  // The map stays mounted behind the wind/wave canvas. On return, resize the
+  // retained Leaflet surface and adopt the shared URL camera instead of
+  // rebuilding every tile, cluster and marker from scratch.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!active || !map) return;
+    const shared = parsePublicMapUrl(window.location.search);
+    const frame = window.requestAnimationFrame(() => {
+      map.invalidateSize({ pan: false });
+      if (shared) map.setView([shared.center[1], shared.center[0]], shared.zoom, { animate: false });
     });
-    return map;
-  }, [viewportLive]);
+    return () => window.cancelAnimationFrame(frame);
+  }, [active]);
+
+  // No live query for the markers any more: every dot is `SPOT_DOT_COLOR`,
+  // so there is nothing to tint. Live readings are still fetched for the
+  // spots shown in the bottom row and the selected spot's card.
 
   // (Re)build the cluster index whenever the spot set changes.
   useEffect(() => {
@@ -332,15 +392,17 @@ export default function MapView() {
         const spot = spotById.get(props.spotId);
         if (!spot) continue;
         const selected = props.spotId === selectedId;
-        const color = spotDotColor("wind", liveValues.get(props.spotId));
-        sig = `${selected ? "s" : ""}:${color}`;
+        // Same disc, open instead of filled — the mark says who entered the
+        // spot, not how good it is. Hidden while the catalogue is all ours.
+        const community = originsMixed && spot.origin === "community";
+        sig = `${selected ? "s" : ""}${community ? "c" : ""}`;
         build = () => {
-          const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot" style="background:${color}"></span>`, iconSize: [44, 44], iconAnchor: [22, 22] });
+          const icon = L.divIcon({ className: `swd-map-a11y-marker${selected ? " is-selected" : ""}`, html: `<span class="swd-map-dot${community ? " is-community" : ""}" style="--swd-map-dot-color:${SPOT_DOT_COLOR}"></span>`, iconSize: [44, 44], iconAnchor: [22, 22] });
           const marker = L.marker([lat, lng], { icon, keyboard: true });
           marker.on("add", () => {
             const el = marker.getElement();
             if (!el) return;
-            el.setAttribute("aria-label", `Surfspot ${spot.name}`);
+            el.setAttribute("aria-label", community ? `Surfspot ${spot.name}, von der Community eingetragen` : `Surfspot ${spot.name}`);
             el.setAttribute("data-tooltip", spot.name);
             el.setAttribute("aria-pressed", String(selected));
           });
@@ -366,7 +428,7 @@ export default function MapView() {
       layer.removeLayer(entry.marker);
       cache.delete(key);
     }
-  }, [selectedId, spotById, liveValues]);
+  }, [selectedId, spotById, originsMixed]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -412,52 +474,71 @@ export default function MapView() {
 
   const listEmptyLabel = viewportSpots.length === 0 ? "Keine Spots in diesem Kartenausschnitt" : `${spotCountLabel(viewportSpots.length)} · Zum Entdecken heranzoomen`;
   const regionLine = (spot: Spot) => [spot.regionName, countryName(spot.regionCountry ?? undefined)].filter(Boolean).join(" · ");
+  const catalogueUnavailable = Boolean(spotsError && !spots?.length);
+  const retryMapProblem = () => {
+    setMapError(false);
+    if (catalogueUnavailable) reloadSpots();
+    else window.location.reload();
+  };
 
   return (
-    <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${selectedSpot ? "has-bottom-panel" : ""}`} aria-labelledby="public-map-title">
-      <Header />
+    <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${selectedSpot ? "has-bottom-panel" : ""} ${tilesOpen ? "has-bottom-row" : ""}`} aria-labelledby="public-map-title">
+      {/* The search is docked at the bottom centre; while the selected-spot
+          chart or the spot row holds the bottom, drop the search so the two
+          don't stack on top of each other. */}
+      {!selectedSpot && !tilesOpen && <Header />}
+      <ExplorerModeToggle mode="spots" onChange={onModeChange} />
       <h1 id="public-map-title" className="sr-only">Spot-Karte</h1>
-      <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" className="absolute inset-0">
-        <div className={`swd-map-canvas h-full w-full transition-opacity duration-300 ${mapReady ? "opacity-100" : "opacity-0"}`}>
-          <div ref={containerRef} className="h-full w-full" />
+      <p id="public-map-help" className="sr-only">
+        Nutze die Zoomtasten oder die Kartensteuerung. Spotmarker sind per Tastatur erreichbar und öffnen eine Vorschau.
+      </p>
+      <div role="region" aria-label="Interaktive Karte der veröffentlichten Surfspots" aria-busy={spotsLoading} className="absolute inset-0">
+        <div className={`swd-map-canvas h-full w-full transition-opacity duration-slow ${mapReady ? "opacity-100" : "opacity-0"}`}>
+          <div ref={containerRef} aria-label="Surfspot-Karte" aria-describedby="public-map-help" className="h-full w-full" />
         </div>
       </div>
       {popupContainer && selectedSpot && createPortal(
         <div className="w-[176px]"><SpotCard spot={selectedSpot} live={live?.get(selectedSpot.id)} preferLiveWind /></div>,
         popupContainer,
       )}
-      {mapError && (
-        <div role="status" className="swd-map-error absolute left-1/2 top-24 z-20 -translate-x-1/2">
-          <span>Karte momentan nicht verfügbar.</span>
-          <button type="button" onClick={() => window.location.reload()}>Erneut versuchen</button>
+      {(mapError || catalogueUnavailable) && (
+        <div role="alert" className="swd-map-error absolute left-1/2 top-24 z-scrim -translate-x-1/2">
+          <div>
+            <strong>{catalogueUnavailable ? "Spots konnten nicht geladen werden." : "Karte momentan nicht verfügbar."}</strong>
+            <p>{catalogueUnavailable ? spotsError : "Prüfe deine Verbindung und lade die Karte erneut."}</p>
+          </div>
+          <button type="button" onClick={retryMapProblem}>Erneut versuchen</button>
         </div>
       )}
       <LeafletAttributionDisclosure source="carto" />
-      <div className="swd-map-controls-left pointer-events-none absolute z-[1100] flex flex-col items-start gap-2">
+      <div className="swd-map-controls-left pointer-events-none absolute z-scrim flex flex-col items-start gap-2">
         <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-bare-control pointer-events-auto">
-          <ChevronLeftIcon className="text-sz-22" />
+          <ChevronLeftIcon className="text-title" />
         </button>
         <div className="pointer-events-auto flex flex-col">
-          <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn()} className="swd-map-bare-control"><PlusIcon className="text-sz-21" /></button>
-          <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut()} className="swd-map-bare-control"><MinusIcon className="text-sz-21" /></button>
+          <button type="button" aria-label="Vergrößern" onClick={() => mapRef.current?.zoomIn()} className="swd-map-bare-control"><PlusIcon className="text-title" /></button>
+          <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut()} className="swd-map-bare-control"><MinusIcon className="text-title" /></button>
         </div>
       </div>
-      {!tilesOpen && (
-        <div className="swd-map-controls pointer-events-none absolute z-[1100] flex flex-col items-end gap-3">
-          <button
-            type="button"
-            aria-label="Spots im Ausschnitt anzeigen"
-            aria-expanded={false}
-            aria-controls="swd-map-list-panel"
-            onClick={() => { setTilesOpen(true); setSelectedId(undefined); }}
-            className="swd-map-control pointer-events-auto h-10 w-10"
-          >
-            <ListIcon className="text-sz-17" />
-          </button>
-        </div>
-      )}
+      {/* The list glyph stays put whether the row is open or not — it is the
+          switch for it, not a one-way door (2026-10-11 feedback: it used to
+          vanish on the first tap). Bare mark, same size as back/zoom. */}
+      <div className="swd-map-controls pointer-events-none absolute z-scrim flex flex-col items-end gap-3">
+        <button
+          type="button"
+          aria-label="Spots im Ausschnitt anzeigen"
+          aria-pressed={tilesOpen}
+          aria-expanded={tilesOpen}
+          aria-controls="swd-map-list-panel"
+          onClick={() => { setTilesOpen((open) => !open); setSelectedId(undefined); }}
+          className="swd-map-bare-control pointer-events-auto"
+        >
+          <ListIcon className="text-title" />
+        </button>
+      </div>
       {tilesOpen && (
-        <div id="swd-map-list-panel" className="swd-map-side-panel pointer-events-auto absolute z-[1100]">
+        <section id="swd-map-list-panel" aria-label="Spots im Ausschnitt" className="swd-map-bottom-shell is-row pointer-events-none absolute inset-x-0 bottom-0 z-scrim">
+          <div className="swd-map-panel pointer-events-auto">
             <div className="swd-map-panel-head">
               <p className="swd-map-list-title">Spots im Ausschnitt</p>
               <button type="button" aria-label="Schließen" aria-expanded={true} onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
@@ -467,14 +548,19 @@ export default function MapView() {
             {listPanelSpots.length === 0 ? (
               <p role="status" className="swd-map-list-empty">{listEmptyLabel}</p>
             ) : (
-              <div className="swd-map-tile-grid">
-                {listPanelSpots.map((spot) => <SpotCard key={spot.id} spot={spot} live={live?.get(spot.id)} preferLiveWind />)}
+              <div className="swd-map-row-scroll">
+                {listPanelSpots.map((spot) => (
+                  <div key={spot.id} className="swd-map-row-item">
+                    <SpotCard spot={spot} live={live?.get(spot.id)} mapRail preferLiveWind />
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        )}
+        </section>
+      )}
       {selectedSpot && (
-        <section aria-label="Kartendetails" className="swd-map-bottom-shell pointer-events-none absolute inset-x-0 bottom-0 z-10">
+        <section aria-label="Kartendetails" className="swd-map-bottom-shell pointer-events-none absolute inset-x-0 bottom-0 z-scrim">
           <div className="swd-map-panel pointer-events-auto">
             <div className="swd-map-panel-head">
               <div className="min-w-0">
@@ -506,5 +592,37 @@ export default function MapView() {
         </section>
       )}
     </main>
+  );
+}
+
+export default function MapView() {
+  const [mode, setMode] = useState<ExplorerMode>(() => parseFieldUrlState(window.location.search).mode);
+  const [weatherMode, setWeatherMode] = useState<"wind" | "waves">(() => {
+    const initial = parseFieldUrlState(window.location.search).mode;
+    return initial === "waves" ? "waves" : "wind";
+  });
+  useEffect(() => {
+    const sync = () => {
+      setMode(parseFieldUrlState(window.location.search).mode);
+    };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+  const changeMode = (next: ExplorerMode) => {
+    updateFieldUrl({ mode: next }, false);
+    if (next !== "spots") setWeatherMode(next);
+    setMode(next);
+  };
+  return (
+    <div className="swd-explorer-stack">
+      <div className={`swd-explorer-pane${mode === "spots" ? " is-active" : ""}`} aria-hidden={mode !== "spots"}>
+        <SpotExplorer active={mode === "spots"} onModeChange={changeMode} />
+      </div>
+      <div className={`swd-explorer-pane${mode !== "spots" ? " is-active" : ""}`} aria-hidden={mode === "spots"}>
+        <Suspense fallback={null}>
+          <WindExplorer active={mode !== "spots"} product={weatherMode} onModeChange={changeMode} />
+        </Suspense>
+      </div>
+    </div>
   );
 }

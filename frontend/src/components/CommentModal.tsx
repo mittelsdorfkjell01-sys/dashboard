@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ApiError, postTip } from "../lib/api";
 import { CloseIcon } from "../lib/icons";
+import { useFocusTrap } from "../lib/useFocusTrap";
 
 /**
  * Central comment composer, shown after the auth choice (anonym / angemeldet).
@@ -28,6 +29,8 @@ export default function CommentModal({
   onClose: () => void;
 }) {
   const reduce = useReducedMotion();
+  const cardRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, cardRef);
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -68,7 +71,7 @@ export default function CommentModal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[1200] grid place-items-center bg-ink/25 p-4 backdrop-blur-[3px]"
+          className="fixed inset-0 z-modal grid place-items-center bg-ink/25 p-4 backdrop-blur-[3px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -76,10 +79,12 @@ export default function CommentModal({
           onClick={onClose}
         >
           <motion.div
+            ref={cardRef}
             role="dialog"
             aria-modal="true"
             aria-label="Kommentar verfassen"
-            className="w-full max-w-[520px] rounded-[14px] border border-line bg-surface p-6 shadow-float sm:p-7"
+            tabIndex={-1}
+            className="w-full max-w-[520px] rounded-card border border-line bg-surface p-6 shadow-float outline-none sm:p-7"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -88,16 +93,16 @@ export default function CommentModal({
           >
             <h2 className="text-title font-semibold text-ink">Kommentar verfassen</h2>
             {replyToName ? (
-              <p className="mt-1 text-label text-muted">Antwort an {replyToName}</p>
+              <p className="mt-1 text-ui text-muted">Antwort an {replyToName}</p>
             ) : (
-              <p className="mt-1 text-label text-muted">
+              <p className="mt-1 text-ui text-muted">
                 als {authorName === "Anonym" ? "Anonym" : authorName}
               </p>
             )}
 
             {!parentId && (
               <div className="mt-5">
-                <label htmlFor="comment-title" className="text-label font-medium text-ink">
+                <label htmlFor="comment-title" className="text-ui font-medium text-ink">
                   Überschrift <span className="text-muted">(optional)</span>
                 </label>
                 <input
@@ -106,7 +111,7 @@ export default function CommentModal({
                   maxLength={120}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Worum geht es?"
-                  className="mt-2 min-h-11 w-full rounded-[14px] border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
+                  className="mt-2 min-h-11 w-full rounded-card border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10"
                 />
                 <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
               </div>
@@ -116,15 +121,15 @@ export default function CommentModal({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="verfasse einen Kommentar…"
-              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-[14px] border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10`}
+              className={`comment-field ${parentId ? "mt-5" : "mt-3"} min-h-[150px] w-full resize-none rounded-card border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10`}
             />
-            {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
+            {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
 
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-[14px] px-3 text-label font-medium text-muted transition-colors hover:bg-band hover:text-ink"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-card px-3 text-ui font-medium text-muted transition-colors hover:bg-band hover:text-ink"
               >
                 <CloseIcon width={15} height={15} />
                 Schließen
@@ -133,7 +138,7 @@ export default function CommentModal({
                 type="button"
                 onClick={submit}
                 disabled={busy || !text.trim()}
-                className="min-h-11 px-5 py-2 text-label font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:opacity-40 disabled:no-underline"
+                className="min-h-11 px-5 py-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 disabled:opacity-40 disabled:no-underline"
               >
                 {busy ? "Senden…" : "absenden"}
               </button>

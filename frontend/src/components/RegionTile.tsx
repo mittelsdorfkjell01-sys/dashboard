@@ -41,9 +41,9 @@ export default function RegionTile({
   return (
     <Link
       to={to}
-      className="group flex h-full flex-col rounded-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className="group flex h-full flex-col rounded-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
-      <div className="relative aspect-video overflow-hidden rounded-[14px]">
+      <div className="relative aspect-video overflow-hidden rounded-card">
         <SpotImage
           src={usable}
           name={name}
@@ -59,16 +59,16 @@ export default function RegionTile({
         <div className="flex items-baseline justify-between gap-3">
           <p className="min-w-0 truncate text-body font-semibold text-ink">{name}</p>
           {typeof spotCount === "number" && (
-            <span className="shrink-0 whitespace-nowrap text-label font-semibold text-ink">
+            <span className="shrink-0 whitespace-nowrap text-ui font-semibold text-ink">
               {spotCount} {spotCount === 1 ? "Spot" : "Spots"}
             </span>
           )}
         </div>
 
-        {geography && <p className="truncate text-sz-11 text-muted sm:text-caption">{geography}</p>}
+        {geography && <p className="truncate text-caption text-muted sm:text-caption">{geography}</p>}
 
         {sportsLine && (
-          <p className="mt-auto truncate pt-1 text-sz-11 text-muted sm:text-caption">{sportsLine}</p>
+          <p className="mt-auto truncate pt-1 text-caption text-muted sm:text-caption">{sportsLine}</p>
         )}
       </div>
     </Link>

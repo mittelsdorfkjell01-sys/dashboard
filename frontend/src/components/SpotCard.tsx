@@ -5,8 +5,9 @@ import type { LiveConditionsRead } from "../lib/api";
 import { sportLabelShort } from "../lib/labels";
 import { countryName } from "../lib/flags";
 import SpotImage from "./SpotImage";
+import SpotOriginMark from "./SpotOriginMark";
 import { spotPath } from "../lib/spotRoutes";
-import { currentWindPresentation, formatAge } from "../lib/liveWindPresentation";
+import { currentWindPresentation } from "../lib/liveWindPresentation";
 import { useOptionalUnits } from "../context/PrefsContext";
 import { windValue as fmtWindValue, WIND_UNIT_SUFFIX, waveValue as fmtWaveValue, WAVE_UNIT_SUFFIX } from "../lib/units";
 import { trackEvent } from "../lib/events";
@@ -42,7 +43,9 @@ export default function SpotCard({
 }: {
   spot: Spot;
   compact?: boolean;
-  /** Public /map rail: compact image card with its factual region line. */
+  /** Public /map rail: the landing card's size and image, but its foot is
+   *  the name and the place alone — no wind, no wave, no sports. The map
+   *  already answers "how is it", the tile only answers "which spot". */
   mapRail?: boolean;
   live?: LiveConditionsRead;
   /** Wind-map surfaces may opt into the analyzed product; browse cards stay on current. */
@@ -82,21 +85,6 @@ export default function SpotCard({
   const windValue = windLive ?? spot.typicalWindKt;
   const windIsLive = windLive != null;
   const waveValue = spot.typicalWaveHeightM;
-  // Map rail: "18 kn · live" / "18 kn · vor 12 Min." instead of a bare dot —
-  // only when the API gave a real timestamp; no invented age otherwise.
-  const liveTime = preferLiveWind && presentedWind.status !== "unavailable"
-    ? presentedWind.analyzedAt
-    : live?.time;
-  const liveMinutesAgo = windIsLive && liveTime ? Math.max(0, Math.round((Date.now() - new Date(liveTime).getTime()) / 60_000)) : null;
-  const liveSuffix = windIsLive
-    ? preferLiveWind
-      ? presentedWind.status === "station_adjusted"
-        ? "LiveWind"
-        : "Baseline"
-      : liveMinutesAgo !== null
-        ? formatAge(liveMinutesAgo)
-        : "live"
-    : null;
   const adjustedLiveWind = preferLiveWind && presentedWind.status === "station_adjusted";
 
   return (
@@ -106,9 +94,9 @@ export default function SpotCard({
       onClick={() => {
         if (surface) trackEvent("click", { spotId: spot.id, surface });
       }}
-      className="group flex h-full flex-col rounded-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className="group flex h-full flex-col rounded-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
-      <div className={`relative overflow-hidden rounded-[14px] ${mapRail ? "aspect-[3/2]" : "aspect-video"}`}>
+      <div className="relative overflow-hidden rounded-card aspect-video">
         <SpotImage
           src={spot.image}
           name={spot.name}
@@ -123,40 +111,42 @@ export default function SpotCard({
 
       <div className={`flex flex-1 flex-col ${compact ? "gap-0 pt-1.5" : "gap-0 pt-1.5 sm:pt-2"}`}>
         <div className="flex items-baseline justify-between gap-3">
+          {/* Name and origin mark share one baseline row: the mark trails the
+              name, inside the truncation flex so a long name still clips. */}
           <p
-            className={`min-w-0 truncate font-semibold text-ink ${compact ? "text-label" : "text-body"}`}
+            className={`flex min-w-0 items-baseline gap-1.5 font-semibold text-ink ${compact ? "text-ui" : "text-body"}`}
           >
-            {spot.name}
+            <span className="min-w-0 truncate">{spot.name}</span>
+            <SpotOriginMark origin={spot.origin} />
           </p>
-          {windValue != null && (
+          {!mapRail && windValue != null && (
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              {!mapRail && windIsLive && (!preferLiveWind || adjustedLiveWind) && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
-              <span className="text-label font-semibold text-ink">{fmtWindValue(windValue, units.wind)}</span>
+              {windIsLive && (!preferLiveWind || adjustedLiveWind) && <span aria-hidden className="inline-block h-1.5 w-1.5 translate-y-[-1px] rounded-full bg-green" />}
+              <span className="text-ui font-semibold text-ink">{fmtWindValue(windValue, units.wind)}</span>
               <span className="text-caption text-ink-soft">{WIND_UNIT_SUFFIX[units.wind]}</span>
-              {mapRail && liveSuffix && <span className="text-caption text-muted">· {liveSuffix}</span>}
             </div>
           )}
         </div>
 
         {mapRail && regionLine && (
-          <p className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{regionLine}</p>
+          <p className="min-w-0 truncate text-caption text-muted sm:text-caption">{regionLine}</p>
         )}
 
-        {!compact && (
+        {!compact && !mapRail && (
           <div className="flex items-baseline justify-between gap-3">
-            {regionLine && <p className="min-w-0 truncate text-sz-11 text-muted sm:text-caption">{regionLine}</p>}
+            {regionLine && <p className="min-w-0 truncate text-caption text-muted sm:text-caption">{regionLine}</p>}
             <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              <span className="text-label font-semibold text-ink">{waveValue == null ? "—" : fmtWaveValue(waveValue, units.wave)}</span>
+              <span className="text-ui font-semibold text-ink">{waveValue == null ? "—" : fmtWaveValue(waveValue, units.wave)}</span>
               <span className="text-caption text-ink-soft">{WAVE_UNIT_SUFFIX[units.wave]}</span>
             </div>
           </div>
         )}
 
-        {!compact && sports && (
+        {!compact && !mapRail && sports && (
           <div className="mt-auto min-w-0 pt-1">
             {/* `block` so `truncate` actually clips: an inline <span> ignores
                 overflow, letting a full sports list spill past the card edge. */}
-            <span className="block truncate text-sz-11 text-muted sm:text-caption">{sports}</span>
+            <span className="block truncate text-caption text-muted sm:text-caption">{sports}</span>
           </div>
         )}
       </div>

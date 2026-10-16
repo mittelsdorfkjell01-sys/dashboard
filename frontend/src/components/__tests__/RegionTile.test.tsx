@@ -55,7 +55,7 @@ describe("RegionTile", () => {
   it("frames the image the same way SpotCard does", () => {
     const html = render();
     expect(html).toContain("aspect-video");
-    expect(html).toContain("rounded-[14px]");
+    expect(html).toContain("rounded-card");
   });
 
   it("loads a known tile image immediately without deferred rendering", () => {

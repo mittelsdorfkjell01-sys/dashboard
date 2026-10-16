@@ -4,6 +4,7 @@ import { ApiError, getImageLicense, uploadSpotImage } from "../lib/api";
 import { compressImageForUpload } from "../lib/imageCompress";
 import { CloseIcon } from "../lib/icons";
 import { Button } from "./ui";
+import Checkbox from "./ui/Checkbox";
 
 export interface GalleryQuickUploadHandle {
   /** Opens the phone's native photo picker. Call it inside a tap handler so iOS
@@ -99,7 +100,7 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
       />
       {file && (
           <div
-            className="fixed inset-0 z-[1300] flex items-start justify-end bg-black/40 p-3"
+            className="fixed inset-0 z-sheet flex items-start justify-end bg-black/40 p-3"
             style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
             onClick={close}
           >
@@ -111,10 +112,10 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
               aria-label="Bild hinzufügen"
               onClick={(e) => e.stopPropagation()}
               data-lenis-prevent
-              className="w-[min(92vw,380px)] rounded-[14px] bg-surface p-5 shadow-float"
+              className="w-[min(92vw,380px)] rounded-card bg-surface p-5 shadow-float"
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sz-18 font-semibold text-ink">Bild hinzufügen</p>
+                <p className="text-lead font-semibold text-ink">Bild hinzufügen</p>
                 <button
                   type="button"
                   onClick={close}
@@ -126,19 +127,12 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
               </div>
 
               {preview && (
-                <div className="mt-4 overflow-hidden rounded-[14px] bg-band">
+                <div className="mt-4 overflow-hidden rounded-card bg-band">
                   <img src={preview} alt="" className="aspect-[4/3] w-full object-cover" />
                 </div>
               )}
 
-              <label className="mt-4 flex items-start gap-2.5 text-label text-ink">
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={(e) => setAccepted(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-ink"
-                />
-                <span>
+              <Checkbox className="mt-4" checked={accepted} onChange={(e) => setAccepted(e.target.checked)}>
                   Ich habe die Rechte am Bild und bestätige die{" "}
                   <button
                     type="button"
@@ -148,10 +142,9 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
                     Rechte- &amp; Einwilligungserklärung{terms ? ` (${terms.version})` : ""}
                   </button>
                   .
-                </span>
-              </label>
+                </Checkbox>
               {showTerms && terms && (
-                <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-[14px] bg-band p-3 text-caption text-ink-soft">
+                <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-card bg-band p-3 text-caption text-ink-soft">
                   {terms.terms}
                 </pre>
               )}
@@ -167,14 +160,14 @@ export const GalleryQuickUpload = forwardRef<GalleryQuickUploadHandle, {
                 className="hidden"
               />
 
-              {error && <p role="alert" className="mt-3 text-label text-danger">{error}</p>}
-              {notice && <p role="status" className="mt-3 text-label text-green">{notice}</p>}
+              {error && <p role="alert" className="mt-3 text-ui text-danger">{error}</p>}
+              {notice && <p role="status" className="mt-3 text-ui text-green">{notice}</p>}
 
               <div className="mt-5 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={close}
-                  className="min-h-11 px-3 text-label font-medium text-ink transition-opacity hover:opacity-70"
+                  className="min-h-11 px-3 text-ui font-medium text-ink transition-opacity hover:opacity-70"
                 >
                   Abbrechen
                 </button>

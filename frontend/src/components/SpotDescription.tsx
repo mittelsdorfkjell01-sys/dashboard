@@ -28,7 +28,7 @@ export default function SpotDescription({ text }: { text: string }) {
     <div className="mt-5 sm:mt-8">
       <p
         ref={ref}
-        className={`max-w-[65ch] text-ui leading-relaxed text-ink-soft ${
+        className={`max-w-measure text-ui leading-relaxed text-ink-soft ${
           expanded ? "" : "line-clamp-4 sm:line-clamp-none"
         }`}
       >
@@ -39,7 +39,7 @@ export default function SpotDescription({ text }: { text: string }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="mt-2 min-h-11 text-label font-semibold text-ink underline underline-offset-4 transition-opacity hover:opacity-70 sm:hidden"
+          className="mt-2 min-h-11 text-ui font-semibold text-ink underline underline-offset-4 transition-opacity hover:opacity-70 sm:hidden"
         >
           {expanded ? "Weniger anzeigen" : "Mehr anzeigen"}
         </button>

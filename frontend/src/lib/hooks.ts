@@ -17,6 +17,24 @@ import type { NormalizedForecastSeries } from "./forecastNormalization";
 export type AsyncState<T> = SwrState<T>;
 export type AsyncStateReloadable<T> = SwrState<T>;
 
+export interface LandingSpotsData {
+  spots: Spot[];
+  total: number;
+  version: string;
+}
+
+/** Bounded first-paint catalogue plus every curated landing hero. */
+export function useLandingSpots(): AsyncStateReloadable<LandingSpotsData> {
+  const state = useSwr("spots:landing", api.getLandingSpots);
+  const data = useMemo(
+    () => state.data
+      ? { ...state.data, spots: adaptSpots(state.data.spots, new Map()) }
+      : null,
+    [state.data],
+  );
+  return { ...state, data };
+}
+
 /** Spots (+ their regions), adapted. Regions come from the shared cache, so a
  *  spot list never re-fetches the region catalogue from scratch. */
 export function useSpots(
@@ -43,6 +61,7 @@ export function useSpots(
     refreshing: spots.refreshing,
     stale: spots.stale,
     error: spots.error,
+    errorStatus: spots.errorStatus,
     reload: spots.reload,
   };
 }
@@ -65,6 +84,7 @@ export function useTopSpots(limit = 5): AsyncStateReloadable<Spot[]> {
     refreshing: spots.refreshing,
     stale: spots.stale,
     error: spots.error,
+    errorStatus: spots.errorStatus,
     reload: spots.reload,
   };
 }
@@ -115,12 +135,24 @@ export function useSpot(id?: string): AsyncStateReloadable<Spot> {
     refreshing: spot.refreshing,
     stale: spot.stale,
     error: spot.error,
+    errorStatus: spot.errorStatus,
     reload: spot.reload,
   };
 }
 
-export function useWindClimatology(id?: string): AsyncStateReloadable<api.WindClimatologyRead> {
-  return useSwr(id ? `wind-climatology-v2:${id}` : null, () => api.getWindClimatology(id!));
+export function useWindClimatology(
+  id?: string,
+  window?: { fromYear: number; toYear: number } | null,
+): AsyncStateReloadable<api.WindClimatologyRead> {
+  // Debounce the two bounds as primitives (an inline object would reset the
+  // timer every render); a window re-aggregates server-side from stored data.
+  const fromYear = useDebouncedValue(window?.fromYear, 300);
+  const toYear = useDebouncedValue(window?.toYear, 300);
+  const windowed = fromYear != null && toYear != null;
+  return useSwr(
+    id ? `wind-climatology-v2:${id}:${windowed ? `${fromYear}-${toYear}` : "full"}` : null,
+    () => api.getWindClimatology(id!, windowed ? { fromYear, toYear } : {}),
+  );
 }
 
 /** Debounces a fast-changing value (e.g. a slider being dragged). The
@@ -164,17 +196,22 @@ export function useWindClimatologyV3(
   spotId: string | undefined,
   selection: WindClimatologyV3Selection,
   enabled: boolean,
+  window?: { fromYear: number; toYear: number } | null,
 ): WindClimatologyV3State {
   const committed = useDebouncedValue(selection, V3_DEBOUNCE_MS);
+  const fromYear = useDebouncedValue(window?.fromYear, V3_DEBOUNCE_MS);
+  const toYear = useDebouncedValue(window?.toYear, V3_DEBOUNCE_MS);
+  const windowed = fromYear != null && toYear != null;
   const key =
     enabled && spotId
-      ? `wind-climatology-v3:${spotId}:${committed.minWindKn}:${committed.maxWindKn ?? "plus"}:${committed.directionMode}`
+      ? `wind-climatology-v3:${spotId}:${committed.minWindKn}:${committed.maxWindKn ?? "plus"}:${committed.directionMode}:${windowed ? `${fromYear}-${toYear}` : "full"}`
       : null;
   const swr = useSwr(key, () =>
     api.getWindClimatologyV3(spotId!, {
       minWindKn: committed.minWindKn,
       maxWindKn: committed.maxWindKn,
       directionMode: committed.directionMode,
+      ...(windowed ? { fromYear, toYear } : {}),
     }),
   );
 
@@ -200,6 +237,24 @@ export function useWindClimatologyV3(
     error: everLoaded ? null : swr.error,
     notFound: !everLoaded && !!swr.error && /404|not available|not found/i.test(swr.error),
   };
+}
+
+/** The spot's natural "best travel season" window (V3 `best_season`), fetched
+ *  with the default wind window and auto-upgraded to the spot's reviewed usable
+ *  directions when available — the same default the detailed Windmonate module
+ *  shows. Deliberately independent of the module's URL/slider selection so the
+ *  summary lines (Daten header, Info tab) stay a stable at-a-glance answer.
+ *  Best-effort: returns null while loading, on error, or when no clear season
+ *  exists, so callers simply render nothing. Shares the V3 SWR cache key, so on
+ *  the Daten tab it usually costs no extra request. */
+export function useSpotBestSeason(spotId?: string): { start_date: string; end_date: string } | null {
+  const [directionMode, setDirectionMode] = useState<api.WindDirectionMode>("all");
+  const v3 = useWindClimatologyV3(spotId, { minWindKn: 15, maxWindKn: 20, directionMode }, Boolean(spotId));
+  useEffect(() => {
+    if (v3.data?.direction.usable_available && directionMode === "all") setDirectionMode("usable");
+  }, [v3.data, directionMode]);
+  const season = v3.data?.best_season;
+  return season ? { start_date: season.start_date, end_date: season.end_date } : null;
 }
 
 /** Live conditions for a spot (best-effort; failure is non-fatal). */
@@ -230,7 +285,7 @@ export function useSpotsLive(
     () => (state.data ? new Map(state.data.map((d) => [d.spot_id, d])) : null),
     [state.data]
   );
-  return { data, loading: state.loading, refreshing: state.refreshing, stale: state.stale, error: state.error, reload: state.reload };
+  return { data, loading: state.loading, refreshing: state.refreshing, stale: state.stale, error: state.error, errorStatus: state.errorStatus, reload: state.reload };
 }
 
 /** Normalized 10-day forecast with hourly detail across the full horizon. */

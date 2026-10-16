@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, postSubmission } from "../lib/api";
 import { CloseIcon, PencilIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import { Button, Input, Select, Textarea } from "./ui";
+import { useFocusTrap } from "../lib/useFocusTrap";
 import type { Spot } from "../lib/types";
 
 /** Every editable "point" on the spot page a visitor can flag a correction for.
@@ -38,6 +39,8 @@ export default function SuggestEditButton({ spot }: { spot: Spot }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, cardRef);
 
   useEffect(() => {
     if (!open) return;
@@ -90,29 +93,32 @@ export default function SuggestEditButton({ spot }: { spot: Spot }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-line px-4 text-label font-medium text-ink transition-colors hover:bg-band active:scale-[0.98] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        aria-label="Änderung vorschlagen"
+        title="Änderung vorschlagen"
+        className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
-        <PencilIcon className="text-sz-16" />
-        Änderung vorschlagen
+        <PencilIcon className="text-lead" />
       </button>
 
       {open &&
         createPortal(
           <div
-            className="fixed inset-0 z-[1300] grid place-items-center bg-black/40 p-4"
+            className="fixed inset-0 z-sheet grid place-items-center bg-black/40 p-4"
             style={{ paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))" }}
             onClick={close}
           >
             <div
+              ref={cardRef}
               role="dialog"
               aria-modal="true"
               aria-label="Änderung vorschlagen"
+              tabIndex={-1}
               onClick={(e) => e.stopPropagation()}
               data-lenis-prevent
-              className="max-h-[88vh] w-[min(94vw,460px)] overflow-y-auto rounded-[14px] bg-surface p-5 shadow-float sm:p-6"
+              className="max-h-[88vh] w-[min(94vw,460px)] overflow-y-auto rounded-card bg-surface p-5 shadow-float outline-none sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sz-18 font-semibold text-ink">Änderung vorschlagen</p>
+                <p className="text-lead font-semibold text-ink">Änderung vorschlagen</p>
                 <button
                   type="button"
                   onClick={close}
@@ -129,11 +135,11 @@ export default function SuggestEditButton({ spot }: { spot: Spot }) {
                 </p>
               ) : (
                 <form onSubmit={submit} className="mt-4 space-y-3">
-                  <p className="text-label text-muted">
+                  <p className="text-ui text-muted">
                     Stimmt etwas nicht oder fehlt eine Info? Wähle den Punkt und beschreibe die Änderung — wir prüfen sie.
                   </p>
 
-                  <label className="block text-label font-medium text-ink">
+                  <label className="block text-ui font-medium text-ink">
                     Welcher Punkt?
                     <Select value={target} onChange={(e) => setTarget(e.target.value)} className="mt-1">
                       {EDIT_TARGETS.map((t) => (
@@ -144,7 +150,7 @@ export default function SuggestEditButton({ spot }: { spot: Spot }) {
                     </Select>
                   </label>
 
-                  <label className="block text-label font-medium text-ink">
+                  <label className="block text-ui font-medium text-ink">
                     Deine Änderung
                     <Textarea
                       required
@@ -183,13 +189,13 @@ export default function SuggestEditButton({ spot }: { spot: Spot }) {
                     className="absolute left-[-9999px] h-0 w-0 opacity-0"
                   />
 
-                  {error && <p role="alert" className="text-label text-danger">{error}</p>}
+                  {error && <p role="alert" className="text-ui text-danger">{error}</p>}
 
                   <div className="flex items-center justify-end gap-3 pt-1">
                     <button
                       type="button"
                       onClick={close}
-                      className="min-h-11 px-3 text-label font-medium text-ink transition-opacity hover:opacity-70"
+                      className="min-h-11 px-3 text-ui font-medium text-ink transition-opacity hover:opacity-70"
                     >
                       Abbrechen
                     </button>

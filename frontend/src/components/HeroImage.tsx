@@ -114,7 +114,7 @@ export default function HeroImage({
       <div
         role="img"
         aria-label={alt || "Bild nicht verfügbar"}
-        className={`${className ?? ""} grid place-items-center bg-ink px-4 text-center text-caption text-white/80`}
+        className={`${className ?? ""} grid place-items-center bg-ink px-4 text-center text-caption text-on-photo`}
       >
         Bild nicht verfügbar
       </div>

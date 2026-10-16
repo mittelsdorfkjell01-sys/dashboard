@@ -1,9 +1,9 @@
 import type { Facility, FacilityKind } from "../lib/types";
-import { ParkingIcon, SchoolIcon, ShowerIcon, FoodIcon, CampingIcon } from "../lib/icons";
+import { ParkingIcon, SurfSchoolIcon, ShowerIcon, FoodIcon, CampingIcon } from "../lib/icons";
 
 const facilityIcon: Record<FacilityKind, (p: { width?: number; height?: number; className?: string }) => JSX.Element> = {
   parking: ParkingIcon,
-  school: SchoolIcon,
+  school: SurfSchoolIcon,
   shower: ShowerIcon,
   food: FoodIcon,
   camping: CampingIcon,
@@ -41,7 +41,7 @@ export default function Facilities({
           return (
             <div key={f.kind} className="flex flex-col items-center gap-1.5">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-[14px] bg-band ${
+                className={`flex h-8 w-8 items-center justify-center rounded-card bg-band ${
                   absent ? "opacity-40" : unknown ? "opacity-30" : ""
                 }`}
               >
@@ -125,7 +125,7 @@ export default function Facilities({
         return (
           <div key={f.kind}>
             <span
-              className={`grid h-11 w-11 place-items-center rounded-[14px] bg-ink/[0.04] text-ink ${
+              className={`grid h-11 w-11 place-items-center rounded-card bg-ink/[0.04] text-ink ${
                 absent ? "opacity-40" : unknown ? "opacity-30" : ""
               }`}
             >
