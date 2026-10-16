@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Surfwinddata · ICON-EU Phase 0</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-sans-serif, system-ui, sans-serif; background:#071015; color:#edf7f7; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:#071015; }
+    header { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:16px 24px; border-bottom:1px solid #193039; }
+    h1 { margin:0; font-size:18px; letter-spacing:.01em; }
+    .eyebrow { margin:0 0 4px; color:#6ed8cf; font-size:11px; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+    #status { color:#adc1c5; font-size:13px; text-align:right; }
+    main { display:grid; grid-template-columns:minmax(0,1fr) 300px; min-height:calc(100vh - 73px); }
+    .map { position:relative; overflow:hidden; background:#0b1920; }
+    canvas { position:absolute; inset:0; width:100%; height:100%; }
+    #particles { pointer-events:none; }
+    aside { padding:22px; border-left:1px solid #193039; background:#0a151a; overflow:auto; }
+    h2 { margin:0 0 14px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#8ba5aa; }
+    dl { margin:0 0 28px; display:grid; grid-template-columns:1fr auto; gap:9px 14px; font-size:13px; }
+    dt { color:#8ba5aa; } dd { margin:0; font-variant-numeric:tabular-nums; text-align:right; }
+    .sample { padding:16px; border:1px solid #25434b; background:#0e2026; margin-bottom:26px; }
+    .sample strong { display:block; margin-top:4px; font-size:27px; letter-spacing:-.03em; }
+    .sample span { color:#92aaae; font-size:12px; }
+    .legend { display:grid; grid-template-columns:repeat(7,1fr); height:10px; margin:8px 0; }
+    .legend i { display:block; }
+    .legend-labels { display:flex; justify-content:space-between; color:#8ba5aa; font-size:11px; }
+    .badge { display:inline-flex; padding:5px 8px; border:1px solid #7b6221; color:#f2ca65; font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+    @media(max-width:800px){ header{padding:12px 16px} main{grid-template-columns:1fr;grid-template-rows:62vh auto} aside{border-left:0;border-top:1px solid #193039} }
+  </style>
+</head>
+<body>
+  <header><div><p class="eyebrow">Weather field laboratory</p><h1>ICON‑EU · Phase‑0 Browser Spike</h1></div><div id="status">Manifest wird geladen …</div></header>
+  <main>
+    <section class="map" id="map" aria-label="Experimentelle Windkarte"><canvas id="field"></canvas><canvas id="particles"></canvas></section>
+    <aside>
+      <div class="sample"><span>Cursor-Sample · Modellwind</span><strong id="sample">—</strong><span id="sampleMeta">Über das Feld fahren</span></div>
+      <h2>Publikation</h2><dl id="publication"></dl>
+      <h2>Live-Messung</h2><dl id="metrics"></dl>
+      <h2>Windgeschwindigkeit · m/s</h2>
+      <div class="legend" id="legend"></div><div class="legend-labels"><span>0</span><span>5</span><span>10</span><span>15</span><span>20+</span></div>
+      <p><span class="badge">Experimentell · nicht produktiv</span></p>
+    </aside>
+  </main>
+<script>
+const colors=['#16313a','#176b75','#1ca69b','#8bc34a','#f0c541','#ed7b2f','#c43a46'];
+const state={tiles:[],bytes:0,frames:0,fps:0,started:performance.now(),particles:[]};
+const field=document.querySelector('#field'), particles=document.querySelector('#particles'), map=document.querySelector('#map');
+const fctx=field.getContext('2d'), pctx=particles.getContext('2d');
+document.querySelector('#legend').innerHTML=colors.map(c=>`<i style="background:${c}"></i>`).join('');
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dl(items){return items.map(([a,b])=>`<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}
+async function ungzip(bytes){return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer())}
+async function decode(response){
+  const packed=new Uint8Array(await response.arrayBuffer()); state.bytes+=packed.byteLength;
+  const raw=await ungzip(packed), view=new DataView(raw.buffer), headerSize=view.getUint32(4,true);
+  if(String.fromCharCode(...raw.slice(0,4))!=='SWF2') throw Error('Ungültiges SWF2-Tile');
+  const header=JSON.parse(new TextDecoder().decode(raw.slice(8,8+headerSize))), count=header.width*header.height, arrays={}; let offset=8+headerSize;
+  for(const variable of header.variables){const stored=new Int16Array(raw.buffer.slice(raw.byteOffset+offset,raw.byteOffset+offset+count*2)), values=new Float32Array(count); for(let i=0;i<count;i++) values[i]=stored[i]===variable.nodata?NaN:stored[i]*variable.scale+variable.offset; arrays[variable.name]=values; offset+=count*2}
+  return {header,arrays};
+}
+function resize(){const dpr=Math.min(devicePixelRatio||1,2); for(const c of [field,particles]){c.width=Math.floor(map.clientWidth*dpr);c.height=Math.floor(map.clientHeight*dpr);c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)} drawField()}
+function extent(){return {minX:Math.min(...state.tiles.map(t=>t.header.x)),maxX:Math.max(...state.tiles.map(t=>t.header.x)),minY:Math.min(...state.tiles.map(t=>t.header.y)),maxY:Math.max(...state.tiles.map(t=>t.header.y))}}
+function tileRect(tile){const e=extent(), w=map.clientWidth/(e.maxX-e.minX+1),h=map.clientHeight/(e.maxY-e.minY+1);return {x:(tile.header.x-e.minX)*w,y:(tile.header.y-e.minY)*h,w,h}}
+function speedColor(speed){return colors[Math.min(colors.length-1,Math.floor(speed/3))]}
+function drawField(){if(!state.tiles.length)return; fctx.clearRect(0,0,map.clientWidth,map.clientHeight); for(const tile of state.tiles){const r=tileRect(tile), n=tile.header.width, overlap=tile.header.overlap||0, inner=n-overlap*2, image=fctx.createImageData(inner,inner); for(let y=0;y<inner;y++)for(let x=0;x<inner;x++){const i=(y+overlap)*n+x+overlap,o=(y*inner+x)*4,u=tile.arrays.wind_u[i],v=tile.arrays.wind_v[i];if(!Number.isFinite(u)||!Number.isFinite(v)){image.data[o+3]=0;continue}const c=speedColor(Math.hypot(u,v)),rgb=c.match(/\w\w/g).map(v=>parseInt(v,16));image.data.set([...rgb,235],o)}const tmp=document.createElement('canvas');tmp.width=inner;tmp.height=inner;tmp.getContext('2d').putImageData(image,0,0);fctx.imageSmoothingEnabled=true;fctx.drawImage(tmp,r.x,r.y,r.w+.5,r.h+.5)}}
+function sampleAt(px,py){for(const tile of state.tiles){const r=tileRect(tile);if(px<r.x||px>r.x+r.w||py<r.y||py>r.y+r.h)continue;const n=tile.header.width,o=tile.header.overlap||0,fx=o+(px-r.x)/r.w*(n-2*o-1),fy=o+(py-r.y)/r.h*(n-2*o-1),x0=Math.floor(fx),y0=Math.floor(fy),x1=Math.min(n-1,x0+1),y1=Math.min(n-1,y0+1),dx=fx-x0,dy=fy-y0;const interp=a=>{const q=[a[y0*n+x0],a[y0*n+x1],a[y1*n+x0],a[y1*n+x1]];if(q.some(v=>!Number.isFinite(v)))return NaN;return (q[0]*(1-dx)+q[1]*dx)*(1-dy)+(q[2]*(1-dx)+q[3]*dx)*dy};return {u:interp(tile.arrays.wind_u),v:interp(tile.arrays.wind_v)}}return null}
+function resetParticle(p={}){p.x=Math.random()*map.clientWidth;p.y=Math.random()*map.clientHeight;p.age=Math.random()*100;return p}
+function animate(now){pctx.fillStyle='rgba(7,16,21,.13)';pctx.fillRect(0,0,map.clientWidth,map.clientHeight);while(state.particles.length<Math.min(1100,Math.floor(map.clientWidth*map.clientHeight/900)))state.particles.push(resetParticle());pctx.strokeStyle='rgba(232,255,250,.66)';pctx.lineWidth=.75;pctx.beginPath();for(const p of state.particles){const s=sampleAt(p.x,p.y);if(!s||!Number.isFinite(s.u)||++p.age>110||p.x<0||p.y<0||p.x>map.clientWidth||p.y>map.clientHeight){resetParticle(p);continue}const x=p.x,y=p.y;p.x+=s.u*.12;p.y-=s.v*.12;pctx.moveTo(x,y);pctx.lineTo(p.x,p.y)}pctx.stroke();state.frames++;const elapsed=now-state.started;if(elapsed>1000){state.fps=Math.round(state.frames*1000/elapsed);state.frames=0;state.started=now;showMetrics()}requestAnimationFrame(animate)}
+function showMetrics(){const heap=performance.memory?`${(performance.memory.usedJSHeapSize/1048576).toFixed(1)} MB`:'nicht verfügbar';document.querySelector('#metrics').innerHTML=dl([['FPS',state.fps],['Netzwerk',`${(state.bytes/1024).toFixed(1)} KiB`],['JS Heap',heap],['GPU Memory','Browser-API fehlt']])}
+map.addEventListener('pointermove',event=>{const box=map.getBoundingClientRect(),s=sampleAt(event.clientX-box.left,event.clientY-box.top);if(!s||!Number.isFinite(s.u)){document.querySelector('#sample').textContent='Keine Daten';return}const speed=Math.hypot(s.u,s.v),direction=(Math.atan2(-s.u,-s.v)*180/Math.PI+360)%360;document.querySelector('#sample').textContent=`${speed.toFixed(1)} m/s`;document.querySelector('#sampleMeta').textContent=`aus ${direction.toFixed(0)}° · u ${s.u.toFixed(2)} · v ${s.v.toFixed(2)}`});
+async function init(){try{const [manifest,index]=await Promise.all([fetch('manifest.json').then(r=>r.json()),fetch('asset-index.json').then(r=>r.json())]);state.tiles=await Promise.all(index.assets.map(async a=>({...await decode(await fetch(a.path)),path:a.path})));document.querySelector('#status').textContent=`${manifest.model} · ${new Date(manifest.valid_times[0]).toLocaleString('de-DE')} · ${state.tiles.length} Tiles`;document.querySelector('#publication').innerHTML=dl([['Modelllauf',new Date(manifest.model_run).toLocaleString('de-DE')],['Freshness',manifest.freshness.status],['Qualität',manifest.quality_status],['Raster',`${manifest.grid.columns} × ${manifest.grid.rows}`],['Contract',manifest.contract_version]]);resize();showMetrics();requestAnimationFrame(animate)}catch(error){document.querySelector('#status').textContent=`Fehler: ${error.message}`;console.error(error)}}
+addEventListener('resize',resize);init();
+</script>
+</body>
+</html>
