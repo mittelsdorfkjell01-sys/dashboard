@@ -36,7 +36,12 @@ def _register(c: TestClient, email: str | None = None, pw: str = "pw-123456789")
     email = email or f"visitor-{uuid.uuid4().hex[:8]}@example.com"
     resp = c.post(
         "/account/register",
-        json={"email": email, "displayName": "Test Visitor"},
+        json={
+            "email": email,
+            "displayName": "Test Visitor",
+            "acceptedTerms": True,
+            "ageConfirmed": True,
+        },
     )
     assert resp.status_code == 202, resp.text
     assert MAIL_OUTBOX[-1][1] == "verify"
@@ -104,6 +109,7 @@ def test_registration_requires_mail_ownership_and_new_password(anon_client):
     email = f"verify-{uuid.uuid4().hex[:8]}@example.com"
     resp = anon_client.post("/account/register", json={
         "email": email, "displayName": "Visitor",
+        "acceptedTerms": True, "ageConfirmed": True,
     })
     assert resp.status_code == 202
     assert anon_client.post("/account/login", json={
@@ -127,6 +133,7 @@ def test_register_duplicate_email_has_generic_response(anon_client):
     other = TestClient(app)
     dup = other.post("/account/register", json={
         "email": first["email"], "displayName": "X",
+        "acceptedTerms": True, "ageConfirmed": True,
     })
     assert dup.status_code == 202
     assert dup.json() == {
@@ -138,11 +145,46 @@ def test_register_duplicate_email_has_generic_response(anon_client):
 def test_confirmation_weak_password_rejected(anon_client):
     resp = anon_client.post("/account/register", json={
         "email": f"weak-{uuid.uuid4().hex[:8]}@example.com", "displayName": "X",
+        "acceptedTerms": True, "ageConfirmed": True,
     })
     assert resp.status_code == 202
     assert anon_client.post("/account/email/confirm", json={
         "token": MAIL_OUTBOX[-1][2], "password": "123",
     }).status_code == 400
+
+
+def test_registration_requires_consent_and_age(anon_client):
+    email = f"consent-{uuid.uuid4().hex[:8]}@example.com"
+    # Missing both flags, missing age, and missing terms each rejected with 400.
+    for payload in (
+        {"email": email, "displayName": "X"},
+        {"email": email, "displayName": "X", "acceptedTerms": True},
+        {"email": email, "displayName": "X", "ageConfirmed": True},
+    ):
+        resp = anon_client.post("/account/register", json=payload)
+        assert resp.status_code == 400, resp.text
+    # No verification mail is sent for a rejected registration.
+    assert all(entry[0] != email for entry in MAIL_OUTBOX)
+
+
+def test_registration_records_consent(anon_client):
+    from app.account import service
+    from app.db.session import SessionLocal
+    from app.models import AppUser
+    from sqlalchemy import select
+
+    email = f"recorded-{uuid.uuid4().hex[:8]}@example.com"
+    resp = anon_client.post("/account/register", json={
+        "email": email, "displayName": "X",
+        "acceptedTerms": True, "ageConfirmed": True,
+    })
+    assert resp.status_code == 202, resp.text
+    with SessionLocal() as db:
+        user = db.scalar(select(AppUser).where(AppUser.email == email))
+        assert user is not None
+        assert user.terms_accepted_version == service.TERMS_VERSION
+        assert user.terms_accepted_at is not None
+        assert user.age_confirmed_at is not None
 
 
 def test_login_me_logout_flow(acct):

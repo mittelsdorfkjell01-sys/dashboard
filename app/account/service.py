@@ -8,6 +8,7 @@ transaction (mirrors :mod:`app.auth.service`). Validation errors raise
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy import delete, exists, func, select
 from sqlalchemy.orm import Session
@@ -30,6 +31,12 @@ class AuthError(ValueError):
     """Bad credentials or wrong current password (→ 401/400 at the API)."""
 
 
+# Current version of the Nutzungsbedingungen (ToS). Bump when the terms change so
+# a new acceptance is recorded against the version actually shown. The server
+# stamps this at registration rather than trusting a client-sent version.
+TERMS_VERSION = "2026-10-05"
+
+
 # --- accounts --------------------------------------------------------------
 
 def get_by_email(db: Session, email: str) -> AppUser | None:
@@ -50,8 +57,20 @@ def _validate_email(email: str) -> str:
 
 
 def register(
-    db: Session, *, email: str, password: str, display_name: str | None
+    db: Session,
+    *,
+    email: str,
+    password: str,
+    display_name: str | None,
+    accepted_terms: bool,
+    age_confirmed: bool,
 ) -> AppUser:
+    # Consent is checked before anything else so a missing declaration always
+    # yields a 400, independent of email validity or duplicates.
+    if not accepted_terms or not age_confirmed:
+        raise ValueError(
+            "Zustimmung zu den Nutzungsbedingungen und Bestätigung des Mindestalters sind erforderlich."
+        )
     email = _validate_email(email)
     _validate_password(password)
     password_hash = hash_password(password)
@@ -59,10 +78,14 @@ def register(
         select(AppUser.id).where(AppUser.pending_email == email)
     ):
         raise EmailExistsError("Für diese E-Mail existiert bereits ein Konto.")
+    now = datetime.now(timezone.utc)
     user = AppUser(
         email=email,
         password_hash=password_hash,
         display_name=(display_name or "").strip() or email.split("@")[0],
+        terms_accepted_version=TERMS_VERSION,
+        terms_accepted_at=now,
+        age_confirmed_at=now,
     )
     db.add(user)
     db.flush()
