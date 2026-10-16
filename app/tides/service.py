@@ -498,7 +498,57 @@ def current_tide_level(
     return normalized_tide_level(phase, position)
 
 
-def public_tides(spot_id: uuid.UUID, *, db: Session) -> dict:
+def _public_event_window(
+    spot_id: uuid.UUID,
+    *,
+    start: datetime,
+    end: datetime,
+    db: Session,
+) -> list[TideEvent]:
+    latest_version = db.scalar(select(func.max(TideEvent.profile_version)).where(
+        TideEvent.spot_id == spot_id, TideEvent.status == "valid"
+    ))
+    if latest_version is None:
+        return []
+    common = (
+        TideEvent.spot_id == spot_id,
+        TideEvent.profile_version == latest_version,
+        TideEvent.status == "valid",
+    )
+    previous = db.scalar(
+        select(TideEvent).where(*common, TideEvent.corrected_time <= start)
+        .order_by(TideEvent.corrected_time.desc()).limit(1)
+    )
+    future = list(db.scalars(
+        select(TideEvent).where(
+            *common,
+            TideEvent.corrected_time > start,
+            TideEvent.corrected_time <= end + timedelta(hours=15),
+        ).order_by(TideEvent.corrected_time).limit(80)
+    ))
+    return ([previous] if previous is not None else []) + future
+
+
+def _normalized_hourly_series(
+    events: list[dict], *, start: datetime, end: datetime
+) -> list[dict]:
+    event_pairs = [(item["event_type"], item["time"]) for item in events]
+    cursors = [start]
+    cursor = start.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    while cursor <= end:
+        cursors.append(cursor)
+        cursor += timedelta(hours=1)
+    result = []
+    for cursor in cursors:
+        phase, position = phase_at(event_pairs, cursor)
+        level = normalized_tide_level(phase, position)
+        if level is not None and phase != "unavailable":
+            result.append({"time": cursor, "level_normalized": level, "phase": phase})
+    return result
+
+
+def public_tides(spot_id: uuid.UUID, *, days: int = 10, db: Session) -> dict:
+    days = max(1, min(10, int(days)))
     profile = db.scalar(select(TideProfile).where(TideProfile.spot_id == spot_id))
     unavailable = "Für diesen Spot sind derzeit keine verlässlichen Gezeitenangaben verfügbar."
     if (
@@ -509,7 +559,9 @@ def public_tides(spot_id: uuid.UUID, *, db: Session) -> dict:
         or profile.anchor_status != "reviewed"
     ):
         return {"available": False, "message": unavailable}
-    events = _latest_events(spot_id, db=db, include_past=False, limit=16)
+    now = _utcnow()
+    requested_end = now + timedelta(days=days)
+    events = _public_event_window(spot_id, start=now, end=requested_end, db=db)
     if not events:
         return {"available": False, "message": unavailable, "timezone": profile.timezone}
     overrides = list(db.scalars(select(TideEventOverride).where(
@@ -517,19 +569,32 @@ def public_tides(spot_id: uuid.UUID, *, db: Session) -> dict:
         TideEventOverride.active.is_(True), TideEventOverride.scope == "single",
     )))
     public_events = [_admin_event(event, overrides) for event in events]
-    now = _utcnow()
     phase, position = phase_at([(item["event_type"], item["time"]) for item in public_events], now)
-    future = [item for item in public_events if item["time"] >= now][:8]
+    future = [item for item in public_events if now <= item["time"] <= requested_end]
     if not future:
         return {"available": False, "message": unavailable, "timezone": profile.timezone}
     valid_until = max(item["time"] for item in public_events)
+    forecast_end = min(requested_end, valid_until)
+    partial = valid_until < requested_end
     stale = valid_until < now + timedelta(days=get_settings().tide_refresh_before_days)
     return {
         "available": True, "timezone": profile.timezone, "phase": phase,
         "cycle_position": position, "quality": profile.quality_status,
         "approximate": True, "last_calculated_at": profile.last_calculated_at,
-        "valid_until": valid_until, "events": future,
-        "message": "Die Prognose wird bald aktualisiert." if stale else None,
+        "valid_until": valid_until,
+        "forecast_start": now,
+        "forecast_end": forecast_end,
+        "horizon_days": days,
+        "partial": partial,
+        "datum": "relative_low_high",
+        "model_name": profile.model_name,
+        "model_version": profile.model_version,
+        "events": [item for item in public_events if item["time"] <= requested_end],
+        "series": _normalized_hourly_series(public_events, start=now, end=forecast_end),
+        "message": (
+            "Der verfügbare Prognosehorizont ist kürzer als angefordert."
+            if partial else "Die Prognose wird bald aktualisiert." if stale else None
+        ),
     }
 
 

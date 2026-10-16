@@ -26,6 +26,12 @@ class PublicTideEventRead(BaseModel):
     uncertainty_minutes: int
 
 
+class PublicTideSeriesPointRead(BaseModel):
+    time: datetime
+    level_normalized: float
+    phase: Literal["rising", "high", "falling", "low"]
+
+
 class PublicTideRead(BaseModel):
     available: bool
     message: str | None = None
@@ -36,7 +42,15 @@ class PublicTideRead(BaseModel):
     approximate: bool = True
     last_calculated_at: datetime | None = None
     valid_until: datetime | None = None
+    forecast_start: datetime | None = None
+    forecast_end: datetime | None = None
+    horizon_days: int = 0
+    partial: bool = False
+    datum: Literal["relative_low_high"] = "relative_low_high"
+    model_name: str | None = None
+    model_version: str | None = None
     events: list[PublicTideEventRead] = Field(default_factory=list)
+    series: list[PublicTideSeriesPointRead] = Field(default_factory=list)
 
 
 class TideProfileUpdate(BaseModel):
