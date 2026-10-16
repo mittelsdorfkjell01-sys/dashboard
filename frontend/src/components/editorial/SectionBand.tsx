@@ -6,20 +6,22 @@ type Width = "narrow" | "content" | "spotBody" | "wide" | "bleed";
 type Pad = "sm" | "md" | "lg";
 type MaxWidth = "narrow" | "default" | "wide";
 
+// Every band aligns to one of the two container tokens: `content` for single
+// columns, `page` for everything else, so band edges line up with the header,
+// hero and grids. (`spotBody`/`wide` are kept as names for existing callers
+// and resolve to the page frame.)
 const WIDTH_MAX: Record<Width, string> = {
-  narrow: "max-w-[720px]",
-  content: "max-w-[1570px]",
-  // Spot-detail body only: 10% wider than the regular 1570px content frame.
-  // Typography, padding and component gaps remain untouched.
-  spotBody: "max-w-[1727px]",
-  wide: "max-w-[1440px]",
+  narrow: "max-w-content",
+  content: "max-w-page",
+  spotBody: "max-w-page",
+  wide: "max-w-page",
   bleed: "max-w-none",
 };
 
 const MAX_WIDTH_CLASS: Record<MaxWidth, string> = {
   narrow: "max-w-[960px]",
-  default: "max-w-[1570px]",
-  wide: "max-w-[1440px]",
+  default: "max-w-page",
+  wide: "max-w-page",
 };
 
 const PAD_Y: Record<Pad, string> = {
@@ -99,7 +101,7 @@ export default function SectionBand({
       >
         {hasHeader && (
           <div className={align === "center" ? "text-center" : ""}>
-            <h2 className="text-sz-28 font-semibold leading-tight text-balance text-ink sm:text-sz-32">{heading}</h2>
+            <h2 className="text-heading font-semibold leading-tight text-balance text-ink sm:text-heading-lg">{heading}</h2>
           </div>
         )}
         {hasHeader && children != null ? <div className="mt-8">{children}</div> : children}

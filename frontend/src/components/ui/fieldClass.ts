@@ -10,4 +10,4 @@
  * while leaving the denser desktop sizing untouched.
  */
 export const fieldClass =
-  "min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sz-16 sm:text-ui text-ink placeholder:text-muted outline-none transition-[border-color,box-shadow,background-color] hover:border-ink/30 focus-visible:border-ink/50 focus-visible:ring-2 focus-visible:ring-ink/20 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-red-400 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-red-300";
+  "min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-body sm:text-ui text-ink placeholder:text-muted outline-none transition-[border-color,box-shadow,background-color] hover:border-ink/30 focus-visible:border-ink/50 focus-visible:ring-2 focus-visible:ring-ink/20 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger-border aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger-border";

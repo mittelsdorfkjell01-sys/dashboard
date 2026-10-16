@@ -22,10 +22,12 @@ export default function Chip({
       role="checkbox"
       aria-checked={active}
       onClick={onClick}
-      className={`rounded-2xl px-3.5 py-2 text-label font-medium transition-colors ${
+      className={`rounded-2xl px-3.5 py-2 text-ui font-medium transition-colors ${
         active
-          ? "bg-teal text-white"
-          : "bg-surface text-ink ring-1 ring-line hover:ring-teal/40"
+          ? // white on the single deep-blue teal (#1C4E63) clears AA in both
+            // themes (9:1); teal no longer lightens in dark mode, so this is safe
+            "bg-teal text-white"
+          : "bg-surface text-ink ring-1 ring-line hover:ring-accent/40"
       } ${className}`}
     >
       {children}

@@ -136,29 +136,29 @@ export default function EditorialHero({
       {/* top slot (back pill etc.) */}
       {children && (
         <div className="pointer-events-none absolute inset-x-0 top-[88px] z-20 sm:top-[120px]">
-          <div className="mx-auto flex max-w-[1570px] px-4 sm:px-8">{children}</div>
+          <div className="mx-auto flex max-w-page px-4 sm:px-8">{children}</div>
         </div>
       )}
 
       {/* headline block — the kicker (region name) stays put; only the title/
           meta get the parallax nudge, so the region name never drifts */}
       <div className="absolute inset-x-0 bottom-0 z-10">
-        <div className="mx-auto max-w-[1570px] px-4 pb-10 sm:px-8 sm:pb-14">
+        <div className="mx-auto max-w-page px-4 pb-10 sm:px-8 sm:pb-14">
           {kicker && (
-            <div className="mb-3 text-label font-semibold uppercase tracking-[0.16em] text-white/85">
+            <div className="mb-3 text-ui font-semibold uppercase tracking-caps text-on-photo">
               {kicker}
             </div>
           )}
           <motion.div style={{ y: still ? 0 : titleY }}>
-            {title && <h1 className="text-display-1 font-bold text-white text-balance">{title}</h1>}
-            {meta && <div className="mt-3 text-body font-medium text-white/90">{meta}</div>}
+            {title && <h1 className="text-hero font-bold text-white text-balance">{title}</h1>}
+            {meta && <div className="mt-3 text-body font-medium text-on-photo">{meta}</div>}
           </motion.div>
         </div>
       </div>
 
       {/* Attribution — same corner, same style, whatever the photo's origin. */}
       {hasCredit(credit ?? null) && (
-        <div className="pointer-events-none absolute bottom-4 right-4 z-10 text-caption tracking-wide text-white/55 sm:bottom-6 sm:right-8">
+        <div className="pointer-events-none absolute bottom-4 right-4 z-10 text-caption tracking-wide text-on-photo-muted sm:bottom-6 sm:right-8">
           <ImageCredit source={credit ?? null} className="pointer-events-auto" />
         </div>
       )}

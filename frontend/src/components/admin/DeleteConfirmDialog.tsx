@@ -48,7 +48,7 @@ export default function DeleteConfirmDialog({
           autoFocus
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
-          className="mt-1.5 w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 py-2 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-danger"
+          className="mt-1.5 w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 py-2 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-muted focus:border-admin-danger"
           placeholder={name}
         />
       </label>

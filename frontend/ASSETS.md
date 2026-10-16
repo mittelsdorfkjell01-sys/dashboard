@@ -12,6 +12,7 @@ grant reuse rights.
 | `hero-src/hero-*` | High-resolution hero source files | Owner verification required |
 | `public/fonts/Poppins-*` | Self-hosted UI font files | Verify against the upstream font license |
 | `public/fonts/MADEMountain-*` | Wordmark font | Confirm the purchased/downloaded license permits web embedding |
+| `public/fonts/Manrope-var-*` | Figures face (digits, tabular) — variable wght 200–800, latin + latin-ext, from `@fontsource-variable/manrope` 5.3.0 | SIL Open Font License 1.1 (The Manrope Project Authors) — web embedding permitted |
 
 ## Required record for new assets
 

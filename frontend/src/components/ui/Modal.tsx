@@ -53,10 +53,11 @@ function popModalLock(): void {
 }
 
 /**
- * Minimal centered modal chassis for admin dialogs (conflict / confirm /
- * prompt). Scrim + a white card; closes on Esc or a scrim click; traps focus
- * and restores it to the trigger on close. No animation library — admin
- * dialogs are utilitarian, not the public bottom-sheet overlays.
+ * Centered modal chassis shared by every dialog that is not a bottom sheet:
+ * the public account confirm/prompt dialogs (ConfirmDialog, PromptDialog) and
+ * the admin dialogs. Scrim + a surface card; closes on Esc or a scrim click;
+ * traps focus and restores it to the trigger on close. No animation library —
+ * these dialogs are utilitarian; the public search/filter overlays are sheets.
  */
 export default function Modal({
   open,
@@ -134,7 +135,7 @@ export default function Modal({
   return createPortal(
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[1200] grid place-items-center bg-black/30 p-4"
+      className="fixed inset-0 z-modal grid place-items-center bg-black/30 p-4"
       onClick={onClose}
     >
       <div

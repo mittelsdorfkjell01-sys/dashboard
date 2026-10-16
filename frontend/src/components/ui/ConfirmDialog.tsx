@@ -29,7 +29,7 @@ export default function ConfirmDialog({
       <h2 id="confirm-title" className="text-ui font-semibold text-ink">
         {title}
       </h2>
-      {message && <p className="mt-2 text-label text-ink-soft">{message}</p>}
+      {message && <p className="mt-2 text-ui text-ink-soft">{message}</p>}
       <div className="mt-5 flex items-center justify-end gap-2">
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
           Abbrechen
