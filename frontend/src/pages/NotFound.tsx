@@ -10,10 +10,10 @@ export default function NotFound() {
       <LandingHeader onLight />
       <main className="grid flex-1 place-items-center px-6 pt-32 text-center">
         <div>
-          <p className="text-label font-semibold uppercase tracking-[0.18em] text-ink-soft">
+          <p className="text-ui font-semibold uppercase tracking-caps text-ink-soft">
             Fehler 404
           </p>
-          <h1 className="mt-2 text-sz-32 font-semibold text-ink">
+          <h1 className="mt-2 text-heading-lg font-semibold text-ink">
             Seite nicht gefunden
           </h1>
           <p className="mx-auto mt-2 max-w-md text-body text-muted">
