@@ -35,6 +35,8 @@ import {
   useFormDirty,
   useUnsavedChangesGuard,
 } from "../../lib/useUnsavedChangesGuard";
+import Switch from "../../components/ui/Switch";
+import { useTranslation } from "react-i18next";
 
 /**
  * Account settings, grouped into short mobile-first sections separated by
@@ -45,6 +47,7 @@ import {
  * without faking a switch.
  */
 export default function Einstellungen() {
+  const { t } = useTranslation();
   const { blocker, markDirty, markClean, setDirty } = useUnsavedChangesGuard();
   const setProfileDirty = useCallback(
     (value: boolean) => (value ? markDirty("profile") : markClean("profile")),
@@ -63,7 +66,7 @@ export default function Einstellungen() {
     [markClean, markDirty]
   );
   return (
-    <AccountPage title="Einstellungen">
+    <AccountPage title={t("settings.pageTitle")}>
       <div className="space-y-10">
         <SportConditionsSection onDirtyChange={setConditionsDirty} />
         <UnitsSection />
@@ -89,20 +92,21 @@ function Section({
 }) {
   return (
     <section className="border-t border-line pt-8 first:border-t-0 first:pt-0">
-      <h2 className="text-sz-18 font-semibold text-ink">{title}</h2>
-      {description && <p className="mt-1 max-w-[60ch] text-ui text-muted">{description}</p>}
+      <h2 className="text-lead font-semibold text-ink">{title}</h2>
+      {description && <p className="mt-1 max-w-measure text-ui text-muted">{description}</p>}
       <div className="mt-5">{children}</div>
     </section>
   );
 }
 
 function PlannedNote({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <div className="rounded-2xl border border-dashed border-line px-4 py-4">
-      <span className="inline-flex items-center rounded-full bg-band px-2.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-muted">
-        Geplant
+    <div className="rounded-card border border-dashed border-line px-4 py-4">
+      <span className="inline-flex items-center rounded-card bg-band px-2.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-muted">
+        {t("settings.planned")}
       </span>
-      <p className="mt-2 max-w-[60ch] text-ui text-muted">{children}</p>
+      <p className="mt-2 max-w-measure text-ui text-muted">{children}</p>
     </div>
   );
 }
@@ -111,7 +115,7 @@ function Note({ kind, children }: { kind: "ok" | "err"; children: ReactNode }) {
   return (
     <p
       role={kind === "err" ? "alert" : "status"}
-      className={`text-label font-medium ${kind === "ok" ? "text-success" : "text-danger"}`}
+      className={`text-ui font-medium ${kind === "ok" ? "text-success" : "text-danger"}`}
     >
       {children}
     </p>
@@ -145,24 +149,29 @@ function UnitSelect<T extends string>({
 }
 
 function UnitsSection() {
+  const { t } = useTranslation();
   const { units, setUnit, retrySave, saving, error } = usePrefs();
   return (
     <Section
-      title="Einheiten & Anzeige"
-      description="Deine Auswahl gilt überall auf der Seite, wo Wind, Wellenhöhe, Temperatur und Entfernungen angezeigt werden."
+      title={t("settings.units.title")}
+      description={t("settings.units.description")}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <UnitSelect label="Wind" value={units.wind} onChange={(v: WindUnit) => setUnit("wind", v)} options={WIND_UNIT_LABELS} />
-        <UnitSelect label="Wellenhöhe" value={units.wave} onChange={(v: WaveUnit) => setUnit("wave", v)} options={WAVE_UNIT_LABELS} />
-        <UnitSelect label="Temperatur" value={units.temp} onChange={(v: TempUnit) => setUnit("temp", v)} options={TEMP_UNIT_LABELS} />
-        <UnitSelect label="Entfernung" value={units.distance} onChange={(v: DistanceUnit) => setUnit("distance", v)} options={DISTANCE_UNIT_LABELS} />
+        <UnitSelect label={t("settings.units.wind")} value={units.wind} onChange={(v: WindUnit) => setUnit("wind", v)} options={WIND_UNIT_LABELS} />
+        <UnitSelect label={t("settings.units.wave")} value={units.wave} onChange={(v: WaveUnit) => setUnit("wave", v)} options={WAVE_UNIT_LABELS} />
+        <UnitSelect label={t("settings.units.temp")} value={units.temp} onChange={(v: TempUnit) => setUnit("temp", v)} options={TEMP_UNIT_LABELS} />
+        <UnitSelect label={t("settings.units.distance")} value={units.distance} onChange={(v: DistanceUnit) => setUnit("distance", v)} options={DISTANCE_UNIT_LABELS} />
       </div>
-      <div className="mt-4 rounded-2xl bg-band px-4 py-3 text-label text-ink">
-        Vorschau: Wind {formatWind(18, units.wind)} · Welle {formatWave(1.2, units.wave)} · Wasser{" "}
-        {formatTemp(17, units.temp)} · Station {formatDistance(3.4, units.distance)}
+      <div className="mt-4 rounded-card bg-band px-4 py-3 text-ui text-ink">
+        {t("settings.units.preview", {
+          wind: formatWind(18, units.wind),
+          wave: formatWave(1.2, units.wave),
+          water: formatTemp(17, units.temp),
+          station: formatDistance(3.4, units.distance),
+        })}
       </div>
-      {saving && <p role="status" className="mt-2 text-caption text-muted">Einheiten werden gespeichert …</p>}
-      {error && <div role="alert" className="mt-2 text-caption text-danger">{error} <button type="button" onClick={retrySave} disabled={saving} className="min-h-11 font-semibold underline">Erneut versuchen</button></div>}
+      {saving && <p role="status" className="mt-2 text-caption text-muted">{t("settings.units.saving")}</p>}
+      {error && <div role="alert" className="mt-2 text-caption text-danger">{error} <button type="button" onClick={retrySave} disabled={saving} className="min-h-11 font-semibold underline">{t("common.retry")}</button></div>}
     </Section>
   );
 }
@@ -178,8 +187,9 @@ function AccountSection({
   onEmailDirty: (dirty: boolean) => void;
   onPasswordDirty: (dirty: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <Section title="Konto" description="Deine persönlichen Angaben und dein Passwort.">
+    <Section title={t("settings.account.title")} description={t("settings.account.description")}>
       <div className="space-y-8">
         <ProfileForm onDirtyChange={onProfileDirty} />
         <div className="border-t border-line pt-8"><EmailForm onDirtyChange={onEmailDirty} /></div>
@@ -192,6 +202,7 @@ function AccountSection({
 }
 
 function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
+  const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const [name, setName] = useState(user?.displayName ?? "");
   const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
@@ -208,9 +219,9 @@ function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => voi
     try {
       const updated = await updateProfile({ displayName: name });
       setUser(updated);
-      setNote({ kind: "ok", msg: "Profil gespeichert." });
+      setNote({ kind: "ok", msg: t("settings.profile.saved") });
     } catch (err) {
-      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : "Speichern fehlgeschlagen." });
+      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : t("settings.profile.failed") });
     } finally {
       setBusy(false);
     }
@@ -218,12 +229,12 @@ function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => voi
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Field label="Anzeigename">
+      <Field label={t("settings.profile.name")}>
         <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="nickname" />
       </Field>
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={busy}>
-          {busy ? "Speichere …" : "Speichern"}
+          {busy ? t("settings.profile.submitting") : t("settings.profile.submit")}
         </Button>
         {note && <Note kind={note.kind}>{note.msg}</Note>}
       </div>
@@ -232,6 +243,7 @@ function ProfileForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => voi
 }
 
 function EmailForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
+  const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -243,21 +255,25 @@ function EmailForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void 
     try {
       setUser(await requestEmailChange(email, password));
       setEmail(""); setPassword("");
-      setNote({ kind: "ok", msg: "Bestätigungslink an die neue E-Mail-Adresse gesendet. Bis zur Bestätigung bleibt deine bisherige Adresse gültig." });
+      setNote({ kind: "ok", msg: t("settings.email.sent") });
     } catch (err) {
-      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : "Adresswechsel fehlgeschlagen." });
+      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : t("settings.email.failed") });
     } finally { setBusy(false); }
   };
   return <form onSubmit={submit} className="space-y-4">
-    <p className="text-label font-semibold uppercase tracking-wide text-muted">E-Mail-Adresse ändern</p>
-    <p className="text-label text-muted">Aktuell: {user?.email}{user?.pendingEmail ? ` · Bestätigung ausstehend für ${user.pendingEmail}` : ""}</p>
-    <Field label="Neue E-Mail-Adresse"><Input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></Field>
-    <Field label="Aktuelles Passwort"><Input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></Field>
-    <div className="flex flex-wrap items-center gap-3"><Button type="submit" variant="secondary" disabled={busy || !email || !password}>{busy ? "Sende …" : "Bestätigungslink senden"}</Button>{note && <Note kind={note.kind}>{note.msg}</Note>}</div>
+    <p className="text-ui font-semibold uppercase tracking-wide text-muted">{t("settings.email.heading")}</p>
+    <p className="text-ui text-muted">
+      {t("settings.email.current", { email: user?.email ?? "" })}
+      {user?.pendingEmail ? t("settings.email.pending", { email: user.pendingEmail }) : ""}
+    </p>
+    <Field label={t("settings.email.newLabel")}><Input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></Field>
+    <Field label={t("settings.email.currentPassword")}><Input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></Field>
+    <div className="flex flex-wrap items-center gap-3"><Button type="submit" variant="secondary" disabled={busy || !email || !password}>{busy ? t("settings.email.submitting") : t("settings.email.submit")}</Button>{note && <Note kind={note.kind}>{note.msg}</Note>}</div>
   </form>;
 }
 
 function PasswordForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
+  const { t } = useTranslation();
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [note, setNote] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
@@ -275,9 +291,9 @@ function PasswordForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => vo
       await changePassword(oldPw, newPw);
       setOldPw("");
       setNewPw("");
-      setNote({ kind: "ok", msg: "Passwort geändert." });
+      setNote({ kind: "ok", msg: t("settings.password.changed") });
     } catch (err) {
-      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : "Ändern fehlgeschlagen." });
+      setNote({ kind: "err", msg: err instanceof AccountError ? err.message : t("settings.password.failed") });
     } finally {
       setBusy(false);
     }
@@ -285,16 +301,16 @@ function PasswordForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => vo
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <p className="text-label font-semibold uppercase tracking-wide text-muted">Passwort ändern</p>
-      <Field label="Aktuelles Passwort">
+      <p className="text-ui font-semibold uppercase tracking-wide text-muted">{t("settings.password.heading")}</p>
+      <Field label={t("settings.password.current")}>
         <Input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} autoComplete="current-password" />
       </Field>
-      <Field label="Neues Passwort" hint="Mindestens 8 Zeichen.">
+      <Field label={t("settings.password.new")} hint={t("settings.password.hint")}>
         <Input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" />
       </Field>
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="secondary" disabled={busy || !oldPw || !newPw}>
-          {busy ? "Ändere …" : "Passwort ändern"}
+          {busy ? t("settings.password.submitting") : t("settings.password.submit")}
         </Button>
         {note && <Note kind={note.kind}>{note.msg}</Note>}
       </div>
@@ -305,6 +321,7 @@ function PasswordForm({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => vo
 // --- 4) Privacy & content (planned visibility + functional data) -----------
 
 function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void }) {
+  const { t } = useTranslation();
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -319,7 +336,7 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
   const exportData = async () => {
     setExportBusy(true); setExportError("");
     try { await downloadAccountExport(); }
-    catch (err) { setExportError(err instanceof AccountError ? err.message : "Datenexport fehlgeschlagen. Bitte versuche es erneut."); }
+    catch (err) { setExportError(err instanceof AccountError ? err.message : t("settings.privacy.exportFailed")); }
     finally { setExportBusy(false); }
   };
 
@@ -340,69 +357,63 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
       setUser(null);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof AccountError ? err.message : "Konto konnte nicht gelöscht werden.");
+      setError(err instanceof AccountError ? err.message : t("settings.privacy.deleteFailed"));
       setBusy(false);
     }
   };
 
   return (
     <Section
-      title="Privatsphäre & Inhalte"
-      description="Steuere die Sichtbarkeit deines Profils und deiner Beiträge sowie deine Kontodaten."
+      title={t("settings.privacy.title")}
+      description={t("settings.privacy.description")}
     >
       <div className="space-y-6">
-        <PlannedNote>
-          Ein öffentliches Profil und die Sichtbarkeit einzelner Beiträge folgen,
-          sobald diese Inhalte serverseitig gespeichert und moderiert werden. Dein
-          Konto ist bis dahin privat — nur du siehst deine Favoriten und Vorschläge.
-        </PlannedNote>
+        <PlannedNote>{t("settings.privacy.plannedNote")}</PlannedNote>
 
         <div>
-          <p className="text-label font-semibold uppercase tracking-wide text-muted">Deine Daten</p>
-          <p className="mt-1 max-w-[60ch] text-ui text-muted">
-            Lade eine Kopie deiner Kontodaten herunter oder lösche dein Konto endgültig.
-          </p>
+          <p className="text-ui font-semibold uppercase tracking-wide text-muted">{t("settings.privacy.dataHeading")}</p>
+          <p className="mt-1 max-w-measure text-ui text-muted">{t("settings.privacy.dataBody")}</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Button type="button" variant="secondary" disabled={exportBusy} onClick={() => void exportData()}>
-              {exportBusy ? "Export wird erstellt …" : "Datenexport herunterladen"}
+              {exportBusy ? t("settings.privacy.exporting") : t("settings.privacy.exportSubmit")}
             </Button>
             <Button type="button" variant="danger" onClick={() => setOpen(true)}>
-              Konto löschen
+              {t("settings.privacy.deleteSubmit")}
             </Button>
           </div>
-          {exportError && <p role="alert" className="mt-2 text-label text-danger">{exportError}</p>}
+          {exportError && <p role="alert" className="mt-2 text-ui text-danger">{exportError}</p>}
         </div>
       </div>
 
       <Modal open={open} onClose={close} labelledBy="delete-account-title" describedBy="delete-account-description">
         <form onSubmit={remove} className="space-y-4">
           <div>
-            <h2 id="delete-account-title" className="text-sz-18 font-semibold text-ink">
-              Konto endgültig löschen
+            <h2 id="delete-account-title" className="text-lead font-semibold text-ink">
+              {t("settings.privacy.deleteTitle")}
             </h2>
             <p id="delete-account-description" className="mt-2 text-ui text-muted">
-              Favoriten werden gelöscht. Veröffentlichte Beiträge bleiben anonymisiert erhalten.
+              {t("settings.privacy.deleteBody")}
             </p>
           </div>
-          <Field label="Passwort zur Bestätigung">
+          <Field label={t("settings.privacy.deletePassword")}>
             <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" />
           </Field>
-          {error && <p role="alert" className="text-label text-danger">{error}</p>}
+          {error && <p role="alert" className="text-ui text-danger">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="secondary" onClick={close} disabled={busy}>
-              Abbrechen
+              {t("common.cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={busy || !password}>
-              {busy ? "Lösche …" : "Endgültig löschen"}
+              {busy ? t("settings.privacy.deleting") : t("settings.privacy.deleteConfirm")}
             </Button>
           </div>
         </form>
       </Modal>
       <ConfirmDialog
         open={discardOpen}
-        title="Löschung abbrechen?"
-        message="Das eingegebene Passwort wird verworfen."
-        confirmText="Verwerfen"
+        title={t("settings.privacy.discardTitle")}
+        message={t("settings.privacy.discardMessage")}
+        confirmText={t("settings.privacy.discardConfirm")}
         variant="danger"
         onCancel={() => setDiscardOpen(false)}
         onConfirm={() => {
@@ -418,6 +429,7 @@ function PrivacySection({ onDirtyChange }: { onDirtyChange: (dirty: boolean) => 
 // --- 5) Notifications (planned) --------------------------------------------
 
 function NotificationsSection() {
+  const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -425,16 +437,16 @@ function NotificationsSection() {
   const toggle = async () => {
     setBusy(true); setError("");
     try { setUser(await updatePreferences({ submissionEmails: !enabled })); }
-    catch (err) { setError(err instanceof AccountError ? err.message : "Einstellung konnte nicht gespeichert werden."); }
+    catch (err) { setError(err instanceof AccountError ? err.message : t("settings.notifications.saveFailed")); }
     finally { setBusy(false); }
   };
   return (
-    <Section title="Benachrichtigungen" description="Wähle, welche Nachrichten du zu deinen Vorschlägen erhalten möchtest.">
-      {!user?.mailAvailable ? <PlannedNote>E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Sobald der Versand eingerichtet ist, kannst du hier über Entscheidungen zu deinen Vorschlägen informiert werden.</PlannedNote> : <>
-      <label className="inline-flex min-h-11 items-center gap-3 text-ui text-ink"><input type="checkbox" checked={enabled} disabled={busy} onChange={() => void toggle()} />E-Mail bei Entscheidung über meinen Spot-Vorschlag</label>
-      {error && <p role="alert" className="mt-2 text-label text-danger">{error}</p>}
+    <Section title={t("settings.notifications.title")} description={t("settings.notifications.description")}>
+      {!user?.mailAvailable ? <PlannedNote>{t("settings.notifications.plannedNote")}</PlannedNote> : <>
+      <Switch checked={enabled} disabled={busy} onChange={() => void toggle()}>{t("settings.notifications.submissionEmails")}</Switch>
+      {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
       </>}
-      <p className="mt-2 text-caption text-muted">Wetteralarme für Favoriten folgen, sobald zuverlässige Schwellen und Versandzeiten feststehen.</p>
+      <p className="mt-2 text-caption text-muted">{t("settings.notifications.alertsNote")}</p>
     </Section>
   );
 }

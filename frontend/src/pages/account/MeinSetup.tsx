@@ -19,22 +19,26 @@ import {
   type TravelMode,
 } from "../../lib/account";
 import QuiverEditor, { type QuiverDraft } from "./QuiverEditor";
+import { useTranslation } from "react-i18next";
+import type { TranslationKey } from "../../lib/i18n";
 
-const LEVELS: { value: RiderLevel; label: string }[] = [
-  { value: "beginner", label: "Einsteiger" },
-  { value: "advanced", label: "Fortgeschritten" },
-  { value: "expert", label: "Experte" },
-  { value: "competition", label: "Competition" },
+const LEVELS: { value: RiderLevel; key: TranslationKey }[] = [
+  { value: "beginner", key: "setup.levels.beginner" },
+  { value: "advanced", key: "setup.levels.advanced" },
+  { value: "expert", key: "setup.levels.expert" },
+  { value: "competition", key: "setup.levels.competition" },
 ];
 
 const STYLES = [
-  ["freeride", "Freeride"], ["freestyle", "Freestyle"],
-  ["big_air", "Big Air"], ["wave_riding", "Wave Riding"], ["wavekite", "Wavekite"],
+  ["freeride", "setup.styles.freeride"], ["freestyle", "setup.styles.freestyle"],
+  ["big_air", "setup.styles.bigAir"], ["wave_riding", "setup.styles.waveRiding"],
+  ["wavekite", "setup.styles.wavekite"],
 ] as const;
 
 const WATER = [
-  ["flach", "Flachwasser"], ["chop", "Chop"], ["welle_klein", "Kleine Welle"],
-  ["welle_gross", "Große Welle"], ["tiefes_wasser", "Tiefes Wasser"],
+  ["flach", "setup.waterKinds.flach"], ["chop", "setup.waterKinds.chop"],
+  ["welle_klein", "setup.waterKinds.welleKlein"], ["welle_gross", "setup.waterKinds.welleGross"],
+  ["tiefes_wasser", "setup.waterKinds.tiefesWasser"],
 ] as const;
 
 const EMPTY_PROFILE: RiderProfile = {
@@ -54,21 +58,27 @@ function drafts(items: GearItem[]): QuiverDraft[] {
 function Section({ title, intro, children }: { title: string; intro?: string; children: ReactNode }) {
   return (
     <section className="border-t border-line pt-8 first:border-t-0 first:pt-0">
-      <h2 className="text-sz-18 font-semibold text-ink">{title}</h2>
-      {intro && <p className="mt-1 max-w-[65ch] text-ui text-muted">{intro}</p>}
+      <h2 className="text-lead font-semibold text-ink">{title}</h2>
+      {intro && <p className="mt-1 max-w-measure text-ui text-muted">{intro}</p>}
       <div className="mt-5">{children}</div>
     </section>
   );
 }
 
 export default function MeinSetup() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<RiderProfile>(EMPTY_PROFILE);
   const [sport, setSport] = useState<RiderSportProfile>(EMPTY_SPORT);
   const [gear, setGear] = useState<QuiverDraft[]>([]);
   const [storedGear, setStoredGear] = useState<GearItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  /** `text` is a server-supplied sentence, `key` one of ours — never both.
+   *  Resolved in render so the message follows a language change, and so the
+   *  load effect does not need `t` in its dependency list. */
+  const [message, setMessage] = useState<
+    { kind: "ok" | "error"; text: string; key?: undefined } | { kind: "ok" | "error"; key: TranslationKey; text?: undefined } | null
+  >(null);
 
   useEffect(() => {
     let active = true;
@@ -80,10 +90,11 @@ export default function MeinSetup() {
         setGear(drafts(items));
         setStoredGear(items);
       })
-      .catch((error) => active && setMessage({
-        kind: "error",
-        text: error instanceof Error ? error.message : "Dein Setup konnte nicht geladen werden.",
-      }))
+      .catch((error) => active && setMessage(
+        error instanceof Error
+          ? { kind: "error", text: error.message }
+          : { kind: "error", key: "setup.loadFailed" },
+      ))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, []);
@@ -159,7 +170,7 @@ export default function MeinSetup() {
     } catch (error) {
       setMessage({
         kind: "error",
-        text: error instanceof AccountError ? error.message : "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+        text: error instanceof AccountError ? error.message : t("setup.saveFailed"),
       });
     } finally {
       setSaving(false);
@@ -167,18 +178,18 @@ export default function MeinSetup() {
   };
 
   if (loading) {
-    return <AccountPage title="Mein Setup"><p role="status" className="text-ui text-muted">Setup wird geladen …</p></AccountPage>;
+    return <AccountPage title={t("setup.pageTitle")}><p role="status" className="text-ui text-muted">{t("setup.loading")}</p></AccountPage>;
   }
 
   return (
     <AccountPage
-      title="Mein Setup"
-      intro="Halte deine Kite-Ausrüstung und deine Vorlieben an einem Ort aktuell."
+      title={t("setup.pageTitle")}
+      intro={t("setup.intro")}
     >
       <form onSubmit={save} className="space-y-10" noValidate>
-        <Section title="Grundangaben" intro="Gewicht, Level und ein Kite reichen für den Start.">
+        <Section title={t("setup.basics.title")} intro={t("setup.basics.intro")}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Gewicht" hint="Pflichtfeld">
+            <Field label={t("setup.basics.weight")} hint={t("setup.required")}>
               <div className="relative">
                 <Input
                   type="number" min="30" max="160" step="0.5" inputMode="decimal"
@@ -186,40 +197,40 @@ export default function MeinSetup() {
                   onChange={(event) => setProfile({ ...profile, weightKg: event.target.value === "" ? null : Number(event.target.value) })}
                   className="pr-12"
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-label text-muted">kg</span>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ui text-muted">{t("setup.unitKg")}</span>
               </div>
             </Field>
-            <Field label="Kite-Level" hint="Pflichtfeld">
+            <Field label={t("setup.basics.level")} hint={t("setup.required")}>
               <Select
                 value={sport.level ?? ""} disabled={saving}
                 onChange={(event) => setSport({ ...sport, level: (event.target.value || null) as RiderLevel | null })}
               >
-                <option value="">Bitte wählen</option>
-                {LEVELS.map((level) => <option key={level.value} value={level.value}>{level.label}</option>)}
+                <option value="">{t("setup.choose")}</option>
+                {LEVELS.map((level) => <option key={level.value} value={level.value}>{t(level.key)}</option>)}
               </Select>
             </Field>
           </div>
         </Section>
 
-        <Section title="Deine Ausrüstung" intro="Trage deine aktiven Kites und den Board-Typ ein.">
+        <Section title={t("setup.gear.title")} intro={t("setup.gear.intro")}>
           <QuiverEditor items={gear} onChange={setGear} disabled={saving} />
         </Section>
 
-        <Section title="Fahrstil" intro="Stelle für jeden Stil ein, wie wichtig er dir ist: 0 steht für unwichtig, 3 für sehr wichtig.">
+        <Section title={t("setup.style.title")} intro={t("setup.style.intro")}>
           <div className="space-y-4">
-            {STYLES.map(([key, label]) => {
-              const value = sport.styleWeights[key] ?? 0;
+            {STYLES.map(([style, labelKey]) => {
+              const value = sport.styleWeights[style] ?? 0;
               return (
-                <label key={key} className="grid min-h-11 grid-cols-[minmax(0,1fr)_8rem_1.5rem] items-center gap-3 text-ui text-ink">
-                  <span>{label}</span>
+                <label key={style} className="grid min-h-11 grid-cols-[minmax(0,1fr)_8rem_1.5rem] items-center gap-3 text-ui text-ink">
+                  <span>{t(labelKey)}</span>
                   <input
-                    aria-label={`${label} Gewichtung`}
+                    aria-label={t("setup.style.weighting", { style: t(labelKey) })}
                     type="range" min="0" max="3" step="1" value={value} disabled={saving}
                     onChange={(event) => setSport({
                       ...sport,
-                      styleWeights: { ...sport.styleWeights, [key]: Number(event.target.value) },
+                      styleWeights: { ...sport.styleWeights, [style]: Number(event.target.value) },
                     })}
-                    className="h-11 accent-[var(--sw-teal)]"
+                    className="h-11 accent-ink"
                   />
                   <span className="text-right font-semibold tabular-nums">{value}</span>
                 </label>
@@ -228,56 +239,56 @@ export default function MeinSetup() {
           </div>
         </Section>
 
-        <Section title="Wasser" intro="Optional: Wähle die Bedingungen, die du besonders gern fährst.">
+        <Section title={t("setup.water.title")} intro={t("setup.water.intro")}>
           <div className="flex flex-wrap gap-2">
-            {WATER.map(([key, label]) => {
-              const checked = sport.preferredWaterCharacter.includes(key);
+            {WATER.map(([kind, labelKey]) => {
+              const checked = sport.preferredWaterCharacter.includes(kind);
               return (
-                <label key={key} className={`inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-label font-medium transition-colors ${checked ? "border-ink bg-ink text-surface" : "border-line bg-surface text-ink hover:bg-band"}`}>
+                <label key={kind} className={`inline-flex min-h-11 cursor-pointer items-center rounded-card border px-4 text-ui font-medium transition-colors ${checked ? "border-ink bg-ink text-surface" : "border-line bg-surface text-ink hover:bg-band"}`}>
                   <input
                     type="checkbox" className="sr-only" checked={checked} disabled={saving}
                     onChange={() => setSport({
                       ...sport,
                       preferredWaterCharacter: checked
-                        ? sport.preferredWaterCharacter.filter((item) => item !== key)
-                        : [...sport.preferredWaterCharacter, key],
+                        ? sport.preferredWaterCharacter.filter((item) => item !== kind)
+                        : [...sport.preferredWaterCharacter, kind],
                     })}
                   />
-                  {label}
+                  {t(labelKey)}
                 </label>
               );
             })}
           </div>
         </Section>
 
-        <Section title="Unterwegs" intro="Heimatort und Reisemodus sind optional und jederzeit änderbar.">
+        <Section title={t("setup.travel.title")} intro={t("setup.travel.intro")}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Breitengrad" hint="Heimatort">
+            <Field label={t("setup.travel.lat")} hint={t("setup.travel.home")}>
               <Input
                 type="number" min="-90" max="90" step="any" inputMode="decimal"
                 value={Number.isFinite(profile.homeLocation?.lat) ? profile.homeLocation?.lat : ""} disabled={saving}
                 onChange={(event) => setCoordinate("lat", event.target.value)}
               />
             </Field>
-            <Field label="Längengrad" hint="Heimatort">
+            <Field label={t("setup.travel.lon")} hint={t("setup.travel.home")}>
               <Input
                 type="number" min="-180" max="180" step="any" inputMode="decimal"
                 value={Number.isFinite(profile.homeLocation?.lon) ? profile.homeLocation?.lon : ""} disabled={saving}
                 onChange={(event) => setCoordinate("lon", event.target.value)}
               />
             </Field>
-            <Field label="Reisemodus">
+            <Field label={t("setup.travel.mode")}>
               <Select
                 value={profile.travelMode} disabled={saving}
                 onChange={(event) => setProfile({ ...profile, travelMode: event.target.value as TravelMode })}
               >
-                <option value="day_trip">Tagesausflug</option>
-                <option value="weekend">Wochenende</option>
-                <option value="trip">Reise</option>
-                <option value="camper">Camper</option>
+                <option value="day_trip">{t("setup.travel.dayTrip")}</option>
+                <option value="weekend">{t("setup.travel.weekend")}</option>
+                <option value="trip">{t("setup.travel.trip")}</option>
+                <option value="camper">{t("setup.travel.camper")}</option>
               </Select>
             </Field>
-            <Field label="Maximale Entfernung" hint="Optional">
+            <Field label={t("setup.travel.maxDistance")} hint={t("setup.optional")}>
               <div className="relative">
                 <Input
                   type="number" min="0" max="20000" step="10" inputMode="decimal"
@@ -285,20 +296,20 @@ export default function MeinSetup() {
                   onChange={(event) => setProfile({ ...profile, maxTravelKm: event.target.value === "" ? null : Number(event.target.value) })}
                   className="pr-12"
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-label text-muted">km</span>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ui text-muted">{t("setup.unitKm")}</span>
               </div>
             </Field>
           </div>
         </Section>
 
         {message && (
-          <p role={message.kind === "error" ? "alert" : "status"} className={`text-label font-medium ${message.kind === "error" ? "text-danger" : "text-success"}`}>
-            {message.text}
+          <p role={message.kind === "error" ? "alert" : "status"} className={`text-ui font-medium ${message.kind === "error" ? "text-danger" : "text-success"}`}>
+            {message.key ? t(message.key) : message.text}
           </p>
         )}
         <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
-          <Button type="submit" disabled={saving}>{saving ? "Speichert …" : "Setup speichern"}</Button>
-          {!complete && <p className="text-caption text-muted">Noch offen: Gewicht, Level oder Kite.</p>}
+          <Button type="submit" disabled={saving}>{saving ? t("setup.submitting") : t("setup.submit")}</Button>
+          {!complete && <p className="text-caption text-muted">{t("setup.incomplete")}</p>}
         </div>
       </form>
     </AccountPage>

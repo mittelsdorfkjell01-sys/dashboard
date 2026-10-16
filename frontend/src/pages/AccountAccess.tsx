@@ -50,8 +50,8 @@ export default function AccountAccess() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-band px-4 py-12">
       <Link to="/" aria-label="Zur Startseite" className="mb-8"><Wordmark size="lg" /></Link>
-      <div className="w-full max-w-[420px] rounded-[14px] border border-line bg-surface p-6 sm:p-8">
-        <h1 className="text-sz-28 font-semibold text-ink">{title}</h1>
+      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-6 sm:p-8">
+        <h1 className="text-heading font-semibold text-ink">{title}</h1>
         <p className="mt-2 text-ui text-muted">
           {resetting && !token ? "Wir senden dir einen Link zum Zurücksetzen." :
            resetting ? "Wähle ein neues Passwort für dein Konto." :
@@ -68,7 +68,7 @@ export default function AccountAccess() {
           </form>
         )}
         {!token && !resetting && <p role="alert" className="mt-5 text-ui text-danger">Der Bestätigungslink fehlt.</p>}
-        {message && <p role="status" className="mt-6 rounded-lg bg-success-bg p-3 text-ui text-success">{message}</p>}
+        {message && <p role="status" className="mt-6 rounded-card bg-success-bg p-3 text-ui text-success">{message}</p>}
         <Link to="/anmelden" className="mt-5 inline-flex min-h-11 items-center text-ui font-semibold text-ink underline">Zur Anmeldung</Link>
       </div>
     </main>

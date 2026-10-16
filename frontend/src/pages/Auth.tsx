@@ -26,12 +26,18 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Registration consent: self-declared minimum age (DSGVO Art. 8 — 16 in DE)
+  // and acceptance of the terms + privacy notice. Both are required to register.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const switchMode = (m: Mode) => {
     setMode(m);
     setError(null);
     setNotice(null);
   };
+
+  const consentMissing = mode === "register" && (!ageConfirmed || !acceptedTerms);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -42,7 +48,11 @@ export default function Auth() {
         await login(email, password);
         navigate(redirect, { replace: true });
       } else {
-        await register(email, name);
+        if (!ageConfirmed || !acceptedTerms) {
+          setError("Bitte bestätige dein Mindestalter und akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung.");
+          return;
+        }
+        await register(email, name, { acceptedTerms, ageConfirmed });
         setMode("login");
         setPassword("");
         setNotice("Prüfe dein E-Mail-Postfach. Öffne den Bestätigungslink und lege dort dein Passwort fest.");
@@ -60,15 +70,15 @@ export default function Auth() {
         <Wordmark size="lg" />
       </Link>
 
-      <div className="w-full max-w-[420px] rounded-[14px] border border-line bg-surface p-6 sm:p-8">
-        <div className="mb-6 grid grid-cols-2 gap-1 rounded-[14px] bg-band p-1">
+      <div className="w-full max-w-[420px] rounded-card border border-line bg-surface p-6 sm:p-8">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-card bg-band p-1">
           {(["login", "register"] as Mode[]).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => switchMode(m)}
               aria-pressed={mode === m}
-              className={`min-h-11 rounded-[14px] py-2 text-ui font-semibold transition-colors ${
+              className={`min-h-11 rounded-card py-2 text-ui font-semibold transition-colors ${
                 mode === m
                   ? "bg-surface text-ink"
                   : "text-muted hover:text-ink"
@@ -79,7 +89,7 @@ export default function Auth() {
           ))}
         </div>
 
-        <h1 className="mb-1 text-sz-32 font-semibold text-ink">
+        <h1 className="mb-1 text-heading-lg font-semibold text-ink">
           {mode === "login" ? "Willkommen zurück" : "Konto erstellen"}
         </h1>
         <p className="mb-6 text-ui text-muted">
@@ -120,25 +130,58 @@ export default function Auth() {
             />
           </Field>}
 
+          {mode === "register" && (
+            <div className="space-y-3 pt-1">
+              <label className="flex items-start gap-3 text-label text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) => setAgeConfirmed(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-ink"
+                />
+                <span>Ich bin mindestens 16 Jahre alt.</span>
+              </label>
+              <label className="flex items-start gap-3 text-label text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-ink"
+                />
+                <span>
+                  Ich akzeptiere die{" "}
+                  <Link to="/nutzungsbedingungen" target="_blank" rel="noopener noreferrer" className="font-semibold text-ink underline">
+                    Nutzungsbedingungen
+                  </Link>{" "}
+                  und habe die{" "}
+                  <Link to="/datenschutz" target="_blank" rel="noopener noreferrer" className="font-semibold text-ink underline">
+                    Datenschutzerklärung
+                  </Link>{" "}
+                  gelesen.
+                </span>
+              </label>
+            </div>
+          )}
+
           {error && (
-            <p role="alert" className="rounded-[14px] bg-danger-bg px-3 py-2 text-label font-medium text-danger">
+            <p role="alert" className="rounded-card bg-danger-bg px-3 py-2 text-ui font-medium text-danger">
               {error}
             </p>
           )}
           {notice && (
-            <p role="status" className="rounded-[14px] bg-success-bg px-3 py-2 text-label font-medium text-success">
+            <p role="status" className="rounded-card bg-success-bg px-3 py-2 text-ui font-medium text-success">
               {notice}
             </p>
           )}
 
-          <Button type="submit" disabled={busy} className="w-full">
+          <Button type="submit" disabled={busy || consentMissing} className="w-full">
             {busy ? "Bitte warten …" : mode === "login" ? "Anmelden" : "Konto erstellen"}
           </Button>
         </form>
 
-        {mode === "login" && <Link to="/passwort-zuruecksetzen" className="mt-3 inline-flex min-h-11 items-center text-label font-semibold text-ink underline">Passwort vergessen?</Link>}
+        {mode === "login" && <Link to="/passwort-zuruecksetzen" className="mt-3 inline-flex min-h-11 items-center text-ui font-semibold text-ink underline">Passwort vergessen?</Link>}
 
-        <p className="mt-5 text-center text-label text-muted">
+        <p className="mt-5 text-center text-ui text-muted">
           {mode === "login" ? "Noch kein Konto? " : "Schon registriert? "}
           <button
             type="button"

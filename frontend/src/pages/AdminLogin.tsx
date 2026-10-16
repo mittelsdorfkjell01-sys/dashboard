@@ -42,7 +42,7 @@ export default function AdminLogin() {
   };
 
   const inputCls =
-    "w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 py-2.5 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-faint focus:border-admin-primary";
+    "w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 py-2.5 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-muted focus:border-admin-primary";
 
   return (
     <div className="grid min-h-screen place-items-center bg-admin-bg px-4">

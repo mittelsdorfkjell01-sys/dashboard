@@ -16,7 +16,7 @@ import { AccountPage } from "./AccountLayout";
 
 const SubmissionMapPicker = lazy(() => import("../../components/SubmissionMapPicker"));
 const STATUS: Record<SubmissionStatus, { label: string; cls: string }> = {
-  pending: { label: "In Prüfung", cls: "bg-amber-100 text-amber-800" },
+  pending: { label: "In Prüfung", cls: "bg-warning-bg text-warning" },
   merged: { label: "Als Entwurf übernommen", cls: "bg-success-bg text-success" },
   rejected: { label: "Abgelehnt", cls: "bg-danger-bg text-danger" },
   withdrawn: { label: "Zurückgezogen", cls: "bg-band text-muted" },
@@ -93,25 +93,25 @@ export default function MeineSpots() {
     <AccountPage title="Spots hinzufügen">
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-[60ch] text-ui text-muted">Hier siehst du deine Vorschläge und was daraus geworden ist. Erst nach der redaktionellen Veröffentlichung ist ein Spot öffentlich sichtbar.</p>
-        <Button onClick={() => setOpen(true)}><PlusCircleIcon className="text-sz-18" /> Spot vorschlagen</Button>
+        <p className="max-w-measure text-ui text-muted">Hier siehst du deine Vorschläge und was daraus geworden ist. Erst nach der redaktionellen Veröffentlichung ist ein Spot öffentlich sichtbar.</p>
+        <Button onClick={() => setOpen(true)}><PlusCircleIcon className="text-lead" /> Spot vorschlagen</Button>
       </div>
 
-      <Modal open={open} onClose={closeForm} labelledBy="suggest-spot-title" cardClassName="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[14px] bg-surface p-5 sm:p-6">
+      <Modal open={open} onClose={closeForm} labelledBy="suggest-spot-title" cardClassName="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-card bg-surface p-5 sm:p-6">
         <form onSubmit={submit} className="space-y-4">
-          <h2 id="suggest-spot-title" className="text-sz-20 font-semibold text-ink">Spot vorschlagen</h2>
+          <h2 id="suggest-spot-title" className="text-lead font-semibold text-ink">Spot vorschlagen</h2>
           <p className="text-ui text-muted">Nenne den Spot und markiere seine Lage. Wir prüfen und vervollständigen die Angaben vor einer Veröffentlichung.</p>
           <Field label="Name des Spots" required><Input value={name} maxLength={200} onChange={(e) => setName(e.target.value)} placeholder="z. B. Wulfener Hals" required /></Field>
-          {similar.length > 0 && <div className="rounded-lg bg-band p-3 text-label"><p className="font-semibold text-ink">Vielleicht schon vorhanden:</p><ul className="mt-1 space-y-1">{similar.map((item) => <li key={item.id}><Link className="text-ink underline" to={spotPath(item)}>{item.name}</Link></li>)}</ul></div>}
+          {similar.length > 0 && <div className="rounded-card bg-band p-3 text-ui"><p className="font-semibold text-ink">Vielleicht schon vorhanden:</p><ul className="mt-1 space-y-1">{similar.map((item) => <li key={item.id}><Link className="text-ink underline" to={spotPath(item)}>{item.name}</Link></li>)}</ul></div>}
           <Field label="Region" required>
             <Select value={regionId} onChange={(e) => setRegionId(e.target.value)} required>
               <option value="">Region wählen</option>
               {(regions.data ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}{item.country ? `, ${item.country}` : ""}</option>)}
             </Select>
           </Field>
-          {regions.error && <p role="alert" className="text-label text-danger">Regionen konnten nicht geladen werden. <button type="button" className="underline" onClick={regions.reload}>Erneut versuchen</button></p>}
+          {regions.error && <p role="alert" className="text-ui text-danger">Regionen konnten nicht geladen werden. <button type="button" className="underline" onClick={regions.reload}>Erneut versuchen</button></p>}
           <div>
-            <p className="mb-2 text-label font-medium text-ink">Position auf der Karte auswählen</p>
+            <p className="mb-2 text-ui font-medium text-ink">Position auf der Karte auswählen</p>
             <Suspense fallback={<div role="status" className="grid h-56 place-items-center bg-band text-ui text-muted">Karte lädt …</div>}>
               <SubmissionMapPicker center={center} position={validPosition ? [latNumber, lonNumber] : null} onPick={(a, b) => { setLat(String(a)); setLon(String(b)); }} />
             </Suspense>
@@ -121,10 +121,10 @@ export default function MeineSpots() {
             </div>
           </div>
           <fieldset>
-            <legend className="text-label font-medium text-ink">Sportarten (optional)</legend>
-            <div className="mt-2 flex flex-wrap gap-2">{SPORTS.map((sport) => <label key={sport} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line px-3 text-label text-ink"><input type="checkbox" checked={sports.includes(sport)} onChange={() => setSports((current) => current.includes(sport) ? current.filter((item) => item !== sport) : [...current, sport])} />{sportLabel(sport)}</label>)}</div>
+            <legend className="text-ui font-medium text-ink">Sportarten (optional)</legend>
+            <div className="mt-2 flex flex-wrap gap-2">{SPORTS.map((sport) => <label key={sport} className="inline-flex min-h-11 items-center gap-2 rounded-card border border-line px-3 text-ui text-ink"><input type="checkbox" checked={sports.includes(sport)} onChange={() => setSports((current) => current.includes(sport) ? current.filter((item) => item !== sport) : [...current, sport])} />{sportLabel(sport)}</label>)}</div>
           </fieldset>
-          {error && <p role="alert" className="text-label font-medium text-danger">{error}</p>}
+          {error && <p role="alert" className="text-ui font-medium text-danger">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={closeForm} disabled={busy}>Abbrechen</Button>
             <Button type="submit" disabled={busy || !name.trim() || !regionId || !validPosition}>{busy ? "Sende …" : "Vorschlag einreichen"}</Button>
@@ -134,20 +134,21 @@ export default function MeineSpots() {
       <ConfirmDialog open={confirmDiscard} title="Eingaben verwerfen?" message="Dein noch nicht eingereichter Vorschlag geht verloren." confirmText="Verwerfen" onCancel={() => setConfirmDiscard(false)} onConfirm={() => { resetForm(); setConfirmDiscard(false); setOpen(false); }} />
 
       {state.status === "loading" && state.items.length === 0 && <p role="status" className="py-8 text-center text-ui text-muted">Vorschläge werden geladen …</p>}
-      {state.status === "error" && <div role="alert" className="rounded-lg border border-line p-5 text-ui"><p>{state.error}</p><button type="button" onClick={() => void refreshSubmissions()} className="mt-3 min-h-11 font-semibold underline">Erneut versuchen</button></div>}
+      {state.status === "error" && <div role="alert" className="rounded-card border border-line p-5 text-ui"><p>{state.error}</p><button type="button" onClick={() => void refreshSubmissions()} className="mt-3 min-h-11 font-semibold underline">Erneut versuchen</button></div>}
       {actionError && <p role="alert" className="text-ui text-danger">{actionError}</p>}
-      {state.status === "ready" && state.items.length === 0 && <p className="rounded-[14px] border border-dashed border-line px-6 py-10 text-center text-ui text-muted">Du hast noch keine Spots vorgeschlagen.</p>}
+      {state.status === "ready" && state.items.length === 0 && <p className="rounded-card border border-dashed border-line px-6 py-10 text-center text-ui text-muted">Du hast noch keine Spots vorgeschlagen.</p>}
       {state.items.length > 0 && <ul className="space-y-3">{state.items.map((sub) => {
         const status = STATUS[sub.status] ?? { label: "Status unbekannt", cls: "bg-band text-muted" };
-        return <li key={sub.id} className="rounded-[14px] border border-line bg-surface p-4">
+        return <li key={sub.id} className="rounded-card border border-line bg-surface p-4">
           <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="text-body font-semibold text-ink">{sub.name}</h2><p className="mt-1 text-caption text-muted">Eingereicht am {new Date(sub.createdAt).toLocaleDateString("de-DE")}</p></div><span className={`rounded-full px-3 py-1 text-caption font-semibold ${status.cls}`}>{status.label}</span></div>
-          {sub.status === "merged" && !sub.publishedSpotId && <p className="mt-3 text-label text-muted">Der Spot ist als Entwurf übernommen. Die Veröffentlichung steht noch aus.</p>}
-          {sub.status === "rejected" && <p className="mt-3 text-label text-muted">{sub.reviewNote ? `Rückmeldung: ${sub.reviewNote}` : "Der Vorschlag wurde nach Prüfung nicht übernommen."}</p>}
-          {sub.publishedSpotId && <Link to={spotPath({ id: sub.publishedSpotId, name: sub.name })} className="mt-3 inline-flex min-h-11 items-center text-label font-semibold text-ink underline">Veröffentlichten Spot ansehen</Link>}
-          {sub.status === "pending" && <button type="button" onClick={() => setWithdrawId(sub.id)} className="mt-3 min-h-11 text-label font-semibold text-ink underline">Vorschlag zurückziehen</button>}
+          {sub.status === "pending" && <p className="mt-3 text-ui text-muted">Dein Vorschlag wartet auf die redaktionelle Prüfung.</p>}
+          {sub.status === "merged" && !sub.publishedSpotId && <p className="mt-3 text-ui text-muted">Als Entwurf übernommen bedeutet, dass daraus ein redaktioneller Entwurf entstanden ist. Die Veröffentlichung steht noch aus.</p>}
+          {sub.status === "rejected" && <p className="mt-3 text-ui text-muted">{sub.reviewNote ? `Rückmeldung: ${sub.reviewNote}` : "Der Vorschlag wurde nach Prüfung nicht übernommen."}</p>}
+          {sub.publishedSpotId && <Link to={spotPath({ id: sub.publishedSpotId, name: sub.name })} className="mt-3 inline-flex min-h-11 items-center text-ui font-semibold text-ink underline">Spot ansehen</Link>}
+          {sub.status === "pending" && <button type="button" onClick={() => setWithdrawId(sub.id)} className="mt-3 min-h-11 text-ui font-semibold text-ink underline">Vorschlag zurückziehen</button>}
         </li>;
       })}</ul>}
-      {state.hasMore && <button type="button" disabled={state.status === "loading"} onClick={() => void loadMoreSubmissions()} className="min-h-11 rounded-lg border border-line px-4 text-ui font-semibold text-ink">{state.status === "loading" ? "Lädt …" : "Weitere Vorschläge laden"}</button>}
+      {state.hasMore && <button type="button" disabled={state.status === "loading"} onClick={() => void loadMoreSubmissions()} className="min-h-11 rounded-card border border-line px-4 text-ui font-semibold text-ink">{state.status === "loading" ? "Lädt …" : "Weitere Vorschläge laden"}</button>}
       <ConfirmDialog open={withdrawId !== null} title="Vorschlag zurückziehen?" message="Der Vorschlag wird nicht mehr geprüft." confirmText="Zurückziehen" onCancel={() => setWithdrawId(null)} onConfirm={() => void withdraw()} />
     </div>
     </AccountPage>
