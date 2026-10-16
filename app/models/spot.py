@@ -69,6 +69,16 @@ class Spot(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default=text("'draft'")
     )  # draft | published | archived
+    # Authorship, not review: 'editorial' = entered by us, 'community' = grew
+    # out of an approved SpotSubmission. A community spot passes the same admin
+    # approval, so this never expresses a quality tier — the public surfaces
+    # only use it to credit and to mark our own entries.
+    origin: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'editorial'")
+    )  # editorial | community
+    # Credit for a community spot (the submitter's display name). NULL for an
+    # editorial spot.
+    contributor_name: Mapped[str | None] = mapped_column(String(120))
     confidence: Mapped[float | None] = mapped_column(Float)      # 0.0 .. 1.0
     # Manual override for the "Fertigstellen" traffic-light rank (red|yellow|
     # green). NULL = automatic (derived from readiness gaps). Set in the
@@ -111,6 +121,10 @@ class Spot(Base, TimestampMixin):
             name="ck_spots_status",
         ),
         CheckConstraint(
+            "origin IN ('editorial', 'community')",
+            name="ck_spots_origin",
+        ),
+        CheckConstraint(
             "finish_rank IS NULL OR finish_rank IN ('red', 'yellow', 'green')",
             name="ck_spots_finish_rank",
         ),
@@ -119,6 +133,7 @@ class Spot(Base, TimestampMixin):
         Index("ix_spots_sports", "sports", postgresql_using="gin"),
         Index("ix_spots_style", "style", postgresql_using="gin"),
         Index("ix_spots_region_status", "region_id", "status"),
+        Index("ix_spots_origin", "origin"),
         Index(
             "ix_spots_normalized_name_trgm",
             "normalized_name",

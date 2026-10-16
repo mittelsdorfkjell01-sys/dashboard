@@ -18,6 +18,7 @@ import {
   type QueueResult,
   type Rank,
   type Readiness,
+  type SpotOrigin,
 } from "../lib/api";
 import { gapLabel } from "../lib/labels";
 import { effectiveRank, RANK_DOT, RANK_LABEL } from "../lib/rank";
@@ -41,6 +42,8 @@ export default function SpotOpsPanel({
   spotId,
   spotName,
   regionName,
+  origin,
+  contributorName,
   onGapClick,
   submitting,
   saveLabel = "Änderungen speichern",
@@ -53,6 +56,9 @@ export default function SpotOpsPanel({
   spotName?: string;
   /** Region name — the muted subtitle under the spot name. */
   regionName?: string;
+  /** Herkunft des Eintrags — reine Anzeige, nicht editierbar. */
+  origin?: SpotOrigin;
+  contributorName?: string | null;
   /** Click a readiness gap to jump to its field in the form. */
   onGapClick?: (gap: string) => void;
   /** Wired to the outer form's submit state — the button lives here now. */
@@ -208,8 +214,15 @@ export default function SpotOpsPanel({
           <p className="truncate text-body font-semibold text-admin-fg">
             {spotName?.trim() || "Unbenannter Spot"}
           </p>
-          <p className="mt-0.5 truncate text-label text-admin-muted">
+          <p className="mt-0.5 truncate text-ui text-admin-muted">
             {regionName || "Ohne Region"}
+          </p>
+          {/* Herkunft ist nur lesbar: sie entsteht beim Anlegen bzw. beim
+              Freigeben eines Vorschlags und wäre als Schalter beliebig. */}
+          <p className="mt-0.5 truncate text-caption text-admin-muted">
+            {origin === "community"
+              ? `Community-Eintrag${contributorName ? ` · ${contributorName}` : ""}`
+              : "Redaktioneller Eintrag"}
           </p>
         </div>
         <span
@@ -270,7 +283,7 @@ export default function SpotOpsPanel({
                 Kite-Empfehlungen
               </p>
               <span
-                className={`text-label font-medium ${
+                className={`text-ui font-medium ${
                   readiness.scoring.kitesurf.ready
                     ? "text-admin-success"
                     : "text-admin-warning"
@@ -279,7 +292,7 @@ export default function SpotOpsPanel({
                 {readiness.scoring.kitesurf.ready ? "bereit" : "unvollständig"}
               </span>
             </div>
-            <p className="mt-1 text-label text-admin-fg2">
+            <p className="mt-1 text-ui text-admin-fg2">
               {readiness.scoring.kitesurf.recommendable
                 ? "Spot ist fachlich empfehlbar."
                 : "Spot ist noch nicht empfehlbar."}
@@ -296,6 +309,23 @@ export default function SpotOpsPanel({
                 ))}
               </div>
             )}
+            <dl className="mt-3 grid gap-2 border-t border-admin-border pt-3 text-caption sm:grid-cols-2">
+              {Object.entries(readiness.scoring.kitesurf.surfaces).map(([surface, value]) => (
+                <div key={surface}>
+                  <dt className="font-medium text-admin-fg">{surface}</dt>
+                  <dd className={value.eligible ? "text-admin-success" : "text-admin-warning"}>
+                    {value.eligible
+                      ? "Grunddaten bereit"
+                      : value.exclusions.map(gapLabel).join(", ")}
+                  </dd>
+                  {value.runtime_requirements.length > 0 && (
+                    <dd className="text-admin-muted">
+                      Laufzeit: {value.runtime_requirements.map(gapLabel).join(", ")}
+                    </dd>
+                  )}
+                </div>
+              ))}
+            </dl>
           </div>
         )}
 
@@ -306,7 +336,7 @@ export default function SpotOpsPanel({
         </Button>
         {secondarySaveAction && <div className="mt-2 hidden xl:block">{secondarySaveAction}</div>}
         {(cancelSlot || previewHref) && (
-          <div className="mt-3 flex items-center justify-between text-label">
+          <div className="mt-3 flex items-center justify-between text-ui">
             {cancelSlot ?? <span />}
             {previewHref && (
               <a
@@ -323,10 +353,10 @@ export default function SpotOpsPanel({
         )}
 
         {notice && (
-          <p className="mt-3 text-label font-medium text-admin-success">{notice}</p>
+          <p className="mt-3 text-ui font-medium text-admin-success">{notice}</p>
         )}
         {error && (
-          <p role="alert" className="mt-3 text-label font-medium text-admin-danger">
+          <p role="alert" className="mt-3 text-ui font-medium text-admin-danger">
             {error}
           </p>
         )}
@@ -335,8 +365,8 @@ export default function SpotOpsPanel({
         <div className="mt-5 space-y-4 border-t border-admin-border pt-5">
           <div>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-label font-medium text-admin-fg">Klimatologie</span>
-              <span className="text-label text-admin-fg2">
+              <span className="text-ui font-medium text-admin-fg">Klimatologie</span>
+              <span className="text-ui text-admin-fg2">
                 {ERA5_LABEL[era5Status] ?? era5Status}
               </span>
             </div>
@@ -364,8 +394,8 @@ export default function SpotOpsPanel({
 
           <div>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-label font-medium text-admin-fg">Fertigstellen-Rang</span>
-              <span className="inline-flex items-center gap-1.5 text-label text-admin-fg2">
+              <span className="text-ui font-medium text-admin-fg">Fertigstellen-Rang</span>
+              <span className="inline-flex items-center gap-1.5 text-ui text-admin-fg2">
                 <span className={`h-2 w-2 rounded-full ${RANK_DOT[rank]}`} />
                 {RANK_LABEL[rank]}
                 <span
@@ -425,10 +455,10 @@ export default function SpotOpsPanel({
 
         {overrideKeys.length > 0 && (
           <div className="mt-5 border-t border-admin-border pt-5">
-            <p className="text-label font-semibold text-admin-fg">Überschriebene Felder</p>
+            <p className="text-ui font-semibold text-admin-fg">Überschriebene Felder</p>
             <ul className="mt-2 space-y-1.5">
               {overrideKeys.map((k) => (
-                <li key={k} className="flex items-center gap-2 text-label text-admin-fg2">
+                <li key={k} className="flex items-center gap-2 text-ui text-admin-fg2">
                   <span className="admin-mono font-medium">{k}</span>
                   <span className="admin-mono text-admin-muted">= {JSON.stringify(overrides?.[k])}</span>
                 </li>

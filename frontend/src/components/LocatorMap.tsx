@@ -5,6 +5,9 @@ import "../map.css";
 import { mapLinkProps } from "../lib/mapLinks";
 import { CloseIcon, LinkIcon } from "../lib/icons";
 import LeafletAttributionDisclosure from "./LeafletAttributionDisclosure";
+import { SPOT_PIN_ANCHOR, SPOT_PIN_SIZE, spotPinSvg } from "../lib/spotPin";
+import { useSpotOriginsMixed } from "../context/SpotOriginContext";
+import type { SpotOrigin } from "../lib/api";
 
 // Aerial imagery mirrors the reference: daylight coastline and naturally blue
 // water. Esri World Imagery is keyless, so production never drops back to a
@@ -15,15 +18,10 @@ const AERIAL_TILE_URL =
 const AERIAL_ATTRIBUTION =
   'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community';
 
-// Orange teardrop pin (unchanged look from the previous marker).
-const PIN_SVG = `<svg width="30" height="38" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">
-  <path d="M12 0C5.7 0 1 4.7 1 10.7 1 18.4 12 30 12 30s11-11.6 11-19.3C23 4.7 18.3 0 12 0Z" fill="#E0823C" stroke="#ffffff" stroke-width="1.4"/>
-  <circle cx="12" cy="10.5" r="3.4" fill="#ffffff"/>
-</svg>`;
 
 /** Interaction handlers toggled by the click-to-activate flow. */
 function interactionHandlers(map: L.Map) {
-  return [map.dragging, map.doubleClickZoom, map.touchZoom, map.keyboard, map.boxZoom];
+  return [map.dragging, map.scrollWheelZoom, map.doubleClickZoom, map.touchZoom, map.keyboard, map.boxZoom];
 }
 
 type BufferedTileLayer = L.TileLayer & {
@@ -36,15 +34,21 @@ type BufferedTileLayer = L.TileLayer & {
  * (starts locked → first click enables pan/zoom → a plain click locks it
  * again), so page scroll is never hijacked and hovering the map changes nothing.
  */
-export default function LocatorMap({ coords }: { coords: [number, number] }) {
+export default function LocatorMap({
+  coords,
+  origin,
+}: {
+  coords: [number, number];
+  /** Herkunft des Spots — variiert nur die Füllung des Pins (offen für einen
+   *  Community-Spot). Ohne Angabe bleibt es der gefüllte Pin. */
+  origin?: SpotOrigin;
+}) {
   const [lat, lng] = coords;
   const link = mapLinkProps(lat, lng);
+  // No origin treatment while the catalogue is all ours.
+  const originsMixed = useSpotOriginsMixed();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const zoomTransitionRef = useRef(false);
-  const pendingZoomDeltaRef = useRef(0);
-  const zoomReleaseTimerRef = useRef(0);
   const [active, setActive] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   // Below lg the inline map is small, so a tap opens it fullscreen; from lg up
@@ -81,6 +85,11 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         zoomAnimation: true,
         zoomSnap: 0.25,
         zoomDelta: 0.5,
+        // Accumulate the small deltas emitted by precision trackpads, then let
+        // Leaflet zoom around the pointer. This stays responsive without the
+        // abrupt multi-level jumps caused by Leaflet's much faster defaults.
+        wheelDebounceTime: 24,
+        wheelPxPerZoomLevel: 240,
         scrollWheelZoom: false,
       });
       const tileLayer = L.tileLayer(AERIAL_TILE_URL, {
@@ -96,7 +105,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         updateInterval: 120,
         // Retain an extra off-screen ring so short pans do not reveal the map
         // background before the next network response arrives.
-        keepBuffer: 8,
+        keepBuffer: 4,
       }) as BufferedTileLayer;
       // Leaflet normally requests exactly the visible rectangle. A zoom-out
       // (especially a pinch) makes that old rectangle much smaller than the
@@ -104,9 +113,8 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       // the edges. Preload a 40% ring around the viewport so the current
       // imagery still covers the full frame throughout that transition.
       const visiblePixelBounds = tileLayer._getTiledPixelBounds.bind(tileLayer);
-      tileLayer._getTiledPixelBounds = (center) => visiblePixelBounds(center).pad(0.4);
+      tileLayer._getTiledPixelBounds = (center) => visiblePixelBounds(center).pad(0.5);
       tileLayer.addTo(map);
-      tileLayerRef.current = tileLayer;
     } catch (error) {
       console.error("Unable to initialise locator map:", error);
       setUnavailable(true);
@@ -115,7 +123,12 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     mapRef.current = map;
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
-    const icon = L.divIcon({ html: PIN_SVG, className: "swd-locator-pin", iconSize: [30, 38], iconAnchor: [15, 38] });
+    const icon = L.divIcon({
+      html: spotPinSvg(originsMixed ? origin : "editorial"),
+      className: "swd-locator-pin",
+      iconSize: SPOT_PIN_SIZE,
+      iconAnchor: SPOT_PIN_ANCHOR,
+    });
     L.marker([lat, lng], { icon, keyboard: false, interactive: false }).addTo(map);
 
     // The page matches this map's height to the responsive gallery after the
@@ -132,47 +145,16 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
     return () => {
       resizeObserver.disconnect();
       cancelAnimationFrame(resizeFrame);
-      window.clearTimeout(zoomReleaseTimerRef.current);
       map.remove();
       mapRef.current = null;
-      tileLayerRef.current = null;
-      zoomTransitionRef.current = false;
-      pendingZoomDeltaRef.current = 0;
     };
-  }, [lat, lng]);
+  }, [lat, lng, origin, originsMixed]);
 
   const requestZoom = useCallback((delta: number) => {
     const map = mapRef.current;
-    const tileLayer = tileLayerRef.current;
-    if (!map || !tileLayer) return;
-    if (zoomTransitionRef.current) {
-      pendingZoomDeltaRef.current = delta;
-      return;
-    }
+    if (!map) return;
     const target = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + delta));
     if (target === map.getZoom()) return;
-
-    zoomTransitionRef.current = true;
-    const release = (continueQueuedZoom: boolean) => {
-      window.clearTimeout(zoomReleaseTimerRef.current);
-      tileLayer.off("load", finishLoadedTiles);
-      zoomTransitionRef.current = false;
-      const queuedDelta = pendingZoomDeltaRef.current;
-      pendingZoomDeltaRef.current = 0;
-      if (continueQueuedZoom && queuedDelta !== 0) requestAnimationFrame(() => requestZoom(queuedDelta));
-    };
-    const finishLoadedTiles = () => release(true);
-    const waitForTiles = () => {
-      if (tileLayer.isLoading()) {
-        tileLayer.once("load", finishLoadedTiles);
-        // A provider failure must release the interaction lock, but must not
-        // advance into another unloaded level.
-        zoomReleaseTimerRef.current = window.setTimeout(() => release(false), 1800);
-      } else {
-        release(true);
-      }
-    };
-    map.once("zoomend", waitForTiles);
     map.setZoom(target, { animate: true });
   }, []);
 
@@ -185,21 +167,6 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
       else h.disable();
     }
   }, [active, ready]);
-
-  // Handle one bounded half-step per wheel gesture. Serialising the next
-  // request until the replacement tiles are ready prevents rapid trackpad
-  // input from outrunning the image network and exposing blank map edges.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !active || !ready) return;
-    const handleWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      if (event.deltaY === 0) return;
-      requestZoom(event.deltaY < 0 ? 0.5 : -0.5);
-    };
-    container.addEventListener("wheel", handleWheel, { passive: false });
-    return () => container.removeEventListener("wheel", handleWheel);
-  }, [active, ready, requestZoom]);
 
   // Desktop only: while activated inline, a plain click (not a drag) locks the
   // map again. Never runs on the touch/fullscreen path.
@@ -238,7 +205,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
 
   if (unavailable) {
     return (
-      <div className="grid h-[360px] place-items-center rounded-[14px] bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
+      <div className="grid h-[360px] place-items-center rounded-card bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
         <div>
           <p className="text-ui font-semibold text-ink">Karte momentan nicht verfügbar</p>
           <a
@@ -263,8 +230,8 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         data-lenis-prevent={active ? "" : undefined}
         className={
           fullscreen
-            ? "swd-locator-map fixed inset-0 z-[1400] overflow-hidden bg-band"
-            : "swd-locator-map relative h-[360px] overflow-hidden rounded-[14px] bg-band sm:h-[440px] lg:h-full"
+            ? "swd-locator-map fixed inset-0 z-fullscreen overflow-hidden bg-band"
+            : "swd-locator-map relative h-[360px] overflow-hidden rounded-card bg-band sm:h-[440px] lg:h-full"
         }
       >
         <div ref={containerRef} className="h-full w-full" />
@@ -283,7 +250,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
                 setActive(true);
               }
             }}
-            className="absolute inset-0 z-[450] bg-transparent"
+            className="absolute inset-0 z-map-overlay bg-transparent"
           />
         )}
 
@@ -297,7 +264,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
               setFullscreen(false);
               setActive(false);
             }}
-            className="absolute right-4 z-[500] grid h-9 w-9 place-items-center rounded-full bg-ink/55 text-white transition-colors hover:bg-ink/70"
+            className="absolute right-4 z-map-control grid h-9 w-9 place-items-center rounded-full bg-ink/55 text-white transition-colors hover:bg-ink/70"
             style={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
           >
             <CloseIcon width={16} height={16} />
@@ -305,7 +272,7 @@ export default function LocatorMap({ coords }: { coords: [number, number] }) {
         )}
 
         <div
-          className="pointer-events-none absolute left-4 top-4 z-[500] flex flex-col items-start gap-2"
+          className="pointer-events-none absolute left-4 top-4 z-map-control flex flex-col items-start gap-2"
           style={fullscreen ? { top: "calc(1rem + env(safe-area-inset-top, 0px))" } : undefined}
         >
           <div className="pointer-events-auto flex flex-col">

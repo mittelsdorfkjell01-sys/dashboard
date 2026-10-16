@@ -926,7 +926,7 @@ export default function AdminSpotForm() {
                   data-facility-row={k}
                   className="rounded-lg border border-admin-border bg-admin-bg p-4"
                 >
-                  <span className="block text-[13.5px] font-medium text-ink">
+                  <span className="block text-label font-medium text-ink">
                     {facilityLabel(k)}
                   </span>
                   <div className="mt-3 grid min-w-0 gap-3">
@@ -1322,6 +1322,8 @@ export default function AdminSpotForm() {
                 spotId={id}
                 spotName={name}
                 regionName={selectedRegionName}
+                origin={loadedSpotRef.current?.origin}
+                contributorName={loadedSpotRef.current?.contributor_name}
                 onGapClick={focusGap}
                 submitting={submitting}
                 saveLabel="Änderungen speichern"

@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import {
   createBrowserRouter,
   Navigate,
@@ -17,7 +18,10 @@ import RouteError from "./components/RouteError";
 import { ADMIN_DEPLOY } from "./lib/target";
 import { AuthProvider } from "./context/AuthContext";
 import { PrefsProvider } from "./context/PrefsContext";
+import { SpotOriginProvider } from "./context/SpotOriginContext";
 import { initializeTheme } from "./lib/theme";
+// Side-effect import: initialises i18next before the first component renders.
+import "./lib/i18n";
 
 initializeTheme();
 
@@ -27,6 +31,10 @@ const RegionDetail = React.lazy(() => import("./pages/RegionDetail"));
 const SearchResults = React.lazy(() => import("./pages/SearchResults"));
 const Impressum = React.lazy(() => import("./pages/Impressum"));
 const Datenschutz = React.lazy(() => import("./pages/Datenschutz"));
+const FAQ = React.lazy(() => import("./pages/FAQ"));
+const Kontakt = React.lazy(() => import("./pages/Kontakt"));
+const UeberUns = React.lazy(() => import("./pages/UeberUns"));
+const Nutzungsbedingungen = React.lazy(() => import("./pages/Nutzungsbedingungen"));
 const Auth = React.lazy(() => import("./pages/Auth"));
 const AccountAccess = React.lazy(() => import("./pages/AccountAccess"));
 const AccountLayout = React.lazy(() => import("./pages/account/AccountLayout"));
@@ -38,7 +46,8 @@ const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
 const MeinSetup = React.lazy(() => import("./pages/account/MeinSetup"));
 
 function RouteFallback() {
-  return <div role="status" className="grid min-h-[40vh] place-items-center text-ui text-muted">Lädt…</div>;
+  const { t } = useTranslation();
+  return <div role="status" className="grid min-h-[40vh] place-items-center text-ui text-muted">{t("common.loading")}</div>;
 }
 
 // A deploy replaces every hashed chunk file; a tab left open across that
@@ -81,6 +90,10 @@ async function bootstrap() {
     { path: "/region/:slug", element: <RegionDetail /> },
     { path: "/impressum", element: <Impressum /> },
     { path: "/datenschutz", element: <Datenschutz /> },
+    { path: "/faq", element: <FAQ /> },
+    { path: "/kontakt", element: <Kontakt /> },
+    { path: "/ueber-uns", element: <UeberUns /> },
+    { path: "/nutzungsbedingungen", element: <Nutzungsbedingungen /> },
     { path: "/anmelden", element: <Auth /> },
     { path: "/bestaetigen", element: <AccountAccess /> },
     { path: "/passwort-zuruecksetzen", element: <AccountAccess /> },
@@ -131,9 +144,11 @@ async function bootstrap() {
       <ErrorBoundary>
         <AuthProvider>
           <PrefsProvider>
-            <LenisProvider>
-              <RouterProvider router={router} />
-            </LenisProvider>
+            <SpotOriginProvider>
+              <LenisProvider>
+                <RouterProvider router={router} />
+              </LenisProvider>
+            </SpotOriginProvider>
           </PrefsProvider>
         </AuthProvider>
       </ErrorBoundary>

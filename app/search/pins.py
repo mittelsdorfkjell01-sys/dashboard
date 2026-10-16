@@ -34,6 +34,9 @@ def spot_brief(spot: Any) -> dict:
         "name": getattr(spot, "name", None),
         "location": {"lat": lat, "lon": lon},
         "sports": list(getattr(spot, "sports", None) or []),
+        # Authorship of the record, so a hit can be filtered/marked without a
+        # second lookup. Never a quality tier (see Spot.origin).
+        "origin": getattr(spot, "origin", None) or "editorial",
     }
 
 
