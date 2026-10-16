@@ -37,6 +37,9 @@ router = APIRouter(prefix="/account", tags=["account"])
 class RegisterRequest(BaseModel):
     email: EmailStr
     display_name: str = Field(default="", alias="displayName", max_length=120)
+    # Consent captured at registration (ToS/privacy acceptance + min-age ≥16).
+    accepted_terms: bool = Field(default=False, alias="acceptedTerms")
+    age_confirmed: bool = Field(default=False, alias="ageConfirmed")
 
     model_config = {"populate_by_name": True, "extra": "forbid"}
 
@@ -269,6 +272,8 @@ def register(
             email=body.email,
             password=secrets.token_urlsafe(32),
             display_name=body.display_name,
+            accepted_terms=body.accepted_terms,
+            age_confirmed=body.age_confirmed,
         )
     except EmailExistsError:
         db.rollback()

@@ -46,3 +46,10 @@ class AppUser(Base, TimestampMixin):
     pending_email: Mapped[str | None] = mapped_column(String(255))
     email_token_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     preferences: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    # Consent captured at registration: the accepted terms version and when, plus
+    # the self-declared minimum-age (DSGVO Art. 8) confirmation timestamp. Nullable
+    # so accounts created before this column, and any future non-registration path,
+    # stay valid without a back-filled claim of consent.
+    terms_accepted_version: Mapped[str | None] = mapped_column(String(32))
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    age_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

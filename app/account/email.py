@@ -31,10 +31,24 @@ def send_account_link(address: str, *, purpose: str, token: str) -> None:
 
 
 def send_account_notice(address: str, *, subject: str, body: str) -> None:
-    _send(address, f"Surfwinddata: {subject}", body)
+    # Notification mails (e.g. a decision on a spot proposal) are not purely
+    # transactional, so they carry a List-Unsubscribe header pointing at the
+    # account settings opt-out and a mailto fallback (RFC 2369 / 8058). Auth
+    # mails via send_account_link stay header-free — they are strictly
+    # transactional and have no opt-out.
+    _send(address, f"Surfwinddata: {subject}", body, with_unsubscribe=True)
 
 
-def _send(address: str, subject: str, body: str) -> None:
+def _unsubscribe_header() -> str | None:
+    settings = get_settings()
+    origin = settings.account_public_origin.rstrip("/")
+    targets = [f"<{origin}/konto/einstellungen>"]
+    if settings.account_smtp_from:
+        targets.append(f"<mailto:{settings.account_smtp_from}?subject=unsubscribe>")
+    return ", ".join(targets) if targets else None
+
+
+def _send(address: str, subject: str, body: str, *, with_unsubscribe: bool = False) -> None:
     settings = get_settings()
     if not settings.account_smtp_host or not settings.account_smtp_from:
         raise MailUnavailable("E-Mail-Versand ist derzeit nicht eingerichtet.")
@@ -42,6 +56,10 @@ def _send(address: str, subject: str, body: str) -> None:
     message["From"] = settings.account_smtp_from
     message["To"] = address
     message["Subject"] = subject
+    if with_unsubscribe:
+        header = _unsubscribe_header()
+        if header:
+            message["List-Unsubscribe"] = header
     message.set_content(body)
     try:
         with smtplib.SMTP(settings.account_smtp_host, settings.account_smtp_port, timeout=10) as smtp:
