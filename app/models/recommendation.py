@@ -45,6 +45,7 @@ class RecommendationLog(Base):
         ),
         Index("ix_recommendation_log_user_created", "app_user_id", "created_at"),
         Index("ix_recommendation_log_surface_window", "surface", "window_start"),
+        Index("ix_recommendation_log_created", "created_at"),
     )
 
 

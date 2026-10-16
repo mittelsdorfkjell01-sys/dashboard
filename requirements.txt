@@ -26,6 +26,7 @@ email-validator==2.2.0  # Pydantic EmailStr validation
 # Data source is Open-Meteo Historical (ERA5 via archive-api + waves via
 # marine-api) over plain HTTP (uses httpx, above) — no CDS credentials needed.
 numpy==2.4.6
+scipy==1.16.2         # deterministic ICON-D2 unstructured-grid remapping
 eccodes==2.44.0         # bounded direct DWD/NOAA GRIB2 point extraction
 pyarrow==25.0.0          # on-disk format for raw extracts (Parquet)
 # OPTIONAL, not on the default path: the Copernicus CDS adapter (app/era5/_real_cds.py)

@@ -314,6 +314,11 @@ class ForecastSnapshot(Base, TimestampMixin):
         ),
         Index("ix_forecast_snapshot_active", "spot_id", "active"),
         Index("ix_forecast_snapshot_generated", "spot_id", "generated_at"),
+        Index(
+            "ix_forecast_snapshot_inactive_generated",
+            "generated_at",
+            postgresql_where=text("active IS FALSE"),
+        ),
     )
 
 
@@ -357,4 +362,11 @@ class ForecastProcessingJob(Base, TimestampMixin):
         ),
         Index("ix_forecast_job_queue", "status", "created_at"),
         Index("ix_forecast_job_spot", "spot_id", "created_at"),
+        Index(
+            "ix_forecast_job_terminal_finished",
+            "finished_at",
+            postgresql_where=text(
+                "status IN ('succeeded','failed','superseded') AND finished_at IS NOT NULL"
+            ),
+        ),
     )

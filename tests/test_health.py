@@ -1,10 +1,12 @@
+import asyncio
 from dataclasses import dataclass
 
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import OperationalError
 
 from app.db.schema import EXPECTED_DB_REVISION
 from app.health import DatabaseHealth, check_database
-from app.main import app
+from app.main import app, database_unavailable
 
 
 class _Scalars:
@@ -126,4 +128,15 @@ def test_legacy_health_preserves_contract_with_unknown_schema(monkeypatch):
     assert response.status_code == 503
     assert response.json()["db"] == "down"
     assert response.json()["schema"] == "unknown"
+
+
+def test_database_exception_contract_is_retryable_and_secret_safe():
+    error = OperationalError("SELECT 1", {}, RuntimeError("database-secret"))
+    response = asyncio.run(database_unavailable(None, error))
+
+    assert response.status_code == 503
+    assert response.headers["retry-after"] == "30"
+    assert response.headers["cache-control"] == "no-store"
+    assert b"retryable" in response.body
+    assert b"database-secret" not in response.body
 

@@ -17,7 +17,7 @@
 
 - **Level (kanonisch, einzig gültig):** `beginner`, `advanced`, `expert`, `competition` (Quelle: `app/admin/constants.py::LEVELS`). Rider-Profile verwenden exakt dieselben Keys. Altwerte `intermediate` → `advanced` und `pro` → `expert` werden nur beim Import gemappt.
 - **Personal Band (Kite):** `[min_kt, ideal_lo_kt, ideal_hi_kt, max_kt]` plus `gust_tolerance_kt`. Dies ist das persönliche Windfenster, abgeleitet aus Gewicht × Quiver × Board × Level.
-- **Recommendable:** Ein Spot darf nur dann in einer Empfehlungsliste auftauchen, wenn er für die Sportart reviewte Richtungssektoren (`SpotWeatherSector`, aktives Profil mit `reviewed_at != null`) und ein gesetztes `facing` hat. Nicht empfehlbare Spots bleiben in Suche und Karte, erscheinen dort aber hinter allen empfehlbaren Treffern.
+- **Recommendable:** Ein Spot darf nur dann in einer Empfehlungsliste auftauchen, wenn ein aktives Wetterprofil mit belegten, aktiven nutzbaren Richtungen und ein gesetztes `facing` existieren. Nutzbare Richtungen sind vom Modell der Forecast-Korrektursektoren getrennt und werden automatisch aus versionierter Start-/Wasser-/Ufergeometrie abgeleitet. `reviewed_at` ist kein Gate. Nicht empfehlbare Spots bleiben in Suche und Karte, erscheinen dort aber hinter allen empfehlbaren Treffern.
 - **Session:** mindestens 3 aufeinanderfolgende Tageslichtstunden am selben lokalen Kalendertag, in denen jede Stunde die Machbarkeit erfüllt (analog zur V3-Definition in `docs/wind-climatology-v3.md`).
 - **Surface:** eine Ausspielfläche mit eigenem Zeitfenster und Kandidatenmenge (Abschnitt 6).
 
@@ -69,7 +69,7 @@ fortlaufende Änderungsprotokoll steht in
 
 `U = Machbarkeit × ConditionFit × CharacterFit × Confidence × Reachability (+ Anomalie nur für Surface „next_week“) (+ Social, Gewicht 0 bis Phase E)`, danach Diversitäts-Reranking.
 
-- **Machbarkeit (hart, 0/1):** Tageslicht; Richtung liegt in einem reviewten Sektor (fehlende Richtung oder fehlende Sektoren = nicht machbar); kein Offshore-Verstoß (Abschnitt 5.3); Wind in `[min_kt, max_kt]`; Böe ≤ Wind + `gust_tolerance_kt`; Tide im Fenster, falls der Spot tideabhängig ist.
+- **Machbarkeit (hart, 0/1):** Tageslicht; Richtung liegt in einem aktiven nutzbaren Richtungsfenster (fehlende Richtung oder fehlende Fenster = nicht machbar); kein Offshore-Verstoß (Abschnitt 5.3); Wind in `[min_kt, max_kt]`; Böe ≤ Wind + `gust_tolerance_kt`; Tide im Fenster, falls der Spot tideabhängig ist.
 - **ConditionFit:** Stundenfit als Trapez (0 bei `min`, 1 in `[ideal_lo, ideal_hi]`, 0 bei `max`), stilabhängig verschoben (hohe `big_air`-Gewichtung verschiebt die Präferenz zum oberen Idealrand). Nur Stunden in Sessions zählen. Aggregiert wird pro Tag und dann über das Surface-Fenster.
 - **CharacterFit:** normiertes Skalarprodukt aus `style_weights` (Nutzer) und `style_affinity` (Spot, 0–3), multipliziert mit Wasser- und Untergrund-Passung. Ausgeschlossene Untergründe setzen den Wert auf 0.
 - **Confidence:** Vorlaufzeit-Abfall, thermischer Abschlag (`editorial.wind_type == "thermal"`), Spot-Verifikationsfehler (`weather_verification`), Modellspreizung falls vorhanden.
@@ -83,7 +83,7 @@ FES-Ereignisse enthalten relative Höhen zu einem Modell-Bezugsniveau. Das bishe
 
 ### 5.3 Offshore
 
-Reviewte Sektoren sind maßgeblich: Liegt die Richtung in einem reviewten Sektor, hat die Kuratorin sie freigegeben. Zusätzlich gilt für `beginner`: Wind aus einer Richtung mit `angular_diff(wind_dir, facing) ≥ 110°` ist nicht machbar, außer `editorial.beginner_offshore_ok == true` (etwa eine flache, geschlossene Lagune).
+Die automatisch aus belegter Geometrie abgeleiteten nutzbaren Richtungen sind maßgeblich. Zusätzlich gilt für `beginner`: Wind aus einer Richtung mit `angular_diff(wind_dir, facing) ≥ 110°` ist nicht machbar, außer `editorial.beginner_offshore_ok == true` (etwa eine flache, geschlossene Lagune). `facing` bleibt dabei ein eigener redaktioneller Wert und wird nicht als Ufernormale verwendet.
 
 ## 6. Surfaces
 

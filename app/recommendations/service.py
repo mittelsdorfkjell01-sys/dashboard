@@ -24,10 +24,11 @@ from app.recommendations.engine import Components, character_fit, forecast_compo
 from app.scoring.params import SCORING_PARAMS_VERSION, get_params
 from app.scoring.rider.resolve import RiderContext
 from app.search.timewindow import rank_by_timewindow, resolve_time_window
+from app.weather.usable_directions import usable_direction_windows
 
 logger = logging.getLogger(__name__)
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 LOCATION_BUCKET_DEGREES = 0.25
 
 
@@ -178,13 +179,9 @@ def _distance_km(a: tuple[float, float] | None, b: tuple[float, float] | None) -
 
 
 def _direction_windows(spot: Spot) -> list[dict[str, float]]:
-    profile = getattr(spot, "weather_profile", None)
-    if not profile or not profile.active or profile.reviewed_at is None:
-        return []
     return [
-        {"min": float(sector.start_deg), "max": float(sector.end_deg)}
-        for sector in profile.sectors
-        if sector.enabled
+        {"min": window["start_deg"], "max": window["end_deg"]}
+        for window in usable_direction_windows(getattr(spot, "weather_profile", None))
     ]
 
 
@@ -204,7 +201,7 @@ def _load_candidates(
         .where(Spot.status == "published", Spot.sports.any(sport))
         .options(
             selectinload(Spot.region),
-            selectinload(Spot.weather_profile).selectinload(SpotWeatherProfile.sectors),
+            selectinload(Spot.weather_profile),
         )
     )
     if region_id is not None:
@@ -374,6 +371,45 @@ def _ordered_spots(db: Session, ids: Iterable[str]) -> list[Spot]:
     return [by_id[spot_id] for spot_id in parsed if spot_id in by_id]
 
 
+def _cached_recommendations(
+    db: Session, payload: Any
+) -> tuple[list[Spot], list[tuple[Spot, dict[str, Any], bool]]] | None:
+    """Hydrate a cached ranking and its audit components with one DB query."""
+    if not isinstance(payload, dict):
+        return None
+    selected_raw = payload.get("ids")
+    rows_raw = payload.get("rows")
+    if not isinstance(selected_raw, list) or not isinstance(rows_raw, list):
+        return None
+    try:
+        selected_ids = [uuid.UUID(str(value)) for value in selected_raw]
+        row_data = [
+            (
+                uuid.UUID(str(row["spot_id"])),
+                dict(row["components"]),
+                bool(row["eligible"]),
+            )
+            for row in rows_raw
+            if isinstance(row, dict)
+        ]
+    except (KeyError, TypeError, ValueError):
+        return None
+    all_ids = set(selected_ids) | {spot_id for spot_id, _components, _eligible in row_data}
+    by_id = {
+        spot.id: spot
+        for spot in db.scalars(
+            select(Spot).where(Spot.id.in_(all_ids)).options(selectinload(Spot.region))
+        )
+    }
+    selected = [by_id[spot_id] for spot_id in selected_ids if spot_id in by_id]
+    rows = [
+        (by_id[spot_id], components, eligible)
+        for spot_id, components, eligible in row_data
+        if spot_id in by_id
+    ]
+    return selected, rows
+
+
 def _write_log(
     db: Session,
     rows: Sequence[tuple[Spot, Components | dict[str, Any], bool]],
@@ -443,6 +479,7 @@ def recommendations(
     location: LocationBucket | None = None,
     limit: int = 12,
     now: datetime | None = None,
+    write_audit_log: bool = True,
 ) -> list[Spot]:
     """Return feasible, recommendable spots in personalized order."""
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -456,11 +493,24 @@ def recommendations(
         params_version=active_version,
     )
     hit = cache.get(key)
-    # Signed-in responses need an actor-specific recommendation_log row so a
-    # later check-in can be attributed exactly. Anonymous responses may reuse
-    # the shared average/fingerprint cache.
-    if isinstance(hit, list) and app_user_id is None:
-        return _ordered_spots(db, hit)
+    cached = _cached_recommendations(db, hit)
+    if cached is not None:
+        selected, cached_rows = cached
+        if write_audit_log and app_user_id is not None:
+            _write_log(
+                db,
+                cached_rows,
+                app_user_id=app_user_id,
+                user_ref=f"user:{app_user_id}",
+                surface=surface,
+                window_start=start,
+                fingerprint=rider.band.fingerprint,
+                audience_segment=(
+                    "logged_profile" if rider.source == "user" else "logged_without_profile"
+                ),
+                params_version=active_version,
+            )
+        return selected
 
     rows = _evaluate(
         _load_candidates(db, sport=sport, region_id=region_id), rider, surface,
@@ -472,13 +522,28 @@ def recommendations(
         else "logged_profile" if rider.source == "user"
         else "logged_without_profile"
     )
-    _write_log(
-        db, rows, app_user_id=app_user_id, user_ref=user_ref, surface=surface,
-        window_start=start, fingerprint=rider.band.fingerprint,
-        audience_segment=audience_segment, params_version=active_version,
-    )
+    if write_audit_log:
+        _write_log(
+            db, rows, app_user_id=app_user_id, user_ref=user_ref, surface=surface,
+            window_start=start, fingerprint=rider.band.fingerprint,
+            audience_segment=audience_segment, params_version=active_version,
+        )
     ids = [str(spot.id) for spot, components, eligible in rows if eligible and components.utility > 0][:limit]
-    cache.set(key, ids, _cache_ttl(surface))
+    cache.set(
+        key,
+        {
+            "ids": ids,
+            "rows": [
+                {
+                    "spot_id": str(spot.id),
+                    "components": components.payload(),
+                    "eligible": eligible,
+                }
+                for spot, components, eligible in rows
+            ],
+        },
+        _cache_ttl(surface),
+    )
     return _ordered_spots(db, ids)
 
 
@@ -603,12 +668,10 @@ def recommendable_spot_ids(db: Session, spots: Sequence[Spot], sport: str) -> se
         .where(
             SpotWeatherProfile.spot_id.in_(ids),
             SpotWeatherProfile.active.is_(True),
-            SpotWeatherProfile.reviewed_at.is_not(None),
         )
-        .options(selectinload(SpotWeatherProfile.sectors))
     ).all()
     return {
         profile.spot_id
         for profile in profiles
-        if any(sector.enabled for sector in profile.sectors)
+        if usable_direction_windows(profile)
     }

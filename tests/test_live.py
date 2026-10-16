@@ -77,6 +77,29 @@ def test_cache_envelope_does_not_replace_provider_capture_time():
     assert cache.get("weather")["_cache_captured_at"] == captured
 
 
+def test_in_memory_cache_evicts_oldest_entry_at_its_limit():
+    cache = InMemoryCache(max_entries=2)
+    cache.set("oldest", {"value": 1}, ttl=10)
+    cache.set("middle", {"value": 2}, ttl=10)
+    cache.set("newest", {"value": 3}, ttl=10)
+
+    assert cache.get("oldest") is None
+    assert cache.get("middle")["value"] == 2
+    assert cache.get("newest")["value"] == 3
+
+
+def test_in_memory_cache_get_many_returns_live_entries_only():
+    now = [10.0]
+    cache = InMemoryCache(clock=lambda: now[0])
+    cache.set("one", {"value": 1}, ttl=10)
+    cache.set("two", {"value": 2}, ttl=1)
+    now[0] = 12.0
+
+    assert cache.get_many(["one", "two", "missing"]) == {
+        "one": {"value": 1}
+    }
+
+
 def test_forecast_sample_identity_is_bounded_to_the_capture_interval():
     captured = "2026-08-29T10:15:30.123456+00:00"
     assert _forecast_sample_issued_at({"_cache_captured_at": captured}).isoformat() == (

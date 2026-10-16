@@ -1,8 +1,11 @@
+import logging
 import os
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.api import (
     account,
@@ -12,6 +15,8 @@ from app.api import (
     admin_moderation,
     admin_users,
     admin_weather,
+    admin_weather_fields,
+    tide_stations,
     auth,
     community,
     cron,
@@ -27,13 +32,29 @@ from app.csrf import CSRFMiddleware
 from app.safety import RemoteWriteGuardMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 from app.health import check_database, check_redis
+from app.spatial_fields.static import ImmutableFieldStaticFiles
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RemoteWriteGuardMiddleware)
+
+
+@app.exception_handler(SQLAlchemyError)
+async def database_unavailable(_request: Request, exc: SQLAlchemyError) -> JSONResponse:
+    """Turn database outages into a recoverable, secret-safe public contract."""
+    logger.error("database request failed (%s)", type(exc).__name__)
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": "Datendienst vorübergehend nicht verfügbar. Bitte erneut versuchen.",
+            "retryable": True,
+        },
+        headers={"Retry-After": "30", "Cache-Control": "no-store"},
+    )
 
 
 @app.on_event("startup")
@@ -99,9 +120,21 @@ if settings.media_backend == "local":
         name="media",
     )
 
+# Immutable field tiles bypass Python request handlers after publication. The
+# active pointer remains a small API response, while large assets are directly
+# cacheable by browsers/reverse proxies without a paid object-store dependency.
+if settings.weather_field_storage_backend == "local":
+    os.makedirs(settings.weather_field_storage_dir, exist_ok=True)
+    app.mount(
+        settings.weather_field_public_base_url,
+        ImmutableFieldStaticFiles(directory=settings.weather_field_storage_dir),
+        name="weather-field-assets",
+    )
+
 # Public + community endpoints — served by every deployment.
 app.include_router(spots.router)
 app.include_router(weather_fields.router)
+app.include_router(tide_stations.router)
 app.include_router(regions.router)
 app.include_router(recommendations.router)
 app.include_router(search.router)
@@ -124,6 +157,8 @@ if settings.enable_admin_api:
     app.include_router(admin_users.router)
     app.include_router(admin_moderation.router)
     app.include_router(admin_weather.router)
+    app.include_router(admin_weather_fields.router)
+    app.include_router(admin_weather_fields.diagnostic_router)
 
 
 def _readiness(response: Response) -> dict[str, object]:

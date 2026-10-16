@@ -16,6 +16,15 @@
 - Frontend entry point: `frontend/src/main.tsx`
 - Database migrations: `alembic/versions/`
 
+## Active measurement campaign
+
+- At the start of every development session, run
+  `python -m scripts.europe_measurement_status --session-check` when
+  `config/europe-wind-measurement.json` exists.
+- If the command reports that the campaign ended, notify the user before new
+  weather work and recommend running the campaign evaluation. The configured
+  end timestamp is authoritative; do not extend it silently.
+
 ## Working agreements
 
 - Use `rg`/`rg --files` before opening files. Do not scan the full repository when an area is known.

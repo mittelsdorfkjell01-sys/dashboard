@@ -15,7 +15,10 @@ if config.config_file_name is not None:
 # Inject the database URL from application settings. Honour an override placed
 # in the alembic config (used by the test-suite) before falling back to .env.
 if not config.get_main_option("sqlalchemy.url"):
-    config.set_main_option("sqlalchemy.url", get_settings().database_url)
+    settings = get_settings()
+    config.set_main_option(
+        "sqlalchemy.url", settings.database_direct_url or settings.database_url
+    )
 
 target_metadata = Base.metadata
 

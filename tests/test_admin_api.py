@@ -331,7 +331,12 @@ def test_go_live_blocks_incomplete_spot(admin, region_id, db):
     scoring = admin.get(f"/admin/spots/{sid}/readiness").json()["scoring"]["kitesurf"]
     assert scoring["applicable"] is True
     assert scoring["recommendable"] is False
-    assert {"reviewed_sectors", "facing", "active_v3_run"} <= set(scoring["missing"])
+    assert {"usable_directions", "facing", "active_v3_run"} <= set(scoring["missing"])
+    assert scoring["directions"]["status"] == "missing"
+    assert scoring["directions"]["effective"] is False
+    assert scoring["surfaces"]["region"]["exclusions"] == ["usable_directions", "facing"]
+    assert "three_hour_daylight_personal_band_session" in scoring["surfaces"]["now"]["runtime_requirements"]
+    assert "active_v3_run" in scoring["surfaces"]["season"]["exclusions"]
 
     # Publishing an editorially incomplete spot is blocked (409) — nothing
     # half-finished reaches the public site. The blocking gaps are returned.

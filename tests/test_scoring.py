@@ -150,15 +150,22 @@ def test_competition_has_own_v2_offsets_and_v1_is_unchanged():
     }
 
 
-def test_recommendable_requires_reviewed_sectors_and_facing():
+def test_recommendable_requires_usable_directions_and_facing():
     from types import SimpleNamespace
 
     from app.scoring.eligibility import is_recommendable, recommendability_gaps
 
     spot = SimpleNamespace(id="spot-1", sports=["kitesurf"], facing=270)
-    reviewed = SimpleNamespace(
-        reviewed_at="2026-09-22",
-        sectors=[SimpleNamespace(enabled=True)],
+    direction_profile = SimpleNamespace(
+        active=True,
+        usable_direction_status="active",
+        usable_direction_rule_version="legacy-v3-sector-migration-v1",
+        usable_direction_sectors=[0],
+        usable_direction_windows=[{"start_deg": 0, "end_deg": 22.5}],
+        usable_direction_evidence={"origin": "legacy_sector_migration", "missing": []},
+        usable_direction_geometry=None,
+        usable_direction_geometry_version=None,
+        usable_direction_calculated_at=None,
     )
 
     class FakeDb:
@@ -168,11 +175,11 @@ def test_recommendable_requires_reviewed_sectors_and_facing():
         def scalar(self, _statement):
             return self.profile
 
-    assert is_recommendable(spot, "kitesurf", FakeDb(reviewed)) is True
+    assert is_recommendable(spot, "kitesurf", FakeDb(direction_profile)) is True
     spot.facing = None
-    assert recommendability_gaps(spot, "kitesurf", FakeDb(reviewed)) == ["facing"]
+    assert recommendability_gaps(spot, "kitesurf", FakeDb(direction_profile)) == ["facing"]
     spot.facing = 270
-    assert recommendability_gaps(spot, "kitesurf", FakeDb(None)) == ["reviewed_sectors"]
+    assert recommendability_gaps(spot, "kitesurf", FakeDb(None)) == ["usable_directions"]
     assert profile_thresholds("competition", "kitesurf", SCORING_PARAMS_V2["kitesurf"]) == {
         "good_min_kt": 5.0,
         "good_max_kt": 6.0,

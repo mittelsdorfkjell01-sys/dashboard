@@ -18,6 +18,8 @@ os.environ["DATABASE_URL"] = _TEST_URL
 os.environ["APP_ENV"] = "test"
 os.environ["DEPLOYMENT_MODE"] = "admin"
 os.environ["ENABLE_ADMIN_API"] = "true"
+# Cron endpoint contract tests opt in explicitly; runtime defaults fail closed.
+os.environ["RUN_MAINTENANCE_CRONS"] = "true"
 # Keep ERA5 background auto-processing off in tests (a dev .env may enable it);
 # tests that exercise it flip the setting explicitly.
 os.environ["ERA5_AUTOPROCESS"] = "false"

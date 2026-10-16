@@ -5,10 +5,12 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from sqlalchemy import func, select
 
 from app.discovery import service as discovery
 from app.discovery.warmup import warm_once
 from app.live.cache import InMemoryCache
+from app.models import RecommendationLog
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
 
@@ -30,6 +32,7 @@ def test_warm_once_populates_cache(seeded):
     assert results and results[0][1] == 5          # (sport, limit, n)
     assert 0 < results[0][2] <= 5
     assert fake.forecast_calls > 0                  # first run did the work
+    assert seeded.scalar(select(func.count()).select_from(RecommendationLog)) == 0
 
 
 def test_warm_once_makes_endpoint_read_free(seeded):

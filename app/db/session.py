@@ -17,7 +17,14 @@ settings = get_settings()
 # psycopg's server-side prepared statements across checkouts — that surfaces as
 # `prepared statement "..." already exists`. Disable auto-preparation in serverless
 # mode (prepare_threshold=None) so every pooled endpoint works.
-_engine_kwargs: dict = {"pool_pre_ping": True, "future": True}
+_engine_kwargs: dict = {
+    "pool_pre_ping": True,
+    "pool_size": settings.db_pool_size,
+    "max_overflow": settings.db_max_overflow,
+    "pool_timeout": settings.db_pool_timeout_seconds,
+    "pool_recycle": settings.db_pool_recycle_seconds,
+    "future": True,
+}
 _running_on_vercel = os.environ.get("VERCEL") == "1"
 if settings.db_serverless or _running_on_vercel:
     _engine_kwargs = {
