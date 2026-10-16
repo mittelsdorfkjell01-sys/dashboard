@@ -49,6 +49,9 @@ async function mockSearch(page: Page) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/search") return route.fulfill({ json: searchResult });
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: catalogueSpots, total: catalogueSpots.length, version: "t-1" } });
+    }
     if (url.pathname === "/spots") return route.fulfill({ json: catalogueSpots });
     if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
       return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
@@ -74,6 +77,45 @@ test("results keep their editorial page structure on mobile", async ({ page }) =
   expect(Math.round(footer!.y + footer!.height)).toBeGreaterThanOrEqual(851);
 });
 
+test("the results page shows the one weather map, framed on the hits", async ({ page }) => {
+  // The page's own Leaflet copy was deleted (2026-10-10). What sits beside the
+  // results from lg up is the shared weather map, embedded: wind only, so no
+  // Spots/Wind switch and no second search inside it.
+  await mockSearch(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/search?q=Tarifa");
+  await expect(page.getByText("Valdevaqueros", { exact: true }).first()).toBeVisible();
+
+  await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Vergrößern" })).toHaveCount(0);
+
+  const map = page.locator(".swd-wind-explorer.is-embedded");
+  await expect(map).toBeVisible();
+  await expect(map.getByRole("group", { name: "Kartenmodus" })).toHaveCount(0);
+
+  // The result column keeps its own measure beside the map rather than
+  // stretching across the whole page.
+  const mapBox = (await map.boundingBox())!;
+  const grid = page.locator("main section div.grid").first();
+  const gridBox = (await grid.boundingBox())!;
+  expect(gridBox.x + gridBox.width).toBeLessThanOrEqual(mapBox.x + 1);
+});
+
+test("on mobile the results page offers the map as a framed link, not a second map", async ({ page }) => {
+  await mockSearch(page);
+  await page.setViewportSize({ width: 393, height: 851 });
+  await page.goto("/search?q=Tarifa");
+  await expect(page.getByText("Valdevaqueros", { exact: true }).first()).toBeVisible();
+
+  await expect(page.locator(".swd-wind-explorer")).toHaveCount(0);
+  const link = page.getByRole("link", { name: "Karte öffnen" });
+  await expect(link).toBeVisible();
+  const href = await link.getAttribute("href");
+  expect(href).toContain("mode=wind");
+  expect(href).toContain("toggle=0");
+  expect(href).toMatch(/lat=-?\d/);
+});
+
 test("saved dark mode is applied before the results route renders", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("sw-theme", "dark"));
   await mockSearch(page);
@@ -97,6 +139,9 @@ test("search is the filled-action exception and loads regions on demand", async 
     if (url.pathname === "/regions") {
       regionCalls += 1;
       return route.fulfill({ json: [] });
+    }
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: [], total: 0, version: "t-1" } });
     }
     if (url.pathname === "/spots/top" || url.pathname === "/spots") {
       return route.fulfill({ json: [] });
