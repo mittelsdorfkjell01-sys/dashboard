@@ -1,29 +1,17 @@
 import type { Spot } from "./types";
 import { haversineKm } from "./mapLinks";
-import { windColor } from "./windScale";
-import { waveColor } from "./waveScale";
 
-// Wind and wave remain available to embedded spot maps. The public overview
-// intentionally uses wind only and exposes no mode control.
-export type PublicMapMode = "wind" | "waves";
-
-/** Per-spot live reading used to color markers for the active mode. Both
- *  values are independently nullable — a spot can have live wind but no
- *  marine data (inland) or vice versa; `null` always means "no data", never
- *  a fabricated 0. */
-export interface PublicSpotLiveValue {
-  windKt: number | null;
-  waveM: number | null;
-}
-
-/** Marker dot fill for the active mode, from the spot's live wind/wave
- *  reading — reuses the exact chart-legend scales (windScale/waveScale) so
- *  "what colour is 18 kt" is one source of truth everywhere. A spot with no
- *  live value for this mode falls back to the scales' own neutral colour,
- *  never a fabricated reading. */
-export function spotDotColor(mode: PublicMapMode, live: PublicSpotLiveValue | undefined): string {
-  return mode === "wind" ? windColor(live?.windKt) : waveColor(live?.waveM);
-}
+/**
+ * Every spot dot on both public maps, in one colour: the dark house mark, a
+ * plain ringless disc (2026-10-12 — both grounds are light again, so the mark
+ * is dark; the light grey of the dark-map day disappeared on Voyager). The
+ * dots used to be tinted by the live-wind scale and fell back to a near-white
+ * neutral wherever a spot had no live reading, which read as "no spot here".
+ * They now only say WHERE a spot is; what the wind does is the field's and the
+ * forecast sheet's job. The wind scale stays the one source of truth for
+ * charts — it is simply no longer used for map markers.
+ */
+export const SPOT_DOT_COLOR = "#1A1F24";
 
 /** Minimal per-spot properties carried on a clustering feature — only what the
  *  marker/aria layer needs; the full Spot is looked up by `spotId` at render. */

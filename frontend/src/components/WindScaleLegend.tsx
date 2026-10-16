@@ -7,7 +7,7 @@ export default function WindScaleLegend() {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-data-caption text-muted">
       {WIND_BINS.map((bin, i) => (
         <span key={bin.min} className="inline-flex items-center gap-1">
-          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: bin.hex }} />
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-card" style={{ backgroundColor: bin.hex }} />
           {i === WIND_BINS.length - 1 ? `${bin.min}+` : `${bin.min}–${bin.max}`} kt
         </span>
       ))}
