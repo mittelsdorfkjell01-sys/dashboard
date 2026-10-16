@@ -11,13 +11,18 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.models import Spot, WindClimatologyCell, WindClimatologyRun
-from app.wind_climatology.aggregate import ALGORITHM_VERSION, aggregate
+from app.wind_climatology.aggregate import ALGORITHM_VERSION, aggregate, reaggregate_sections
 from app.wind_climatology.client import WindHistoryClient
+
+# Number of complete calendar years the climatology window spans. The per-year
+# aggregates are stored, so the public year-range slider can re-aggregate any
+# sub-window of this span without a new provider fetch.
+CLIMATOLOGY_WINDOW_YEARS = 30
 
 
 def full_year_window(today: date | None = None) -> tuple[int, int]:
     end = (today or date.today()).year - 1
-    return end - 19, end
+    return end - (CLIMATOLOGY_WINDOW_YEARS - 1), end
 
 
 def spot_coordinates(spot: Spot) -> tuple[float, float]:
@@ -109,10 +114,31 @@ def public_state(db: Session, spot_id: uuid.UUID) -> dict:
     if active:
         data = dict(active.public_data or {})
         data["status"] = "ready"
+        data["available_years"] = {"min": active.start_year, "max": active.end_year}
         if latest and latest.id != active.id and latest.status in {"pending", "processing"}:
             data["refresh_status"] = latest.status
         return data
     return {"status": latest.status if latest else "unavailable"}
+
+
+def windowed_public(db: Session, spot_id: uuid.UUID, from_year: int, to_year: int) -> dict | None:
+    """Public payload for a user-chosen year sub-window, re-aggregated from the
+    active run's stored per-year bins (no provider fetch). Returns None when no
+    active run / per-year data exists, so the caller falls back to the default."""
+    active = db.scalar(select(WindClimatologyRun).where(WindClimatologyRun.spot_id == spot_id, WindClimatologyRun.is_active.is_(True)))
+    if active is None or not active.annual_aggregates:
+        return None
+    low, high = active.start_year, active.end_year
+    start = max(low, min(int(from_year), high))
+    end = max(low, min(int(to_year), high))
+    if start > end:
+        start, end = end, start
+    data = dict(active.public_data or {})
+    data["status"] = "ready"
+    data["available_years"] = {"min": low, "max": high}
+    data["period"] = {"start_year": start, "end_year": end}
+    data["sections"] = reaggregate_sections(active.annual_aggregates, start, end)
+    return data
 
 
 def set_cell(db: Session, spot_id: uuid.UUID, *, mode: str, lat: float | None = None, lon: float | None = None) -> WindClimatologyRun:

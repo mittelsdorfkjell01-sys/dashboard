@@ -3,7 +3,7 @@ import importlib
 
 import pytest
 
-from app.wind_climatology.aggregate import aggregate, date_range, section_for_day, speed_bin
+from app.wind_climatology.aggregate import aggregate, date_range, reaggregate_sections, section_for_day, speed_bin
 from app.wind_climatology.client import WindHistoryClient
 from app.wind_climatology.service import full_year_window
 
@@ -19,9 +19,9 @@ def test_sections_are_month_local_and_leap_aware():
     assert date_range(2, 4, 2023) == (22, 28)
 
 
-def test_window_is_last_twenty_completed_years():
+def test_window_is_last_thirty_completed_years():
     from datetime import date
-    assert full_year_window(date(2026, 8, 16)) == (2006, 2025)
+    assert full_year_window(date(2026, 8, 16)) == (1996, 2025)
 
 
 def test_explicit_era5_nearest_cell_and_knots_are_requested():
@@ -85,3 +85,23 @@ def test_aggregation_has_48_unsmoothed_sections_and_full_denominator(monkeypatch
     assert public["sections"][2]["windows"]["15_20"]["percent"] == 100
     assert public["sections"][3]["windows"]["20_30"]["percent"] == 100
     assert public["sections"][1]["windows"]["10_15"]["hours_per_day"] == round(20 / 140, 2)
+
+
+def test_reaggregate_sections_subwindow_matches_full_and_scales(monkeypatch):
+    times, speeds = [], []
+    for year in range(2006, 2026):
+        for month in range(1, 13):
+            for day, speed in ((1, 9.9), (8, 10.0), (15, 15.0), (22, 20.0)):
+                times.append(datetime(year, month, day, 12, tzinfo=timezone.utc).timestamp())
+                speeds.append(speed)
+    aggregate_module = importlib.import_module("app.wind_climatology.aggregate")
+    monkeypatch.setattr(aggregate_module, "daylight_mask", lambda times, *_: [True] * len(times))
+    annual, public = aggregate(times, speeds, timezone_name="Europe/Berlin", spot_lat=54, spot_lon=10, start_year=2006, end_year=2025)
+    # Full window re-aggregation reproduces the stored sections exactly.
+    assert reaggregate_sections(annual, 2006, 2025) == public["sections"]
+    # A 10-year sub-window keeps identical percentages (each year is identical)
+    # but exactly half the counted hours.
+    sub = reaggregate_sections(annual, 2016, 2025)
+    assert sub[1]["windows"]["10_15"]["percent"] == 100
+    assert sub[1]["windows"]["10_15"]["hours"] == 10
+    assert public["sections"][1]["windows"]["10_15"]["hours"] == 20

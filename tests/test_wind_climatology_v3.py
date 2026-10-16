@@ -8,7 +8,7 @@ import pytest
 
 from app.wind_climatology.v3_artifact import decode_cube, encode_cube
 from app.wind_climatology.v3_direction import canonical_windows, direction_matches
-from app.wind_climatology.v3_engine import Hour, _sessions, aggregate_variant, variant_specs, wilson_interval
+from app.wind_climatology.v3_engine import Hour, _per_year_week, _sessions, aggregate_variant, collapse_from_serialized, prepare_context, serialize_per_year, variant_specs, wilson_interval
 from app.wind_climatology.v3_time import expected_hours_by_week, seasonal_week, week_date_range
 from app.wind_climatology.v3_service import _best_season, _config, _hash, error_category, state_label
 
@@ -44,6 +44,21 @@ def _week_one_hours(session_years: set[int], *, concentrated_days=2, direction=0
     return rows
 
 
+def test_collapse_from_serialized_matches_full_and_subwindow():
+    rows = _week_one_hours(set(range(2006, 2026)))
+    full = aggregate_variant(rows, start_year=2006, end_year=2025)["weeks"][0]
+    context = prepare_context(rows, start_year=2006, end_year=2025, timezone_name="UTC")
+    year_week = _per_year_week(context, min_wind_kn=15, max_wind_kn=20, direction_mode="all", windows=[])
+    per_year = serialize_per_year(year_week, 2006, 2025)
+    # Re-collapsing the stored per-year grid over the full range is identical to
+    # the direct aggregation.
+    assert collapse_from_serialized(per_year, 2006, 2025)[0] == full
+    # A 10-year sub-window halves the sample size.
+    sub = collapse_from_serialized(per_year, 2016, 2025)[0]
+    assert full["sample_years"] == 20
+    assert sub["sample_years"] == 10
+
+
 def test_yearly_regularity_beats_same_hours_concentrated_in_fewer_years():
     # Both fixtures contain 42 qualified hours: 7 years × 2 days × 3 hours
     # versus 2 years × 7 days × 3 hours.
@@ -67,7 +82,7 @@ def test_usable_filter_cannot_increase_result_and_missing_definition_is_rejected
     all_result = aggregate_variant(rows, start_year=2006, end_year=2025, direction_mode="all")
     usable = aggregate_variant(rows, start_year=2006, end_year=2025, direction_mode="usable", usable_windows=[{"min": 315, "max": 45}])
     assert usable["weeks"][0]["reliability_percent"] <= all_result["weeks"][0]["reliability_percent"]
-    with pytest.raises(ValueError, match="reviewed"):
+    with pytest.raises(ValueError, match="active usable"):
         aggregate_variant(rows, start_year=2006, end_year=2025, direction_mode="usable")
 
 

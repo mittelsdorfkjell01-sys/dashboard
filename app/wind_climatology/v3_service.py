@@ -8,14 +8,15 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select, update
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Spot, SpotWeatherProfile, WindClimatologyCell, WindClimatologyV3Run, WindClimatologyV3Variant
 from app.wind_climatology.client import WindHistoryClient
 from app.wind_climatology.service import _cell, full_year_window, haversine_km, spot_coordinates
 from app.wind_climatology.v3_artifact import decode_cube, encode_cube
-from app.wind_climatology.v3_direction import canonical_windows, direction_label
+from app.weather.usable_directions import usable_direction_state, usable_direction_windows
+from app.wind_climatology.v3_direction import direction_label
 from app.wind_climatology.v3_engine import (
     ALGORITHM_VERSION,
     COMPLETENESS_THRESHOLD,
@@ -23,6 +24,7 @@ from app.wind_climatology.v3_engine import (
     SESSION_HOURS,
     SUCCESSFUL_DAYS,
     build_variant_cube,
+    collapse_from_serialized,
     prepare_hours,
     variant_key,
     wilson_interval,
@@ -32,11 +34,11 @@ from app.wind_climatology.v3_time import week_date_range
 VARIANT_RANGE = {"min": 5, "max": 40, "step": 1, "open_upper": True}
 
 
-def reviewed_direction_windows(db: Session, spot_id: uuid.UUID) -> list[dict[str, float]]:
-    profile = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id, SpotWeatherProfile.active.is_(True)).options(selectinload(SpotWeatherProfile.sectors)))
-    if profile is None or profile.reviewed_at is None:
-        return []
-    return canonical_windows([{"start_deg": row.start_deg, "end_deg": row.end_deg} for row in profile.sectors if row.enabled])
+def direction_windows_for_spot(db: Session, spot_id: uuid.UUID) -> list[dict[str, float]]:
+    profile = db.scalar(
+        select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id)
+    )
+    return usable_direction_windows(profile)
 
 
 def _config(*, start: int, end: int, spot_coords, requested_coords, actual_coords, windows) -> dict:
@@ -64,7 +66,7 @@ def enqueue(db: Session, spot_id: uuid.UUID) -> tuple[WindClimatologyV3Run, bool
         raise LookupError("spot not found")
     cell = _cell(db, spot)
     start, end = full_year_window()
-    windows = reviewed_direction_windows(db, spot.id)
+    windows = direction_windows_for_spot(db, spot.id)
     request_config = _config(start=start, end=end, spot_coords=spot_coordinates(spot), requested_coords=(cell.requested_lat, cell.requested_lon), actual_coords=(cell.actual_lat, cell.actual_lon) if cell.actual_lat is not None else None, windows=windows)
     digest = _hash(request_config)
     existing = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot.id, WindClimatologyV3Run.config_hash == digest, WindClimatologyV3Run.status.in_(("pending", "processing"))))
@@ -126,7 +128,9 @@ def status(db: Session, spot_id: uuid.UUID) -> dict:
     latest = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot_id).order_by(WindClimatologyV3Run.created_at.desc()))
     active = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot_id, WindClimatologyV3Run.is_active.is_(True)))
     cell = db.scalar(select(WindClimatologyCell).where(WindClimatologyCell.spot_id == spot_id))
-    windows = reviewed_direction_windows(db, spot_id)
+    profile = db.scalar(select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot_id))
+    direction_state = usable_direction_state(profile)
+    windows = direction_state["windows"]
     def view(row):
         if row is None:
             return None
@@ -146,7 +150,7 @@ def status(db: Session, spot_id: uuid.UUID) -> dict:
             windows=windows))
     stale = bool(active and current_hash and active.config_hash != current_hash)
     return {"state": state_label(latest, active, stale), "stale": stale, "latest": view(latest),
-            "active": view(active), "directions": {"reviewed": bool(windows), "windows": windows,
+            "active": view(active), "directions": {**direction_state,
             "usable_available": bool(windows)}, "cell": cell_view(cell), "public_effect": "none"}
 
 
@@ -205,7 +209,7 @@ def set_cell(db: Session, spot_id: uuid.UUID, *, mode: str, lat: float | None, l
 def operations(db: Session, *, limit: int = 30) -> dict:
     spots = db.scalars(select(Spot)).all()
     cells = {row.spot_id: row for row in db.scalars(select(WindClimatologyCell)).all()}
-    profiles = {row.spot_id: row for row in db.scalars(select(SpotWeatherProfile).options(selectinload(SpotWeatherProfile.sectors))).all()}
+    profiles = {row.spot_id: row for row in db.scalars(select(SpotWeatherProfile)).all()}
     active_by_spot = {row.spot_id: row for row in db.scalars(select(WindClimatologyV3Run).where(WindClimatologyV3Run.is_active.is_(True))).all()}
     latest_by_spot = {row.spot_id: row for row in db.scalars(select(WindClimatologyV3Run).distinct(WindClimatologyV3Run.spot_id).order_by(WindClimatologyV3Run.spot_id, WindClimatologyV3Run.created_at.desc())).all()}
     start, end = full_year_window()
@@ -213,8 +217,7 @@ def operations(db: Session, *, limit: int = 30) -> dict:
     for spot in spots:
         active, cell, profile = active_by_spot.get(spot.id), cells.get(spot.id), profiles.get(spot.id)
         if not active or not cell: continue
-        windows = canonical_windows([{"start_deg": row.start_deg, "end_deg": row.end_deg}
-            for row in profile.sectors if row.enabled]) if profile and profile.active and profile.reviewed_at else []
+        windows = usable_direction_windows(profile)
         digest = _hash(_config(start=start, end=end, spot_coords=spot_coordinates(spot),
             requested_coords=(cell.requested_lat, cell.requested_lon),
             actual_coords=(cell.actual_lat, cell.actual_lon) if cell.actual_lat is not None else None,
@@ -242,7 +245,7 @@ def operations(db: Session, *, limit: int = 30) -> dict:
             "stale": len(stale_spots)}, "queue_depth": queue_depth, "recent_runs": rows, "public_effect": "none"}
 
 
-def variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: str) -> dict:
+def variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: str, from_year: int | None = None, to_year: int | None = None) -> dict:
     run = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot_id, WindClimatologyV3Run.is_active.is_(True)))
     if run is None:
         raise LookupError("no active V3 shadow run")
@@ -255,7 +258,21 @@ def variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: i
         raise LookupError("V3 variant unavailable")
     selected = decode_cube(row.payload_blob)
     key = variant_key(min_wind_kn, max_wind_kn, direction_mode)
-    return {"run_id": str(run.id), "algorithm_version": run.algorithm_version, "period": [run.start_year, run.end_year], "quality": run.quality_metadata, "variant": selected, "cache_key": f"wind-climatology-v3:{run.id}:{key}", "public_effect": "none"}
+    period = [run.start_year, run.end_year]
+    cache_key = f"wind-climatology-v3:{run.id}:{key}"
+    # Year-range slider: re-collapse the stored per-year grid for a sub-window
+    # (no provider fetch). Older artifacts without per_year keep the full window.
+    if from_year is not None and to_year is not None and selected.get("per_year"):
+        low, high = run.start_year, run.end_year
+        start = max(low, min(int(from_year), high))
+        end = max(low, min(int(to_year), high))
+        if start > end:
+            start, end = end, start
+        if (start, end) != (low, high):
+            selected = {**selected, "weeks": collapse_from_serialized(selected["per_year"], start, end)}
+            period = [start, end]
+            cache_key = f"{cache_key}:{start}-{end}"
+    return {"run_id": str(run.id), "algorithm_version": run.algorithm_version, "period": period, "quality": run.quality_metadata, "variant": selected, "cache_key": cache_key, "available_years": {"min": run.start_year, "max": run.end_year}, "public_effect": "none"}
 
 
 # --- Public read-only contract (Phase 5) ------------------------------------
@@ -362,18 +379,19 @@ def _overall_data_quality(weeks: list[dict]) -> str:
     return "insufficient"
 
 
-def public_variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: str) -> tuple[dict, str]:
+def public_variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_wind_kn: int | None, direction_mode: str, from_year: int | None = None, to_year: int | None = None) -> tuple[dict, str]:
     """Public weekly reliability payload for one spot/window/direction-mode selection.
 
-    Returns ``(payload, cache_key)``; the cache key is for HTTP caching (ETag)
-    only and is never embedded in the payload body.
+    ``from_year``/``to_year`` re-collapse the stored per-year grid for a chosen
+    year sub-window. Returns ``(payload, cache_key)``; the cache key is for HTTP
+    caching (ETag) only and is never embedded in the payload body.
     """
     if not public_enabled(spot_id):
         raise LookupError("V3 public access not enabled for this spot")
-    windows = reviewed_direction_windows(db, spot_id)
+    windows = direction_windows_for_spot(db, spot_id)
     if direction_mode == "usable" and not windows:
-        raise ValueError("usable direction mode requires reviewed direction windows for this spot")
-    result = variant(db, spot_id, min_wind_kn=min_wind_kn, max_wind_kn=max_wind_kn, direction_mode=direction_mode)
+        raise ValueError("usable direction mode requires active usable directions for this spot")
+    result = variant(db, spot_id, min_wind_kn=min_wind_kn, max_wind_kn=max_wind_kn, direction_mode=direction_mode, from_year=from_year, to_year=to_year)
     cell = db.scalar(select(WindClimatologyCell).where(WindClimatologyCell.spot_id == spot_id))
     run = db.scalar(select(WindClimatologyV3Run).where(WindClimatologyV3Run.spot_id == spot_id, WindClimatologyV3Run.is_active.is_(True)))
     if run is None or run.algorithm_version != ALGORITHM_VERSION:
@@ -383,6 +401,7 @@ def public_variant(db: Session, spot_id: uuid.UUID, *, min_wind_kn: int, max_win
         "status": "ready",
         "algorithm_version": result["algorithm_version"],
         "period": result["period"],
+        "available_years": result["available_years"],
         "model": cell.model if cell else "ERA5",
         "wind_height_m": 10,
         "grid_resolution_degrees": cell.resolution_deg if cell else 0.25,

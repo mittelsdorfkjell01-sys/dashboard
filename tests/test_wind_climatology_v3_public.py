@@ -193,7 +193,7 @@ def test_open_upper_window_reports_null_max(anon_client, db, v3_spot, monkeypatc
     assert response.json()["selection"] == {"min_wind_kn": 30, "max_wind_kn": None, "direction_mode": "all"}
 
 
-def test_usable_mode_without_reviewed_directions_is_rejected(anon_client, db, v3_spot, monkeypatch):
+def test_usable_mode_without_active_directions_is_rejected(anon_client, db, v3_spot, monkeypatch):
     spot, cell = v3_spot
     _add_active_run(db, spot, cell, variants={(15, 20, "all"): _default_weeks()})
     _enable_public(monkeypatch)
@@ -201,12 +201,19 @@ def test_usable_mode_without_reviewed_directions_is_rejected(anon_client, db, v3
     assert response.status_code == 422
 
 
-def test_usable_mode_available_with_reviewed_directions_and_description(anon_client, db, v3_spot, monkeypatch):
+def test_usable_mode_available_with_active_directions_and_description(anon_client, db, v3_spot, monkeypatch):
     spot, cell = v3_spot
-    profile = SpotWeatherProfile(spot_id=spot.id, reviewed_at=datetime.now(timezone.utc), active=True)
+    profile = SpotWeatherProfile(
+        spot_id=spot.id,
+        active=True,
+        usable_direction_status="active",
+        usable_direction_rule_version="legacy-v3-sector-migration-v1",
+        usable_direction_sectors=[11, 12, 13],
+        usable_direction_windows=[{"start_deg": 247.5, "end_deg": 315.0}],
+        usable_direction_evidence={"origin": "legacy_sector_migration", "missing": []},
+    )
     db.add(profile)
     db.flush()
-    db.add(SpotWeatherSector(profile_id=profile.id, start_deg=247.5, end_deg=315.0, enabled=True))
     db.commit()
     _add_active_run(db, spot, cell, variants={
         (15, 20, "all"): _default_weeks(),
