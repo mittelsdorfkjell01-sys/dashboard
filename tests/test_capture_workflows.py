@@ -1,4 +1,4 @@
-"""The checked-in capture schedules stay raw-only and fail closed."""
+"""Development capture workflows stay bounded, shadow-only and fail closed."""
 
 from pathlib import Path
 
@@ -14,6 +14,8 @@ def test_raw_capture_orders_exact_assets_before_observations_and_has_no_analysis
     observations = "python -m scripts.station_capture_worker observations"
     assert workflow.index(exact) < workflow.index(observations)
     assert "LIVE_WIND_CAPTURE_ENABLED == 'true'" in workflow
+    assert 'cron: "*/30 * * * *"' in workflow
+    assert "europe_measurement_status --require-active" in workflow
     assert "--require-new-job" in workflow
     for forbidden in (
         "exact_run_worker residuals",
@@ -34,13 +36,15 @@ def test_catalog_and_observation_schedules_are_independent():
     assert "LIVE_WIND_CAPTURE_CATALOG_ENABLED == 'true'" in catalog
     assert "station_capture_worker catalog" in catalog
     assert "station_capture_worker observations" not in catalog
+    assert 'cron: "17 2 * * *"' in catalog
+    assert "europe_measurement_status --require-active" in catalog
     assert "station_capture_worker observations" in capture
     assert "station_capture_worker catalog" not in capture
     assert "secrets.LIVE_WIND_CAPTURE_DATABASE_URL" in catalog
     assert "secrets.LIVE_WIND_CAPTURE_DATABASE_URL" in capture
 
 
-def test_hosted_station_schedules_need_no_persistent_worker_or_database_secret():
+def test_hosted_station_workflows_are_manual_and_need_no_database_secret():
     observations = (ROOT / ".github/workflows/weather-observation-import.yml").read_text(
         encoding="utf-8"
     )
@@ -50,8 +54,10 @@ def test_hosted_station_schedules_need_no_persistent_worker_or_database_secret()
 
     assert "runs-on: ubuntu-latest" in observations
     assert "runs-on: ubuntu-latest" in catalog
-    assert 'cron: "6,16,26,36,46,56 * * * *"' in observations
-    assert 'cron: "22 */6 * * *"' in catalog
+    for workflow in (observations, catalog):
+        assert "workflow_dispatch" in workflow
+        assert "schedule:" not in workflow
+        assert "cron:" not in workflow
     assert "WEATHER_OBSERVATION_IMPORT_ENABLED == 'true'" in observations
     assert "WEATHER_STATION_CATALOG_ENABLED == 'true'" in catalog
     assert "/cron/observations" in observations
@@ -70,11 +76,13 @@ def test_hosted_station_schedules_need_no_persistent_worker_or_database_secret()
         assert "forecast" not in workflow.casefold()
 
 
-def test_weather_verification_schedule_is_daily_and_fail_closed():
+def test_weather_verification_is_manual_and_fail_closed():
     workflow = (ROOT / ".github/workflows/weather-verification.yml").read_text(
         encoding="utf-8"
     )
-    assert 'cron: "38 5 * * *"' in workflow
+    assert "workflow_dispatch" in workflow
+    assert "schedule:" not in workflow
+    assert "cron:" not in workflow
     assert "WEATHER_VERIFICATION_ENABLED == 'true'" in workflow
     assert "secrets.WEATHER_SHADOW_CRON_SECRET" in workflow
     assert "/cron/verification" in workflow
@@ -87,7 +95,8 @@ def test_hosted_exact_point_capture_uses_ephemeral_grib_and_persistent_database(
         encoding="utf-8"
     )
     assert "runs-on: ubuntu-latest" in workflow
-    assert 'cron: "1,11,21,31,41,51 * * * *"' in workflow
+    assert "workflow_dispatch" in workflow
+    assert "schedule:" not in workflow
     assert "LIVE_WIND_POINT_CAPTURE_ENABLED" in workflow
     assert "LIVE_WIND_POINT_DATABASE_URL" in workflow
     assert "RUNNER_TEMP" in workflow
@@ -105,10 +114,51 @@ def test_hosted_residual_job_reads_persisted_points_without_raw_cache():
         encoding="utf-8"
     )
     assert "runs-on: ubuntu-latest" in workflow
-    assert 'cron: "8,18,28,38,48,58 * * * *"' in workflow
+    assert "workflow_dispatch" in workflow
+    assert 'cron: "13 * * * *"' in workflow
+    assert "europe_measurement_status --require-active" in workflow
     assert "LIVE_WIND_RESIDUALS_ENABLED" in workflow
     assert "LIVE_WIND_POINT_DATABASE_URL" in workflow
-    assert "persisted-residuals" in workflow
+    assert "campaign-persisted-residuals" in workflow
     assert "LIVE_WIND_EXACT_RUN_CACHE_DIR" not in workflow
     assert "self-hosted" not in workflow
     assert "forecast" not in workflow.casefold()
+
+
+def test_europe_measurement_runs_on_free_hosted_runner_without_redis():
+    workflow = (
+        ROOT / ".github/workflows/europe-wind-measurement.yml"
+    ).read_text(encoding="utf-8")
+    assert "runs-on: ubuntu-latest" in workflow
+    assert 'cron: "7,37 * * * *"' in workflow
+    assert "EUROPE_WIND_MEASUREMENT_ENABLED == 'true'" in workflow
+    assert "secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL" in workflow
+    assert "vars.EUROPE_WIND_MEASUREMENT_DATABASE_ID" in workflow
+    assert "vars.EUROPE_WIND_MEASUREMENT_CODE_REF" in workflow
+    assert "europe_measurement_worker --once" in workflow
+    assert "europe_measurement_status --require-active" in workflow
+    assert "0078_europe_wind_campaign (head)" in workflow
+    assert "RUNNER_TEMP/europe-wind-exact" in workflow
+    assert "self-hosted" not in workflow
+    assert "REDIS_URL" not in workflow
+
+
+def test_europe_measurement_bootstrap_is_manual_and_confirmed():
+    workflow = (
+        ROOT / ".github/workflows/europe-wind-measurement-bootstrap.yml"
+    ).read_text(encoding="utf-8")
+    assert "workflow_dispatch" in workflow
+    assert "schedule:" not in workflow
+    assert "inputs.confirmation == 'APPLY-0078'" in workflow
+    assert "europe_measurement_worker --validate-only" in workflow
+    assert "alembic upgrade head" in workflow
+
+
+def test_europe_measurement_monitor_fails_on_unhealthy_evidence():
+    workflow = (
+        ROOT / ".github/workflows/europe-wind-measurement-monitor.yml"
+    ).read_text(encoding="utf-8")
+    assert 'cron: "23 3 * * *"' in workflow
+    assert "runs-on: ubuntu-latest" in workflow
+    assert "europe_measurement_status --require-healthy" in workflow
+    assert "REDIS_URL" not in workflow

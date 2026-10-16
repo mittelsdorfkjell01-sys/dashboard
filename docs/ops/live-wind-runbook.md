@@ -121,7 +121,7 @@ Apply the additive migration before starting either scheduler or worker:
 
 ```bash
 alembic upgrade head
-alembic current  # 0069_scoring_evaluation (head; station capture is 0062)
+alembic current  # 0071_retention_indexes (head; station capture is 0062)
 alembic heads    # exactly one head
 ```
 
@@ -510,8 +510,8 @@ Required repository configuration:
 - `WEATHER_OBSERVATION_ENDPOINT=https://<api>/cron/observations`;
 - `WEATHER_STATION_CATALOG_ENDPOINT=https://<api>/cron/station-catalog`;
 - secret `LIVE_WIND_CRON_SECRET`, equal to the API deployment's `CRON_SECRET`.
-- API environment `WEATHER_OBSERVATION_PROVIDERS=dwd,dmi` and
-  `WEATHER_STATION_CATALOG_PROVIDERS=dwd,dmi`. `awc_metar` is deliberately
+- API environment `WEATHER_OBSERVATION_PROVIDERS=dwd,dmi,eumetnet_esoh` and
+  `WEATHER_STATION_CATALOG_PROVIDERS=dwd,dmi,eumetnet_esoh`. `awc_metar` is deliberately
   opt-in until downstream commercial reuse is cleared.
 
 These workflows intentionally do not capture exact model assets, build

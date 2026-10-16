@@ -24,7 +24,11 @@ from app.models import (
     WeatherStationProviderCursor,
 )
 from app.weather.observation_quality import evaluate_observation
-from app.weather.station_epochs import configuration_from_candidate, ensure_epoch
+from app.weather.station_epochs import (
+    configuration_from_candidate,
+    ensure_epoch,
+    metadata_payload_hash,
+)
 from app.weather.providers.common import (
     ObservationStation,
     deduplicate_observations,
@@ -78,7 +82,7 @@ def catalog_candidates(spots: Iterable, catalog: list[ObservationStation], *, li
                 "active_from": candidate.active_from, "active_to": candidate.active_to,
                 "metadata_updated_at": candidate.metadata_updated_at,
                 "source_url": candidate.source_url,
-                "metadata_payload_hash": hashlib.sha256(json.dumps(candidate.raw_payload, sort_keys=True, default=str).encode()).hexdigest(),
+                "metadata_payload_hash": metadata_payload_hash(candidate.raw_payload),
                 "metadata_payload": candidate.raw_payload,
                 "metadata_received_at": candidate.received_at,
                 "elevation_difference_m": (None if elevation is None or candidate.elevation_m is None
@@ -179,6 +183,146 @@ def sync_catalog_candidates(db, candidates: list[dict], *, dry_run=True) -> dict
         _, created = ensure_epoch(
             db, station, configuration_from_candidate(candidate), first_seen_at=received,
             metadata_revision_id=revision.id if revision else None,
+        )
+        report["epochs_proposed"] += int(created)
+    db.commit()
+    return report
+
+
+def sync_campaign_stations(
+    db,
+    stations: list[ObservationStation],
+    *,
+    campaign_key: str,
+    dry_run: bool = True,
+) -> dict:
+    """Upsert geography-independent shadow stations without granting approval."""
+    report = {
+        "received": len(stations), "persisted": 0, "upserted": 0,
+        "metadata_revisions_persisted": 0, "epochs_proposed": 0,
+        "metadata_drift": 0, "dry_run": dry_run,
+    }
+    if dry_run or not stations:
+        return report
+    previous = db.scalars(select(WeatherStation).where(
+        WeatherStation.campaign_key == campaign_key,
+        WeatherStation.provider.in_({item.provider for item in stations}),
+    )).all()
+    existing = {(item.provider, item.provider_station_id): item for item in previous}
+    rows = []
+    payloads = {}
+    for station in stations:
+        key = (station.provider, station.station_id)
+        old = existing.get(key)
+        if old and any(
+            getattr(old, field) is not None and value is not None
+            and abs(float(getattr(old, field)) - float(value)) > tolerance
+            for field, value, tolerance in (
+                ("latitude", station.latitude, 0.001),
+                ("longitude", station.longitude, 0.001),
+                ("elevation_m", station.elevation_m, 5),
+                ("measurement_height_m", station.measurement_height_m, 1),
+            )
+        ):
+            old.blocked = True
+            old.decision_reason = "metadata_drift_requires_review"
+            old.identity_review_status = "unreviewed"
+            report["metadata_drift"] += 1
+            continue
+        payload_hash = metadata_payload_hash(station.raw_payload)
+        row = {
+            "campaign_key": campaign_key,
+            "provider": station.provider,
+            "provider_station_id": station.station_id,
+            "wigos_id": station.wigos_id,
+            "icao_id": station.icao_id,
+            "name": station.name,
+            "latitude": station.latitude,
+            "longitude": station.longitude,
+            "elevation_m": station.elevation_m,
+            "measurement_height_m": station.measurement_height_m,
+            "license": station.license,
+            "provenance": station.provenance,
+            "country_code": station.country_code,
+            "operator": station.operator,
+            "station_type": station.station_type,
+            "sensor_metadata": station.sensor_metadata,
+            "active_from": station.active_from,
+            "active_to": station.active_to,
+            "metadata_updated_at": station.metadata_updated_at,
+            "source_url": station.source_url,
+            "metadata_payload_hash": payload_hash,
+            "active": station.active,
+            "recommended": False,
+            "approved": False,
+            "monitoring_approved": False,
+            "residual_approved": False,
+            "holdout_target_approved": False,
+            "holdout_input_approved": False,
+        }
+        rows.append(row)
+        payloads[key] = (station.raw_payload, station.received_at, payload_hash)
+    if not rows:
+        db.commit()
+        return report
+    statement = insert(WeatherStation).values(rows)
+    excluded = statement.excluded
+    report["upserted"] = len(db.scalars(
+        statement.on_conflict_do_update(
+            index_elements=["campaign_key", "provider", "provider_station_id"],
+            index_where=WeatherStation.campaign_key.is_not(None),
+            set_={key: getattr(excluded, key) for key in (
+                "name", "latitude", "longitude", "elevation_m", "wigos_id",
+                "icao_id", "measurement_height_m", "license", "provenance",
+                "country_code", "operator", "station_type", "sensor_metadata",
+                "active_from", "active_to", "metadata_updated_at", "source_url",
+                "metadata_payload_hash", "active",
+            )},
+        ).returning(WeatherStation.id)
+    ).all())
+    report["persisted"] = sum(
+        (row["provider"], row["provider_station_id"]) not in existing for row in rows
+    )
+    current = db.scalars(select(WeatherStation).where(
+        WeatherStation.campaign_key == campaign_key,
+        WeatherStation.provider.in_({row["provider"] for row in rows}),
+    )).all()
+    by_key = {(item.provider, item.provider_station_id): item for item in current}
+    for key, (raw_payload, received_at, payload_hash) in payloads.items():
+        station = by_key.get(key)
+        if station is None or received_at is None or received_at.tzinfo is None:
+            continue
+        revision_id = db.scalar(
+            insert(WeatherStationMetadataRevision).values({
+                "station_id": station.id,
+                "payload_hash": payload_hash,
+                "raw_payload": raw_payload or {},
+                "source_url": station.source_url,
+                "license": station.license,
+                "received_at": received_at,
+            }).on_conflict_do_nothing(
+                constraint="uq_weather_station_metadata_revision"
+            ).returning(WeatherStationMetadataRevision.id)
+        )
+        report["metadata_revisions_persisted"] += int(revision_id is not None)
+        revision = revision_id or db.scalar(select(WeatherStationMetadataRevision.id).where(
+            WeatherStationMetadataRevision.station_id == station.id,
+            WeatherStationMetadataRevision.payload_hash == payload_hash,
+        ))
+        _, created = ensure_epoch(
+            db,
+            station,
+            configuration_from_candidate({
+                **{column: getattr(station, column, None) for column in (
+                    "provider", "provider_station_id", "wigos_id", "icao_id",
+                    "latitude", "longitude", "elevation_m", "measurement_height_m",
+                    "sensor_metadata", "active_from", "active_to", "active",
+                    "station_type",
+                )},
+                "provenance": station.provenance,
+            }),
+            first_seen_at=received_at,
+            metadata_revision_id=revision,
         )
         report["epochs_proposed"] += int(created)
     db.commit()
@@ -425,7 +569,7 @@ def persist_batch(db, station, rows, *, cache: Cache | None = None, dry_run=True
         if station.last_observation_at is None or latest.observed_at > station.last_observation_at:
             station.last_observation_at = latest.observed_at
     db.commit()
-    if cache and report["persisted"]:
+    if cache and report["persisted"] and station.spot_id is not None:
         # Invalidate the measurement layer rather than writing a raw row here: the
         # serving path rebuilds the gated, correctly-shaped MeasurementRead payload
         # (eligibility gate, provider_station_id, provenance, wind_direction_from_deg)
@@ -557,7 +701,17 @@ def provider_fetchers(db=None) -> dict:
     cost only when it actually runs. KNMI needs a registered key and stays out
     of the automatic cycle until an operator wires it in.
     """
-    from app.weather.providers import awc_metar, dmi, dwd
+    from app.weather.providers import awc_metar, dmi, dwd, eumetnet_esoh
+
+    esoh_metadata = {}
+    if db is not None:
+        esoh_metadata = {
+            item.provider_station_id: item.sensor_metadata
+            for item in db.scalars(select(WeatherStation).where(
+                WeatherStation.provider == "eumetnet_esoh",
+                WeatherStation.active.is_(True),
+            )).all()
+        }
 
     return {
         "dwd": (
@@ -566,6 +720,9 @@ def provider_fetchers(db=None) -> dict:
         ),
         "dmi": dmi.fetch_recent,
         "awc_metar": awc_metar.fetch_recent,
+        "eumetnet_esoh": lambda station_id: eumetnet_esoh.fetch_recent(
+            station_id, sensor_metadata=esoh_metadata.get(station_id) or {}
+        ),
     }
 
 
@@ -583,8 +740,17 @@ def run_observation_import(db, *, providers=("dwd", "dmi"), limit: int = 25,
     cursor_get = getattr(db, "get", None)
     cursors = {provider: cursor_get(WeatherStationProviderCursor, provider) if cursor_get else None
                for provider in providers}
-    enabled_providers = [provider for provider in providers
-                         if cursors[provider] is None or not cursors[provider].paused]
+    from app.weather.europe_campaign import load_campaign
+
+    campaign = load_campaign()
+    inactive_campaign_providers = {
+        campaign.provider
+    } if campaign.phase(due_at) != "active" else set()
+    enabled_providers = [
+        provider for provider in providers
+        if (cursors[provider] is None or not cursors[provider].paused)
+        and provider not in inactive_campaign_providers
+    ]
     batch_limit = max(1, limit)
     stations = []
     if enabled_providers:
@@ -732,4 +898,6 @@ def run_observation_import(db, *, providers=("dwd", "dmi"), limit: int = 25,
             ))
         db.commit()
     report["paused_providers"] = [provider for provider in providers if provider not in enabled_providers]
+    report["campaign_phase"] = campaign.phase(due_at)
+    report["inactive_campaign_providers"] = sorted(inactive_campaign_providers)
     return report

@@ -86,7 +86,11 @@ def main() -> None:
                                             "dossier", "dossier-show", "groups", "group-review",
                                             "epoch-review", "approval-preview", "approve", "revoke",
                                             "audit", "readiness", "pause", "resume"))
-    parser.add_argument("--providers", nargs="+", choices=("dwd", "dmi"), default=("dwd", "dmi"))
+    parser.add_argument(
+        "--providers", nargs="+",
+        choices=("dwd", "dmi", "eumetnet_esoh"),
+        default=("dwd", "dmi", "eumetnet_esoh"),
+    )
     parser.add_argument("--limit", type=int, default=25)
     parser.add_argument("--candidate-limit", type=int, default=30)
     parser.add_argument("--max-km", type=float, default=250.0)

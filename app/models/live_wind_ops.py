@@ -126,6 +126,13 @@ class WeatherLiveWindJob(Base):
             "attempt_count >= 0 AND station_count >= 0",
             name="ck_weather_live_wind_job_counts",
         ),
+        Index(
+            "ix_live_wind_job_terminal_finished",
+            "finished_at",
+            postgresql_where=text(
+                "status IN ('succeeded','failed') AND finished_at IS NOT NULL"
+            ),
+        ),
         CheckConstraint(
             "conflict_index IS NULL OR "
             "(conflict_index >= 0 AND conflict_index <= 1)",

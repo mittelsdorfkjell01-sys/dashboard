@@ -1,8 +1,6 @@
 name: Weather Station Catalog Refresh
 
 on:
-  schedule:
-    - cron: "22 */6 * * *"
   workflow_dispatch: {}
 
 permissions:

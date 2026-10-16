@@ -228,8 +228,9 @@ def validate_spot_readiness(spot_id, *, db) -> dict:
         water_character=spot.water_character,
         level=spot.level,
     )
-    from app.models import WindClimatologyV3Run
+    from app.models import SpotWeatherProfile, WindClimatologyV3Run
     from app.scoring.eligibility import recommendability_gaps
+    from app.weather.usable_directions import usable_direction_state
 
     recommendation_gaps = recommendability_gaps(spot, "kitesurf", db)
     active_v3 = db.scalar(
@@ -238,6 +239,10 @@ def validate_spot_readiness(spot_id, *, db) -> dict:
             WindClimatologyV3Run.is_active.is_(True),
         )
     )
+    profile = db.scalar(
+        select(SpotWeatherProfile).where(SpotWeatherProfile.spot_id == spot.id)
+    )
+    direction_state = usable_direction_state(profile)
     scoring_gaps = list(recommendation_gaps)
     if active_v3 is None:
         scoring_gaps.append("active_v3_run")
@@ -248,6 +253,29 @@ def validate_spot_readiness(spot_id, *, db) -> dict:
             "ready": not scoring_gaps,
             "missing": scoring_gaps,
             "active_v3_run_id": str(active_v3.id) if active_v3 else None,
+            "directions": direction_state,
+            "surfaces": {
+                "now": {
+                    "eligible": not recommendation_gaps,
+                    "exclusions": list(recommendation_gaps),
+                    "runtime_requirements": ["three_hour_daylight_personal_band_session"],
+                },
+                "next_week": {
+                    "eligible": not recommendation_gaps,
+                    "exclusions": list(recommendation_gaps),
+                    "runtime_requirements": ["three_hour_daylight_personal_band_session"],
+                },
+                "season": {
+                    "eligible": not scoring_gaps,
+                    "exclusions": scoring_gaps,
+                    "runtime_requirements": ["matching_active_v3_personal_band_variant"],
+                },
+                "region": {
+                    "eligible": not recommendation_gaps,
+                    "exclusions": list(recommendation_gaps),
+                    "runtime_requirements": [],
+                },
+            },
         }
     }
     return {

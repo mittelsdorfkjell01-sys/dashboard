@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 import json
 import math
 
-from sqlalchemy import func, select, text
+from geoalchemy2 import Geometry
+from sqlalchemy import func, or_, select, text
 
 from app.config import get_settings
 from app.db.schema import EXPECTED_DB_REVISION
@@ -22,6 +23,7 @@ from app.db.session import SessionLocal
 from app.models import Spot, WeatherStation
 from app.weather.exact_run import ExactRunAssetCache, ExactRunLoader, gfs_tile
 from app.weather.exact_points import persist_exact_point_bundle
+from app.weather.europe_campaign import load_campaign
 from app.weather.model_error import run_station_model_error_analysis
 
 
@@ -37,14 +39,28 @@ def capture_exact_cycle(
     run_at = instant.replace(hour=instant.hour - instant.hour % 6, minute=0, second=0, microsecond=0) - timedelta(hours=6)
     first = max(0, int((instant-run_at).total_seconds() // 3600))
     hours = tuple(range(first, first + 4))
+    campaign = load_campaign()
+    station_scope = or_(
+        (
+            WeatherStation.approved.is_(True)
+            & WeatherStation.residual_approved.is_(True)
+            & WeatherStation.blocked.is_(False)
+        ),
+        (
+            WeatherStation.campaign_key == campaign.campaign_id
+            if campaign.phase(instant) == "active"
+            else text("false")
+        ),
+    )
     stations = db.execute(select(
         WeatherStation.id, WeatherStation.latitude, WeatherStation.longitude
     ).where(
-        WeatherStation.active.is_(True), WeatherStation.approved.is_(True),
-        WeatherStation.residual_approved.is_(True), WeatherStation.blocked.is_(False),
+        WeatherStation.active.is_(True), station_scope,
     )).all()
     spots = db.execute(select(
-        Spot.id, func.ST_Y(Spot.location), func.ST_X(Spot.location)
+        Spot.id,
+        func.ST_Y(Spot.location.cast(Geometry)),
+        func.ST_X(Spot.location.cast(Geometry)),
     ).where(
         Spot.status == "published", Spot.location.is_not(None),
     )).all()
@@ -89,32 +105,37 @@ def capture_exact_cycle(
         "points_inserted": 0, "ineligible": 0, "errors": 0,
     }
     for kind, identifier, latitude, longitude in selected_targets:
-        try:
-            bundle = loader.bundle(
-                valid_at=instant,
-                latitude=latitude,
-                longitude=longitude,
-                as_of=captured_at,
-            )
-            baseline = loader.sample(
-                bundle, latitude=latitude, longitude=longitude
-            )
-            with db.begin_nested():
-                persisted = persist_exact_point_bundle(
-                    db,
-                    target_kind=kind,
-                    target_id=identifier,
+        # Persist three adjacent interpolation windows from the same forecast
+        # snapshot. A station is rotated through the capture set, so retaining
+        # only the window around `instant` would leave its later observations
+        # without provably pre-observation evidence.
+        for offset_hours in range(3):
+            try:
+                bundle = loader.bundle(
+                    valid_at=instant + timedelta(hours=offset_hours),
                     latitude=latitude,
                     longitude=longitude,
-                    sampled_for_at=instant,
-                    captured_at=captured_at,
-                    baseline=baseline,
+                    as_of=captured_at,
                 )
-            point_report["bundles_inserted"] += persisted["bundle_inserted"]
-            point_report["points_inserted"] += persisted["points_inserted"]
-            point_report["ineligible"] += int(persisted["status"] != "persisted")
-        except Exception:
-            point_report["errors"] += 1
+                baseline = loader.sample(
+                    bundle, latitude=latitude, longitude=longitude
+                )
+                with db.begin_nested():
+                    persisted = persist_exact_point_bundle(
+                        db,
+                        target_kind=kind,
+                        target_id=identifier,
+                        latitude=latitude,
+                        longitude=longitude,
+                        sampled_for_at=instant,
+                        captured_at=captured_at,
+                        baseline=baseline,
+                    )
+                point_report["bundles_inserted"] += persisted["bundle_inserted"]
+                point_report["points_inserted"] += persisted["points_inserted"]
+                point_report["ineligible"] += int(persisted["status"] != "persisted")
+            except Exception:
+                point_report["errors"] += 1
     db.commit()
     return {"tiles": len(tiles), "total_targets": len(targets),
             "assets": sum(report["assets"] for report in reports),
@@ -133,15 +154,19 @@ def capture_exact_cycle(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "stage", choices=("capture", "residuals", "persisted-residuals")
+        "stage", choices=(
+            "capture", "residuals", "persisted-residuals",
+            "campaign-persisted-residuals",
+        )
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     cfg = get_settings()
-    if args.stage != "persisted-residuals" and not cfg.live_wind_exact_run_cache_dir:
+    if args.stage not in {"persisted-residuals", "campaign-persisted-residuals"} \
+            and not cfg.live_wind_exact_run_cache_dir:
         raise SystemExit("LIVE_WIND_EXACT_RUN_CACHE_DIR must be a persistent shared mount")
     loader = None
-    if args.stage != "persisted-residuals":
+    if args.stage not in {"persisted-residuals", "campaign-persisted-residuals"}:
         loader = ExactRunLoader(ExactRunAssetCache(
             cfg.live_wind_exact_run_cache_dir,
             require_persistent=cfg.app_env == "production" or cfg.live_wind_canary_mode,
@@ -169,7 +194,7 @@ def main() -> None:
                 skip_exact_attempted=True,
                 require_exact=True,
             )
-        else:
+        elif args.stage == "persisted-residuals":
             from app.weather.exact_points import PersistedStationBaselineLoader
 
             result = run_station_model_error_analysis(
@@ -180,6 +205,20 @@ def main() -> None:
                 recent_hours=48,
                 skip_exact_attempted=True,
                 require_exact=True,
+            )
+        else:
+            from app.weather.exact_points import PersistedStationBaselineLoader
+
+            campaign = load_campaign()
+            result = run_station_model_error_analysis(
+                db,
+                PersistedStationBaselineLoader(db),
+                limit=cfg.weather_observation_cron_batch_size,
+                dry_run=args.dry_run,
+                recent_hours=48,
+                skip_exact_attempted=True,
+                require_exact=True,
+                campaign_key=campaign.campaign_id,
             )
     print(json.dumps(result, sort_keys=True, default=str))
     if result.get("errors") or result.get("status") == "provider_unavailable":

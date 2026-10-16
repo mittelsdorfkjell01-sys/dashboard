@@ -31,6 +31,8 @@ def cache_key(model: str, lat: float, lon: float, var: str) -> str:
 class Cache(Protocol):
     def get(self, key: str) -> Any | None: ...
 
+    def get_many(self, keys: list[str]) -> dict[str, Any]: ...
+
     def set(self, key: str, value: Any, ttl: int) -> None: ...
 
     def delete(self, key: str) -> None: ...
@@ -67,6 +69,20 @@ class RedisCache:
             return None
         return _unpack(json.loads(raw)) if raw is not None else None
 
+    def get_many(self, keys: list[str]) -> dict[str, Any]:
+        if not keys:
+            return {}
+        try:
+            values = self._r.mget(keys)
+        except Exception as exc:
+            logger.warning("live cache mget failed (%s) — treating as misses", type(exc).__name__)
+            return {}
+        result: dict[str, Any] = {}
+        for key, raw in zip(keys, values):
+            if raw is not None:
+                result[key] = _unpack(json.loads(raw))
+        return result
+
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         try:
             self._r.set(key, json.dumps(_pack(value)), ex=ttl)
@@ -98,13 +114,22 @@ class RedisCache:
 
 
 class InMemoryCache:
-    """Thread-safe process-local TTL cache, lost completely on restart."""
+    """Thread-safe bounded process-local TTL cache, lost on restart."""
 
-    def __init__(self, clock=time.monotonic) -> None:
+    def __init__(self, clock=time.monotonic, max_entries: int = 500) -> None:
         self._store: dict[str, tuple[float, Any]] = {}
         self._locks: dict[str, tuple[float, str]] = {}
         self._clock = clock
+        self._max_entries = max(1, max_entries)
         self._lock = threading.Lock()
+
+    def _prune_expired(self, now: float) -> None:
+        for key, (expires_at, _) in list(self._store.items()):
+            if expires_at <= now:
+                self._store.pop(key, None)
+        for key, (expires_at, _) in list(self._locks.items()):
+            if expires_at <= now:
+                self._locks.pop(key, None)
 
     def get(self, key: str) -> Any | None:
         with self._lock:
@@ -117,10 +142,34 @@ class InMemoryCache:
                 return None
             return _unpack(value, expose_capture=key == "weather" or key.startswith(("om:", "weather:", "public:")))
 
+    def get_many(self, keys: list[str]) -> dict[str, Any]:
+        if not keys:
+            return {}
+        result: dict[str, Any] = {}
+        with self._lock:
+            now = self._clock()
+            for key in keys:
+                item = self._store.get(key)
+                if item is None:
+                    continue
+                expires_at, value = item
+                if expires_at <= now:
+                    self._store.pop(key, None)
+                    continue
+                result[key] = _unpack(
+                    value,
+                    expose_capture=key == "weather" or key.startswith(("om:", "weather:", "public:")),
+                )
+        return result
+
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         if ttl <= 0:
             return
         with self._lock:
+            self._store.pop(key, None)
+            self._prune_expired(self._clock())
+            while len(self._store) >= self._max_entries:
+                self._store.pop(next(iter(self._store)))
             self._store[key] = (self._clock() + ttl, _pack(value))
 
     def delete(self, key: str) -> None:
@@ -132,9 +181,13 @@ class InMemoryCache:
             return False
         with self._lock:
             now = self._clock()
+            self._prune_expired(now)
             current = self._locks.get(key)
             if current is not None and current[0] > now:
                 return False
+            self._locks.pop(key, None)
+            while len(self._locks) >= self._max_entries:
+                self._locks.pop(next(iter(self._locks)))
             self._locks[key] = (now + ttl, token)
             return True
 
@@ -172,6 +225,20 @@ class FailOpenCache:
         value = self.primary.get(key)
         return value if value is not None else self.fallback.get(key)
 
+    def get_many(self, keys: list[str]) -> dict[str, Any]:
+        primary_get_many = getattr(self.primary, "get_many", None)
+        primary = primary_get_many(keys) if primary_get_many is not None else {
+            key: value for key in keys if (value := self.primary.get(key)) is not None
+        }
+        missing = [key for key in keys if key not in primary]
+        if not missing:
+            return primary
+        fallback_get_many = getattr(self.fallback, "get_many", None)
+        fallback = fallback_get_many(missing) if fallback_get_many is not None else {
+            key: value for key in missing if (value := self.fallback.get(key)) is not None
+        }
+        return {**fallback, **primary}
+
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         self.primary.set(key, value, ttl)
         self.fallback.set(key, value, ttl)
@@ -202,7 +269,11 @@ _default_cache: Cache | None = None
 def default_cache() -> Cache:
     global _default_cache
     if _default_cache is None:
-        _default_cache = FailOpenCache(RedisCache(), InMemoryCache())
+        settings = get_settings()
+        _default_cache = FailOpenCache(
+            RedisCache(),
+            InMemoryCache(max_entries=settings.cache_memory_max_entries),
+        )
     return _default_cache
 
 

@@ -415,14 +415,16 @@ def test_database_lease_prevents_a_second_claim(db):
         db.commit()
 
 
-def test_shadow_workflow_schedules_import_worker_and_doctor():
+def test_shadow_workflow_is_manual_and_runs_import_worker_and_doctor():
     workflow = (
         Path(__file__).resolve().parents[1]
         / ".github"
         / "workflows"
         / "live-wind-shadow.yml"
     ).read_text(encoding="utf-8")
-    assert 'cron: "3,13,23,33,43,53 * * * *"' in workflow
+    assert "workflow_dispatch" in workflow
+    assert "schedule:" not in workflow
+    assert "cron:" not in workflow
     assert "LIVE_WIND_ROLLOUT_STAGE: shadow" in workflow
     assert 'test "$LIVE_WIND_ROLLOUT_STAGE" = "shadow"' in workflow
     assert "$WEATHER_OBSERVATION_ENDPOINT" in workflow

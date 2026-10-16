@@ -195,7 +195,7 @@ def test_capture_cycle_persists_bounded_station_and_spot_points(monkeypatch):
     )
     assert set(persisted) == {("station", station_id), ("spot", spot_id)}
     assert report["point_samples"] == {
-        "targets": 2, "bundles_inserted": 2, "points_inserted": 8,
+        "targets": 2, "bundles_inserted": 6, "points_inserted": 24,
         "ineligible": 0, "errors": 0,
     }
     assert database.committed

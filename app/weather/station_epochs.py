@@ -16,8 +16,44 @@ CONFIG_FIELDS = (
 )
 
 
+def stable_metadata_payload(payload):
+    """Remove provider coverage markers that move without a sensor change.
+
+    DWD republishes the current sensor row with a changing ``Bis_Datum``. That
+    value is useful operational metadata, but it is not a new physical sensor
+    configuration and must not create an immutable revision on every refresh.
+    """
+    if isinstance(payload, dict):
+        return {
+            key: stable_metadata_payload(value)
+            for key, value in payload.items()
+            if key not in {"Bis_Datum", "effective_to"}
+        }
+    if isinstance(payload, list):
+        return [stable_metadata_payload(value) for value in payload]
+    return payload
+
+
+def metadata_payload_hash(payload: dict) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            stable_metadata_payload(payload),
+            sort_keys=True,
+            default=str,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+
+
+def _stable_sensor_metadata(value):
+    if not isinstance(value, dict):
+        return value
+    return {key: item for key, item in value.items() if key != "effective_to"}
+
+
 def configuration_from_candidate(candidate: dict) -> dict:
     values = {key: candidate.get(key) for key in CONFIG_FIELDS}
+    values["sensor_metadata"] = _stable_sensor_metadata(values["sensor_metadata"])
     values["typical_interval_minutes"] = (candidate.get("provenance") or {}).get("typical_interval_minutes")
     return json.loads(json.dumps(values | {"version": EPOCH_VERSION},
                                  default=lambda value: value.isoformat() if isinstance(value, datetime) else str(value)))
@@ -25,6 +61,7 @@ def configuration_from_candidate(candidate: dict) -> dict:
 
 def configuration_from_station(station) -> dict:
     values = {key: getattr(station, key, None) for key in CONFIG_FIELDS}
+    values["sensor_metadata"] = _stable_sensor_metadata(values["sensor_metadata"])
     values["typical_interval_minutes"] = (getattr(station, "provenance", None) or {}).get("typical_interval_minutes")
     return json.loads(json.dumps(values | {"version": EPOCH_VERSION},
                                  default=lambda value: value.isoformat() if isinstance(value, datetime) else str(value)))

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Literal
+from typing import Any, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -19,6 +19,10 @@ from app.live import service as live_service
 from app.live.cache import Cache
 from app.live.deps import get_cache
 from app.weather.profiles import WIND_CLIMATOLOGY_V3_NOTE, is_forecast_sector
+from app.weather.usable_directions import (
+    apply_geometry_to_profile,
+    usable_direction_state,
+)
 from app.models import (
     ForecastProcessingJob,
     ForecastSectorGateEvidence,
@@ -121,9 +125,11 @@ class WindCellSelection(BaseModel):
     longitude: float | None = Field(default=None, ge=-180, le=180)
 
 
-class WindDirectionSelection(BaseModel):
-    sectors: list[int] = Field(default_factory=list, max_length=16)
-    reviewed: bool = False
+class WindDirectionGeometry(BaseModel):
+    geometry_version: str = Field(min_length=1, max_length=80)
+    start_areas: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
+    exclusions: list[dict[str, Any]] = Field(default_factory=list, max_length=16)
+    conflicts: list[str] = Field(default_factory=list, max_length=40)
     expected_updated_at: datetime | None = None
 
 
@@ -185,66 +191,82 @@ def wind_climatology_v3_status(spot_id: uuid.UUID, db: Session = Depends(get_db)
 
 @router.get("/spots/{spot_id}/wind-climatology-v3/directions")
 def wind_climatology_v3_directions(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    if db.get(Spot, spot_id) is None:
+        raise HTTPException(status_code=404, detail="Spot not found")
     profile = _load(db, spot_id)
-    selected: list[int] = []
-    if profile:
-        for sector in profile.sectors:
-            if not sector.enabled or sector.note != WIND_CLIMATOLOGY_V3_NOTE:
-                continue
-            start, end = round(sector.start_deg % 360, 6), round(sector.end_deg % 360, 6)
-            for index in range(16):
-                if start == round(index * 22.5, 6) and end == round(((index + 1) * 22.5) % 360, 6):
-                    selected.append(index)
-    return {"sectors": sorted(set(selected)), "reviewed": bool(profile and profile.reviewed_at),
-            "reviewed_at": profile.reviewed_at if profile else None,
-            "updated_at": profile.updated_at if profile else None,
-            "convention": "meteorological_from", "sector_count": 16}
+    return {
+        **usable_direction_state(profile),
+        "updated_at": profile.updated_at if profile else None,
+        "convention": "meteorological_from",
+        "sector_count": 16,
+    }
 
 
-@router.put("/spots/{spot_id}/wind-climatology-v3/directions")
-def update_wind_climatology_v3_directions(spot_id: uuid.UUID, body: WindDirectionSelection,
+@router.put("/spots/{spot_id}/wind-climatology-v3/directions/geometry")
+def update_wind_climatology_v3_direction_geometry(spot_id: uuid.UUID, body: WindDirectionGeometry,
     db: Session = Depends(get_db), actor: str = Depends(get_actor)) -> dict:
     if db.get(Spot, spot_id) is None:
         raise HTTPException(status_code=404, detail="Spot not found")
-    if len(set(body.sectors)) != len(body.sectors) or any(i < 0 or i > 15 for i in body.sectors):
-        raise HTTPException(status_code=422, detail="Sectors must be unique indices from 0 to 15")
     profile = _load(db, spot_id) or SpotWeatherProfile(spot_id=spot_id)
     if profile.id and body.expected_updated_at:
         loaded = profile.updated_at if profile.updated_at.tzinfo else profile.updated_at.replace(tzinfo=timezone.utc)
         expected = body.expected_updated_at if body.expected_updated_at.tzinfo else body.expected_updated_at.replace(tzinfo=timezone.utc)
         if loaded != expected:
-            raise HTTPException(status_code=409, detail="Die Windrichtungen wurden zwischenzeitlich geändert.")
-    before = {"reviewed": bool(profile.reviewed_at), "windows": [
-        [s.start_deg, s.end_deg] for s in profile.sectors
-        if s.enabled and s.note == WIND_CLIMATOLOGY_V3_NOTE]}
+            raise HTTPException(status_code=409, detail="Die Richtungsgeometrie wurde zwischenzeitlich geändert.")
+    before = usable_direction_state(profile)
     db.add(profile)
-    profile.sectors = [sector for sector in profile.sectors if is_forecast_sector(sector)]
-    # Flush removals before recreating identical V3 windows; otherwise the
-    # versioned unique constraint can observe INSERT before orphan DELETE.
+    geometry = body.model_dump(exclude={"expected_updated_at"})
+    result = apply_geometry_to_profile(profile, geometry)
+    profile.updated_at = datetime.now(timezone.utc)
     db.flush()
-    profile.sectors.extend(SpotWeatherSector(start_deg=i * 22.5,
-        end_deg=((i + 1) * 22.5) % 360, speed_factor=1, direction_offset_deg=0,
-        version=1, enabled=True, note=WIND_CLIMATOLOGY_V3_NOTE) for i in sorted(body.sectors))
-    profile.reviewed_at = datetime.now(timezone.utc) if body.reviewed else None
-    db.flush()
-    after = {"reviewed": body.reviewed, "windows": [
-        [s.start_deg, s.end_deg] for s in profile.sectors
-        if s.note == WIND_CLIMATOLOGY_V3_NOTE]}
-    effective_changed = before != after
+    after = usable_direction_state(profile)
+    effective_changed = (
+        before.get("windows") != after.get("windows")
+        or before.get("effective") != after.get("effective")
+    )
     run = None; created = False
-    if effective_changed:
-        record_audit(db, spot_id, "wind_climatology_v3_directions", {"before": before, "after": after}, actor)
-        db.flush()
-        if body.reviewed:
-            from app.wind_climatology.v3_service import enqueue
-            run, created = enqueue(db, spot_id)
-        else:
-            db.commit()
+    record_audit(db, spot_id, "usable_directions_geometry", {
+        "before": {"status": before.get("status"), "effective": before.get("effective"), "sectors": before.get("sectors")},
+        "after": {"status": after.get("status"), "effective": after.get("effective"), "sectors": after.get("sectors"), "missing": result.missing},
+    }, actor)
+    db.flush()
+    if effective_changed and after["effective"]:
+        from app.wind_climatology.v3_service import enqueue
+        run, created = enqueue(db, spot_id)
     else:
         db.commit()
     db.refresh(profile)
-    return {"sectors": sorted(body.sectors), "reviewed": bool(profile.reviewed_at),
-        "reviewed_at": profile.reviewed_at, "updated_at": profile.updated_at,
+    return {**usable_direction_state(profile), "updated_at": profile.updated_at,
+        "run": None if run is None else {"id": str(run.id), "status": run.status, "created": created},
+        "public_effect": "none"}
+
+
+@router.post("/spots/{spot_id}/wind-climatology-v3/directions/recalculate")
+def recalculate_wind_climatology_v3_directions(
+    spot_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> dict:
+    profile = _load(db, spot_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="Weather profile not found")
+    before = usable_direction_state(profile)
+    result = apply_geometry_to_profile(profile, profile.usable_direction_geometry or {})
+    profile.updated_at = datetime.now(timezone.utc)
+    record_audit(db, spot_id, "usable_directions_recalculated", {
+        "before": {"status": before.get("status"), "effective": before.get("effective"), "sectors": before.get("sectors")},
+        "after": {"status": result.status, "sectors": result.sectors, "missing": result.missing},
+    }, actor)
+    db.flush()
+    run = None; created = False
+    state = usable_direction_state(profile)
+    if state["effective"] and (before.get("windows") != state["windows"] or not before.get("effective")):
+        from app.wind_climatology.v3_service import enqueue
+        run, created = enqueue(db, spot_id)
+    else:
+        db.commit()
+    db.refresh(profile)
+    return {**usable_direction_state(profile), "updated_at": profile.updated_at,
         "run": None if run is None else {"id": str(run.id), "status": run.status, "created": created},
         "public_effect": "none"}
 
@@ -414,7 +436,6 @@ class WeatherProfileIn(BaseModel):
         "coordinates"
     )
     physics_version: str = Field(default="wind-v1", max_length=40)
-    reviewed: bool = False
     active: bool = True
     sectors: list[SectorIn] = Field(default_factory=list)
     expected_updated_at: datetime | None = None
@@ -494,7 +515,6 @@ def _view(profile: SpotWeatherProfile) -> dict:
         "water_reference": profile.water_reference,
         "quality_tier": profile.quality_tier,
         "physics_version": profile.physics_version,
-        "reviewed_at": profile.reviewed_at.isoformat() if profile.reviewed_at else None,
         "updated_at": profile.updated_at.isoformat(),
         "active": profile.active,
         "sectors": [
@@ -557,9 +577,7 @@ def list_profiles(
             else (
                 "coordinates"
                 if profile.quality_tier == "coordinates"
-                else "advanced_released"
-                if profile.quality_tier == "advanced" and profile.reviewed_at
-                else "advanced_draft"
+                else "advanced"
                 if profile.quality_tier == "advanced"
                 else "complete"
                 if not missing
@@ -578,9 +596,8 @@ def list_profiles(
                 "profile_state": profile_state,
                 "missing": missing,
                 "active": profile.active if profile else False,
-                "reviewed_at": profile.reviewed_at.isoformat()
-                if profile and profile.reviewed_at
-                else None,
+                "direction_status": usable_direction_state(profile)["status"],
+                "direction_missing": usable_direction_state(profile)["missing"],
                 "updated_at": profile.updated_at.isoformat() if profile else None,
             }
         )
@@ -651,6 +668,7 @@ def put_profile(
         .options(selectinload(SpotWeatherProfile.sectors))
         .with_for_update()
     ) or SpotWeatherProfile(spot_id=spot_id)
+    directions_were_effective = usable_direction_state(profile)["effective"]
     if _enabled_sector_identities(body.sectors) != _enabled_sector_identities(
         profile.sectors
     ):
@@ -698,15 +716,10 @@ def put_profile(
             field,
             value.model_dump() if isinstance(value, ReferencePointIn) else value,
         )
-    profile.reviewed_at = datetime.now(timezone.utc) if body.reviewed else None
     # Relationship-only edits would otherwise leave the profile revision
     # unchanged and defeat expected_updated_at on the next editor request.
     profile.updated_at = datetime.now(timezone.utc)
-    v3_sectors = [
-        sector for sector in profile.sectors
-        if sector.note == WIND_CLIMATOLOGY_V3_NOTE
-    ]
-    profile.sectors = v3_sectors
+    profile.sectors = []
     # Candidate rows are versioned and may be posted back unchanged. Retire the
     # old correction rows before inserting their replacements with the same key.
     db.flush()
@@ -730,6 +743,11 @@ def put_profile(
         actor,
     )
     db.commit()
+    directions_are_effective = usable_direction_state(profile)["effective"]
+    if directions_are_effective and not directions_were_effective:
+        from app.wind_climatology.v3_service import enqueue
+
+        enqueue(db, spot_id)
     from app.live.public_cache import invalidate_public_weather
 
     invalidate_public_weather(cache, spot_id)

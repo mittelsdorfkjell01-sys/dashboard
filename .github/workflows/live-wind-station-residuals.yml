@@ -2,7 +2,7 @@ name: Persistent LiveWind Station Residuals
 
 on:
   schedule:
-    - cron: "8,18,28,38,48,58 * * * *"
+    - cron: "13 * * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -40,5 +40,8 @@ jobs:
       - name: Install application dependencies
         run: pip install -r requirements.txt
 
+      - name: Require active Europe measurement window
+        run: python -m scripts.europe_measurement_status --require-active
+
       - name: Calculate residuals from pre-observation exact points only
-        run: python -m scripts.exact_run_worker persisted-residuals
+        run: python -m scripts.exact_run_worker campaign-persisted-residuals

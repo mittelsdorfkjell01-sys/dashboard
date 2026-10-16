@@ -24,7 +24,7 @@ from app.weather.station_catalog_job import run_station_catalog_refresh
 from app.weather.station_report import station_report
 
 
-PROVIDERS = ("dwd", "dmi")
+PROVIDERS = ("dwd", "dmi", "eumetnet_esoh")
 
 
 def validate_capture_environment(settings, environ: dict[str, str]) -> dict:

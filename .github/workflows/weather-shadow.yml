@@ -1,8 +1,6 @@
 name: Weather Shadow Collector
 
 on:
-  schedule:
-    - cron: "41 */6 * * *"
   workflow_dispatch: {}
 
 permissions:
