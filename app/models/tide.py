@@ -202,3 +202,160 @@ class TideCalculationRun(Base):
         Index("ix_tide_calculation_runs_queue", "status", "created_at"),
         Index("ix_tide_calculation_runs_spot", "spot_id", "created_at"),
     )
+
+
+class TideStation(Base, TimestampMixin):
+    """Canonical identity for a physical European water-level station."""
+
+    __tablename__ = "tide_stations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    canonical_key: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    country_code: Mapped[str | None] = mapped_column(String(2))
+    operator: Mapped[str | None] = mapped_column(String(160))
+    location: Mapped[object] = mapped_column(
+        Geography(geometry_type="POINT", srid=4326, spatial_index=False), nullable=False
+    )
+    basin: Mapped[str | None] = mapped_column(String(80))
+    timezone: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'unknown'")
+    )
+    public_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    quality_status: Mapped[str] = mapped_column(
+        String(30), nullable=False, server_default=text("'unreviewed'")
+    )
+    latest_observation_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    station_metadata: Mapped[dict | None] = mapped_column(JSONB)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('unknown','active','inactive')", name="ck_tide_stations_status"),
+        CheckConstraint(
+            "quality_status IN ('unreviewed','raw','automatic_qc','validated','rejected')",
+            name="ck_tide_stations_quality",
+        ),
+        Index("ix_tide_stations_location", "location", postgresql_using="gist"),
+        Index("ix_tide_stations_public", "public_enabled", "status", "latest_observation_at"),
+    )
+
+
+class TideStationAlias(Base, TimestampMixin):
+    __tablename__ = "tide_station_aliases"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    station_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tide_stations.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    provider_station_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    attribution: Mapped[dict | None] = mapped_column(JSONB)
+
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_station_id", name="uq_tide_station_provider_id"),
+        Index("ix_tide_station_alias_station", "station_id"),
+    )
+
+
+class TideSensor(Base, TimestampMixin):
+    __tablename__ = "tide_sensors"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    station_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tide_stations.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    provider_sensor_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    parameter: Mapped[str] = mapped_column(
+        String(40), nullable=False, server_default=text("'water_level'")
+    )
+    unit: Mapped[str] = mapped_column(String(20), nullable=False)
+    vertical_datum: Mapped[str | None] = mapped_column(String(120))
+    gauge_zero_m: Mapped[float | None] = mapped_column(Float)
+    cadence_seconds: Mapped[int | None] = mapped_column(Integer)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    sensor_metadata: Mapped[dict | None] = mapped_column(JSONB)
+
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_sensor_id", name="uq_tide_sensor_provider_id"),
+        CheckConstraint("cadence_seconds IS NULL OR cadence_seconds > 0", name="ck_tide_sensor_cadence"),
+        Index("ix_tide_sensors_station", "station_id", "active"),
+    )
+
+
+class TideObservation(Base):
+    __tablename__ = "tide_observations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    sensor_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tide_sensors.id", ondelete="CASCADE"), nullable=False
+    )
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    value_m: Mapped[float] = mapped_column(Float, nullable=False)
+    vertical_datum: Mapped[str | None] = mapped_column(String(120))
+    quality_status: Mapped[str] = mapped_column(
+        String(30), nullable=False, server_default=text("'raw'")
+    )
+    provider_flags: Mapped[dict | None] = mapped_column(JSONB)
+    payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw_payload: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+    __table_args__ = (
+        UniqueConstraint("sensor_id", "observed_at", "payload_sha256", name="uq_tide_observation_evidence"),
+        CheckConstraint(
+            "quality_status IN ('raw','automatic_qc','validated','rejected')",
+            name="ck_tide_observations_quality",
+        ),
+        Index("ix_tide_observations_sensor_time", "sensor_id", "observed_at"),
+    )
+
+
+class TideHarmonicSolution(Base):
+    __tablename__ = "tide_harmonic_solutions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    station_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tide_stations.id", ondelete="CASCADE"), nullable=False
+    )
+    algorithm_version: Mapped[str] = mapped_column(String(40), nullable=False)
+    training_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    training_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    constituents: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    holdout_metrics: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'candidate'")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    )
+
+    __table_args__ = (
+        CheckConstraint("training_until > training_from", name="ck_tide_harmonic_training"),
+        CheckConstraint(
+            "status IN ('candidate','validated','rejected','superseded')",
+            name="ck_tide_harmonic_status",
+        ),
+        Index("ix_tide_harmonic_station_status", "station_id", "status", "created_at"),
+    )

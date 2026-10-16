@@ -1,5 +1,9 @@
 # Gezeitenbetrieb
 
+Die technische Zielarchitektur für den europäischen 10-Tage-Forecast, die
+Tidenkarte, freie Pegelquellen und die stationsgestützte Geokorrektur steht in
+[`docs/architecture/tide-platform-v2.md`](architecture/tide-platform-v2.md).
+
 ## Modell und Lizenz
 
 Surfwinddata verwendet FES2022b Ocean Tide Elevations über die offizielle
