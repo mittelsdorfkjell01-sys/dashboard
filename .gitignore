@@ -12,6 +12,12 @@ __pycache__/
 frontend/tsconfig.tsbuildinfo
 frontend/dist/
 
+# Playwright run artifacts (traces, screenshots, error contexts)
+test-results/
+frontend/test-results/
+playwright-report/
+frontend/playwright-report/
+
 # Generated screenshots and local review/export output
 .impeccable/review/
 frontend/exports/
@@ -59,6 +65,9 @@ screens/
 
 # Local worker counters and production-operation evidence
 /data/weather-smoke-budget.json
+/data/weather-field-phase0/
+/data/weather-field-phase0b/
+/data/weather-fields/
 /reports/weather-shadow-scheduler-readiness.*
 /reports/weather-w1-*
 
