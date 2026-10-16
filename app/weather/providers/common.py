@@ -203,7 +203,7 @@ def normalize_observation(
 
     provider_name = str(provider or "").strip().lower()
     original_station_id = str(station_id or "").strip()
-    if provider_name not in {"dwd", "dmi", "awc_metar", "knmi"}:
+    if provider_name not in {"dwd", "dmi", "awc_metar", "knmi", "eumetnet_esoh"}:
         issues.append("provider:not_observation_source")
     if (
         not provider_name

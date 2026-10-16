@@ -1,8 +1,6 @@
 name: Weather Forecast Verification
 
 on:
-  schedule:
-    - cron: "38 5 * * *"
   workflow_dispatch: {}
 
 permissions:

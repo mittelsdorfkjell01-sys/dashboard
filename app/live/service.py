@@ -556,6 +556,8 @@ def public_live_wind_analysis(
     *,
     cache: Cache | None = None,
     model_ids: tuple[str, ...] = (),
+    weather_generation: str | None = None,
+    input_generation: str | None = None,
 ) -> dict:
     """Attach only rollout- and quality-gated LiveWind to a public response."""
     if not isinstance(baseline, dict):
@@ -607,8 +609,8 @@ def public_live_wind_analysis(
         working_baseline,
         gate_configuration=gate_configuration,
     )
-    weather_generation = public_weather_generation(cache, spot_id)
-    input_generation = public_live_wind_input_generation(cache, spot_id)
+    weather_generation = weather_generation or public_weather_generation(cache, spot_id)
+    input_generation = input_generation or public_live_wind_input_generation(cache, spot_id)
     cached = get_public_live_wind_analysis(
         cache,
         spot_id,

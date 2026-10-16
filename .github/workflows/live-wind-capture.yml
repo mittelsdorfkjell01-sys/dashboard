@@ -2,7 +2,7 @@ name: Nonproduction Raw Wind Capture
 
 on:
   schedule:
-    - cron: "3,13,23,33,43,53 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -59,6 +59,9 @@ jobs:
       - name: Install worker dependencies
         run: pip install -r requirements.txt
 
+      - name: Require active Europe measurement window
+        run: python -m scripts.europe_measurement_status --require-active
+
       - name: Verify DB, Redis and cache persistence from a prior runner job
         run: >-
           python -m scripts.exact_run_preflight
@@ -69,7 +72,7 @@ jobs:
       - name: Capture exact GFS and ICON assets before station observations
         run: python -m scripts.exact_run_worker capture
 
-      - name: Capture operational DWD and DMI observations only
+      - name: Capture operational European observations only
         run: python -m scripts.station_capture_worker observations
 
       - name: Emit sanitized capture status

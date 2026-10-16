@@ -2,7 +2,7 @@ name: Nonproduction Station Catalog Capture
 
 on:
   schedule:
-    - cron: "27 2 * * *"
+    - cron: "17 2 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -59,6 +59,9 @@ jobs:
       - name: Install worker dependencies
         run: pip install -r requirements.txt
 
+      - name: Require active Europe measurement window
+        run: python -m scripts.europe_measurement_status --require-active
+
       - name: Verify DB, Redis and cache persistence from a prior runner job
         run: >-
           python -m scripts.exact_run_preflight
@@ -66,7 +69,7 @@ jobs:
           --require-new-job
           --expected-probe-sha256 "$LIVE_WIND_CAPTURE_PROBE_SHA256"
 
-      - name: Refresh DWD and DMI catalogs only
+      - name: Refresh European observation catalogs only
         run: python -m scripts.station_capture_worker catalog
 
       - name: Emit sanitized capture status

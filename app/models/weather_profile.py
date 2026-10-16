@@ -11,7 +11,7 @@ from app.db.base import Base, TimestampMixin
 
 
 class SpotWeatherProfile(Base, TimestampMixin):
-    """Reviewed metadata for local wind physics; never inferred from ``facing``."""
+    """Admin-managed local wind metadata; never inferred from ``facing``."""
 
     __tablename__ = "spot_weather_profiles"
 
@@ -28,6 +28,27 @@ class SpotWeatherProfile(Base, TimestampMixin):
     physics_version: Mapped[str] = mapped_column(String(40), nullable=False, server_default=text("'wind-v1'"))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    # Usable directions are a separate product concept from forecast correction
+    # sectors. Geometry and the derived result stay together so an automatic
+    # result can always be explained and invalidated when its rule changes.
+    usable_direction_geometry: Mapped[dict | None] = mapped_column(JSONB)
+    usable_direction_geometry_version: Mapped[str | None] = mapped_column(String(80))
+    usable_direction_rule_version: Mapped[str | None] = mapped_column(String(80))
+    usable_direction_status: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default=text("'missing'")
+    )
+    usable_direction_sectors: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    usable_direction_windows: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    usable_direction_evidence: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    usable_direction_calculated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
     sectors: Mapped[list["SpotWeatherSector"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
 
@@ -37,6 +58,10 @@ class SpotWeatherProfile(Base, TimestampMixin):
         CheckConstraint("roughness_length_m IS NULL OR roughness_length_m > 0", name="ck_weather_profile_roughness"),
         CheckConstraint("quality_tier IN ('coordinates','coastal','extended','advanced')", name="ck_weather_profile_tier"),
         CheckConstraint("exposure IS NULL OR exposure IN ('sheltered','neutral','exposed')", name="ck_weather_profile_exposure"),
+        CheckConstraint(
+            "usable_direction_status IN ('missing','active','blocked','ambiguous')",
+            name="ck_weather_profile_usable_direction_status",
+        ),
     )
 
 

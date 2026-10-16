@@ -14,11 +14,13 @@ import math
 from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from sqlalchemy import exists, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.forecast.contracts import NormalizedModelValue
 from app.models import (
+    WeatherExactModelBundle,
+    WeatherExactModelPoint,
     WeatherObservation,
     WeatherStation,
     WeatherStationModelResidual,
@@ -383,31 +385,34 @@ def _observation_gate_reasons(
     *,
     analyzed_at: datetime,
     policy: ModelErrorPolicy,
+    governance_required: bool = True,
 ) -> list[str]:
     reasons = []
     if not getattr(station, "active", False):
         reasons.append("station_inactive")
-    if not getattr(station, "approved", False):
-        reasons.append("station_unapproved")
-    if not getattr(station, "residual_approved", False):
-        reasons.append("station_residual_scope_unapproved")
-    if getattr(station, "identity_review_status", "unreviewed") != "passed":
-        reasons.append("station_identity_unreviewed")
-    if not getattr(station, "physical_station_group", None) or not getattr(station, "correlation_group", None):
-        reasons.append("station_dependency_group_unreviewed")
-    if getattr(station, "blocked", False):
-        reasons.append("station_blocked")
-    if getattr(station, "representativeness_status", "unreviewed") != "passed":
-        reasons.append("representativeness_unpassed")
+    if governance_required:
+        if not getattr(station, "approved", False):
+            reasons.append("station_unapproved")
+        if not getattr(station, "residual_approved", False):
+            reasons.append("station_residual_scope_unapproved")
+        if getattr(station, "identity_review_status", "unreviewed") != "passed":
+            reasons.append("station_identity_unreviewed")
+        if not getattr(station, "physical_station_group", None) or not getattr(station, "correlation_group", None):
+            reasons.append("station_dependency_group_unreviewed")
+        if getattr(station, "blocked", False):
+            reasons.append("station_blocked")
+        if getattr(station, "representativeness_status", "unreviewed") != "passed":
+            reasons.append("representativeness_unpassed")
     if getattr(observation, "station_id", None) != getattr(station, "id", None):
         reasons.append("observation_station_mismatch")
     if getattr(observation, "import_status", None) != "accepted":
         reasons.append("observation_not_accepted")
     from app.weather.observation_quality import QC_VERSION
-    if getattr(observation, "qc_version", None) != QC_VERSION or getattr(observation, "qc_flags", None):
-        reasons.append("observation_qc_unqualified")
-    if getattr(observation, "qc_stage", None) not in {"eligible_for_residuals", "eligible_for_holdout"}:
-        reasons.append("observation_qc_stage_unqualified")
+    if governance_required:
+        if getattr(observation, "qc_version", None) != QC_VERSION or getattr(observation, "qc_flags", None):
+            reasons.append("observation_qc_unqualified")
+        if getattr(observation, "qc_stage", None) not in {"eligible_for_residuals", "eligible_for_holdout"}:
+            reasons.append("observation_qc_stage_unqualified")
     received_at = _aware_utc(getattr(observation, "received_at", None))
     imported_at = _aware_utc(getattr(observation, "imported_at", None))
     if received_at is None or imported_at is None or received_at > analyzed_at or imported_at > analyzed_at:
@@ -626,6 +631,7 @@ def _analysis_id(
     profile: ReviewedStationPhysics | None,
     policy: ModelErrorPolicy,
     blend_overrides: dict[str, float] | None,
+    evaluation_mode: str,
 ) -> str:
     ordered_points = sorted(
         baseline.points,
@@ -650,6 +656,7 @@ def _analysis_id(
         "station_profile": _station_profile_snapshot(profile),
         "configuration": policy.snapshot(),
         "physics_blend": _blend_snapshot(blend_overrides),
+        "evaluation_mode": evaluation_mode,
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
@@ -729,8 +736,12 @@ def calculate_station_model_error(
     analyzed_at: datetime | None = None,
     policy: ModelErrorPolicy = DEFAULT_MODEL_ERROR_POLICY,
     blend_overrides: dict[str, float] | None = None,
+    evaluation_mode: str = "operational",
 ) -> StationModelErrorResult:
     """Calculate ``measurement_uv - expected_station_model_uv`` once."""
+    if evaluation_mode not in {"operational", "shadow_campaign"}:
+        raise ValueError(f"unsupported evaluation mode: {evaluation_mode}")
+    governance_required = evaluation_mode == "operational"
     analysis_time = _require_utc(
         analyzed_at or datetime.now(timezone.utc), "analyzed_at"
     )
@@ -746,9 +757,14 @@ def calculate_station_model_error(
         station_physics,
         policy,
         blend_overrides,
+        evaluation_mode,
     )
     gate_reasons = _observation_gate_reasons(
-        station, observation, analyzed_at=analysis_time, policy=policy
+        station,
+        observation,
+        analyzed_at=analysis_time,
+        policy=policy,
+        governance_required=governance_required,
     )
     lineage_reasons = []
     if any(point.source_product != "raw_model" for point in baseline.points):
@@ -765,7 +781,8 @@ def calculate_station_model_error(
     if baseline.baseline_version == "exact-run-bundle-v1":
         lineage_reasons.append("legacy_capture_time_baseline")
     if baseline.baseline_version == "exact-run-bundle-v2":
-        if not baseline.activation_eligible or not baseline.dataset_bundle_hash or not baseline.dataset_manifest:
+        if ((governance_required and not baseline.activation_eligible)
+                or not baseline.dataset_bundle_hash or not baseline.dataset_manifest):
             lineage_reasons.append("not_activation_eligible")
         elif hashlib.sha256(json.dumps(
             baseline.dataset_manifest, sort_keys=True, separators=(",", ":")
@@ -872,6 +889,7 @@ def calculate_station_model_error(
             "baseline_bundle": baseline.bundle_manifest,
             "dataset_bundle": baseline.dataset_manifest,
             "member_statuses": baseline.member_statuses or {},
+            "evaluation_mode": evaluation_mode,
         },
         "baseline_bundle_hash": baseline.bundle_hash,
         "dataset_bundle_hash": baseline.dataset_bundle_hash,
@@ -879,7 +897,9 @@ def calculate_station_model_error(
         "sample_hash": None,
         "sample_manifest": None,
         "activation_eligible": (
-            baseline.activation_eligible and baseline.baseline_version == "exact-run-bundle-v2"
+            governance_required
+            and baseline.activation_eligible
+            and baseline.baseline_version == "exact-run-bundle-v2"
         ),
     }
     blocking = list(dict.fromkeys([*gate_reasons, *lineage_reasons]))
@@ -1176,6 +1196,7 @@ def run_station_model_error_analysis(
     recent_hours: int | None = None,
     skip_exact_attempted: bool = False,
     require_exact: bool = False,
+    campaign_key: str | None = None,
 ) -> dict:
     """Drain suitable observations without coupling imports to model I/O.
 
@@ -1203,13 +1224,20 @@ def run_station_model_error_analysis(
             WeatherStationModelResidual.baseline_version == "exact-run-bundle-v2",
         )
     )
-    rows = db.execute(
-        select(WeatherStation, WeatherObservation)
-        .join(
-            WeatherObservation,
-            WeatherObservation.station_id == WeatherStation.id,
+    if campaign_key:
+        from app.weather.europe_campaign import load_campaign
+
+        campaign = load_campaign()
+        station_conditions = (
+            WeatherStation.active.is_(True),
+            WeatherStation.campaign_key == campaign_key,
         )
-        .where(
+        observation_stages = (
+            "accepted_for_storage", "accepted_for_monitoring",
+            "eligible_for_residuals", "eligible_for_holdout",
+        )
+    else:
+        station_conditions = (
             WeatherStation.active.is_(True),
             WeatherStation.approved.is_(True),
             WeatherStation.residual_approved.is_(True),
@@ -1218,16 +1246,56 @@ def run_station_model_error_analysis(
             WeatherStation.correlation_group.is_not(None),
             WeatherStation.blocked.is_(False),
             WeatherStation.representativeness_status == "passed",
+        )
+        observation_stages = ("eligible_for_residuals", "eligible_for_holdout")
+    rows = db.execute(
+        select(WeatherStation, WeatherObservation)
+        .join(
+            WeatherObservation,
+            WeatherObservation.station_id == WeatherStation.id,
+        )
+        .where(
+            *station_conditions,
             WeatherObservation.import_status == "accepted",
             WeatherObservation.qc_version == "station-observation-qc-v1",
-            WeatherObservation.qc_stage.in_(("eligible_for_residuals", "eligible_for_holdout")),
-            WeatherObservation.qc_flags == [],
+            WeatherObservation.qc_stage.in_(observation_stages),
+            *([WeatherObservation.qc_flags == []] if not campaign_key else []),
             WeatherObservation.availability_class == "captured_operationally",
             WeatherObservation.epoch_id == WeatherStation.current_epoch_id,
             WeatherObservation.received_at <= analysis_time,
             WeatherObservation.imported_at <= analysis_time,
             WeatherObservation.wind_u_ms.is_not(None),
             WeatherObservation.wind_v_ms.is_not(None),
+            *(
+                [
+                    WeatherObservation.observed_at >= campaign.starts_at,
+                    exists(
+                        select(WeatherExactModelBundle.id)
+                        .join(
+                            WeatherExactModelPoint,
+                            WeatherExactModelPoint.bundle_id
+                            == WeatherExactModelBundle.id,
+                        )
+                        .where(
+                            WeatherExactModelBundle.target_kind == "station",
+                            WeatherExactModelBundle.target_id == WeatherStation.id,
+                            WeatherExactModelBundle.activation_eligible.is_(True),
+                            WeatherExactModelBundle.captured_at
+                            <= WeatherObservation.observed_at,
+                            WeatherExactModelPoint.available_at
+                            <= WeatherObservation.observed_at,
+                        )
+                        .group_by(WeatherExactModelBundle.id)
+                        .having(
+                            func.min(WeatherExactModelPoint.valid_at)
+                            <= WeatherObservation.observed_at,
+                            func.max(WeatherExactModelPoint.valid_at)
+                            >= WeatherObservation.observed_at,
+                        )
+                    ),
+                ]
+                if campaign_key else []
+            ),
             *(
                 [WeatherObservation.observed_at >= analysis_time - timedelta(hours=recent_hours),
                  WeatherObservation.observed_at <= analysis_time]
@@ -1248,18 +1316,34 @@ def run_station_model_error_analysis(
         "errors": 0,
         "dry_run": dry_run,
         "calculation_version": policy.version,
+        "campaign_key": campaign_key,
+        "public_effect": "none" if campaign_key else "gated",
         "items": [],
     }
     for station, observation in rows:
         try:
-            from app.weather.station_approval import scope_valid
-            if not scope_valid(db, station, observation, scope="residual_source",
-                               analyzed_at=analysis_time):
-                report["rejected"] += 1
-                report["items"].append({"station_id": str(station.id),
-                                        "observation_id": str(observation.id),
-                                        "reason": "epoch_scope_or_dossier_unqualified"})
-                continue
+            if campaign_key:
+                critical_flags = {
+                    "vector_missing", "direction_missing", "provider_quality_untrusted",
+                    "received_at_unproven", "wind_jump", "sensor_stuck",
+                }
+                if critical_flags.intersection(observation.qc_flags or []):
+                    report["rejected"] += 1
+                    report["items"].append({
+                        "station_id": str(station.id),
+                        "observation_id": str(observation.id),
+                        "reason": "campaign_observation_quality_rejected",
+                    })
+                    continue
+            else:
+                from app.weather.station_approval import scope_valid
+                if not scope_valid(db, station, observation, scope="residual_source",
+                                   analyzed_at=analysis_time):
+                    report["rejected"] += 1
+                    report["items"].append({"station_id": str(station.id),
+                                            "observation_id": str(observation.id),
+                                            "reason": "epoch_scope_or_dossier_unqualified"})
+                    continue
             baseline = baseline_loader(station, observation)
             station_physics = load_reviewed_station_physics(db, station.id)
             result = calculate_station_model_error(
@@ -1270,7 +1354,19 @@ def run_station_model_error_analysis(
                 analyzed_at=analysis_time,
                 policy=policy,
                 blend_overrides=blend_overrides,
+                evaluation_mode=(
+                    "shadow_campaign" if campaign_key else "operational"
+                ),
             )
+            if campaign_key:
+                result = replace(
+                    result,
+                    activation_eligible=False,
+                    qc_status=("degraded" if result.qc_status == "accepted" else result.qc_status),
+                    qc_reasons=tuple(dict.fromkeys((
+                        *result.qc_reasons, "campaign_shadow_only",
+                    ))),
+                )
             if not dry_run:
                 persist_station_model_error(db, result)
                 db.commit()

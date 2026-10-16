@@ -260,6 +260,114 @@ def test_catalog_metadata_revision_is_idempotent_and_drift_blocks_station(db):
         db.commit()
 
 
+def test_dwd_rolling_sensor_end_date_does_not_create_revision_or_epoch(db):
+    from geoalchemy2 import WKTElement
+    from sqlalchemy import func, select
+    from app.models import (
+        Region,
+        Spot,
+        WeatherStation,
+        WeatherStationEpoch,
+        WeatherStationMetadataRevision,
+    )
+
+    suffix = uuid.uuid4().hex[:8]
+    region = Region(
+        slug=f"stable-meta-{suffix}",
+        name="Stable Metadata Fixture",
+        country="DE",
+        status="published",
+    )
+    db.add(region)
+    db.flush()
+    spot = Spot(
+        slug=f"stable-meta-{suffix}",
+        name="Stable Metadata Fixture",
+        region_id=region.id,
+        location=WKTElement("POINT(10 54)", srid=4326),
+        status="published",
+        sports=["wind"],
+        water_type=["sea"],
+    )
+    db.add(spot)
+    db.commit()
+    target = SimpleNamespace(
+        id=spot.id, latitude=54.0, longitude=10.0, elevation_m=None
+    )
+
+    def candidate(end_date: str, *, equipment: str = "sensor-a"):
+        return ObservationStation(
+            provider="dwd",
+            station_id="00043",
+            name="Stable Fixture",
+            latitude=54.01,
+            longitude=10.0,
+            elevation_m=6,
+            measurement_height_m=13,
+            license="CC BY 4.0",
+            country_code="DE",
+            sensor_metadata={
+                "equipment": equipment,
+                "effective_from": "20210102",
+                "effective_to": end_date,
+            },
+            raw_payload={
+                "sensor_row": {
+                    "Geraetetyp Name": equipment,
+                    "Von_Datum": "20210102",
+                    "Bis_Datum": end_date,
+                }
+            },
+            received_at=NOW,
+        )
+
+    try:
+        first = sync_catalog_candidates(
+            db, catalog_candidates([target], [candidate("20260917")]), dry_run=False
+        )
+        rolling = sync_catalog_candidates(
+            db,
+            catalog_candidates([target], [candidate("20260918")]),
+            dry_run=False,
+        )
+        station = db.scalar(
+            select(WeatherStation).where(WeatherStation.spot_id == spot.id)
+        )
+        assert first["metadata_revisions_persisted"] == 1
+        assert first["epochs_proposed"] == 1
+        assert rolling["metadata_revisions_persisted"] == 0
+        assert rolling["epochs_proposed"] == 0
+        assert db.scalar(
+            select(func.count()).select_from(WeatherStationMetadataRevision).where(
+                WeatherStationMetadataRevision.station_id == station.id
+            )
+        ) == 1
+        assert db.scalar(
+            select(func.count()).select_from(WeatherStationEpoch).where(
+                WeatherStationEpoch.station_id == station.id
+            )
+        ) == 1
+
+        replacement = sync_catalog_candidates(
+            db,
+            catalog_candidates(
+                [target], [candidate("99991231", equipment="sensor-b")]
+            ),
+            dry_run=False,
+        )
+        assert replacement["metadata_revisions_persisted"] == 1
+        assert replacement["epochs_proposed"] == 1
+    finally:
+        for item in db.scalars(
+            select(WeatherStation).where(WeatherStation.spot_id == spot.id)
+        ).all():
+            db.delete(item)
+        db.delete(spot)
+        db.flush()
+        db.delete(region)
+        db.commit()
+
+
 def test_parallel_replay_and_cross_spot_revision_identity(db):
     from geoalchemy2 import WKTElement
     from sqlalchemy import select

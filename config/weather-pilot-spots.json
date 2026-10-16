@@ -1,6 +1,6 @@
 [
   {"name":"Sankt Peter-Ording – Ording","country":"DE","group":"core","spot_id":null},
-  {"name":"Fehmarn – Gold","country":"DE","group":"core","spot_id":null},
+  {"name":"Fehmarn – Gold","country":"DE","group":"core","spot_id":"5ffee534-7c7a-4b2f-ad57-bd2fd3d6f1b5"},
   {"name":"Steinhuder Meer – Mardorf","country":"DE","group":"core","spot_id":null},
   {"name":"Walchensee – Urfeld","country":"DE","group":"core","spot_id":null},
   {"name":"Sylt – Westerland","country":"DE","group":"extension","spot_id":null},
@@ -17,6 +17,9 @@
   {"name":"Hvide Sande – Ringkøbing-Fjord-Seite","country":"DK","group":"core","spot_id":null},
   {"name":"Lynæs","country":"DK","group":"core","spot_id":null},
   {"name":"Amager Strandpark","country":"DK","group":"core","spot_id":null},
+  {"name":"Fehmarn Wulfener Hals","country":"DE","group":"core","spot_id":null},
+  {"name":"Valdevaqueros","country":"ES","group":"core","spot_id":null},
+  {"name":"Porto Pollo","country":"IT","group":"core","spot_id":null},
   {"name":"Rømø – Sønderstrand","country":"DK","group":"extension","spot_id":null},
   {"name":"Kerteminde Nord","country":"DK","group":"extension","spot_id":null}
 ]

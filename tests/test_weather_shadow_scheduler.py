@@ -8,7 +8,9 @@ def test_scheduler_contract_is_post_only_and_bounded():
     workflow = (ROOT / ".github/workflows/weather-shadow.yml").read_text(
         encoding="utf-8"
     )
-    assert 'cron: "41 */6 * * *"' in workflow
+    assert "workflow_dispatch" in workflow
+    assert "schedule:" not in workflow
+    assert "cron:" not in workflow
     assert "workflow_dispatch:" in workflow
     assert "cancel-in-progress: false" in workflow
     assert "timeout-minutes: 15" in workflow

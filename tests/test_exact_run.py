@@ -182,6 +182,52 @@ def test_station_and_target_share_exact_bundle_and_uv_residual(tmp_path, monkeyp
     assert "model_grid_too_distant:icon-eu" in rejected.qc_reasons
 
 
+def test_shadow_campaign_scores_raw_residual_without_operational_approval(tmp_path):
+    exact_loader, _, _ = loader(tmp_path)
+    capture_pair(exact_loader)
+    station = SimpleNamespace(
+        id=uuid.uuid4(), latitude=54.2, longitude=10.2,
+        active=True, approved=False, blocked=True,
+        representativeness_status="unreviewed", residual_approved=False,
+        identity_review_status="unreviewed", physical_station_group=None,
+        correlation_group=None,
+    )
+    measured_u, measured_v = wind_to_uv(12, 270)
+    observation = SimpleNamespace(
+        id=uuid.uuid4(), station_id=station.id, observed_at=OBS,
+        wind_speed_ms=12, wind_direction_deg=270,
+        wind_u_ms=measured_u, wind_v_ms=measured_v,
+        wind_gust_ms=None, gust_period_seconds=None,
+        provider_quality="good", import_status="accepted",
+        qc_version="station-observation-qc-v1", qc_flags=[],
+        qc_stage="accepted_for_monitoring",
+        received_at=OBS + timedelta(minutes=1),
+        imported_at=OBS + timedelta(minutes=1),
+    )
+
+    result = calculate_station_model_error(
+        station,
+        observation,
+        exact_loader(station, observation),
+        analyzed_at=OBS + timedelta(minutes=1),
+        evaluation_mode="shadow_campaign",
+    )
+
+    assert result.qc_status in {"accepted", "degraded"}
+    assert result.residual_vector
+    assert not result.activation_eligible
+    assert result.configuration["evaluation_mode"] == "shadow_campaign"
+
+    operational = calculate_station_model_error(
+        station,
+        observation,
+        exact_loader(station, observation),
+        analyzed_at=OBS + timedelta(minutes=1),
+    )
+    assert operational.qc_status == "rejected"
+    assert "station_unapproved" in operational.qc_reasons
+
+
 def test_different_tiles_share_dataset_but_not_assets_or_samples(tmp_path, monkeypatch):
     exact_loader, _, _ = loader(tmp_path)
     capture_pair(exact_loader)

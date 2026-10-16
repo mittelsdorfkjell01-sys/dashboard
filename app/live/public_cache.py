@@ -47,6 +47,16 @@ def public_weather_generation(cache: Cache, spot_id) -> str:
     return value if isinstance(value, str) and value else "0"
 
 
+def public_weather_generations(cache: Cache, spot_ids) -> dict[Any, str]:
+    ids = list(spot_ids)
+    keys = [public_weather_generation_key(spot_id) for spot_id in ids]
+    values = _safe_get_many(cache, keys)
+    return {
+        spot_id: value if isinstance(value := values.get(key), str) and value else "0"
+        for spot_id, key in zip(ids, keys)
+    }
+
+
 def public_live_key(spot_id, generation: str = "0") -> str:
     # The model-nowcast product layer (keyed ``nowcast``), distinct from the
     # separate ``measurement`` layer (P0.1). The function name is kept for its
@@ -83,6 +93,16 @@ def public_live_wind_input_generation_key(spot_id) -> str:
 def public_live_wind_input_generation(cache: Cache, spot_id) -> str:
     value = _safe_scalar_get(cache, public_live_wind_input_generation_key(spot_id))
     return value if isinstance(value, str) and value else "0"
+
+
+def public_live_wind_input_generations(cache: Cache, spot_ids) -> dict[Any, str]:
+    ids = list(spot_ids)
+    keys = [public_live_wind_input_generation_key(spot_id) for spot_id in ids]
+    values = _safe_get_many(cache, keys)
+    return {
+        spot_id: value if isinstance(value := values.get(key), str) and value else "0"
+        for spot_id, key in zip(ids, keys)
+    }
 
 
 def public_live_wind_residual_key(
@@ -140,6 +160,21 @@ def get_public_live(
     return _safe_get(cache, public_live_key(spot_id, generation))
 
 
+def get_public_live_many(
+    cache: Cache, generations: dict[Any, str]
+) -> dict[Any, dict[str, Any]]:
+    keys = {
+        spot_id: public_live_key(spot_id, generation)
+        for spot_id, generation in generations.items()
+    }
+    values = _safe_get_many(cache, list(keys.values()))
+    return {
+        spot_id: payload
+        for spot_id, key in keys.items()
+        if (payload := _as_public_dict(values.get(key))) is not None
+    }
+
+
 def set_public_live(
     cache: Cache,
     spot_id,
@@ -170,6 +205,17 @@ def get_public_measurement(cache: Cache, spot_id) -> dict[str, Any] | None:
     return _safe_get(cache, public_measurement_key(spot_id))
 
 
+def get_public_measurements_many(cache: Cache, spot_ids) -> dict[Any, dict[str, Any]]:
+    ids = list(spot_ids)
+    keys = {spot_id: public_measurement_key(spot_id) for spot_id in ids}
+    values = _safe_get_many(cache, list(keys.values()))
+    return {
+        spot_id: payload
+        for spot_id, key in keys.items()
+        if (payload := _as_public_dict(values.get(key))) is not None
+    }
+
+
 def set_public_measurement(cache: Cache, spot_id, payload: dict[str, Any] | None) -> None:
     """Warm the separate measurement layer with a freshly computed reading."""
     if payload is None:
@@ -183,6 +229,21 @@ def get_public_live_wind_baseline(
     """Return the model-only LiveWind scaffold used for a fresh DB analysis."""
     generation = generation or public_weather_generation(cache, spot_id)
     return _safe_get(cache, public_live_wind_baseline_key(spot_id, generation))
+
+
+def get_public_live_wind_baselines_many(
+    cache: Cache, generations: dict[Any, str]
+) -> dict[Any, dict[str, Any]]:
+    keys = {
+        spot_id: public_live_wind_baseline_key(spot_id, generation)
+        for spot_id, generation in generations.items()
+    }
+    values = _safe_get_many(cache, list(keys.values()))
+    return {
+        spot_id: payload
+        for spot_id, key in keys.items()
+        if (payload := _as_public_dict(values.get(key))) is not None
+    }
 
 
 def set_public_live_wind_baseline(
@@ -413,11 +474,28 @@ def _safe_get(cache: Cache, key: str) -> dict[str, Any] | None:
     except Exception as exc:
         logger.warning("public weather cache get failed (%s)", type(exc).__name__)
         return None
+    return _as_public_dict(value)
+
+
+def _as_public_dict(value: Any) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         return None
     result = dict(value)
     result.pop("_cache_captured_at", None)
     return result
+
+
+def _safe_get_many(cache: Cache, keys: list[str]) -> dict[str, Any]:
+    try:
+        get_many = getattr(cache, "get_many", None)
+        if get_many is not None:
+            return get_many(keys)
+        return {
+            key: value for key in keys if (value := cache.get(key)) is not None
+        }
+    except Exception as exc:
+        logger.warning("public weather cache mget failed (%s)", type(exc).__name__)
+        return {}
 
 
 def _safe_scalar_get(cache: Cache, key: str) -> Any | None:
