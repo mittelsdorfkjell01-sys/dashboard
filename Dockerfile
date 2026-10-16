@@ -18,6 +18,7 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./alembic.ini
 COPY scripts ./scripts
+COPY config/europe-wind-measurement.json ./config/europe-wind-measurement.json
 
 RUN chmod +x scripts/entrypoint.sh && mkdir -p data/media
 

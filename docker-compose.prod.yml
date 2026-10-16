@@ -17,6 +17,23 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    shm_size: ${POSTGRES_SHM_SIZE:-1gb}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-512MB}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-2GB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-8MB}
+      - -c
+      - maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-128MB}
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-50}
+      - -c
+      - random_page_cost=${POSTGRES_RANDOM_PAGE_COST:-1.1}
+      - -c
+      - wal_compression=on
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -27,12 +44,34 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     # Pure cache: no persistence needed (entries rebuild from Open-Meteo).
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-512mb}
+      - --maxmemory-policy
+      - allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
+
+  migrate:
+    build: .
+    restart: "no"
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_DIRECT_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["alembic", "upgrade", "head"]
 
   app:
     build: .
@@ -43,6 +82,67 @@ services:
       # Built from the individual POSTGRES_* so the password lives in exactly one
       # place; host is the compose service name.
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-10}
+      DB_POOL_TIMEOUT_SECONDS: ${DB_POOL_TIMEOUT_SECONDS:-10}
+      DB_POOL_RECYCLE_SECONDS: ${DB_POOL_RECYCLE_SECONDS:-1800}
+      FEATURED_WARMUP_ENABLED: "false"
+      # The dedicated maintenance service owns every provider/retention job.
+      RUN_MAINTENANCE_CRONS: "false"
+      RUN_DB_MIGRATIONS: "false"
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    volumes:
+      - media:/app/data/media
+      - geodata:/app/data/geodata-cache
+      - weather_fields:/app/data/weather-fields
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=4).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  cache-warmup:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_POOL_SIZE: "2"
+      DB_MAX_OVERFLOW: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Keep provider/forecast work out of the latency-sensitive web process.
+    entrypoint:
+      - python
+      - -m
+      - app.discovery.warmup
+      - --loop
+      - --interval
+      - ${FEATURED_WARMUP_INTERVAL:-1800}
+
+  maintenance-worker:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_POOL_SIZE: "3"
+      DB_MAX_OVERFLOW: "0"
+      RUN_MAINTENANCE_CRONS: "true"
+      FEATURED_WARMUP_ENABLED: "false"
     depends_on:
       db:
         condition: service_healthy
@@ -50,12 +150,45 @@ services:
         condition: service_healthy
     volumes:
       - media:/app/data/media
+      - geodata:/app/data/geodata-cache
+      - weather_fields:/app/data/weather-fields
+    entrypoint: ["python", "-m", "app.maintenance.worker"]
+
+  weather-field-worker:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DB_POOL_SIZE: "2"
+      DB_MAX_OVERFLOW: "0"
+      FEATURED_WARMUP_ENABLED: "false"
+      RUN_MAINTENANCE_CRONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - weather_fields:/app/data/weather-fields
+    entrypoint: ["python", "scripts/weather_field_worker.py", "--loop"]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=4).status==200 else 1)"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "python", "scripts/weather_field_doctor.py", "--require-public", "--fail-on-alert"]
+      interval: 15m
+      timeout: 60s
+      retries: 2
+      start_period: 45m
+
+  api-cache:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./deploy/nginx-api-cache.conf:/etc/nginx/conf.d/default.conf:ro
+      - api_cache:/var/cache/nginx
 
   caddy:
     # Custom image = Caddy + the built SPA baked in (frontend/Dockerfile). Serves
@@ -76,11 +209,10 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - weather_fields:/srv/weather-field-assets:ro
     depends_on:
-      app:
-        # Caddy only starts routing once the app is healthy (migrations applied,
-        # DB reachable) — a failed migration keeps the new app unhealthy.
-        condition: service_healthy
+      api-cache:
+        condition: service_started
 
   backup:
     image: postgres:16-alpine
@@ -106,5 +238,8 @@ services:
 volumes:
   pgdata:
   media:
+  geodata:
+  weather_fields:
   caddy_data:
   caddy_config:
+  api_cache:

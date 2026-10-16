@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:16-3.5
     environment:
       POSTGRES_USER: surf
       POSTGRES_PASSWORD: surf
@@ -26,5 +26,37 @@ services:
       timeout: 5s
       retries: 10
 
+  europe-measurement:
+    build: .
+    entrypoint: ["python", "-m", "scripts.europe_measurement_worker"]
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    environment:
+      APP_ENV: development
+      DEPLOYMENT_MODE: development
+      ENABLE_ADMIN_API: "false"
+      DATABASE_URL: postgresql+psycopg://surf:surf@db:5432/surfwind
+      REDIS_URL: redis://redis:6379/0
+      LIVE_WIND_ROLLOUT_STAGE: shadow
+      LIVE_WIND_FORCE_BASELINE: "true"
+      LIVE_WIND_ENABLED_REGION_SLUGS: ""
+      LIVE_WIND_EXACT_RUN_CACHE_DIR: /var/cache/surfwind-exact
+      LIVE_WIND_EXACT_RUN_MIN_FREE_BYTES: "0"
+      LIVE_WIND_EXACT_CAPTURE_TILE_LIMIT: "16"
+      LIVE_WIND_EXACT_POINT_BATCH_SIZE: "16"
+      WEATHER_OBSERVATION_CRON_BATCH_SIZE: "45"
+      WEATHER_OBSERVATION_PROVIDERS: eumetnet_esoh
+      WEATHER_STATION_CATALOG_PROVIDERS: eumetnet_esoh
+      WEATHER_EUROPE_CAMPAIGN_STATION_LIMIT: "240"
+    volumes:
+      - europe_exact_cache:/var/cache/surfwind-exact
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   pgdata:
+  europe_exact_cache:

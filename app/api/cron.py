@@ -7,7 +7,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.db.session import get_db
@@ -54,6 +54,9 @@ def _maintenance_cron_skipped() -> dict | None:
 )
 def collect_weather_shadow(db: Session = Depends(get_db)) -> dict:
     """Atomically enqueue one model generation and return without provider I/O."""
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
     from app.weather.shadow_jobs import enqueue_shadow_cycle
 
     job, created = enqueue_shadow_cycle(db)
@@ -74,6 +77,9 @@ def collect_weather_shadow(db: Session = Depends(get_db)) -> dict:
 )
 def enqueue_live_wind(db: Session = Depends(get_db)) -> dict:
     """Queue a fair bounded shadow batch; never perform provider I/O inline."""
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
     from app.weather.live_wind_jobs import enqueue_live_wind_cycle
 
     try:
@@ -82,6 +88,53 @@ def enqueue_live_wind(db: Session = Depends(get_db)) -> dict:
         db.rollback()
         logger.exception("cron_live_wind_enqueue_failed")
         return {"error": "internal_error", "public_effect": "none"}
+
+
+@router.post(
+    "/weather-fields",
+    dependencies=[Depends(_require_cron)],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def enqueue_weather_fields(db: Session = Depends(get_db)) -> dict:
+    """Queue field maintenance; provider I/O stays in the worker."""
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
+    settings = get_settings()
+    if not settings.weather_field_pipeline_enabled:
+        return {"status": "skipped", "reason": "weather_field_pipeline_disabled"}
+    from app.spatial_fields.jobs import (
+        enqueue_discovery,
+        enqueue_retention,
+        enqueue_shadow_validation,
+    )
+
+    discovery, discovery_created = enqueue_discovery(db)
+    retention, retention_created = enqueue_retention(db)
+    shadow = None
+    shadow_created = False
+    if settings.weather_field_shadow_enabled:
+        shadow, shadow_created = enqueue_shadow_validation(db, settings=settings)
+    return {
+        "status": "accepted",
+        "discovery": {
+            "job_id": str(discovery.id),
+            "created": discovery_created,
+        },
+        "retention": {
+            "job_id": str(retention.id),
+            "created": retention_created,
+        },
+        "shadow_validation": (
+            {
+                "job_id": str(shadow.id),
+                "created": shadow_created,
+            }
+            if shadow is not None
+            else {"status": "disabled_or_no_active_publication"}
+        ),
+        "public_effect": "none",
+    }
 
 
 @router.get("/climatology", dependencies=[Depends(_require_cron)])
@@ -137,39 +190,9 @@ def maintain_climatology(
         logger.exception("cron_media_gc_collect_failed")
         result["media_gc"]["collect"] = {"error": "internal_error"}
     try:
-        from datetime import datetime, timezone
-        from app.forecast.publisher import enqueue, run_job
-        from app.models import ForecastProcessingJob, ForecastSnapshot, Spot
+        from app.forecast.refresh_worker import run_refresh_cycle
 
-        limit = get_settings().forecast_job_batch_size
-        candidates = db.scalars(
-            select(Spot)
-            .outerjoin(
-                ForecastSnapshot,
-                (ForecastSnapshot.spot_id == Spot.id)
-                & ForecastSnapshot.active.is_(True),
-            )
-            .where(
-                Spot.status == "published",
-                or_(
-                    ForecastSnapshot.id.is_(None),
-                    ForecastSnapshot.valid_until < datetime.now(timezone.utc),
-                ),
-            )
-            .order_by(Spot.updated_at)
-            .limit(limit)
-        ).all()
-        for spot in candidates:
-            enqueue(db, spot.id, reason="cron")
-        jobs = db.scalars(
-            select(ForecastProcessingJob)
-            .where(ForecastProcessingJob.status == "queued")
-            .order_by(ForecastProcessingJob.created_at)
-            .limit(get_settings().forecast_job_batch_size)
-        ).all()
-        result["forecast"] = [
-            {"id": str(job.id), "status": run_job(db, job.id).status} for job in jobs
-        ]
+        result["forecast"] = run_refresh_cycle(db)
     except Exception:
         db.rollback()
         logger.exception("cron_forecast_refresh_failed")
@@ -187,6 +210,24 @@ def maintain_climatology(
         db.rollback()
         logger.exception("cron_featured_warmup_failed")
         result["featured"] = {"error": "internal_error"}
+    try:
+        from app.db.retention import prune_operational_history
+
+        settings = get_settings()
+        result["database_retention"] = prune_operational_history(
+            db,
+            snapshot_days=settings.forecast_snapshot_retention_days,
+            job_days=settings.forecast_job_retention_days,
+            failed_job_days=settings.forecast_failed_job_retention_days,
+            recommendation_days=settings.recommendation_log_retention_days,
+            live_wind_job_days=settings.live_wind_job_retention_days,
+            live_wind_failed_job_days=settings.live_wind_failed_job_retention_days,
+            batch_size=settings.operational_retention_batch_size,
+        )
+    except Exception:
+        db.rollback()
+        logger.exception("cron_database_retention_failed")
+        result["database_retention"] = {"error": "internal_error"}
     return result
 
 
@@ -198,6 +239,9 @@ def collect_observations(db: Session = Depends(get_db)) -> dict:
     forecast value. Idempotent through the observation uniqueness constraint;
     repeated cron invocations drain the active-station catalogue.
     """
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
     settings = get_settings()
     try:
         from app.live.cache import default_cache
@@ -219,6 +263,9 @@ def collect_observations(db: Session = Depends(get_db)) -> dict:
 @router.get("/station-catalog", dependencies=[Depends(_require_cron)])
 def refresh_station_catalog(db: Session = Depends(get_db)) -> dict:
     """Refresh station metadata independently from observation capture."""
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
     try:
         from app.weather.station_catalog_job import run_station_catalog_refresh
 
@@ -242,6 +289,9 @@ def run_verification(db: Session = Depends(get_db)) -> dict:
     land as ``pending_review``; no second gate is introduced). Scoring and
     calibration are isolated so one failure cannot mask the other.
     """
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
     settings = get_settings()
     result: dict = {}
     try:
@@ -300,6 +350,9 @@ def build_sectors(db: Session = Depends(get_db)) -> dict:
     ordered by least-recently-built, so repeated invocations drain the full
     published catalogue without starving or double-running a spot.
     """
+    skipped = _maintenance_cron_skipped()
+    if skipped is not None:
+        return skipped
     settings = get_settings()
     try:
         from app.forecast.sector_runner import run_sector_producer
