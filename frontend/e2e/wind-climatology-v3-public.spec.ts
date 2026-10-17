@@ -77,7 +77,7 @@ async function baseRoutes(page: Page, opts: { v3: "ready" | "404"; usableAvailab
     if (url.pathname === "/spots/test/forecast") return route.fulfill({ json: { spot_id: "test", model: "test", generated_at: "2026-08-06T08:00:00Z", days: [] } });
     if (url.pathname === "/spots/test/ratings") return route.fulfill({ json: { items: [], aggregate: { count: 0, average: null } } });
     if (url.pathname === "/spots/test/tips" || url.pathname === "/spots/test/images") return route.fulfill({ json: [] });
-    if (url.pathname === "/spots/test/tides") return route.fulfill({ json: { available: false, message: null, timezone: "Europe/Berlin", phase: null, cycle_position: null, quality: null, approximate: true, last_calculated_at: null, valid_until: null, events: [] } });
+    if (url.pathname === "/spots/test/tides") return route.fulfill({ json: { available: false, message: null, timezone: "Europe/Berlin", phase: null, cycle_position: null, quality: null, approximate: true, last_calculated_at: null, valid_until: null, events: [], series: [] } });
     if (url.pathname === "/spots/test/wind-climatology") {
       return route.fulfill({ json: { status: "ready", period: { start_year: 2006, end_year: 2025 }, model: "ERA5", wind_height_m: 10, updated_at: "2026-08-01", grid: { resolution_degrees: 0.25 }, sections: [] } });
     }

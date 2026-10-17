@@ -1,6 +1,12 @@
 import { test } from "@playwright/test";
 
+/**
+ * Manual diagnostic, not a test: it drives the wind map's time controls and
+ * logs heap size, crashes and page errors. It asserts nothing, so a normal run
+ * would only pay its ~30s. Run it on demand with SCRATCH_LIVE=1.
+ */
 test("LIVE crash watch", async ({ page }) => {
+  test.skip(!process.env.SCRATCH_LIVE, "Manual diagnostic — run with SCRATCH_LIVE=1");
   page.on("crash", () => console.log("PAGE CRASHED"));
   page.on("pageerror", (e) => console.log("PAGEERROR", e.message));
   const mem = async (tag: string) => {
@@ -11,7 +17,7 @@ test("LIVE crash watch", async ({ page }) => {
     console.log(tag, "heapMB", m);
   };
 
-  await page.goto("http://localhost:5173/map?mode=wind&lat=54.4&lon=10.2&z=7");
+  await page.goto("/map?mode=wind&lat=54.4&lon=10.2&z=7");
   await page.waitForTimeout(6000);
   await mem("start");
 

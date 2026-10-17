@@ -49,6 +49,9 @@ async function mockPublicApi(page: Page) {
       const data = surface === "season" ? orders[profile].slice(1) : orders[profile];
       return route.fulfill({ json: data });
     }
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: orders[profile], total: orders[profile].length, version: "e2e" } });
+    }
     if (url.pathname === "/spots") return route.fulfill({ json: orders[profile] });
     if (url.pathname === "/spots/version") return route.fulfill({ json: { version: "e2e" } });
     if (url.pathname === "/spots/top" || url.pathname === "/spots/live") return route.fulfill({ json: [] });
@@ -102,9 +105,11 @@ test("landing renders all non-empty recommendation surfaces without scoring copy
   });
   await mockPublicApi(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Aktuelle Top-Spots" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Interessant nächste Woche" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Saison" })).toBeVisible();
+  // The three surfaces as the landing names them: the "now" row's own header is
+  // hidden and carried by the section heading beside the filter icon.
+  await expect(page.getByRole("heading", { name: "Aktuelle Topspots" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Woche" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Zeit" })).toBeVisible();
   const markup = await page.locator("body").evaluate((node) => node.outerHTML.toLowerCase());
   for (const forbidden of ["top-match", "match-prozent", "rank_score", "gut_anteil", "weil du", "passt zu"]) {
     expect(markup).not.toContain(forbidden);

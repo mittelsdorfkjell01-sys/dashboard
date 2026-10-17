@@ -228,10 +228,12 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   await expect(tile).toHaveCSS("outline-width", "1px");
   await expect(tile).toHaveCSS("outline-style", "solid");
   await expect(tile).toHaveCSS("outline-color", "rgba(0, 0, 0, 0)");
+  // The spot page no longer shrinks its desktop body with CSS zoom (0.85), so
+  // the locator needs no counter-zoom either: tiles render at native scale.
   const mapZoom = await map.locator(".swd-locator-map").evaluate((element) =>
     Number.parseFloat(getComputedStyle(element).zoom),
   );
-  expect(mapZoom).toBeCloseTo(1 / 0.85, 5);
+  expect(mapZoom).toBeCloseTo(1, 5);
   await expect(map.locator(".leaflet-tile-pane")).not.toHaveCSS("filter", "none");
   const edgeBlend = await map.locator(".swd-locator-map").evaluate((element) =>
     getComputedStyle(element, "::after").boxShadow,
@@ -422,14 +424,16 @@ test("Info und Daten behalten beim Tabwechsel dieselbe Scrollhöhe", async ({ pa
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   const infoScrollY = await page.evaluate(() => window.scrollY);
   await page.getByRole("tab", { name: "Daten" }).click();
-  await expect(page).toHaveURL(/\/spot\/laboe\/daten$/);
+  // The Windmonate module keeps its wind window in the query string, so pin the
+  // path and allow whatever selection it has synced.
+  await expect(page).toHaveURL(/\/spot\/laboe\/daten(\?|$)/);
   await expect(page.getByRole("group", { name: "Meteogramm — Zeitpunkt wählen" })).toBeVisible();
   await page.waitForTimeout(400);
   expect(await page.evaluate(() => window.scrollY)).toBe(infoScrollY);
 
   const datenScrollY = await page.evaluate(() => window.scrollY);
   await page.getByRole("tab", { name: "Info" }).click();
-  await expect(page).toHaveURL(/\/spot\/laboe\/info$/);
+  await expect(page).toHaveURL(/\/spot\/laboe\/info(\?|$)/);
   await expect(page.getByRole("heading", { name: "Alcyons" })).toHaveCount(1);
   await page.waitForTimeout(400);
   expect(await page.evaluate(() => window.scrollY)).toBe(datenScrollY);
