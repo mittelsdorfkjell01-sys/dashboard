@@ -47,3 +47,38 @@ def test_wave_api_smoke_checks_ten_day_chain_manifest_and_series(monkeypatch):
     assert "valid_at=2026-10-10T12%3A00%3A00Z" in requested[2]
     assert "/sample/series?" in requested[3]
     assert "valid_at=2026-10-20T12%3A00%3A00Z" in requested[4]
+
+
+
+def test_app_imports_when_the_local_asset_store_cannot_be_created(tmp_path):
+    """A read-only filesystem must cost the asset mount, not the whole API.
+
+    `weather_field_storage_backend` defaults to "local", so app.main ran
+    os.makedirs at import. On Vercel everything outside /tmp is read-only, the
+    OSError escaped during module import, and every API route answered
+    FUNCTION_INVOCATION_FAILED before FastAPI ever saw a request.
+
+    A directory under a regular file is the portable stand-in: makedirs raises
+    NotADirectoryError, an OSError like the read-only one.
+    """
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("", encoding="utf-8")
+
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, "-c", "import app.main; print(len(app.main.app.routes))"],
+        cwd=root,
+        env={
+            **os.environ,
+            "WEATHER_FIELD_STORAGE_BACKEND": "local",
+            "WEATHER_FIELD_STORAGE_DIR": str(blocker / "fields"),
+        },
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
