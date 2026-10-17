@@ -535,8 +535,20 @@ test("the wind map carries the same overlay furniture as the spot map", async ({
   const zoomBefore = Number(new URL(page.url()).searchParams.get("z"));
   await zoomIn.click();
   await expect.poll(() => Number(new URL(page.url()).searchParams.get("z"))).toBeGreaterThan(zoomBefore);
-  while (Number(new URL(page.url()).searchParams.get("z")) < 8) await zoomIn.click();
-  await expect.poll(() => tileRequests.some((url) => url.pathname.includes("/rastertiles/voyager_only_labels/"))).toBe(true);
+  // Past the threshold, not onto it: the label raster joins at
+  // PLACE_LABEL_MIN_ZOOM (8), and the URL carries the camera's target while the
+  // camera is still flying there. Stopping at exactly 8 therefore raced the
+  // layer's visibility — reliably lost on a software renderer, where this
+  // failed on the mobile project in CI while passing locally. One more step
+  // puts the camera unambiguously inside the layer's range, and the poll gets
+  // room for the slower tile fetch.
+  while (Number(new URL(page.url()).searchParams.get("z")) < 9) await zoomIn.click();
+  await expect
+    .poll(
+      () => tileRequests.some((url) => url.pathname.includes("/rastertiles/voyager_only_labels/")),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
   await expect(page.locator(".swd-country-label", { hasText: "Deutschland" })).toBeHidden();
 
   await page.screenshot({
