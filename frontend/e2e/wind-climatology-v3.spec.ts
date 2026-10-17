@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 const weeks=Array.from({length:52},(_,i)=>({week:i+1,sample_years:20,successful_years:i%3===0?0:12,reliability_percent:i%3===0?0:60,median_usable_days:2,median_session_hours:6,p25_session_hours:3,p75_session_hours:9,quality_status:"high"}));
-const status={state:"complete",stale:false,latest:{id:"run-1",status:"ready",period:[2006,2025],algorithm_version:"wind-climatology-v3.0",config_hash:"hash",started_at:"2026-08-22T10:00:00Z",completed_at:"2026-08-22T10:04:00Z",activated_at:"2026-08-22T10:04:00Z",is_active:true,quality:{valid_years:20,quality_status:"high"},warnings:[],error_category:null,error:null},active:null as unknown, directions:{reviewed:true,windows:[{start_deg:337.5,end_deg:0},{start_deg:0,end_deg:22.5}],usable_available:true},cell:{mode:"automatic",spot:[54.4,10.2],requested:[54.4,10.2],actual:[54.5,10.25],distance_km:11.2,model:"ERA5",resolution_degrees:.25,status:"ready",warnings:[]},public_effect:"none"};
+const geometry={geometry_version:"geom-1",start_areas:[{name:"Nordstrand",start_area:{type:"Polygon",coordinates:[[[10.2,54.4],[10.21,54.4],[10.21,54.41],[10.2,54.4]]]},usable_water:{type:"Polygon",coordinates:[[[10.2,54.41],[10.25,54.41],[10.25,54.45],[10.2,54.41]]]},shoreline:{type:"LineString",coordinates:[[10.2,54.405],[10.21,54.405]]},waterward_normal_deg:0,source:{label:"Amtliche Luftbilder",url:"https://example.org/nachweis",version:"2026"}}],exclusions:[],conflicts:[]};
+const directions={status:"effective",effective:true,missing:[],sectors:[0,15],windows:[{start_deg:337.5,end_deg:0},{start_deg:0,end_deg:22.5}],geometry,geometry_version:"geom-1",rule_version:"usable-directions-1",evidence:{},calculated_at:"2026-08-22T10:00:00Z",updated_at:"2026-08-22T10:00:00Z"};
+const status={state:"complete",stale:false,latest:{id:"run-1",status:"ready",period:[2006,2025],algorithm_version:"wind-climatology-v3.0",config_hash:"hash",started_at:"2026-08-22T10:00:00Z",completed_at:"2026-08-22T10:04:00Z",activated_at:"2026-08-22T10:04:00Z",is_active:true,quality:{valid_years:20,quality_status:"high"},warnings:[],error_category:null,error:null},active:null as unknown, directions:{...directions,usable_available:true},cell:{mode:"automatic",spot:[54.4,10.2],requested:[54.4,10.2],actual:[54.5,10.25],distance_km:11.2,model:"ERA5",resolution_degrees:.25,status:"ready",warnings:[]},public_effect:"none"};
 status.active=status.latest;
 
 test.beforeEach(async({page})=>{
@@ -9,7 +11,11 @@ test.beforeEach(async({page})=>{
   await page.route("**/admin/notifications/unread-count",r=>r.fulfill({json:{count:0}}));
   await page.route("**/admin/environment",r=>r.fulfill({json:{app_env:"test",database_target:"local",admin_writes_blocked:false,allow_remote_writes:false}}));
   await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/status",r=>r.fulfill({json:status}));
-  await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/directions",r=>r.fulfill({json:r.request().method()==="PUT"?{sectors:[0,3,15],reviewed:true,reviewed_at:"2026-08-22T12:00:00Z",updated_at:"2026-08-22T12:00:00Z",run:{id:"run-2",status:"pending",created:true}}:{sectors:[0,15],reviewed:true,reviewed_at:"2026-08-22T10:00:00Z",updated_at:"2026-08-22T10:00:00Z"}}));
+  await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/directions",r=>r.fulfill({json:directions}));
+  // Saving and recalculating the evidence geometry are their own endpoints; both
+  // answer with the recalculated directions plus the run they scheduled.
+  await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/directions/geometry",r=>r.fulfill({json:{...directions,run:{id:"run-2",status:"pending",created:true}}}));
+  await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/directions/recalculate",r=>r.fulfill({json:{...directions,run:null}}));
   await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/cell",r=>r.fulfill({json:{cell:status.cell,run:{id:"run-2",status:"pending",created:true}}}));
   await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/runs",r=>r.fulfill({status:202,json:{run_id:"run-2",status:"pending",created:true}}));
   await page.route("**/admin/weather/spots/spot-1/wind-climatology-v3/variant?**",r=>{const url=new URL(r.request().url());const mode=url.searchParams.get("direction_mode")??"all";r.fulfill({json:{run_id:"run-1",period:[2006,2025],algorithm_version:"wind-climatology-v3.0",variant:{min_wind_kn:Number(url.searchParams.get("min_wind_kn")),max_wind_kn:Number(url.searchParams.get("max_wind_kn")),direction_mode:mode,weeks:mode==="usable"?weeks.map(w=>({...w,reliability_percent:(w.reliability_percent??0)/2,median_session_hours:3})):weeks}}})});
@@ -18,9 +24,18 @@ test.beforeEach(async({page})=>{
 test("administrator verwaltet V3 ohne Providerabruf",async({page},testInfo)=>{
   await page.goto("/admin/spot/spot-1/wind-climatology-v3");
   await expect(page.getByRole("heading",{name:"Windklimatologie V3"})).toBeVisible();
-  await expect(page.getByRole("button",{name:/Wind aus/})).toHaveCount(16);
-  await page.getByRole("button",{name:/ONO, Wind aus/}).click();
-  await page.getByRole("button",{name:"Richtungen speichern"}).click();
+  // Usable directions are computed from the stored evidence, not clicked on a
+  // sector wheel: the compass only shows the result, the editor holds the
+  // start area, its waterward normal and the source behind it.
+  await expect(page.getByRole("heading",{name:"Nutzbare Windrichtungen"})).toBeVisible();
+  const wheel=page.getByRole("group",{name:"Nutzbare meteorologische Windrichtungen"});
+  await expect(wheel.getByRole("button",{name:/Wind aus/})).toHaveCount(16);
+  // Read-only result display: every sector is disabled, because the selection
+  // is derived from the evidence below instead of clicked here.
+  await expect(wheel.getByRole("button",{name:/NNO, Wind aus/})).toBeDisabled();
+  await expect(page.getByRole("group",{name:"Startbereich 1"})).toBeVisible();
+  await page.getByLabel("Wasserseitige Normale (°)").fill("12");
+  await page.getByRole("button",{name:"Geometrie speichern und berechnen"}).click();
   await expect(page.getByText(/V3-Lauf eingeplant/)).toBeVisible();
   await page.getByRole("button",{name:"Manuell"}).click();
   await page.getByLabel("Latitude").fill("54.45"); await page.getByLabel("Longitude").fill("10.3");
