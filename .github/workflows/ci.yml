@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  # gitleaks reads the pull request's commits when it scans a PR.
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -104,4 +106,11 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
+      # Scanning a pull request needs the token: without it the action stops
+      # with "GITHUB_TOKEN is now required to scan pull requests", so this gate
+      # could never pass on a PR — only on a push to main. Comments stay off,
+      # which keeps the job on read-only permissions.
       - uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
