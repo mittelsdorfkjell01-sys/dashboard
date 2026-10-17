@@ -42,8 +42,11 @@ function EventTime({ event, timezone, prominent = false }: {
   );
 }
 
-function buildTideCurve(series: PublicTideSeriesPoint[]) {
-  const visible = series.slice(0, 49);
+function buildTideCurve(series: PublicTideSeriesPoint[] | undefined) {
+  // The endpoint defaults the series to an empty list, so a response without
+  // it is out of contract — but a missing curve must never cost the visitor
+  // the whole Daten page. No points, no curve; the events below still render.
+  const visible = (series ?? []).slice(0, 49);
   if (visible.length < 2) return null;
   const x0 = +new Date(visible[0].time);
   const x1 = +new Date(visible[visible.length - 1].time);
@@ -82,7 +85,7 @@ export default function TidePanel({ spotId }: { spotId: string }) {
 
   const futureEvents = useMemo(() => {
     const now = Date.now();
-    return data?.events.filter((item) => +new Date(item.time) >= now) ?? [];
+    return data?.events?.filter((item) => +new Date(item.time) >= now) ?? [];
   }, [data]);
   const next = useMemo(() => ({
     high: futureEvents.find((item) => item.event_type === "high"),

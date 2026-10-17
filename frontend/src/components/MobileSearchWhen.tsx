@@ -49,19 +49,24 @@ export function WhenToggle({
   onChange: (t: WhenTab) => void;
 }) {
   return (
-    <div className="relative inline-flex shrink-0 rounded-card bg-teal p-0.5">
+    <div className="relative inline-flex shrink-0 items-center rounded-card bg-teal p-0.5">
       {(["date", "flex"] as const).map((t) => (
         <button
           key={t}
           type="button"
           onClick={() => onChange(t)}
           aria-pressed={tab === t}
-          className="relative rounded-card px-3.5 py-0.5 text-caption font-medium"
+          // A 44px tap target without a 44px pill: the extra height is
+          // transparent padding pulled back out with a negative margin, so the
+          // visible band keeps its compact size. The tile header is already
+          // 44px tall (its label button carries min-h-11), so the taller tap
+          // area costs no layout.
+          className="relative -my-[11px] flex min-h-11 items-center rounded-card px-3.5 py-0.5 text-caption font-medium"
         >
           {tab === t && (
             <motion.span
               layoutId="when-toggle-pill"
-              className="absolute inset-0 rounded-card bg-surface"
+              className="absolute inset-x-0 inset-y-[11px] rounded-card bg-surface"
               transition={{ type: "spring", stiffness: 500, damping: 38 }}
             />
           )}

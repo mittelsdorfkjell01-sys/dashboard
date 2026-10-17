@@ -159,7 +159,7 @@ function ResultsLayout({
         <Link
           to={windMapHref(frame.center, frame.zoom, { toggle: false })}
           aria-label="Karte öffnen"
-          className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-page px-4 py-2 text-ui font-normal text-white shadow-float lg:hidden"
+          className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-teal px-4 py-2 text-ui font-normal text-white shadow-float lg:hidden"
         >
           Karte <MapIcon className="text-body" />
         </Link>
