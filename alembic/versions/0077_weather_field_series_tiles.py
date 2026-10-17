@@ -37,6 +37,12 @@ def downgrade() -> None:
         "weather_field_assets",
         type_="check",
     )
+    # The narrow constraint cannot hold while the rows this revision made
+    # possible still exist, so restoring it without clearing them first makes
+    # every rollback fail once series tiles have been published. They are a
+    # derived cache the field worker rebuilds from the run, so dropping them
+    # is the consistent way down.
+    op.execute("DELETE FROM weather_field_assets WHERE asset_type = 'series_tile'")
     op.drop_constraint(
         "ck_weather_field_asset_type", "weather_field_assets", type_="check"
     )
