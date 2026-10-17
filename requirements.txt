@@ -19,7 +19,7 @@ pillow-avif-plugin==1.5.5 # AVIF encode on upload (falls back to built-in WebP i
 
 # --- Auth (Sprint A) ---
 bcrypt==5.0.0            # admin password hashing (used directly; passlib dropped)
-PyJWT==2.13.0           # short-lived JWT for the httpOnly admin session cookie
+PyJWT==2.15.0           # short-lived JWT for the httpOnly admin session cookie
 email-validator==2.2.0  # Pydantic EmailStr validation
 
 # --- Climatology pipeline ---
