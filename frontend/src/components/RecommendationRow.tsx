@@ -128,10 +128,16 @@ export default function RecommendationRow({
 
   return (
     <section ref={sectionRef} className={className} data-recommendation-surface={surface}>
-      <div className="mb-4 flex min-h-11 items-center justify-between gap-4">
-        <h2 className="text-title font-semibold text-ink">{title}</h2>
-        {action}
-      </div>
+      {/* `hideHeader` has to hold here too, not only in the loading and error
+          branches: the landing's first row borrows the section heading beside
+          the filter icon, so rendering this one as well printed the title
+          twice as soon as the data arrived. */}
+      {!hideHeader && (
+        <div className="mb-4 flex min-h-11 items-center justify-between gap-4">
+          <h2 className="text-title font-semibold text-ink">{title}</h2>
+          {action}
+        </div>
+      )}
       {loading ? (
         <RowSkeleton />
       ) : (
