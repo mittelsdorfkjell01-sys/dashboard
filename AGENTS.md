@@ -47,6 +47,7 @@ Use the local URL only in the process environment; do not replace a user's `.env
 - Use only a skill that directly matches the current request.
 - Normal backend, database, and test work needs no design, SEO, iOS, Notion, or image skill.
 - Use `impeccable` only for an actual frontend/UX task and `seo` only for an explicit SEO task.
+- Use `$weather-integrity-review` before merging or releasing changes that can alter station measurements, LiveWind, forecasts, wind provenance, weather timestamps, correction composition, activation gates, or backend/frontend weather semantics. The skill reviews and reports; it does not authorize implementation.
 - Do not add another MCP server or plugin just to search local code. Use Graphify for cross-cutting architecture and blast-radius questions; the focused scripts and `rg` remain the default for narrow searches.
 
 ## Definition of done
