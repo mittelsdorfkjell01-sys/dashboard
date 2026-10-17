@@ -13,6 +13,10 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from app.config import Settings
+# The head this build expects, rather than a revision spelled out here: the
+# literal went stale with every migration added after it, and
+# test_migration_head already pins this constant to the single Alembic head.
+from app.db.schema import EXPECTED_DB_REVISION
 from app.live.live_wind import load_station_residual_inputs
 
 
@@ -99,7 +103,7 @@ def test_exact_dataset_identity_empty_and_legacy_upgrade(db):
                 _upgrade(url, "head")
             with target_engine.connect() as connection:
                 assert connection.execute(text(
-                    "SELECT version_num FROM alembic_version")).scalar_one() == "0071_retention_indexes"
+                    "SELECT version_num FROM alembic_version")).scalar_one() == EXPECTED_DB_REVISION
                 assert inspect(connection).has_table("weather_live_wind_holdout_cases")
                 columns = {item["name"] for item in inspect(connection).get_columns(
                     "weather_station_model_residuals")}
@@ -211,7 +215,7 @@ def test_disposable_0056_to_0059_keeps_legacy_residual_ineligible(db):
             assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0060_station_foundation"
         _upgrade(url, "head")
         with target_engine.connect() as connection:
-            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0071_retention_indexes"
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == EXPECTED_DB_REVISION
             assert connection.scalar(text("SELECT count(*) FROM weather_observations")) == 1
             assert connection.scalar(text("SELECT count(*) FROM weather_stations")) == 1
             assert connection.scalar(text("SELECT residual_approved FROM weather_stations")) is False

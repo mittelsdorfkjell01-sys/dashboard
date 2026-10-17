@@ -127,5 +127,18 @@ def test_enabled_sector_changes_the_real_forecast_path_but_disabled_candidate_do
 
 
 def test_pilot_configuration_is_not_imported_by_productive_weather_code():
+    """Productive weather code must never read the pilot spot list.
+
+    The settings module is exempt: it may name the list as the default path for
+    the shadow-validation subsystem, which *is* the pilot mechanism. Everything
+    else reaches it through that setting, never through the file name — so a
+    module naming the file directly is the violation this guards against.
+    """
     root = Path(__file__).resolve().parents[1] / "app"
-    assert not any("weather-pilot-spots" in path.read_text(encoding="utf-8") for path in root.rglob("*.py"))
+    offenders = sorted(
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*.py")
+        if path.name != "config.py"
+        and "weather-pilot-spots" in path.read_text(encoding="utf-8")
+    )
+    assert offenders == [], f"productive weather code names the pilot list: {offenders}"

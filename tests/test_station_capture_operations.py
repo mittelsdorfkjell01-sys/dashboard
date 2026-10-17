@@ -238,4 +238,9 @@ def test_station_catalog_cron_is_authenticated_and_uses_shared_job(
     )
     assert response.status_code == 200
     assert response.json() == {"status": "success", "providers": {}}
-    assert called == [(True, ("dwd", "dmi"), False)]
+    # The contract is "the cron forwards the configured providers", not a
+    # particular list: spelling one out here went stale the moment a provider
+    # was added to the default.
+    assert called == [
+        (True, tuple(get_settings().weather_station_catalog_providers), False)
+    ]
