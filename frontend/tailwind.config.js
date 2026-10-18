@@ -108,6 +108,7 @@ export default {
           "success-border": "var(--a-success-border)",
           warning: "var(--a-warning-fg)",
           "warning-bg": "var(--a-warning-bg)",
+          "warning-border": "var(--a-warning-border)",
           danger: "var(--a-danger-fg)",
           "danger-strong": "var(--a-danger)",
           "danger-bg": "var(--a-danger-bg)",

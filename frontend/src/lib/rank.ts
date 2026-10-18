@@ -43,6 +43,6 @@ export const RANK_DOT: Record<Rank, string> = {
 // token surfaces so the traffic-light tint adapts to light/dark.
 export const RANK_CARD: Record<Rank, string> = {
   red: "border-admin-danger-border bg-admin-danger-bg",
-  yellow: "border-admin-warning-bg bg-admin-warning-bg",
+  yellow: "border-admin-warning-border bg-admin-warning-bg",
   green: "border-admin-success-border bg-admin-success-bg",
 };

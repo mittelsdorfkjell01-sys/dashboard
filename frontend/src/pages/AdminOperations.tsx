@@ -129,8 +129,10 @@ export default function AdminOperations() {
 
   return (
     <div>
-      <PageHeader title="Betrieb" />
-      <h1 className="sr-only">Betrieb</h1>
+      <PageHeader
+        title="Betrieb"
+        description="Hintergrundjobs, Warteschlangen und der Zustand der Datenpipelines."
+      />
 
       {error && (
         <div
@@ -306,7 +308,7 @@ export default function AdminOperations() {
         className="mt-3 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
       >
         <table className="w-full min-w-[820px] text-left text-ui">
-          <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
+          <thead className="border-b border-admin-border bg-admin-hover text-caption text-admin-muted">
             <tr>
               <th className="px-4 py-2.5 font-semibold">Spot</th>
               <th className="px-4 py-2.5 font-semibold">Status</th>

@@ -100,8 +100,9 @@ export default function AdminWeatherFields() {
 
   return (
     <div className="max-w-7xl">
+      {/* The intro block below already carries the explanation, so the page
+          header stays a plain title here. */}
       <PageHeader title="Windfeld-Shadow" />
-      <h1 className="sr-only">Windfeld-Shadow-Validierung</h1>
 
       <div className="flex flex-col gap-4 border-b border-admin-border pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl">
@@ -119,10 +120,10 @@ export default function AdminWeatherFields() {
       {message && <div role="status" className="mt-4 rounded-md border border-admin-border bg-admin-surface px-4 py-3 text-label text-admin-fg">{message}</div>}
 
       <dl className="mt-6 grid gap-x-8 gap-y-5 border-b border-admin-border pb-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div><dt className="text-caption uppercase tracking-wide text-admin-muted">Betriebsstatus</dt><dd className="mt-1"><Badge tone={status.enabled ? "success" : "neutral"}>{status.enabled ? "Aktiviert" : "Deaktiviert"}</Badge></dd></div>
-        <div><dt className="text-caption uppercase tracking-wide text-admin-muted">Pilotgruppe</dt><dd className="admin-mono mt-1 text-ui text-admin-fg">{status.pilot.group} · max. {status.pilot.max_spots} Spots</dd></div>
-        <div><dt className="text-caption uppercase tracking-wide text-admin-muted">Horizont</dt><dd className="admin-mono mt-1 text-ui text-admin-fg">T+0 bis T+{status.pilot.max_horizon_hours}</dd></div>
-        <div><dt className="text-caption uppercase tracking-wide text-admin-muted">Cutover</dt><dd className="mt-1"><Badge tone="warning">Nicht autorisiert</Badge></dd></div>
+        <div><dt className="text-caption uppercase tracking-caps text-admin-muted">Betriebsstatus</dt><dd className="mt-1"><Badge tone={status.enabled ? "success" : "neutral"}>{status.enabled ? "Aktiviert" : "Deaktiviert"}</Badge></dd></div>
+        <div><dt className="text-caption uppercase tracking-caps text-admin-muted">Pilotgruppe</dt><dd className="admin-mono mt-1 text-ui text-admin-fg">{status.pilot.group} · max. {status.pilot.max_spots} Spots</dd></div>
+        <div><dt className="text-caption uppercase tracking-caps text-admin-muted">Horizont</dt><dd className="admin-mono mt-1 text-ui text-admin-fg">T+0 bis T+{status.pilot.max_horizon_hours}</dd></div>
+        <div><dt className="text-caption uppercase tracking-caps text-admin-muted">Cutover</dt><dd className="mt-1"><Badge tone="warning">Nicht autorisiert</Badge></dd></div>
       </dl>
 
       {!status.enabled && (

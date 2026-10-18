@@ -1017,7 +1017,7 @@ export default function AdminSpotForm() {
                   </p>
                   <div className="mt-3 grid gap-6 md:grid-cols-2">
                     <div>
-                      <p className="text-caption uppercase tracking-wide text-muted">Desktop · 21:9</p>
+                      <p className="text-caption uppercase tracking-caps text-muted">Desktop · 21:9</p>
                       <div className="mt-1.5">
                         <ImageFocalEditor
                           url={currentImage.url}
@@ -1040,7 +1040,7 @@ export default function AdminSpotForm() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-caption uppercase tracking-wide text-muted">Mobile · 16:9</p>
+                      <p className="text-caption uppercase tracking-caps text-muted">Mobile · 16:9</p>
                       <div className="mt-1.5">
                         <ImageFocalEditor
                           url={currentImage.url}

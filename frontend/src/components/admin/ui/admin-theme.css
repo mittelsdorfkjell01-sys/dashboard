@@ -1,15 +1,22 @@
 /* =========================================================================
-   Admin design system — an independent, monochrome, Vercel/Linear-inspired
-   token layer scoped ENTIRELY to the admin back office.
+   Admin design system — an independent, monochrome SaaS token layer scoped
+   ENTIRELY to the admin back office.
 
    Nothing here leaks to the public site: every rule is nested under
    `.admin-scope`, a class the AdminThemeProvider adds to <body> only while an
    admin route is mounted (and removes on unmount). Because it also lives on
    <body>, portaled dialogs (Modal → document.body) inherit the tokens too.
 
-   The admin is DARK ONLY — a single dark token set, no light mode, no toggle.
+   The admin ships LIGHT and DARK. Light is the default; the resolved theme is
+   written by the provider as `data-admin-theme="light|dark"` on <body>, so the
+   two token sets below are plain attribute selectors — no media query races,
+   no flash, and the choice survives a reload (localStorage).
 
-   Two jobs:
+   The palette is strictly monochrome: the accent is black on white (light) and
+   white on dark blue-grey (dark). Colour appears ONLY as status (success /
+   warning / danger / info). There is no brand teal in the back office.
+
+   Three jobs:
    1. Define the semantic CSS variables (the source of truth).
    2. Re-point the app's existing brand utilities (text-ink, bg-white,
       border-line, text-teal, …) at those tokens *within the scope only*, so
@@ -17,93 +24,166 @@
       restyled — themes correctly with no per-call-site edits. Specificity
       (.admin-scope .x = 0,2,0) beats the base utility (.x = 0,1,0), so no
       `!important` is needed.
+   3. Restore the admin's own denser radius scale over the public site's
+      single 14px corner.
    ========================================================================= */
 
-/* The admin is dark-only — a single token set, no light mode, no toggle. */
-.admin-scope {
-  --a-bg: #0a0a0a; /* app canvas */
-  --a-surface: #111112; /* panels, tables, cards */
-  --a-elevated: #18181a; /* popovers, dialogs */
-  --a-hover: #1b1b1e; /* subtle row/control hover */
-  --a-active: #232327; /* pressed / selected surface */
+/* -------------------------------------------------------------------------
+   LIGHT — the default. Near-white canvas, white surfaces, hairline greys.
+   Also the fallback before the provider has resolved a theme.
+   ------------------------------------------------------------------------- */
+.admin-scope,
+.admin-scope[data-admin-theme="light"] {
+  --a-bg: #f6f6f7; /* app canvas */
+  --a-surface: #ffffff; /* panels, tables, cards */
+  --a-elevated: #ffffff; /* popovers, dialogs */
+  --a-hover: #f1f1f3; /* subtle row/control hover */
+  --a-active: #e8e8ec; /* pressed / selected surface */
 
-  --a-border: #272729; /* standard hairline */
-  --a-border-subtle: #1c1c1f; /* faint divider */
-  --a-border-strong: #34343a; /* input / emphasized edge */
+  --a-border: #e6e6ea; /* standard hairline */
+  --a-border-subtle: #f0f0f3; /* faint divider */
+  --a-border-strong: #d6d6dd; /* input / emphasized edge */
 
-  --a-fg: #fafafa; /* primary text */
-  --a-fg2: #a1a1aa; /* secondary text */
-  --a-muted: #92929c; /* captions, meta */
-  --a-faint: #55555c; /* disabled text only — too low-contrast (2.7:1) for
-                         placeholders, which now use --a-muted (6.1:1) */
+  --a-fg: #121214; /* primary text */
+  --a-fg2: #52525b; /* secondary text */
+  --a-muted: #67676f; /* captions, meta. Sized against --a-hover (5.1:1), NOT
+                         against white: muted text sits on the tinted surface
+                         as often as on the card (table headers, chips, the
+                         wordmark's tag), and a value tuned to white alone
+                         lands at 4.47:1 there — just under AA. */
+  --a-faint: #a1a1aa; /* disabled text and decorative glyphs only */
 
-  /* Accent — a single restrained thread of the surf brand's teal. */
-  --a-primary: #2fa6bb;
-  --a-primary-hover: #43b7cb;
-  --a-primary-fg: #04181d;
-  --a-primary-bg: #10262b; /* tinted surface (active nav, selected) */
-  --a-ring: #2fa6bb;
+  /* Accent — monochrome. Primary action = solid near-black. */
+  --a-primary: #121214;
+  --a-primary-hover: #2b2b31;
+  --a-primary-fg: #ffffff;
+  --a-primary-bg: #f1f1f3; /* tinted surface (active nav, selected row) */
+  --a-ring: #121214;
+
+  --a-success: #16a34a;
+  --a-success-fg: #15803d;
+  --a-success-bg: #f0fdf4;
+  --a-success-border: #bbf7d0;
+  --a-warning: #d97706;
+  --a-warning-fg: #b45309;
+  --a-warning-bg: #fffbeb;
+  --a-warning-border: #fde68a;
+  --a-danger: #dc2626;
+  --a-danger-fg: #b91c1c;
+  --a-danger-bg: #fef2f2;
+  --a-danger-border: #fecaca;
+  --a-info: #2563eb;
+  --a-info-bg: #eff6ff;
+
+  --a-shadow-pop: 0 8px 24px -10px rgba(16, 18, 24, 0.18),
+    0 2px 6px -2px rgba(16, 18, 24, 0.1);
+  --a-shadow-dialog: 0 24px 48px -16px rgba(16, 18, 24, 0.22),
+    0 8px 20px -10px rgba(16, 18, 24, 0.14);
+
+  color-scheme: light;
+}
+
+/* -------------------------------------------------------------------------
+   DARK — deliberately NOT black. A dark blue-grey canvas (hue ~218°) so the
+   surface separation reads as depth rather than as pure absence of light.
+   ------------------------------------------------------------------------- */
+.admin-scope[data-admin-theme="dark"] {
+  --a-bg: #0f141b; /* app canvas */
+  --a-surface: #151b24; /* panels, tables, cards */
+  --a-elevated: #1b222c; /* popovers, dialogs */
+  --a-hover: #1e2631; /* subtle row/control hover */
+  --a-active: #253040; /* pressed / selected surface */
+
+  --a-border: #262f3b; /* standard hairline */
+  --a-border-subtle: #1c242e; /* faint divider */
+  --a-border-strong: #35404f; /* input / emphasized edge */
+
+  --a-fg: #eef2f7; /* primary text */
+  --a-fg2: #a7b3c2; /* secondary text */
+  --a-muted: #93a0b1; /* captions, meta — 6.2:1 on --a-surface */
+  --a-faint: #5b6779; /* disabled text and decorative glyphs only */
+
+  /* Accent — monochrome, inverted: primary action = near-white on dark. */
+  --a-primary: #eef2f7;
+  --a-primary-hover: #ffffff;
+  --a-primary-fg: #0f141b;
+  --a-primary-bg: #1e2631; /* tinted surface (active nav, selected row) */
+  --a-ring: #eef2f7;
 
   --a-success: #4ade80;
-  --a-success-fg: #5ad98a;
-  --a-success-bg: #0f2417;
-  --a-success-border: #1c3d29;
+  --a-success-fg: #5fd98d;
+  --a-success-bg: #10251a;
+  --a-success-border: #1d3f2b;
   --a-warning: #fbbf24;
   --a-warning-fg: #fbbf24;
-  --a-warning-bg: #2a2110;
+  --a-warning-bg: #2a2212;
+  --a-warning-border: #46391a;
   --a-danger: #f87171;
   --a-danger-fg: #f87171;
-  --a-danger-bg: #2a1414;
-  --a-danger-border: #4a2020;
-  --a-info: #2fa6bb;
-  --a-info-bg: #10262b;
+  --a-danger-bg: #2b1618;
+  --a-danger-border: #4a2326;
+  --a-info: #7aa5f5;
+  --a-info-bg: #1a2432;
 
   --a-shadow-pop: 0 8px 24px -8px rgba(0, 0, 0, 0.6),
     0 2px 6px -2px rgba(0, 0, 0, 0.5);
   --a-shadow-dialog: 0 24px 48px -12px rgba(0, 0, 0, 0.7),
     0 8px 20px -8px rgba(0, 0, 0, 0.55);
 
-  background-color: var(--a-bg);
-  color: var(--a-fg);
   /* Render native controls (select, checkbox, scrollbars, date pickers) in
      their dark variant so they match the theme instead of the OS light chrome. */
   color-scheme: dark;
+}
+
+.admin-scope {
+  background-color: var(--a-bg);
+  color: var(--a-fg);
 
   /* The global keyboard-focus outline (index.css) is drawn with var(--sw-ink).
-     The admin runs dark via this scope class, not html[data-theme="dark"], so
-     without this remap --sw-ink stays the light-theme near-black (#241C17) and
-     the focus ring is invisible on the near-black admin canvas. Point the base
-     ink/line tokens at the admin equivalents so the ring is clearly visible. */
+     The admin themes via this scope class, not html[data-theme="dark"], so
+     without this remap --sw-ink stays the public light-theme near-black and the
+     focus ring is invisible on the dark admin canvas. Point the base ink/line
+     tokens at the admin equivalents so the ring tracks the admin theme. */
   --sw-ink: var(--a-fg);
   --sw-line: var(--a-border);
 }
 
+/* While the provider swaps themes it sets `data-admin-theme-switching` for one
+   frame; suppressing transitions there stops every surface in the app from
+   cross-fading at once (which reads as a flash, not as polish). */
+.admin-scope[data-admin-theme-switching] * {
+  transition: none !important;
+}
+
 /* =========================================================================
-   Brand-utility remap — themes existing admin markup + enables dark mode.
+   Brand-utility remap — themes existing admin markup in both modes.
    Keep in sync with the token vocabulary the admin pages already use.
    ========================================================================= */
 
 /* Radius ------------------------------------------------------------------
    The public site resolves every Tailwind radius step to one 14px corner
-   (tailwind.config.js). The admin keeps its own denser, stepped radii, so
-   restore them inside the scope (also covers shared ui/ primitives rendered
-   in the admin). `rounded-card` and `rounded-full` are intentionally left. */
+   (tailwind.config.js). The admin keeps its own denser, stepped scale —
+   controls 6px, panels/cards 10px — so restore it inside the scope (this also
+   covers shared ui/ primitives rendered in the admin). `rounded-full` is
+   intentionally left alone: badges, avatars and dots stay full pills. */
 .admin-scope .rounded {
-  border-radius: 0.25rem;
+  border-radius: 0.25rem; /* 4px — chips, swatches, inline marks */
 }
 .admin-scope .rounded-sm {
   border-radius: 0.125rem;
 }
 .admin-scope .rounded-md {
-  border-radius: 0.375rem;
+  border-radius: 0.375rem; /* 6px — buttons, inputs, menu items */
 }
-.admin-scope .rounded-lg,
+.admin-scope .rounded-lg {
+  border-radius: 0.625rem; /* 10px — cards, panels, popovers (the common case
+                              across the admin pages) */
+}
+.admin-scope .rounded-xl,
 .admin-scope .rounded-2xl,
-.admin-scope .rounded-3xl {
-  border-radius: 0.5rem;
-}
-.admin-scope .rounded-xl {
-  border-radius: 0.75rem;
+.admin-scope .rounded-3xl,
+.admin-scope .rounded-card {
+  border-radius: 0.625rem; /* 10px — cards, tables, dialogs */
 }
 
 /* Text ------------------------------------------------------------------- */
@@ -116,21 +196,31 @@
 .admin-scope .text-muted {
   color: var(--a-muted);
 }
-.admin-scope .wordmark.text-orange {
-  color: #fb923c;
-}
+/* In a monochrome back office the wordmark renders as plain foreground in both
+   modes; the `Admin` tag beside it carries the context instead of colour. */
+.admin-scope .wordmark.text-orange,
 .admin-scope .wordmark.text-teal {
-  color: #43b7cb;
+  color: var(--a-fg);
 }
-/* Accents (exclude the brand wordmark, which keeps its orange/teal). */
-.admin-scope .text-teal:not(.wordmark) {
-  color: var(--a-primary);
+/* Legacy accent classes still present in admin markup collapse to monochrome;
+   status classes keep their meaning. */
+.admin-scope .text-teal:not(.wordmark),
+.admin-scope .text-accent {
+  color: var(--a-fg);
 }
 .admin-scope .text-orange:not(.wordmark) {
-  color: var(--a-warning);
+  color: var(--a-warning-fg);
 }
 .admin-scope .text-green {
   color: var(--a-success-fg);
+}
+/* `text-surface` is what the PUBLIC filled button paints its label with — the
+   public surface colour, i.e. white in both themes. Those buttons also fill
+   with `bg-ink`/`bg-teal`, which this file maps to `--a-primary` — near-white
+   in dark. Without this, such a button renders white-on-near-white. Admin code
+   should use the admin Button, but a shared dialog can still drag one in. */
+.admin-scope .text-surface {
+  color: var(--a-primary-fg);
 }
 .admin-scope .text-red-600,
 .admin-scope .text-red-700,
@@ -158,15 +248,13 @@
 .admin-scope .hover\:bg-ink\/5:hover {
   background-color: var(--a-hover);
 }
-.admin-scope .bg-teal {
+.admin-scope .bg-teal,
+.admin-scope .bg-ink {
   background-color: var(--a-primary);
 }
 .admin-scope .bg-teal-hover,
 .admin-scope .hover\:bg-teal-hover:hover {
   background-color: var(--a-primary-hover);
-}
-.admin-scope .bg-ink {
-  background-color: var(--a-fg);
 }
 .admin-scope .bg-green {
   background-color: var(--a-success);
@@ -193,12 +281,64 @@
   background-color: var(--a-danger);
 }
 
+/* Shared PUBLIC primitives rendered inside the admin -----------------------
+   A few admin screens still use the shared ui/ set (Field, fieldClass, Chip,
+   Modal, ConfirmDialog) for its ARIA plumbing. Those carry the PUBLIC tokens,
+   which do not follow the admin theme: `bg-surface` stays white in both, so a
+   public input in the dark back office rendered as a white box with near-white
+   text — unreadable. Re-point that vocabulary here, the same way the ink/line
+   utilities are re-pointed above. */
+.admin-scope .bg-surface {
+  background-color: var(--a-surface);
+}
+.admin-scope .bg-page {
+  background-color: var(--a-bg);
+}
+.admin-scope .placeholder\:text-muted::placeholder {
+  color: var(--a-muted);
+}
+.admin-scope .hover\:border-ink\/30:hover {
+  border-color: var(--a-border-strong);
+}
+.admin-scope .focus-visible\:border-ink\/50:focus-visible {
+  border-color: var(--a-primary);
+}
+.admin-scope .focus-visible\:ring-ink\/20:focus-visible {
+  --tw-ring-color: var(--a-border-strong);
+}
+/* Public status vocabulary → the admin's own status tokens. */
+.admin-scope .text-danger {
+  color: var(--a-danger-fg);
+}
+.admin-scope .bg-danger-bg {
+  background-color: var(--a-danger-bg);
+}
+.admin-scope .border-danger-border,
+.admin-scope .aria-\[invalid\=true\]\:border-danger-border[aria-invalid="true"] {
+  border-color: var(--a-danger-border);
+}
+.admin-scope .ring-danger-border,
+.admin-scope .aria-\[invalid\=true\]\:ring-danger-border[aria-invalid="true"] {
+  --tw-ring-color: var(--a-danger-border);
+}
+.admin-scope .text-success {
+  color: var(--a-success-fg);
+}
+.admin-scope .bg-success-bg {
+  background-color: var(--a-success-bg);
+}
+.admin-scope .text-warning {
+  color: var(--a-warning-fg);
+}
+.admin-scope .bg-warning-bg {
+  background-color: var(--a-warning-bg);
+}
+
 /* Borders / rings / dividers -------------------------------------------- */
 .admin-scope .border-line,
 .admin-scope .border-teal\/30,
 .admin-scope .border-teal\/40,
-.admin-scope .border-teal\/50,
-.admin-scope .border-teal {
+.admin-scope .border-teal\/50 {
   border-color: var(--a-border);
 }
 .admin-scope .border-teal,
@@ -224,7 +364,7 @@
 .admin-scope .ring-teal\/50,
 .admin-scope .hover\:ring-teal\/40:hover,
 .admin-scope .hover\:ring-teal\/50:hover {
-  --tw-ring-color: var(--a-primary);
+  --tw-ring-color: var(--a-border-strong);
 }
 .admin-scope .ring-ink,
 .admin-scope .ring-ink\/30 {
@@ -260,6 +400,44 @@
 }
 .admin-scope * {
   scrollbar-color: var(--a-border-strong) transparent;
+}
+
+/* Leaflet chrome inside the admin map ---------------------------------------
+   Leaflet ships its own white popup/attribution regardless of the page theme,
+   which used to force the admin map popup to hard-code dark text to stay
+   legible. Theming the popup itself instead means the popup follows the admin
+   theme and its contents can use the normal tokens. */
+.admin-scope .leaflet-popup-content-wrapper,
+.admin-scope .leaflet-popup-tip {
+  background: var(--a-elevated);
+  color: var(--a-fg);
+  border: 1px solid var(--a-border);
+  box-shadow: var(--a-shadow-pop);
+}
+.admin-scope .leaflet-popup-content-wrapper {
+  border-radius: 0.625rem;
+}
+.admin-scope .leaflet-popup-close-button {
+  color: var(--a-muted);
+}
+.admin-scope .leaflet-popup-close-button:hover {
+  color: var(--a-fg);
+}
+.admin-scope .leaflet-control-attribution {
+  background: var(--a-surface);
+  color: var(--a-muted);
+}
+.admin-scope .leaflet-control-attribution a {
+  color: var(--a-fg2);
+}
+.admin-scope .leaflet-bar a {
+  background: var(--a-surface);
+  color: var(--a-fg);
+  border-bottom-color: var(--a-border);
+}
+.admin-scope .leaflet-bar a:hover {
+  background: var(--a-hover);
+  color: var(--a-fg);
 }
 
 /* Monospace for technical values (coords, timestamps, IDs, wind/wave data). */

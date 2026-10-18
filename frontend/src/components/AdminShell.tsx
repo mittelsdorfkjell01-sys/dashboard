@@ -1,6 +1,6 @@
 // Admin back-office chrome: a sidebar nav + a top bar with the theme toggle,
-// the signed-in user and logout. Child routes render into <Outlet />. Restyled
-// to the independent admin design system (monochrome tokens + dark mode); the
+// the signed-in user and logout. Child routes render into <Outlet />. Styled to
+// the independent admin design system (monochrome tokens, light + dark); the
 // navigation structure, routes and behaviour are unchanged.
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -9,7 +9,7 @@ import { useAuth } from "../lib/auth";
 import { roleLabel } from "../lib/labels";
 import type { AdminRole } from "../lib/api";
 import { Wordmark } from "./ui";
-import { Button } from "./admin/ui";
+import { Button, ThemeToggle } from "./admin/ui";
 import NotificationBell from "./admin/NotificationBell";
 import MediaBudgetIndicator from "./admin/MediaBudgetIndicator";
 
@@ -125,12 +125,21 @@ const NAV: NavItem[] = [
   { to: "/admin/activity", label: "Aktivität", icon: I.activity, group: "Verwaltung" },
 ];
 
+// The groups, in the order the sidebar and the mobile menu both render them.
+const GROUPS = ["Inhalte", "Daten & Betrieb", "Verwaltung"] as const;
+
+// A nav row reads as a soft rounded tile. Active = a raised surface with a
+// hairline (the monochrome system has no accent colour to mark it with), which
+// also survives both themes without a tinted fill.
 function sideNavClass({ isActive }: { isActive: boolean }) {
   return [
-    "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-label font-medium transition-colors",
+    "group relative flex items-center gap-2.5 rounded-md border px-2.5 py-2 text-label font-medium transition-colors",
+    // `hover` as the active fill reads as "raised" in BOTH themes (a light grey
+    // on white, a lighter slate on the dark canvas); `bg` would invert that
+    // metaphor in dark, where it sits below the sidebar surface.
     isActive
-      ? "bg-admin-hover text-admin-fg"
-      : "text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg",
+      ? "border-admin-border bg-admin-hover text-admin-fg"
+      : "border-transparent text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg",
   ].join(" ");
 }
 
@@ -203,34 +212,45 @@ export default function AdminShell() {
     <div className="min-h-screen overflow-x-clip bg-admin-bg text-admin-fg">
       <div className="flex items-start">
         {/* Sidebar (desktop) */}
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-5 lg:flex">
-          <Link to="/admin" className="px-2 py-1">
-            <Wordmark size="md" tag="Admin" />
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-4 lg:flex">
+          {/* Brand block — a bordered tile rather than a bare wordmark, so the
+              sidebar opens on a defined surface like the reference dashboards. */}
+          <Link
+            to="/admin"
+            className="flex items-center gap-2.5 rounded-md border border-admin-border bg-admin-bg px-2.5 py-2 transition-colors hover:bg-admin-hover"
+          >
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-admin-primary text-sz-11 font-semibold text-admin-primary-fg">
+              sw
+            </span>
+            <Wordmark size="sm" tag="Admin" />
           </Link>
-          <nav className="mt-7 flex flex-col gap-0.5">
-            {items.map((n) => (
-              <NavLink key={n.to} to={n.to} end={n.end} className={sideNavClass}>
-                {({ isActive }) => (
-                  <>
-                    <span
-                      aria-hidden="true"
-                      className={`absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-admin-primary transition-opacity ${
-                        isActive ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                    <span className="grid h-[18px] w-[18px] place-items-center [&_svg]:h-[18px] [&_svg]:w-[18px]">
-                      {n.icon}
-                    </span>
-                    {n.label}
-                  </>
-                )}
-              </NavLink>
-            ))}
+
+          <nav className="mt-5 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+            {GROUPS.map((group) => {
+              const groupItems = items.filter((item) => item.group === group);
+              if (groupItems.length === 0) return null;
+              return (
+                <div key={group}>
+                  <p className="px-2.5 pb-1.5 text-sz-10 font-semibold uppercase tracking-caps text-admin-muted">
+                    {group}
+                  </p>
+                  <div className="flex flex-col gap-0.5">
+                    {groupItems.map((n) => (
+                      <NavLink key={n.to} to={n.to} end={n.end} className={sideNavClass}>
+                        <span className="grid h-[18px] w-[18px] place-items-center [&_svg]:h-[18px] [&_svg]:w-[18px]">
+                          {n.icon}
+                        </span>
+                        {n.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </nav>
-          <div className="mt-auto px-2 pt-4">
-            <p className="text-caption text-admin-muted">
-              surfwind data · Back office
-            </p>
+
+          <div className="mt-4 border-t border-admin-border px-2.5 pt-3">
+            <p className="text-caption text-admin-muted">surfwind data · Back office</p>
           </div>
         </aside>
 
@@ -242,14 +262,26 @@ export default function AdminShell() {
               <Link to="/admin" className="lg:hidden">
                 <Wordmark size="sm" tag="Admin" />
               </Link>
-              <div className="hidden lg:block" />
+              {/* Desktop: name the current section. The sidebar marks it too,
+                  but the bar is where the eye lands after a route change. */}
+              <p className="hidden min-w-0 truncate text-label font-semibold text-admin-fg lg:block">
+                {activeItem?.label}
+              </p>
               <div className="flex items-center gap-2 sm:gap-3">
                 <MediaBudgetIndicator />
                 <NotificationBell />
+                <ThemeToggle />
                 {user && (
                   <>
                     <div className="mx-0.5 hidden h-5 w-px bg-admin-border lg:block" />
                     <span className="hidden items-center gap-2 text-label text-admin-fg lg:flex">
+                      <span
+                        aria-hidden="true"
+                        className="grid h-7 w-7 place-items-center rounded-full border border-admin-border bg-admin-hover text-caption font-semibold text-admin-fg2"
+                      >
+                        {(user.display_name || user.email || "?").trim().charAt(0).toUpperCase() ||
+                          "?"}
+                      </span>
                       {user.display_name}
                       <span className="rounded-full border border-admin-border bg-admin-hover px-2 py-0.5 text-caption font-medium text-admin-muted">
                         {roleLabel(user.role)}
@@ -285,12 +317,12 @@ export default function AdminShell() {
                       className="absolute right-0 top-[calc(100%+0.5rem)] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-admin-border bg-admin-elevated shadow-admin-pop"
                     >
                       <nav aria-label="Dashboard-Navigation" className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-2">
-                        {(["Inhalte", "Daten & Betrieb", "Verwaltung"] as const).map((group) => {
+                        {GROUPS.map((group) => {
                           const groupItems = items.filter((item) => item.group === group);
                           if (groupItems.length === 0) return null;
                           return (
                             <div key={group} className="mt-2 first:mt-0">
-                              <p className="px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wide text-admin-muted">{group}</p>
+                              <p className="px-3 pb-1 pt-2 text-sz-10 font-semibold uppercase tracking-caps text-admin-muted">{group}</p>
                               {groupItems.map((item) => (
                                 <NavLink
                                   key={item.to}

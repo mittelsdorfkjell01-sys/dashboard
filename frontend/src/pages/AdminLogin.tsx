@@ -6,6 +6,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { ApiError } from "../lib/api";
 import { Wordmark } from "../components/ui";
+import { ThemeToggle } from "../components/admin/ui";
 
 export default function AdminLogin() {
   const { login, user } = useAuth();
@@ -45,14 +46,17 @@ export default function AdminLogin() {
     "w-full rounded-md border border-admin-border-strong bg-admin-surface px-3 py-2.5 text-ui text-admin-fg outline-none transition-colors placeholder:text-admin-muted focus:border-admin-primary";
 
   return (
-    <div className="grid min-h-screen place-items-center bg-admin-bg px-4">
+    <div className="relative grid min-h-screen place-items-center bg-admin-bg px-4">
+      {/* The toggle also belongs here: the shell is not mounted yet, so this
+          is the only way to sign in under the preferred theme. */}
+      <ThemeToggle className="absolute right-4 top-4" />
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-6 flex justify-center">
           <Wordmark size="lg" />
         </Link>
         <form
           onSubmit={onSubmit}
-          className="rounded-xl border border-admin-border bg-admin-surface p-6 sm:p-8"
+          className="rounded-lg border border-admin-border bg-admin-surface p-6 shadow-admin-pop sm:p-8"
           noValidate
         >
           <h1 className="text-lg font-semibold text-admin-fg">Admin-Anmeldung</h1>

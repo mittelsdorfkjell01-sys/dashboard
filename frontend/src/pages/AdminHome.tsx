@@ -15,10 +15,10 @@ import {
 import { gapLabel } from "../lib/labels";
 import { RANK_CARD, RANK_DOT } from "../lib/rank";
 import BoardPanel from "../components/admin/BoardPanel";
-import { Badge, type BadgeTone } from "../components/admin/ui";
+import { Badge, PageHeader, StatTile, type BadgeTone } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
 
-type Tone = "red" | "orange" | "teal";
+type Tone = "red" | "orange" | "neutral";
 interface Task {
   key: string;
   tone: Tone;
@@ -30,7 +30,7 @@ interface Task {
 const TONE_BADGE: Record<Tone, BadgeTone> = {
   red: "danger",
   orange: "warning",
-  teal: "primary",
+  neutral: "primary",
 };
 
 function buildTasks(data: AdminOverview): Task[] {
@@ -47,7 +47,7 @@ function buildTasks(data: AdminOverview): Task[] {
   if (pending > 0)
     tasks.push({ key: "pending", tone: "orange", label: "Neue Einreichungen prüfen", count: pending, to: "/admin/review" });
   if (readyToPublish > 0)
-    tasks.push({ key: "ready", tone: "teal", label: "Bereit zum Veröffentlichen", count: readyToPublish, to: "/admin/spots?status=draft" });
+    tasks.push({ key: "ready", tone: "neutral", label: "Bereit zum Veröffentlichen", count: readyToPublish, to: "/admin/spots?status=draft" });
   // Note: "Spots fertigstellen" is intentionally NOT a task here — the same open
   // spots are shown as a working list in the "Fertigstellen" panel below, so
   // listing them twice (once as a count, once as a list) only read as redundant.
@@ -79,7 +79,10 @@ export default function AdminHome() {
 
   return (
     <div>
-      <h1 className="sr-only">Übersicht</h1>
+      <PageHeader
+        title="Übersicht"
+        description="Was gerade Aufmerksamkeit braucht — Moderation, Review und unfertige Spots."
+      />
       {/* Region-less spots — most urgent, flagged red at the very top. */}
       {data.no_region.length > 0 && (
         <section className="rounded-lg border border-admin-danger-border bg-admin-danger-bg p-4">
@@ -174,10 +177,10 @@ export default function AdminHome() {
 
       {/* Secondary: raw counters */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Tile label="Entwürfe" value={data.spots.draft} to="/admin/spots?status=draft" />
-        <Tile label="Veröffentlicht" value={data.spots.published} to="/admin/spots?status=published" accent="green" />
-        <Tile label="Archiviert" value={data.spots.archived} to="/admin/spots?status=archived" />
-        <Tile label="Regionen" value={data.regions} to="/admin/regions" />
+        <StatTile label="Entwürfe" value={data.spots.draft} to="/admin/spots?status=draft" />
+        <StatTile label="Veröffentlicht" value={data.spots.published} to="/admin/spots?status=published" tone="success" />
+        <StatTile label="Archiviert" value={data.spots.archived} to="/admin/spots?status=archived" />
+        <StatTile label="Regionen" value={data.regions} to="/admin/regions" />
       </div>
     </div>
   );
@@ -231,35 +234,5 @@ function FinishColumn({
         )}
       </div>
     </section>
-  );
-}
-
-function Tile({
-  label,
-  value,
-  to,
-  accent,
-}: {
-  label: string;
-  value: number;
-  to: string;
-  accent?: "green";
-}) {
-  return (
-    <Link
-      to={to}
-      className="rounded-lg border border-admin-border bg-admin-surface p-4 transition-colors hover:border-admin-border-strong hover:bg-admin-hover"
-    >
-      {/* Counters are secondary: kept deliberately quiet (smaller numerals) so
-          the prioritised task list above wins the squint test. */}
-      <div
-        className={`admin-mono text-sz-20 font-semibold leading-none ${
-          accent === "green" ? "text-admin-success" : "text-admin-fg2"
-        }`}
-      >
-        {value}
-      </div>
-      <div className="mt-1.5 text-caption text-admin-muted">{label}</div>
-    </Link>
   );
 }

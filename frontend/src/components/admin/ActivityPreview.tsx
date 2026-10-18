@@ -121,7 +121,7 @@ function FieldRow({
       <dt className="flex items-center gap-2 text-caption text-muted">
         {label}
         {changed && (
-          <span className="rounded-full bg-green/15 px-1.5 py-0.5 text-sz-10 font-semibold uppercase tracking-wide text-green">
+          <span className="rounded-full bg-green/15 px-1.5 py-0.5 text-sz-10 font-semibold uppercase tracking-caps text-green">
             geändert
           </span>
         )}
@@ -202,7 +202,7 @@ export default function ActivityPreview({
           <>
             {SECTIONS.map((section) => (
               <section key={section.title}>
-                <p className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-muted">
+                <p className="mb-1.5 text-caption font-semibold uppercase tracking-caps text-muted">
                   {section.title}
                 </p>
                 <dl className="space-y-1.5">
@@ -216,7 +216,7 @@ export default function ActivityPreview({
             ))}
             {extras.length > 0 && (
               <section>
-                <p className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-muted">
+                <p className="mb-1.5 text-caption font-semibold uppercase tracking-caps text-muted">
                   Weitere Änderungen
                 </p>
                 <dl className="space-y-1.5">

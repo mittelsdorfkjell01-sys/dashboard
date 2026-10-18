@@ -252,7 +252,7 @@ export default function FormNavBar() {
           className="fixed bottom-24 left-1/2 z-[1001] w-[min(92vw,340px)] -translate-x-1/2 rounded-xl border border-admin-border bg-admin-surface p-2 shadow-admin-pop"
         >
           <div className="flex items-center justify-between gap-2 px-2 py-1">
-            <span className="text-caption font-semibold uppercase tracking-wide text-admin-muted">
+            <span className="text-caption font-semibold uppercase tracking-caps text-admin-muted">
               Springe zu
             </span>
             <button
