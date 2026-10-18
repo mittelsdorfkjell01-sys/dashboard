@@ -124,12 +124,25 @@ if settings.media_backend == "local":
 # active pointer remains a small API response, while large assets are directly
 # cacheable by browsers/reverse proxies without a paid object-store dependency.
 if settings.weather_field_storage_backend == "local":
-    os.makedirs(settings.weather_field_storage_dir, exist_ok=True)
-    app.mount(
-        settings.weather_field_public_base_url,
-        ImmutableFieldStaticFiles(directory=settings.weather_field_storage_dir),
-        name="weather-field-assets",
-    )
+    # A serverless deployment has a read-only filesystem outside /tmp, and
+    # `local` is the default backend — so this ran on Vercel and the OSError
+    # from makedirs happened at *import*, taking the whole function down:
+    # every API route answered FUNCTION_INVOCATION_FAILED before FastAPI could
+    # handle anything. There is no local asset store to mount in that case, and
+    # that must stay a missing mount rather than a dead API.
+    try:
+        os.makedirs(settings.weather_field_storage_dir, exist_ok=True)
+    except OSError as exc:
+        logger.warning(
+            "local weather-field asset store unavailable (%s); serving without the mount",
+            type(exc).__name__,
+        )
+    else:
+        app.mount(
+            settings.weather_field_public_base_url,
+            ImmutableFieldStaticFiles(directory=settings.weather_field_storage_dir),
+            name="weather-field-assets",
+        )
 
 # Public + community endpoints — served by every deployment.
 app.include_router(spots.router)
