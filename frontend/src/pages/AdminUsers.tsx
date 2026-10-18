@@ -15,11 +15,10 @@ import {
   type AuthUser,
 } from "../lib/api";
 import { roleLabel } from "../lib/labels";
-import { Button, Input } from "../components/ui";
 import PromptDialog from "../components/ui/PromptDialog";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import Modal from "../components/ui/Modal";
-import { PageHeader, Badge } from "../components/admin/ui";
+import { Badge, Button, Input, PageHeader } from "../components/admin/ui";
 import { PlusIcon } from "../lib/icons";
 import {
   useFormDirty,
@@ -238,7 +237,7 @@ export default function AdminUsers() {
         title="Benutzer"
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button variant="primary" onClick={() => setCreateOpen(true)}>
               <PlusIcon className="text-sz-16" /> Benutzer anlegen
             </Button>
           </div>
@@ -341,7 +340,7 @@ export default function AdminUsers() {
         {/* Desktop: dense table. */}
         <div className="mt-8 hidden overflow-x-auto rounded-lg border border-admin-border bg-admin-surface lg:block">
           <table className="w-full min-w-[720px] text-left text-ui">
-            <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
+            <thead className="border-b border-admin-border bg-admin-hover text-caption text-admin-muted">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">E-Mail</th>
                 <th className="px-4 py-2.5 font-semibold">Name</th>
@@ -426,6 +425,7 @@ export default function AdminUsers() {
               Abbrechen
             </Button>
             <Button
+              variant="primary"
               onClick={saveEdit}
               disabled={dialogBusy || !editEmail.trim() || !editName.trim()}
             >
@@ -565,7 +565,7 @@ function CreateUserForm({
         <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
           Abbrechen
         </Button>
-        <Button type="submit" disabled={busy || !email || password.length < 12}>
+        <Button variant="primary" type="submit" disabled={busy || !email || password.length < 12}>
           {busy ? "…" : "Anlegen"}
         </Button>
       </div>

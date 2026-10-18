@@ -334,7 +334,7 @@ export default function AdminSpots() {
       {/* Desktop: dense table. */}
       <div className="mt-4 hidden overflow-x-auto rounded-lg border border-admin-border bg-admin-surface lg:block">
         <table className="w-full min-w-[820px] text-left text-ui">
-          <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase tracking-wide text-admin-muted">
+          <thead className="border-b border-admin-border bg-admin-hover text-caption text-admin-muted">
             <tr>
               <th className="px-4 py-2.5 font-semibold">Name</th>
               <th className="px-4 py-2.5 font-semibold">Region</th>

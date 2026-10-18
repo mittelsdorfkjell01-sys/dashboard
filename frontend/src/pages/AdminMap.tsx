@@ -226,22 +226,18 @@ export default function AdminMap() {
               alt={adminSpotMarkerLabel(s.name)}
             >
               <Popup>
-                {/* Inline colours: the Leaflet popup keeps a white background,
-                    but the admin dark theme remaps `text-ink`/`text-muted` to
-                    light — so set explicit dark colours here for legibility. */}
+                {/* The popup surface itself is themed in admin-theme.css, so
+                    these read as normal admin tokens in both themes. */}
                 <div className="min-w-[160px]">
-                  <p className="text-label font-semibold" style={{ color: "#000" }}>
-                    {s.name}
-                  </p>
-                  <p className="mt-0.5 text-caption" style={{ color: "#6B7280" }}>
+                  <p className="text-label font-semibold text-admin-fg">{s.name}</p>
+                  <p className="mt-0.5 text-caption text-admin-muted">
                     {statusLabel(s.status)}
                   </p>
                   <div className="mt-2 flex items-center gap-3">
                     <Link
                       to={`/admin/spot/${s.id}/edit`}
                       state={editorState}
-                      className="text-label font-medium hover:underline"
-                      style={{ color: "#1E6E7E" }}
+                      className="text-label font-medium text-admin-fg hover:underline"
                     >
                       Bearbeiten →
                     </Link>
