@@ -388,15 +388,14 @@ export default function Landing() {
       </section>
 
       {/* Mobile: floating map access, bottom-centre — mirrors the results page's
-          "Karte" pill instead of a fixed icon in the topspots row header. The
-          fill is `teal`, not `page`: white on the light page surface was
-          unreadable (1.07:1), and teal/white is the one pairing that clears AA
-          in both themes. */}
+          "Karte" pill instead of a fixed icon in the topspots row header. Its
+          semantic page colours follow the surrounding background in both
+          themes; elevation keeps the control distinct from the content. */}
       <Link
         to="/map"
         state={{ from }}
         aria-label="Karte öffnen"
-        className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-teal px-4 py-2 text-ui font-normal text-white shadow-float lg:hidden"
+        className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-page px-4 py-2 text-ui font-normal text-ink shadow-float lg:hidden"
       >
         Karte <MapIcon className="text-body" />
       </Link>
