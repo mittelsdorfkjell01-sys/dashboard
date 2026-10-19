@@ -77,7 +77,7 @@ export default function AdminWindClimatologyV3() {
     const base=allComparison.variant.weeks[index]; return (week.reliability_percent??0)>(base?.reliability_percent??0)|| (week.median_session_hours??0)>(base?.median_session_hours??0);
   }),[directionMode,variant,allComparison]);
   if(!status||!dirs)return <p role="status" className="text-admin-muted">Windklimatologie wird geladen …</p>;
-  return <div className="max-w-6xl pb-12"><Link to={`/admin/spot/${spotId}/edit`} className="text-admin-primary underline">← Zurück zum Spot</Link>
+  return <div className="pb-12"><Link to={`/admin/spot/${spotId}/edit`} className="text-admin-primary underline">← Zurück zum Spot</Link>
     <div className="mt-4 flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-semibold">Windklimatologie V3</h1><p className="mt-1 max-w-3xl text-ui text-admin-muted">Administrative Shadow-Vorschau. Öffentlich bleibt weiterhin V2 aktiv.</p></div><Button variant="primary" onClick={recalc} disabled={busy!==null}>{busy==="run"?"Wird eingeplant …":"V3 neu berechnen"}</Button></div>
     {message&&<p role="status" className="mt-4 rounded-md border border-admin-border bg-admin-surface p-3 text-label">{message}</p>}
     <section className="mt-6 rounded-lg border border-admin-border bg-admin-surface p-4"><div className="flex flex-wrap gap-2"><Badge tone={state[1]}>{state[0]}</Badge>{status.directions.usable_available?<Badge tone="success">Nutzbare Richtungen aktiv</Badge>:<Badge tone="warning">Keine aktiven nutzbaren Richtungen</Badge>}</div>

@@ -2,20 +2,22 @@ import { useEffect, useRef, useState } from "react";
 
 const DESKTOP_QUERY = "(min-width: 640px)";
 
-/** Tracks the same breakpoint used by Tailwind's `sm` utilities. It lets
- * code-split desktop controls stay completely out of mobile's JS path. */
-export function useDesktopViewport(): boolean {
+/** Tracks a breakpoint, defaulting to the one Tailwind's `sm` utilities use. It
+ * lets code-split desktop controls stay completely out of mobile's JS path.
+ * Pass a query to follow a different breakpoint (e.g. a bar that only exists
+ * below `xl`), so the JS switch and the CSS one cannot drift apart. */
+export function useDesktopViewport(query: string = DESKTOP_QUERY): boolean {
   const [desktop, setDesktop] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia(DESKTOP_QUERY).matches,
+    typeof window !== "undefined" && window.matchMedia(query).matches,
   );
 
   useEffect(() => {
-    const media = window.matchMedia(DESKTOP_QUERY);
+    const media = window.matchMedia(query);
     const update = () => setDesktop(media.matches);
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, []);
+  }, [query]);
 
   return desktop;
 }

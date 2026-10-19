@@ -167,6 +167,10 @@ export default {
         page: "1570px",
         content: "760px",
         measure: "62ch",
+        // The ONE admin content width. AdminShell's <main> owns it; admin pages
+        // must not set their own max-width, or the body jumps between routes
+        // (Hero used 1200px, Rider-Modell 6xl, Windfeld-Shadow 7xl).
+        admin: "1440px",
       },
 
       // --- Stacking layers --------------------------------------------------

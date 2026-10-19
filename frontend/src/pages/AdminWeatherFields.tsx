@@ -99,7 +99,7 @@ export default function AdminWeatherFields() {
   if (!status) return <div role="alert" className="text-label text-admin-danger">{error ?? "Keine Statusdaten verfügbar."}</div>;
 
   return (
-    <div className="max-w-7xl">
+    <div>
       {/* The intro block below already carries the explanation, so the page
           header stays a plain title here. */}
       <PageHeader title="Windfeld-Shadow" />
