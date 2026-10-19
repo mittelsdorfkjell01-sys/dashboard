@@ -148,7 +148,15 @@ function IconChevron({ up = false }: { up?: boolean }) {
 
 // --- component --------------------------------------------------------------
 
-export default function FormNavBar() {
+/** `floating` keeps the self-contained pill (desktop). `inline` renders only the
+ *  two buttons, for a caller that places them inside its own action row — on
+ *  mobile the form's Abbrechen/Speichern bar hosts them, so the controls share
+ *  one row instead of stacking two bars on top of each other. */
+export default function FormNavBar({
+  variant = "floating",
+}: {
+  variant?: "floating" | "inline";
+} = {}) {
   const [mode, setMode] = useState<"closed" | "menu" | "search">("closed");
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<HTMLElement[]>([]);
@@ -224,6 +232,36 @@ export default function FormNavBar() {
     setActiveIndex((idx) => (idx + dir + hits.length) % hits.length);
   };
 
+  // The two controls, shared by both variants so the markup cannot drift.
+  const buttons = (
+    <>
+      <button
+        type="button"
+        onClick={() => setMode(mode === "menu" ? "closed" : "menu")}
+        aria-label="Abschnittsmenü öffnen"
+        aria-expanded={mode === "menu"}
+        aria-controls={MENU_ID}
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors ${
+          mode === "menu" ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover"
+        }`}
+      >
+        <IconMenu />
+      </button>
+      <button
+        type="button"
+        onClick={() => setMode(mode === "search" ? "closed" : "search")}
+        aria-label="Suche öffnen"
+        aria-expanded={mode === "search"}
+        aria-controls={SEARCH_ID}
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors ${
+          mode === "search" ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover"
+        }`}
+      >
+        <IconSearch />
+      </button>
+    </>
+  );
+
   return (
     <>
       {/* Inline style so the find-in-page marks land in the cascade regardless
@@ -249,7 +287,9 @@ export default function FormNavBar() {
           aria-modal="false"
           aria-label="Abschnittsmenü"
           id={MENU_ID}
-          className="fixed bottom-24 left-1/2 z-[1001] w-[min(92vw,340px)] -translate-x-1/2 rounded-xl border border-admin-border bg-admin-surface p-2 shadow-admin-pop"
+          className={`fixed left-1/2 z-[1101] w-[min(92vw,340px)] -translate-x-1/2 rounded-xl border border-admin-border bg-admin-surface p-2 shadow-admin-pop ${
+            variant === "inline" ? "bottom-[5.5rem]" : "bottom-24"
+          }`}
         >
           <div className="flex items-center justify-between gap-2 px-2 py-1">
             <span className="text-caption font-semibold uppercase tracking-caps text-admin-muted">
@@ -287,7 +327,9 @@ export default function FormNavBar() {
           aria-modal="false"
           aria-label="Suche"
           id={SEARCH_ID}
-          className="fixed bottom-24 left-1/2 z-[1001] flex w-[min(92vw,420px)] -translate-x-1/2 items-center gap-2 rounded-full border border-admin-border bg-admin-surface px-3 py-1.5 shadow-admin-pop"
+          className={`fixed left-1/2 z-[1101] flex w-[min(92vw,420px)] -translate-x-1/2 items-center gap-2 rounded-full border border-admin-border bg-admin-surface px-3 py-1.5 shadow-admin-pop ${
+            variant === "inline" ? "bottom-[5.5rem]" : "bottom-24"
+          }`}
         >
           <IconSearch />
           <input
@@ -338,34 +380,15 @@ export default function FormNavBar() {
         </div>
       )}
 
-      <div className="pointer-events-none fixed bottom-6 left-0 right-0 z-[1000] flex justify-center px-4">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-admin-border bg-admin-surface p-1 shadow-admin-pop">
-          <button
-            type="button"
-            onClick={() => setMode(mode === "menu" ? "closed" : "menu")}
-            aria-label="Abschnittsmenü öffnen"
-            aria-expanded={mode === "menu"}
-            aria-controls={MENU_ID}
-            className={`grid h-10 w-10 place-items-center rounded-full transition-colors ${
-              mode === "menu" ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover"
-            }`}
-          >
-            <IconMenu />
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode(mode === "search" ? "closed" : "search")}
-            aria-label="Suche öffnen"
-            aria-expanded={mode === "search"}
-            aria-controls={SEARCH_ID}
-            className={`grid h-10 w-10 place-items-center rounded-full transition-colors ${
-              mode === "search" ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover"
-            }`}
-          >
-            <IconSearch />
-          </button>
+      {variant === "inline" ? (
+        <div className="flex shrink-0 items-center gap-1">{buttons}</div>
+      ) : (
+        <div className="pointer-events-none fixed bottom-6 left-0 right-0 z-[1100] flex justify-center px-4">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-admin-border bg-admin-surface p-1 shadow-admin-pop">
+            {buttons}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

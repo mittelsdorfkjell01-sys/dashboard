@@ -77,7 +77,7 @@ export default function AdminHero() {
   const inReel = spots.filter((s) => s.image?.hero_reel).length;
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div>
       <div className="mb-6">
         <h1 className="text-title font-semibold text-admin-fg">Hero-Rotation</h1>
         <p className="mt-1 max-w-[70ch] text-label text-admin-muted">

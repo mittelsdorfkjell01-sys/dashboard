@@ -402,6 +402,46 @@
   scrollbar-color: var(--a-border-strong) transparent;
 }
 
+/* RULE: a focused text control shows ONE stroke, never two --------------------
+   Focus on an input, select or textarea in the back office is expressed by the
+   stroke that is already there turning to `--a-primary`, plus the blinking
+   caret. Nothing is allowed to draw a second shape around the field — no
+   outline, no ring, no box-shadow.
+
+   index.css forces `outline: 2px solid var(--sw-ink) !important` on every
+   field for keyboard focus. Inside the admin, `--sw-ink` resolves to --a-fg,
+   so that outline rendered as a thick near-white frame around the field in
+   dark (and a thick near-black one in light), sitting outside the field's own
+   border — the doubled indicator this rule exists to forbid. The shared public
+   `fieldClass` adds `focus-visible:ring-2` on top of that.
+
+   Checkboxes, radios and range inputs are excluded on purpose: they have no
+   border to brighten, so the outline is their only focus indicator and must
+   stay (WCAG 2.4.7).
+
+   `e2e/admin-theme.spec.ts` pins this. */
+.admin-scope
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea
+  ):focus,
+.admin-scope
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea
+  ):focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  border-color: var(--a-primary);
+  /* Neutralise Tailwind's ring utilities, which paint through box-shadow. */
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-color: transparent;
+}
+
 /* Leaflet chrome inside the admin map ---------------------------------------
    Leaflet ships its own white popup/attribution regardless of the page theme,
    which used to force the admin map popup to hard-code dark text to stay

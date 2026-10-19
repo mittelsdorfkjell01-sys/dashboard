@@ -9,6 +9,7 @@ import DeleteConfirmDialog from "../components/admin/DeleteConfirmDialog";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
 import CollapsibleSection from "../components/admin/CollapsibleSection";
 import FormNavBar from "../components/admin/FormNavBar";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import { ErrorBanner } from "../components/AsyncStates";
 import { useAdminRegions } from "../lib/hooks";
 import {
@@ -608,10 +609,11 @@ export default function AdminSpotForm() {
   const selectedRegionName =
     regionOptions.find((region) => region.id === regionId)?.name ?? "Ohne Region";
   const imageGeoVerified = currentImage?.geo_verified === true;
+  const wideLayout = useDesktopViewport("(min-width: 1280px)");
 
   if (loadingExisting) {
     return (
-      <div className="mx-auto max-w-[820px]">
+      <div>
         <div className="h-8 w-64 animate-pulse rounded bg-line" />
       </div>
     );
@@ -1401,46 +1403,36 @@ export default function AdminSpotForm() {
         </aside>
       </form>
 
-      <FormNavBar />
+      {/* Desktop keeps the self-contained floating pill; below `xl` its two
+          controls move into the action bar, so the form never stacks two
+          floating bars. Exactly one variant is mounted (the component owns
+          find-in-page state and ids, which must not exist twice). */}
+      {wideLayout && <FormNavBar />}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-admin-border bg-admin-surface px-4 py-3 xl:hidden sm:bg-admin-surface/95 sm:backdrop-blur">
-        <AdminBackButton
-          onClick={back.goBack}
-          label={back.label}
-          text="Abbrechen"
-          showIcon={false}
-          className="min-h-11 flex-1 justify-center"
-        />
-        <Button
-          type="submit"
-          form="admin-spot-form"
-          variant="primary"
-          disabled={submitting}
-          className="min-h-11 flex-1"
-        >
-          {submitting ? "Speichern …" : isEdit ? "Speichern" : "Spot anlegen"}
-        </Button>
-        {isEdit && (
-          <details className="relative">
-            <summary
-              aria-label="Weitere Speicheraktionen"
-              className="grid min-h-11 min-w-11 cursor-pointer list-none place-items-center rounded-md border border-admin-border bg-admin-surface text-admin-fg2 hover:bg-admin-hover"
-            >
-              <span aria-hidden="true">•••</span>
-            </summary>
-            <div className="absolute bottom-full right-0 mb-2 w-52 rounded-lg border border-admin-border bg-admin-elevated p-1.5 shadow-admin-pop">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={saveAndReturn}
-                className="min-h-10 w-full rounded-md px-3 text-left text-label font-medium text-admin-fg2 hover:bg-admin-hover disabled:opacity-50"
-              >
-                Speichern und zurück
-              </button>
-            </div>
-          </details>
-        )}
-      </div>
+      {/* One row: Abbrechen left, the section/search controls centred,
+          Speichern right. The bar sits above the page's own layers — at the
+          old z-30 the spot map covered it while scrolling. */}
+      {!wideLayout && (
+        <div className="fixed inset-x-0 bottom-0 z-[1100] flex items-center gap-2 border-t border-admin-border bg-admin-surface px-4 py-3 sm:bg-admin-surface/95 sm:backdrop-blur">
+          <AdminBackButton
+            onClick={back.goBack}
+            label={back.label}
+            text="Abbrechen"
+            showIcon={false}
+            className="min-h-11 flex-1 justify-center"
+          />
+          <FormNavBar variant="inline" />
+          <Button
+            type="submit"
+            form="admin-spot-form"
+            variant="primary"
+            disabled={submitting}
+            className="min-h-11 flex-1"
+          >
+            {submitting ? "Speichern …" : isEdit ? "Speichern" : "Spot anlegen"}
+          </Button>
+        </div>
+      )}
 
       <DuplicateWarningDialog
         conflict={duplicateConflict}

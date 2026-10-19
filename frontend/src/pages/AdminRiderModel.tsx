@@ -135,7 +135,7 @@ export default function AdminRiderModel() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div>
       <PageHeader title="Rider-Modell" actions={<Button variant="primary" disabled={saving} onClick={() => void save()}>{saving ? "Speichert …" : "Neue Version speichern"}</Button>} />
       <div className="mb-7 flex flex-wrap items-baseline justify-between gap-3 border-b border-admin-border pb-5">
         <div>
