@@ -157,6 +157,10 @@ export default function AdminShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  // The overlay renders outside the header (see below), so the outside-click
+  // guard has to know about both subtrees — otherwise tapping a nav row in
+  // the overlay counts as "outside" and closes it before the link fires.
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
   const headerStackRef = useRef<HTMLDivElement>(null);
   const contentColRef = useRef<HTMLDivElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -172,7 +176,13 @@ export default function AdminShell() {
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const closeOutside = (event: PointerEvent) => {
-      if (!mobileMenuRef.current?.contains(event.target as Node)) setMobileMenuOpen(false);
+      const target = event.target as Node;
+      if (
+        !mobileMenuRef.current?.contains(target) &&
+        !mobilePanelRef.current?.contains(target)
+      ) {
+        setMobileMenuOpen(false);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileMenuOpen(false);
@@ -212,20 +222,14 @@ export default function AdminShell() {
     <div className="min-h-screen overflow-x-clip bg-admin-bg text-admin-fg">
       <div className="flex items-start">
         {/* Sidebar (desktop) */}
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-surface px-3 py-4 lg:flex">
-          {/* Brand block — a bordered tile rather than a bare wordmark, so the
-              sidebar opens on a defined surface like the reference dashboards. */}
-          <Link
-            to="/admin"
-            className="flex items-center gap-2.5 rounded-md border border-admin-border bg-admin-bg px-2.5 py-2 transition-colors hover:bg-admin-hover"
-          >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-admin-primary text-sz-11 font-semibold text-admin-primary-fg">
-              sw
-            </span>
-            <Wordmark size="sm" tag="Admin" />
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-admin-border bg-admin-bg px-3 py-4 lg:flex">
+          {/* Brand — the wordmark and the signed-in role, nothing else: no mark
+              tile and no separate fill, so the sidebar opens quietly. */}
+          <Link to="/admin" className="block px-2.5 py-2">
+            <Wordmark size="sm" tag={user ? roleLabel(user.role) : undefined} />
           </Link>
 
-          <nav className="mt-5 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+          <nav className="mt-5 flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
             {GROUPS.map((group) => {
               const groupItems = items.filter((item) => item.group === group);
               if (groupItems.length === 0) return null;
@@ -255,7 +259,7 @@ export default function AdminShell() {
         </aside>
 
         {/* Content column */}
-        <div ref={contentColRef} className="min-w-0 flex-1">
+        <div ref={contentColRef} className="min-w-0 flex-1 bg-admin-surface">
           <div ref={headerStackRef} className="sticky top-0 z-20">
             <header className="flex min-h-16 items-center justify-between gap-3 border-b border-admin-border bg-admin-surface px-4 py-2 sm:bg-admin-surface/90 sm:px-8 sm:backdrop-blur-sm">
               {/* Brand — shown until the sidebar appears (lg). */}
@@ -292,7 +296,7 @@ export default function AdminShell() {
                     </Button>
                   </>
                 )}
-                <div ref={mobileMenuRef} className="relative lg:hidden">
+                <div ref={mobileMenuRef} className="lg:hidden">
                   <button
                     type="button"
                     aria-expanded={mobileMenuOpen}
@@ -310,51 +314,52 @@ export default function AdminShell() {
                     </svg>
                     <span className="hidden max-w-28 truncate sm:inline">{activeItem?.label ?? "Menü"}</span>
                   </button>
-
-                  {mobileMenuOpen && (
-                    <div
-                      id="admin-mobile-menu"
-                      className="absolute right-0 top-[calc(100%+0.5rem)] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-admin-border bg-admin-elevated shadow-admin-pop"
-                    >
-                      <nav aria-label="Dashboard-Navigation" className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-2">
-                        {GROUPS.map((group) => {
-                          const groupItems = items.filter((item) => item.group === group);
-                          if (groupItems.length === 0) return null;
-                          return (
-                            <div key={group} className="mt-2 first:mt-0">
-                              <p className="px-3 pb-1 pt-2 text-sz-10 font-semibold uppercase tracking-caps text-admin-muted">{group}</p>
-                              {groupItems.map((item) => (
-                                <NavLink
-                                  key={item.to}
-                                  to={item.to}
-                                  end={item.end}
-                                  className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${isActive || navItemMatches(item, location.pathname) ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg"}`}
-                                >
-                                  <span className="grid h-5 w-5 place-items-center [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span>
-                                  {item.label}
-                                </NavLink>
-                              ))}
-                            </div>
-                          );
-                        })}
-                      </nav>
-                      {user && (
-                        <div className="flex items-center gap-3 border-t border-admin-border p-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-admin-fg">{user.display_name}</p>
-                            <p className="text-caption text-admin-muted">{roleLabel(user.role)}</p>
-                          </div>
-                          <Button variant="secondary" onClick={onLogout}>Abmelden</Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </header>
           </div>
 
-          <main className="px-4 py-6 sm:px-8">
+          {mobileMenuOpen && (
+          <div
+            id="admin-mobile-menu"
+            ref={mobilePanelRef}
+            className="fixed inset-x-0 bottom-0 top-[var(--admin-header-h,64px)] z-[1090] flex flex-col border-t border-admin-border bg-admin-surface lg:hidden"
+          >
+            <nav aria-label="Dashboard-Navigation" className="min-h-0 flex-1 overflow-y-auto p-2">
+              {GROUPS.map((group) => {
+                const groupItems = items.filter((item) => item.group === group);
+                if (groupItems.length === 0) return null;
+                return (
+                  <div key={group} className="mt-2 first:mt-0">
+                    <p className="px-3 pb-1 pt-2 text-sz-10 font-semibold uppercase tracking-caps text-admin-muted">{group}</p>
+                    {groupItems.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        className={({ isActive }) => `flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors ${isActive || navItemMatches(item, location.pathname) ? "bg-admin-hover text-admin-fg" : "text-admin-fg2 hover:bg-admin-hover hover:text-admin-fg"}`}
+                      >
+                        <span className="grid h-5 w-5 place-items-center [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span>
+                        {item.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                );
+              })}
+            </nav>
+            {user && (
+              <div className="flex items-center gap-3 border-t border-admin-border p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-admin-fg">{user.display_name}</p>
+                  <p className="text-caption text-admin-muted">{roleLabel(user.role)}</p>
+                </div>
+                <Button variant="secondary" onClick={onLogout}>Abmelden</Button>
+              </div>
+            )}
+          </div>
+          )}
+
+          <main className="mx-auto w-full max-w-admin px-4 py-6 sm:px-8">
             <Outlet />
           </main>
         </div>

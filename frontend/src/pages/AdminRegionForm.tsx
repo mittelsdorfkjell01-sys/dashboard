@@ -359,7 +359,7 @@ export default function AdminRegionForm() {
   };
 
   if (!region) {
-    return <div className="mx-auto max-w-[820px] text-ui text-muted">Lädt…</div>;
+    return <div className="text-ui text-muted">Lädt…</div>;
   }
 
   return (

@@ -96,3 +96,57 @@ test("the top-bar toggle switches the theme and remembers it", async ({ page }) 
   await page.getByRole("button", { name: "Zu hellem Design wechseln" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-admin-theme", "light");
 });
+
+// A focused text control in the back office shows ONE stroke: the border it
+// already has, turned to the primary colour, plus the caret. index.css forces a
+// 2px outline on every field for keyboard focus, which inside the admin scope
+// rendered as a thick near-white frame OUTSIDE the field's own border. The rule
+// lives in admin-theme.css; this pins it in both themes.
+for (const theme of ["light", "dark"] as const) {
+  test(`a focused admin field draws no second ring in the ${theme} theme`, async ({ page }) => {
+    await page.addInitScript(
+      ([key, value]) => {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch {
+          // Blocked site data only costs the preset.
+        }
+      },
+      [THEME_KEY, theme] as const
+    );
+    await mockAdmin(page);
+    await page.route("**127.0.0.1:8000/admin/spots**", (route) =>
+      route.fulfill({ json: { items: [], total: 0, limit: 25, offset: 0 } })
+    );
+    await page.goto("/admin/spots");
+
+    const search = page.getByPlaceholder(/suchen/i).first();
+    await expect(search).toBeVisible();
+
+    const before = await search.evaluate((el) => getComputedStyle(el).borderColor);
+    await search.click();
+    await expect(search).toBeFocused();
+    // The field token animates its border (transition-colors, 150ms). Reading
+    // straight after the click returns the pre-focus value mid-transition, so
+    // wait for the settled colour before asserting on it.
+    await expect
+      .poll(() => search.evaluate((el) => getComputedStyle(el).borderColor))
+      .not.toBe(before);
+
+    const focused = await search.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        outlineStyle: cs.outlineStyle,
+        outlineWidth: cs.outlineWidth,
+        boxShadow: cs.boxShadow,
+        borderColor: cs.borderColor,
+      };
+    });
+
+    // No second shape around the field…
+    expect(focused.outlineStyle === "none" || focused.outlineWidth === "0px").toBe(true);
+    expect(focused.boxShadow === "none" || focused.boxShadow === "").toBe(true);
+    // …and the existing stroke is what changed.
+    expect(focused.borderColor).not.toBe(before);
+  });
+}
