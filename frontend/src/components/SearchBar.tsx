@@ -72,7 +72,6 @@ export default function SearchBar({
     top: number;
     left: number;
     width: number;
-    placement: "above" | "below";
   } | null>(null);
   const [open, setOpen] = useState<Segment>("where");
   const [val, setVal] = useState<SearchValue>(() => loadSearchDraft());
@@ -134,25 +133,14 @@ export default function SearchBar({
     if (variant === "hero") {
       const rect = heroTriggerRef.current?.getBoundingClientRect();
       if (rect) {
-        // Keep the shell *pinned to the clicked bar* (top = rect.top) so the open
-        // search always reads as anchored to the field the visitor tapped — never
-        // floating in the middle of the screen. Only the panel flips side to stay
-        // on screen: it opens above the bar when the bar rests low in the hero,
-        // and drops below once the bar has scrolled near the top and there is no
-        // room above. The shell leaves the bar solely in the rare case neither
-        // side fits (a very short window), and only by the minimum needed.
+        // Keep the shell anchored to the clicked bar whenever the viewport has
+        // room. The panel always opens below it; on short viewports the complete
+        // stack shifts upward only as far as needed to remain reachable.
         const panelSpan = PANEL_HEIGHT + PANEL_GAP;
-        const spaceAbove = rect.top - VIEWPORT_GUTTER;
-        const spaceBelow = window.innerHeight - (rect.top + SHELL_HEIGHT) - VIEWPORT_GUTTER;
-        const placement: "above" | "below" =
-          spaceAbove >= panelSpan ? "above" : spaceBelow >= panelSpan ? "below" : "above";
-        let top = rect.top;
-        if (placement === "below") {
-          const maxTop = window.innerHeight - (SHELL_HEIGHT + panelSpan) - VIEWPORT_GUTTER;
-          top = Math.min(top, maxTop);
-        }
+        const maxTop = window.innerHeight - (SHELL_HEIGHT + panelSpan) - VIEWPORT_GUTTER;
+        let top = Math.min(rect.top, maxTop);
         top = Math.max(VIEWPORT_GUTTER, top);
-        setHeroAnchor({ top, left: rect.left, width: rect.width, placement });
+        setHeroAnchor({ top, left: rect.left, width: rect.width });
       }
     }
     setOpen(seg);
@@ -329,7 +317,7 @@ export default function SearchBar({
                         top: heroAnchor.top,
                         left: heroAnchor.left,
                         width: heroAnchor.width,
-                        transformOrigin: heroAnchor.placement === "above" ? "center bottom" : "center top",
+                        transformOrigin: "center top",
                       }
                     : { transformOrigin: "center top" }
                 }
@@ -425,11 +413,7 @@ export default function SearchBar({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: reduce ? 0 : -2 }}
                       transition={reduce ? { duration: 0.05, ease: "easeOut" } : PANEL_TRANSITION}
-                      className={`absolute ${
-                        variant === "hero" && heroAnchor?.placement === "above"
-                          ? "bottom-full mb-3"
-                          : "top-full mt-3"
-                      } ${
+                      className={`absolute top-full mt-3 ${
                         open === "when"
                           ? "inset-x-0"
                           : open === "where"

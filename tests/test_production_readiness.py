@@ -50,8 +50,8 @@ def test_wave_api_smoke_checks_ten_day_chain_manifest_and_series(monkeypatch):
 
 
 
-def test_app_imports_when_the_local_asset_store_cannot_be_created(tmp_path):
-    """A read-only filesystem must cost the asset mount, not the whole API.
+def test_app_imports_on_vercel_when_the_local_asset_store_cannot_be_created(tmp_path):
+    """Vercel's read-only filesystem must cost the mount, not the whole API.
 
     `weather_field_storage_backend` defaults to "local", so app.main ran
     os.makedirs at import. On Vercel everything outside /tmp is read-only, the
@@ -75,6 +75,7 @@ def test_app_imports_when_the_local_asset_store_cannot_be_created(tmp_path):
         cwd=root,
         env={
             **os.environ,
+            "VERCEL": "1",
             "WEATHER_FIELD_STORAGE_BACKEND": "local",
             "WEATHER_FIELD_STORAGE_DIR": str(blocker / "fields"),
         },
@@ -82,3 +83,35 @@ def test_app_imports_when_the_local_asset_store_cannot_be_created(tmp_path):
         text=True,
     )
     assert result.returncode == 0, result.stderr[-2000:]
+    assert int(result.stdout.strip()) > 0
+    assert str(blocker / "fields") in result.stderr
+
+
+def test_app_import_fails_outside_vercel_when_the_local_asset_store_cannot_be_created(tmp_path):
+    """A persistent local backend must expose an invalid storage directory."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("", encoding="utf-8")
+
+    root = Path(__file__).resolve().parents[1]
+    env = {
+        **os.environ,
+        "WEATHER_FIELD_STORAGE_BACKEND": "local",
+        "WEATHER_FIELD_STORAGE_DIR": str(blocker / "fields"),
+    }
+    env.pop("VERCEL", None)
+    result = subprocess.run(
+        [sys.executable, "-c", "import app.main"],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "not-a-directory" in result.stderr
+    assert "fields" in result.stderr

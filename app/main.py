@@ -124,18 +124,22 @@ if settings.media_backend == "local":
 # active pointer remains a small API response, while large assets are directly
 # cacheable by browsers/reverse proxies without a paid object-store dependency.
 if settings.weather_field_storage_backend == "local":
-    # A serverless deployment has a read-only filesystem outside /tmp, and
-    # `local` is the default backend — so this ran on Vercel and the OSError
-    # from makedirs happened at *import*, taking the whole function down:
-    # every API route answered FUNCTION_INVOCATION_FAILED before FastAPI could
-    # handle anything. There is no local asset store to mount in that case, and
-    # that must stay a missing mount rather than a dead API.
+    # A Vercel deployment has a read-only filesystem outside /tmp, and `local`
+    # is the default backend. Missing that optional mount must not take down the
+    # whole serverless API. Everywhere else, however, a local backend is an
+    # explicit promise that the directory works; hiding its failure would only
+    # turn a clear startup error into later 404s and failed publication writes.
     try:
         os.makedirs(settings.weather_field_storage_dir, exist_ok=True)
     except OSError as exc:
+        if os.environ.get("VERCEL") != "1":
+            raise
         logger.warning(
-            "local weather-field asset store unavailable (%s); serving without the mount",
+            "local weather-field asset store unavailable at %s (%s: %s); "
+            "serving without the mount on Vercel",
+            settings.weather_field_storage_dir,
             type(exc).__name__,
+            exc,
         )
     else:
         app.mount(

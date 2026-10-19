@@ -217,18 +217,19 @@ export default function Landing() {
 
         <div className="flex-1" />
 
-        {/* Search — sits a bit higher in the hero. On mobile it is the search
+        {/* Search — vertically centered in the desktop hero. On mobile it is the search
             entry and docks into the header once scrolled (see LandingHeader);
             the inline SearchBar dropdown takes over from sm. */}
-        <div className="flex justify-center px-4 pb-32 sm:px-6 sm:pb-40">
+        <div className="flex justify-center px-4 pb-32 sm:absolute sm:inset-0 sm:items-center sm:px-6 sm:pb-0">
           <div id="landing-search" className="relative z-modal w-full max-w-content">
             <span data-landing-header-sentinel aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px" />
-            {/* Mobile pill; hidden (kept in layout) while the sheet is open, and
-                faded out once it reaches the header line so it vanishes into the
-                bar rather than scrolling over it. */}
+            {/* Mobile pill; hidden (kept in layout) while the sheet is open. It
+                disappears immediately at the header line so it cannot overlap it. */}
             <div
-              className={`transition-opacity duration-base sm:hidden ${searchOpen ? "invisible" : ""} ${
-                heroSearchDocked ? "pointer-events-none opacity-0" : "opacity-100"
+              className={`sm:hidden ${searchOpen ? "invisible" : ""} ${
+                heroSearchDocked
+                  ? "invisible pointer-events-none opacity-0"
+                  : "opacity-100 transition-opacity duration-base"
               }`}
             >
               <MobileSearchTrigger onClick={openSearch} />

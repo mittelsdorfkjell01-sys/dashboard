@@ -16,7 +16,7 @@ import {
   type TdHTMLAttributes,
   type ThHTMLAttributes,
 } from "react";
-import { Link, NavLink, type LinkProps, type NavLinkProps } from "react-router-dom";
+import { Link, type LinkProps } from "react-router-dom";
 import { SearchIcon } from "../../../lib/icons";
 import { useAdminTheme } from "../theme";
 
@@ -159,23 +159,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
 );
 Select.displayName = "AdminSelect";
 
-/** The label above a field. One definition so forms stop drifting between
- *  text-caption/text-label and medium/semibold. */
-export function FieldLabel({
-  children,
-  className = "",
-  ...props
-}: HTMLAttributes<HTMLLabelElement> & { htmlFor?: string }) {
-  return (
-    <label
-      className={`mb-1.5 block text-label font-medium text-admin-fg2 ${className}`}
-      {...props}
-    >
-      {children}
-    </label>
-  );
-}
-
 /* ------------------------------------------------------------------------- */
 /* Card — the standard admin surface: hairline border, 10px corner, no        */
 /* shadow (elevation in this system comes from the border + canvas contrast,  */
@@ -193,32 +176,6 @@ export function Card({
       {...props}
     >
       {children}
-    </div>
-  );
-}
-
-/** Card header: title on the left, optional actions on the right, divider
- *  below. Use inside an unpadded <Card> so the divider spans the full width. */
-export function CardHeader({
-  title,
-  description,
-  actions,
-  className = "",
-}: {
-  title: ReactNode;
-  description?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`flex flex-wrap items-center justify-between gap-3 border-b border-admin-border px-4 py-3 ${className}`}
-    >
-      <div className="min-w-0">
-        <h2 className="truncate text-label font-semibold text-admin-fg">{title}</h2>
-        {description && <p className="mt-0.5 text-caption text-admin-muted">{description}</p>}
-      </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
@@ -266,57 +223,6 @@ export function PageHeader({
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------------- */
-/* Tabs — a row of route links under the page header, marking the active one  */
-/* with an underline rather than a filled pill (quieter, and it survives both  */
-/* themes without a tinted surface).                                          */
-/* ------------------------------------------------------------------------- */
-export function TabBar({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`-mt-1 mb-5 flex gap-1 border-b border-admin-border ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-const TAB_BASE =
-  "relative -mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2 text-label font-medium transition-colors";
-
-export function Tab({ className = "", ...props }: NavLinkProps) {
-  return (
-    <NavLink
-      className={({ isActive }) =>
-        `${TAB_BASE} ${
-          isActive
-            ? "border-admin-primary text-admin-fg"
-            : "border-transparent text-admin-muted hover:border-admin-border-strong hover:text-admin-fg"
-        } ${className}`
-      }
-      {...props}
-    />
-  );
-}
-
-/** The same tab look for in-page state that is not a route. */
-export function TabButton({
-  active,
-  className = "",
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { active: boolean }) {
-  return (
-    <button
-      type="button"
-      aria-current={active ? "page" : undefined}
-      className={`${TAB_BASE} ${
-        active
-          ? "border-admin-primary text-admin-fg"
-          : "border-transparent text-admin-muted hover:border-admin-border-strong hover:text-admin-fg"
-      } ${className}`}
-      {...props}
-    />
   );
 }
 
