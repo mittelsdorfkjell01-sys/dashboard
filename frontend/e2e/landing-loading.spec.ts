@@ -92,6 +92,7 @@ test("hero search remains fully visible when opened after scrolling", async ({ p
   expect(panelBox).not.toBeNull();
   expect(viewport).not.toBeNull();
   expect(box!.y).toBeGreaterThanOrEqual(23);
+  expect(panelBox!.y).toBeGreaterThanOrEqual(box!.y + 56 + 11);
   expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(viewport!.height - 23);
 });
 
@@ -123,4 +124,32 @@ test("mobile search contains focus and returns it to its trigger", async ({ page
 
   await close.click();
   await expect(trigger).toBeFocused();
+});
+
+test("mobile hero search disappears at the header boundary", async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes("mobile"), "Mobile search uses the disappearing hero trigger");
+
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/spots/landing") {
+      return route.fulfill({ json: { spots: spots.slice(0, 24), total: spots.length, version: "t-1" } });
+    }
+    if (url.pathname === "/spots") return route.fulfill({ json: spots });
+    if (url.pathname === "/auth/me" || url.pathname === "/account/me") {
+      return route.fulfill({ status: 401, json: { detail: "not authenticated" } });
+    }
+    return route.fulfill({ json: [] });
+  });
+
+  await page.goto("/");
+  const sentinel = page.locator("[data-landing-header-sentinel]");
+  const trigger = page.locator("#landing-search").getByRole("button", { name: "Jetzt suchen" });
+  const sentinelBox = await sentinel.boundingBox();
+  expect(sentinelBox).not.toBeNull();
+
+  await page.evaluate((scrollY) => window.scrollTo(0, scrollY), Math.max(0, sentinelBox!.y - 86));
+  await expect(trigger).toBeVisible();
+
+  await page.evaluate((scrollY) => window.scrollTo(0, scrollY), Math.max(0, sentinelBox!.y - 82));
+  await expect(trigger).toBeHidden();
 });
