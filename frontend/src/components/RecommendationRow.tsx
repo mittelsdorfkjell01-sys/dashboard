@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRecommendations, useSpotsLive } from "../lib/hooks";
 import type { RecommendationSurface } from "../lib/api";
 import SpotCard from "./SpotCard";
-import { ErrorBanner } from "./AsyncStates";
 
 const GRID =
   "grid auto-rows-fr grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5";
@@ -36,6 +35,7 @@ export default function RecommendationRow({
   className = "",
   defer = false,
   hideHeader = false,
+  onVisibilityChange,
 }: {
   title: string;
   surface: RecommendationSurface;
@@ -53,6 +53,8 @@ export default function RecommendationRow({
   defer?: boolean;
   /** Suppress the row's own title/action header (rendered by the parent instead). */
   hideHeader?: boolean;
+  /** Keep parent-owned chrome in sync when this category has no usable data. */
+  onVisibilityChange?: (visible: boolean) => void;
 }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [inRange, setInRange] = useState(!defer);
@@ -78,7 +80,7 @@ export default function RecommendationRow({
   }, [defer, inRange]);
 
   const requestEnabled = !defer || inRange;
-  const { data, loading, error, reload } = useRecommendations({
+  const { data, loading } = useRecommendations({
     sport,
     surface,
     region_id: regionId,
@@ -89,6 +91,14 @@ export default function RecommendationRow({
   }, requestEnabled);
   const spots = (data ?? []).slice(0, MAX_TILES);
   const [loadLive, setLoadLive] = useState(false);
+
+  // A category is useful while it loads or when it has data. Once the request
+  // settles without rows, hide the complete category instead of exposing an
+  // error/empty panel. Cached rows stay visible if a background refresh fails.
+  const visible = loading || spots.length > 0;
+  useEffect(() => {
+    if (requestEnabled) onVisibilityChange?.(visible);
+  }, [onVisibilityChange, requestEnabled, visible]);
 
   useEffect(() => {
     if (!spots.length) return;
@@ -111,19 +121,6 @@ export default function RecommendationRow({
     );
   }
 
-  if (!loading && error) {
-    return (
-      <section ref={sectionRef} className={className} data-recommendation-surface={surface}>
-        {!hideHeader && (
-          <div className="mb-4 flex min-h-11 items-center justify-between gap-4">
-            <h2 className="text-lead font-semibold text-ink">{title}</h2>
-            {action}
-          </div>
-        )}
-        <ErrorBanner title="Empfehlungen konnten nicht geladen werden." message={error} onRetry={reload} />
-      </section>
-    );
-  }
   if (!loading && spots.length === 0) return null;
 
   return (

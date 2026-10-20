@@ -40,12 +40,15 @@ function profileFrom(route: Route): keyof typeof orders {
   return "anonymous";
 }
 
-async function mockPublicApi(page: Page) {
+async function mockPublicApi(page: Page, failingSurfaces: string[] = []) {
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\//, async (route) => {
     const url = new URL(route.request().url());
     const profile = profileFrom(route);
     if (url.pathname === "/recommendations") {
       const surface = url.searchParams.get("surface");
+      if (surface && failingSurfaces.includes(surface)) {
+        return route.fulfill({ status: 503, json: { detail: "temporarily unavailable" } });
+      }
       const data = surface === "season" ? orders[profile].slice(1) : orders[profile];
       return route.fulfill({ json: data });
     }
@@ -118,6 +121,17 @@ test("landing renders all non-empty recommendation surfaces without scoring copy
     window as Window & { __recommendationCls?: number }
   ).__recommendationCls ?? 0);
   expect(cls).toBeLessThan(0.1);
+});
+
+test("landing hides recommendation categories that cannot be loaded", async ({ page }) => {
+  await mockPublicApi(page, ["now", "next_week"]);
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Zeit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Aktuelle Topspots" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Woche" })).toHaveCount(0);
+  await expect(page.getByText("Empfehlungen konnten nicht geladen werden.")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
 });
 
 test("a rider profile switch changes the server search order", async ({ page }) => {

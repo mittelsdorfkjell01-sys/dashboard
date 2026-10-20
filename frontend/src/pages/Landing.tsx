@@ -69,6 +69,7 @@ export default function Landing() {
   const personalizedTitle = personalized && rowSport !== AGGREGATE_SPORT;
   // The three recommendation rows only make sense in "recommended" order.
   const showRows = sortMode === "recommended";
+  const [currentRecommendationsVisible, setCurrentRecommendationsVisible] = useState(true);
   // Remember where the map is opened from, so its close button can return here.
   const from = location.pathname + location.search;
   const [visibleSpotLimit, setVisibleSpotLimit] = useState(20);
@@ -267,7 +268,7 @@ export default function Landing() {
               personalization toggle when signed in). Sport applies to the rows
               and the "Alle Spots" grid; land/level narrow the grid. */}
           <div className="mb-6 flex min-h-11 items-center justify-between gap-4">
-            {showRows ? (
+            {showRows && currentRecommendationsVisible ? (
               <h2 className="text-lead font-semibold text-ink">
                 {personalizedTitle ? "Deine aktuellen Topspots" : "Aktuelle Topspots"}
               </h2>
@@ -275,7 +276,7 @@ export default function Landing() {
               <span aria-hidden />
             )}
             <div className="flex items-center gap-2">
-              {showRows && (
+              {showRows && currentRecommendationsVisible && (
                 <Link
                   to="/map"
                   state={{ from }}
@@ -318,6 +319,7 @@ export default function Landing() {
                 personalized={personalized}
                 defer
                 hideHeader
+                onVisibilityChange={setCurrentRecommendationsVisible}
               />
               <RecommendationRow
                 title="Topspots in der nächsten Woche"
