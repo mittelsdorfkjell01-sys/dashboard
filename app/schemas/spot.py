@@ -1,12 +1,17 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
 from app.admin.constants import offered_variants
 from app.schemas.common import GeoPoint
 from app.scoring.context import typical_figures
+
+
+EditorialClassification = Literal[
+    "world_class", "worth_trip", "worth_checking_out"
+]
 
 
 def _public_editorial(value: Any) -> dict[str, Any] | None:
@@ -50,6 +55,7 @@ class SpotSummary(BaseModel):
     # Authorship of the record: "editorial" (entered by us) or "community" (an
     # approved proposal). Not a quality tier — both pass the same review.
     origin: str = "editorial"
+    editorial_classification: EditorialClassification | None = None
     # Credit for a community spot; None for an editorial one.
     contributor_name: str | None = None
     # Variant keys this spot actually offers (suitability geeignet/eingeschraenkt).
@@ -84,6 +90,7 @@ class SpotSummary(BaseModel):
             facing=spot.facing,
             image=spot.image,
             origin=getattr(spot, "origin", None) or "editorial",
+            editorial_classification=getattr(spot, "editorial_classification", None),
             contributor_name=getattr(spot, "contributor_name", None),
             variants=offered_variants(getattr(spot, "variant_conditions", None)),
             typical_wind_kt=typical_wind_kt,
@@ -122,6 +129,7 @@ class SpotRead(BaseModel):
     status: str
     facing: int | None = None
     origin: str = "editorial"
+    editorial_classification: EditorialClassification | None = None
     contributor_name: str | None = None
     editorial: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
@@ -156,6 +164,7 @@ class SpotRead(BaseModel):
             status=spot.status,
             facing=spot.facing,
             origin=getattr(spot, "origin", None) or "editorial",
+            editorial_classification=getattr(spot, "editorial_classification", None),
             contributor_name=getattr(spot, "contributor_name", None),
             editorial=_public_editorial(spot.editorial) if public else spot.editorial,
             overrides=spot.overrides,

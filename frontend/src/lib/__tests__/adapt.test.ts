@@ -65,6 +65,17 @@ describe("adaptSpot", () => {
     expect(s.facingDeg).toBeUndefined();
   });
 
+  it("keeps editorial classification separate from community origin", () => {
+    const s = adaptSpot(summary({
+      origin: "community",
+      contributor_name: "Lena K.",
+      editorial_classification: "worth_checking_out",
+    }), region);
+    expect(s.origin).toBe("community");
+    expect(s.contributorName).toBe("Lena K.");
+    expect(s.editorialClassification).toBe("worth_checking_out");
+  });
+
   it("leaves image empty when none is set (branded fallback, no picsum)", () => {
     const s = adaptSpot(summary({ image: null }), region);
     expect(s.image).toBe("");

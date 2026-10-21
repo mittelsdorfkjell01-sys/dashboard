@@ -261,9 +261,9 @@ export function useSpotBestSeason(spotId?: string): { start_date: string; end_da
 export function useSpotLive(id?: string): AsyncStateReloadable<api.LiveConditionsRead> {
   const enabled = import.meta.env.VITE_WEATHER_POLLING_ENABLED === "true";
   return useSwr(id ? `live:${id}` : null, () => api.getSpotLive(id!), enabled ? {
-    refreshIntervalMs: 5 * 60_000, jitterRatio: 0.15,
-    refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 10 * 60_000,
-  } : {});
+      refreshIntervalMs: 5 * 60_000, jitterRatio: 0.15,
+      refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 10 * 60_000,
+    } : {});
 }
 
 /** Batch live conditions for several spots → Map by spot_id. One request per
@@ -295,6 +295,19 @@ export function useSpotForecast(id?: string): AsyncStateReloadable<NormalizedFor
     refreshIntervalMs: 45 * 60_000, jitterRatio: 0.15,
     refreshOnFocus: true, refreshOnReconnect: true, maxAgeMs: 60 * 60_000,
   } : {});
+}
+
+/** Forecast hour nearest to now for lightweight hints on the Info tab. */
+export function useSpotForecastSummary(id?: string): AsyncStateReloadable<api.ForecastSummaryRead> {
+  const enabled = import.meta.env.VITE_WEATHER_POLLING_ENABLED === "true";
+  return useSwr(id ? `forecast-summary:${id}` : null, () => api.getSpotForecastSummary(id!), {
+    revalidateOnMount: "stale",
+    maxAgeMs: 60 * 60_000,
+    ...(enabled ? {
+      refreshIntervalMs: 45 * 60_000, jitterRatio: 0.15,
+      refreshOnFocus: true, refreshOnReconnect: true,
+    } : {}),
+  });
 }
 
 /** Region season aggregate (52 weeks). Best-effort. */

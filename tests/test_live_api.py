@@ -3,6 +3,8 @@ via FastAPI dependency overrides. DB-gated (skips when the test DB is down)."""
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 from fastapi import Response
 from sqlalchemy import event, select
@@ -19,7 +21,8 @@ from app.models import Spot
 from app.models.forecast_system import ForecastSnapshot
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
-from app.api.spots import get_spot_forecast, get_spot_live
+from app.api.spots import _current_forecast_hour, get_spot_forecast, get_spot_live
+from app.schemas.live import ForecastSeriesRead
 
 
 def _clear_snapshots(db, *spot_ids) -> None:
@@ -38,6 +41,54 @@ def _clear_snapshots(db, *spot_ids) -> None:
 
     db.execute(delete(ForecastSnapshot).where(ForecastSnapshot.spot_id.in_(spot_ids)))
     db.commit()
+
+
+def test_current_forecast_hour_prefers_the_upcoming_hour_on_a_tie():
+    def hour(at: str) -> dict:
+        return {
+            "time": at,
+            "wind": 12,
+            "dir": 225,
+            "observation_type": "forecast",
+            "provenance": {
+                "source_type": "forecast",
+                "observation_type": "forecast",
+                "source": "model",
+                "provider": "test",
+                "valid_at": at,
+                "captured_at": "2026-10-21T11:00:00Z",
+                "model_run_quality": "capture-time-only",
+                "spot_timezone": "UTC",
+                "requested_coordinate": {"latitude": 54.4, "longitude": 10.2},
+                "stale": False,
+                "availability": "available",
+                "quality_tier": "provider_point",
+            },
+        }
+
+    forecast = ForecastSeriesRead.model_validate({
+        "spot_id": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+        "model": "test",
+        "generated_at": "2026-10-21T11:00:00Z",
+        "days": [{
+            "date": "2026-10-21",
+            "confidence": "hoch",
+            "summary": {},
+            "detail": "hourly",
+            "hours": [hour("2026-10-21T12:00:00Z"), hour("2026-10-21T13:00:00Z")],
+        }],
+    })
+
+    selected = _current_forecast_hour(
+        forecast,
+        now=datetime(2026, 10, 21, 12, 30, tzinfo=timezone.utc),
+    )
+    assert selected is not None
+    assert selected.time == "2026-10-21T13:00:00Z"
+    assert _current_forecast_hour(
+        forecast,
+        now=datetime(2026, 10, 21, 15, 1, tzinfo=timezone.utc),
+    ) is None
 
 
 @pytest.fixture
@@ -199,6 +250,26 @@ def test_forecast_endpoint_caps_at_10(client, seeded_spot_id, fake_live):
     assert days[-1]["confidence"] == "niedrig"
     assert all(day["detail"] == "hourly" and day["hours"] for day in days)
     assert len(days[-1]["hours"]) == 24
+
+
+def test_forecast_summary_uses_forecast_hour_nearest_now(
+    client, seeded_spot_id, fake_live, monkeypatch
+):
+    # The shared weather fake has a deliberately fixed historic time axis.
+    # Selection freshness is covered by the pure test above; pin this endpoint
+    # contract to one of its forecast hours.
+    monkeypatch.setattr(
+        "app.api.spots._current_forecast_hour",
+        lambda series: series.days[0].hours[0],
+    )
+    resp = client.get(f"/spots/{seeded_spot_id}/forecast-summary")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "s-maxage=1800" in resp.headers["cache-control"]
+    assert body["hour"]["observation_type"] == "forecast"
+    assert body["hour"]["provenance"]["source_type"] == "forecast"
+    assert body["hour"]["provenance"]["observation_type"] == "forecast"
+    assert body["hour"]["coastal_profile_reviewed_at"] is not None
 
 
 def test_forecast_endpoint_rejects_over_horizon(client, seeded_spot_id, fake_live):

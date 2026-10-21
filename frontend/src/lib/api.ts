@@ -144,6 +144,10 @@ export type FacilityMap = Partial<
 >;
 
 export type SpotOrigin = "editorial" | "community";
+export type EditorialClassification =
+  | "world_class"
+  | "worth_trip"
+  | "worth_checking_out";
 
 export interface SpotSummary {
   id: string;
@@ -167,6 +171,7 @@ export interface SpotSummary {
    *  Optional, damit eine noch gecachte Antwort ohne das Feld gültig bleibt —
    *  Konsumenten behandeln ein fehlendes Feld als "editorial". */
   origin?: SpotOrigin;
+  editorial_classification?: EditorialClassification | null;
   contributor_name?: string | null;
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
@@ -569,6 +574,7 @@ export interface ForecastHour {
   wind_spread?: SpreadBand | null;
   observation_type?: "forecast";
   coastal_normal_deg?: number | null;
+  coastal_profile_reviewed_at?: string | null;
   coastal_classification?: CoastalClassification | null;
   wave_coastal_classification?: CoastalClassification | null;
   quality_tier?: string | null;
@@ -600,6 +606,14 @@ export interface ForecastSeries {
   calibrated?: boolean;
   availability?: Record<"atmosphere" | "solar" | "marine", AvailabilityStatus>;
   attributions?: Array<{ provider: string; text: string; url: string; licence: string }>;
+}
+
+export interface ForecastSummaryRead {
+  spot_id: string;
+  model: string;
+  generated_at: string;
+  timezone: string;
+  hour: ForecastHour | null;
 }
 
 export interface RegionSeasonResponse {
@@ -955,6 +969,9 @@ export const unpublishRegion = (id: string) =>
 
 export const getSpotForecast = (id: string, days?: number) =>
   request<ForecastSeries>(`/spots/${id}/forecast${qs({ days })}`).then(normalizeForecast) as Promise<NormalizedForecastSeries>;
+
+export const getSpotForecastSummary = (id: string) =>
+  request<ForecastSummaryRead>(`/spots/${id}/forecast-summary`);
 
 export interface WeatherReferencePoint { latitude: number; longitude: number; source?: string | null; reason?: string | null }
 export interface WeatherSector { id?: string; start_deg: number; end_deg: number; speed_factor: number; direction_offset_deg: number; version: number; enabled: boolean; note?: string | null }
@@ -2189,6 +2206,7 @@ export interface SpotCreateBody {
   style?: string[];
   facilities?: FacilityMap | null;
   facing?: number | null;
+  editorial_classification?: EditorialClassification | null;
   editorial?: Record<string, any> | null;
   allow_duplicate?: boolean;
 }

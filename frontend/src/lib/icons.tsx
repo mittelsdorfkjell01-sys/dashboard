@@ -54,6 +54,23 @@ export const WaveIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Meteorological wind — three restrained stream lines. */
+export const WindIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 8h10.5a2.5 2.5 0 1 0-2.2-3.7" />
+    <path d="M3 12h15a2.5 2.5 0 1 1-2.2 3.7" />
+    <path d="M3 16h7" />
+  </svg>
+);
+
+/** Air / water temperature. */
+export const TemperatureIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M10 5a2 2 0 0 1 4 0v8.2a4 4 0 1 1-4 0Z" />
+    <path d="M12 8v7" />
+  </svg>
+);
+
 /** House mark in miniature — the favicon's teardrop with its dot knocked out.
  *  Marks a spot we entered ourselves (see components/SpotOriginMark). Filled,
  *  not stroked, so it still reads as one shape at 12–14px. */

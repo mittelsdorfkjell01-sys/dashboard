@@ -46,6 +46,9 @@ class SpotCreate(AdminWriteModel):
     style: list[str] = Field(default_factory=list, max_length=8)
     facilities: dict[str, Any] | None = None
     facing: int | None = Field(default=None, ge=0, le=359)
+    editorial_classification: Literal[
+        "world_class", "worth_trip", "worth_checking_out"
+    ] | None = None
     model_pref: str | None = Field(default=None, max_length=50)
     editorial: dict[str, Any] | None = None
     variant_conditions: dict[str, Any] | None = None
@@ -99,6 +102,9 @@ class SpotUpdate(AdminWriteModel):
     style: list[str] | None = Field(default=None, max_length=8)
     facilities: dict[str, Any] | None = None
     facing: int | None = Field(default=None, ge=0, le=359)
+    editorial_classification: Literal[
+        "world_class", "worth_trip", "worth_checking_out"
+    ] | None = None
     model_pref: str | None = Field(default=None, max_length=50)
     editorial: dict[str, Any] | None = None
     variant_conditions: dict[str, Any] | None = None

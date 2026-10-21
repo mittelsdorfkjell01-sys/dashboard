@@ -1012,6 +1012,9 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
     timezone_name = provider_timezone(forecast)
     reference = provider_time_utc((forecast.get("current") or {}).get("time"), timezone_name)
     coastal_normal = getattr(profile, "coastal_normal_deg", None) if profile else None
+    coastal_profile_reviewed_at = (
+        getattr(profile, "reviewed_at", None) if coastal_normal is not None else None
+    )
     quality_tier = getattr(profile, "quality_tier", "coordinates") if profile else "coordinates"
 
     hours: list[dict] = []
@@ -1063,6 +1066,7 @@ def _merge_hours(forecast: dict, marine: dict, models: list[str], profile=None, 
                 "period": m.get("period"),
                 "swell_dir": m.get("swell_dir"),
                 "coastal_normal_deg": coastal_normal,
+                "coastal_profile_reviewed_at": coastal_profile_reviewed_at,
                 "coastal_classification": coastal_class(consensus.direction_deg if consensus else None, coastal_normal),
                 "wave_coastal_classification": coastal_class(m.get("swell_dir"), coastal_normal),
                 "quality_tier": quality_tier,

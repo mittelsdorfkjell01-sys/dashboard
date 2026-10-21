@@ -624,6 +624,7 @@ class ForecastHour(BaseModel):
     provenance: ValueProvenance | None = None
     sources: CurrentSourceMap | None = None
     coastal_normal_deg: float | None = Field(default=None, ge=0, lt=360)
+    coastal_profile_reviewed_at: datetime | None = None
     coastal_classification: str | None = None
     wave_coastal_classification: str | None = None
     quality_tier: str | None = None
@@ -703,3 +704,13 @@ class ForecastSeriesRead(BaseModel):
     availability: dict[str, str] = {}
     calibrated: bool = False
     observation_type: Literal["forecast"] = "forecast"
+
+
+class ForecastSummaryRead(BaseModel):
+    """Small public payload for the forecast hour closest to now."""
+
+    spot_id: uuid.UUID
+    model: str
+    generated_at: str
+    timezone: str = "UTC"
+    hour: ForecastHour | None = None

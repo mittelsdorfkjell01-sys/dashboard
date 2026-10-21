@@ -106,6 +106,8 @@ export interface SwrState<T> {
 
 export interface SwrOptions {
   maxAgeMs?: number;
+  /** Avoid a duplicate mount request while cached data is still fresh. */
+  revalidateOnMount?: "always" | "stale";
   refreshIntervalMs?: number;
   jitterRatio?: number;
   refreshOnFocus?: boolean;
@@ -199,7 +201,12 @@ export function useSwr<T>(
       subscribers.set(key, set);
     }
     set.add(force);
-    void revalidate(key, fetcher);
+    const cached = store.get(key);
+    const fresh = cached?.data !== undefined && cached.ts !== undefined &&
+      Date.now() - cached.ts <= (options.maxAgeMs ?? MAX_AGE_MS);
+    if (options.revalidateOnMount !== "stale" || !fresh) {
+      void revalidate(key, fetcher);
+    }
     return () => {
       set!.delete(force);
       if (set!.size === 0) subscribers.delete(key);

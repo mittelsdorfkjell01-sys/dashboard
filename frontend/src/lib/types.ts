@@ -2,7 +2,7 @@
 // src/data/*.ts alongside mock data; the mock data is gone (all pages read the
 // API now), the types stay.
 
-import type { FacilityMap, SpotOrigin } from "./api";
+import type { EditorialClassification, FacilityMap, SpotOrigin } from "./api";
 import type { CreditSource } from "./imageCredit";
 
 // --- spot / region view models ---------------------------------------------
@@ -69,6 +69,8 @@ export interface Spot {
    *  Freigabe; die Oberfläche nutzt sie nur zur Kennzeichnung und für das
    *  Credit (siehe SpotOriginMark). */
   origin?: SpotOrigin;
+  /** Optional editorial travel classification; independent of authorship. */
+  editorialClassification?: EditorialClassification | null;
   /** Name der Person, die einen Community-Spot eingetragen hat. */
   contributorName?: string | null;
   /** Weighted monthly daylight availability for 15–20 kt from active V2. */

@@ -121,6 +121,20 @@ def _create_region(admin, *, name: str, lat: float, lon: float, country: str = "
     return resp.json()
 
 
+def test_editorial_classification_is_optional_and_independent_of_origin(admin, region_id):
+    created = _create_spot(admin, region_id)
+    assert created["origin"] == "editorial"
+    assert created["editorial_classification"] is None
+
+    updated = admin.patch(
+        f"/admin/spots/{created['id']}",
+        json={"editorial_classification": "worth_trip"},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["origin"] == "editorial"
+    assert updated.json()["editorial_classification"] == "worth_trip"
+
+
 # --- catalogue duplicate protection ---------------------------------------
 
 def test_exact_spot_duplicate_is_blocked_and_lists_candidate(admin, region_id):

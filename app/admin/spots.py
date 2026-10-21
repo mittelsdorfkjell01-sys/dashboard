@@ -139,6 +139,7 @@ def create_spot(
         facilities=facilities,
         variant_conditions=variant_conditions,
         facing=data.get("facing"),
+        editorial_classification=data.get("editorial_classification"),
         model_pref=data.get("model_pref") or defaults.get("model_pref"),
         editorial=editorial or None,
         era5_cell=resolve_grid_cell(lat, lon),
@@ -255,6 +256,8 @@ def update_spot(
         spot.model_pref = data["model_pref"]
     if "facing" in data:
         spot.facing = data["facing"]
+    if "editorial_classification" in data:
+        spot.editorial_classification = data["editorial_classification"]
     if "water_type" in data:
         spot.water_type = validate_water_types(data["water_type"])
     if "level" in data:

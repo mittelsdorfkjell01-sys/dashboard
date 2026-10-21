@@ -31,6 +31,7 @@ import {
   type SpotCreateBody,
   type SpotUpdateBody,
   type SpotRead,
+  type EditorialClassification,
 } from "../lib/api";
 import {
   FACILITY_KINDS,
@@ -117,6 +118,7 @@ export default function AdminSpotForm() {
   const [waterCharacter, setWaterCharacter] = useState<string[]>([]);
   const [styles, setStyles] = useState<string[]>([]);
   const [facing, setFacing] = useState("");
+  const [editorialClassification, setEditorialClassification] = useState<EditorialClassification | "">("");
   const [beginnerOffshoreOk, setBeginnerOffshoreOk] = useState(false);
   const [waterType, setWaterType] = useState<string[]>([]);
   const [bottomType, setBottomType] = useState<string[]>([]);
@@ -213,6 +215,7 @@ export default function AdminSpotForm() {
     waterCharacter,
     styles,
     facing,
+    editorialClassification,
     beginnerOffshoreOk,
     waterType,
     bottomType,
@@ -323,6 +326,7 @@ export default function AdminSpotForm() {
     setWaterCharacter(s.water_character ?? []);
     setStyles(synchronizeWavekiteStyle(nextSports, s.style ?? []));
     setFacing(s.facing != null ? String(s.facing) : "");
+    setEditorialClassification(s.editorial_classification ?? "");
     setBeginnerOffshoreOk(s.editorial?.beginner_offshore_ok === true);
     setWaterType(s.water_type ?? []);
     setBottomType(normalizeBottomTypes(s.bottom_type));
@@ -445,6 +449,11 @@ export default function AdminSpotForm() {
     add("water_type", waterType, loaded.water_type ?? []);
     add("bottom_type", bottomType, loaded.bottom_type ?? []);
     add("facing", facing !== "" ? Number(facing) : null, loaded.facing ?? null);
+    add(
+      "editorial_classification",
+      editorialClassification || null,
+      loaded.editorial_classification ?? null,
+    );
     add("facilities", buildFacilities(), loaded.facilities ?? null);
     add("model_pref", modelPref || null, loaded.model_pref ?? null);
 
@@ -494,6 +503,7 @@ export default function AdminSpotForm() {
         water_type: waterType,
         bottom_type: bottomType,
         facing: facing !== "" ? Number(facing) : null,
+        editorial_classification: editorialClassification || null,
         facilities: buildFacilities(),
         editorial: Object.keys(buildEditorial()).length ? buildEditorial() : null,
         allow_duplicate: allowDuplicate,
@@ -751,6 +761,24 @@ export default function AdminSpotForm() {
                 }}
                 placeholder="Charakter des Spots, Bedingungen, Besonderheiten …"
               />
+            </Field>
+            <Field
+              label="Redaktionelle Einordnung"
+              hint="Optional und unabhängig von der Herkunft des Eintrags."
+            >
+              <select
+                className={inputCls}
+                value={editorialClassification}
+                onChange={(event) => {
+                  markDirty("main");
+                  setEditorialClassification(event.target.value as EditorialClassification | "");
+                }}
+              >
+                <option value="">— noch nicht eingeordnet —</option>
+                <option value="world_class">World Class</option>
+                <option value="worth_trip">Eine Reise wert</option>
+                <option value="worth_checking_out">Entdecken lohnt sich</option>
+              </select>
             </Field>
           </CollapsibleSection>
 

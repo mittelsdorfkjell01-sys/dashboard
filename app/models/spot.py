@@ -76,6 +76,10 @@ class Spot(Base, TimestampMixin):
     origin: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default=text("'editorial'")
     )  # editorial | community
+    # Optional editorial travel classification. This is deliberately separate
+    # from ``origin`` (authorship) and has no server default: newly-created and
+    # community spots remain unranked until an editor chooses a value.
+    editorial_classification: Mapped[str | None] = mapped_column(String(32))
     # Credit for a community spot (the submitter's display name). NULL for an
     # editorial spot.
     contributor_name: Mapped[str | None] = mapped_column(String(120))
@@ -123,6 +127,11 @@ class Spot(Base, TimestampMixin):
         CheckConstraint(
             "origin IN ('editorial', 'community')",
             name="ck_spots_origin",
+        ),
+        CheckConstraint(
+            "editorial_classification IS NULL OR editorial_classification IN "
+            "('world_class', 'worth_trip', 'worth_checking_out')",
+            name="ck_spots_editorial_classification",
         ),
         CheckConstraint(
             "finish_rank IS NULL OR finish_rank IN ('red', 'yellow', 'green')",

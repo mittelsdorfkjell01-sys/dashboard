@@ -47,6 +47,65 @@ def test_all_tables_created(db):
     assert EXPECTED_TABLES.issubset(tables)
 
 
+def test_migration_0081_classifies_only_existing_published_spots(db):
+    """The one-time baseline must not rank drafts, archives, or future rows."""
+    from pathlib import Path
+    import uuid
+
+    from alembic import command
+    from alembic.config import Config
+
+    root = Path(__file__).resolve().parents[1]
+    cfg = Config(str(root / "alembic.ini"))
+    cfg.set_main_option("script_location", str(root / "alembic"))
+    cfg.set_main_option(
+        "sqlalchemy.url", db.get_bind().engine.url.render_as_string(hide_password=False)
+    )
+    command.downgrade(cfg, "0080_spot_origin")
+    db.commit()
+
+    marker = uuid.uuid4().hex[:10]
+    for status in ("published", "draft", "archived"):
+        db.execute(text(
+            "INSERT INTO spots (slug, name, normalized_name, location, status, origin) "
+            "VALUES (:slug, :name, :normalized, "
+            "ST_SetSRID(ST_MakePoint(10.2, 54.4), 4326)::geography, :status, 'editorial')"
+        ), {
+            "slug": f"classification-{status}-{marker}",
+            "name": f"Classification {status} {marker}",
+            "normalized": f"classification {status} {marker}",
+            "status": status,
+        })
+    db.commit()
+
+    command.upgrade(cfg, "head")
+    db.commit()
+    rows = dict(db.execute(text(
+        "SELECT status, editorial_classification FROM spots "
+        "WHERE slug LIKE :prefix"
+    ), {"prefix": f"classification-%-{marker}"}).all())
+    assert rows == {
+        "published": "world_class",
+        "draft": None,
+        "archived": None,
+    }
+
+    # A row created after the migration inherits no rank.
+    db.execute(text(
+        "INSERT INTO spots (slug, name, normalized_name, location, status, origin) "
+        "VALUES (:slug, :name, :normalized, "
+        "ST_SetSRID(ST_MakePoint(10.2, 54.4), 4326)::geography, 'published', 'community')"
+    ), {
+        "slug": f"classification-future-{marker}",
+        "name": f"Classification future {marker}",
+        "normalized": f"classification future {marker}",
+    })
+    assert db.execute(text(
+        "SELECT editorial_classification FROM spots WHERE slug = :slug"
+    ), {"slug": f"classification-future-{marker}"}).scalar_one() is None
+    db.rollback()
+
+
 def test_migration_0067_rider_data_down_and_up(db):
     """Rider/evaluation storage and current activation are reversible."""
     from pathlib import Path

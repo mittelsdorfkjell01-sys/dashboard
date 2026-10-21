@@ -43,7 +43,7 @@ from app.models import AppUser, Spot, SpotWeatherProfile, SpotWeatherSector, Win
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
 from app.schemas import LandingSpots, SpotRead, SpotSummary
-from app.schemas.live import ForecastSeriesRead, LiveConditionsRead
+from app.schemas.live import ForecastSeriesRead, ForecastSummaryRead, LiveConditionsRead
 from app.similarity import service as similarity_service
 from app.tides import service as tide_service
 from app.tides.schemas import PublicTideRead
@@ -126,6 +126,9 @@ def _summary_options():
             Spot.facilities,
             Spot.status,
             Spot.facing,
+            Spot.origin,
+            Spot.contributor_name,
+            Spot.editorial_classification,
             Spot.editorial,
             Spot.variant_conditions,
             Spot.image,
@@ -236,6 +239,9 @@ def list_spots(
                 Spot.facilities,
                 Spot.status,
                 Spot.facing,
+                Spot.origin,
+                Spot.contributor_name,
+                Spot.editorial_classification,
                 Spot.editorial,
                 Spot.variant_conditions,
                 Spot.image,
@@ -745,8 +751,8 @@ def get_spot_forecast(
     generation = public_weather_generation(cache, spot_id)
     cached = get_public_forecast(cache, spot_id, generation=generation)
     if cached is not None:
-        cached["days"] = list(cached.get("days") or [])[:days]
-        return ForecastSeriesRead.model_validate(cached)
+        selected = {**cached, "days": list(cached.get("days") or [])[:days]}
+        return ForecastSeriesRead.model_validate(selected)
     if not published_spot_exists(db, spot_id):
         raise HTTPException(status_code=404, detail="Spot not found")
     from app.forecast.publisher import active_snapshot, public_payload
@@ -808,6 +814,71 @@ def get_spot_forecast(
     )
     stored["days"] = stored["days"][:days]
     return ForecastSeriesRead.model_validate(stored)
+
+
+def _current_forecast_hour(
+    forecast: ForecastSeriesRead,
+    *,
+    now: datetime | None = None,
+):
+    """Return the valid forecast hour nearest to now, preferring the future on ties."""
+    if forecast.stale:
+        return None
+    reference = now or datetime.now(timezone.utc)
+    candidates = []
+    for day in forecast.days:
+        for hour in day.hours:
+            provenance = hour.provenance
+            try:
+                valid_at = datetime.fromisoformat(hour.time.replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                continue
+            if valid_at.tzinfo is None:
+                continue
+            if (
+                hour.stale
+                or provenance is None
+                or provenance.source_type != "forecast"
+                or provenance.observation_type != "forecast"
+                or provenance.stale
+                or provenance.availability != "available"
+                or provenance.valid_at is None
+            ):
+                continue
+            delta = (valid_at.astimezone(timezone.utc) - reference).total_seconds()
+            resolution_seconds = (provenance.temporal_resolution_minutes or 60) * 60
+            if abs(delta) > resolution_seconds:
+                continue
+            candidates.append((abs(delta), 0 if delta >= 0 else 1, valid_at, hour))
+    return min(candidates, key=lambda item: item[:3])[3] if candidates else None
+
+
+@router.get("/{spot_id}/forecast-summary", response_model=ForecastSummaryRead, tags=["live"])
+def get_spot_forecast_summary(
+    spot_id: uuid.UUID,
+    response: Response,
+    db: Session = Depends(get_db),
+    client: OpenMeteoClient = Depends(get_om_client),
+    cache: Cache = Depends(get_cache),
+) -> ForecastSummaryRead:
+    """Current forecast hour for lightweight, forecast-only spot hints."""
+    forecast = get_spot_forecast(
+        spot_id,
+        response=response,
+        db=db,
+        # Two calendar days preserve the genuinely nearest hour around midnight
+        # while the response still exposes only one compact hour.
+        days=2,
+        client=client,
+        cache=cache,
+    )
+    return ForecastSummaryRead(
+        spot_id=forecast.spot_id,
+        model=forecast.model,
+        generated_at=forecast.generated_at,
+        timezone=forecast.timezone,
+        hour=_current_forecast_hour(forecast),
+    )
 
 
 @router.get("/{spot_id}/similar", tags=["similarity"])

@@ -9,7 +9,7 @@ import type { CommunityImage } from "../src/lib/api";
 // "Karte" button links into the one weather map, framed on the spot and locked
 // to the wind field.
 
-const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
+const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
 const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
@@ -39,6 +39,22 @@ const hourly = forecastDates.map((date, day) => ({
   })),
 }));
 const forecast = { spot_id: "test", model: "consensus", product: "Surfwinddata Forecast", generated_at: "2026-09-05T08:00:00Z", updated_at: "2026-09-05T08:00:00Z", timezone: "Europe/Berlin", stale: false, availability: { atmosphere: "available", solar: "available", marine: "available" }, days: hourly };
+const forecastSummary = {
+  spot_id: "test", model: "consensus", generated_at: "2026-09-14T11:55:00Z", timezone: "Europe/Berlin",
+  hour: {
+    time: "2026-09-14T12:00:00Z", wind: 9, gust: 14, dir: 247, air: 23, sst: 18,
+    swell: 2.5, period: 8, swell_dir: 250, precip: 0, quality_tier: "coastal",
+    coastal_normal_deg: 67, coastal_profile_reviewed_at: "2026-08-01T08:00:00Z",
+    coastal_classification: "offshore", stale: false,
+    provenance: {
+      contract_version: "weather-v6", source_type: "forecast", observation_type: "forecast",
+      source: "model", provider: "Open-Meteo", valid_at: "2026-09-14T12:00:00Z",
+      captured_at: "2026-09-14T11:55:00Z", model_run_quality: "capture-time-only",
+      spot_timezone: "Europe/Berlin", stale: false, availability: "available",
+      quality_tier: "provider_point", uncertainty: "not_determined", data_issues: [],
+    },
+  },
+};
 
 function weatherFieldTile(z: number, x: number, y: number): Buffer {
   const width = 130;
@@ -67,9 +83,19 @@ async function mockApi(page: Page, photos: CommunityImage[] = [], withWeatherFie
     if (["/spots/test", "/spots/laboe", "/spots/Alcyons"].includes(path)) return route.fulfill({ json: spot });
     if (path === "/regions/r1") return route.fulfill({ json: { id: "r1", slug: "kieler-bucht", name: "Kieler Bucht", country: "DE", center: null, description: null, image: null, season: null, defaults: null, status: "published", updated_at: "2026-08-24T00:00:00Z" } });
     if (path === "/spots/test/forecast") return route.fulfill({ json: forecast });
+    if (path === "/spots/test/forecast-summary") return route.fulfill({ json: forecastSummary });
     if (path === "/spots/test/live") return route.fulfill({ json: {
       spot_id: "test", model: "consensus", time: "2026-09-14T12:00:00Z",
-      current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250, coastal_normal_deg: 180, coastal_classification: "cross_onshore" },
+      quality_tier: "coastal", coastal_normal_deg: 67,
+      current: { wind: 9, gust: 14, dir: 247, air: 23, sst: 18, swell: 2.5, period: 8, swell_dir: 250, coastal_normal_deg: 67, coastal_classification: "offshore" },
+      sources: Object.fromEntries(["wind", "air", "marine"].map((kind) => [kind, {
+        contract_version: "weather-v6", source_type: "model_nowcast", observation_type: "nowcast",
+        source: "model", provider: "Open-Meteo", valid_at: "2026-09-14T12:00:00Z",
+        captured_at: "2026-09-14T11:55:00Z", model_run_quality: "capture-time-only",
+        spot_timezone: "Europe/Berlin", requested_coordinate: { latitude: 54.4, longitude: 10.2 },
+        stale: false, availability: "available", quality_tier: "provider_point",
+        attribution: [], uncertainty: "not_determined", data_issues: [],
+      }])),
       live_wind: {
         contract_version: "live-wind-v1", product_type: "live_wind", status: "station_adjusted",
         analyzed_at: "2026-09-14T12:05:00Z", valid_at: "2026-09-14T12:00:00Z",
@@ -324,10 +350,14 @@ test("Meteogramm zeigt Temperatur nur als Zahl ohne Balken", async ({ page }) =>
   await expect(temperatures.first()).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
-test("Info-Locator bleibt statisch und lädt kein LiveWind", async ({ page }) => {
+test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abruf", async ({ page }) => {
   let liveRequests = 0;
+  let forecastRequests = 0;
+  let forecastSummaryRequests = 0;
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/spots/test/live") liveRequests += 1;
+    if (new URL(request.url()).pathname === "/spots/test/forecast") forecastRequests += 1;
+    if (new URL(request.url()).pathname === "/spots/test/forecast-summary") forecastSummaryRequests += 1;
   });
   await mockApi(page);
   await page.goto("/spot/test/info");
@@ -337,12 +367,27 @@ test("Info-Locator bleibt statisch und lädt kein LiveWind", async ({ page }) =>
   // map; waiting on the lazy child itself can never trigger that observer.
   // A synchronous DOM scroll also avoids Playwright waiting for the tab's
   // entrance animation while React legitimately rerenders the lazy slot.
-  const locatorRegion = page.getByRole("region", { name: "Lage" });
+  const locatorRegion = page.getByRole("region", { name: "Lage", exact: true });
   await expect(locatorRegion).toBeAttached();
   await locatorRegion.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await expect(page.locator(".swd-locator-map")).toBeVisible();
   await expect(page.locator(".swd-locator-map [data-observation-type]")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Hinweise zur aktuellen Lage" })).toBeVisible();
+  await expect(page.getByText("Eine Reise wert")).toBeVisible();
+  await expect(page.getByText(/Community · Lena K\./)).toBeVisible();
+  await expect(page.getByText(/Voraussichtlich 23 °C Lufttemperatur und 18 °C Wassertemperatur/)).toBeVisible();
   expect(liveRequests).toBe(0);
+  expect(forecastRequests).toBe(0);
+  expect(forecastSummaryRequests).toBe(1);
+});
+
+test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+  await expect(page.getByRole("heading", { name: "Hinweise zur aktuellen Lage" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
 });
 
 for (const width of [320, 375, 768, 1280, 1440]) {

@@ -17,13 +17,15 @@ import SimilarSpots from "../components/SimilarSpots";
 import SpotOriginMark, { SpotOriginLine } from "../components/SpotOriginMark";
 import SpotMetaGrid from "../components/SpotMetaGrid";
 import SpotDescription from "../components/SpotDescription";
+import SpotConditionHints from "../components/SpotConditionHints";
+import SpotEditorialClassification from "../components/SpotEditorialClassification";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
-import { useSpot, useSpotLive, useSpotForecast, useCommunityFeed, useSpotBestSeason } from "../lib/hooks";
+import { useSpot, useSpotLive, useSpotForecast, useSpotForecastSummary, useCommunityFeed, useSpotBestSeason } from "../lib/hooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { spotPath } from "../lib/spotRoutes";
@@ -66,6 +68,7 @@ export default function SpotDetail() {
     stale: liveStale,
     reload: reloadLive,
   } = useSpotLive(activeTab === "daten" ? spotId : undefined);
+  const { data: forecastSummary } = useSpotForecastSummary(activeTab === "info" ? spotId : undefined);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(activeTab === "daten" ? spotId : undefined);
   const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } =
@@ -276,6 +279,7 @@ export default function SpotDetail() {
                         written-out sentence sits at the foot of this tab. */}
                     <SpotOriginMark origin={spot.origin} className="ml-2 align-baseline" />
                   </h1>
+                  <SpotEditorialClassification spot={spot} />
 
                   {/* Sports are plain label + white check, not
                       filled pills — datengetrieben aus spot.sports. */}
@@ -297,6 +301,7 @@ export default function SpotDetail() {
                       falls back to a gentle note when a spot has none yet. On
                       mobile it starts collapsed with a "Mehr anzeigen" toggle. */}
                   <SpotDescription text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."} />
+                  <SpotConditionHints spot={spot} forecast={forecastSummary} />
 
                   <div className="mt-auto flex w-full items-center justify-center gap-4 pt-6 sm:pt-10">
                     <FavoriteButton spot={spot} />

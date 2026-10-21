@@ -21,6 +21,7 @@ def test_spot_summary_passes_through_array_backed_categories() -> None:
         status="published",
         confidence=None,
         facing=None,
+        editorial_classification="worth_trip",
         image=None,
     )
 
@@ -30,3 +31,4 @@ def test_spot_summary_passes_through_array_backed_categories() -> None:
     assert summary.bottom_type == ["sand", "reef"]
     assert summary.level == ["beginner", "advanced"]
     assert summary.water_character == []
+    assert summary.editorial_classification == "worth_trip"

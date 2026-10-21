@@ -165,6 +165,7 @@ def test_approved_submission_keeps_community_origin_and_credit(client, anon_clie
 
     spot = db.get(Spot, uuid.UUID(resp.json()["spot_id"]))
     assert spot.origin == "community"
+    assert spot.editorial_classification is None
     assert spot.contributor_name == "Lena K."
 
 
