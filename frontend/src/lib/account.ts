@@ -82,7 +82,9 @@ export interface AccountActivity {
 export type RiderLevel = "beginner" | "advanced" | "expert" | "competition";
 export type TravelMode = "day_trip" | "weekend" | "trip" | "camper";
 export type BoardType = "twintip" | "surfboard" | "foil" | "bigair_twintip";
-export type GearKind = "kite" | "board" | "foil";
+export type GearKind =
+  | "kite" | "board" | "foil" | "surfboard" | "kiteboard" | "bar"
+  | "harness" | "wetsuit" | "windsurf" | "foil_component";
 
 export interface RiderProfile {
   weightKg: number | null;
@@ -109,12 +111,95 @@ export interface GearItem {
   kind: GearKind;
   size: number | null;
   boardType: BoardType | null;
+  catalogSizeVariantId: string | null;
+  catalogColorVariantId: string | null;
+  catalogItem: GearCatalogItem | null;
   active: boolean;
   sortOrder: number;
   profileVersion: number;
 }
 
-export type GearItemInput = Omit<GearItem, "id" | "profileVersion">;
+export interface GearCatalogSource {
+  title: string;
+  publisher: string;
+  url: string;
+  type: string;
+  checkedAt: string;
+}
+
+export interface GearCatalogClaim {
+  field: string;
+  group: "identity" | "dimensions" | "geometry" | "construction" | "performance" | "compatibility" | "appearance" | "other";
+  value: Record<string, string | number>;
+  unit: string | null;
+  status: "unverified" | "review" | "verified" | "conflict";
+  verifiedAt: string | null;
+  uncertainty: string | null;
+  source: GearCatalogSource;
+}
+
+export interface GearCompatibility {
+  targetCategory: string;
+  targetProductVersionId: string | null;
+  targetProduct: {
+    id: string;
+    brand: { slug: string; name: string };
+    category: string;
+    name: string;
+    season: string;
+  } | null;
+  relation: "requires" | "compatible" | "recommended" | "incompatible";
+  specification: Record<string, string | number | boolean | null>;
+  status: "unverified" | "review" | "verified" | "conflict";
+  verifiedAt: string | null;
+  notes: string | null;
+  source: GearCatalogSource;
+}
+
+export interface GearUseProfile {
+  sport: "kitesurf" | "windsurf" | "wingfoil" | "surfing";
+  discipline: "all_round" | "freeride" | "big_air" | "wave" | "freestyle" | "foil" | "race" | "school";
+  condition: "all_conditions" | "light_wind" | "moderate_wind" | "strong_wind" | "waves" | "flat_water" | "gusty";
+  suitability: "designed_for" | "suitable" | "limited" | "not_recommended";
+  sizeVariantId: string | null;
+  status: "unverified" | "review" | "verified" | "conflict";
+  verifiedAt: string | null;
+  notes: string | null;
+  source: GearCatalogSource;
+}
+
+export interface GearCatalogItem {
+  catalogSizeVariantId: string;
+  brand: { slug: string; name: string };
+  category: string;
+  name: string;
+  model: string;
+  subtype: string | null;
+  season: string;
+  modelYear: number | null;
+  identityStatus: "unverified" | "review" | "verified" | "conflict";
+  size: { label: string; value: number | null; unit: string | null };
+  colors: Array<{
+    id: string;
+    code: string;
+    name: string | null;
+    palette: Record<string, string>;
+    specifications: GearCatalogClaim[];
+  }>;
+  specifications: GearCatalogClaim[];
+  compatibility: GearCompatibility[];
+  useProfiles: GearUseProfile[];
+  selectedColorVariantId?: string | null;
+}
+
+export type GearItemInput = Omit<GearItem, "id" | "profileVersion" | "catalogItem">;
+export type GearSetupItemInput = GearItemInput & { id?: string };
+
+export interface RiderSetupResult {
+  profile: RiderProfile;
+  sportProfile: RiderSportProfile;
+  gear: GearItem[];
+}
 
 /** Thrown for expected, user-facing failures (duplicate email, bad password …). */
 export class AccountError extends Error {}
@@ -338,6 +423,9 @@ export const putRiderSportProfile = (
 export const getGear = async (sport?: SportKey) =>
   (await call<{ items: GearItem[] }>(`/account/gear${sport ? `?sport=${sport}` : ""}`)).items;
 
+export const getGearCatalog = async (category = "kite") =>
+  (await call<{ items: GearCatalogItem[] }>(`/account/gear-catalog?category=${encodeURIComponent(category)}`)).items;
+
 export const createGearItem = (item: GearItemInput) =>
   call<GearItem>("/account/gear", { method: "POST", body: JSON.stringify(item) });
 
@@ -346,6 +434,17 @@ export const updateGearItem = (id: string, item: GearItemInput) =>
 
 export const deleteGearItem = (id: string) =>
   call<void>(`/account/gear/${id}`, { method: "DELETE" });
+
+export const putRiderSetup = (
+  sport: SportKey,
+  setup: {
+    profile: Omit<RiderProfile, "profileVersion">;
+    sportProfile: Pick<RiderSportProfile, "level" | "styleWeights" | "preferredWaterCharacter">;
+    gear: GearSetupItemInput[];
+  },
+) => call<RiderSetupResult>(`/account/rider-setup/${sport}`, {
+  method: "PUT", body: JSON.stringify(setup),
+});
 
 export function getFavoritesState(): CollectionState<FavoriteSpot> {
   return { items: favCache, status: favoritesStatus, error: favoritesError };

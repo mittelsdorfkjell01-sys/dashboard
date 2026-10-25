@@ -1,5 +1,7 @@
 from sqlalchemy import inspect, text
 
+from app.db.schema import EXPECTED_DB_REVISION
+
 EXPECTED_TABLES = {
     "regions",
     "spots",
@@ -35,10 +37,29 @@ EXPECTED_TABLES = {
     "rider_profiles",
     "rider_sport_profiles",
     "gear_items",
+    "gear_brands",
+    "gear_products",
+    "gear_product_versions",
+    "gear_size_variants",
+    "gear_color_variants",
+    "gear_sources",
+    "gear_claims",
+    "gear_compatibilities",
+    "gear_use_profiles",
+    "gear_research_coverage",
     "user_events",
     "recommendation_log",
     "scoring_calibration_proposals",
 }
+
+
+def test_alembic_version_column_fits_current_revision(db):
+    width = db.execute(text(
+        "SELECT character_maximum_length FROM information_schema.columns "
+        "WHERE table_schema = 'public' AND table_name = 'alembic_version' "
+        "AND column_name = 'version_num'"
+    )).scalar_one()
+    assert width >= len(EXPECTED_DB_REVISION)
 
 
 def test_all_tables_created(db):
@@ -104,6 +125,49 @@ def test_migration_0081_classifies_only_existing_published_spots(db):
         "SELECT editorial_classification FROM spots WHERE slug = :slug"
     ), {"slug": f"classification-future-{marker}"}).scalar_one() is None
     db.rollback()
+
+
+def test_migration_0082_seeds_auditable_gear_pilot(db):
+    assert db.execute(text("SELECT count(*) FROM gear_brands")).scalar_one() == 13
+    assert db.execute(text("SELECT count(*) FROM gear_products")).scalar_one() == 3
+    assert db.execute(text("SELECT count(*) FROM gear_size_variants")).scalar_one() == 3
+    assert db.execute(text(
+        "SELECT count(*) FROM gear_claims WHERE verification_status = 'verified'"
+    )).scalar_one() == 10
+    assert db.execute(text(
+        "SELECT model_year FROM gear_product_versions WHERE season_label = 'Edition 18'"
+    )).scalar_one() is None
+    assert db.execute(text(
+        "SELECT count(*) FROM gear_research_coverage WHERE start_year = 2016"
+    )).scalar_one() == 13
+
+    item_columns = {column["name"] for column in inspect(db.get_bind()).get_columns("gear_items")}
+    assert {"catalog_size_variant_id", "catalog_color_variant_id"} <= item_columns
+
+
+def test_migration_0084_replaces_drawings_with_usage_and_compatibility(db):
+    inspector = inspect(db.get_bind())
+    assert not inspector.has_table("gear_geometries")
+    assert inspector.has_table("gear_compatibilities")
+    assert inspector.has_table("gear_use_profiles")
+    categories = db.execute(text(
+        "SELECT pg_get_constraintdef(oid) FROM pg_constraint "
+        "WHERE conname = 'ck_gear_products_category'"
+    )).scalar_one()
+    assert "line_set" in categories
+    assert "wing" in categories
+
+
+def test_migration_0085_removes_numeric_gear_wind_ranges(db):
+    columns = {
+        column["name"]
+        for column in inspect(db.get_bind()).get_columns("gear_use_profiles")
+    }
+    assert "wind_min_kn" not in columns
+    assert "wind_max_kn" not in columns
+    assert db.execute(text(
+        "SELECT count(*) FROM gear_claims WHERE field_name = 'wind_range'"
+    )).scalar_one() == 0
 
 
 def test_migration_0067_rider_data_down_and_up(db):

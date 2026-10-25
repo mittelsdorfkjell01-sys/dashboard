@@ -149,6 +149,12 @@ class GearItem(Base, TimestampMixin):
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     size: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     board_type: Mapped[str | None] = mapped_column(String(30))
+    catalog_size_variant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("gear_size_variants.id", ondelete="SET NULL")
+    )
+    catalog_color_variant_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("gear_color_variants.id", ondelete="SET NULL")
+    )
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
@@ -156,7 +162,10 @@ class GearItem(Base, TimestampMixin):
         CheckConstraint(
             "sport IN ('kitesurf','windsurf','wing','surf')", name="ck_gear_items_sport"
         ),
-        CheckConstraint("kind IN ('kite','board','foil')", name="ck_gear_items_kind"),
+        CheckConstraint(
+            "kind IN ('kite','board','foil','surfboard','kiteboard','bar','harness','wetsuit','windsurf','foil_component')",
+            name="ck_gear_items_kind",
+        ),
         CheckConstraint("size IS NULL OR size > 0", name="ck_gear_items_size"),
         CheckConstraint(
             "kind <> 'kite' OR size IS NOT NULL", name="ck_gear_items_kite_size"
@@ -167,6 +176,7 @@ class GearItem(Base, TimestampMixin):
         ),
         CheckConstraint("sort_order >= 0", name="ck_gear_items_sort_order"),
         Index("ix_gear_items_profile_sport", "rider_profile_id", "sport", "sort_order"),
+        Index("ix_gear_items_catalog_size", "catalog_size_variant_id"),
     )
 
 

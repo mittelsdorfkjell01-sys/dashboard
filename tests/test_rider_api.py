@@ -137,3 +137,79 @@ def test_events_export_and_account_deletion(db, rider_account):
     db.expire_all()
     assert db.get(AppUser, user_id) is None
     assert db.scalar(select(UserEvent).where(UserEvent.app_user_id == user_id)) is None
+
+
+def test_gear_catalog_selection_is_auditable_and_size_safe(rider_account):
+    client, _, _ = rider_account
+
+    response = client.get("/account/gear-catalog?category=kite")
+    assert response.status_code == 200, response.text
+    catalog = response.json()["items"]
+    assert len(catalog) == 3
+    core = next(item for item in catalog if item["brand"]["name"] == "CORE")
+    assert core["name"] == "XR8"
+    assert core["model"] == "XR8"
+    assert core["season"] == "2023"
+    assert core["size"]["label"] == "11 m²"
+    assert core["compatibility"] == []
+    assert core["useProfiles"] == []
+    weight = next(spec for spec in core["specifications"] if spec["field"] == "weight_without_bag")
+    assert weight["value"] == {"value": 3.5}
+    assert weight["group"] == "dimensions"
+    assert weight["status"] == "verified"
+    assert weight["source"]["publisher"] == "CORE"
+
+    created = client.post("/account/gear", json={
+        "sport": "kitesurf",
+        "kind": "kite",
+        "size": 11,
+        "catalogSizeVariantId": core["catalogSizeVariantId"],
+        "active": True,
+        "sortOrder": 0,
+    })
+    assert created.status_code == 201, created.text
+    assert created.json()["catalogItem"]["model"] == "XR8"
+
+    mismatch = client.post("/account/gear", json={
+        "sport": "kitesurf",
+        "kind": "kite",
+        "size": 12,
+        "catalogSizeVariantId": core["catalogSizeVariantId"],
+    })
+    assert mismatch.status_code == 422
+    assert "does not match" in mismatch.json()["detail"]
+
+
+def test_rider_setup_saves_atomically_and_rolls_back_on_invalid_gear(rider_account):
+    client, _, _ = rider_account
+    payload = {
+        "profile": {"weightKg": 81, "travelMode": "weekend"},
+        "sportProfile": {
+            "level": "advanced",
+            "styleWeights": {"freeride": 3},
+            "preferredWaterCharacter": ["chop"],
+        },
+        "gear": [{
+            "sport": "kitesurf", "kind": "kite", "size": 9,
+            "active": True, "sortOrder": 0,
+        }],
+    }
+    saved = client.put("/account/rider-setup/kitesurf", json=payload)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["profile"]["weightKg"] == 81
+    assert [item["size"] for item in saved.json()["gear"]] == [9]
+
+    invalid = {
+        **payload,
+        "profile": {"weightKg": 95, "travelMode": "trip"},
+        "gear": [{
+            "sport": "kitesurf", "kind": "kite", "size": 12,
+            "catalogSizeVariantId": str(uuid.uuid4()),
+            "active": True, "sortOrder": 0,
+        }],
+    }
+    failed = client.put("/account/rider-setup/kitesurf", json=invalid)
+    assert failed.status_code == 422
+    assert "catalog size" in failed.json()["detail"]
+    assert client.get("/account/rider-profile").json()["weightKg"] == 81
+    assert [item["size"] for item in client.get("/account/gear?sport=kitesurf").json()["items"]] == [9]

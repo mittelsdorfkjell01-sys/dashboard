@@ -13,6 +13,18 @@ from app.models.admin_user import AdminUser
 from app.models.app_user import AppUser
 from app.models.favorite import Favorite
 from app.models.rider import GearItem, RiderProfile, RiderSportProfile, UserEvent
+from app.models.gear import (
+    GearBrand,
+    GearClaim,
+    GearColorVariant,
+    GearCompatibility,
+    GearProduct,
+    GearProductVersion,
+    GearResearchCoverage,
+    GearSizeVariant,
+    GearSource,
+    GearUseProfile,
+)
 from app.models.recommendation import RecommendationLog, ScoringCalibrationProposal
 from app.models.ugc import (
     SpotRating,
@@ -117,6 +129,16 @@ __all__ = [
     "RiderProfile",
     "RiderSportProfile",
     "GearItem",
+    "GearBrand",
+    "GearProduct",
+    "GearProductVersion",
+    "GearSizeVariant",
+    "GearColorVariant",
+    "GearSource",
+    "GearClaim",
+    "GearCompatibility",
+    "GearUseProfile",
+    "GearResearchCoverage",
     "UserEvent",
     "RecommendationLog",
     "ScoringCalibrationProposal",

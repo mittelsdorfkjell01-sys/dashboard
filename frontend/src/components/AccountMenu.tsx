@@ -26,13 +26,14 @@ interface NavItem {
   key: TranslationKey;
   to: string;
   icon: (p: { className?: string }) => ReactNode;
+  planned?: boolean;
 }
 
 const ACCOUNT_NAV: NavItem[] = [
   { key: "accountNav.profile", to: "/konto/profil", icon: AccountProfileIcon },
   { key: "accountNav.setup", to: "/konto/setup", icon: SchoolIcon },
   { key: "accountNav.saved", to: "/konto/favoriten", icon: AccountSavedIcon },
-  { key: "accountNav.visited", to: "/konto/besucht", icon: AccountVisitedIcon },
+  { key: "accountNav.visited", to: "/konto/besucht", icon: AccountVisitedIcon, planned: true },
   { key: "accountNav.addSpots", to: "/konto/spots", icon: AccountAddSpotsIcon },
   { key: "accountNav.settings", to: "/konto/einstellungen", icon: AccountSettingsIcon },
 ];
@@ -224,10 +225,11 @@ function DesktopDropdown({
 
       {user && (
         <div className="mt-1.5">
-          {ACCOUNT_NAV.map(({ key, to, icon: Icon }) => (
+          {ACCOUNT_NAV.map(({ key, to, icon: Icon, planned }) => (
             <Link key={to} to={to} role="menuitem" onClick={onClose} className={rowClass}>
               <Icon className="text-lead text-muted" />
-              {t(key)}
+              <span className="flex-1">{t(key)}</span>
+              {planned && <span className="text-caption font-semibold text-muted">{t("menu.planned")}</span>}
             </Link>
           ))}
         </div>
@@ -337,10 +339,11 @@ function MobileSheet({
 
         {user && (
           <nav aria-label={t("menu.areas")} className="mt-8">
-            {ACCOUNT_NAV.map(({ key, to, icon: Icon }) => (
+            {ACCOUNT_NAV.map(({ key, to, icon: Icon, planned }) => (
               <Link key={to} to={to} onClick={onClose} className={rowClass}>
                 <Icon className="text-title text-ink" />
                 <span className="flex-1">{t(key)}</span>
+                {planned && <span className="text-caption font-semibold text-muted">{t("menu.planned")}</span>}
               </Link>
             ))}
           </nav>

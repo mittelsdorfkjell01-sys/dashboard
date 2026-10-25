@@ -3,16 +3,14 @@ import { AccountPage } from "./AccountLayout";
 import { Button, Field, Input, Select } from "../../components/ui";
 import {
   AccountError,
-  createGearItem,
-  deleteGearItem,
   getGear,
+  getGearCatalog,
   getRiderProfile,
   getRiderSportProfile,
-  putRiderProfile,
-  putRiderSportProfile,
-  updateGearItem,
+  putRiderSetup,
   type GearItem,
-  type GearItemInput,
+  type GearSetupItemInput,
+  type GearCatalogItem,
   type RiderLevel,
   type RiderProfile,
   type RiderSportProfile,
@@ -70,7 +68,8 @@ export default function MeinSetup() {
   const [profile, setProfile] = useState<RiderProfile>(EMPTY_PROFILE);
   const [sport, setSport] = useState<RiderSportProfile>(EMPTY_SPORT);
   const [gear, setGear] = useState<QuiverDraft[]>([]);
-  const [storedGear, setStoredGear] = useState<GearItem[]>([]);
+  const [catalog, setCatalog] = useState<GearCatalogItem[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   /** `text` is a server-supplied sentence, `key` one of ours — never both.
@@ -82,13 +81,15 @@ export default function MeinSetup() {
 
   useEffect(() => {
     let active = true;
+    getGearCatalog("kite")
+      .then((items) => active && setCatalog(items))
+      .catch(() => active && setCatalogError("Der Produktkatalog ist gerade nicht verfügbar. Freie Größenangaben bleiben möglich."));
     Promise.all([getRiderProfile(), getRiderSportProfile("kitesurf"), getGear("kitesurf")])
       .then(([base, kite, items]) => {
         if (!active) return;
         setProfile(base);
         setSport(kite);
         setGear(drafts(items));
-        setStoredGear(items);
       })
       .catch((error) => active && setMessage(
         error instanceof Error
@@ -137,35 +138,32 @@ export default function MeinSetup() {
 
     setSaving(true);
     try {
-      const savedProfile = await putRiderProfile({
-        weightKg: profile.weightKg,
-        homeLocation: profile.homeLocation,
-        maxTravelKm: profile.maxTravelKm,
-        travelMode: profile.travelMode,
-        availability: profile.availability,
-        minWaterTempC: profile.minWaterTempC,
-        excludedBottoms: profile.excludedBottoms,
-      });
-      const savedSport = await putRiderSportProfile("kitesurf", {
-        level: sport.level,
-        styleWeights: sport.styleWeights,
-        preferredWaterCharacter: sport.preferredWaterCharacter,
-      });
-
-      const keptIds = new Set(gear.flatMap((item) => item.id ? [item.id] : []));
-      await Promise.all(storedGear.filter((item) => !keptIds.has(item.id)).map((item) => deleteGearItem(item.id)));
-      await Promise.all(gear.map((item) => {
-        const input: GearItemInput = {
+      const saved = await putRiderSetup("kitesurf", {
+        profile: {
+          weightKg: profile.weightKg,
+          homeLocation: profile.homeLocation,
+          maxTravelKm: profile.maxTravelKm,
+          travelMode: profile.travelMode,
+          availability: profile.availability,
+          minWaterTempC: profile.minWaterTempC,
+          excludedBottoms: profile.excludedBottoms,
+        },
+        sportProfile: {
+          level: sport.level,
+          styleWeights: sport.styleWeights,
+          preferredWaterCharacter: sport.preferredWaterCharacter,
+        },
+        gear: gear.map((item): GearSetupItemInput => ({
+          id: item.id,
           sport: "kitesurf", kind: item.kind, size: item.size,
           boardType: item.boardType, active: item.active, sortOrder: item.sortOrder,
-        };
-        return item.id ? updateGearItem(item.id, input) : createGearItem(input);
-      }));
-      const reloaded = await getGear("kitesurf");
-      setProfile(savedProfile);
-      setSport(savedSport);
-      setStoredGear(reloaded);
-      setGear(drafts(reloaded));
+          catalogSizeVariantId: item.catalogSizeVariantId,
+          catalogColorVariantId: item.catalogColorVariantId,
+        })),
+      });
+      setProfile(saved.profile);
+      setSport(saved.sportProfile);
+      setGear(drafts(saved.gear));
       setMessage({ kind: "ok", text: "Dein Setup wurde gespeichert." });
     } catch (error) {
       setMessage({
@@ -213,7 +211,13 @@ export default function MeinSetup() {
         </Section>
 
         <Section title={t("setup.gear.title")} intro={t("setup.gear.intro")}>
-          <QuiverEditor items={gear} onChange={setGear} disabled={saving} />
+          <QuiverEditor
+            items={gear}
+            catalog={catalog}
+            catalogError={catalogError}
+            onChange={setGear}
+            disabled={saving}
+          />
         </Section>
 
         <Section title={t("setup.style.title")} intro={t("setup.style.intro")}>

@@ -18,9 +18,13 @@ from app.admin.constants import (
     WATER_CHARACTERS,
 )
 from app.models import AppUser, GearItem, RiderProfile, RiderSportProfile
+from app.gear import catalog as gear_catalog
 
 TRAVEL_MODES = ("day_trip", "weekend", "trip", "camper")
-GEAR_KINDS = ("kite", "board", "foil")
+GEAR_KINDS = (
+    "kite", "board", "foil", "surfboard", "kiteboard", "bar", "harness", "wetsuit",
+    "windsurf", "foil_component",
+)
 BOARD_TYPES = ("twintip", "surfboard", "foil", "bigair_twintip")
 
 
@@ -164,13 +168,22 @@ def put_sport_profile(
     return sport_profile_payload(row, sport, profile.profile_version)
 
 
-def gear_payload(item: GearItem, profile_version: int) -> dict[str, Any]:
+def gear_payload(db: Session, item: GearItem, profile_version: int) -> dict[str, Any]:
     return {
         "id": str(item.id),
         "sport": item.sport,
         "kind": item.kind,
         "size": float(item.size) if item.size is not None else None,
         "boardType": item.board_type,
+        "catalogSizeVariantId": (
+            str(item.catalog_size_variant_id) if item.catalog_size_variant_id else None
+        ),
+        "catalogColorVariantId": (
+            str(item.catalog_color_variant_id) if item.catalog_color_variant_id else None
+        ),
+        "catalogItem": gear_catalog.selection_payload(
+            db, item.catalog_size_variant_id, item.catalog_color_variant_id
+        ),
         "active": item.active,
         "sortOrder": item.sort_order,
         "profileVersion": profile_version,
@@ -187,7 +200,7 @@ def list_gear(db: Session, user: AppUser, sport: str | None = None) -> list[dict
     if sport is not None:
         stmt = stmt.where(GearItem.sport == sport)
     rows = db.scalars(stmt.order_by(GearItem.sort_order, GearItem.created_at)).all()
-    return [gear_payload(row, profile.profile_version) for row in rows]
+    return [gear_payload(db, row, profile.profile_version) for row in rows]
 
 
 def _validated_gear(data: Mapping[str, Any]) -> dict[str, Any]:
@@ -211,23 +224,47 @@ def _validated_gear(data: Mapping[str, Any]) -> dict[str, Any]:
         "sport": sport, "kind": kind, "size": size,
         "board_type": board_type, "active": bool(data.get("active", True)),
         "sort_order": sort_order,
+        "catalog_size_variant_id": data.get("catalog_size_variant_id"),
+        "catalog_color_variant_id": data.get("catalog_color_variant_id"),
     }
+
+
+def _validate_catalog_selection(db: Session, values: dict[str, Any]) -> None:
+    selected = gear_catalog.selection_payload(
+        db, values.get("catalog_size_variant_id"), values.get("catalog_color_variant_id")
+    )
+    if selected is None:
+        if values.get("catalog_size_variant_id") is not None:
+            raise ValueError("catalog size does not exist")
+        if values.get("catalog_color_variant_id") is not None:
+            raise ValueError("a catalog color requires a catalog size")
+        return
+    if values["kind"] != selected["category"]:
+        raise ValueError("gear kind does not match the selected catalogue item")
+    canonical_size = selected["size"]["value"]
+    if canonical_size is None:
+        raise ValueError("catalog size has no numeric value")
+    if values["size"] is not None and abs(float(values["size"]) - canonical_size) > 0.001:
+        raise ValueError("gear size does not match the selected catalogue variant")
+    values["size"] = canonical_size
 
 
 def create_gear(db: Session, user: AppUser, data: Mapping[str, Any]) -> dict[str, Any]:
     values = _validated_gear(data)
+    _validate_catalog_selection(db, values)
     profile = ensure_profile(db, user, lock=True)
     item = GearItem(rider_profile_id=profile.id, **values)
     db.add(item)
     _bump(profile)
     db.flush()
-    return gear_payload(item, profile.profile_version)
+    return gear_payload(db, item, profile.profile_version)
 
 
 def update_gear(
     db: Session, user: AppUser, item_id: uuid.UUID, data: Mapping[str, Any]
 ) -> dict[str, Any]:
     values = _validated_gear(data)
+    _validate_catalog_selection(db, values)
     profile = ensure_profile(db, user, lock=True)
     item = db.scalar(select(GearItem).where(
         GearItem.id == item_id, GearItem.rider_profile_id == profile.id
@@ -238,7 +275,7 @@ def update_gear(
         setattr(item, key, value)
     _bump(profile)
     db.flush()
-    return gear_payload(item, profile.profile_version)
+    return gear_payload(db, item, profile.profile_version)
 
 
 def delete_gear(db: Session, user: AppUser, item_id: uuid.UUID) -> None:
@@ -253,3 +290,57 @@ def delete_gear(db: Session, user: AppUser, item_id: uuid.UUID) -> None:
     db.delete(item)
     _bump(profile)
     db.flush()
+
+
+def replace_gear(
+    db: Session,
+    user: AppUser,
+    sport: str,
+    items: list[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Replace one sport's complete quiver inside the caller's transaction."""
+    if sport not in SPORTS:
+        raise ValueError("invalid sport")
+
+    validated: list[tuple[uuid.UUID | None, dict[str, Any]]] = []
+    seen_ids: set[uuid.UUID] = set()
+    for item in items:
+        values = _validated_gear(item)
+        if values["sport"] != sport:
+            raise ValueError("gear sport does not match setup sport")
+        _validate_catalog_selection(db, values)
+        item_id = item.get("id")
+        if item_id is not None:
+            item_id = uuid.UUID(str(item_id))
+            if item_id in seen_ids:
+                raise ValueError("duplicate gear item id")
+            seen_ids.add(item_id)
+        validated.append((item_id, values))
+
+    profile = ensure_profile(db, user, lock=True)
+    existing = db.scalars(
+        select(GearItem).where(
+            GearItem.rider_profile_id == profile.id,
+            GearItem.sport == sport,
+        ).with_for_update()
+    ).all()
+    existing_by_id = {item.id: item for item in existing}
+    unknown_ids = seen_ids - set(existing_by_id)
+    if unknown_ids:
+        raise LookupError("gear item not found")
+
+    for item in existing:
+        if item.id not in seen_ids:
+            db.delete(item)
+
+    for item_id, values in validated:
+        if item_id is None:
+            db.add(GearItem(rider_profile_id=profile.id, **values))
+            continue
+        row = existing_by_id[item_id]
+        for key, value in values.items():
+            setattr(row, key, value)
+
+    _bump(profile)
+    db.flush()
+    return list_gear(db, user, sport)

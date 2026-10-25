@@ -181,9 +181,14 @@ class RiderSportProfilePut(BaseModel):
 
 class GearItemPut(BaseModel):
     sport: Literal["surf", "windsurf", "kitesurf", "wing"]
-    kind: Literal["kite", "board", "foil"]
+    kind: Literal[
+        "kite", "board", "foil", "surfboard", "kiteboard", "bar", "harness", "wetsuit",
+        "windsurf", "foil_component",
+    ]
     size: float | None = Field(default=None, gt=0, le=500, allow_inf_nan=False)
     board_type: Literal["twintip", "surfboard", "foil", "bigair_twintip"] | None = Field(default=None, alias="boardType")
+    catalog_size_variant_id: uuid.UUID | None = Field(default=None, alias="catalogSizeVariantId")
+    catalog_color_variant_id: uuid.UUID | None = Field(default=None, alias="catalogColorVariantId")
     active: bool = True
     sort_order: int = Field(default=0, alias="sortOrder", ge=0, le=10000)
 
@@ -194,6 +199,18 @@ class GearItemPut(BaseModel):
         if self.kind == "kite" and self.size is None:
             raise ValueError("size is required for a kite")
         return self
+
+
+class GearSetupItemPut(GearItemPut):
+    id: uuid.UUID | None = None
+
+
+class RiderSetupPut(BaseModel):
+    profile: RiderProfilePut
+    sport_profile: RiderSportProfilePut = Field(alias="sportProfile")
+    gear: list[GearSetupItemPut] = Field(default_factory=list, max_length=100)
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
 
 
 class AccountOut(BaseModel):
@@ -531,6 +548,40 @@ def put_rider_sport_profile(
     return result
 
 
+@router.put("/rider-setup/{sport}")
+def put_rider_setup(
+    sport: str,
+    body: RiderSetupPut,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Save profile, sport preferences and quiver as one database transaction."""
+    try:
+        rider_service.put_profile(db, user, body.profile.model_dump(by_alias=False))
+        rider_service.put_sport_profile(
+            db, user, sport, body.sport_profile.model_dump(by_alias=False)
+        )
+        rider_service.replace_gear(
+            db,
+            user,
+            sport,
+            [item.model_dump(by_alias=False) for item in body.gear],
+        )
+        result = {
+            "profile": rider_service.get_profile(db, user),
+            "sportProfile": rider_service.get_sport_profile(db, user, sport),
+            "gear": rider_service.list_gear(db, user, sport),
+        }
+    except LookupError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
 @router.get("/gear")
 def get_gear(
     sport: str | None = None,
@@ -539,6 +590,20 @@ def get_gear(
 ) -> dict:
     try:
         return {"items": rider_service.list_gear(db, user, sport)}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/gear-catalog")
+def get_gear_catalog(
+    category: str = "kite",
+    _user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    from app.gear.catalog import list_catalog
+
+    try:
+        return {"items": list_catalog(db, category)}
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

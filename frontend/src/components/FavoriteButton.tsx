@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { isFavorite, toggleFavorite, FAVORITES_EVENT } from "../lib/account";
 import { BookmarkIcon, BookmarkFilledIcon } from "../lib/icons";
@@ -11,6 +11,7 @@ export default function FavoriteButton({ spot }: { spot: Spot }) {
   const id = spot.uuid ?? spot.id;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [fav, setFav] = useState(() => isFavorite(id));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,8 @@ export default function FavoriteButton({ spot }: { spot: Spot }) {
 
   const onClick = async () => {
     if (!user) {
-      navigate("/anmelden");
+      const here = location.pathname + location.search + location.hash;
+      navigate(`/anmelden?redirect=${encodeURIComponent(here)}`);
       return;
     }
     if (busy) return;

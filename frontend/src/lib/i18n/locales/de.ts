@@ -69,6 +69,7 @@ export const de = {
     welcomeBody: "Melde dich an, um Favoriten und eigene Spots zu verwalten.",
     signIn: "Anmelden",
     createAccount: "Konto erstellen",
+    planned: "Geplant",
     signOut: "Abmelden",
     // The mobile sheet sets its rows in lower case; keeping it a separate key
     // means a future locale can diverge without one of the two going wrong.

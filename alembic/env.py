@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import Column, MetaData, String, Table, engine_from_config, inspect, pool, text
 
 from app.config import get_settings
 from app.db.base import Base
@@ -21,6 +21,22 @@ if not config.get_main_option("sqlalchemy.url"):
     )
 
 target_metadata = Base.metadata
+
+
+def _ensure_version_table_capacity(connection) -> None:
+    """Allow descriptive revision IDs longer than Alembic's 32-char default."""
+    if inspect(connection).has_table("alembic_version"):
+        if connection.dialect.name == "postgresql":
+            connection.execute(text(
+                "ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(128)"
+            ))
+        return
+    version_metadata = MetaData()
+    Table(
+        "alembic_version",
+        version_metadata,
+        Column("version_num", String(128), primary_key=True, nullable=False),
+    ).create(connection)
 
 
 def run_migrations_offline() -> None:
@@ -43,6 +59,8 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
+        with connection.begin():
+            _ensure_version_table_capacity(connection)
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
