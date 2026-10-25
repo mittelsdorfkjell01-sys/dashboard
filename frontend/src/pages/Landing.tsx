@@ -317,7 +317,6 @@ export default function Landing() {
                 surface="now"
                 sport={rowSport}
                 personalized={personalized}
-                defer
                 hideHeader
                 onVisibilityChange={setCurrentRecommendationsVisible}
               />
@@ -326,7 +325,6 @@ export default function Landing() {
                 surface="next_week"
                 sport={rowSport}
                 personalized={personalized}
-                defer
                 className="mt-12"
               />
               <RecommendationRow
@@ -334,7 +332,6 @@ export default function Landing() {
                 surface="season"
                 sport={rowSport}
                 personalized={personalized}
-                defer
                 weeks={nextWeeks}
                 className="mt-12"
               />

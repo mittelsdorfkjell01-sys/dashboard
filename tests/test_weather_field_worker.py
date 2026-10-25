@@ -17,6 +17,7 @@ def test_weather_fields_use_a_dedicated_worker_and_three_hour_discovery(monkeypa
 
     assert by_name["weather-fields-enqueue"].interval == 10_800
     assert by_name["weather-fields-health"].interval == 900
+    assert by_name["recommendation-warmup"].interval == 600
     assert "weather-fields-worker" not in by_name
 
 

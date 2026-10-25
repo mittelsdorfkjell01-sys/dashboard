@@ -8,9 +8,15 @@ import pytest
 from sqlalchemy import func, select
 
 from app.discovery import service as discovery
-from app.discovery.warmup import warm_once
+from app.discovery.warmup import _landing_weeks, warm_once
 from app.live.cache import InMemoryCache
 from app.models import RecommendationLog
+from app.recommendations.multisport import (
+    AGGREGATE_SPORTS,
+    _cache_key as multisport_cache_key,
+    scored_recommendations,
+)
+from app.recommendations.service import RecommendationSurface
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
 
@@ -24,6 +30,7 @@ def seeded(db):
 def test_warm_once_populates_cache(seeded):
     fake, cache = FakeOpenMeteoClient(), InMemoryCache()
     day = date(2026, 7, 18)
+    logs_before = seeded.scalar(select(func.count()).select_from(RecommendationLog))
 
     results = warm_once(
         limits=[5], sports=[None], db=seeded, client=fake, cache=cache, today=day
@@ -32,7 +39,7 @@ def test_warm_once_populates_cache(seeded):
     assert results and results[0][1] == 5          # (sport, limit, n)
     assert 0 < results[0][2] <= 5
     assert fake.forecast_calls > 0                  # first run did the work
-    assert seeded.scalar(select(func.count()).select_from(RecommendationLog)) == 0
+    assert seeded.scalar(select(func.count()).select_from(RecommendationLog)) == logs_before
 
 
 def test_warm_once_makes_endpoint_read_free(seeded):
@@ -60,6 +67,45 @@ def test_warm_once_second_run_is_noop(seeded):
     warm_once(limits=[5], sports=[None], db=seeded, client=fake, cache=cache, today=day)
 
     assert fake.forecast_calls == after_first       # cache hit -> no re-fetch
+
+
+@pytest.mark.parametrize(
+    "surface",
+    [
+        RecommendationSurface.NOW,
+        RecommendationSurface.NEXT_WEEK,
+        RecommendationSurface.SEASON,
+    ],
+)
+def test_warm_once_covers_exact_anonymous_landing_queries(seeded, surface):
+    fake, cache = FakeOpenMeteoClient(), InMemoryCache()
+    day = date(2026, 7, 18)
+
+    warm_once(limits=[8], sports=[None], db=seeded, client=fake, cache=cache, today=day)
+    warmed_calls = fake.forecast_calls
+    rows = scored_recommendations(
+        seeded,
+        surface=surface,
+        sports=AGGREGATE_SPORTS,
+        client=fake,
+        cache=cache,
+        weeks=_landing_weeks(day) if surface == RecommendationSurface.SEASON else None,
+        limit=5,
+    )
+
+    key = multisport_cache_key(
+        sports=AGGREGATE_SPORTS,
+        surface=surface,
+        region_id=None,
+        month=None,
+        weeks=_landing_weeks(day) if surface == RecommendationSurface.SEASON else None,
+        level=None,
+        limit=5,
+    )
+    assert cache.get(key) == [str(row.id) for row in rows]
+    if surface != RecommendationSurface.SEASON:
+        assert rows
+    assert fake.forecast_calls == warmed_calls
 
 
 def test_warm_once_warms_multiple_limits(seeded):

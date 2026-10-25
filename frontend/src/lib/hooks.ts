@@ -25,7 +25,10 @@ export interface LandingSpotsData {
 
 /** Bounded first-paint catalogue plus every curated landing hero. */
 export function useLandingSpots(): AsyncStateReloadable<LandingSpotsData> {
-  const state = useSwr("spots:landing", api.getLandingSpots);
+  const state = usePersistentSwr("spots:landing", api.getLandingSpots, {
+    storageKey: "swd.landing-spots.v1",
+    maxAgeMs: 24 * 60 * 60 * 1000,
+  });
   const data = useMemo(
     () => state.data
       ? { ...state.data, spots: adaptSpots(state.data.spots, new Map()) }
@@ -94,9 +97,20 @@ export function useRecommendations(
   query: api.RecommendationQuery,
   enabled = true,
 ): AsyncStateReloadable<Spot[]> {
-  const state = useSwr(
-    enabled ? `recommendations:${JSON.stringify(query)}` : null,
+  const key = `recommendations:${JSON.stringify(query)}`;
+  // Only the explicitly non-personalized variant is public. Keeping these
+  // three small landing lists across reloads makes returning visits render
+  // immediately, while account-specific rankings never reach localStorage.
+  const persistent = query.personalized === false
+    ? {
+        storageKey: `swd.public-recommendations.v1:${key}`,
+        maxAgeMs: 6 * 60 * 60 * 1000,
+      }
+    : null;
+  const state = usePersistentSwr(
+    enabled ? key : null,
     () => api.getRecommendations(query),
+    persistent,
   );
   const data = useMemo(
     () => (state.data ? adaptSpots(state.data, new Map()) : null),

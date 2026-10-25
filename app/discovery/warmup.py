@@ -36,6 +36,93 @@ from app.live.cache import Cache, default_cache
 from app.live.client import OpenMeteoClient, default_client
 
 
+LANDING_RECOMMENDATION_LIMIT = 5
+
+
+def _landing_weeks(day: date) -> tuple[int, int]:
+    """Match the rolling season window requested by ``Landing.tsx``."""
+    start = min(52, day.isocalendar().week)
+    return start, min(52, start + 8)
+
+
+def warm_landing_recommendations(
+    *,
+    db,
+    client: OpenMeteoClient | None = None,
+    cache: Cache | None = None,
+    today: date | None = None,
+) -> dict[str, int]:
+    """Warm the exact anonymous recommendation keys requested on the landing.
+
+    Forecast payloads are already cached per spot, so warming ``next_week``
+    directly after ``now`` reuses the provider responses instead of fetching
+    them twice.
+    """
+    from app.recommendations.multisport import AGGREGATE_SPORTS, scored_recommendations
+    from app.recommendations.service import RecommendationSurface, recommendations
+    from app.scoring.rider.resolve import resolve_rider
+
+    recommendation_client = client or default_client()
+    recommendation_cache = cache or default_cache()
+    now = (
+        datetime.combine(today, datetime_time.min, tzinfo=timezone.utc)
+        if today is not None
+        else datetime.now(timezone.utc)
+    )
+    day = now.date()
+    weeks = _landing_weeks(day)
+    counts: dict[str, int] = {}
+
+    # Logged-out Landing defaults to the cross-sport aggregate.
+    for surface in (
+        RecommendationSurface.NOW,
+        RecommendationSurface.NEXT_WEEK,
+        RecommendationSurface.SEASON,
+    ):
+        rows = scored_recommendations(
+            db,
+            surface=surface,
+            sports=AGGREGATE_SPORTS,
+            client=recommendation_client,
+            cache=recommendation_cache,
+            weeks=weeks if surface == RecommendationSurface.SEASON else None,
+            limit=LANDING_RECOMMENDATION_LIMIT,
+            now=now,
+        )
+        counts[f"all:{surface.value}"] = len(rows)
+        print(
+            f"[warm] landing sport=all recommendations={surface.value} -> {len(rows)} spots",
+            flush=True,
+        )
+
+    # Also cover the public kitesurf filter. Personalized users use their own
+    # cache key, but benefit from the already-warmed per-spot forecasts above.
+    rider = resolve_rider(db, None, "kitesurf")
+    for surface in (
+        RecommendationSurface.NOW,
+        RecommendationSurface.NEXT_WEEK,
+        RecommendationSurface.SEASON,
+    ):
+        rows = recommendations(
+            db,
+            rider,
+            surface=surface,
+            sport="kitesurf",
+            client=recommendation_client,
+            cache=recommendation_cache,
+            weeks=weeks if surface == RecommendationSurface.SEASON else None,
+            limit=LANDING_RECOMMENDATION_LIMIT,
+            now=now,
+            write_audit_log=False,
+        )
+        counts[f"kitesurf:{surface.value}"] = len(rows)
+        print(
+            f"[warm] landing sport=kitesurf recommendations={surface.value} -> {len(rows)} spots",
+            flush=True,
+        )
+    return counts
+
+
 def warm_once(
     *,
     limits: list[int],
@@ -70,41 +157,16 @@ def warm_once(
                     f"[warm] sport={sport or 'any'} limit={limit} -> {len(ids)} spots",
                     flush=True,
                 )
-        # Phase-D surfaces share the same forecast/cache dependencies. Warm the
-        # average-rider variants even when the legacy job is invoked with the
-        # historical `sport=any` default.
+        # Recommendation rows share the same forecast/cache dependencies. Warm
+        # the exact anonymous landing keys even when this legacy job is invoked
+        # with the historical `sport=any`, `limit=8` arguments.
         if any(sport in (None, "kitesurf") for sport in sports):
-            from app.recommendations.service import RecommendationSurface, recommendations
-            from app.scoring.rider.resolve import resolve_rider
-
-            recommendation_client = client or default_client()
-            recommendation_cache = cache or default_cache()
-            rider = resolve_rider(db, None, "kitesurf")
-            now = (
-                datetime.combine(today, datetime_time.min, tzinfo=timezone.utc)
-                if today is not None
-                else datetime.now(timezone.utc)
+            warm_landing_recommendations(
+                db=db,
+                client=client,
+                cache=cache,
+                today=today,
             )
-            for surface in (
-                RecommendationSurface.NOW,
-                RecommendationSurface.NEXT_WEEK,
-                RecommendationSurface.SEASON,
-            ):
-                rows = recommendations(
-                    db,
-                    rider,
-                    surface=surface,
-                    sport="kitesurf",
-                    client=recommendation_client,
-                    cache=recommendation_cache,
-                    limit=max(limits),
-                    now=now,
-                    write_audit_log=False,
-                )
-                print(
-                    f"[warm] recommendations={surface.value} -> {len(rows)} spots",
-                    flush=True,
-                )
         return results
     finally:
         if own_session:

@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.api._http_cache import set_recommendation_cache
+from app.api._http_cache import RECOMMENDATIONS_CACHE_CONTROL, set_recommendation_cache
 from app.recommendations.engine import character_fit, condition_fit, forecast_components
 from app.recommendations.service import bucket_location
 from app.scoring.rider.band import PersonalBand
@@ -88,7 +88,8 @@ def test_recommendation_cache_headers_separate_account_responses():
     private = Response()
     set_recommendation_cache(public, private=False)
     set_recommendation_cache(private, private=True)
-    assert public.headers["Cache-Control"].startswith("public")
+    assert public.headers["Cache-Control"] == RECOMMENDATIONS_CACHE_CONTROL
+    assert "stale-while-revalidate=21600" in public.headers["Cache-Control"]
     assert private.headers["Cache-Control"] == "private, no-store"
     assert "Cookie" not in public.headers.get("Vary", "")
 

@@ -52,6 +52,12 @@ def _forecast_refresh_worker() -> Any:
     return _with_db(run_refresh_cycle)
 
 
+def _recommendation_warmup() -> Any:
+    from app.discovery.warmup import warm_landing_recommendations
+
+    return _with_db(warm_landing_recommendations)
+
+
 def _weather_field_health_monitor() -> dict:
     from app.config import get_settings
     from app.spatial_fields.doctor import build_weather_field_doctor_report
@@ -115,6 +121,7 @@ def _tasks(now: float) -> list[Task]:
             _forecast_refresh_worker,
             now + 120,
         ),
+        Task("recommendation-warmup", 10 * 60, _recommendation_warmup, now + 135),
         Task("climatology", 6 * 60 * 60, lambda: _with_db(cron.maintain_climatology), now + 150),
         Task("build-sectors", 6 * 60 * 60, lambda: _with_db(cron.build_sectors), now + 5 * 60),
         Task("wind-climatology", 6 * 60 * 60, lambda: _with_db(cron.maintain_wind_climatology), now + 8 * 60),

@@ -55,7 +55,7 @@ FORECAST_CACHE_CONTROL = (
 )
 
 RECOMMENDATIONS_CACHE_CONTROL = (
-    "public, max-age=60, s-maxage=900, stale-while-revalidate=1800"
+    "public, max-age=300, s-maxage=1800, stale-while-revalidate=21600"
 )
 PRIVATE_RECOMMENDATIONS_CACHE_CONTROL = "private, no-store"
 
