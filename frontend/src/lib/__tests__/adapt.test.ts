@@ -88,14 +88,19 @@ describe("adaptSpot", () => {
     expect(s.hero).toContain("/media/spots/x/hero.jpg");
   });
 
-  it("derives a typical wind + description from editorial (detail record)", () => {
+  it("derives wind, description and the safety notice from editorial", () => {
     const detail = {
       ...summary(),
-      editorial: { wind_range: [14, 26], description: "Schöner Spot." },
+      editorial: {
+        wind_range: [14, 26],
+        description: "Schöner Spot.",
+        safety_notice: "Starke Strömung.",
+      },
     } as unknown as SpotRead;
     const s = adaptSpot(detail, region);
     expect(s.wind).toBe(20); // midpoint of 14..26
     expect(s.description).toBe("Schöner Spot.");
+    expect(s.safetyNotice).toBe("Starke Strömung.");
   });
 
   it("treats an 'n/a' description as no description", () => {

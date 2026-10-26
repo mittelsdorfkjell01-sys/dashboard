@@ -1,0 +1,20 @@
+{
+  "category": "kite",
+  "startYear": 2016,
+  "checkedAt": "2026-10-24T12:00:00+02:00",
+  "brands": [
+    { "brand": "CORE", "status": "in_progress", "latestVerifiedPilotSeason": "2023", "latestOfficialSeason": null, "completedBatches": ["GTS6 / GTS6 LW 2020", "remaining supplied-list models 2026-10-24"] },
+    { "brand": "Duotone", "status": "in_progress", "latestVerifiedPilotSeason": "2026", "latestOfficialSeason": null, "completedBatches": ["2021 range and Rebel D/LAB 2025"] },
+    { "brand": "North", "status": "in_progress", "latestVerifiedPilotSeason": null, "latestOfficialSeason": null, "completedBatches": ["legacy model identities from supplied list"] },
+    { "brand": "Cabrinha", "status": "in_progress", "latestVerifiedPilotSeason": "2016", "latestOfficialSeason": null, "completedBatches": ["2016 supplied-list range"] },
+    { "brand": "F-One", "status": "in_progress", "latestVerifiedPilotSeason": "Edition 18", "latestOfficialSeason": null, "completedBatches": ["2017–2021 supplied-list models"] },
+    { "brand": "Ozone", "status": "in_progress", "latestVerifiedPilotSeason": null, "latestOfficialSeason": null, "completedBatches": ["supplied-list historic and current models"] },
+    { "brand": "Naish", "status": "in_progress", "latestVerifiedPilotSeason": "2026", "latestOfficialSeason": "2026", "completedBatches": ["2023/2024–2026 supplied-list models"] },
+    { "brand": "Slingshot", "status": "in_progress", "latestVerifiedPilotSeason": "2025", "latestOfficialSeason": null, "completedBatches": ["2016 and 2021–2025 supplied-list models"] },
+    { "brand": "Airush", "status": "in_progress", "latestVerifiedPilotSeason": null, "latestOfficialSeason": null, "completedBatches": ["2023/2024–2025/2026 supplied-list models"] },
+    { "brand": "Eleveight", "status": "in_progress", "latestVerifiedPilotSeason": null, "latestOfficialSeason": null, "completedBatches": ["current supplied-list models"] },
+    { "brand": "Reedin", "status": "in_progress", "latestVerifiedPilotSeason": "2026", "latestOfficialSeason": "2026", "completedBatches": ["2025–2026 supplied-list models"] },
+    { "brand": "Flysurfer", "status": "in_progress", "latestVerifiedPilotSeason": "2017", "latestOfficialSeason": null, "completedBatches": ["2016–2017 and current supplied-list models"] },
+    { "brand": "Harlem", "status": "in_progress", "latestVerifiedPilotSeason": null, "latestOfficialSeason": null, "completedBatches": ["current supplied-list models and Force identity"] }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "reviewStatus": "accepted_for_initial_migration",
+  "checkedAt": "2026-10-22T12:00:00Z",
+  "rights": "Facts only. No manufacturer images, logos or traced artwork are included.",
+  "records": [
+    {
+      "brand": "CORE",
+      "model": "XR8",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": "11 m²",
+      "claims": [
+        {
+          "field": "model_year",
+          "value": 2023,
+          "status": "verified",
+          "source": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 3.5,
+          "unit": "kg",
+          "status": "verified",
+          "source": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-"
+        }
+      ],
+      "missing": ["verified colourways", "line count and length", "condition profiles"]
+    },
+    {
+      "brand": "Duotone",
+      "model": "Neo",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": "11 m²",
+      "claims": [
+        { "field": "model_year", "value": 2026, "status": "verified" },
+        { "field": "intended_use", "value": "wave", "status": "verified" },
+        { "field": "available_size", "value": 11, "unit": "m²", "status": "verified" }
+      ],
+      "source": "https://www.duotonesports.com/en/products/duotone-neo-2026-44260-3004",
+      "missing": ["size-specific weight", "bar and line compatibility", "verified colourways", "condition profiles"]
+    },
+    {
+      "brand": "F-One",
+      "model": "Bandit",
+      "season": "Edition 18",
+      "modelYear": null,
+      "size": "9 m²",
+      "claims": [
+        { "field": "edition", "value": 18, "status": "verified", "uncertainty": "Edition is not treated as a calendar model year." },
+        { "field": "strut_count", "value": 3, "status": "verified" },
+        { "field": "aspect_ratio", "value": "medium", "status": "verified" },
+        { "field": "colorway", "code": "A", "name": "Lilac", "status": "verified" },
+        { "field": "colorway", "code": "B", "name": "Flame", "status": "verified" }
+      ],
+      "source": "https://www.f-one.world/en/kite/kites/bandit-18.html",
+      "missing": ["manufacturer-stated model year", "bar and line compatibility", "size-specific material details"]
+    }
+  ]
+}

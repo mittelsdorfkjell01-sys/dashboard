@@ -1,0 +1,1364 @@
+{
+  "reviewStatus": "accepted_for_import",
+  "checkedAt": "2026-10-24T10:00:00+02:00",
+  "rights": "Facts only. No manufacturer images, logos or traced artwork are included.",
+  "researchScope": "CORE GTS6 and GTS6 LW: complete official sizes, size weights, qualitative use profiles and exact compatible CORE Sensor bar product versions. Numeric kite wind ranges are intentionally omitted.",
+  "records": [
+    {
+      "brand": "CORE",
+      "name": "Sensor 2",
+      "category": "bar",
+      "season": "2014",
+      "modelYear": 2014,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 2+",
+      "category": "bar",
+      "season": "2016/2017",
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor Pro",
+      "category": "bar",
+      "season": "2014",
+      "modelYear": 2014,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 2S",
+      "category": "bar",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 2S Pro",
+      "category": "bar",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 3",
+      "category": "bar",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 3 Pro",
+      "category": "bar",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 3S",
+      "category": "bar",
+      "season": "2022",
+      "modelYear": 2022,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 3S Pro",
+      "category": "bar",
+      "season": "2022",
+      "modelYear": 2022,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 4",
+      "category": "bar",
+      "season": "2024",
+      "modelYear": 2024,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Sensor 4 Pro",
+      "category": "bar",
+      "season": "2024",
+      "modelYear": 2024,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official end of support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "bar_compatibility",
+          "value": "Compatible with CORE GTS6",
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 - Freestyle+ | Wave | Freeride",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "model_year",
+          "value": 2020,
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+            "title": "CORE official end of support roadmap",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "field": "strut_count",
+          "value": 3,
+          "status": "verified"
+        },
+        {
+          "field": "kite_shape",
+          "value": "c",
+          "status": "verified"
+        },
+        {
+          "field": "canopy_material",
+          "value": "CoreTex Triple Ripstop",
+          "status": "verified"
+        },
+        {
+          "field": "leading_edge_material",
+          "value": "ExoTex Ultra Rigid Dacron",
+          "status": "verified"
+        },
+        {
+          "field": "valve_system",
+          "value": "Speed Valve 2",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2",
+            "season": "2014"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2+",
+            "season": "2016/2017"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2+"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor Pro",
+            "season": "2014"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2S",
+            "season": "2016"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2S"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2S Pro",
+            "season": "2016"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2S Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 3",
+            "season": "2020"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 3"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 3 Pro",
+            "season": "2020"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 3 Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 3S",
+            "season": "2022"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 3S"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 3S Pro",
+            "season": "2022"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 3S Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 4",
+            "season": "2024"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 4"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 4 Pro",
+            "season": "2024"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 4 Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6",
+            "title": "CORE GTS6 compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "suitable",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "suitable",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6 LW",
+      "category": "kite",
+      "subtype": "future_c_lightwind",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+        "title": "CORE GTS6 LW - Freestyle+ | Wave | Freeride",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "model_year",
+          "value": 2020,
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+            "title": "CORE official end of support roadmap",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "field": "strut_count",
+          "value": 3,
+          "status": "verified"
+        },
+        {
+          "field": "kite_shape",
+          "value": "c",
+          "status": "verified"
+        },
+        {
+          "field": "canopy_material",
+          "value": "CoreTex Triple Ripstop",
+          "status": "verified"
+        },
+        {
+          "field": "leading_edge_material",
+          "value": "ExoTex Ultra Rigid Dacron",
+          "status": "verified"
+        },
+        {
+          "field": "valve_system",
+          "value": "Speed Valve 2",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2",
+            "season": "2014"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2+",
+            "season": "2016/2017"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2+"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor Pro",
+            "season": "2014"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2S",
+            "season": "2016"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2S"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 2S Pro",
+            "season": "2016"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 2S Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 3",
+            "season": "2020"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 3"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        },
+        {
+          "targetCategory": "bar",
+          "targetProduct": {
+            "brand": "CORE",
+            "name": "Sensor 3 Pro",
+            "season": "2020"
+          },
+          "relation": "compatible",
+          "specification": {
+            "system": "Sensor 3 Pro"
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+            "title": "CORE GTS6 LW compatibility",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "light_wind",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "light_wind",
+          "suitability": "suitable",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "light_wind",
+          "suitability": "suitable",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 2.1,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 2.4,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 2.6,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 2.8,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 3,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 3.2,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 3.4,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 3.6,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6",
+      "category": "kite",
+      "subtype": "future_c",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "13,5 m²",
+        "value": 13.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6",
+        "title": "CORE GTS6 size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.5,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 3.9,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6 LW",
+      "category": "kite",
+      "subtype": "future_c_lightwind",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+        "title": "CORE GTS6 LW size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 4,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS6 LW",
+      "category": "kite",
+      "subtype": "future_c_lightwind",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/kite/kites/gts6-lw",
+        "title": "CORE GTS6 LW size range",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T10:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        },
+        {
+          "field": "weight_without_bag",
+          "value": 4.3,
+          "unit": "kg",
+          "status": "verified",
+          "source": {
+            "url": "https://support.corekites.com/en/support/solutions/articles/4000007990-how-much-does-my-kite-and-kite-bag-weigh-",
+            "title": "How much does my kite and kite bag weigh?",
+            "publisher": "CORE",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T10:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -21,6 +21,10 @@ from app.live.cache import Cache
 from app.live.client import OpenMeteoClient
 from app.models import RecommendationLog, Spot, SpotWeatherProfile
 from app.recommendations.engine import Components, character_fit, forecast_components, reachability
+from app.recommendations.forecast_data import (
+    persisted_forecast_days,
+    provider_fallback_allowed,
+)
 from app.scoring.params import SCORING_PARAMS_VERSION, get_params
 from app.scoring.rider.resolve import RiderContext
 from app.search.timewindow import rank_by_timewindow, resolve_time_window
@@ -28,7 +32,7 @@ from app.weather.usable_directions import usable_direction_windows
 
 logger = logging.getLogger(__name__)
 
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 LOCATION_BUCKET_DEGREES = 0.25
 
 
@@ -259,11 +263,16 @@ def _forecast_components(
     client: OpenMeteoClient,
     cache: Cache,
     location: LocationBucket | None,
+    persisted_days: Sequence[dict] | None = None,
 ) -> Components:
-    from app.live.service import get_forecast_series
+    days = list(persisted_days or [])
+    if not days and provider_fallback_allowed():
+        from app.live.service import get_forecast_series
 
-    series = get_forecast_series(spot.id, 10, db=db, client=client, cache=cache)
-    days = list(series.get("days") or [])
+        series = get_forecast_series(spot.id, 10, db=db, client=client, cache=cache)
+        days = list(series.get("days") or [])
+    if not days:
+        return Components(0, 0, 0, 0, 0)
     selected = days[2:10] if surface == RecommendationSurface.NEXT_WEEK else days[:2]
     coords = _spot_coords(spot)
     return forecast_components(
@@ -296,6 +305,11 @@ def _evaluate(
             range_input = {"weeks": list(weeks)}
         window = resolve_time_window("season", range_input)
     params = get_params(rider.sport, db=db)
+    forecast_days = (
+        {}
+        if surface == RecommendationSurface.SEASON
+        else persisted_forecast_days(db, (spot.id for spot in candidates))
+    )
     social_config = params.get("social") or {}
     social_min_group = int(social_config.get("min_group_size") or 20)
     social_weight = (
@@ -334,7 +348,14 @@ def _evaluate(
                 _season_components(spot, rider, db=db, window=window, location=location)
                 if surface == RecommendationSurface.SEASON
                 else _forecast_components(
-                    spot, rider, surface, db=db, client=client, cache=cache, location=location
+                    spot,
+                    rider,
+                    surface,
+                    db=db,
+                    client=client,
+                    cache=cache,
+                    location=location,
+                    persisted_days=forecast_days.get(spot.id),
                 )
             )
             social = social_by_spot.get(

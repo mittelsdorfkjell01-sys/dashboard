@@ -1,0 +1,4427 @@
+{
+  "reviewStatus": "accepted_for_import",
+  "checkedAt": "2026-10-24T12:00:00+02:00",
+  "rights": "Facts only. No manufacturer images, logos or traced artwork are included.",
+  "researchScope": "All remaining CORE, Duotone and legacy North models named in the supplied research list.",
+  "records": [
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR4 is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "13.5 m²",
+        "value": 13.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR4 LW is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "19 m²",
+        "value": 19,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 19,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "GTS4 is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "13.5 m²",
+        "value": 13.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "GTS4 LW is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS4 LW",
+      "category": "kite",
+      "season": "2016/2017",
+      "modelYear": null,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://publish.corekites.com/files/CORE_ProductGuide_2016_2017_EN.pdf",
+        "title": "CORE Product Guide 2016/2017",
+        "publisher": "CORE",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR5",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR5 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Section 2",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Section 2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Impact 2",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Impact 2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "GTS5",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "GTS5 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR6 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Section 3",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Section 3 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XLite",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XLite is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Nexus 2",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Nexus 2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR7",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR7 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Section 4",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Section 4 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XLite 2",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XLite 2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Nexus 3",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Nexus 3 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR Pro",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR Pro is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR8",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR8 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Nexus 4",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Nexus 4 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Pace Pro",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Pace Pro is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Section 5",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Section 5 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XR Pro 2",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XR Pro 2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "PACE",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "PACE is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Air",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Air is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "Air Pro",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Air Pro is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "XRX",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "XRX is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "CORE",
+      "name": "NXS",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://support.corekites.com/en/support/solutions/articles/136210-how-long-will-you-carry-parts-for-my-core-product-kite-bar-board-",
+        "title": "CORE official product support roadmap",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "NXS is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; exact manufacturer season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Neo SLS is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "wave",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Neo is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "wave",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "3 m²",
+        "value": 3.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "4 m²",
+        "value": 4.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Evo SLS is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "all-round",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "all_round",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo SLS",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Evo is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "all-round",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "all_round",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "4 m²",
+        "value": 4.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "14 m²",
+        "value": 14.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Dice is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freestyle",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "flat_water",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Rebel is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "14 m²",
+        "value": 14.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "15 m²",
+        "value": 15.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Vegas is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freestyle",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "flat_water",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "14.5 m²",
+        "value": 14.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14.5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Mono is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "all-round",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "all_round",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "3.5 m²",
+        "value": 3.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3.5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Juice is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "light-wind",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "light_wind",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice D/LAB",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Juice D/LAB is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "light-wind",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "light_wind",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice D/LAB",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Juice D/LAB",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Capa",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Capa is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Capa",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Capa",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Capa",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Capa",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/booklet/DT21-Whats-New/DT21-Whats-New/assets/common/downloads/Duotone%20What.pdf",
+        "title": "Duotone What's New 2021",
+        "publisher": "Duotone",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Rebel D/LAB is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Duotone",
+      "name": "Rebel D/LAB",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.duotonesports.com/en/products/duotone-rebel-d-lab-2025-44250-3009",
+        "title": "Duotone Rebel D/LAB 2025",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Dice",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Dice is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Neo",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Neo is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Vegas",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Vegas is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Evo",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Evo is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Mono",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Mono is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Rebel",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Rebel is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Juice",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Juice is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Dyno",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Dyno is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Buzz Trainer",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Buzz Trainer is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "North",
+      "name": "Lizard Trainer",
+      "category": "kite",
+      "season": "2016–2018 archive",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.duotonesports.com/en/kiteboarding/more/about-us/history",
+        "title": "Official North/Duotone brand history and archive",
+        "publisher": "Duotone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Lizard Trainer is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Legacy North identity is separate from the post-2018 North brand; exact season and sizes remain unresolved."
+        }
+      ]
+    }
+  ]
+}

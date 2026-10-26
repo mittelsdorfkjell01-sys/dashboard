@@ -58,6 +58,14 @@ Use the local URL only in the process environment; do not replace a user's `.env
 - Use `impeccable` only for an actual frontend/UX task and `seo` only for an explicit SEO task.
 - Do not add another MCP server or plugin just to search local code. Use Graphify for cross-cutting architecture and blast-radius questions; the focused scripts and `rg` remain the default for narrow searches.
 
+## Gear catalogue research
+
+- Stage new product research under `research/gear/staging/`; never write unreviewed research directly to catalogue or production data.
+- Store manufacturer-stated seasons only when an explicit source proves them. Keep model, season, size and colour variants separate, and leave unknown values unknown.
+- Every researched claim needs a source, checked timestamp, verification status and any uncertainty. Prefer official manufacturer pages, manuals and catalogues.
+- Generated gear SVGs must declare `generic`, `data_based_unverified` or `reference_checked`; never copy or trace manufacturer images or logos without documented rights.
+- Use `.codex/agents/gear-researcher.md` for staged gear research. That agent must not change schemas or delete/overwrite production data.
+
 ## Definition of done
 
 - Requested behavior is implemented without unrelated refactors.

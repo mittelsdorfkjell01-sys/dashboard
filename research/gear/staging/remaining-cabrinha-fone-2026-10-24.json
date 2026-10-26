@@ -1,0 +1,4460 @@
+{
+  "reviewStatus": "accepted_for_import",
+  "checkedAt": "2026-10-24T12:00:00+02:00",
+  "rights": "Facts only. No manufacturer images, logos or traced artwork are included.",
+  "researchScope": "Cabrinha 2016 and F-One models/sizes explicitly named in the supplied research list.",
+  "records": [
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "FX is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "FX",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Switchblade is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Switchblade",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Radar is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "3.5 m²",
+        "value": 3.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3.5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Radar",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Drifter is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "4.5 m²",
+        "value": 4.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4.5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "5.5 m²",
+        "value": 5.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Drifter",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Contra",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Contra is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Contra",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Contra",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Contra",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Velocity is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "16 m²",
+        "value": 16,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 16,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Velocity",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "18 m²",
+        "value": 18,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 18,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Chaos",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Chaos is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Chaos",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Chaos",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Chaos",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Chaos",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Genesis/Spark Trainer",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Genesis/Spark Trainer is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Cabrinha",
+      "name": "Genesis/Spark Trainer",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "2 m²",
+        "value": 2,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.cabrinha.com/pages/product-catalog",
+        "title": "Cabrinha official product catalog archive",
+        "publisher": "Cabrinha",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 2,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Sizes are transcribed from the supplied research list and remain flagged for page-level archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Diablo V1 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V1",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "18 m²",
+        "value": 18,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 18,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Diablo V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Diablo V2",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "18 m²",
+        "value": 18,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 18,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "The supplied list groups V1 and V2; variant-specific official archive confirmation remains open."
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Bandit is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Breeze is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2018",
+      "modelYear": 2018,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Bandit is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Breeze is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Furtive is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "6.4 m²",
+        "value": 6.4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.4,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Furtive",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "19 m²",
+        "value": 19,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 19,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Trust is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Trust",
+      "category": "kite",
+      "season": "2019",
+      "modelYear": 2019,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/app/uploads/2018/08/F-ONE-2019-Kite-collection-EN.pdf",
+        "title": "F-One 2019 Kite Collection",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Bandit is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Bandit-S is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "WTF!? V2 is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "WTF!? V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Breeze V2 is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "3 m²",
+        "value": 3,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Breeze V2",
+      "category": "kite",
+      "season": "2020",
+      "modelYear": 2020,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "F-One",
+      "name": "Bandit-S2",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://www.f-one.world/downloads/",
+        "title": "F-One official downloads archive",
+        "publisher": "F-One",
+        "type": "manufacturer_catalog",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Bandit-S2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; sizes remain unresolved."
+        }
+      ]
+    }
+  ]
+}

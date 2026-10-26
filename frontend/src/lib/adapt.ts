@@ -38,6 +38,10 @@ export function adaptSpot(
     editorial.description.trim().toLowerCase() !== "n/a"
       ? editorial.description.trim()
       : undefined;
+  const safetyNotice =
+    typeof editorial?.safety_notice === "string" && editorial.safety_notice.trim()
+      ? editorial.safety_notice.trim()
+      : undefined;
 
   return {
     id: s.id, // backend UUID — also the route id
@@ -48,6 +52,7 @@ export function adaptSpot(
     regionId: s.region_id ?? undefined,
     wind: typicalWind,
     description,
+    safetyNotice,
     tags: [],
     // Empty string = "no image yet" → the UI renders a branded fallback (never
     // an external placeholder). A real upload fills this in later. Seed rows

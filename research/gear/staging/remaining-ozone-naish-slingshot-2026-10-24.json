@@ -1,0 +1,5322 @@
+{
+  "reviewStatus": "accepted_for_import",
+  "checkedAt": "2026-10-24T12:00:00+02:00",
+  "rights": "Facts only. No manufacturer images, logos or traced artwork are included.",
+  "researchScope": "Ozone, Naish and Slingshot models named in the supplied research list.",
+  "records": [
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Enduro V1 is listed in the cited official manufacturer source.",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Enduro V1",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/app/uploads/products/Enduro-V1-Info.pdf",
+        "title": "Ozone Enduro V1 official product information",
+        "publisher": "Ozone",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The official document proves the model and sizes but not a calendar model year."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "C4 V6 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "C4 V6",
+      "category": "kite",
+      "season": "Unknown",
+      "modelYear": null,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Exact manufacturer season remains unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Reo V7 Ultra-X is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "wave",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "4 m²",
+        "value": 4.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Zephyr V8 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Zephyr V8 Ultra-X is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "light-wind",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "light_wind",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Zephyr V8 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Edge VT",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Edge VT is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Hyperlink V4",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Hyperlink V4 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Catalyst V5",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Catalyst V5 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reflex",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Reflex is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Vortex V2 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Vortex V2 Ultra-X is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Reo V7",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Reo V7 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Alpha V3 Ultra-X",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Alpha V3 Ultra-X is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Ignition V3",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Ignition V3 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Uno V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Uno V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "Mach1",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Mach1 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Ozone",
+      "name": "R1 V5",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://ozonekites.com/kite/kites/",
+        "title": "Ozone current kite collection",
+        "publisher": "Ozone",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "R1 V5 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence is proven; sizes remain unresolved in this batch."
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Boxer is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "2.8 m²",
+        "value": 2.8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 2.8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "3.4 m²",
+        "value": 3.4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3.4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer",
+      "category": "kite",
+      "season": "2023/2024",
+      "modelYear": null,
+      "size": {
+        "label": "16 m²",
+        "value": 16,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 16,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Boxer [Q]Series is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "2.8 m²",
+        "value": 2.8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 2.8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "3.4 m²",
+        "value": 3.4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3.4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Boxer [Q]Series",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "size": {
+        "label": "16 m²",
+        "value": 16,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 16,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Hunt [Q]Series is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Hunt [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Pivot is listed in the cited official manufacturer source.",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/products/pivot-new-2026",
+        "title": "Naish Pivot 2026",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Psycho [Q]Series is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Psycho [Q]Series",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "13.5 m²",
+        "value": 13.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.5,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Pivot NVision is listed in the cited official manufacturer source.",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Naish",
+      "name": "Pivot NVision",
+      "category": "kite",
+      "season": "2026",
+      "modelYear": 2026,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://www.naish.com/collections/kites",
+        "title": "Naish official kite collection",
+        "publisher": "Naish",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "RPM is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "4.5 m²",
+        "value": 4.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4.5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPM",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Turbine",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Turbine is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Turbine",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Turbine",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Machine V1 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine LW V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Machine LW V1 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine LW V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine LW V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "RPX V1 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "4.5 m²",
+        "value": 4.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4.5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "RPX V1",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SST V6 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V6",
+      "category": "kite",
+      "season": "2021",
+      "modelYear": 2021,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "UFO V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "3 m²",
+        "value": 3,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 3,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "UFO V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Ghost V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "2.5 m²",
+        "value": 2.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 2.5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Ghost V2",
+      "category": "kite",
+      "season": "2022",
+      "modelYear": 2022,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Machine V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine LW V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Machine LW V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine LW V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Machine LW V2",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SST V7 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "SST V7",
+      "category": "kite",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "review",
+          "uncertainty": "Size list remains flagged for page-level official archive reconfirmation."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Code NXT",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Code NXT is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Slingshot",
+      "name": "Code V2",
+      "category": "kite",
+      "season": "2025",
+      "modelYear": 2025,
+      "source": {
+        "url": "https://slingshotsports.com/collections/kites",
+        "title": "Slingshot official kite collection and archive",
+        "publisher": "Slingshot",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Code V2 is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Official model presence is retained; sizes remain unresolved."
+        }
+      ]
+    }
+  ]
+}

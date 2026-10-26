@@ -223,6 +223,15 @@ def validate_editorial(value: dict | None) -> dict | None:
     offshore = cleaned.get("beginner_offshore_ok")
     if offshore is not None and not isinstance(offshore, bool):
         raise ValueError("editorial.beginner_offshore_ok must be a boolean")
+    if "safety_notice" in cleaned:
+        notice = cleaned["safety_notice"]
+        if notice is not None and not isinstance(notice, str):
+            raise ValueError("editorial.safety_notice must be a string or null")
+        if isinstance(notice, str):
+            notice = " ".join(notice.split())
+            if len(notice) > 2_000:
+                raise ValueError("editorial.safety_notice must be at most 2000 characters")
+            cleaned["safety_notice"] = notice or None
     tide = cleaned.get("tide")
     if isinstance(tide, dict) and tide.get("window") is not None:
         window = tide["window"]

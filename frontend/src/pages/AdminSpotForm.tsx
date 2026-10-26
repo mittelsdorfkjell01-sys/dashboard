@@ -110,6 +110,7 @@ export default function AdminSpotForm() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [regionId, setRegionId] = useState("");
   const [description, setDescription] = useState("");
+  const [safetyNotice, setSafetyNotice] = useState("");
   const [lat, setLat] = useState("");
   const [lon, setLon] = useState("");
   const [mapView, setMapView] = useState<MapView | null>(null);
@@ -207,6 +208,7 @@ export default function AdminSpotForm() {
     slug: effectiveSlug,
     regionId,
     description,
+    safetyNotice,
     lat,
     lon,
     mapView,
@@ -304,6 +306,7 @@ export default function AdminSpotForm() {
     setSlugTouched(true);
     setRegionId(s.region_id ?? "");
     setDescription((s.editorial?.description as string) ?? "");
+    setSafetyNotice((s.editorial?.safety_notice as string) ?? "");
     seedImage((s.image as ImageRecord | null) ?? null);
     pickHeroFile(null);
     setCredit("");
@@ -386,6 +389,7 @@ export default function AdminSpotForm() {
   const buildEditorial = (): Record<string, any> => {
     const ed: Record<string, any> = {};
     if (description.trim()) ed.description = description.trim();
+    if (safetyNotice.trim()) ed.safety_notice = safetyNotice.trim();
     if (isSurf && tide.trim()) ed.tide = tide.trim();
     if (sports.includes("kitesurf") && beginnerOffshoreOk) {
       ed.beginner_offshore_ok = true;
@@ -461,6 +465,7 @@ export default function AdminSpotForm() {
     const expectedEditorial: Record<string, unknown> = {};
     const nextEditorial = {
       description: description.trim() || null,
+      safety_notice: safetyNotice.trim() || null,
       tide: isSurf ? tide.trim() || null : null,
       map_view: mapView,
       beginner_offshore_ok:
@@ -760,6 +765,23 @@ export default function AdminSpotForm() {
                   setDescription(e.target.value);
                 }}
                 placeholder="Charakter des Spots, Bedingungen, Besonderheiten …"
+              />
+            </Field>
+            <Field
+              label="Sicherheitshinweis"
+              hint={`${safetyNotice.length}/2000 Zeichen · Leer speichern, um den Hinweis zu löschen.`}
+              error={fieldErrors.safety_notice}
+            >
+              <textarea
+                id="f-safety-notice"
+                className={`${inputCls} min-h-[120px] resize-y scroll-mt-24`}
+                value={safetyNotice}
+                maxLength={2000}
+                onChange={(event) => {
+                  markDirty("main");
+                  setSafetyNotice(event.target.value);
+                }}
+                placeholder="Strömungen, Hindernisse, Schiffsverkehr, volle Startzonen …"
               />
             </Field>
             <Field

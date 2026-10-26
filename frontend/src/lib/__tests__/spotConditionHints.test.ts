@@ -42,6 +42,19 @@ const forecast = (hourOver: Partial<NonNullable<ForecastSummaryRead["hour"]>> = 
 });
 
 describe("spot condition hints", () => {
+  it("places an editorial safety notice alongside the dynamic hints", () => {
+    const hints = buildSpotConditionHints(
+      spot({ safetyNotice: "Starke Strömung am Flussauslauf." }),
+      forecast(),
+    );
+    expect(hints[0]).toEqual({
+      id: "safety",
+      kind: "safety",
+      sentence: "Starke Strömung am Flussauslauf.",
+      sourceLabel: "Redaktioneller Sicherheitshinweis",
+    });
+  });
+
   it("writes compass directions out in German", () => {
     expect(directionName(45)).toBe("Nordosten");
     expect(directionName(225)).toBe("Südwesten");

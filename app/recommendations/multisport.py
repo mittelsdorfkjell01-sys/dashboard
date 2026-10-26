@@ -25,6 +25,10 @@ from sqlalchemy.orm import Session, selectinload
 from app.live.cache import Cache
 from app.live.client import OpenMeteoClient
 from app.models import Spot
+from app.recommendations.forecast_data import (
+    persisted_forecast_days,
+    provider_fallback_allowed,
+)
 from app.recommendations.service import (
     CACHE_VERSION,
     LocationBucket,
@@ -73,12 +77,17 @@ def _forecast_days(
     db: Session,
     client: OpenMeteoClient,
     cache: Cache,
+    persisted_days: Sequence[dict] | None = None,
 ) -> list[dict]:
     """The daylight-annotated forecast slice a surface scores over (once/spot)."""
-    from app.live.service import get_forecast_series
+    days = list(persisted_days or [])
+    if not days and provider_fallback_allowed():
+        from app.live.service import get_forecast_series
 
-    series = get_forecast_series(spot.id, 10, db=db, client=client, cache=cache)
-    days = list(series.get("days") or [])
+        series = get_forecast_series(spot.id, 10, db=db, client=client, cache=cache)
+        days = list(series.get("days") or [])
+    if not days:
+        return []
     selected = days[2:10] if surface == RecommendationSurface.NEXT_WEEK else days[:2]
     return _with_daylight(selected, _spot_coords(spot))
 
@@ -188,8 +197,14 @@ def scored_recommendations(
         window = resolve_time_window("season", range_input)
 
     params_by_sport = {sport: get_params(sport, db) for sport in sports}
+    candidates = _load_candidates(db, sports=sports, region_id=region_id)
+    forecast_days = (
+        {}
+        if surface == RecommendationSurface.SEASON
+        else persisted_forecast_days(db, (spot.id for spot in candidates))
+    )
     scored: list[tuple[Spot, float]] = []
-    for spot in _load_candidates(db, sports=sports, region_id=region_id):
+    for spot in candidates:
         spot_sports = [sport for sport in sports if sport in (spot.sports or [])]
         if not spot_sports:
             continue
@@ -199,7 +214,21 @@ def scored_recommendations(
                 for sport in spot_sports
             )
         else:
-            days = _forecast_days(spot, surface, db=db, client=client, cache=cache)
+            try:
+                days = _forecast_days(
+                    spot,
+                    surface,
+                    db=db,
+                    client=client,
+                    cache=cache,
+                    persisted_days=forecast_days.get(spot.id),
+                )
+            except Exception:
+                # One unavailable local-dev provider response must not turn the
+                # complete aggregate recommendation endpoint into a 500.
+                continue
+            if not days:
+                continue
             best = max(
                 _forecast_score(spot, sport, days, profile, params_by_sport[sport])
                 for sport in spot_sports

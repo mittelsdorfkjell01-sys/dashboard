@@ -100,6 +100,21 @@ def test_beginner_offshore_flag_is_strictly_validated():
         validate_editorial({"beginner_offshore_ok": "yes"})
 
 
+def test_safety_notice_is_normalized_and_bounded():
+    import pytest
+
+    from app.admin.constants import validate_editorial
+
+    assert validate_editorial({"safety_notice": "  Starke  Strömung.\n"}) == {
+        "safety_notice": "Starke Strömung."
+    }
+    assert validate_editorial({"safety_notice": "  "}) == {"safety_notice": None}
+    with pytest.raises(ValueError):
+        validate_editorial({"safety_notice": 12})
+    with pytest.raises(ValueError):
+        validate_editorial({"safety_notice": "x" * 2_001})
+
+
 def test_kite_night_is_no():
     res = _kite(20, daylight=False)
     assert res["rating"] == NO

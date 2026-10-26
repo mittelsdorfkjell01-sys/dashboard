@@ -7,7 +7,8 @@ import pytest
 
 from app.api._http_cache import RECOMMENDATIONS_CACHE_CONTROL, set_recommendation_cache
 from app.recommendations.engine import character_fit, condition_fit, forecast_components
-from app.recommendations.service import bucket_location
+from app.recommendations.multisport import _forecast_days
+from app.recommendations.service import RecommendationSurface, bucket_location
 from app.scoring.rider.band import PersonalBand
 
 
@@ -89,9 +90,34 @@ def test_recommendation_cache_headers_separate_account_responses():
     set_recommendation_cache(public, private=False)
     set_recommendation_cache(private, private=True)
     assert public.headers["Cache-Control"] == RECOMMENDATIONS_CACHE_CONTROL
-    assert "stale-while-revalidate=21600" in public.headers["Cache-Control"]
+    assert "s-maxage=3600" in public.headers["Cache-Control"]
+    assert "stale-while-revalidate=86400" in public.headers["Cache-Control"]
+    assert "stale-if-error=86400" in public.headers["Cache-Control"]
+    assert public.headers["CDN-Cache-Control"] == public.headers["Vercel-CDN-Cache-Control"]
     assert private.headers["Cache-Control"] == "private, no-store"
     assert "Cookie" not in public.headers.get("Vary", "")
+
+
+def test_persisted_recommendation_forecast_never_checks_provider_fallback(monkeypatch):
+    days = [
+        {"date": f"2026-07-0{index}", "hours": _hours(3)}
+        for index in range(1, 5)
+    ]
+    monkeypatch.setattr(
+        "app.recommendations.multisport.provider_fallback_allowed",
+        lambda: pytest.fail("persisted snapshots must bypass request-time providers"),
+    )
+
+    selected = _forecast_days(
+        SimpleNamespace(location=None),
+        RecommendationSurface.NEXT_WEEK,
+        db=None,
+        client=None,
+        cache=None,
+        persisted_days=days,
+    )
+
+    assert selected == days[2:]
 
 
 @pytest.mark.parametrize("lat,lon", [(None, 10.0), (54.0, None), (91.0, 10.0)])

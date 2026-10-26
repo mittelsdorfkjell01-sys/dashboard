@@ -193,6 +193,14 @@ export const InfoIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Safety / hazard notice. */
+export const SafetyIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 3 2.8 20h18.4L12 3Z" />
+    <path d="M12 9v5M12 17.2h.01" />
+  </svg>
+);
+
 /** Facility: parking — "P" in a rounded square. */
 export const ParkingIcon = (p: IconProps) => (
   <svg {...base} {...p}>

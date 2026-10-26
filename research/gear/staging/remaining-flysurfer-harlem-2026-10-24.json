@@ -1,0 +1,2896 @@
+{
+  "reviewStatus": "accepted_for_import",
+  "checkedAt": "2026-10-24T12:00:00+02:00",
+  "rights": "Facts only. No manufacturer images, logos or traced artwork are included.",
+  "researchScope": "FLYSURFER and Harlem models named in the supplied research list.",
+  "records": [
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SPEED5 is listed in the cited official manufacturer source.",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "18 m²",
+        "value": 18,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 18,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SPEED5",
+      "category": "kite",
+      "season": "2016",
+      "modelYear": 2016,
+      "size": {
+        "label": "21 m²",
+        "value": 21,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 21,
+          "unit": "m²",
+          "status": "verified",
+          "uncertainty": "The 21 m² size is included because it is present in the official manual in addition to the supplied summary."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SONIC RACE is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "race",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "race",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "18 m²",
+        "value": 18,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 18,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC RACE",
+      "category": "kite",
+      "season": "2017",
+      "modelYear": 2017,
+      "size": {
+        "label": "21 m²",
+        "value": 21,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 21,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "PEAK⁶ is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "manufacturerRecommendedModels": [
+              "CONNECT Control Bar"
+            ]
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://flysurfer.com/products/kites/",
+            "title": "FLYSURFER current kite collection",
+            "publisher": "FLYSURFER",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T12:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          },
+          "notes": "Exact bar season was not established, so this is not linked to a target product version."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "2.5 m²",
+        "value": 2.5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 2.5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "PEAK⁶",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SOUL⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SOUL⁴ is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freestyle",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "flat_water",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "manufacturerRecommendedModels": [
+              "FUSION Control Bar",
+              "CONNECT Control Bar"
+            ]
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://flysurfer.com/products/kites/",
+            "title": "FLYSURFER current kite collection",
+            "publisher": "FLYSURFER",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T12:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          },
+          "notes": "Exact bar season was not established, so this is not linked to a target product version."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SOUL⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SOUL⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SOUL⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SOUL⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SOUL⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "18 m²",
+        "value": 18,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 18,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC⁵",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SONIC⁵ is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "manufacturerRecommendedModels": [
+              "FUSION Control Bar"
+            ]
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://flysurfer.com/products/kites/",
+            "title": "FLYSURFER current kite collection",
+            "publisher": "FLYSURFER",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T12:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          },
+          "notes": "Exact bar season was not established, so this is not linked to a target product version."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC⁵",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC⁵",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC⁵",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SONIC⁵",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "ERA² is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "manufacturerRecommendedModels": [
+              "FUSION Control Bar"
+            ]
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://flysurfer.com/products/kites/",
+            "title": "FLYSURFER current kite collection",
+            "publisher": "FLYSURFER",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T12:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          },
+          "notes": "Exact bar season was not established, so this is not linked to a target product version."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "ERA²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "14 m²",
+        "value": 14,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 14,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "STOKE⁴ is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "wave",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freestyle",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "flat_water",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "manufacturerRecommendedModels": [
+              "FORCE Control Bar"
+            ]
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://flysurfer.com/products/kites/",
+            "title": "FLYSURFER current kite collection",
+            "publisher": "FLYSURFER",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T12:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          },
+          "notes": "Exact bar season was not established, so this is not linked to a target product version."
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "4 m²",
+        "value": 4,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 4,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "STOKE⁴",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://flysurfer.com/services/downloads/",
+        "title": "FLYSURFER official manuals and line plans",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_manual",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "VMG³",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/products/kites/",
+        "title": "FLYSURFER current kite collection",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "VMG³ is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence and use cases are proven; sizes remain unresolved in the supplied list."
+        },
+        {
+          "field": "intended_use",
+          "value": "race",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "race",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "SUPERSONIC",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/products/kites/",
+        "title": "FLYSURFER current kite collection",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "SUPERSONIC is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence and use cases are proven; sizes remain unresolved in the supplied list."
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "HYBRID²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/products/kites/",
+        "title": "FLYSURFER current kite collection",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "HYBRID² is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence and use cases are proven; sizes remain unresolved in the supplied list."
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "HELI",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/products/kites/",
+        "title": "FLYSURFER current kite collection",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "HELI is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence and use cases are proven; sizes remain unresolved in the supplied list."
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "wave",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Flysurfer",
+      "name": "INDIE²",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://flysurfer.com/products/kites/",
+        "title": "FLYSURFER current kite collection",
+        "publisher": "FLYSURFER",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "INDIE² is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Current model presence and use cases are proven; sizes remain unresolved in the supplied list."
+        },
+        {
+          "field": "intended_use",
+          "value": "school",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "freeride",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "foil",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "school",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "foil",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Force",
+      "category": "kite",
+      "season": "From 2023; exact season unresolved",
+      "modelYear": null,
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Force is listed in the cited official manufacturer source.",
+          "status": "review",
+          "uncertainty": "Model presence from 2023 is retained; exact product season and sizes remain unresolved."
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Thrive V2 is listed in the cited official manufacturer source.",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "all-round",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "all_round",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive V2",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "13 m²",
+        "value": 13.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Peak is listed in the cited official manufacturer source.",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "big-air",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Peak",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "12 m²",
+        "value": 12.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 12.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Flow is listed in the cited official manufacturer source.",
+          "status": "review"
+        },
+        {
+          "field": "intended_use",
+          "value": "wave",
+          "status": "review"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "wave",
+          "condition": "waves",
+          "suitability": "designed_for",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "5 m²",
+        "value": 5.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 5.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "6 m²",
+        "value": 6.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 6.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "7 m²",
+        "value": 7.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 7.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "8 m²",
+        "value": 8.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 8.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Flow",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "10 m²",
+        "value": 10.0,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 10.0,
+          "unit": "m²",
+          "status": "review"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive LiteX",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Thrive LiteX is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "light-wind",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "light_wind",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive LiteX",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "15 m²",
+        "value": 15,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 15,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Thrive LiteX",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "17 m²",
+        "value": 17,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/collections/kites",
+        "title": "Harlem official kite collection",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 17,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Hadlow Pro",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "source": {
+        "url": "https://harlemkitesurfing.com/products/hadlow-pro",
+        "title": "Harlem Hadlow Pro",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "catalogue_presence",
+          "value": "Hadlow Pro is listed in the cited official manufacturer source.",
+          "status": "verified"
+        },
+        {
+          "field": "intended_use",
+          "value": "freestyle",
+          "status": "verified"
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "freestyle",
+          "condition": "flat_water",
+          "suitability": "designed_for",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "manufacturerRecommendedModel": "Hadlow Pro Bar",
+            "lineCount": 5,
+            "lineLengthM": 22
+          },
+          "status": "verified",
+          "source": {
+            "url": "https://harlemkitesurfing.com/products/hadlow-pro",
+            "title": "Harlem Hadlow Pro",
+            "publisher": "Harlem",
+            "type": "manufacturer_page",
+            "checkedAt": "2026-10-24T12:00:00+02:00",
+            "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+          },
+          "notes": "Exact bar season was not established, so this is not linked to a target product version."
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Hadlow Pro",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "9 m²",
+        "value": 9,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/products/hadlow-pro",
+        "title": "Harlem Hadlow Pro",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 9,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Hadlow Pro",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/products/hadlow-pro",
+        "title": "Harlem Hadlow Pro",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 11,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "brand": "Harlem",
+      "name": "Hadlow Pro",
+      "category": "kite",
+      "season": "Current catalogue (checked 2026-10-24)",
+      "modelYear": null,
+      "size": {
+        "label": "13 m²",
+        "value": 13,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://harlemkitesurfing.com/products/hadlow-pro",
+        "title": "Harlem Hadlow Pro",
+        "publisher": "Harlem",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-24T12:00:00+02:00",
+        "rights": "Facts only; no manufacturer imagery or protected artwork copied."
+      },
+      "claims": [
+        {
+          "field": "available_size",
+          "value": 13,
+          "unit": "m²",
+          "status": "verified"
+        }
+      ]
+    }
+  ]
+}

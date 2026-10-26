@@ -271,7 +271,10 @@ def update_spot(
         for key, value in (validate_editorial(data["editorial"]) or {}).items():
             if key in ("wind_danger", "hazards"):
                 continue
-            merged[key] = value
+            if key == "safety_notice" and value is None:
+                merged.pop(key, None)
+            else:
+                merged[key] = value
         spot.editorial = merged or None
 
     changes: dict[str, Any] = {"fields": sorted(data)}
@@ -325,7 +328,10 @@ def update_spot_metadata(
     for key, value in (validate_editorial(editorial) or {}).items():
         if key in ("wind_danger", "hazards"):
             continue  # explicitly dropped
-        merged[key] = value
+        if key == "safety_notice" and value is None:
+            merged.pop(key, None)
+        else:
+            merged[key] = value
     spot.editorial = merged
     record_audit(db, spot.id, "update", {"editorial_keys": sorted(editorial or {})}, actor)
     db.commit()

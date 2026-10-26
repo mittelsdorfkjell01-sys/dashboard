@@ -55,7 +55,11 @@ FORECAST_CACHE_CONTROL = (
 )
 
 RECOMMENDATIONS_CACHE_CONTROL = (
-    "public, max-age=300, s-maxage=1800, stale-while-revalidate=21600"
+    "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400, "
+    "stale-if-error=86400"
+)
+RECOMMENDATIONS_CDN_CACHE_CONTROL = (
+    "public, max-age=3600, stale-while-revalidate=86400, stale-if-error=86400"
 )
 PRIVATE_RECOMMENDATIONS_CACHE_CONTROL = "private, no-store"
 
@@ -99,6 +103,12 @@ def set_forecast_cache(response: Response) -> None:
 
 def set_recommendation_cache(response: Response, *, private: bool) -> None:
     """Separate signed-in responses while sharing the average-rider variant."""
-    response.headers["Cache-Control"] = (
-        PRIVATE_RECOMMENDATIONS_CACHE_CONTROL if private else RECOMMENDATIONS_CACHE_CONTROL
-    )
+    if private:
+        response.headers["Cache-Control"] = PRIVATE_RECOMMENDATIONS_CACHE_CONTROL
+        return
+    response.headers["Cache-Control"] = RECOMMENDATIONS_CACHE_CONTROL
+    # Targeted headers keep the complete anonymous response at Vercel's nearest
+    # PoP while leaving the browser on the short five-minute freshness window.
+    # CDN-Cache-Control also documents the intended policy for any future proxy.
+    response.headers["CDN-Cache-Control"] = RECOMMENDATIONS_CDN_CACHE_CONTROL
+    response.headers["Vercel-CDN-Cache-Control"] = RECOMMENDATIONS_CDN_CACHE_CONTROL

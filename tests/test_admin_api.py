@@ -1209,6 +1209,32 @@ def test_spot_patch_can_clear_optional_editorial_field(admin, region_id):
     assert admin.get(f"/admin/spots/{sid}/record").json()["editorial"]["description"] is None
 
 
+def test_spot_patch_can_add_change_and_delete_safety_notice(admin, region_id):
+    spot = _create_spot(admin, region_id, name="Safety Notice Spot")
+    sid = spot["id"]
+
+    created = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"editorial": {"safety_notice": "Starke Strömung."}},
+    )
+    assert created.status_code == 200
+    assert created.json()["editorial"]["safety_notice"] == "Starke Strömung."
+
+    changed = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"editorial": {"safety_notice": "Felsen am Einstieg."}},
+    )
+    assert changed.status_code == 200
+    assert changed.json()["editorial"]["safety_notice"] == "Felsen am Einstieg."
+
+    deleted = admin.patch(
+        f"/admin/spots/{sid}",
+        json={"editorial": {"safety_notice": None}},
+    )
+    assert deleted.status_code == 200
+    assert "safety_notice" not in (deleted.json()["editorial"] or {})
+
+
 def test_spot_patch_moves_pin_and_reresolves_era5_cell(admin, region_id):
     """Correcting the pin (lat/lon) must persist — regression: SpotUpdate used to
     drop lat/lon, so the marker snapped back on the next open."""

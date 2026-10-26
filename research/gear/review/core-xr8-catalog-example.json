@@ -1,0 +1,99 @@
+{
+  "reviewStatus": "review_requested",
+  "checkedAt": "2026-10-23T16:55:00Z",
+  "rights": "Facts only; no manufacturer images, logos or traced artwork.",
+  "records": [
+    {
+      "brand": "CORE",
+      "name": "XR8",
+      "category": "kite",
+      "subtype": "delta_bow",
+      "season": "2023",
+      "modelYear": 2023,
+      "size": {
+        "label": "11 m²",
+        "value": 11,
+        "unit": "m²"
+      },
+      "source": {
+        "url": "https://ridecore.com/us/newsroom/2023/core-xr8",
+        "title": "CORE XR8 – 2023",
+        "publisher": "CORE",
+        "type": "manufacturer_page",
+        "checkedAt": "2026-10-23T16:55:00Z",
+        "rights": "Facts only; no manufacturer imagery copied."
+      },
+      "claims": [
+        {
+          "field": "model_year",
+          "value": 2023,
+          "status": "verified"
+        },
+        {
+          "field": "strut_count",
+          "value": 5,
+          "status": "verified"
+        },
+        {
+          "field": "kite_shape",
+          "value": "delta",
+          "status": "verified"
+        },
+        {
+          "field": "canopy_material",
+          "value": "CORETEX 2 Triple Ripstop",
+          "status": "verified"
+        },
+        {
+          "field": "leading_edge_material",
+          "value": "EXOTEX 2 Ultra Rigid Dacron",
+          "status": "verified"
+        }
+      ],
+      "compatibility": [
+        {
+          "targetCategory": "bar",
+          "relation": "recommended",
+          "specification": {
+            "system": "Sensor Bar System"
+          },
+          "status": "verified"
+        },
+        {
+          "targetCategory": "line_set",
+          "relation": "requires",
+          "specification": {
+            "lineCount": null,
+            "lineLengthM": null
+          },
+          "status": "review",
+          "uncertainty": "Leinenanzahl und -länge müssen noch im offiziellen Handbuch belegt werden."
+        }
+      ],
+      "useProfiles": [
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "freeride",
+          "condition": "all_conditions",
+          "suitability": "designed_for",
+          "status": "verified"
+        },
+        {
+          "sport": "kitesurf",
+          "discipline": "big_air",
+          "condition": "strong_wind",
+          "suitability": "suitable",
+          "status": "review",
+          "uncertainty": "Starkwind-Eignung muss noch durch eine ausdrückliche Herstellerquelle bestätigt werden; numerische Windranges werden nicht gespeichert."
+        }
+      ]
+    }
+  ]
+}

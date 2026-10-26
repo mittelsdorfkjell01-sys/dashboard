@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.models import Region, Spot
 from app.seed.data import REGIONS, SPOTS
+from app.seed.safety_notices import initial_safety_notice
 
 
 def _point(lon_lat: tuple[float, float]):
@@ -95,6 +96,10 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
         if existing is not None:
             continue
         region = region_by_slug[s["region_slug"]]
+        editorial = dict(s.get("editorial") or {})
+        safety_notice = initial_safety_notice(s["name"])
+        if safety_notice:
+            editorial["safety_notice"] = safety_notice
         # water_type / level / water_character are multi-select arrays now; the
         # seed data still carries a single scalar each, so wrap into a list.
         spot = Spot(
@@ -115,7 +120,7 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             status=s["status"],
             facing=s.get("facing"),
             confidence=s.get("confidence"),
-            editorial=s.get("editorial"),
+            editorial=editorial or None,
             image=_image(s.get("image")),
             model_pref=region.defaults.get("model_pref") if region.defaults else None,
         )

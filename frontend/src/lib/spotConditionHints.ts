@@ -3,10 +3,10 @@ import { bottomTypeLabel } from "./labels";
 import type { Spot } from "./types";
 
 export type SpotConditionHint = {
-  id: "forecast-wind" | "temperature" | "bottom";
-  kind: "wind" | "temperature" | "bottom";
+  id: "safety" | "forecast-wind" | "temperature" | "bottom";
+  kind: "safety" | "wind" | "temperature" | "bottom";
   sentence: string;
-  sourceLabel: "Vorhersage" | "Geprüftes Spotprofil";
+  sourceLabel: "Redaktioneller Sicherheitshinweis" | "Vorhersage" | "Geprüftes Spotprofil";
   timing?: string;
 };
 
@@ -93,6 +93,14 @@ export function buildSpotConditionHints(
   forecast: ForecastSummaryRead | null | undefined,
 ): SpotConditionHint[] {
   const hints: SpotConditionHint[] = [];
+  if (spot.safetyNotice?.trim()) {
+    hints.push({
+      id: "safety",
+      kind: "safety",
+      sentence: spot.safetyNotice.trim(),
+      sourceLabel: "Redaktioneller Sicherheitshinweis",
+    });
+  }
   const hour = forecast?.hour;
   const provenance = hour?.provenance;
   const normal = hour?.coastal_normal_deg;

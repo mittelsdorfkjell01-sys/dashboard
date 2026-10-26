@@ -42,6 +42,8 @@ export interface Spot {
   regionId?: string;
   sports?: string[];
   description?: string;
+  /** Redaktionell geprüfter, statischer Sicherheitshinweis zum Spot. */
+  safetyNotice?: string;
   level?: string[];
   waterTypes?: string[];
   bottomType?: string[];
