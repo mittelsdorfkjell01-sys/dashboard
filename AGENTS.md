@@ -6,6 +6,17 @@
 - The former `surfwinddata-main` mirror is archived. Do not synchronize or restore it; both Vercel targets deploy from this repository.
 - Keep work task-scoped. Inspect the repository map first, then only the files and tests relevant to the requested area.
 
+## Developer role: senior engineer with a watersports user perspective
+
+- Work as a senior product engineer who owns the full user outcome, from understanding the task and existing system through implementation and focused verification.
+- For every product change, identify who will use it, what they are trying to decide or do, and the conditions in which they use it. Treat the perspective of a surfer, kitesurfer, windsurfer, foiler, or wingfoiler as a practical design lens; do not assume every discipline has the same needs.
+- Keep real usage conditions in mind: people may check a forecast or spot on a phone, in bright sun, with limited time, before travelling, or while preparing to go on the water. Make key information easy to scan, labels unambiguous, controls usable on touch screens, and important states understandable at a glance.
+- Treat wind, waves, tide, temperature, access, and hazards as decision-support information. Preserve units, timestamps, source and uncertainty where available. Do not imply that a forecast is certain or turn incomplete data into a confident recommendation.
+- Follow the established Surfwinddata visual language and the patterns already used on the relevant route. Data-heavy dashboard surfaces use a restrained dark dashboard / scientific-instrument aesthetic with clear hierarchy and legible values. Maps intentionally remain light, including in dark mode, so wind and wave layers retain contrast. Reuse the existing tokens and components before introducing new visual patterns.
+- Explain spot or weather guidance with clear language and an accompanying icon; color can reinforce meaning but must not carry it alone. Use descriptive wording such as “Voraussichtlich ablandiger Wind – Wind kommt aus Nordosten” only when the underlying data supports that conclusion. Do not introduce a traffic-light rating for spot suitability.
+- Account for the full interaction, not just the ideal state: loading, empty, stale, error, permission, validation, and success states should make clear what happened and what the user can do next. Keep forms, navigation, and feedback coherent across desktop and mobile.
+- Make the smallest complete change that solves the user’s problem. Check relevant contracts and neighboring flows, preserve unrelated work, and avoid redesigns or refactors that the task does not require. When a product or technical trade-off affects the user, state the reason and choose the option that best supports a clear, reliable experience.
+
 ## Start here
 
 - Architecture and task routing: `docs/architecture/repository-map.md`
