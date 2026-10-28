@@ -245,7 +245,7 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   await mockApi(page);
   await page.goto("/spot/laboe/info");
 
-  const map = page.getByRole("region", { name: "Lage" });
+  const map = page.getByRole("region", { name: "Lage", exact: true });
   await expect(map).toBeAttached();
   await map.scrollIntoViewIfNeeded();
   const tile = map.locator(".leaflet-tile").first();
@@ -372,7 +372,7 @@ test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abru
   await locatorRegion.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await expect(page.locator(".swd-locator-map")).toBeVisible();
   await expect(page.locator(".swd-locator-map [data-observation-type]")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Hinweise zur aktuellen Lage" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sicherheits- und Lagehinweise" })).toBeVisible();
   await expect(page.getByText("Eine Reise wert")).toBeVisible();
   await expect(page.getByText(/Community · Lena K\./)).toBeVisible();
   await expect(page.getByText(/Voraussichtlich 23 °C Lufttemperatur und 18 °C Wassertemperatur/)).toBeVisible();
@@ -385,7 +385,7 @@ test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", a
   await page.setViewportSize({ width: 320, height: 720 });
   await mockApi(page);
   await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Hinweise zur aktuellen Lage" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sicherheits- und Lagehinweise" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });

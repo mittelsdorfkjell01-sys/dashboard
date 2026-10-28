@@ -29,6 +29,7 @@ from app.api import (
 )
 from app.config import get_settings
 from app.csrf import CSRFMiddleware
+from app.db.schema import EXPECTED_DB_FINGERPRINT
 from app.safety import RemoteWriteGuardMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 from app.health import check_database, check_redis
@@ -204,6 +205,10 @@ def _readiness(response: Response) -> dict[str, object]:
         "schema": database.schema,
         "redis": "ok" if redis_ok else "down",
     }
+    if database.schema == "ok":
+        # Proves the active schema contract without exposing a DSN, database
+        # name, host or provider identifier.
+        payload["schema_fingerprint"] = EXPECTED_DB_FINGERPRINT
     diagnostics = {
         key: value
         for key, value in {

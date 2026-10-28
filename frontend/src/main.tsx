@@ -73,7 +73,7 @@ window.addEventListener("vite:preloadError", (event) => {
 
 // The admin back office is code-split behind a build flag: the public build
 // (surfwinddata.com) never imports ./adminRoutes, so none of the admin UI ships.
-// The admin build (kjellmittelsdorf.de, VITE_INCLUDE_ADMIN=true) pulls it in and
+// The admin build (dashboardsurfwind.vercel.app, VITE_INCLUDE_ADMIN=true) pulls it in and
 // opens the dashboard at "/". See lib/target.ts.
 async function bootstrap() {
   // The admin-only deployment redirects "/" into the dashboard but keeps every

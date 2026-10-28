@@ -6,6 +6,7 @@
   "mode": "shadow",
   "public_effect": "none",
   "station_limit": 240,
+  "freshness_limit_minutes": 180,
   "bounds": {
     "south": 29.0,
     "north": 72.0,

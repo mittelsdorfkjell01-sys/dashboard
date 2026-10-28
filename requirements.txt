@@ -14,7 +14,7 @@ boto3==1.40.11
 pyproj==3.7.1
 httpx==0.28.1            # Open-Meteo client (Sprint 3 live path) + test client
 python-multipart==0.0.32  # multipart/form-data parsing for the hero-image upload
-pillow==12.3.0            # server-side hero-image dimension/format validation
+pillow==13.0.0            # server-side hero-image dimension/format validation
 pillow-avif-plugin==1.5.5 # AVIF encode on upload (falls back to built-in WebP if absent)
 
 # --- Auth (Sprint A) ---

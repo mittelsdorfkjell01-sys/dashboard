@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.live.cache import InMemoryCache
 from app.live.deps import get_cache, get_om_client
+from app.config import get_settings
 from app.main import app
 from app.models import Region, Spot
 from app.search.deps import get_geocoder, get_scorer
@@ -58,7 +59,11 @@ def seeded_public_catalog(_migrated_db):
 
 
 @pytest.fixture
-def public_contract_deps():
+def public_contract_deps(monkeypatch):
+    # This contract checks public serialization, not the deployment-specific
+    # shadow-field switch. Keep it deterministic when a developer has enabled
+    # weather fields in the local environment.
+    monkeypatch.setattr(get_settings(), "weather_field_public_enabled", False)
     app.dependency_overrides[get_geocoder] = lambda: FakeGeocoder()
     app.dependency_overrides[get_scorer] = lambda: FakeScorer({}, default=0.6)
     app.dependency_overrides[get_om_client] = lambda: FakeOpenMeteoClient()
@@ -94,7 +99,7 @@ def test_public_serializer_helpers_hide_internal_scores():
         assert _forbidden_paths(payload) == []
 
 
-def test_private_account_rider_serializers_do_not_expose_personal_band():
+def test_private_account_rider_serializers_do_not_expose_personal_band(db):
     from app.account.rider import gear_payload, profile_payload, sport_profile_payload
     from app.models import GearItem, RiderProfile, RiderSportProfile
     import uuid
@@ -111,7 +116,7 @@ def test_private_account_rider_serializers_do_not_expose_personal_band():
     payloads = (
         profile_payload(profile),
         sport_profile_payload(sport, "kitesurf", 3),
-        gear_payload(gear, 3),
+        gear_payload(db, gear, 3),
     )
     for payload in payloads:
         assert _forbidden_paths(payload) == []

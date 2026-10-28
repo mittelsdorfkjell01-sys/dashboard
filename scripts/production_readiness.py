@@ -2,8 +2,10 @@
 
 import argparse
 from datetime import datetime, timedelta
+from hashlib import sha256
 import json
 import os
+from pathlib import Path
 import sys
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
@@ -14,7 +16,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.pool import NullPool
 
 from app.config import _normalize_pg_driver
-from app.db.schema import EXPECTED_DB_REVISION
+from app.db.schema import EXPECTED_DB_FINGERPRINT, EXPECTED_DB_REVISION
 
 
 def _fail(label: str, exc: BaseException | None = None) -> None:
@@ -40,7 +42,44 @@ def _connect(url: str, label: str):
         _fail(f"{label} connection failed", exc)
 
 
-def database_preflight(require_target: bool) -> None:
+def _database_state(connection, label: str) -> tuple[tuple[str, ...], str | None]:
+    try:
+        revisions = tuple(
+            connection.execute(text("SELECT version_num FROM alembic_version")).scalars()
+        )
+    except Exception as exc:
+        _fail(f"{label} current schema revision could not be read", exc)
+    if len(revisions) > 1:
+        _fail(f"{label} database contains multiple Alembic revisions")
+    try:
+        count, latest = connection.execute(text(
+            "SELECT count(id), max(updated_at) FROM spots WHERE status = 'published'"
+        )).one()
+        latest_token = latest.isoformat() if latest is not None else "none"
+        catalog_version = f"{count}:{latest_token}"
+    except Exception:
+        # A database before the initial catalogue migration has no token yet.
+        # Postflight verification requires it once the target is reached.
+        catalog_version = None
+    return revisions, catalog_version
+
+
+def _short_fingerprint(value: str | None) -> str:
+    return "unavailable" if value is None else sha256(value.encode("utf-8")).hexdigest()[:12]
+
+
+def _write_github_outputs(values: dict[str, str]) -> None:
+    output_path = os.environ.get("GITHUB_OUTPUT")
+    if not output_path:
+        _fail("GITHUB_OUTPUT is not configured")
+    with Path(output_path).open("a", encoding="utf-8") as handle:
+        for key, value in values.items():
+            if "\n" in value or "\r" in value:
+                _fail(f"unsafe newline in GitHub output {key}")
+            handle.write(f"{key}={value}\n")
+
+
+def database_preflight(require_target: bool, *, github_output: bool = False) -> None:
     config = Config("alembic.ini")
     script = ScriptDirectory.from_config(config)
     heads = script.get_heads()
@@ -50,26 +89,40 @@ def database_preflight(require_target: bool) -> None:
 
     direct = _connect(os.environ.get("DIRECT_DATABASE_URL", ""), "direct")
     try:
-        revisions = tuple(direct.execute(text("SELECT version_num FROM alembic_version")).scalars())
-    except Exception as exc:
-        _fail("current schema revision could not be read", exc)
+        direct_revisions, direct_catalog = _database_state(direct, "direct")
     finally:
         direct.close()
-    if len(revisions) > 1:
-        _fail("database contains multiple Alembic revisions")
-    current = revisions[0] if revisions else "base/unversioned"
+    current = direct_revisions[0] if direct_revisions else "base/unversioned"
     print(f"current revision: {current}")
     known_ancestors = {
         revision.revision
         for revision in script.walk_revisions(base="base", head=EXPECTED_DB_REVISION)
     }
-    if revisions and revisions[0] not in known_ancestors:
+    if direct_revisions and direct_revisions[0] not in known_ancestors:
         _fail("current revision is not an ancestor of the target")
-    if require_target and revisions != (EXPECTED_DB_REVISION,):
+    if require_target and direct_revisions != (EXPECTED_DB_REVISION,):
         _fail("database did not reach the target revision")
 
     pooled = _connect(os.environ.get("POOLED_DATABASE_URL", ""), "pooled")
-    pooled.close()
+    try:
+        pooled_revisions, pooled_catalog = _database_state(pooled, "pooled")
+    finally:
+        pooled.close()
+    if pooled_revisions != direct_revisions:
+        _fail("direct and pooled connections report different schema revisions")
+    if pooled_catalog != direct_catalog:
+        _fail("direct and pooled connections report different public catalogues")
+    if require_target and direct_catalog is None:
+        _fail("target database has no readable public catalogue")
+    print(f"catalog fingerprint: {_short_fingerprint(direct_catalog)}")
+    print("direct/pooled schema and catalogue: identical")
+    if github_output:
+        if direct_catalog is None:
+            _fail("catalogue attestation is unavailable")
+        _write_github_outputs({
+            "schema_fingerprint": EXPECTED_DB_FINGERPRINT,
+            "catalog_version": direct_catalog,
+        })
 
 
 def _get_json(base_url: str, path: str):
@@ -143,8 +196,14 @@ def api_smoke(*, require_wave_fields: bool = False) -> None:
     health = _get_json(base_url, "/health/ready")
     if health.get("db") != "ok" or health.get("schema") != "ok":
         _fail("readiness did not report database and schema as ok")
+    expected_schema = os.environ.get("EXPECTED_SCHEMA_FINGERPRINT")
+    if expected_schema and health.get("schema_fingerprint") != expected_schema:
+        _fail("readiness schema fingerprint differs from the migration postflight")
     print("readiness: ok")
-    _get_json(base_url, "/spots/version")
+    version = _get_json(base_url, "/spots/version")
+    expected_catalog = os.environ.get("EXPECTED_CATALOG_VERSION")
+    if expected_catalog and version.get("version") != expected_catalog:
+        _fail("public API catalogue differs from the migration postflight")
     spots = _get_json(base_url, "/spots?limit=1")
     if not isinstance(spots, list) or not spots or not spots[0].get("id"):
         _fail("spot list did not return a smoke-test candidate")
@@ -173,11 +232,12 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     database = commands.add_parser("database")
     database.add_argument("--require-target", action="store_true")
+    database.add_argument("--github-output", action="store_true")
     api = commands.add_parser("api-smoke")
     api.add_argument("--require-wave-fields", action="store_true")
     args = parser.parse_args()
     if args.command == "database":
-        database_preflight(args.require_target)
+        database_preflight(args.require_target, github_output=args.github_output)
     else:
         api_smoke(require_wave_fields=args.require_wave_fields)
 

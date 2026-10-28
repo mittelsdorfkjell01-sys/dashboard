@@ -30,6 +30,28 @@ Read-only session check:
 python -m scripts.europe_measurement_status --session-check
 ```
 
+Repository-wide workflow overview (read-only):
+
+```powershell
+python -m scripts.backtest_status
+```
+
+This command reports the latest GitHub Actions run for the Europe measurement,
+its monitor, tide worker, forecast verification, weather shadow and LiveWind
+shadow workflows. It never starts, cancels or reruns a job. Interpret the
+result precisely:
+
+- `success` means the workflow ran and completed successfully;
+- `failure` means its logs need investigation;
+- `skipped` means the workflow exists but its current gates did not allow it to
+  run; it is not evidence of an active backtest;
+- the run URL opens the exact Summary and Logs in GitHub Actions.
+
+The Europe campaign uses its dedicated measurement database and remains
+separate from the public and admin deployment database. Do not delete or
+repurpose its database, workflow variables or secrets while the configured
+campaign window is active.
+
 Read-only progress counters from the configured database:
 
 ```powershell
@@ -74,6 +96,32 @@ or comparable residuals are missing, the shadow activation boundary is
 violated, or database size reaches 900 MB. A failed scheduled workflow is the
 operational alert; it never changes public forecast state.
 
-At campaign end, first inspect station coverage, capture gaps, provider errors,
-exact-bundle completeness and residual counts. Do not activate corrections from
-this campaign automatically.
+The 180-minute limit is explicit in the campaign configuration. It covers six
+missed 30-minute collection slots and is a campaign-availability gate, not a
+claim that every sensor publishes every 30 minutes. Status output keeps the
+latest observation time separate from provider receipt, import/processing time
+and the observation's measurement period. Diagnose failures in this order:
+
+1. observation time in the future: sensor clock or timezone/UTC parsing;
+2. old observation with recent receipt: provider delay or a real sensor gap;
+3. old receipt/import: workflow, queue, database or provider-fetch delay;
+4. compare the stored measurement period and station metadata with the
+   provider's stated cadence; never relabel an old observation as current.
+
+Until the configured end, the repository owner watches the scheduled workflow
+daily and acknowledges failures the same day. A failed freshness gate opens an
+operations issue with the three timestamps, affected station count, workflow
+run and classification (clock, provider, pipeline or genuine gap). LiveWind and
+measurement-derived corrections remain launch-gated and shadow-only.
+
+At campaign end, run a formal evaluation before any rollout decision. Report:
+
+- station and geographic coverage plus observed provider cadences;
+- expected versus captured intervals, gaps and outages by cause;
+- counts excluded for clock, provenance, QC, epoch or pre-observation evidence;
+- exact-bundle and comparable-residual completeness;
+- error distributions and uncertainty by region, lead time and condition;
+- all quality rules, known biases and limits on what the sample can prove.
+
+Do not activate corrections from this campaign automatically. Activation needs
+a separately reviewed evidence record and explicit operational approval.

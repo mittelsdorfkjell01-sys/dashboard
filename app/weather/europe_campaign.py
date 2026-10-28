@@ -30,6 +30,7 @@ class EuropeWindCampaign:
     mode: str
     public_effect: str
     station_limit: int
+    freshness_limit_minutes: int
     bounds: tuple[float, float, float, float]
     status: str
 
@@ -54,6 +55,9 @@ def load_campaign(path: Path = CAMPAIGN_FILE) -> EuropeWindCampaign:
         raise ValueError("Europe measurement campaign must run exactly 21 days")
     if payload.get("mode") != "shadow" or payload.get("public_effect") != "none":
         raise ValueError("Europe measurement campaign must remain shadow-only")
+    freshness_limit_minutes = int(payload["freshness_limit_minutes"])
+    if freshness_limit_minutes <= 0:
+        raise ValueError("campaign freshness limit must be positive")
     return EuropeWindCampaign(
         campaign_id=str(payload["campaign_id"]),
         starts_at=starts_at,
@@ -62,6 +66,7 @@ def load_campaign(path: Path = CAMPAIGN_FILE) -> EuropeWindCampaign:
         mode=str(payload["mode"]),
         public_effect=str(payload["public_effect"]),
         station_limit=int(payload["station_limit"]),
+        freshness_limit_minutes=freshness_limit_minutes,
         bounds=(
             float(bounds["south"]), float(bounds["north"]),
             float(bounds["west"]), float(bounds["east"]),

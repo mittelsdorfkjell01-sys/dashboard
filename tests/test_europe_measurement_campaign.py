@@ -13,6 +13,7 @@ def test_campaign_is_exactly_three_weeks_and_shadow_only():
     assert (campaign.ends_at - campaign.starts_at).days == 21
     assert campaign.mode == "shadow"
     assert campaign.public_effect == "none"
+    assert campaign.freshness_limit_minutes == 180
     assert campaign.phase(campaign.starts_at) == "active"
     assert campaign.phase(campaign.ends_at) == "ended"
 
@@ -59,6 +60,12 @@ def test_campaign_health_requires_fresh_shadow_evidence():
         "latest_observation_at": (
             campaign.starts_at + timedelta(hours=23, minutes=50)
         ).isoformat(),
+        "latest_observation_received_at": (
+            campaign.starts_at + timedelta(hours=23, minutes=55)
+        ).isoformat(),
+        "latest_observation_imported_at": (
+            campaign.starts_at + timedelta(hours=23, minutes=56)
+        ).isoformat(),
         "exact_bundles": 100,
         "residuals": {"degraded": 20},
         "activation_eligible_residuals": 0,
@@ -72,6 +79,28 @@ def test_campaign_health_requires_fresh_shadow_evidence():
     failed = health_status(report, now=campaign.starts_at + timedelta(days=1))
     assert failed["status"] == "failed"
     assert "public_activation_boundary_violated" in failed["failures"]
+
+
+def test_campaign_health_distinguishes_clock_and_pipeline_timestamps():
+    campaign = load_campaign()
+    now = campaign.starts_at + timedelta(days=1)
+    report = status(now=now)
+    report["database"] = {
+        "stations": 240,
+        "observations": 1,
+        "latest_observation_at": (now + timedelta(minutes=10)).isoformat(),
+        "latest_observation_received_at": (now + timedelta(minutes=9)).isoformat(),
+        "latest_observation_imported_at": (now + timedelta(minutes=8)).isoformat(),
+        "exact_bundles": 1,
+        "residuals": {"degraded": 1},
+        "activation_eligible_residuals": 0,
+        "database_size_bytes": 1,
+    }
+
+    failed = health_status(report, now=now)
+    assert "latest_observation_clock_skew_future" in failed["failures"]
+    assert "latest_observation_received_before_observed" in failed["failures"]
+    assert "latest_observation_imported_before_received" in failed["failures"]
 
 
 def test_balanced_station_selection_does_not_fill_one_grid_cell_first():

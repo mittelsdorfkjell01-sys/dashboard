@@ -1,4 +1,4 @@
-import { readdir, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,12 +10,22 @@ const sizes = await Promise.all(
 const tooLarge = sizes.filter(({ bytes }) => bytes > 1_000_000);
 const isAdminBuild = process.env.VITE_INCLUDE_ADMIN === "true";
 const hasAdminChunk = files.some((name) => /admin/i.test(name));
+const indexHtml = await readFile(fileURLToPath(new URL("../dist/index.html", import.meta.url)), "utf8");
+const hasNoIndex = indexHtml.includes('name="robots"') && indexHtml.includes("noindex");
 if (!isAdminBuild && hasAdminChunk) {
   console.error("Public build contains an admin chunk.");
   process.exit(1);
 }
 if (isAdminBuild && !hasAdminChunk) {
   console.error("Admin build is missing its admin chunks.");
+  process.exit(1);
+}
+if (isAdminBuild && !hasNoIndex) {
+  console.error("Admin build must prevent search-engine indexing.");
+  process.exit(1);
+}
+if (!isAdminBuild && hasNoIndex) {
+  console.error("Public build must remain indexable.");
   process.exit(1);
 }
 if (tooLarge.length) {

@@ -23,7 +23,25 @@ export default defineConfig(({ command, mode }) => {
     rootEnv.VITE_CARTO_KEY ||
     "";
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: "admin-deployment-noindex",
+        transformIndexHtml() {
+          if (command !== "build" || !adminBuild) return [];
+          return [
+            {
+              tag: "meta",
+              attrs: {
+                name: "robots",
+                content: "noindex, nofollow, noarchive, nosnippet",
+              },
+              injectTo: "head",
+            },
+          ];
+        },
+      },
+    ],
     optimizeDeps: {
       // MapLibre ships its worker as a sibling ESM asset. Pre-bundling the
       // package rewrites that URL into Vite's deps cache where the worker does
@@ -59,6 +77,16 @@ export default defineConfig(({ command, mode }) => {
     },
     test: {
       exclude: ["e2e/**", "node_modules/**"],
+      coverage: {
+        provider: "v8",
+        reporter: ["text", "json-summary", "lcov"],
+        thresholds: {
+          lines: 50,
+          statements: 46,
+          branches: 42,
+          functions: 35,
+        },
+      },
     },
   };
 });
