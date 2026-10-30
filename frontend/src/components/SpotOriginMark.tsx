@@ -46,8 +46,8 @@ export function SpotOriginLine({ spot, className = "" }: { spot: Spot; className
   const text =
     spot.origin === "community"
       ? spot.contributorName
-        ? `Dieser Spot wurde von ${spot.contributorName} eingetragen und von uns freigegeben.`
-        : "Dieser Spot wurde von der Community eingetragen und von uns freigegeben."
+        ? `Dieser Spot wurde von ${spot.contributorName} eingetragen und als Community-Beitrag übernommen.`
+        : "Dieser Spot wurde von der Community eingetragen und als Community-Beitrag übernommen."
       : "Dieser Spot wurde von der Redaktion erfasst.";
   return <p className={`text-caption text-muted ${className}`}>{text}</p>;
 }

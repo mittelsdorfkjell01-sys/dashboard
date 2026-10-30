@@ -7,6 +7,7 @@ override → audit → provenance → recompute → revert behaviour.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import delete, select
@@ -100,12 +101,34 @@ def _make_publishable(admin, sid):
     go-live but is not derived by it — go-live only queues an async
     wind_climatology_v2 run, so the "climatology" gap stays open afterwards."""
     admin.patch(f"/admin/spots/{sid}", json={
-        "editorial": {"description": "A breezy Baltic flatwater spot."},
+        "editorial": {
+            "description": "A breezy Baltic flatwater spot.",
+            "safety_notice": "Current, entry and local rules must be checked on site.",
+        },
     })
     admin.post(f"/admin/spots/{sid}/image", json={
         "url": "https://img/x.jpg", "source": "unsplash",
         "license": "Unsplash License", "credit": "Jo",
     })
+    checked_at = datetime.now(timezone.utc).isoformat()
+    for field_path in (
+        "location", "sports", "level", "editorial.description",
+        "editorial.safety_notice",
+    ):
+        response = admin.post(f"/admin/spots/{sid}/content-sources", json={
+            "field_path": field_path,
+            "url": f"https://example.test/source/{field_path.replace('.', '-')}",
+            "title": f"Test source for {field_path}",
+            "publisher": "Test Publisher",
+            "checked_at": checked_at,
+            "verification_status": "verified",
+        })
+        assert response.status_code == 201, response.text
+    reviewed = admin.patch(
+        f"/admin/spots/{sid}/content-review", json={"status": "verified"}
+    )
+    assert reviewed.status_code == 200, reviewed.text
+    assert reviewed.json()["content_status"] == "verified"
 
 
 def _create_region(admin, *, name: str, lat: float, lon: float, country: str = "DE"):
@@ -133,6 +156,75 @@ def test_editorial_classification_is_optional_and_independent_of_origin(admin, r
     assert updated.status_code == 200, updated.text
     assert updated.json()["origin"] == "editorial"
     assert updated.json()["editorial_classification"] == "worth_trip"
+
+
+def test_content_review_requires_field_sources_and_invalidates_after_edit(admin, region_id):
+    spot = _create_spot(admin, region_id)
+    sid = spot["id"]
+    assert spot["content_status"] == "unreviewed"
+
+    admin.patch(f"/admin/spots/{sid}", json={
+        "editorial": {
+            "description": "Reviewed place description.",
+            "safety_notice": "Check current, entry and local restrictions on site.",
+        },
+    })
+    admin.post(f"/admin/spots/{sid}/image", json={
+        "url": "https://img/content-review.jpg",
+        "source": "manual",
+        "license": "CC BY 4.0",
+        "credit": "Test Photographer",
+    })
+
+    blocked = admin.patch(
+        f"/admin/spots/{sid}/content-review", json={"status": "verified"}
+    )
+    assert blocked.status_code == 409
+    assert "content.source.location" in blocked.json()["detail"]["gaps"]
+
+    checked_at = datetime.now(timezone.utc).isoformat()
+    created_sources = []
+    for field_path in (
+        "location", "sports", "level", "editorial.description",
+        "editorial.safety_notice",
+    ):
+        response = admin.post(f"/admin/spots/{sid}/content-sources", json={
+            "field_path": field_path,
+            "url": f"https://example.test/content/{field_path.replace('.', '-')}",
+            "title": f"Source {field_path}",
+            "checked_at": checked_at,
+            "verification_status": "verified",
+        })
+        assert response.status_code == 201, response.text
+        created_sources.append(response.json())
+
+    listed = admin.get(f"/admin/spots/{sid}/content-sources")
+    assert listed.status_code == 200
+    assert len(listed.json()) == 5
+
+    verified = admin.patch(
+        f"/admin/spots/{sid}/content-review", json={"status": "verified"}
+    )
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["content_reviewed_at"] is not None
+    assert verified.json()["content_review_due_at"] is not None
+
+    edited = admin.patch(f"/admin/spots/{sid}", json={
+        "editorial": {
+            "description": "The reviewed description has changed.",
+            "safety_notice": "Check current, entry and local restrictions on site.",
+        },
+    })
+    assert edited.status_code == 200
+    assert edited.json()["content_status"] == "review_due"
+
+    conflicted_source = admin.patch(
+        f"/admin/spots/{sid}/content-sources/{created_sources[0]['id']}",
+        json={"verification_status": "conflict"},
+    )
+    assert conflicted_source.status_code == 200
+    record = admin.get(f"/admin/spots/{sid}/record").json()
+    assert record["content_status"] == "conflict"
 
 
 # --- catalogue duplicate protection ---------------------------------------
@@ -532,6 +624,23 @@ def test_grid_cell_change_keeps_old_snapshot_and_queues_refresh(
     )
     assert latest.status == "queued"
     assert latest.params["reason"] == "location_changed"
+
+    # Moving a spot invalidates the editorial review as well as ERA5 freshness.
+    # Re-verify the changed location claim before checking the climatology path.
+    checked_at = datetime.now(timezone.utc).isoformat()
+    source = admin.post(f"/admin/spots/{sid}/content-sources", json={
+        "field_path": "location",
+        "url": "https://example.test/source/moved-location",
+        "title": "Updated test location",
+        "publisher": "Test Publisher",
+        "checked_at": checked_at,
+        "verification_status": "verified",
+    })
+    assert source.status_code == 201, source.text
+    reviewed = admin.patch(
+        f"/admin/spots/{sid}/content-review", json={"status": "verified"}
+    )
+    assert reviewed.status_code == 200, reviewed.text
 
     # Existing weekly values mean Go Live does not run a second inline compute.
     live = admin.post(f"/admin/spots/{sid}/live")
@@ -1592,6 +1701,21 @@ def test_region_publish_status_and_public_filter(admin):
     assert admin.get(f"/regions/by-slug/test-region-{suffix}").status_code == 404
 
     # Publish → live + shows publicly.
+    image = admin.post(f"/admin/regions/{rid}/image", json={
+        "url": "https://example.com/region.jpg", "credit": "Test",
+        "source": "test", "license": "own",
+    })
+    assert image.status_code == 200, image.text
+    reviewed = admin.patch(f"/admin/regions/{rid}", json={
+        "description": "Geprüfte Regionsbeschreibung.",
+        "description_en": "Reviewed region description.",
+        "content_sources": [{
+            "field": "description", "url": "https://example.com/source",
+            "title": "Test source", "checked_at": "2026-10-30T12:00:00Z",
+        }],
+        "content_status": "verified",
+    })
+    assert reviewed.status_code == 200, reviewed.text
     assert admin.post(f"/admin/regions/{rid}/publish").json()["status"] == "published"
     assert any(r["id"] == rid for r in admin.get("/regions").json())
     # Unpublish → draft again.

@@ -139,6 +139,27 @@ export const GAP_LABELS: Record<string, string> = {
   sport_not_offered: "Kitesurfen nicht angeboten",
   climatology: "Klimatologie",
   image: "Titelbild",
+  "content.field.location": "Koordinaten / Standort",
+  "content.field.sports": "Sportarten",
+  "content.field.level": "Niveau",
+  "content.field.editorial.description": "Geprüfte Beschreibung",
+  "content.field.editorial.safety_notice": "Sicherheitshinweis",
+  "content.field.editorial.classification_reason": "Begründung der Einordnung",
+  "content.source.location": "Quelle für Standort",
+  "content.source.sports": "Quelle für Sportarten",
+  "content.source.level": "Quelle für Niveau",
+  "content.source.editorial.description": "Quelle für Beschreibung",
+  "content.source.editorial.safety_notice": "Quelle für Sicherheitshinweis",
+  "content.status.verified": "Redaktionell geprüft",
+  "content.reviewed_at": "Prüfdatum",
+  "content.review_due": "Gültiger Prüfzeitraum",
+  "content.sources.conflict": "Widersprüchliche Quelle vorhanden",
+  "content.sources.stale": "Quellenprüfung ist abgelaufen",
+  "content.sources.no_conflict": "Keine widersprüchliche Quelle",
+  "content.level.beginner_mentioned_but_not_structured":
+    "Text nennt Einsteiger, strukturiertes Level jedoch nicht",
+  "content.description.known_geography_conflict":
+    "Bestätigter Ortskonflikt im Beschreibungstext",
 };
 export const gapLabel = (k: string) => GAP_LABELS[k] ?? k;
 export const GAP_ANCHORS: Record<string, string> = {
@@ -149,6 +170,20 @@ export const GAP_ANCHORS: Record<string, string> = {
   "editorial.description": "f-description",
   climatology: "f-operations",
   image: "f-hero",
+  "content.field.location": "f-basisdaten",
+  "content.field.sports": "f-sportarten",
+  "content.field.level": "f-kategorien",
+  "content.field.editorial.description": "f-description",
+  "content.field.editorial.safety_notice": "f-safety-notice",
+  "content.field.editorial.classification_reason": "f-classification-reason",
+  "content.source.location": "f-content-governance",
+  "content.source.sports": "f-content-governance",
+  "content.source.level": "f-content-governance",
+  "content.source.editorial.description": "f-content-governance",
+  "content.source.editorial.safety_notice": "f-content-governance",
+  "content.status.verified": "f-content-governance",
+  "content.reviewed_at": "f-content-governance",
+  "content.review_due": "f-content-governance",
 };
 export const gapAnchor = (k: string) => GAP_ANCHORS[k] ?? "f-operations";
 

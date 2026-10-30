@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from app.admin.readiness import (
@@ -19,11 +20,26 @@ _IMAGE = {"url": "u", "source": "unsplash", "license": "Unsplash License", "cred
 
 
 def _spot(**kw):
+    now = datetime.now(timezone.utc)
+    source_fields = (
+        "location", "sports", "level", "editorial.description",
+        "editorial.safety_notice",
+    )
     base = dict(
         sports=["kitesurf"], water_type="sea", bottom_type="sand", level="beginner",
         water_character="chop", style=[], facilities=None,
         facing=45, editorial=None, climatology=None, image=None, overrides=None,
         name="X", model_pref=None, confidence=None,
+        location=object(), content_status="verified", content_reviewed_at=now,
+        content_review_due_at=now + timedelta(days=365),
+        content_sources=[
+            SimpleNamespace(
+                field_path=field,
+                verification_status="verified",
+                checked_at=now,
+            )
+            for field in source_fields
+        ],
     )
     base.update(kw)
     return SimpleNamespace(**base)
@@ -84,7 +100,11 @@ def test_checklist_not_ready_lists_gaps():
 def test_checklist_ready_with_na_counting():
     spot = _spot(
         bottom_type="n/a",  # not applicable, but counts as fulfilled
-        editorial={"description": "x", "usable_wind_directions": {"min": 0, "max": 45}},
+        editorial={
+            "description": "x",
+            "safety_notice": "Brandung und Strömung vor Ort prüfen.",
+            "usable_wind_directions": {"min": 0, "max": 45},
+        },
         climatology={"weeks": [1]},
         image=_IMAGE,
     )
@@ -95,7 +115,10 @@ def test_checklist_ready_with_na_counting():
 
 def test_checklist_surf_no_longer_requires_tide():
     spot = _spot(
-        sports=["surf"], editorial={"description": "x"},  # no tide
+        sports=["surf"], editorial={
+            "description": "x",
+            "safety_notice": "Brandung und Strömung vor Ort prüfen.",
+        },  # no tide
         climatology={"weeks": [1]}, image=_IMAGE,
     )
     r = build_checklist(spot, REQUIRED_FIELDS_V1)

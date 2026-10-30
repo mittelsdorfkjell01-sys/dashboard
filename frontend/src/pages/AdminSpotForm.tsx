@@ -7,6 +7,7 @@ import SpotMapEditor, { type MapView } from "../components/SpotMapEditor";
 import DuplicateWarningDialog from "../components/admin/DuplicateWarningDialog";
 import DeleteConfirmDialog from "../components/admin/DeleteConfirmDialog";
 import SpotCommentsPanel from "../components/admin/SpotCommentsPanel";
+import ContentGovernancePanel from "../components/admin/ContentGovernancePanel";
 import CollapsibleSection from "../components/admin/CollapsibleSection";
 import FormNavBar from "../components/admin/FormNavBar";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
@@ -120,6 +121,7 @@ export default function AdminSpotForm() {
   const [styles, setStyles] = useState<string[]>([]);
   const [facing, setFacing] = useState("");
   const [editorialClassification, setEditorialClassification] = useState<EditorialClassification | "">("");
+  const [classificationReason, setClassificationReason] = useState("");
   const [beginnerOffshoreOk, setBeginnerOffshoreOk] = useState(false);
   const [waterType, setWaterType] = useState<string[]>([]);
   const [bottomType, setBottomType] = useState<string[]>([]);
@@ -218,6 +220,7 @@ export default function AdminSpotForm() {
     styles,
     facing,
     editorialClassification,
+    classificationReason,
     beginnerOffshoreOk,
     waterType,
     bottomType,
@@ -330,6 +333,7 @@ export default function AdminSpotForm() {
     setStyles(synchronizeWavekiteStyle(nextSports, s.style ?? []));
     setFacing(s.facing != null ? String(s.facing) : "");
     setEditorialClassification(s.editorial_classification ?? "");
+    setClassificationReason((s.editorial?.classification_reason as string) ?? "");
     setBeginnerOffshoreOk(s.editorial?.beginner_offshore_ok === true);
     setWaterType(s.water_type ?? []);
     setBottomType(normalizeBottomTypes(s.bottom_type));
@@ -390,6 +394,9 @@ export default function AdminSpotForm() {
     const ed: Record<string, any> = {};
     if (description.trim()) ed.description = description.trim();
     if (safetyNotice.trim()) ed.safety_notice = safetyNotice.trim();
+    if (editorialClassification && classificationReason.trim()) {
+      ed.classification_reason = classificationReason.trim();
+    }
     if (isSurf && tide.trim()) ed.tide = tide.trim();
     if (sports.includes("kitesurf") && beginnerOffshoreOk) {
       ed.beginner_offshore_ok = true;
@@ -466,6 +473,8 @@ export default function AdminSpotForm() {
     const nextEditorial = {
       description: description.trim() || null,
       safety_notice: safetyNotice.trim() || null,
+      classification_reason:
+        editorialClassification ? classificationReason.trim() || null : null,
       tide: isSurf ? tide.trim() || null : null,
       map_view: mapView,
       beginner_offshore_ok:
@@ -793,15 +802,35 @@ export default function AdminSpotForm() {
                 value={editorialClassification}
                 onChange={(event) => {
                   markDirty("main");
-                  setEditorialClassification(event.target.value as EditorialClassification | "");
+                  const next = event.target.value as EditorialClassification | "";
+                  setEditorialClassification(next);
+                  if (!next) setClassificationReason("");
                 }}
               >
                 <option value="">— noch nicht eingeordnet —</option>
                 <option value="world_class">World Class</option>
                 <option value="worth_trip">Eine Reise wert</option>
-                <option value="worth_checking_out">Entdecken lohnt sich</option>
+                <option value="worth_checking_out">Lohnt sich auszuchecken</option>
               </select>
             </Field>
+            {editorialClassification && (
+              <Field
+                label="Begründung der Einordnung"
+                hint={`${classificationReason.length}/1000 Zeichen · Konkret erklären, warum der Spot in diese Relevanzstufe fällt.`}
+              >
+                <textarea
+                  id="f-classification-reason"
+                  className={`${inputCls} min-h-[96px] resize-y scroll-mt-24`}
+                  value={classificationReason}
+                  maxLength={1000}
+                  onChange={(event) => {
+                    markDirty("main");
+                    setClassificationReason(event.target.value);
+                  }}
+                  placeholder="Zum Beispiel überregionale Bedeutung, eigenständige Reiseattraktivität oder Rolle als lokale Alternative …"
+                />
+              </Field>
+            )}
           </CollapsibleSection>
 
           {/* Sportarten */}
@@ -1322,6 +1351,22 @@ export default function AdminSpotForm() {
           )}
 
           {/* Kommentare: per-spot moderation (verbergen/wiederherstellen) */}
+          {isEdit && id && (
+            <CollapsibleSection
+              id="f-content-governance"
+              title="Quellen & Inhaltsprüfung"
+              mobileDefaultOpen={false}
+            >
+              <ContentGovernancePanel
+                spotId={id}
+                onSpotChanged={(spot) => {
+                  loadedSpotRef.current = spot;
+                  void getReadiness(id).then(setReadiness).catch(() => undefined);
+                }}
+              />
+            </CollapsibleSection>
+          )}
+
           {isEdit && id && (
             <CollapsibleSection id="f-kommentare" title="Kommentare" mobileDefaultOpen={false}>
               <p className="-mt-3 mb-4 text-caption text-muted">

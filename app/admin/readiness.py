@@ -162,6 +162,10 @@ def build_checklist(
         "ok": image_ready(getattr(spot, "image", None)), "na": False,
     })
 
+    from app.admin.content_governance import content_governance_checklist
+
+    items.extend(content_governance_checklist(spot))
+
     gaps = [i["field"] for i in items if i["severity"] == "required" and not i["ok"]]
     return {"ready": len(gaps) == 0, "checklist": items, "gaps": gaps}
 
@@ -228,6 +232,12 @@ def validate_spot_readiness(spot_id, *, db) -> dict:
         water_character=spot.water_character,
         level=spot.level,
     )
+    from app.admin.content_review import content_consistency_warnings
+
+    warnings.extend(content_consistency_warnings(spot))
+    from app.admin.content_governance import content_governance_warnings
+
+    warnings.extend(content_governance_warnings(spot))
     from app.models import SpotWeatherProfile, WindClimatologyV3Run
     from app.scoring.eligibility import recommendability_gaps
     from app.weather.usable_directions import usable_direction_state

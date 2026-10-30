@@ -20,14 +20,28 @@ import i18next, { type ParseKeys } from "i18next";
 import { initReactI18next } from "react-i18next";
 
 import { de } from "./locales/de";
+import { en } from "./locales/en";
 
 export const DEFAULT_LOCALE = "de" as const;
+export type Locale = "de" | "en";
+export const LOCALE_STORAGE_KEY = "swd.locale";
 
-export const resources = { de: { translation: de } } as const;
+function initialLocale(): Locale {
+  try {
+    const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (saved === "de" || saved === "en") return saved;
+  } catch {
+    // Storage can be unavailable in private browsing; use the browser language.
+  }
+  return navigator.language.toLowerCase().startsWith("de") ? "de" : "en";
+}
+const startupLocale = initialLocale();
+
+export const resources = { de: { translation: de }, en: { translation: en } } as const;
 
 void i18next.use(initReactI18next).init({
   resources,
-  lng: DEFAULT_LOCALE,
+  lng: startupLocale,
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: "translation",
   // German is the source language, so a missing key is a bug in our catalogue,
@@ -39,6 +53,18 @@ void i18next.use(initReactI18next).init({
     // too turns "Über uns" into "&#220;ber uns" at render time.
     escapeValue: false,
   },
+});
+
+document.documentElement.lang = startupLocale;
+
+i18next.on("languageChanged", (language) => {
+  const locale: Locale = language === "en" ? "en" : "de";
+  document.documentElement.lang = locale;
+  try {
+    localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch {
+    // The in-memory choice still applies for this session.
+  }
 });
 
 /**

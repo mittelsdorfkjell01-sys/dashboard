@@ -13,11 +13,13 @@ import {
   AccountVisitedIcon,
   AccountAddSpotsIcon,
   AccountSettingsIcon,
+  CalendarIcon,
 } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import { initialsOf } from "../lib/initials";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { SITE_LINKS } from "../lib/siteLinks";
 import type { TranslationKey } from "../lib/i18n";
 
@@ -33,7 +35,8 @@ const ACCOUNT_NAV: NavItem[] = [
   { key: "accountNav.profile", to: "/konto/profil", icon: AccountProfileIcon },
   { key: "accountNav.setup", to: "/konto/setup", icon: SchoolIcon },
   { key: "accountNav.saved", to: "/konto/favoriten", icon: AccountSavedIcon },
-  { key: "accountNav.visited", to: "/konto/besucht", icon: AccountVisitedIcon, planned: true },
+  { key: "accountNav.visited", to: "/konto/besucht", icon: AccountVisitedIcon },
+  { key: "accountNav.trips", to: "/konto/reisen", icon: CalendarIcon },
   { key: "accountNav.addSpots", to: "/konto/spots", icon: AccountAddSpotsIcon },
   { key: "accountNav.settings", to: "/konto/einstellungen", icon: AccountSettingsIcon },
 ];
@@ -237,6 +240,7 @@ function DesktopDropdown({
 
       <div className="mt-1.5 border-t border-line pt-1.5">
         <ThemeToggle menuItem />
+        <div className="px-2 py-2"><LanguageSwitcher compact /></div>
         {SITE_LINKS.map((item) => (
           <Link key={item.to} to={item.to} role="menuitem" onClick={onClose} className={rowClass}>
             {t(item.key)}
@@ -352,6 +356,9 @@ function MobileSheet({
         {/* Darkmode switch sits on its own, set apart from the account areas. */}
         <div className="mt-6">
           <ThemeToggle variant="switch" />
+        </div>
+        <div className="mt-4">
+          <LanguageSwitcher />
         </div>
 
         {/* Legal links, pushed toward the foot of the sheet. */}

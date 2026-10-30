@@ -276,6 +276,19 @@ export default function SpotOpsPanel({
           </div>
         )}
 
+        {readiness && (readiness.warnings?.length ?? 0) > 0 && (
+          <div className="mb-5 rounded-md border border-admin-warning-border bg-admin-warning-bg px-3 py-2.5">
+            <p className="text-caption font-medium uppercase tracking-wide text-admin-warning">
+              Redaktionell prüfen
+            </p>
+            <ul className="mt-2 space-y-1 text-ui text-admin-fg">
+              {readiness.warnings?.map((warning) => (
+                <li key={warning}>• {gapLabel(warning)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {readiness?.scoring?.kitesurf?.applicable && (
           <div className="mb-5 rounded-md border border-admin-border bg-admin-bg px-3 py-2.5">
             <div className="flex items-center justify-between gap-3">

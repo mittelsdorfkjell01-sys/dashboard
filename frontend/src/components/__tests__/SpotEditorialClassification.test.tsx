@@ -13,14 +13,27 @@ describe("SpotEditorialClassification", () => {
       origin: "community",
       contributorName: "Lena K.",
       editorialClassification: "worth_trip",
+      contentStatus: "verified",
+      contentReviewedAt: "2026-10-01T00:00:00Z",
+      classificationReason: "Ein eigenständiges Reiseziel für mehrere Bedingungen.",
     })} />);
     expect(html).toContain("Eine Reise wert");
     expect(html).toContain("Community");
     expect(html).toContain("Lena K.");
+    expect(html).toContain("Redaktionell geprüft");
+    expect(html).toContain("Warum diese Einordnung?");
+    expect(html).toContain("eigenständiges Reiseziel");
     expect(html).not.toContain("badge");
   });
 
-  it("renders nothing for an unranked editorial spot", () => {
-    expect(renderToStaticMarkup(<SpotEditorialClassification spot={spot({ origin: "editorial" })} />)).toBe("");
+  it("makes an unreviewed legacy entry explicit without showing its old rank", () => {
+    const html = renderToStaticMarkup(<SpotEditorialClassification spot={spot({
+      origin: "editorial",
+      editorialClassification: "world_class",
+      contentStatus: "unreviewed",
+    })} />);
+    expect(html).toContain("noch nicht redaktionell geprüft");
+    expect(html).toContain("frühere Relevanzeinordnung");
+    expect(html).not.toContain(">World Class<");
   });
 });

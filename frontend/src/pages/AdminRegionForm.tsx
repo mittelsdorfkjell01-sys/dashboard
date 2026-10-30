@@ -63,6 +63,9 @@ export default function AdminRegionForm() {
   const [name, setName] = useState("");
   const [country, setCountry] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceTitle, setSourceTitle] = useState("");
   const [imgUrl, setImgUrl] = useState("");
   const [imgCredit, setImgCredit] = useState("");
 
@@ -87,7 +90,7 @@ export default function AdminRegionForm() {
   const [fieldsBaseline, setFieldsBaseline] = useState<string | null>(null);
   const [imageBaseline, setImageBaseline] = useState(stableFormValue({ url: "", credit: "" }));
 
-  const fieldsValue = stableFormValue({ name, country, description });
+  const fieldsValue = stableFormValue({ name, country, description, descriptionEn, sourceUrl, sourceTitle });
   const imageValue = stableFormValue({ url: imgUrl, credit: imgCredit });
 
   useEffect(() => {
@@ -109,8 +112,15 @@ export default function AdminRegionForm() {
     setName(r.name);
     setCountry(r.country ?? "");
     setDescription(r.description ?? "");
+    setDescriptionEn(r.description_en ?? "");
+    const descriptionSource = r.content_sources?.find((source) => source.field === "description");
+    setSourceUrl(descriptionSource?.url ?? "");
+    setSourceTitle(descriptionSource?.title ?? "");
     setFieldsBaseline(
-      stableFormValue({ name: r.name, country: r.country ?? "", description: r.description ?? "" })
+      stableFormValue({
+        name: r.name, country: r.country ?? "", description: r.description ?? "",
+        descriptionEn: r.description_en ?? "", sourceUrl: descriptionSource?.url ?? "", sourceTitle: descriptionSource?.title ?? "",
+      })
     );
     markClean();
   };
@@ -149,7 +159,7 @@ export default function AdminRegionForm() {
     try {
       const patch: Parameters<typeof updateRegion>[1] = { expected_values: {} };
       const expected = patch.expected_values!;
-      const add = (field: "name" | "country" | "description", value: unknown, oldValue: unknown) => {
+      const add = (field: "name" | "country" | "description" | "description_en" | "content_sources", value: unknown, oldValue: unknown) => {
         if (stableFormValue(value) === stableFormValue(oldValue)) return;
         (patch as Record<string, unknown>)[field] = value;
         expected[field] = oldValue;
@@ -157,6 +167,13 @@ export default function AdminRegionForm() {
       add("name", name.trim(), region?.name);
       add("country", country.trim() || null, region?.country ?? null);
       add("description", description.trim() || null, region?.description ?? null);
+      add("description_en", descriptionEn.trim() || null, region?.description_en ?? null);
+      const currentSource = region?.content_sources?.find((source) => source.field === "description");
+      const sourceUnchanged = currentSource?.url === sourceUrl.trim() && (currentSource?.title ?? "") === sourceTitle.trim();
+      const nextSources = sourceUrl.trim()
+        ? [{ field: "description", url: sourceUrl.trim(), title: sourceTitle.trim() || null, checked_at: sourceUnchanged ? currentSource?.checked_at ?? null : new Date().toISOString() }]
+        : [];
+      add("content_sources", nextSources, region?.content_sources ?? []);
       patch.allow_duplicate = allowDuplicate;
       const updated = Object.keys(expected).length
         ? await updateRegion(id, patch)
@@ -165,11 +182,16 @@ export default function AdminRegionForm() {
       setName(updated.name);
       setCountry(updated.country ?? "");
       setDescription(updated.description ?? "");
+      setDescriptionEn(updated.description_en ?? "");
+      const updatedSource = updated.content_sources?.find((source) => source.field === "description");
+      setSourceUrl(updatedSource?.url ?? "");
+      setSourceTitle(updatedSource?.title ?? "");
       setFieldsBaseline(
         stableFormValue({
           name: updated.name,
           country: updated.country ?? "",
-          description: updated.description ?? "",
+          description: updated.description ?? "", descriptionEn: updated.description_en ?? "",
+          sourceUrl: updatedSource?.url ?? "", sourceTitle: updatedSource?.title ?? "",
         })
       );
       markClean("fields");
@@ -335,6 +357,21 @@ export default function AdminRegionForm() {
     }
   };
 
+  const setContentStatus = async (status: NonNullable<Region["content_status"]>) => {
+    if (!id) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await updateRegion(id, { content_status: status });
+      setRegion(updated);
+      flash(status === "verified" ? "Regionsinhalt verifiziert." : "Inhaltsprüfung aktualisiert.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Prüfstatus konnte nicht gespeichert werden.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const toggle = (set: Set<string>, sid: string) => {
     const next = new Set(set);
     if (next.has(sid)) next.delete(sid);
@@ -408,7 +445,7 @@ export default function AdminRegionForm() {
           </label>
         </div>
         <label className="block">
-          <span className={label}>Beschreibung</span>
+          <span className={label}>Beschreibung (Deutsch)</span>
           <Textarea
             className="mt-1.5 min-h-[120px] resize-y"
             value={description}
@@ -419,6 +456,23 @@ export default function AdminRegionForm() {
             placeholder="Beschreibung der Region…"
           />
         </label>
+        <label className="block">
+          <span className={label}>Beschreibung (English)</span>
+          <Textarea
+            className="mt-1.5 min-h-[120px] resize-y"
+            value={descriptionEn}
+            onChange={(e) => { markDirty("fields"); setDescriptionEn(e.target.value); }}
+            placeholder="English region description…"
+          />
+        </label>
+        <fieldset className="rounded-md border border-admin-border p-3">
+          <legend className={`${label} px-1`}>Quelle der Regionsbeschreibung</legend>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input value={sourceTitle} onChange={(e) => { markDirty("fields"); setSourceTitle(e.target.value); }} placeholder="Titel / Herausgeber" />
+            <Input type="url" value={sourceUrl} onChange={(e) => { markDirty("fields"); setSourceUrl(e.target.value); }} placeholder="https://…" />
+          </div>
+          <p className="mt-2 text-caption text-admin-muted">Pflicht für den Status „verifiziert“. Beim Speichern wird der Prüfzeitpunkt aktualisiert.</p>
+        </fieldset>
         <div>
           <span className={label}>Windverfügbarkeit</span>
           <p className="mt-1.5 text-label font-medium text-admin-fg2">Unbekannt</p>
@@ -770,6 +824,18 @@ export default function AdminRegionForm() {
               </Badge>
             </div>
             <div className="mt-4 flex flex-col gap-2">
+              <div className="mb-2 rounded-md border border-admin-border bg-admin-bg p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-label font-semibold text-admin-fg">Inhaltsprüfung</span>
+                  <Badge tone={region.content_status === "verified" ? "success" : "warning"}>
+                    {region.content_status === "verified" ? "Verifiziert" : region.content_status}
+                  </Badge>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button variant="secondary" disabled={busy} onClick={() => void setContentStatus("in_review")}>In Prüfung</Button>
+                  <Button variant="primary" disabled={busy} onClick={() => void setContentStatus("verified")}>Verifizieren</Button>
+                </div>
+              </div>
               {region.status === "published" ? (
                 <Button
                   variant="secondary"

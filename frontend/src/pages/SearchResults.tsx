@@ -17,6 +17,7 @@ import { useSpotOriginsMixed } from "../context/SpotOriginContext";
 import Chip from "../components/ui/Chip";
 import type { Spot } from "../lib/types";
 import { trackEvent } from "../lib/events";
+import { useTranslation } from "react-i18next";
 
 // The one weather map, docked beside the results. Lazily imported: a result
 // column read on a phone never pays for MapLibre.
@@ -254,6 +255,7 @@ function enrichSpots(hits: api.SearchSpot[], catalogue: Spot[]): Spot[] {
  *  • ?mode=weeks + an entity → GET /areas/best-weeks → the temporal "best weeks" list.
  */
 export default function SearchResults() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const q = (params.get("q") ?? "").trim();
   const sport = params.get("sport") ?? undefined;
@@ -511,7 +513,7 @@ export default function SearchResults() {
               <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
             )}
 
-            <SpotRow title="Aktuelle Top-Spots" subtitle="Ausgewählte Spots" spots={performing} live={live} surface="now" />
+            <SpotRow title={t("recommendations.currentTitle")} subtitle={t("recommendations.limits")} spots={performing} live={live} surface="now" />
 
             {discovery && <DiscoveryRegions />}
           </ResultsLayout>

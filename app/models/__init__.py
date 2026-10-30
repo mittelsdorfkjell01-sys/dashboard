@@ -3,6 +3,7 @@
 from app.db.base import Base
 from app.models.region import Region
 from app.models.spot import Spot
+from app.models.spot_content_source import SpotContentSource
 from app.models.era5_job import Era5Job
 from app.models.watch import Watch
 from app.models.notification import Notification
@@ -12,6 +13,9 @@ from app.models.required_fields import RequiredField
 from app.models.admin_user import AdminUser
 from app.models.app_user import AppUser
 from app.models.favorite import Favorite
+from app.models.trip import Trip, TripStop
+from app.models.spot_visit import SpotVisit
+from app.models.decision_support_gate import DecisionSupportGate
 from app.models.rider import GearItem, RiderProfile, RiderSportProfile, UserEvent
 from app.models.gear import (
     GearBrand,
@@ -117,6 +121,7 @@ __all__ = [
     "Base",
     "Region",
     "Spot",
+    "SpotContentSource",
     "Era5Job",
     "Watch",
     "Notification",
@@ -140,6 +145,10 @@ __all__ = [
     "GearUseProfile",
     "GearResearchCoverage",
     "UserEvent",
+    "Trip",
+    "TripStop",
+    "SpotVisit",
+    "DecisionSupportGate",
     "RecommendationLog",
     "ScoringCalibrationProposal",
     "SpotRating",

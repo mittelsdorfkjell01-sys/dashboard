@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -18,6 +19,7 @@ import { ChevronDownIcon } from "../lib/icons";
 import type { RegionInfo } from "../lib/types";
 import { usableMediaUrl } from "../lib/api";
 import { useRegionBySlug, useSpots, useSpotsLive } from "../lib/hooks";
+import DataHelpLink from "../components/DataHelpLink";
 import {
   filterSpots,
   filtersToSearchParams,
@@ -28,6 +30,7 @@ import {
 
 
 export default function RegionDetail() {
+  const { t, i18n } = useTranslation();
   const { slug } = useParams();
   const navigate = useNavigate();
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate("/"));
@@ -47,9 +50,7 @@ export default function RegionDetail() {
     loading: spotsLoading,
     error: spotsError,
     reload: reloadSpots,
-  } = useSpots(
-    backendRegion ? { region_id: backendRegion.id, sport: "kitesurf" } : {}
-  );
+  } = useSpots(backendRegion ? { region_id: backendRegion.id } : {});
   const { data: live } = useSpotsLive((spots ?? []).map((s) => s.id));
 
   const loading = regionsLoading || (backendRegion && spotsLoading);
@@ -112,9 +113,9 @@ export default function RegionDetail() {
         <LandingHeader onLight />
         <div className="grid min-h-screen place-items-center px-6 text-center">
           <div>
-            <h1 className="text-title font-semibold text-ink">Region nicht gefunden</h1>
+            <h1 className="text-title font-semibold text-ink">{t("region.notFound")}</h1>
             <Link to="/" className="mt-4 inline-block text-body text-ink underline">
-              Zurück zur Übersicht
+              {t("region.backOverview")}
             </Link>
           </div>
         </div>
@@ -122,43 +123,26 @@ export default function RegionDetail() {
     );
   }
 
-  const description = backendRegion.description ?? "";
+  const description =
+    (i18n.resolvedLanguage === "en" ? backendRegion.description_en : backendRegion.description) ?? "";
+  const descriptionSource = backendRegion.content_sources?.find(
+    (source) => source.field === "description" && source.url,
+  );
 
-  // Hero source, in order: the region's own image → the first spot's image →
-  // EditorialHero's designed fallback. Crop metadata and attribution always
-  // travel with whichever photo is actually rendered.
+  // A spot photo must not silently present itself as representative of a whole
+  // region. Without a reviewed region image, use the designed fallback.
   const regionImage = usableMediaUrl(backendRegion.image?.url);
-  const heroImage = regionImage ?? usableMediaUrl(region.spots[0]?.image);
-  const heroFocal = regionImage
-    ? backendRegion.image?.focal ?? null
-    : region.spots[0]?.heroFocal ?? null;
-  const heroFocalMobile = regionImage
-    ? backendRegion.image?.focal_mobile ?? null
-    : region.spots[0]?.heroFocalMobile ?? null;
-  const heroRotation = regionImage
-    ? backendRegion.image?.rotation ?? 0
-    : region.spots[0]?.heroRotation ?? 0;
-  const heroWidth = regionImage
-    ? backendRegion.image?.width ?? null
-    : region.spots[0]?.heroWidth ?? null;
-  // Until now region heroes rendered with no attribution at all, while the
-  // stock-image route had been setting Unsplash photos on them for months —
-  // which breaches Unsplash's attribution condition. When the hero falls back
-  // to a spot photo, that spot's credit is used, because that is whose photo
-  // is on screen.
-  const fallbackSpot = regionImage ? undefined : region.spots[0];
-  const heroCredit = regionImage
-    ? fromImageRecord(backendRegion.image)
-    : fallbackSpot?.heroCredit ?? null;
-  const heroDelivery = regionImage
-    ? backendRegion.image?.delivery
-    : fallbackSpot?.heroDelivery;
+  const heroImage = regionImage;
+  const heroFocal = backendRegion.image?.focal ?? null;
+  const heroFocalMobile = backendRegion.image?.focal_mobile ?? null;
+  const heroRotation = backendRegion.image?.rotation ?? 0;
+  const heroWidth = backendRegion.image?.width ?? null;
+  const heroCredit = regionImage ? fromImageRecord(backendRegion.image) : null;
+  const heroDelivery = backendRegion.image?.delivery;
 
   const withCoords = region.spots.filter((s) => s.coords);
   const gridSpots = sortSpots(filterSpots(region.spots, filters), filters.sort);
-  const spotCount = `${region.spots.length} ${
-    region.spots.length === 1 ? "Spot" : "Spots"
-  } in der Region`;
+  const spotCount = t("region.spotCount", { count: region.spots.length });
 
   return (
     <div className="relative min-h-screen bg-page">
@@ -190,7 +174,7 @@ export default function RegionDetail() {
         <div className="mx-auto max-w-page px-4 pt-6 sm:px-8">
           <nav className="text-ui font-medium text-muted">
             <Link to="/" className="hover:underline">
-              Übersicht
+              {t("region.overview")}
             </Link>
             {region.country && (
               <>
@@ -211,33 +195,44 @@ export default function RegionDetail() {
 
         {/* Lede */}
         <SectionBand tone="page" pad="md">
-          <Lede>{description}</Lede>
+          <Lede>{description || t("region.descriptionPending")}</Lede>
+          {backendRegion.content_status === "verified" && (
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-ui text-muted">
+              <span>{t("region.verified")}</span>
+              {descriptionSource && (
+                <a href={descriptionSource.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink underline underline-offset-4">
+                  {descriptionSource.title || t("region.source")} ↗
+                </a>
+              )}
+            </div>
+          )}
         </SectionBand>
 
         <SectionBand tone="page" pad="md" width="spotBody">
           <RecommendationRow
-            title={`Top in ${region.name}`}
+            title={t("region.top", { name: region.name })}
             surface="region"
             regionId={backendRegion.id}
           />
         </SectionBand>
 
         {/* No region aggregation until a V2 product rule has been defined. */}
-        <SectionBand tone="band" heading="Wann hinfahren" pad="md">
-          <p className="text-body text-muted">Windverfügbarkeit für Regionen: Unbekannt</p>
+        <SectionBand tone="band" heading={t("region.when")} pad="md" id="season">
+          <p className="text-body text-muted">{t("region.windUnknown")}</p>
+          <DataHelpLink anchor="forecast-climate">{t("region.windHelp")}</DataHelpLink>
         </SectionBand>
 
         {/* Die Spots — same body width as the spot detail page's content frame. */}
         <SectionBand tone="page" pad="md" width="spotBody">
           <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line/70 pb-5">
             <h2 className="text-heading font-semibold leading-tight text-ink text-balance sm:text-heading-lg">
-              Die Spots
+              {t("region.spots")}
             </h2>
             <SortDropdown value={filters} onChange={setFilters} />
           </div>
           {gridSpots.length === 0 ? (
             <div className="mt-8">
-              <EmptyState message="Keine Spots für diese Auswahl." />
+              <EmptyState message={t("region.noSpots")} />
             </div>
           ) : (
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
@@ -255,7 +250,7 @@ export default function RegionDetail() {
 
         {/* Auf der Karte */}
         {withCoords.length > 0 && (
-          <SectionBand tone="band" heading="Auf der Karte">
+          <SectionBand tone="band" heading={t("region.map")}>
             <div className="overflow-hidden rounded-card border border-line">
               <MapContainer
                 center={region.center}

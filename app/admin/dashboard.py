@@ -59,6 +59,7 @@ def list_spots(
     exclude_status: str | None = None,
     completeness: str | None = None,
     media: str | None = None,
+    content_attention: str | None = None,
 ) -> tuple[list[Spot], int, dict[uuid.UUID, dict]]:
     """Filtered, sorted spot page plus readiness from the canonical rules."""
     base = _spot_filters(
@@ -67,37 +68,37 @@ def list_spots(
     )
     ordered = base.order_by(_SORTS.get(sort, Spot.name.asc()))
 
-    if media:
+    if media or completeness or content_attention:
         # Media state is derived from the JSONB image object plus the usage
         # index, so it is filtered in Python like `completeness` above rather
         # than pushed into SQL. The admin catalogue is small enough that this
         # stays cheap, and the rules live in one place.
         from app.media.worklist import duplicate_photo_keys, image_flags, matches
 
-        duplicates = duplicate_photo_keys(db)
-        candidates = [
-            spot
-            for spot in db.scalars(ordered).all()
-            if matches(image_flags(spot.image, duplicates), media)
-        ]
+        duplicates = duplicate_photo_keys(db) if media else set()
+        candidates = list(db.scalars(ordered).all())
+        if media:
+            candidates = [
+                spot
+                for spot in candidates
+                if matches(image_flags(spot.image, duplicates), media)
+            ]
         if completeness:
             readiness_all = readiness_for_spots(db, candidates)
             expected = completeness == "complete"
             candidates = [
                 s for s in candidates if readiness_all[s.id]["ready"] is expected
             ]
+        if content_attention:
+            from app.admin.content_governance import content_attention_flags
+
+            candidates = [
+                spot for spot in candidates
+                if content_attention_flags(spot).get(content_attention, False)
+            ]
         total = len(candidates)
         rows = candidates[offset:offset + limit]
         return rows, total, readiness_for_spots(db, rows)
-
-    if completeness:
-        candidates = list(db.scalars(ordered).all())
-        readiness = readiness_for_spots(db, candidates)
-        expected = completeness == "complete"
-        candidates = [s for s in candidates if readiness[s.id]["ready"] is expected]
-        total = len(candidates)
-        rows = candidates[offset:offset + limit]
-        return rows, total, {s.id: readiness[s.id] for s in rows}
 
     total = db.scalar(
         _spot_filters(

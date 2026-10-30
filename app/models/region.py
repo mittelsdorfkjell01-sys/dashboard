@@ -1,7 +1,7 @@
 import uuid
 
 from geoalchemy2 import Geography
-from sqlalchemy import CheckConstraint, Index, String, Text, text
+from sqlalchemy import CheckConstraint, DateTime, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
@@ -38,6 +38,13 @@ class Region(Base, TimestampMixin):
     )
 
     description: Mapped[str | None] = mapped_column(Text)
+    description_en: Mapped[str | None] = mapped_column(Text)
+    content_sources: Mapped[list | None] = mapped_column(JSONB)
+    content_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'unreviewed'")
+    )
+    content_reviewed_at: Mapped[object | None] = mapped_column(DateTime(timezone=True))
+    content_reviewed_by: Mapped[str | None] = mapped_column(String(200))
     image: Mapped[dict | None] = mapped_column(JSONB)
     season: Mapped[dict | None] = mapped_column(JSONB)
     defaults: Mapped[dict | None] = mapped_column(JSONB)
@@ -46,6 +53,10 @@ class Region(Base, TimestampMixin):
 
     __table_args__ = (
         CheckConstraint("status IN ('draft', 'published')", name="ck_regions_status"),
+        CheckConstraint(
+            "content_status IN ('unreviewed', 'in_review', 'verified', 'review_due', 'conflict')",
+            name="ck_regions_content_status",
+        ),
         Index("ix_regions_center", "center", postgresql_using="gist"),
         Index(
             "ix_regions_normalized_name_trgm",

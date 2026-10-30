@@ -13,7 +13,7 @@ import uuid
 from typing import Any, Iterable, Sequence
 
 from geoalchemy2.shape import to_shape
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, selectinload
 
@@ -41,6 +41,34 @@ class RecommendationSurface(str, Enum):
     NEXT_WEEK = "next_week"
     SEASON = "season"
     REGION = "region"
+
+
+def catalog_discovery(
+    db: Session,
+    *,
+    sport: str | None,
+    region_id: uuid.UUID | None,
+    limit: int,
+) -> list[Spot]:
+    """Stable, forecast-free fallback while decision gates are closed.
+
+    Only a verified editorial relevance tier affects order. Everything else is
+    alphabetical, so missing weather evidence cannot masquerade as a current
+    recommendation.
+    """
+    tier = case(
+        (Spot.content_status != "verified", 4),
+        (Spot.editorial_classification == "world_class", 0),
+        (Spot.editorial_classification == "worth_trip", 1),
+        (Spot.editorial_classification == "worth_checking_out", 2),
+        else_=3,
+    )
+    stmt = select(Spot).where(Spot.status == "published").options(selectinload(Spot.region))
+    if sport is not None:
+        stmt = stmt.where(Spot.sports.any(sport))
+    if region_id is not None:
+        stmt = stmt.where(Spot.region_id == region_id)
+    return list(db.scalars(stmt.order_by(tier, Spot.name).limit(limit)))
 
 
 @dataclass(frozen=True, slots=True)

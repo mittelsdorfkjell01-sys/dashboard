@@ -575,6 +575,10 @@ def adopt(
             db, entity_type, entity.id, keep_url=image["url"]
         )
         entity.image = image
+        if entity_type == "spot":
+            from app.admin.content_governance import mark_content_changed
+
+            mark_content_changed(entity, fields={"image"})
         outcome.image = image
     else:
         row = _gallery_row(

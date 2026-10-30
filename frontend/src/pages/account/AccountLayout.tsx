@@ -30,7 +30,7 @@ export default function AccountLayout() {
       </main>
     );
   if (!user) {
-    const redirect = encodeURIComponent(location.pathname);
+    const redirect = encodeURIComponent(location.pathname + location.search + location.hash);
     return <Navigate to={`/anmelden?redirect=${redirect}`} replace />;
   }
 

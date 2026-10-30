@@ -44,6 +44,8 @@ const BesuchteSpots = React.lazy(() => import("./pages/account/BesuchteSpots"));
 const MeineSpots = React.lazy(() => import("./pages/account/MeineSpots"));
 const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
 const MeinSetup = React.lazy(() => import("./pages/account/MeinSetup"));
+const Reiseplaner = React.lazy(() => import("./pages/account/Reiseplaner"));
+const SharedTrip = React.lazy(() => import("./pages/SharedTrip"));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -91,9 +93,11 @@ async function bootstrap() {
     { path: "/impressum", element: <Impressum /> },
     { path: "/datenschutz", element: <Datenschutz /> },
     { path: "/faq", element: <FAQ /> },
+    { path: "/fragen", element: <FAQ /> },
     { path: "/kontakt", element: <Kontakt /> },
     { path: "/ueber-uns", element: <UeberUns /> },
     { path: "/nutzungsbedingungen", element: <Nutzungsbedingungen /> },
+    { path: "/reise/:token", element: <SharedTrip /> },
     { path: "/anmelden", element: <Auth /> },
     { path: "/bestaetigen", element: <AccountAccess /> },
     { path: "/passwort-zuruecksetzen", element: <AccountAccess /> },
@@ -105,6 +109,7 @@ async function bootstrap() {
         { path: "profil", element: <Profil /> },
         { path: "favoriten", element: <Favoriten /> },
         { path: "besucht", element: <BesuchteSpots /> },
+        { path: "reisen", element: <Reiseplaner /> },
         { path: "spots", element: <MeineSpots /> },
         { path: "einstellungen", element: <Einstellungen /> },
         { path: "setup", element: <MeinSetup /> },

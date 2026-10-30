@@ -211,7 +211,21 @@ def list_spots(
     """
     # Don't load the heavy JSONB columns for a list view — editorial stays
     # (SpotSummary derives typical_wind_kt/typical_wave_height_m from it).
-    personalized_region = sport == "kitesurf" and region_id is not None
+    personalized_region_requested = sport == "kitesurf" and region_id is not None
+    personalized_region = False
+    if personalized_region_requested:
+        from app.weather.decision_gates import capability_status
+
+        gate = capability_status(
+            db, "forecast_sorting", sport="kitesurf",
+            region_id=region_id, horizon_bucket="0_48h",
+        )
+        personalized_region = bool(gate["ready"])
+        response.headers["X-Surfwinddata-Decision-Mode"] = (
+            "forecast-gated" if personalized_region else "catalog-manual"
+        )
+        if personalized_region:
+            response.headers["X-Surfwinddata-Gate-Evidence"] = ",".join(gate["evidence_ids"])
     relationship_option = (
         selectinload(Spot.weather_profile).selectinload(SpotWeatherProfile.sectors)
         if personalized_region
@@ -335,6 +349,22 @@ def list_top_spots(
     Kitesurf uses the personalized `now` surface and returns an empty list when
     no spot is feasible. Other sports retain the legacy featured fallback.
     """
+    from app.recommendations.service import catalog_discovery
+    from app.weather.decision_gates import capability_status
+
+    gate = capability_status(
+        db, "forecast_sorting", sport=sport or "all",
+        region_id=None, horizon_bucket="0_48h",
+    )
+    response.headers["X-Surfwinddata-Decision-Mode"] = (
+        "forecast-gated" if gate["ready"] else "catalog-manual"
+    )
+    if not gate["ready"]:
+        ordered = catalog_discovery(db, sport=sport, region_id=None, limit=limit)
+        set_top_spots_cache(response)
+        return _safe_summaries(ordered, db)[:limit]
+
+    response.headers["X-Surfwinddata-Gate-Evidence"] = ",".join(gate["evidence_ids"])
     if sport == "kitesurf":
         from app.recommendations.service import RecommendationSurface, recommendations
         from app.scoring.rider.resolve import resolve_rider

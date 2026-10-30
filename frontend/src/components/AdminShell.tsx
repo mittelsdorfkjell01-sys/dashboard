@@ -109,6 +109,7 @@ const NAV: NavItem[] = [
   // Frontend
   { to: "/admin", label: "Übersicht", end: true, icon: I.overview, group: "Inhalte" },
   { to: "/admin/spots", label: "Spots", icon: I.spots, group: "Inhalte" },
+  { to: "/admin/catalog", label: "Katalog", icon: I.spots, group: "Inhalte" },
   { to: "/admin/hero", label: "Hero", icon: I.hero, group: "Inhalte" },
   { to: "/admin/regions", label: "Regionen", icon: I.regions, group: "Inhalte" },
   { to: "/admin/map", label: "Karte", icon: I.map, group: "Inhalte" },
