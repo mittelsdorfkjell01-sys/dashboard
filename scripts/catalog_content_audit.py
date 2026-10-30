@@ -13,11 +13,22 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 
 from app.admin.content_review import content_consistency_warnings
+
+
+def _is_placeholder_image(value: Any) -> bool:
+    """Match known placeholder hosts without trusting URL substrings."""
+    try:
+        host = (urlsplit(str(value or "")).hostname or "").rstrip(".").lower()
+    except ValueError:
+        return False
+    return host in {"placeholder.local", "example.com"} or host.endswith(
+        (".placeholder.local", ".example.com")
+    )
 
 
 def _fetch_json(url: str, *, timeout: float = 15.0) -> Any:
@@ -106,8 +117,7 @@ def runtime_inventory(
         if (warnings := description_warnings(row))
     ]
     placeholder_regions = sum(
-        "placeholder.local" in str((row.get("image") or {}).get("url", ""))
-        or "example.com" in str((row.get("image") or {}).get("url", ""))
+        _is_placeholder_image((row.get("image") or {}).get("url"))
         for row in regions
     )
     return {

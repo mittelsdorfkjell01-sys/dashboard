@@ -1,4 +1,4 @@
-from scripts.catalog_content_audit import description_warnings, runtime_inventory, seed_inventory
+from scripts.catalog_content_audit import _is_placeholder_image, description_warnings, runtime_inventory, seed_inventory
 
 
 def test_seed_inventory_keeps_drafts_and_published_separate():
@@ -41,3 +41,8 @@ def test_known_supertubos_copy_conflict_is_detected():
         "editorial": {"description": "Lagunen der Ria Formosa nahe Tavira."},
     })
     assert "content.description.known_geography_conflict" in warnings
+
+
+def test_placeholder_detection_uses_the_hostname_not_an_arbitrary_substring():
+    assert _is_placeholder_image("https://images.example.com/region.jpg")
+    assert not _is_placeholder_image("https://example.com.evil.test/region.jpg")
