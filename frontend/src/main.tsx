@@ -44,6 +44,8 @@ const BesuchteSpots = React.lazy(() => import("./pages/account/BesuchteSpots"));
 const MeineSpots = React.lazy(() => import("./pages/account/MeineSpots"));
 const Einstellungen = React.lazy(() => import("./pages/account/Einstellungen"));
 const MeinSetup = React.lazy(() => import("./pages/account/MeinSetup"));
+const Reiseplaner = React.lazy(() => import("./pages/account/Reiseplaner"));
+const SharedTrip = React.lazy(() => import("./pages/SharedTrip"));
 
 function RouteFallback() {
   const { t } = useTranslation();
@@ -73,7 +75,7 @@ window.addEventListener("vite:preloadError", (event) => {
 
 // The admin back office is code-split behind a build flag: the public build
 // (surfwinddata.com) never imports ./adminRoutes, so none of the admin UI ships.
-// The admin build (kjellmittelsdorf.de, VITE_INCLUDE_ADMIN=true) pulls it in and
+// The admin build (dashboardsurfwind.vercel.app, VITE_INCLUDE_ADMIN=true) pulls it in and
 // opens the dashboard at "/". See lib/target.ts.
 async function bootstrap() {
   // The admin-only deployment redirects "/" into the dashboard but keeps every
@@ -91,9 +93,11 @@ async function bootstrap() {
     { path: "/impressum", element: <Impressum /> },
     { path: "/datenschutz", element: <Datenschutz /> },
     { path: "/faq", element: <FAQ /> },
+    { path: "/fragen", element: <FAQ /> },
     { path: "/kontakt", element: <Kontakt /> },
     { path: "/ueber-uns", element: <UeberUns /> },
     { path: "/nutzungsbedingungen", element: <Nutzungsbedingungen /> },
+    { path: "/reise/:token", element: <SharedTrip /> },
     { path: "/anmelden", element: <Auth /> },
     { path: "/bestaetigen", element: <AccountAccess /> },
     { path: "/passwort-zuruecksetzen", element: <AccountAccess /> },
@@ -105,6 +109,7 @@ async function bootstrap() {
         { path: "profil", element: <Profil /> },
         { path: "favoriten", element: <Favoriten /> },
         { path: "besucht", element: <BesuchteSpots /> },
+        { path: "reisen", element: <Reiseplaner /> },
         { path: "spots", element: <MeineSpots /> },
         { path: "einstellungen", element: <Einstellungen /> },
         { path: "setup", element: <MeinSetup /> },

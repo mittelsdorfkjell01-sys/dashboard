@@ -28,18 +28,21 @@ from app.admin.spots import create_spot
 from app.admin.constants import SPORTS
 from app.admin.duplicates import find_spot_duplicates
 from app.db.session import SessionLocal
-from app.models import Region, Spot
+from app.media.image_object import CANONICAL_KEYS, build_image
+from app.models import Region, Spot, SpotContentSource
 from app.names import normalize_name
-from app.schemas.admin import SpotCreate
+from app.schemas.admin import SpotContentSourceCreate, SpotCreate
+from app.config import get_settings
 
 
 ARRAY_FIELDS = {
     "sports", "water_type", "bottom_type", "level", "water_character", "style"
 }
-JSON_FIELDS = {"editorial", "facilities"}
+JSON_FIELDS = {"editorial", "facilities", "image"}
 ALLOWED_FIELDS = {
     "slug", "name", "region_slug", "lat", "lon", "location", "description",
-    "facing", "model_pref", *ARRAY_FIELDS, *JSON_FIELDS,
+    "facing", "model_pref", "editorial_classification", "content_sources",
+    *ARRAY_FIELDS, *JSON_FIELDS,
 }
 REQUIRED_FIELDS = {"slug", "name", "region_slug", "sports"}
 
@@ -56,6 +59,7 @@ class ImportReport:
     created: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
     errors: list[dict[str, Any]] = field(default_factory=list)
+    preview: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -70,6 +74,7 @@ class ImportReport:
             "created": self.created,
             "skipped": self.skipped,
             "errors": self.errors,
+            "preview": self.preview,
         }
 
 
@@ -155,6 +160,39 @@ def normalize_row(raw: dict[str, Any], row_number: int) -> dict[str, Any]:
             if row[field_name] is not None and not isinstance(row[field_name], dict):
                 raise ImportFormatError(f"{field_name}: erwartet ein JSON-Objekt")
 
+    if row.get("image") is not None:
+        try:
+            row["image"] = build_image(
+                **{key: row["image"].get(key) for key in CANONICAL_KEYS}
+            )
+        except (TypeError, ValueError) as exc:
+            raise ImportFormatError(f"image: {exc}") from exc
+
+    if "content_sources" in row:
+        raw_sources = _parse_json_cell(row["content_sources"], "content_sources")
+        if not isinstance(raw_sources, list):
+            raise ImportFormatError("content_sources: erwartet eine Liste")
+        sources: list[dict[str, Any]] = []
+        for index, source in enumerate(raw_sources, start=1):
+            if not isinstance(source, dict):
+                raise ImportFormatError(
+                    f"content_sources[{index}]: erwartet ein Objekt"
+                )
+            if source.get("verification_status", "unreviewed") != "unreviewed":
+                raise ImportFormatError(
+                    f"content_sources[{index}]: Batch-Import darf Quellen nicht vorab verifizieren"
+                )
+            try:
+                validated_source = SpotContentSourceCreate.model_validate({
+                    **source, "verification_status": "unreviewed"
+                })
+            except ValidationError as exc:
+                raise ImportFormatError(
+                    f"content_sources[{index}]: {exc}"
+                ) from exc
+            sources.append(validated_source.to_data())
+        row["content_sources"] = sources
+
     editorial = dict(row.get("editorial") or {})
     if "description" in row:
         editorial["description"] = str(row.pop("description")).strip()
@@ -184,6 +222,12 @@ def import_spots(
     region_aliases: dict[str, str] | None = None,
     actor: str = "bulk-import",
 ) -> ImportReport:
+    settings = get_settings()
+    if not dry_run and settings.database_target != "local" and not settings.allow_remote_writes:
+        raise ImportFormatError(
+            "Batch-Import schreibt nur in eine lokale Datenbank. Für Remote-Ziele "
+            "ist ein ausdrücklich freigegebener Deployment-Workflow erforderlich."
+        )
     raw_rows = load_rows(path)
     report = ImportReport(source=str(path), dry_run=dry_run, total=len(raw_rows))
     normalized: list[dict[str, Any]] = []
@@ -222,6 +266,8 @@ def import_spots(
             if region is None:
                 raise ImportFormatError("Region nicht gefunden")
             payload = {**row, "region_id": region.id, "allow_duplicate": allow_duplicates}
+            image = payload.pop("image", None)
+            content_sources = payload.pop("content_sources", [])
             validated = SpotCreate.model_validate(payload)
             existing_spot = db.scalar(
                 select(Spot.id).where(
@@ -234,6 +280,10 @@ def import_spots(
             )
             if existing_spot is not None:
                 report.skipped.append(slug)
+                report.preview.append({
+                    "row": number, "slug": slug, "action": "skip_existing",
+                    "region": region.slug,
+                })
                 continue
             duplicate_result = find_spot_duplicates(
                 db,
@@ -245,20 +295,56 @@ def import_spots(
             candidates = [*duplicate_result.exact, *duplicate_result.likely]
             if any(candidate.get("similarity") == 1.0 for candidate in candidates):
                 report.skipped.append(slug)
+                report.preview.append({
+                    "row": number, "slug": slug, "action": "skip_exact_duplicate",
+                    "region": region.slug, "duplicates": candidates,
+                })
                 continue
-            create_spot(
+            spot = create_spot(
                 validated.to_data(),
                 db=db,
                 actor=actor,
                 commit=False,
                 allow_duplicate=allow_duplicates,
             )
+            if image is not None:
+                spot.image = image
+            for source in content_sources:
+                db.add(SpotContentSource(
+                    spot_id=spot.id,
+                    field_path=source["field_path"],
+                    url=str(source["url"]),
+                    title=source["title"],
+                    publisher=source.get("publisher"),
+                    checked_at=source["checked_at"],
+                    verification_status="unreviewed",
+                    note=source.get("note"),
+                    created_by=actor,
+                ))
             report.created.append(slug)
+            report.preview.append({
+                "row": number,
+                "slug": slug,
+                "action": "would_create" if dry_run else "created",
+                "region": region.slug,
+                "status": "draft",
+                "content_status": "unreviewed",
+                "source_count": len(content_sources),
+                "image_rights_present": image is not None,
+                "duplicates": candidates,
+            })
         except Exception as exc:
             report.errors.append({"row": number, "slug": slug, "error": str(exc)})
             break
 
-    if report.errors or dry_run:
+    if report.errors:
+        rolled_back = set(report.created)
+        for item in report.preview:
+            if item.get("slug") in rolled_back and item.get("action") == "created":
+                item["action"] = "rolled_back"
+        report.created.clear()
+        db.rollback()
+    elif dry_run:
         db.rollback()
     else:
         db.commit()

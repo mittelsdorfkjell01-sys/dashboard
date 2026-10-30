@@ -2,7 +2,7 @@
 //
 // The public deployment (surfwinddata.com) ships with NO admin code: no admin
 // routes, no auth context, no login entry points. The admin back office is a
-// separate deployment (kjellmittelsdorf.de) built with VITE_INCLUDE_ADMIN=true.
+// separate deployment (dashboardsurfwind.vercel.app) built with VITE_INCLUDE_ADMIN=true.
 // Both talk to their own same-origin /api and share one database.
 
 // Is the admin back office compiled into this build? Always in local dev (so a

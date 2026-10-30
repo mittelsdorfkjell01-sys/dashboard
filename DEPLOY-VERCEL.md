@@ -6,7 +6,7 @@ admin back office live on separate domains; each is same-origin (SPA + its own
 no `SameSite=None`**. They differ only by two flags (below) and their env vars.
 
 ```
-surfwinddata.com (public project)          kjellmittelsdorf.de (admin project)
+surfwinddata.com (public project)          dashboardsurfwind.vercel.app (admin project)
  ├── /            → public SPA               ├── /            → redirects to /admin
  │                  (NO admin code)          ├── /admin       → back-office SPA + login
  └── /api/*       → FastAPI                  └── /api/*       → FastAPI
@@ -107,7 +107,7 @@ Directory = repo root** (the included `vercel.json` drives the build).
 
 *(no `VITE_INCLUDE_ADMIN` or `ADMIN_BOOTSTRAP_*` — the public build has no admin. `JWT_SECRET` is still required because public accounts use signed sessions.)*
 
-**Admin project** (`kjellmittelsdorf.de`) — add:
+**Admin project** (`dashboardsurfwind.vercel.app`) — add:
 
 | Key | Value |
 |---|---|
@@ -117,7 +117,7 @@ Directory = repo root** (the included `vercel.json` drives the build).
 | `ADMIN_BOOTSTRAP_EMAIL` | your admin email |
 | `ADMIN_BOOTSTRAP_PASSWORD` | a strong password (change after first login) |
 | `COOKIE_SECURE` | `true` |
-| `TAKEDOWN_CONTACT_EMAIL` | e.g. `abuse@kjellmittelsdorf.de` |
+| `TAKEDOWN_CONTACT_EMAIL` | A monitored operator contact address |
 
 The admin build intentionally contains only dashboard routes. Legal operator
 variables are required by `build:release` only for the separate public project.
@@ -125,15 +125,42 @@ variables are required by `build:release` only for the separate public project.
 Production configuration is validated at process start; unsafe combinations do
 not boot.
 
-3. **Deploy both.** Point `surfwinddata.com` at the public project and
-   `kjellmittelsdorf.de` at the admin project (Settings → Domains).
+3. **Deploy both.** Point `surfwinddata.com` at the public project. The admin
+   project intentionally uses only its assigned `dashboardsurfwind.vercel.app`
+   domain; do not add or redirect a custom domain to it.
 
-## Step 6 — domain
-Project → **Settings → Domains** → add `kjellmittelsdorf.de` → set the DNS records
-Vercel shows you.
+### Secret-safe shared-target verification
 
-After deploy: `https://kjellmittelsdorf.de` = site, `…/admin` = dashboard (login
-with the bootstrap admin).
+Do not compare or print connection strings. After a protected migration, use
+the repository workflow's attestations instead:
+
+1. `production_readiness database --require-target --github-output` verifies
+   that direct and pooled routes report the same Alembic revision and public
+   catalogue. It emits only a short schema fingerprint and the already-public
+   `/spots/version` value.
+2. Public and admin `/api/health/ready` must both return HTTP 200 with
+   `db=ok`, `schema=ok`, and the same `schema_fingerprint`.
+3. Public and admin `/api/spots/version` must both equal the postflight
+   catalogue value. Matching catalogues are evidence of a shared target, but
+   not a substitute for the direct/pooled database check.
+4. Public `/api/auth/me` and `/api/admin/summary` must be 404. On admin they
+   must be 401 without a session; after an authorized operator logs in,
+   `/api/auth/me` and a read-only admin summary must return 200.
+5. Record both Vercel deployment commit SHAs outside application logs and
+   verify they are the approved release commit.
+
+DNS, TLS, Vercel project/domain assignment, environment values and the
+authorized login check are external operations. Never mark them complete from
+repository configuration alone.
+
+## Step 6 — admin address and discoverability
+
+The admin project intentionally remains at
+`https://dashboardsurfwind.vercel.app`. Its root redirects to `/admin`, all
+admin APIs require authentication, and the admin build emits a robots `noindex`
+directive. Do not link the address from the public product or add a custom
+domain. `noindex` reduces discovery but is not access control; authentication
+remains the security boundary.
 
 ---
 

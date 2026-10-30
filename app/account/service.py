@@ -8,7 +8,7 @@ transaction (mirrors :mod:`app.auth.service`). Validation errors raise
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import delete, exists, func, select
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from app.account.security import (
 )
 from app.config import get_settings
 from app.password_policy import ensure_password_safe
-from app.models import AppUser, CommunityUpvote, Favorite, LocalTip, RecommendationLog, Region, Spot, SpotImage, SpotRating, SpotSubmission, UserEvent
+from app.models import AppUser, CommunityUpvote, Favorite, LocalTip, RecommendationLog, Region, Spot, SpotImage, SpotRating, SpotSubmission, SpotVisit, UserEvent
 from app.models.app_user import normalize_email
 
 
@@ -262,6 +262,9 @@ def export_account_data(db: Session, user: AppUser) -> dict:
         .where(RecommendationLog.app_user_id == user.id)
         .order_by(RecommendationLog.created_at)
     ).all()
+    visits = db.scalars(select(SpotVisit).where(SpotVisit.app_user_id == user.id)).all()
+    from app.account import trips as trip_service
+    trips = trip_service.list_trips(db, user)
     from app.account import rider as rider_service
 
     rider_profile = rider_service._profile(db, user)
@@ -324,6 +327,12 @@ def export_account_data(db: Session, user: AppUser) -> dict:
             for row in recommendation_rows
         ],
         "favorites": [{**stamp(row), "spot_id": str(row.spot_id)} for row in favorites],
+        "visits": [
+            {**stamp(row), "spot_id": str(row.spot_id), "visited_at": row.visited_at.isoformat(),
+             "outcome": row.outcome, "notes": row.notes}
+            for row in visits
+        ],
+        "trips": trips,
         "upvotes": [
             {**stamp(row), "tip_id": str(row.tip_id) if row.tip_id else None,
              "rating_id": str(row.rating_id) if row.rating_id else None}
@@ -421,7 +430,12 @@ def list_favorites(db: Session, user: AppUser) -> list[dict]:
                 "id": str(spot.id),
                 "name": spot.name,
                 "region": region_label,
+                "regionId": str(region.id) if region else None,
                 "sports": list(spot.sports or []),
+                "levels": list(spot.level or []),
+                "waterCharacter": list(spot.water_character or []),
+                "contentStatus": spot.content_status,
+                "classification": spot.editorial_classification,
                 "addedAt": fav.created_at.isoformat(),
             }
         )
@@ -451,6 +465,55 @@ def remove_favorite(db: Session, user: AppUser, spot_id: uuid.UUID) -> None:
             Favorite.app_user_id == user.id, Favorite.spot_id == spot_id
         )
     )
+    db.flush()
+
+
+# --- visited spots ---------------------------------------------------------
+
+def list_visits(db: Session, user: AppUser) -> list[dict]:
+    rows = db.execute(
+        select(SpotVisit, Spot)
+        .join(Spot, Spot.id == SpotVisit.spot_id)
+        .where(SpotVisit.app_user_id == user.id, Spot.status == "published")
+        .order_by(SpotVisit.visited_at.desc(), SpotVisit.updated_at.desc())
+    ).all()
+    return [{
+        "id": str(visit.id), "spotId": str(spot.id), "name": spot.name,
+        "region": spot.region.name if spot.region else None,
+        "sports": list(spot.sports or []), "visitedAt": visit.visited_at.isoformat(),
+        "outcome": visit.outcome, "notes": visit.notes,
+    } for visit, spot in rows]
+
+
+def set_visit(
+    db: Session, user: AppUser, spot_id: uuid.UUID, *, visited_at: date,
+    outcome: str | None = None, notes: str | None = None,
+) -> dict:
+    spot = db.scalar(select(Spot).where(Spot.id == spot_id, Spot.status == "published"))
+    if spot is None:
+        raise ValueError("Spot nicht gefunden.")
+    visit = db.scalar(select(SpotVisit).where(
+        SpotVisit.app_user_id == user.id, SpotVisit.spot_id == spot_id
+    ))
+    if visit is None:
+        visit = SpotVisit(app_user_id=user.id, spot_id=spot_id, visited_at=visited_at)
+        db.add(visit)
+    visit.visited_at = visited_at
+    visit.outcome = outcome
+    visit.notes = notes
+    db.flush()
+    return {
+        "id": str(visit.id), "spotId": str(spot.id), "name": spot.name,
+        "region": spot.region.name if spot.region else None,
+        "sports": list(spot.sports or []), "visitedAt": visit.visited_at.isoformat(),
+        "outcome": visit.outcome, "notes": visit.notes,
+    }
+
+
+def remove_visit(db: Session, user: AppUser, spot_id: uuid.UUID) -> None:
+    db.execute(delete(SpotVisit).where(
+        SpotVisit.app_user_id == user.id, SpotVisit.spot_id == spot_id
+    ))
     db.flush()
 
 

@@ -13,6 +13,8 @@ import pytest
 from PIL import Image
 from sqlalchemy import func, select
 
+from tests.content_helpers import verify_spot_content
+
 from app.admin.deps import get_cds_client, get_extract_client
 from app.community.ratelimit import NoLimitRateLimiter, get_rate_limiter
 from app.config import get_settings
@@ -104,6 +106,7 @@ def spot_id(client):
         "url": "https://images.example.com/hero.jpg", "source": "unsplash",
         "license": "Unsplash License", "credit": "Test",
     })
+    verify_spot_content(client, sid)
     # The community routes (ratings/tips/images) reject non-public spots, so
     # every moderation test that goes through those needs the spot live.
     # Go-live enforces editorial completeness (Aug 2026), so the fields above

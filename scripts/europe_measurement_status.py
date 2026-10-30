@@ -35,6 +35,19 @@ def database_status(campaign_id: str) -> dict:
             .join(WeatherStation, WeatherStation.id == WeatherObservation.station_id)
             .where(station_scope)
         ).one()
+        latest_observation = db.execute(
+            select(
+                WeatherObservation.observed_at,
+                WeatherObservation.received_at,
+                WeatherObservation.imported_at,
+                WeatherObservation.fetched_at,
+                WeatherObservation.measurement_period_seconds,
+            )
+            .join(WeatherStation, WeatherStation.id == WeatherObservation.station_id)
+            .where(station_scope)
+            .order_by(WeatherObservation.observed_at.desc())
+            .limit(1)
+        ).one_or_none()
         exact_row = db.execute(
             select(
                 func.count(WeatherExactModelBundle.id),
@@ -71,6 +84,21 @@ def database_status(campaign_id: str) -> dict:
         "latest_observation_at": (
             observation_row[2].isoformat() if observation_row[2] else None
         ),
+        "latest_observation_received_at": (
+            latest_observation.received_at.isoformat()
+            if latest_observation and latest_observation.received_at else None
+        ),
+        "latest_observation_imported_at": (
+            latest_observation.imported_at.isoformat()
+            if latest_observation and latest_observation.imported_at else None
+        ),
+        "latest_observation_fetched_at": (
+            latest_observation.fetched_at.isoformat()
+            if latest_observation and latest_observation.fetched_at else None
+        ),
+        "latest_observation_measurement_period_seconds": (
+            latest_observation.measurement_period_seconds if latest_observation else None
+        ),
         "exact_bundles": exact_row[0],
         "stations_with_exact_bundles": exact_row[1],
         "residuals": {status: count for status, count in residual_rows},
@@ -84,6 +112,9 @@ def health_status(report: dict, *, now: datetime | None = None) -> dict:
     campaign = load_campaign()
     database = report.get("database") or {}
     failures = []
+    freshness: dict[str, object] = {
+        "limit_minutes": campaign.freshness_limit_minutes,
+    }
     if report.get("phase") == "active":
         if database.get("stations", 0) < min(200, campaign.station_limit):
             failures.append("station_coverage_below_200")
@@ -94,8 +125,28 @@ def health_status(report: dict, *, now: datetime | None = None) -> dict:
             failures.append("latest_observation_missing")
         else:
             latest_at = datetime.fromisoformat(latest)
-            if instant - latest_at > timedelta(hours=3):
+            age_seconds = (instant - latest_at).total_seconds()
+            freshness["observation_age_seconds"] = int(age_seconds)
+            if age_seconds < -300:
+                failures.append("latest_observation_clock_skew_future")
+            elif age_seconds > campaign.freshness_limit_minutes * 60:
                 failures.append("latest_observation_older_than_3h")
+            received = database.get("latest_observation_received_at")
+            imported = database.get("latest_observation_imported_at")
+            if received:
+                received_at = datetime.fromisoformat(received)
+                freshness["provider_receive_lag_seconds"] = int(
+                    (received_at - latest_at).total_seconds()
+                )
+                if received_at < latest_at:
+                    failures.append("latest_observation_received_before_observed")
+            if imported:
+                imported_at = datetime.fromisoformat(imported)
+                freshness["processing_lag_seconds"] = int(
+                    (imported_at - datetime.fromisoformat(received or latest)).total_seconds()
+                )
+                if received and imported_at < datetime.fromisoformat(received):
+                    failures.append("latest_observation_imported_before_received")
         if database.get("exact_bundles", 0) < 1:
             failures.append("exact_bundles_missing")
         comparable = (database.get("residuals") or {}).get("degraded", 0)
@@ -108,6 +159,7 @@ def health_status(report: dict, *, now: datetime | None = None) -> dict:
     return {
         "status": "healthy" if not failures else "failed",
         "failures": failures,
+        "freshness": freshness,
     }
 
 

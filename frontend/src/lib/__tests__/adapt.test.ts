@@ -76,6 +76,32 @@ describe("adaptSpot", () => {
     expect(s.editorialClassification).toBe("worth_checking_out");
   });
 
+  it("maps review maturity, classification reason and field sources without conflating them", () => {
+    const detail = {
+      ...summary({
+        content_status: "verified",
+        content_reviewed_at: "2026-10-01T00:00:00Z",
+        content_review_due_at: "2027-10-01T00:00:00Z",
+      }),
+      editorial: { classification_reason: "International etablierter Reisespot." },
+      content_sources: [{
+        id: "source-1",
+        spot_id: "uuid-1",
+        field_path: "editorial.description",
+        url: "https://example.test/source",
+        title: "Official source",
+        publisher: null,
+        checked_at: "2026-10-01T00:00:00Z",
+        verification_status: "verified",
+        note: null,
+      }],
+    } as unknown as SpotRead;
+    const s = adaptSpot(detail, region);
+    expect(s.contentStatus).toBe("verified");
+    expect(s.classificationReason).toContain("International");
+    expect(s.contentSources).toHaveLength(1);
+  });
+
   it("leaves image empty when none is set (branded fallback, no picsum)", () => {
     const s = adaptSpot(summary({ image: null }), region);
     expect(s.image).toBe("");

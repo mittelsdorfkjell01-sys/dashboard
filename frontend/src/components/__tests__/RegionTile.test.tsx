@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter } from "react-router-dom";
 import RegionTile from "../RegionTile";
+
+vi.mock("react-router-dom", () => ({
+  Link: ({ to, children, ...props }: React.PropsWithChildren<{ to: string }>) => (
+    <a href={to} {...props}>{children}</a>
+  ),
+}));
 
 function render(props: Partial<React.ComponentProps<typeof RegionTile>> = {}) {
   const merged = {
@@ -13,11 +18,7 @@ function render(props: Partial<React.ComponentProps<typeof RegionTile>> = {}) {
     sports: ["kitesurf", "windsurf"],
     ...props,
   };
-  return renderToStaticMarkup(
-    <MemoryRouter>
-      <RegionTile {...merged} />
-    </MemoryRouter>,
-  );
+  return renderToStaticMarkup(<RegionTile {...merged} />);
 }
 
 describe("RegionTile", () => {

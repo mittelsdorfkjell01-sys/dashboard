@@ -43,9 +43,61 @@ export interface FavoriteSpot {
   id: string;
   name: string;
   region?: string | null;
+  regionId?: string | null;
   sports?: string[];
+  levels?: string[];
+  waterCharacter?: string[];
+  contentStatus?: "unreviewed" | "in_review" | "verified" | "review_due" | "conflict";
+  classification?: "world_class" | "worth_trip" | "worth_checking_out" | null;
   addedAt: string;
 }
+export interface VisitedSpot {
+  id: string;
+  spotId: string;
+  name: string;
+  region?: string | null;
+  sports?: string[];
+  visitedAt: string;
+  outcome: "worthwhile" | "neutral" | "not_worthwhile" | null;
+  notes: string | null;
+}
+
+export interface TripChecklistItem { text: string; done: boolean }
+export interface TripDay {
+  date: string;
+  notes: string | null;
+  accommodation: string | null;
+  travel: string | null;
+}
+export interface TripStop {
+  id?: string;
+  spotId: string | null;
+  spotName: string;
+  position: number;
+  plannedDate: string | null;
+  notes: string | null;
+  role: "main" | "alternative";
+  contentChanged: boolean;
+  spotAvailable: boolean;
+}
+export interface TripPlan {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  notes: string | null;
+  checklist: TripChecklistItem[];
+  days: TripDay[];
+  status: "draft" | "planned" | "completed" | "cancelled";
+  stops: TripStop[];
+  createdAt: string;
+  updatedAt: string;
+  shareUrl?: string | null;
+  shareNotes?: boolean;
+}
+export type TripInput = Omit<TripPlan, "id" | "createdAt" | "updatedAt" | "stops" | "shareUrl" | "shareNotes"> & {
+  stops: Array<{ spotId: string; plannedDate: string; notes: string | null; role: "main" | "alternative" }>;
+};
 
 // Mirrors the backend submission lifecycle (app/admin/moderation.py): a proposal
 // is "pending", becomes "merged" once an admin turns it into a (draft) spot, or
@@ -206,6 +258,7 @@ export class AccountError extends Error {}
 
 export const FAVORITES_EVENT = "swd:favorites";
 export const SUBMISSIONS_EVENT = "swd:submissions";
+export const VISITS_EVENT = "swd:visits";
 
 /** Run an account request, surfacing the server's German detail as an
  *  AccountError the pages already know how to display. */
@@ -222,10 +275,13 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 
 let favCache: FavoriteSpot[] = [];
 let subsCache: MySubmission[] = [];
+let visitsCache: VisitedSpot[] = [];
 let favoritesStatus: CollectionStatus = "idle";
 let submissionsStatus: CollectionStatus = "idle";
+let visitsStatus: CollectionStatus = "idle";
 let favoritesError: string | null = null;
 let submissionsError: string | null = null;
+let visitsError: string | null = null;
 let submissionsHasMore = false;
 
 function emit(name: string): void {
@@ -235,11 +291,13 @@ function emit(name: string): void {
 function clearCaches(): void {
   favCache = [];
   subsCache = [];
-  favoritesStatus = submissionsStatus = "idle";
-  favoritesError = submissionsError = null;
+  visitsCache = [];
+  favoritesStatus = submissionsStatus = visitsStatus = "idle";
+  favoritesError = submissionsError = visitsError = null;
   submissionsHasMore = false;
   emit(FAVORITES_EVENT);
   emit(SUBMISSIONS_EVENT);
+  emit(VISITS_EVENT);
 }
 
 /** Load the signed-in user's favourites + submissions into the cache. Called
@@ -274,8 +332,22 @@ export async function refreshSubmissions(): Promise<void> {
   emit(SUBMISSIONS_EVENT);
 }
 
+export async function refreshVisits(): Promise<void> {
+  visitsStatus = "loading";
+  visitsError = null;
+  emit(VISITS_EVENT);
+  try {
+    visitsCache = (await call<{ items: VisitedSpot[] }>("/account/visits")).items;
+    visitsStatus = "ready";
+  } catch (error) {
+    visitsStatus = "error";
+    visitsError = error instanceof Error ? error.message : "Besuchte Spots konnten nicht geladen werden.";
+  }
+  emit(VISITS_EVENT);
+}
+
 async function hydrate(): Promise<void> {
-  await Promise.all([refreshFavorites(), refreshSubmissions()]);
+  await Promise.all([refreshFavorites(), refreshSubmissions(), refreshVisits()]);
 }
 
 // --- auth / session --------------------------------------------------------
@@ -400,6 +472,70 @@ export async function deleteAccount(password: string): Promise<void> {
 export function listFavorites(): FavoriteSpot[] {
   return favCache;
 }
+
+export function getVisitsState(): CollectionState<VisitedSpot> {
+  return { items: visitsCache, status: visitsStatus, error: visitsError };
+}
+
+export function isVisited(spotId: string): boolean {
+  return visitsCache.some((visit) => visit.spotId === spotId);
+}
+
+export async function markVisited(
+  spotId: string,
+  input: { visitedAt?: string; outcome?: VisitedSpot["outcome"]; notes?: string | null } = {},
+): Promise<VisitedSpot> {
+  const localToday = () => {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  const visit = await call<VisitedSpot>(`/account/visits/${spotId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      visitedAt: input.visitedAt ?? localToday(),
+      outcome: input.outcome ?? null,
+      notes: input.notes ?? null,
+    }),
+  });
+  visitsCache = [visit, ...visitsCache.filter((item) => item.spotId !== spotId)];
+  emit(VISITS_EVENT);
+  trackEvent("session_checkin", { spotId, surface: "spot" });
+  return visit;
+}
+
+export async function unmarkVisited(spotId: string): Promise<void> {
+  await call<void>(`/account/visits/${spotId}`, { method: "DELETE" });
+  visitsCache = visitsCache.filter((item) => item.spotId !== spotId);
+  emit(VISITS_EVENT);
+}
+
+// --- manual trip planner ---------------------------------------------------
+
+export const getTrips = async () =>
+  (await call<{ items: TripPlan[] }>("/account/trips")).items;
+
+export const createTrip = (input: TripInput) =>
+  call<TripPlan>("/account/trips", { method: "POST", body: JSON.stringify(input) });
+
+export const updateTrip = (id: string, input: Partial<TripInput>) =>
+  call<TripPlan>(`/account/trips/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+
+export const deleteTrip = (id: string) =>
+  call<void>(`/account/trips/${id}`, { method: "DELETE" });
+
+export const copyTrip = (id: string) =>
+  call<TripPlan>(`/account/trips/${id}/copy`, { method: "POST" });
+
+export const setTripSharing = (id: string, enabled: boolean, shareNotes = false) =>
+  call<TripPlan>(`/account/trips/${id}/share`, {
+    method: "PUT", body: JSON.stringify({ enabled, shareNotes }),
+  });
+
+export const getSharedTrip = (token: string) =>
+  call<TripPlan>(`/account/trips/shared/${encodeURIComponent(token)}`);
+
+export const searchTripSpots = async (q: string) =>
+  (await call<{ items: { id: string; name: string }[] }>(`/account/trips/spots?q=${encodeURIComponent(q)}`)).items;
 
 // --- private rider setup --------------------------------------------------
 

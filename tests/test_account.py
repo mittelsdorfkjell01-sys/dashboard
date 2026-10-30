@@ -372,6 +372,128 @@ def test_favorites_require_auth(anon_client):
     assert anon_client.put(f"/account/favorites/{uuid.uuid4()}").status_code == 401
 
 
+# --- manual trip planner ---------------------------------------------------
+
+def test_trip_planner_create_update_and_delete(acct, spot_id, db):
+    spot = db.get(Spot, uuid.UUID(spot_id))
+    spot.status = "published"
+    db.commit()
+    c = acct["client"]
+
+    created = c.post("/account/trips", json={
+        "title": "Nordsee Wochenende",
+        "startDate": "2026-11-06",
+        "endDate": "2026-11-08",
+        "notes": "Forecast erst kurzfristig bewerten.",
+        "checklist": [{"text": "Neopren einpacken", "done": False}],
+        "days": [{"date": "2026-11-07", "accommodation": "Privat", "travel": "Bahn"}],
+        "stops": [{"spotId": spot_id, "plannedDate": "2026-11-07", "role": "main", "notes": "Lokale Regeln prüfen"}],
+    })
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert body["stops"][0]["spotId"] == spot_id
+    assert body["stops"][0]["spotName"].startswith("Acct Spot")
+    assert body["stops"][0]["role"] == "main"
+    assert body["days"][0]["date"] == "2026-11-07"
+    assert c.get("/account/trips").json()["items"][0]["id"] == body["id"]
+
+    updated = c.patch(f"/account/trips/{body['id']}", json={
+        "status": "planned",
+        "checklist": [{"text": "Neopren einpacken", "done": True}],
+    })
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["status"] == "planned"
+    assert updated.json()["checklist"][0]["done"] is True
+    assert c.delete(f"/account/trips/{body['id']}").status_code == 204
+    assert c.get("/account/trips").json()["items"] == []
+
+
+def test_trip_copy_and_revocable_read_only_share(acct, spot_id, db):
+    spot = db.get(Spot, uuid.UUID(spot_id))
+    spot.status = "published"
+    db.commit()
+    c = acct["client"]
+    created = c.post("/account/trips", json={
+        "title": "Drei Tage Nordsee", "startDate": "2026-11-06", "endDate": "2026-11-08",
+        "notes": "Private Buchungsnummer 123", "days": [
+            {"date": "2026-11-06", "notes": "Ankommen", "accommodation": "Privat"},
+            {"date": "2026-11-07"}, {"date": "2026-11-08"},
+        ],
+        "stops": [{"spotId": spot_id, "plannedDate": "2026-11-07", "role": "main"}],
+    })
+    assert created.status_code == 201, created.text
+    trip_id = created.json()["id"]
+
+    copied = c.post(f"/account/trips/{trip_id}/copy")
+    assert copied.status_code == 201, copied.text
+    assert copied.json()["title"].endswith("Kopie")
+    assert copied.json()["shareUrl"] is None
+
+    shared = c.put(f"/account/trips/{trip_id}/share", json={"enabled": True})
+    assert shared.status_code == 200, shared.text
+    share_url = shared.json()["shareUrl"]
+    token = share_url.rsplit("/", 1)[-1]
+    with TestClient(app) as public_client:
+        public = public_client.get(f"/account/trips/shared/{token}")
+        assert public.status_code == 200, public.text
+        assert public.json()["title"] == "Drei Tage Nordsee"
+        assert public.json()["notes"] is None
+        assert public.json()["days"][0]["accommodation"] is None
+        assert "shareUrl" not in public.json()
+
+    revoked = c.put(f"/account/trips/{trip_id}/share", json={"enabled": False})
+    assert revoked.status_code == 200
+    with TestClient(app) as public_client:
+        assert public_client.get(f"/account/trips/shared/{token}").status_code == 404
+
+
+def test_trip_allows_only_one_main_spot_per_day(acct, spot_id, db):
+    spot = db.get(Spot, uuid.UUID(spot_id))
+    spot.status = "published"
+    db.commit()
+    response = acct["client"].post("/account/trips", json={
+        "title": "Ungültig", "startDate": "2026-11-06", "endDate": "2026-11-08",
+        "stops": [
+            {"spotId": spot_id, "plannedDate": "2026-11-07", "role": "main"},
+            {"spotId": spot_id, "plannedDate": "2026-11-07", "role": "main"},
+        ],
+    })
+    assert response.status_code == 422
+
+
+def test_trip_planner_rejects_invalid_dates_and_foreign_access(acct, anon_client):
+    bad = acct["client"].post("/account/trips", json={
+        "title": "Falsch", "startDate": "2026-11-09", "endDate": "2026-11-08",
+    })
+    assert bad.status_code == 422
+    with TestClient(app) as unauthenticated_client:
+        assert unauthenticated_client.get("/account/trips").status_code == 401
+
+
+def test_visited_spots_are_durable_and_removable(acct, spot_id, db):
+    spot = db.get(Spot, uuid.UUID(spot_id))
+    spot.status = "published"
+    db.commit()
+    c = acct["client"]
+    saved = c.put(f"/account/visits/{spot_id}", json={
+        "visitedAt": "2026-10-29", "outcome": "worthwhile", "notes": "Lokale Hinweise geprüft",
+    })
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["visitedAt"] == "2026-10-29"
+    assert c.get("/account/visits").json()["items"][0]["spotId"] == spot_id
+    assert c.delete(f"/account/visits/{spot_id}").status_code == 204
+    assert c.get("/account/visits").json()["items"] == []
+
+
+def test_visit_rejects_future_date(acct, spot_id, db):
+    spot = db.get(Spot, uuid.UUID(spot_id))
+    spot.status = "published"
+    db.commit()
+    assert acct["client"].put(f"/account/visits/{spot_id}", json={
+        "visitedAt": "2099-01-01",
+    }).status_code == 422
+
+
 # --- spot proposals --------------------------------------------------------
 
 def test_submission_create_and_list(acct, db):

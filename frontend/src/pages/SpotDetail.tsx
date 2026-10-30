@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import LandingHeader from "../components/LandingHeader";
 import Facilities from "../components/Facilities";
 import SpotTabs from "../components/SpotTabs";
@@ -21,7 +22,7 @@ import SpotConditionHints from "../components/SpotConditionHints";
 import SpotEditorialClassification from "../components/SpotEditorialClassification";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
-import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
+import { CalendarIcon, ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
@@ -34,6 +35,7 @@ const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minm
 const LocatorMap = lazy(() => import("../components/LocatorMap"));
 
 export default function SpotDetail() {
+  const { t } = useTranslation();
   const { spotName } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -307,6 +309,7 @@ export default function SpotDetail() {
                     <FavoriteButton spot={spot} />
                     <ShareButton spot={spot} />
                     {spotId && <VisitedButton spotId={spotId} />}
+                    {spotId && <Link to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`} aria-label={t("trips.planSpot")} title={t("trips.planSpot")} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"><CalendarIcon className="text-lead" /></Link>}
                     <SuggestEditButton spot={spot} />
                   </div>
                 </div>

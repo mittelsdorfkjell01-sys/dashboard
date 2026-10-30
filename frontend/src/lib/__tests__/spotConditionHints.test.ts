@@ -55,6 +55,25 @@ describe("spot condition hints", () => {
     });
   });
 
+  it("links a verified field source and states when it was checked", () => {
+    const hint = buildSpotConditionHints(spot({
+      safetyNotice: "Starke Strömung am Flussauslauf.",
+      contentSources: [{
+        id: "source-1",
+        spot_id: "spot-1",
+        field_path: "editorial.safety_notice",
+        url: "https://example.test/safety",
+        title: "Safety source",
+        publisher: "Harbour authority",
+        checked_at: "2026-10-20T12:00:00Z",
+        verification_status: "verified",
+        note: null,
+      }],
+    }), null)[0];
+    expect(hint.sourceUrl).toBe("https://example.test/safety");
+    expect(hint.timing).toContain("20.10.2026");
+  });
+
   it("writes compass directions out in German", () => {
     expect(directionName(45)).toBe("Nordosten");
     expect(directionName(225)).toBe("Südwesten");

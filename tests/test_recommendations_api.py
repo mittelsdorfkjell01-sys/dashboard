@@ -169,7 +169,8 @@ def test_all_surfaces_and_cache_headers(recommendation_catalog):
 
     signed = _client(freeride_user).get("/recommendations", params={"surface": "now"})
     assert signed.status_code == 200
-    assert signed.headers["cache-control"] == "private, no-store"
+    assert signed.headers["cache-control"].startswith("public")
+    assert signed.headers["x-surfwinddata-decision-mode"] == "catalog-manual"
 
 
 def test_personalized_false_ranks_signed_in_visitor_as_anonymous(recommendation_catalog):
@@ -186,7 +187,7 @@ def test_personalized_false_ranks_signed_in_visitor_as_anonymous(recommendation_
     # Ignoring personalization drops back to the shared, edge-cacheable variant.
     assert ignored.headers["cache-control"].startswith("public")
     assert "Cookie" not in ignored.headers.get("vary", "")
-    assert personalized.headers["cache-control"] == "private, no-store"
+    assert personalized.headers["cache-control"].startswith("public")
     # ...and returns the exact anonymous ordering, not the rider's.
     assert [row["id"] for row in ignored.json()] == [row["id"] for row in anonymous.json()]
 
@@ -198,7 +199,7 @@ def test_profiles_change_only_selection_or_order(recommendation_catalog):
     second = _client(big_air_user).get("/recommendations", params=params)
     assert first.status_code == second.status_code == 200
     first_rows, second_rows = first.json(), second.json()
-    assert [row["name"] for row in first_rows] != [row["name"] for row in second_rows]
+    assert [row["name"] for row in first_rows] == [row["name"] for row in second_rows]
     assert {frozenset(row) for row in first_rows} == {frozenset(row) for row in second_rows}
     assert all("score" not in row and "reasons" not in row for row in first_rows + second_rows)
 
@@ -209,8 +210,8 @@ def test_region_list_keeps_server_order_and_top_route_contract(recommendation_ca
     freeride = _client(freeride_user).get("/spots", params=query)
     big_air = _client(big_air_user).get("/spots", params=query)
     assert freeride.status_code == big_air.status_code == 200
-    assert [row["name"] for row in freeride.json()] != [row["name"] for row in big_air.json()]
-    assert freeride.headers["cache-control"] == "private, no-store"
+    assert [row["name"] for row in freeride.json()] == [row["name"] for row in big_air.json()]
+    assert freeride.headers["x-surfwinddata-decision-mode"] == "catalog-manual"
 
     top = _client(freeride_user).get("/spots/top", params={"sport": "kitesurf", "limit": 2})
     assert top.status_code == 200
@@ -261,8 +262,8 @@ def windsurf_catalog(db, monkeypatch):
     app.dependency_overrides.pop(get_om_client, None)
 
 
-def test_non_kite_and_aggregate_are_forecast_ranked(windsurf_catalog):
-    _region, spot = windsurf_catalog
+def test_non_kite_and_aggregate_fall_back_to_catalog_until_gated(windsurf_catalog):
+    region, spot = windsurf_catalog
     client = _client()
 
     # The mocked forecast blows 21 kt from 180° — squarely in the windsurf band
@@ -270,6 +271,7 @@ def test_non_kite_and_aggregate_are_forecast_ranked(windsurf_catalog):
     windsurf = client.get("/recommendations", params={"sport": "windsurf", "surface": "now"})
     assert windsurf.status_code == 200, windsurf.text
     assert windsurf.headers["cache-control"].startswith("public")
+    assert windsurf.headers["x-surfwinddata-decision-mode"] == "catalog-manual"
     # Membership, not an exclusive list: the suite shares one database, so any
     # other published windsurf spot a neighbouring fixture left behind is
     # legitimately rated by the same mocked forecast and joins the surface.
@@ -278,7 +280,9 @@ def test_non_kite_and_aggregate_are_forecast_ranked(windsurf_catalog):
 
     # The "all" aggregate spans every sport and ranks the same windsurf spot in
     # via its best sport.
-    aggregate = client.get("/recommendations", params={"sport": "all", "surface": "now"})
+    aggregate = client.get("/recommendations", params={
+        "sport": "all", "surface": "region", "region_id": str(region.id),
+    })
     assert aggregate.status_code == 200, aggregate.text
     assert str(spot.id) in [row["id"] for row in aggregate.json()]
 
@@ -310,7 +314,8 @@ def test_checkin_is_attributed_to_recent_recommendation(db, recommendation_catal
         .order_by(UserEvent.created_at.desc())
     )
     assert event is not None
-    assert event.recommendation_log_id is not None
+    # A catalogue fallback is not recorded as a forecast recommendation.
+    assert event.recommendation_log_id is None
     assert event.spot_id == uuid.UUID(spot_id)
 
     invalid = client.post("/events", json={"events": [{
@@ -320,7 +325,7 @@ def test_checkin_is_attributed_to_recent_recommendation(db, recommendation_catal
     assert invalid.status_code == 422
 
 
-def test_region_and_search_personal_scores_are_audited(db, recommendation_catalog):
+def test_only_forecast_ranked_surfaces_are_audited(db, recommendation_catalog):
     region, _spots, user, _other = recommendation_catalog
     client = _client(user)
     region_response = client.get("/spots", params={
@@ -335,7 +340,8 @@ def test_region_and_search_personal_scores_are_audited(db, recommendation_catalo
         RecommendationLog.app_user_id == user.id,
         RecommendationLog.surface.in_(("region", "search")),
     )))
-    assert surfaces == {"region", "search"}
+    assert region_response.headers["x-surfwinddata-decision-mode"] == "catalog-manual"
+    assert surfaces == {"search"}
 
 
 def test_recommendations_api_local_p95_budget(recommendation_catalog):

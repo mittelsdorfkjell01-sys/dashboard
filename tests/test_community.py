@@ -23,6 +23,7 @@ from app.community.ratelimit import (
     get_rate_limiter,
 )
 from app.config import get_settings
+from tests.content_helpers import verify_spot_content
 from app.main import app
 from app.models import LocalTip, Spot, SpotSubmission
 from app.seed.seed import seed
@@ -101,6 +102,7 @@ def spot_id(client):
         "url": "https://images.example.com/hero.jpg", "source": "unsplash",
         "license": "Unsplash License", "credit": "Test",
     })
+    verify_spot_content(client, sid)
     # Community routes reject non-public spots — publish so the tests can
     # exercise them. Go-live enforces editorial completeness (Aug 2026), so
     # the fields above satisfy every required readiness gap.

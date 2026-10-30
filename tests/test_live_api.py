@@ -269,7 +269,9 @@ def test_forecast_summary_uses_forecast_hour_nearest_now(
     assert body["hour"]["observation_type"] == "forecast"
     assert body["hour"]["provenance"]["source_type"] == "forecast"
     assert body["hour"]["provenance"]["observation_type"] == "forecast"
-    assert body["hour"]["coastal_profile_reviewed_at"] is not None
+    # The seed only provides the spot facing. That is enough for a derived
+    # coastal normal, but it must never be presented as an editorial review.
+    assert body["hour"]["coastal_profile_reviewed_at"] is None
 
 
 def test_forecast_endpoint_rejects_over_horizon(client, seeded_spot_id, fake_live):

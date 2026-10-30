@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
+from datetime import date
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -18,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.account import rider as rider_service
+from app.account import trips as trip_service
 from app.account import service
 from app.account.email import MailUnavailable, send_account_link, send_account_notice
 from app.account.deps import current_account
@@ -128,6 +130,107 @@ class SubmissionRequest(BaseModel):
 
 class DeleteAccountRequest(BaseModel):
     password: str = Field(min_length=1, max_length=1024)
+
+
+class TripChecklistItem(BaseModel):
+    text: str = Field(min_length=1, max_length=160)
+    done: bool = False
+
+    model_config = {"extra": "forbid"}
+
+
+class TripStopInput(BaseModel):
+    spot_id: uuid.UUID = Field(alias="spotId")
+    planned_date: date | None = Field(default=None, alias="plannedDate")
+    notes: str | None = Field(default=None, max_length=1000)
+    role: Literal["main", "alternative"] = "main"
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+
+class TripDayInput(BaseModel):
+    date: date
+    notes: str | None = Field(default=None, max_length=2000)
+    accommodation: str | None = Field(default=None, max_length=1000)
+    travel: str | None = Field(default=None, max_length=1000)
+
+    model_config = {"extra": "forbid"}
+
+
+class TripCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    start_date: date = Field(alias="startDate")
+    end_date: date = Field(alias="endDate")
+    notes: str | None = Field(default=None, max_length=5000)
+    checklist: list[TripChecklistItem] = Field(default_factory=list, max_length=50)
+    days: list[TripDayInput] = Field(default_factory=list, max_length=31)
+    stops: list[TripStopInput] = Field(default_factory=list, max_length=30)
+    status: Literal["draft", "planned", "completed", "cancelled"] = "draft"
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+    @model_validator(mode="after")
+    def valid_dates(self) -> "TripCreate":
+        if self.end_date < self.start_date:
+            raise ValueError("Das Enddatum darf nicht vor dem Startdatum liegen.")
+        if (self.end_date - self.start_date).days > 30:
+            raise ValueError("Eine Reise darf höchstens 31 Tage umfassen.")
+        self.title = " ".join(self.title.split())
+        _validate_trip_structure(self.start_date, self.end_date, self.days, self.stops)
+        return self
+
+
+class TripPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    start_date: date | None = Field(default=None, alias="startDate")
+    end_date: date | None = Field(default=None, alias="endDate")
+    notes: str | None = Field(default=None, max_length=5000)
+    checklist: list[TripChecklistItem] | None = Field(default=None, max_length=50)
+    days: list[TripDayInput] | None = Field(default=None, max_length=31)
+    stops: list[TripStopInput] | None = Field(default=None, max_length=30)
+    status: Literal["draft", "planned", "completed", "cancelled"] | None = None
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+
+def _validate_trip_structure(
+    start_date: date, end_date: date, days: list[TripDayInput], stops: list[TripStopInput]
+) -> None:
+    day_dates = [day.date for day in days]
+    if len(day_dates) != len(set(day_dates)):
+        raise ValueError("Jeder Reisetag darf nur einmal angelegt werden.")
+    if any(day < start_date or day > end_date for day in day_dates):
+        raise ValueError("Ein Reisetag liegt außerhalb des Reisezeitraums.")
+    main_dates: set[date] = set()
+    spot_days: set[tuple[date, uuid.UUID]] = set()
+    for stop in stops:
+        if stop.planned_date is None:
+            raise ValueError("Jeder Spot benötigt einen geplanten Reisetag.")
+        if stop.planned_date < start_date or stop.planned_date > end_date:
+            raise ValueError("Ein geplanter Spot-Tag liegt außerhalb des Reisezeitraums.")
+        if stop.role == "main" and stop.planned_date in main_dates:
+            raise ValueError("Pro Reisetag ist nur ein Hauptspot möglich.")
+        if stop.role == "main":
+            main_dates.add(stop.planned_date)
+        key = (stop.planned_date, stop.spot_id)
+        if key in spot_days:
+            raise ValueError("Ein Spot darf pro Reisetag nur einmal vorkommen.")
+        spot_days.add(key)
+
+
+class TripShareInput(BaseModel):
+    enabled: bool
+    share_notes: bool = Field(default=False, alias="shareNotes")
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
+
+
+class VisitPut(BaseModel):
+    visited_at: date = Field(default_factory=date.today, alias="visitedAt")
+    outcome: Literal["worthwhile", "neutral", "not_worthwhile"] | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+    model_config = {"populate_by_name": True, "extra": "forbid"}
 
 
 class RiderLocation(BaseModel):
@@ -651,6 +754,164 @@ def delete_gear(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     db.commit()
     return Response(status_code=204)
+
+
+# --- visited spots ---------------------------------------------------------
+
+@router.get("/visits")
+def list_visits(
+    user: AppUser = Depends(current_account), db: Session = Depends(get_db)
+) -> dict:
+    return {"items": service.list_visits(db, user)}
+
+
+@router.put("/visits/{spot_id}")
+def set_visit(
+    spot_id: uuid.UUID,
+    body: VisitPut,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    if body.visited_at > date.today():
+        raise HTTPException(status_code=422, detail="Ein Besuch kann nicht in der Zukunft liegen.")
+    try:
+        result = service.set_visit(
+            db, user, spot_id, visited_at=body.visited_at,
+            outcome=body.outcome, notes=body.notes,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    db.commit()
+    return result
+
+
+@router.delete("/visits/{spot_id}", status_code=204)
+def remove_visit(
+    spot_id: uuid.UUID,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> Response:
+    service.remove_visit(db, user, spot_id)
+    db.commit()
+    return Response(status_code=204)
+
+
+# --- manual trip planner ---------------------------------------------------
+
+@router.get("/trips")
+def list_trips(
+    user: AppUser = Depends(current_account), db: Session = Depends(get_db)
+) -> dict:
+    return {"items": trip_service.list_trips(db, user)}
+
+
+@router.get("/trips/spots")
+def search_trip_spots(
+    q: str = "",
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    term = " ".join(q.split())[:80]
+    if len(term) < 2:
+        return {"items": []}
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    rows = db.scalars(
+        select(Spot)
+        .where(Spot.status == "published", Spot.name.ilike(f"%{escaped}%", escape="\\"))
+        .order_by(Spot.name)
+        .limit(8)
+    ).all()
+    return {"items": [{"id": str(spot.id), "name": spot.name} for spot in rows]}
+
+
+@router.post("/trips", status_code=201)
+def create_trip(
+    body: TripCreate,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return trip_service.create_trip(db, user, body.model_dump(by_alias=False))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/trips/{trip_id}")
+def get_trip(
+    trip_id: uuid.UUID,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        trip = trip_service._owned(db, user, trip_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return trip_service.as_dict(trip)
+
+
+@router.patch("/trips/{trip_id}")
+def update_trip(
+    trip_id: uuid.UUID,
+    body: TripPatch,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return trip_service.update_trip(
+            db, user, trip_id, body.model_dump(exclude_unset=True, by_alias=False)
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/trips/{trip_id}", status_code=204)
+def delete_trip(
+    trip_id: uuid.UUID,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> Response:
+    try:
+        trip_service.delete_trip(db, user, trip_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=204)
+
+
+@router.post("/trips/{trip_id}/copy", status_code=201)
+def copy_trip(
+    trip_id: uuid.UUID,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return trip_service.copy_trip(db, user, trip_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put("/trips/{trip_id}/share")
+def set_trip_sharing(
+    trip_id: uuid.UUID,
+    body: TripShareInput,
+    user: AppUser = Depends(current_account),
+    db: Session = Depends(get_db),
+) -> dict:
+    try:
+        return trip_service.set_sharing(
+            db, user, trip_id, enabled=body.enabled, share_notes=body.share_notes
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/trips/shared/{token}")
+def get_shared_trip(token: uuid.UUID, db: Session = Depends(get_db)) -> dict:
+    try:
+        return trip_service.shared_trip(db, token)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 # --- favourites ------------------------------------------------------------
