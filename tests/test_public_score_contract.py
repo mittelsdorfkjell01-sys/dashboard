@@ -172,7 +172,11 @@ def test_all_public_catalog_and_discovery_json_hides_scoring(
 
     for method, url, kwargs in calls:
         response = getattr(anon_client, method)(url, **kwargs)
-        assert response.status_code == 200, f"{method.upper()} {url}: {response.text}"
+        # Spatial field availability is deployment/data dependent. A coordinate
+        # outside every active publication has the documented 404 contract and
+        # is still valid JSON to inspect for accidental score leakage.
+        expected_statuses = {200, 404} if url.startswith("/weather-fields/") else {200}
+        assert response.status_code in expected_statuses, f"{method.upper()} {url}: {response.text}"
         assert _forbidden_paths(response.json()) == [], url
 
     # Public spot records must not expose the legacy confidence stage either.

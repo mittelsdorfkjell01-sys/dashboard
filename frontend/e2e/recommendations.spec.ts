@@ -110,9 +110,9 @@ test("landing renders all non-empty recommendation surfaces without scoring copy
   await page.goto("/");
   // The three surfaces as the landing names them: the "now" row's own header is
   // hidden and carried by the section heading beside the filter icon.
-  await expect(page.getByRole("heading", { name: "Aktuelle Topspots" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Woche" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Zeit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Spot-Auswahl", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Für nächste Woche vormerken" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Saisonale Spot-Auswahl" })).toBeVisible();
   const markup = await page.locator("body").evaluate((node) => node.outerHTML.toLowerCase());
   for (const forbidden of ["top-match", "match-prozent", "rank_score", "gut_anteil", "weil du", "passt zu"]) {
     expect(markup).not.toContain(forbidden);
@@ -127,9 +127,9 @@ test("landing hides recommendation categories that cannot be loaded", async ({ p
   await mockPublicApi(page, ["now", "next_week"]);
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Zeit" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Aktuelle Topspots" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Topspots in der nächsten Woche" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Saisonale Spot-Auswahl" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Spot-Auswahl", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Für nächste Woche vormerken" })).toHaveCount(0);
   await expect(page.getByText("Empfehlungen konnten nicht geladen werden.")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
 });
@@ -154,7 +154,7 @@ test("captures anonymous and two rider orders for the same region", async ({ pag
     if (profile === "anonymous") await page.context().clearCookies();
     else await page.context().addCookies([{ name: "e2e-profile", value: profile, domain: "127.0.0.1", path: "/" }]);
     await page.goto("/region/sardinien");
-    const heading = page.getByRole("heading", { name: "Top in Sardinien" });
+    const heading = page.getByRole("heading", { name: "Spot-Auswahl in Sardinien" });
     await expect(heading).toBeVisible();
     const surface = page.locator('[data-recommendation-surface="region"]');
     await surface.scrollIntoViewIfNeeded();

@@ -20,7 +20,7 @@ test("migrated surfaces render German copy, not catalogue keys", async ({ page }
   await page.goto("/");
 
   // Footer and account menu both render the shared SITE_LINKS list.
-  await expect(page.getByText("Fragen und Antworten").first()).toBeVisible();
+  await expect(page.getByText("Daten & Fragen").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Impressum" }).first()).toBeVisible();
 
   // The account menu's trigger label, heading and actions are all catalogue keys.

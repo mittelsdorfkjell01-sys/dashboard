@@ -82,7 +82,7 @@ export default function Reiseplaner() {
     open("new");
     setStops([{ spotId, spotName, plannedDate: dateString(), notes: null, role: "main" }]);
     setSearchParams({}, { replace: true });
-  }, [searchParams, setSearchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!editing) return;

@@ -5,6 +5,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   use: {
     baseURL: "http://127.0.0.1:4173",
+    // Public E2E assertions exercise the German source catalogue. Pin the
+    // browser locale so CI runners with an English OS do not select English.
+    locale: "de-DE",
     trace: "retain-on-failure",
   },
   projects: [
