@@ -57,11 +57,10 @@ merely to merge a regression.
 10. Enable independent approvals, monitoring ownership and backup alerts. Finish
     the wind evaluation before enabling measurement-based corrections.
 
-The unused `kjellmittelsdorf.de` team-domain object is not assigned to either
-project and does not resolve. Removing that account-level object requires a
-Vercel Owner or a token with domain-management permission; the current project
-token cannot delete it. This cleanup does not block either deployment and must
-not be confused with cancelling the domain at its registrar.
+The unused `kjellmittelsdorf.de` team-domain object was removed through the
+Vercel API on 2026-10-30 and its absence was verified against the complete team
+domain list. This Vercel cleanup is separate from any registrar contract that
+may exist outside Vercel.
 
 ## Launch decision
 
