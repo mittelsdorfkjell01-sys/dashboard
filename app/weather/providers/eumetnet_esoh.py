@@ -7,6 +7,7 @@ from dataclasses import replace
 from concurrent.futures import ThreadPoolExecutor
 import math
 import re
+import time
 
 import httpx
 
@@ -61,6 +62,8 @@ _TERRITORY_CODES = {
     "Serbia": "RS", "Slovakia": "SK", "Slovenia": "SI", "Spain": "ES",
     "Sweden": "SE", "Switzerland": "CH", "Tunisia": "TN", "Türkiye": "TR",
     "Turkey": "TR", "Ukraine": "UA", "United Kingdom": "GB",
+    "United Kingdom (the)": "GB", "Netherlands (the)": "NL",
+    "Russian Federation (the)": "RU", "Republic of Moldova (the)": "MD",
     "Vatican City": "VA",
 }
 
@@ -236,7 +239,7 @@ def _oscar_metadata(station: ObservationStation, *, timeout: float) -> Observati
             if _number(match.get("elevation")) is not None
             else station.elevation_m
         ),
-        station_type=str(match.get("stationTypeName") or station.station_type),
+        station_type=match.get("stationTypeName") or station.station_type,
         provenance=provenance,
     )
 
@@ -245,14 +248,20 @@ def enrich_oscar_metadata(
     stations: list[ObservationStation],
     *,
     timeout: float = 15.0,
-    workers: int = 8,
+    workers: int = 6,
 ) -> tuple[list[ObservationStation], int]:
     """Enrich a bounded selected set; failures remain explicit and retryable."""
     def enrich(station: ObservationStation) -> ObservationStation:
-        try:
-            return _oscar_metadata(station, timeout=timeout)
-        except (httpx.HTTPError, ValueError, TypeError):
-            return station
+        for attempt in range(3):
+            try:
+                enriched = _oscar_metadata(station, timeout=timeout)
+                if enriched.country_code:
+                    return enriched
+            except (httpx.HTTPError, ValueError, TypeError):
+                pass
+            if attempt < 2:
+                time.sleep(0.5 * (attempt + 1))
+        return station
 
     with ThreadPoolExecutor(max_workers=max(1, min(workers, 12))) as pool:
         enriched = list(pool.map(enrich, stations))

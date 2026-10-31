@@ -167,12 +167,25 @@ def _refresh_provider(
     ]
     if provider == "eumetnet_esoh":
         campaign = load_campaign()
-        selected = select_balanced_stations(
+        campaign_limit = min(
+            campaign.station_limit,
+            get_settings().weather_europe_campaign_station_limit,
+        )
+        candidates = select_balanced_stations(
             regional,
             bounds=bounds,
-            limit=min(campaign.station_limit, get_settings().weather_europe_campaign_station_limit),
+            limit=min(len(regional), campaign_limit * 2),
         )
-        selected, metadata_errors = eumetnet_esoh.enrich_oscar_metadata(selected)
+        enriched, metadata_errors = eumetnet_esoh.enrich_oscar_metadata(candidates)
+        selected = select_balanced_stations(
+            [
+                item for item in enriched
+                if item.country_code and item.wigos_id and item.station_type
+            ],
+            bounds=bounds,
+            limit=campaign_limit,
+        )
+        metadata_errors += max(0, campaign_limit - len(selected))
         persistence = sync_campaign_stations(
             db, selected, campaign_key=campaign.campaign_id, dry_run=dry_run
         )
