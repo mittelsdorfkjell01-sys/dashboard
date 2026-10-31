@@ -23,7 +23,10 @@ def database_status(campaign_id: str) -> dict:
     )
 
     with SessionLocal() as db:
-        station_scope = WeatherStation.campaign_key == campaign_id
+        station_scope = (
+            (WeatherStation.campaign_key == campaign_id)
+            & WeatherStation.active.is_(True)
+        )
         stations = db.scalar(
             select(func.count()).select_from(WeatherStation).where(station_scope)
         ) or 0

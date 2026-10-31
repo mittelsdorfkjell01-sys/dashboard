@@ -199,6 +199,7 @@ def sync_campaign_stations(
     """Upsert geography-independent shadow stations without granting approval."""
     report = {
         "received": len(stations), "persisted": 0, "upserted": 0,
+        "retired": 0,
         "metadata_revisions_persisted": 0, "epochs_proposed": 0,
         "metadata_drift": 0, "dry_run": dry_run,
     }
@@ -209,6 +210,13 @@ def sync_campaign_stations(
         WeatherStation.provider.in_({item.provider for item in stations}),
     )).all()
     existing = {(item.provider, item.provider_station_id): item for item in previous}
+    selected_keys = {(item.provider, item.station_id) for item in stations}
+    for old in previous:
+        if (old.provider, old.provider_station_id) not in selected_keys and old.active:
+            old.active = False
+            old.blocked = True
+            old.decision_reason = "campaign_station_not_selected"
+            report["retired"] += 1
     rows = []
     payloads = {}
     for station in stations:
