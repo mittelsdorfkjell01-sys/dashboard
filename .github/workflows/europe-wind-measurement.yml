@@ -2,7 +2,9 @@ name: Europe Wind Measurement
 
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    # Two independent triggers per 30-minute campaign slot. The worker stores
+    # one append-only heartbeat and deduplicates the second trigger.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -16,7 +18,7 @@ jobs:
   measure:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.EUROPE_WIND_MEASUREMENT_ENABLED == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     env:
       TZ: UTC
       APP_ENV: development
@@ -29,10 +31,11 @@ jobs:
       LIVE_WIND_ENABLED_REGION_SLUGS: ""
       LIVE_WIND_EXACT_CAPTURE_MODE: scheduled
       LIVE_WIND_EXACT_RUN_MIN_FREE_BYTES: "0"
-      LIVE_WIND_EXACT_CAPTURE_TILE_LIMIT: "16"
-      LIVE_WIND_EXACT_POINT_BATCH_SIZE: "16"
-      WEATHER_OBSERVATION_CRON_BATCH_SIZE: "45"
-      WEATHER_STATION_CATALOG_LIMIT: "240"
+      LIVE_WIND_EXACT_CAPTURE_TILE_LIMIT: "64"
+      LIVE_WIND_EXACT_POINT_BATCH_SIZE: "64"
+      WEATHER_OBSERVATION_CRON_BATCH_SIZE: "64"
+      WEATHER_STATION_CATALOG_LIMIT: "64"
+      WEATHER_EUROPE_CAMPAIGN_STATION_LIMIT: "64"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -62,8 +65,9 @@ jobs:
       - name: Require deployed schema head
         shell: bash
         run: |
-          current="$(alembic current 2>/dev/null | tail -1)"
-          test "$current" = "0078_europe_wind_campaign (head)"
+          current="$(alembic current 2>/dev/null | tail -1 | awk '{print $1}')"
+          expected="$(python -c 'from app.db.schema import EXPECTED_DB_REVISION; print(EXPECTED_DB_REVISION)')"
+          test "$current" = "$expected"
 
       - name: Capture forecast, observations and shadow residuals once
         run: python -m scripts.europe_measurement_worker --once

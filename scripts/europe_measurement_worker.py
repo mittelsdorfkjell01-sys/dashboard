@@ -13,7 +13,7 @@ from sqlalchemy.engine import make_url
 
 from app.config import get_settings
 from app.db.session import SessionLocal
-from app.models import WeatherStationCatalogState
+from app.models import WeatherStationCaptureCycle, WeatherStationCatalogState
 from app.weather.europe_campaign import load_campaign
 from app.weather.exact_points import PersistedStationBaselineLoader
 from app.weather.exact_run import ExactRunAssetCache, ExactRunLoader
@@ -85,42 +85,107 @@ def run_cycle(*, now: datetime | None = None) -> dict:
         expected_id=settings.live_wind_exact_run_cache_id,
         minimum_free_bytes=settings.live_wind_exact_run_min_free_bytes,
     ))
+    slot_start = instant.replace(
+        minute=(instant.minute // campaign.expected_interval_minutes)
+        * campaign.expected_interval_minutes,
+        second=0,
+        microsecond=0,
+    )
     with SessionLocal() as db:
-        catalog = None
-        if _catalog_due(db, campaign.provider, instant):
-            catalog = run_station_catalog_refresh(
+        completed = db.scalar(select(WeatherStationCaptureCycle.id).where(
+            WeatherStationCaptureCycle.job_type == "campaign",
+            WeatherStationCaptureCycle.started_at >= slot_start,
+            WeatherStationCaptureCycle.started_at < (
+                slot_start + timedelta(minutes=campaign.expected_interval_minutes)
+            ),
+            WeatherStationCaptureCycle.status.in_(("success", "partial")),
+        ).limit(1))
+        if completed is not None:
+            return {
+                "status": "duplicate_slot_skipped",
+                "campaign_phase": "active",
+                "scheduled_slot": slot_start.isoformat(),
+                "ends_at": campaign.ends_at.isoformat(),
+                "public_effect": "none",
+            }
+        started_at = datetime.now(timezone.utc)
+        try:
+            catalog = None
+            if _catalog_due(db, campaign.provider, instant):
+                catalog = run_station_catalog_refresh(
+                    db,
+                    providers=(campaign.provider,),
+                    dry_run=False,
+                    force=True,
+                    bounds=campaign.bounds,
+                )
+            exact = capture_exact_cycle(
+                db,
+                loader,
+                now=instant,
+                limit=settings.live_wind_exact_capture_tile_limit,
+                point_limit=settings.live_wind_exact_point_batch_size,
+                campaign_only=True,
+            )
+            observations = run_observation_import(
                 db,
                 providers=(campaign.provider,),
+                limit=settings.weather_observation_cron_batch_size,
                 dry_run=False,
-                force=True,
-                bounds=campaign.bounds,
+                capture_mode="operational",
             )
-        exact = capture_exact_cycle(
-            db,
-            loader,
-            now=instant,
-            limit=settings.live_wind_exact_capture_tile_limit,
-            point_limit=settings.live_wind_exact_point_batch_size,
-        )
-        observations = run_observation_import(
-            db,
-            providers=(campaign.provider,),
-            limit=settings.weather_observation_cron_batch_size,
-            dry_run=False,
-            capture_mode="operational",
-        )
-        residuals = run_station_model_error_analysis(
-            db,
-            PersistedStationBaselineLoader(db),
-            limit=settings.weather_observation_cron_batch_size,
-            recent_hours=48,
-            skip_exact_attempted=True,
-            require_exact=True,
-            campaign_key=campaign.campaign_id,
-        )
+            residuals = run_station_model_error_analysis(
+                db,
+                PersistedStationBaselineLoader(db),
+                limit=settings.weather_observation_cron_batch_size,
+                recent_hours=48,
+                skip_exact_attempted=True,
+                require_exact=True,
+                campaign_key=campaign.campaign_id,
+            )
+            partial = (
+                exact.get("status") != "available"
+                or any(
+                    item.get("status") not in {"success", "no_work"}
+                    for item in (observations.get("providers") or {}).values()
+                )
+            )
+            db.add(WeatherStationCaptureCycle(
+                job_type="campaign",
+                provider=campaign.provider,
+                started_at=started_at,
+                finished_at=datetime.now(timezone.utc),
+                status="partial" if partial else "success",
+                counts={
+                    "campaign_id": campaign.campaign_id,
+                    "scheduled_slot": slot_start.isoformat(),
+                    "exact_targets": (exact.get("point_samples") or {}).get("targets", 0),
+                    "exact_bundles_inserted": (
+                        exact.get("point_samples") or {}
+                    ).get("bundles_inserted", 0),
+                },
+            ))
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            db.add(WeatherStationCaptureCycle(
+                job_type="campaign",
+                provider=campaign.provider,
+                started_at=started_at,
+                finished_at=datetime.now(timezone.utc),
+                status="error",
+                counts={
+                    "campaign_id": campaign.campaign_id,
+                    "scheduled_slot": slot_start.isoformat(),
+                    "error_class": type(exc).__name__,
+                },
+            ))
+            db.commit()
+            raise
     return {
         "status": "ok",
         "campaign_phase": "active",
+        "scheduled_slot": slot_start.isoformat(),
         "ends_at": campaign.ends_at.isoformat(),
         "catalog": _compact(catalog),
         "exact": _compact(exact),

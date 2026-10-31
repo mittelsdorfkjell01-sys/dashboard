@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: "Type APPLY-0078 to migrate the dedicated measurement database"
+        description: "Type APPLY-0094 to migrate the dedicated measurement database"
         required: true
         type: string
 
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   migrate:
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'APPLY-0078'
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'APPLY-0094'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

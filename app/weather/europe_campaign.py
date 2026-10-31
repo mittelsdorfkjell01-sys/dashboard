@@ -31,6 +31,10 @@ class EuropeWindCampaign:
     public_effect: str
     station_limit: int
     freshness_limit_minutes: int
+    expected_interval_minutes: int
+    missed_interval_limit: int
+    schedule_grace_minutes: int
+    minimum_exact_coverage_ratio: float
     bounds: tuple[float, float, float, float]
     status: str
 
@@ -58,6 +62,16 @@ def load_campaign(path: Path = CAMPAIGN_FILE) -> EuropeWindCampaign:
     freshness_limit_minutes = int(payload["freshness_limit_minutes"])
     if freshness_limit_minutes <= 0:
         raise ValueError("campaign freshness limit must be positive")
+    expected_interval_minutes = int(payload["expected_interval_minutes"])
+    missed_interval_limit = int(payload["missed_interval_limit"])
+    schedule_grace_minutes = int(payload["schedule_grace_minutes"])
+    minimum_exact_coverage_ratio = float(payload["minimum_exact_coverage_ratio"])
+    if expected_interval_minutes <= 0 or missed_interval_limit < 1:
+        raise ValueError("campaign cadence must be positive")
+    if schedule_grace_minutes < 0:
+        raise ValueError("campaign schedule grace must not be negative")
+    if not 0 < minimum_exact_coverage_ratio <= 1:
+        raise ValueError("campaign exact coverage ratio must be in (0, 1]")
     return EuropeWindCampaign(
         campaign_id=str(payload["campaign_id"]),
         starts_at=starts_at,
@@ -67,6 +81,10 @@ def load_campaign(path: Path = CAMPAIGN_FILE) -> EuropeWindCampaign:
         public_effect=str(payload["public_effect"]),
         station_limit=int(payload["station_limit"]),
         freshness_limit_minutes=freshness_limit_minutes,
+        expected_interval_minutes=expected_interval_minutes,
+        missed_interval_limit=missed_interval_limit,
+        schedule_grace_minutes=schedule_grace_minutes,
+        minimum_exact_coverage_ratio=minimum_exact_coverage_ratio,
         bounds=(
             float(bounds["south"]), float(bounds["north"]),
             float(bounds["west"]), float(bounds["east"]),

@@ -18,6 +18,7 @@ def database_status(campaign_id: str) -> dict:
         WeatherExactModelBundle,
         WeatherObservation,
         WeatherStation,
+        WeatherStationCaptureCycle,
         WeatherStationModelResidual,
     )
 
@@ -26,15 +27,26 @@ def database_status(campaign_id: str) -> dict:
         stations = db.scalar(
             select(func.count()).select_from(WeatherStation).where(station_scope)
         ) or 0
-        observation_row = db.execute(
+        observation_rows = db.execute(
             select(
+                WeatherObservation.availability_class,
                 func.count(WeatherObservation.id),
                 func.count(distinct(WeatherObservation.station_id)),
                 func.max(WeatherObservation.observed_at),
             )
             .join(WeatherStation, WeatherStation.id == WeatherObservation.station_id)
             .where(station_scope)
-        ).one()
+            .group_by(WeatherObservation.availability_class)
+        ).all()
+        observations_by_class = {
+            availability: {
+                "observations": count,
+                "stations": station_count,
+                "latest_at": latest.isoformat() if latest else None,
+            }
+            for availability, count, station_count, latest in observation_rows
+        }
+        operational = observations_by_class.get("captured_operationally", {})
         latest_observation = db.execute(
             select(
                 WeatherObservation.observed_at,
@@ -44,7 +56,10 @@ def database_status(campaign_id: str) -> dict:
                 WeatherObservation.measurement_period_seconds,
             )
             .join(WeatherStation, WeatherStation.id == WeatherObservation.station_id)
-            .where(station_scope)
+            .where(
+                station_scope,
+                WeatherObservation.availability_class == "captured_operationally",
+            )
             .order_by(WeatherObservation.observed_at.desc())
             .limit(1)
         ).one_or_none()
@@ -59,6 +74,33 @@ def database_status(campaign_id: str) -> dict:
                 WeatherExactModelBundle.target_kind == "station",
             )
         ).one()
+        latest_cycle = db.execute(select(
+            WeatherStationCaptureCycle.started_at,
+            WeatherStationCaptureCycle.finished_at,
+            WeatherStationCaptureCycle.status,
+        ).where(
+            WeatherStationCaptureCycle.job_type == "campaign",
+        ).order_by(WeatherStationCaptureCycle.started_at.desc()).limit(1)).one_or_none()
+        recent_exact_stations = 0
+        if latest_cycle is not None:
+            recent_exact_stations = db.scalar(select(
+                func.count(distinct(WeatherExactModelBundle.target_id))
+            ).join(
+                WeatherStation, WeatherStation.id == WeatherExactModelBundle.target_id
+            ).where(
+                station_scope,
+                WeatherExactModelBundle.target_kind == "station",
+                WeatherExactModelBundle.captured_at >= latest_cycle.started_at,
+            )) or 0
+        station_metadata = db.execute(select(
+            func.count().filter(WeatherStation.country_code.is_not(None)),
+            func.count().filter(WeatherStation.wigos_id.is_not(None)),
+            func.count().filter(WeatherStation.physical_station_group.is_not(None)),
+            func.count().filter(WeatherStation.correlation_group.is_not(None)),
+            func.count().filter(
+                WeatherStation.representativeness_status != "unreviewed"
+            ),
+        ).where(station_scope)).one()
         residual_rows = db.execute(
             select(
                 WeatherStationModelResidual.qc_status,
@@ -79,11 +121,14 @@ def database_status(campaign_id: str) -> dict:
         ) or 0
     return {
         "stations": stations,
-        "observations": observation_row[0],
-        "stations_with_observations": observation_row[1],
-        "latest_observation_at": (
-            observation_row[2].isoformat() if observation_row[2] else None
-        ),
+        "observations": sum(item[1] for item in observation_rows),
+        "observations_by_availability": observations_by_class,
+        "operational_observations": operational.get("observations", 0),
+        "historical_backfill_observations": observations_by_class.get(
+            "historical_backfill", {}
+        ).get("observations", 0),
+        "stations_with_operational_observations": operational.get("stations", 0),
+        "latest_observation_at": operational.get("latest_at"),
         "latest_observation_received_at": (
             latest_observation.received_at.isoformat()
             if latest_observation and latest_observation.received_at else None
@@ -101,6 +146,21 @@ def database_status(campaign_id: str) -> dict:
         ),
         "exact_bundles": exact_row[0],
         "stations_with_exact_bundles": exact_row[1],
+        "stations_with_exact_bundles_latest_cycle": recent_exact_stations,
+        "latest_campaign_cycle_started_at": (
+            latest_cycle.started_at.isoformat() if latest_cycle else None
+        ),
+        "latest_campaign_cycle_finished_at": (
+            latest_cycle.finished_at.isoformat() if latest_cycle else None
+        ),
+        "latest_campaign_cycle_status": latest_cycle.status if latest_cycle else None,
+        "station_metadata": {
+            "with_country": station_metadata[0],
+            "with_wigos_identity": station_metadata[1],
+            "with_physical_group": station_metadata[2],
+            "with_correlation_group": station_metadata[3],
+            "with_representativeness_screening": station_metadata[4],
+        },
         "residuals": {status: count for status, count in residual_rows},
         "activation_eligible_residuals": activation_eligible,
         "database_size_bytes": database_size_bytes,
@@ -114,12 +174,30 @@ def health_status(report: dict, *, now: datetime | None = None) -> dict:
     failures = []
     freshness: dict[str, object] = {
         "limit_minutes": campaign.freshness_limit_minutes,
+        "maximum_cycle_age_minutes": (
+            campaign.expected_interval_minutes * campaign.missed_interval_limit
+            + campaign.schedule_grace_minutes
+        ),
     }
     if report.get("phase") == "active":
-        if database.get("stations", 0) < min(200, campaign.station_limit):
-            failures.append("station_coverage_below_200")
-        if database.get("observations", 0) < 1:
-            failures.append("observations_missing")
+        if database.get("stations", 0) < campaign.station_limit:
+            failures.append("station_coverage_below_campaign_target")
+        if database.get("operational_observations", 0) < 1:
+            failures.append("operational_observations_missing")
+        latest_cycle = database.get("latest_campaign_cycle_finished_at")
+        if latest_cycle is None:
+            failures.append("campaign_cycle_heartbeat_missing")
+        else:
+            cycle_age = (instant - datetime.fromisoformat(latest_cycle)).total_seconds()
+            freshness["campaign_cycle_age_seconds"] = int(cycle_age)
+            maximum_cycle_age = (
+                campaign.expected_interval_minutes * campaign.missed_interval_limit
+                + campaign.schedule_grace_minutes
+            ) * 60
+            if cycle_age > maximum_cycle_age:
+                failures.append("two_campaign_intervals_missed")
+        if database.get("latest_campaign_cycle_status") == "error":
+            failures.append("latest_campaign_cycle_failed")
         latest = database.get("latest_observation_at")
         if latest is None:
             failures.append("latest_observation_missing")
@@ -149,6 +227,23 @@ def health_status(report: dict, *, now: datetime | None = None) -> dict:
                     failures.append("latest_observation_imported_before_received")
         if database.get("exact_bundles", 0) < 1:
             failures.append("exact_bundles_missing")
+        exact_ratio = (
+            database.get("stations_with_exact_bundles_latest_cycle", 0)
+            / max(1, database.get("stations", 0))
+        )
+        freshness["latest_cycle_exact_station_ratio"] = round(exact_ratio, 4)
+        if exact_ratio < campaign.minimum_exact_coverage_ratio:
+            failures.append("latest_cycle_exact_station_coverage_below_target")
+        metadata = database.get("station_metadata") or {}
+        for key in (
+            "with_country",
+            "with_wigos_identity",
+            "with_physical_group",
+            "with_correlation_group",
+            "with_representativeness_screening",
+        ):
+            if metadata.get(key, 0) < database.get("stations", 0):
+                failures.append(f"station_metadata_incomplete:{key}")
         comparable = (database.get("residuals") or {}).get("degraded", 0)
         if instant >= campaign.starts_at + timedelta(hours=6) and comparable < 1:
             failures.append("comparable_residuals_missing")

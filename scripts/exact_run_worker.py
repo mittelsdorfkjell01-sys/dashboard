@@ -34,6 +34,7 @@ def capture_exact_cycle(
     now: datetime,
     limit: int,
     point_limit: int | None = None,
+    campaign_only: bool = False,
 ) -> dict:
     instant = now.astimezone(timezone.utc)
     run_at = instant.replace(hour=instant.hour - instant.hour % 6, minute=0, second=0, microsecond=0) - timedelta(hours=6)
@@ -57,7 +58,7 @@ def capture_exact_cycle(
     ).where(
         WeatherStation.active.is_(True), station_scope,
     )).all()
-    spots = db.execute(select(
+    spots = [] if campaign_only else db.execute(select(
         Spot.id,
         func.ST_Y(Spot.location.cast(Geometry)),
         func.ST_X(Spot.location.cast(Geometry)),

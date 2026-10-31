@@ -2,11 +2,12 @@ name: Monitor Europe Wind Measurement
 
 on:
   schedule:
-    - cron: "23 3 * * *"
+    - cron: "14,29,44,59 * * * *"
   workflow_dispatch: {}
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   health:
@@ -34,3 +35,18 @@ jobs:
 
       - name: Require fresh, isolated campaign evidence
         run: python -m scripts.europe_measurement_status --require-healthy
+
+      - name: Open or update missed-cadence alert
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          title="Europe wind measurement cadence alert"
+          existing="$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty')"
+          body="The isolated Europe wind measurement campaign failed its health gate. This includes the two-missed-interval cadence gate. Inspect this workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body" --label bug
+          fi

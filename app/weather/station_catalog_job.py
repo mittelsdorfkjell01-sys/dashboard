@@ -172,6 +172,7 @@ def _refresh_provider(
             bounds=bounds,
             limit=min(campaign.station_limit, get_settings().weather_europe_campaign_station_limit),
         )
+        selected, metadata_errors = eumetnet_esoh.enrich_oscar_metadata(selected)
         persistence = sync_campaign_stations(
             db, selected, campaign_key=campaign.campaign_id, dry_run=dry_run
         )
@@ -184,7 +185,7 @@ def _refresh_provider(
             "inactive_records": sum(not item.active for item in regional),
             "selected_candidates": len(selected),
             "retirements": 0,
-            "metadata_errors": 0,
+            "metadata_errors": metadata_errors,
             "persistence": persistence,
         }
     selected_ids = {

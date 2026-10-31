@@ -3,11 +3,13 @@ import io
 import zipfile
 
 import pytest
+import httpx
 
 from app.weather.providers.common import ObservationStation, haversine_km, nearest_stations
 from app.weather.providers.dmi import fetch_recent, fetch_stations
 from app.weather.providers.dwd import parse_now_zip, parse_station_catalog
 from app.weather.providers.knmi import KnmiOpenDataClient
+from app.weather.providers.eumetnet_esoh import enrich_oscar_metadata
 
 
 def test_station_matching_filters_non_wind_and_radius():
@@ -19,6 +21,32 @@ def test_station_matching_filters_non_wind_and_radius():
     result = nearest_stations(54.0, 10.0, stations, max_km=50)
     assert [item.station_id for item, _ in result] == ["near"]
     assert haversine_km(54.0, 10.0, 54.01, 10.0) == pytest.approx(1.11, rel=0.02)
+
+
+def test_esoh_oscar_enrichment_adds_authoritative_country(monkeypatch):
+    def fake_get(url, *, params, timeout):
+        request = httpx.Request("GET", url, params=params)
+        return httpx.Response(200, request=request, json={
+            "stationSearchResults": [{
+                "wigosId": "0-20000-0-10385",
+                "territory": "Germany",
+                "declaredStatus": "Operational",
+                "assessedStatus": "Operational",
+                "stationTypeName": "Land (fixed)",
+                "elevation": 45.64,
+            }]
+        })
+
+    monkeypatch.setattr("app.weather.providers.eumetnet_esoh.httpx.get", fake_get)
+    station = ObservationStation(
+        "eumetnet_esoh", "0-20000-0-10385", "Berlin", 52.38, 13.53,
+        wigos_id="0-20000-0-10385",
+    )
+    enriched, missing = enrich_oscar_metadata([station], workers=1)
+    assert missing == 0
+    assert enriched[0].country_code == "DE"
+    assert enriched[0].station_type == "Land (fixed)"
+    assert enriched[0].provenance["oscar"]["territory"] == "Germany"
 
 
 def test_dmi_station_parser(monkeypatch):

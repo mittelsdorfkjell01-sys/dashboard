@@ -253,6 +253,19 @@ def sync_campaign_stations(
             "source_url": station.source_url,
             "metadata_payload_hash": payload_hash,
             "active": station.active,
+            "physical_station_group": (
+                f"wigos:{station.wigos_id}" if station.wigos_id else None
+            ),
+            "correlation_group": (
+                f"geo:{round(station.latitude * 2) / 2:.1f}:"
+                f"{round(station.longitude * 2) / 2:.1f}"
+                if station.country_code else None
+            ),
+            "identity_review_status": "unreviewed",
+            "representativeness_status": (
+                "provisional" if station.country_code and station.station_type
+                else "unreviewed"
+            ),
             "recommended": False,
             "approved": False,
             "monitoring_approved": False,
@@ -277,6 +290,8 @@ def sync_campaign_stations(
                 "country_code", "operator", "station_type", "sensor_metadata",
                 "active_from", "active_to", "metadata_updated_at", "source_url",
                 "metadata_payload_hash", "active",
+                "physical_station_group", "correlation_group",
+                "identity_review_status", "representativeness_status",
             )},
         ).returning(WeatherStation.id)
     ).all())

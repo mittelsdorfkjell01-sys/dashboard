@@ -14,12 +14,16 @@ def test_campaign_is_exactly_three_weeks_and_shadow_only():
     assert campaign.mode == "shadow"
     assert campaign.public_effect == "none"
     assert campaign.freshness_limit_minutes == 180
+    assert campaign.expected_interval_minutes == 30
+    assert campaign.missed_interval_limit == 2
+    assert campaign.station_limit == 64
     assert campaign.phase(campaign.starts_at) == "active"
     assert campaign.phase(campaign.ends_at) == "ended"
 
 
 def test_session_status_calls_out_measurement_end():
-    report = status(now=datetime(2026, 11, 2, 15, 17, 54, tzinfo=timezone.utc))
+    campaign = load_campaign()
+    report = status(now=campaign.ends_at)
     assert report["phase"] == "ended"
     assert "beendet" in report["message"]
 
@@ -55,8 +59,9 @@ def test_campaign_health_requires_fresh_shadow_evidence():
     campaign = load_campaign()
     report = status(now=campaign.starts_at + timedelta(days=1))
     report["database"] = {
-        "stations": 240,
+        "stations": 64,
         "observations": 500,
+        "operational_observations": 100,
         "latest_observation_at": (
             campaign.starts_at + timedelta(hours=23, minutes=50)
         ).isoformat(),
@@ -67,6 +72,18 @@ def test_campaign_health_requires_fresh_shadow_evidence():
             campaign.starts_at + timedelta(hours=23, minutes=56)
         ).isoformat(),
         "exact_bundles": 100,
+        "stations_with_exact_bundles_latest_cycle": 64,
+        "latest_campaign_cycle_finished_at": (
+            campaign.starts_at + timedelta(hours=23, minutes=58)
+        ).isoformat(),
+        "latest_campaign_cycle_status": "success",
+        "station_metadata": {
+            "with_country": 64,
+            "with_wigos_identity": 64,
+            "with_physical_group": 64,
+            "with_correlation_group": 64,
+            "with_representativeness_screening": 64,
+        },
         "residuals": {"degraded": 20},
         "activation_eligible_residuals": 0,
         "database_size_bytes": 100_000_000,
@@ -86,12 +103,23 @@ def test_campaign_health_distinguishes_clock_and_pipeline_timestamps():
     now = campaign.starts_at + timedelta(days=1)
     report = status(now=now)
     report["database"] = {
-        "stations": 240,
+        "stations": 64,
         "observations": 1,
+        "operational_observations": 1,
         "latest_observation_at": (now + timedelta(minutes=10)).isoformat(),
         "latest_observation_received_at": (now + timedelta(minutes=9)).isoformat(),
         "latest_observation_imported_at": (now + timedelta(minutes=8)).isoformat(),
         "exact_bundles": 1,
+        "stations_with_exact_bundles_latest_cycle": 64,
+        "latest_campaign_cycle_finished_at": now.isoformat(),
+        "latest_campaign_cycle_status": "success",
+        "station_metadata": {
+            "with_country": 64,
+            "with_wigos_identity": 64,
+            "with_physical_group": 64,
+            "with_correlation_group": 64,
+            "with_representativeness_screening": 64,
+        },
         "residuals": {"degraded": 1},
         "activation_eligible_residuals": 0,
         "database_size_bytes": 1,
@@ -101,6 +129,35 @@ def test_campaign_health_distinguishes_clock_and_pipeline_timestamps():
     assert "latest_observation_clock_skew_future" in failed["failures"]
     assert "latest_observation_received_before_observed" in failed["failures"]
     assert "latest_observation_imported_before_received" in failed["failures"]
+
+
+def test_campaign_health_alerts_after_two_missed_intervals():
+    campaign = load_campaign()
+    now = campaign.starts_at + timedelta(days=1)
+    report = status(now=now)
+    report["database"] = {
+        "stations": 64,
+        "operational_observations": 1,
+        "latest_observation_at": now.isoformat(),
+        "exact_bundles": 64,
+        "stations_with_exact_bundles_latest_cycle": 64,
+        "latest_campaign_cycle_finished_at": (
+            now - timedelta(minutes=71)
+        ).isoformat(),
+        "latest_campaign_cycle_status": "success",
+        "station_metadata": {
+            "with_country": 64,
+            "with_wigos_identity": 64,
+            "with_physical_group": 64,
+            "with_correlation_group": 64,
+            "with_representativeness_screening": 64,
+        },
+        "residuals": {"degraded": 1},
+        "activation_eligible_residuals": 0,
+        "database_size_bytes": 1,
+    }
+    failed = health_status(report, now=now)
+    assert "two_campaign_intervals_missed" in failed["failures"]
 
 
 def test_balanced_station_selection_does_not_fill_one_grid_cell_first():
@@ -141,6 +198,8 @@ def test_campaign_station_is_persisted_without_a_spot_and_never_approved(db):
         longitude=2.0,
         wigos_id="0-20000-0-test-campaign",
         measurement_height_m=10.0,
+        country_code="FR",
+        station_type="Land (fixed)",
         license="CC BY 4.0",
         provenance={"source": "fixture", "typical_interval_minutes": 10},
         sensor_metadata={"esoh_wind": {
@@ -166,6 +225,10 @@ def test_campaign_station_is_persisted_without_a_spot_and_never_approved(db):
         assert report["persisted"] == 1
         assert stored is not None and stored.spot_id is None
         assert not stored.approved and not stored.residual_approved
+        assert stored.physical_station_group == f"wigos:{station.wigos_id}"
+        assert stored.correlation_group is not None
+        assert stored.identity_review_status == "unreviewed"
+        assert stored.representativeness_status == "provisional"
         assert stored.blocked  # the new metadata epoch still requires review
     finally:
         stored = db.scalar(select(WeatherStation).where(

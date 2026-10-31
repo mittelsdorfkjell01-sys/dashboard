@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
+from concurrent.futures import ThreadPoolExecutor
 import math
 import re
 
@@ -21,6 +23,7 @@ ESOH_BASE = (
     "eu-eumetnet-surface-observations/collections/observations"
 )
 ESOH_LICENSE = "CC BY 4.0"
+OSCAR_SEARCH_URL = "https://oscar.wmo.int/surface/rest/api/search/station"
 ESOH_PROVENANCE = {
     "source": "EUMETNET MeteoGate E-SOH",
     "collection": "Meteorological Observations in Europe",
@@ -40,6 +43,26 @@ _PAIR_PREFERENCE = (
     ("mean", "PT1H"),
     ("point", "PT1H"),
 )
+
+_TERRITORY_CODES = {
+    "Albania": "AL", "Algeria": "DZ", "Andorra": "AD", "Armenia": "AM",
+    "Austria": "AT", "Azerbaijan": "AZ", "Belarus": "BY", "Belgium": "BE",
+    "Bosnia and Herzegovina": "BA", "Bulgaria": "BG", "Croatia": "HR",
+    "Cyprus": "CY", "Czechia": "CZ", "Denmark": "DK", "Egypt": "EG",
+    "Estonia": "EE", "Faroe Islands": "FO", "Finland": "FI", "France": "FR",
+    "Georgia": "GE", "Germany": "DE", "Gibraltar": "GI", "Greece": "GR",
+    "Greenland": "GL", "Hungary": "HU", "Iceland": "IS", "Ireland": "IE",
+    "Israel": "IL", "Italy": "IT", "Jordan": "JO", "Kosovo": "XK",
+    "Latvia": "LV", "Lebanon": "LB", "Liechtenstein": "LI", "Lithuania": "LT",
+    "Luxembourg": "LU", "Malta": "MT", "Moldova": "MD", "Monaco": "MC",
+    "Montenegro": "ME", "Morocco": "MA", "Netherlands": "NL",
+    "North Macedonia": "MK", "Norway": "NO", "Poland": "PL", "Portugal": "PT",
+    "Romania": "RO", "Russian Federation": "RU", "San Marino": "SM",
+    "Serbia": "RS", "Slovakia": "SK", "Slovenia": "SI", "Spain": "ES",
+    "Sweden": "SE", "Switzerland": "CH", "Tunisia": "TN", "Türkiye": "TR",
+    "Turkey": "TR", "Ukraine": "UA", "United Kingdom": "GB",
+    "Vatican City": "VA",
+}
 
 
 def _number(value) -> float | None:
@@ -174,6 +197,67 @@ def fetch_stations(*, timeout: float = 30.0) -> list[ObservationStation]:
     response = httpx.get(f"{ESOH_BASE}/locations", params={"f": "json"}, timeout=timeout)
     response.raise_for_status()
     return parse_station_catalog(response.json())
+
+
+def _oscar_metadata(station: ObservationStation, *, timeout: float) -> ObservationStation:
+    """Add authoritative country and station identity metadata from OSCAR."""
+    response = httpx.get(
+        OSCAR_SEARCH_URL,
+        params={"wigosId": station.wigos_id or station.station_id},
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    matches = response.json().get("stationSearchResults") or []
+    match = next(
+        (item for item in matches if item.get("wigosId") == (station.wigos_id or station.station_id)),
+        None,
+    )
+    if match is None:
+        return station
+    territory = str(match.get("territory") or "").strip()
+    country_code = _TERRITORY_CODES.get(territory)
+    if country_code is None:
+        return station
+    provenance = {
+        **station.provenance,
+        "oscar": {
+            "source_url": str(response.url.copy_with(query=None)),
+            "territory": territory,
+            "declared_status": match.get("declaredStatus"),
+            "assessed_status": match.get("assessedStatus"),
+            "station_type": match.get("stationTypeName"),
+        },
+    }
+    return replace(
+        station,
+        country_code=country_code,
+        elevation_m=(
+            _number(match.get("elevation"))
+            if _number(match.get("elevation")) is not None
+            else station.elevation_m
+        ),
+        station_type=str(match.get("stationTypeName") or station.station_type),
+        provenance=provenance,
+    )
+
+
+def enrich_oscar_metadata(
+    stations: list[ObservationStation],
+    *,
+    timeout: float = 15.0,
+    workers: int = 8,
+) -> tuple[list[ObservationStation], int]:
+    """Enrich a bounded selected set; failures remain explicit and retryable."""
+    def enrich(station: ObservationStation) -> ObservationStation:
+        try:
+            return _oscar_metadata(station, timeout=timeout)
+        except (httpx.HTTPError, ValueError, TypeError):
+            return station
+
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, 12))) as pool:
+        enriched = list(pool.map(enrich, stations))
+    missing = sum(item.country_code is None for item in enriched)
+    return enriched, missing
 
 
 def _coverage_values(payload: dict, parameter: str) -> dict[datetime, float | None]:
