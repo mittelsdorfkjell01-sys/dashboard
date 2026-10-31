@@ -98,7 +98,7 @@ def run_cycle(*, now: datetime | None = None) -> dict:
             WeatherStationCaptureCycle.started_at < (
                 slot_start + timedelta(minutes=campaign.expected_interval_minutes)
             ),
-            WeatherStationCaptureCycle.status.in_(("success", "partial")),
+            WeatherStationCaptureCycle.status == "success",
         ).limit(1))
         if completed is not None:
             return {
