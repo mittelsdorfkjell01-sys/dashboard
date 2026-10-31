@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   measure:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || vars.EUROPE_WIND_MEASUREMENT_ENABLED == 'true')
+    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.EUROPE_WIND_MEASUREMENT_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:

@@ -3,8 +3,8 @@
 The authoritative campaign window is stored in
 `config/europe-wind-measurement.json`.
 
-- Start: `2026-11-02T18:00:00Z`
-- End: `2026-11-23T18:00:00Z`
+- Start: `2026-10-31T17:00:00Z`
+- End: `2026-11-21T17:00:00Z`
 - Duration: exactly 21 days
 - Provider: EUMETNET MeteoGate E-SOH
 - Mode: shadow; public forecast effect is always `none`
