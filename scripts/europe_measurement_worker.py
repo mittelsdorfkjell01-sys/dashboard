@@ -8,12 +8,16 @@ import json
 import os
 import time
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.engine import make_url
 
 from app.config import get_settings
 from app.db.session import SessionLocal
-from app.models import WeatherStationCaptureCycle, WeatherStationCatalogState
+from app.models import (
+    WeatherStation,
+    WeatherStationCaptureCycle,
+    WeatherStationCatalogState,
+)
 from app.weather.europe_campaign import load_campaign
 from app.weather.exact_points import PersistedStationBaselineLoader
 from app.weather.exact_run import ExactRunAssetCache, ExactRunLoader
@@ -23,9 +27,30 @@ from app.weather.station_catalog_job import run_station_catalog_refresh
 from scripts.exact_run_worker import capture_exact_cycle
 
 
-def _catalog_due(db, provider: str, now: datetime) -> bool:
+def _catalog_due(
+    db,
+    provider: str,
+    now: datetime,
+    *,
+    campaign_id: str,
+    station_limit: int,
+) -> bool:
     state = db.get(WeatherStationCatalogState, provider)
-    return state is None or state.last_success_at is None or state.last_success_at <= now - timedelta(hours=20)
+    qualified = db.scalar(select(func.count()).select_from(WeatherStation).where(
+        WeatherStation.campaign_key == campaign_id,
+        WeatherStation.active.is_(True),
+        WeatherStation.country_code.is_not(None),
+        WeatherStation.wigos_id.is_not(None),
+        WeatherStation.physical_station_group.is_not(None),
+        WeatherStation.correlation_group.is_not(None),
+        WeatherStation.representativeness_status != "unreviewed",
+    )) or 0
+    return (
+        qualified < station_limit
+        or state is None
+        or state.last_success_at is None
+        or state.last_success_at <= now - timedelta(hours=20)
+    )
 
 
 def _compact(report: dict | None) -> dict | None:
@@ -111,7 +136,13 @@ def run_cycle(*, now: datetime | None = None) -> dict:
         started_at = datetime.now(timezone.utc)
         try:
             catalog = None
-            if _catalog_due(db, campaign.provider, instant):
+            if _catalog_due(
+                db,
+                campaign.provider,
+                instant,
+                campaign_id=campaign.campaign_id,
+                station_limit=campaign.station_limit,
+            ):
                 catalog = run_station_catalog_refresh(
                     db,
                     providers=(campaign.provider,),
