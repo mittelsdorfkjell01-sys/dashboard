@@ -199,6 +199,7 @@ def sync_campaign_stations(
     """Upsert geography-independent shadow stations without granting approval."""
     report = {
         "received": len(stations), "persisted": 0, "upserted": 0,
+        "retired": 0,
         "metadata_revisions_persisted": 0, "epochs_proposed": 0,
         "metadata_drift": 0, "dry_run": dry_run,
     }
@@ -209,6 +210,13 @@ def sync_campaign_stations(
         WeatherStation.provider.in_({item.provider for item in stations}),
     )).all()
     existing = {(item.provider, item.provider_station_id): item for item in previous}
+    selected_keys = {(item.provider, item.station_id) for item in stations}
+    for old in previous:
+        if (old.provider, old.provider_station_id) not in selected_keys and old.active:
+            old.active = False
+            old.blocked = True
+            old.decision_reason = "campaign_station_not_selected"
+            report["retired"] += 1
     rows = []
     payloads = {}
     for station in stations:
@@ -253,6 +261,19 @@ def sync_campaign_stations(
             "source_url": station.source_url,
             "metadata_payload_hash": payload_hash,
             "active": station.active,
+            "physical_station_group": (
+                f"wigos:{station.wigos_id}" if station.wigos_id else None
+            ),
+            "correlation_group": (
+                f"geo:{round(station.latitude * 2) / 2:.1f}:"
+                f"{round(station.longitude * 2) / 2:.1f}"
+                if station.country_code else None
+            ),
+            "identity_review_status": "unreviewed",
+            "representativeness_status": (
+                "provisional" if station.country_code and station.station_type
+                else "unreviewed"
+            ),
             "recommended": False,
             "approved": False,
             "monitoring_approved": False,
@@ -277,6 +298,8 @@ def sync_campaign_stations(
                 "country_code", "operator", "station_type", "sensor_metadata",
                 "active_from", "active_to", "metadata_updated_at", "source_url",
                 "metadata_payload_hash", "active",
+                "physical_station_group", "correlation_group",
+                "identity_review_status", "representativeness_status",
             )},
         ).returning(WeatherStation.id)
     ).all())

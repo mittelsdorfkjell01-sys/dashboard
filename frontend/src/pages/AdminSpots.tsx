@@ -13,6 +13,7 @@ import {
   type MediaFilterKey,
   type Region,
   type AdminSpotSummary,
+  type ContentAttentionFilter,
 } from "../lib/api";
 import { SPORTS, gapAnchor, gapLabel, sportLabel, statusLabel } from "../lib/labels";
 import { PageHeader, Badge, Button, ButtonLink, SearchInput, adminFieldClass, type BadgeTone } from "../components/admin/ui";
@@ -29,6 +30,15 @@ const MEDIA_FILTER_LABEL: Record<MediaFilterKey, string> = {
   unverified: "Ortsbezug ungeprüft",
   duplicate: "Bild mehrfach genutzt",
   dead: "Quelle tot",
+};
+const CONTENT_FILTER_LABEL: Record<ContentAttentionFilter, string> = {
+  incomplete: "Inhalt unvollständig",
+  unreviewed: "Inhalt ungeprüft",
+  in_review: "In Prüfung",
+  review_due: "Prüfung fällig",
+  conflict: "Widerspruch offen",
+  stale: "Quelle veraltet",
+  license: "Bildlizenz offen",
 };
 // Status tabs. "" = Alle (everything except archived); "archived" is its own tab.
 const STATUS_TABS: { key: string; label: string }[] = [
@@ -51,6 +61,7 @@ export default function AdminSpots() {
   const q = params.get("q") ?? "";
   const completeness = params.get("completeness") ?? "";
   const media = (params.get("media") ?? "") as MediaFilterKey | "";
+  const contentAttention = (params.get("content_attention") ?? "") as ContentAttentionFilter | "";
   const offset = Number(params.get("offset") ?? "0") || 0;
   const activeFilterCount = countActiveAdminSpotFilters(params);
 
@@ -83,6 +94,7 @@ export default function AdminSpots() {
           sort,
           completeness: completeness === "complete" || completeness === "incomplete" ? completeness : undefined,
           media: media || undefined,
+          content_attention: contentAttention || undefined,
           limit: PAGE,
           offset,
         })
@@ -90,7 +102,7 @@ export default function AdminSpots() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.");
     }
-  }, [status, regionId, sport, sort, completeness, media, q, offset]);
+  }, [status, regionId, sport, sort, completeness, media, contentAttention, q, offset]);
 
   useEffect(() => {
     void load();
@@ -193,6 +205,17 @@ export default function AdminSpots() {
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:contents">
+          <select
+            value={contentAttention}
+            onChange={(e) => setFilter("content_attention", e.target.value)}
+            className={`${selectCls} w-full min-w-0 sm:w-auto`}
+            aria-label="Inhaltsprüfung"
+          >
+            <option value="">Alle Inhaltsprüfungen</option>
+            {(Object.entries(CONTENT_FILTER_LABEL) as [ContentAttentionFilter, string][]).map(
+              ([key, filterLabel]) => <option key={key} value={key}>{filterLabel}</option>
+            )}
+          </select>
           <select
             value={regionId}
             onChange={(e) => setFilter("region_id", e.target.value)}
@@ -325,6 +348,7 @@ export default function AdminSpots() {
                 <ReadinessStatus spot={s} editorState={editorState} />
               </div>
               <MediaFlagBadges spot={s} />
+              <ContentFlagBadges spot={s} />
               <div className="mt-3">{rowActions(s)}</div>
             </div>
           ))
@@ -383,6 +407,7 @@ export default function AdminSpots() {
                   <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
                     <ReadinessStatus spot={s} editorState={editorState} />
                     <MediaFlagBadges spot={s} />
+                    <ContentFlagBadges spot={s} />
                   </td>
                   <td className="admin-mono px-4 py-3 text-right text-admin-fg2">
                     {s.confidence != null ? s.confidence.toFixed(2) : "—"}
@@ -451,6 +476,30 @@ function MediaFlagBadges({ spot }: { spot: AdminSpotSummary }) {
         <Badge key={key} tone={MEDIA_FLAG_TONE[key]}>
           {MEDIA_FILTER_LABEL[key]}
         </Badge>
+      ))}
+    </div>
+  );
+}
+
+const CONTENT_FLAG_TONE: Record<ContentAttentionFilter, BadgeTone> = {
+  incomplete: "warning",
+  unreviewed: "neutral",
+  in_review: "info",
+  review_due: "warning",
+  conflict: "danger",
+  stale: "warning",
+  license: "danger",
+};
+
+function ContentFlagBadges({ spot }: { spot: AdminSpotSummary }) {
+  const active = (Object.keys(CONTENT_FLAG_TONE) as ContentAttentionFilter[]).filter(
+    (key) => spot.content_flags?.[key]
+  );
+  if (active.length === 0) return <div className="mt-1.5"><Badge tone="success">Inhalt geprüft</Badge></div>;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {active.map((key) => (
+        <Badge key={key} tone={CONTENT_FLAG_TONE[key]}>{CONTENT_FILTER_LABEL[key]}</Badge>
       ))}
     </div>
   );

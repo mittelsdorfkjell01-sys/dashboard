@@ -231,9 +231,16 @@ services:
       - ./backups:/backups
       - media:/media:ro
       - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./scripts/backup_health.sh:/usr/local/bin/backup_health.sh:ro
     # One backup at start, then every 24h. `|| true` keeps the loop alive if a
     # single run fails (restart policy covers a hard crash).
     entrypoint: ["/bin/sh", "-c", "while true; do sh /usr/local/bin/backup.sh || echo '[backup] run FAILED'; sleep 86400; done"]
+    healthcheck:
+      test: ["CMD", "sh", "/usr/local/bin/backup_health.sh"]
+      interval: 1h
+      timeout: 30s
+      retries: 3
+      start_period: 30m
 
 volumes:
   pgdata:

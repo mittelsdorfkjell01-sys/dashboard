@@ -34,6 +34,7 @@ def capture_exact_cycle(
     now: datetime,
     limit: int,
     point_limit: int | None = None,
+    campaign_only: bool = False,
 ) -> dict:
     instant = now.astimezone(timezone.utc)
     run_at = instant.replace(hour=instant.hour - instant.hour % 6, minute=0, second=0, microsecond=0) - timedelta(hours=6)
@@ -57,7 +58,7 @@ def capture_exact_cycle(
     ).where(
         WeatherStation.active.is_(True), station_scope,
     )).all()
-    spots = db.execute(select(
+    spots = [] if campaign_only else db.execute(select(
         Spot.id,
         func.ST_Y(Spot.location.cast(Geometry)),
         func.ST_X(Spot.location.cast(Geometry)),
@@ -73,6 +74,12 @@ def capture_exact_cycle(
     targets.sort(key=lambda item: (item[0], str(item[1])))
     if not targets:
         return {"tiles": 0, "assets": 0, "errors": {}, "status": "no_locations"}
+    # Do not hold a pooled database connection while downloading model assets.
+    # Hosted captures can spend several minutes on provider I/O, long enough
+    # for Neon or another pooler to recycle the idle connection.  The target
+    # rows above are plain values, so a rollback safely releases the read-only
+    # transaction; persistence below starts a fresh transaction on demand.
+    db.rollback()
     point_limit = max(1, point_limit or limit)
     cycle = int(instant.timestamp() // 600)
     offset = (cycle * point_limit) % len(targets)

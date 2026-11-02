@@ -14,6 +14,7 @@ import { SearchIcon } from "../lib/icons";
 import { Wordmark } from "./ui";
 import AccountMenu from "./AccountMenu";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
+import { useTranslation } from "react-i18next";
 
 const SearchBar = lazy(() => import("./SearchBar"));
 
@@ -51,6 +52,7 @@ export default function LandingHeader({
    *  ink token so it doesn't vanish and fail colour contrast. */
   onLight?: boolean;
 }) {
+  const { t } = useTranslation();
   // The hardening is a *triggered, time-based* animation, not coupled to scroll
   // distance. A single `docked` boolean flips at one point (IntersectionObserver
   // on touch, a scroll threshold on desktop); CSS transitions then play the whole
@@ -227,7 +229,7 @@ export default function LandingHeader({
                   }`}
                   style={sticky ? { opacity: 1 - progress } : undefined}
                 >
-                  Best collection of surfspots
+                  {t("header.tagline")}
                 </span>
                 {/* No docked lockup here any more: the single gliding wordmark
                     above settles into this left slot on both mobile and desktop. */}
@@ -281,7 +283,7 @@ export default function LandingHeader({
             <button
               type="button"
               onClick={(event) => onMobileSearch(event.currentTarget)}
-              aria-label="Suche öffnen"
+              aria-label={t("header.openSearch")}
               // Docking: fade in after a short delay, once the wordmark has
               // begun gliding clear of centre. Un-docking: disappear instantly,
               // so the slow wordmark returning to centre never passes over a
@@ -303,7 +305,7 @@ export default function LandingHeader({
                 to="/admin/spot/new"
                 className="hidden text-body font-medium text-ink transition-opacity hover:opacity-70 sm:block"
               >
-                Füge Spots hinzu
+                {t("header.addSpots")}
               </Link>
             )}
 

@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import LandingHeader from "../components/LandingHeader";
 import Footer from "../components/Footer";
@@ -58,7 +59,7 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    id: "wetter",
+    id: "forecast-climate",
     title: "Wetter und Saison",
     items: [
       {
@@ -201,24 +202,64 @@ const GROUPS: Group[] = [
   },
 ];
 
+const GROUPS_EN: Group[] = [
+  {
+    id: "spots", title: "Discover spots", items: [
+      { q: "What is Surfwinddata?", a: "Surfwinddata helps you discover watersports spots and put conditions into context for planning. It combines spot and region information with forecasts and seasonal wind data." },
+      { q: "Which sports does it cover?", a: "The catalogue distinguishes surfing, windsurfing, kitesurfing and wing foiling. A spot page shows which sports are recorded there; foil disciplines can have different requirements." },
+      { q: "Can I browse without an account?", a: "Yes. The catalogue, map and spot information are public. An account is needed for personal favourites, visits, setup details and account-linked suggestions." },
+      { q: "Is the spot catalogue complete?", a: "No. The catalogue is being expanded and may have gaps. You can suggest a missing spot from your account." },
+      { q: "Is a listed spot a safety approval?", a: "No. Check current weather, currents, water level, local rules, closures and your own ability on site. If in doubt, do not go on the water." },
+    ],
+  },
+  {
+    id: "forecast-climate", title: "Forecasts, data and seasons", items: [
+      { q: "How reliable are forecasts?", a: "Forecasts are model calculations, not guarantees. Local effects and changing conditions can differ from them, and uncertainty generally grows further into the future." },
+      { q: "What is the difference between a forecast and wind climatology?", a: "A forecast describes expected conditions over the coming days. Wind climatology summarises typical conditions from past periods; it cannot predict the weather on a particular future date." },
+      { q: "Are seasonal percentages a weather guarantee?", a: "No. They describe frequencies for the labelled period and threshold. Always check the chart's units, time window and method." },
+      { q: "What does a missing value mean?", a: "No usable data is currently available for that value. It does not mean calm wind, no waves or safe conditions." },
+      { q: "How do I read wind direction?", a: "It describes where the wind comes from. Whether it is onshore, cross-shore or offshore depends on the local coastline and your exact launch point." },
+      { q: "Where does the data come from?", a: "Editorial information comes from the operator and community contributions. Weather values come from forecast models; maps use OpenStreetMap and external map services. The active services are listed in the privacy notice." },
+      { q: "Why do values differ from other weather apps?", a: "Apps may use different models, update times, heights, forecast steps and display intervals. Compare the source and reference time as well as the number itself." },
+      { q: "Why is regional wind availability marked unknown?", a: "Surfwinddata does not yet turn individual spot forecasts into a regional promise. It remains unknown until a documented aggregation rule has been validated." },
+    ],
+  },
+  {
+    id: "account", title: "Account and setup", items: [
+      { q: "What is My setup for?", a: "It stores your kite equipment and riding preferences to support personal spot selection. The detailed setup currently focuses on kitesurfing." },
+      { q: "Do I have to enter a home location?", a: "No. It is optional and can be changed or removed at any time. An approximate starting point is enough for planning." },
+      { q: "Who can see my profile?", a: "There is currently no public profile page. Published community contributions have their own visibility rules." },
+      { q: "Are weather alerts available?", a: "Not yet. Alerts will only be introduced once reliable thresholds and delivery times are defined." },
+    ],
+  },
+  {
+    id: "contribute", title: "Contribute", items: [
+      { q: "How can I suggest a spot?", a: "Open Add spots in your account, enter the name, region and position, and check first whether the spot already exists." },
+      { q: "Is my suggestion public immediately?", a: "No. It is reviewed first. A public entry is created only after editorial approval and publication." },
+      { q: "How do I report incorrect information?", a: "Use the correction option on the spot when available, or contact us. Include the spot link, the affected claim and a current source where possible." },
+    ],
+  },
+];
+
 export default function FAQ() {
+  const { t, i18n } = useTranslation();
+  const groups = i18n.resolvedLanguage === "en" ? GROUPS_EN : GROUPS;
   useEffect(() => {
-    document.title = "Fragen und Antworten — surfwind data";
-  }, []);
+    document.title = `${t("faq.title")} — surfwind data`;
+  }, [t, i18n.resolvedLanguage]);
 
   return (
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
       <main className="mx-auto max-w-content px-4 pb-24 pt-32 sm:px-8">
-        <h1 className="text-heading-lg font-semibold text-ink">Fragen und Antworten</h1>
+        <h1 className="text-heading-lg font-semibold text-ink">{t("faq.title")}</h1>
         <p className="mt-3 text-body leading-relaxed text-ink-soft">
-          Hier findest du Hilfe zu Spots, Wetterdaten, deinem Konto und den
-          Funktionen von Surfwinddata.
+          {t("faq.intro")}
         </p>
 
         <div className="mt-10 space-y-12">
-          {GROUPS.map((group) => (
-            <section key={group.id} aria-labelledby={`faq-${group.id}`}>
+          {groups.map((group) => (
+            <section id={group.id} key={group.id} aria-labelledby={`faq-${group.id}`} className="scroll-mt-24">
               <h2 id={`faq-${group.id}`} className="text-lead font-semibold text-ink">
                 {group.title}
               </h2>
@@ -240,12 +281,12 @@ export default function FAQ() {
         </div>
 
         <div className="mt-12 border-t border-line pt-6">
-          <p className="text-body font-semibold text-ink">Deine Frage ist noch offen?</p>
+          <p className="text-body font-semibold text-ink">{t("faq.open")}</p>
           <Link
             to="/kontakt"
             className="mt-3 inline-flex min-h-11 items-center rounded-card bg-ink px-5 text-ui font-semibold text-surface transition-opacity hover:opacity-90"
           >
-            Kontakt aufnehmen
+            {t("faq.contact")}
           </Link>
         </div>
       </main>

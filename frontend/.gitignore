@@ -5,6 +5,7 @@ dist-ssr
 .vite
 test-results/
 playwright-report/
+coverage/
 
 # Editor / OS
 .DS_Store

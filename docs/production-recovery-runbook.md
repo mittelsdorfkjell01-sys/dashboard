@@ -15,14 +15,34 @@ database URL into an input, command, issue, or workflow log.
    logs. Enter `BACKUP CONFIRMED` only after this check.
 4. Obtain protected-environment approval and run the workflow from the intended
    default-branch commit. Migration uses the direct connection only.
-5. The workflow rechecks direct and pooled connections and the target revision,
-   then checks health, spot version, spot list, one live value, and one forecast.
+5. The workflow rechecks the revision and public-catalogue token through both
+   direct and pooled connections. It passes only non-sensitive schema and
+   catalogue attestations to the API smoke step, which must observe the same
+   values through the deployed public API before the workflow is green.
+6. The API smoke then checks readiness, spot list/detail, regions, search, one
+   live value, and one forecast. Complete the separate Public/Admin checklist in
+   `docs/ops/launch-readiness-2026-10-27.md`; a green migration job alone is not
+   a release approval.
+
+Before approving a migration from a revision older than `0086`, inspect the
+exact pending range printed by preflight. In particular, `0084` drops the old
+`gear_geometries` table and `0085` deletes numeric gear wind-range claims before
+dropping their columns. These are deliberate catalogue-model changes but are
+destructive and not backward-compatible with an older application build. The
+operator must confirm that the recovery point covers the affected tables and
+that both Vercel projects are ready to deploy the same commit. `0086` itself is
+an idempotent-by-content update: it adds missing safety notices inside spot JSON
+and its downgrade removes only unchanged seeded text.
 
 Stop before migration if the backup is absent, the target is not the single head,
 either connection fails, the current revision is unexpected, or compatibility is
 uncertain. Stop after migration and deploy nothing further if verification fails.
 Restore only through the provider's approved procedure after an incident decision;
 do not automatically downgrade because migration `0040` rewrites existing JSON.
+
+An isolated restore rehearsal is specified in
+`docs/ops/backup-restore-drill.md`. Never rehearse against the production
+database or reuse its writable endpoint.
 
 ## Neon transfer guard and Weather Shadow
 

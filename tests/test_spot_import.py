@@ -50,6 +50,56 @@ def test_normalize_csv_row_parses_pipe_lists_and_json_objects():
     assert row["facilities"] == {"parking": {"available": True}}
 
 
+def test_normalize_validates_image_rights_and_keeps_sources_unreviewed():
+    row = normalize_row(
+        {
+            "slug": "nordstrand",
+            "name": "Nordstrand",
+            "region_slug": "kiel",
+            "lat": 54.41,
+            "lon": 10.22,
+            "sports": ["wing"],
+            "image": {
+                "url": "https://example.test/photo.jpg",
+                "source": "Official gallery",
+                "license": "CC BY 4.0",
+                "credit": "Example Photographer",
+            },
+            "content_sources": [{
+                "field_path": "location",
+                "url": "https://example.test/location",
+                "title": "Official location page",
+                "checked_at": "2026-10-20T12:00:00Z",
+            }],
+        },
+        1,
+    )
+    assert row["image"]["credit"] == "Example Photographer"
+    assert row["content_sources"][0]["verification_status"] == "unreviewed"
+
+
+def test_normalize_rejects_preverified_import_sources():
+    with pytest.raises(ImportFormatError, match="nicht vorab verifizieren"):
+        normalize_row(
+            {
+                "slug": "nordstrand",
+                "name": "Nordstrand",
+                "region_slug": "kiel",
+                "lat": 54.41,
+                "lon": 10.22,
+                "sports": ["wing"],
+                "content_sources": [{
+                    "field_path": "location",
+                    "url": "https://example.test/location",
+                    "title": "Official location page",
+                    "checked_at": "2026-10-20T12:00:00Z",
+                    "verification_status": "verified",
+                }],
+            },
+            1,
+        )
+
+
 def test_normalize_rejects_unknown_columns_and_missing_coordinates():
     base = {
         "slug": "nordstrand",
@@ -87,6 +137,7 @@ def test_import_is_dry_run_safe_and_idempotent(db, tmp_path):
 
     dry = import_spots(path, db=db, dry_run=True)
     assert dry.ok and dry.created == [spot_slug]
+    assert dry.preview[0]["action"] == "would_create"
     assert db.scalar(select(Spot).where(Spot.slug == spot_slug)) is None
 
     real = import_spots(path, db=db)

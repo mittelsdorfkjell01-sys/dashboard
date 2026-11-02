@@ -7,7 +7,6 @@ from datetime import date
 import pytest
 from sqlalchemy import func, select
 
-from app.discovery import service as discovery
 from app.discovery.warmup import _landing_weeks, warm_once
 from app.live.cache import InMemoryCache
 from app.models import RecommendationLog
@@ -16,7 +15,7 @@ from app.recommendations.multisport import (
     _cache_key as multisport_cache_key,
     scored_recommendations,
 )
-from app.recommendations.service import RecommendationSurface
+from app.recommendations.service import RecommendationSurface, catalog_discovery
 from app.seed.seed import seed
 from tests.live_helpers import FakeOpenMeteoClient
 
@@ -38,22 +37,25 @@ def test_warm_once_populates_cache(seeded):
 
     assert results and results[0][1] == 5          # (sport, limit, n)
     assert 0 < results[0][2] <= 5
-    assert fake.forecast_calls > 0                  # first run did the work
+    # Forecast ranking is intentionally gated off until a product policy and
+    # matching evidence have been approved. The warmup must keep that fallback
+    # provider-free instead of silently exercising the old scorer.
+    assert fake.forecast_calls == 0
     assert seeded.scalar(select(func.count()).select_from(RecommendationLog)) == logs_before
 
 
-def test_warm_once_makes_endpoint_read_free(seeded):
+def test_warm_once_keeps_catalog_fallback_provider_free(seeded):
     fake, cache = FakeOpenMeteoClient(), InMemoryCache()
     day = date(2026, 7, 18)
 
     warm_once(limits=[5], sports=[None], db=seeded, client=fake, cache=cache, today=day)
     warmed_calls = fake.forecast_calls
 
-    # A subsequent request for the same (sport, limit, day) is served from the
-    # warmed cache — no further forecast fetches.
-    ids = discovery.top_spot_ids(
-        seeded, limit=5, sport=None, client=fake, cache=cache, today=day
-    )
+    # The public path uses the transparent catalogue fallback while the gate is
+    # closed. It is a cheap DB read and must not contact the forecast provider.
+    ids = [row.id for row in catalog_discovery(
+        seeded, sport=None, region_id=None, limit=5
+    )]
     assert fake.forecast_calls == warmed_calls
     assert 0 < len(ids) <= 5
 
@@ -69,27 +71,20 @@ def test_warm_once_second_run_is_noop(seeded):
     assert fake.forecast_calls == after_first       # cache hit -> no re-fetch
 
 
-@pytest.mark.parametrize(
-    "surface",
-    [
-        RecommendationSurface.NOW,
-        RecommendationSurface.NEXT_WEEK,
-        RecommendationSurface.SEASON,
-    ],
-)
-def test_warm_once_covers_exact_anonymous_landing_queries(seeded, surface):
+def test_warm_once_covers_exact_anonymous_season_query(seeded):
     fake, cache = FakeOpenMeteoClient(), InMemoryCache()
     day = date(2026, 7, 18)
 
     warm_once(limits=[8], sports=[None], db=seeded, client=fake, cache=cache, today=day)
     warmed_calls = fake.forecast_calls
+    surface = RecommendationSurface.SEASON
     rows = scored_recommendations(
         seeded,
         surface=surface,
         sports=AGGREGATE_SPORTS,
         client=fake,
         cache=cache,
-        weeks=_landing_weeks(day) if surface == RecommendationSurface.SEASON else None,
+        weeks=_landing_weeks(day),
         limit=5,
     )
 
@@ -98,13 +93,11 @@ def test_warm_once_covers_exact_anonymous_landing_queries(seeded, surface):
         surface=surface,
         region_id=None,
         month=None,
-        weeks=_landing_weeks(day) if surface == RecommendationSurface.SEASON else None,
+        weeks=_landing_weeks(day),
         level=None,
         limit=5,
     )
     assert cache.get(key) == [str(row.id) for row in rows]
-    if surface != RecommendationSurface.SEASON:
-        assert rows
     assert fake.forecast_calls == warmed_calls
 
 

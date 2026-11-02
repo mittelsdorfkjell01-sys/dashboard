@@ -1,7 +1,8 @@
 import uuid
+from datetime import datetime
 
 from geoalchemy2 import Geography
-from sqlalchemy import CheckConstraint, ForeignKey, Index, SmallInteger, String, Float, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, SmallInteger, String, Float, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
@@ -83,6 +84,15 @@ class Spot(Base, TimestampMixin):
     # Credit for a community spot (the submitter's display name). NULL for an
     # editorial spot.
     contributor_name: Mapped[str | None] = mapped_column(String(120))
+    # Content maturity is independent of publication status, travel relevance
+    # and authorship.  Existing catalogue rows start as ``unreviewed`` until a
+    # curator verifies their required field-level sources.
+    content_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=text("'unreviewed'")
+    )
+    content_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    content_reviewed_by: Mapped[str | None] = mapped_column(String(120))
+    content_review_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     confidence: Mapped[float | None] = mapped_column(Float)      # 0.0 .. 1.0
     # Manual override for the "Fertigstellen" traffic-light rank (red|yellow|
     # green). NULL = automatic (derived from readiness gaps). Set in the
@@ -118,6 +128,12 @@ class Spot(Base, TimestampMixin):
     weather_profile: Mapped["SpotWeatherProfile | None"] = relationship(  # noqa: F821
         backref="spot", uselist=False, lazy="selectin", cascade="all, delete-orphan"
     )
+    content_sources: Mapped[list["SpotContentSource"]] = relationship(  # noqa: F821
+        back_populates="spot",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        order_by="SpotContentSource.field_path, SpotContentSource.checked_at.desc()",
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -134,6 +150,10 @@ class Spot(Base, TimestampMixin):
             name="ck_spots_editorial_classification",
         ),
         CheckConstraint(
+            "content_status IN ('unreviewed', 'in_review', 'verified', 'review_due', 'conflict')",
+            name="ck_spots_content_status",
+        ),
+        CheckConstraint(
             "finish_rank IS NULL OR finish_rank IN ('red', 'yellow', 'green')",
             name="ck_spots_finish_rank",
         ),
@@ -143,6 +163,7 @@ class Spot(Base, TimestampMixin):
         Index("ix_spots_style", "style", postgresql_using="gin"),
         Index("ix_spots_region_status", "region_id", "status"),
         Index("ix_spots_origin", "origin"),
+        Index("ix_spots_content_status", "content_status"),
         Index(
             "ix_spots_normalized_name_trgm",
             "normalized_name",

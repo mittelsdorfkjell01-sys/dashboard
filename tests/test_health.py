@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
 
-from app.db.schema import EXPECTED_DB_REVISION
+from app.db.schema import EXPECTED_DB_FINGERPRINT, EXPECTED_DB_REVISION
 from app.health import DatabaseHealth, check_database
 from app.main import app, database_unavailable
 
@@ -114,6 +114,7 @@ def test_redis_outage_is_degraded_but_ready(monkeypatch):
         "db": "ok",
         "schema": "ok",
         "redis": "down",
+        "schema_fingerprint": EXPECTED_DB_FINGERPRINT,
         "diagnostics": {"redis_error": "TimeoutError"},
     }
 

@@ -27,6 +27,7 @@ from app.admin.deps import get_cds_client
 from app.main import app
 from app.seed.seed import seed
 from tests.era5_helpers import FakeCdsClient, make_synthetic_series
+from tests.content_helpers import verify_spot_content
 
 
 # --- pure enum validation --------------------------------------------------
@@ -199,6 +200,7 @@ def _create(admin, region_id, publish=False, **overrides):
             "url": "https://images.example.com/hero.jpg", "source": "unsplash",
             "license": "Unsplash License", "credit": "Test",
         })
+        verify_spot_content(admin, sid)
         live = admin.post(f"/admin/spots/{sid}/live")
         assert live.status_code == 200, live.text
     return resp

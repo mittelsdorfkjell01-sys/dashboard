@@ -24,9 +24,9 @@ function RowSkeleton() {
 }
 
 /**
- * "aktuelle Top Spots" — a responsive grid of the highest-ranked published
- * spots (backend `/spots/top`: this week's wind forecast + today's conditions +
- * popularity, rotating daily). Fills the row's full width (no horizontal scroll,
+ * A responsive catalogue selection. `/spots/top` only switches to forecast
+ * ordering after a scope-specific decision-support gate passes; otherwise it
+ * uses reviewed editorial relevance and stable name order. Fills the row's full width (no horizontal scroll,
  * so no tile is ever clipped), capped at MAX_TILES so the desktop row stays a
  * single clean line. A small, bounded row — cheap to also fetch live
  * conditions for (see SpotCard's `live` prop).

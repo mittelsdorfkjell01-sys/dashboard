@@ -90,6 +90,14 @@ export function adaptSpot(
     typicalWaveHeightM: summary.typical_wave_height_m ?? null,
     origin: s.origin ?? "editorial",
     editorialClassification: s.editorial_classification ?? null,
+    classificationReason:
+      typeof editorial?.classification_reason === "string" && editorial.classification_reason.trim()
+        ? editorial.classification_reason.trim()
+        : undefined,
+    contentStatus: s.content_status ?? "unreviewed",
+    contentReviewedAt: s.content_reviewed_at ?? null,
+    contentReviewDueAt: s.content_review_due_at ?? null,
+    contentSources: (s as SpotRead).content_sources ?? [],
     contributorName: s.contributor_name ?? null,
     windAvailability: summary.wind_availability ?? null,
     mapView:

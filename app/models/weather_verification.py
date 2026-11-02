@@ -301,7 +301,8 @@ class WeatherStationCaptureCycle(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "job_type IN ('observations','catalog')", name="ck_station_cycle_job_type"
+            "job_type IN ('observations','catalog','campaign')",
+            name="ck_station_cycle_job_type",
         ),
         CheckConstraint(
             "status IN ('success','partial','error','no_work','overlap_skipped')",

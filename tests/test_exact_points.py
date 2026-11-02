@@ -152,6 +152,7 @@ def test_capture_cycle_persists_bounded_station_and_spot_points(monkeypatch):
     class Db:
         calls = 0
         committed = False
+        rolled_back = False
 
         def execute(self, _query):
             self.calls += 1
@@ -164,11 +165,15 @@ def test_capture_cycle_persists_bounded_station_and_spot_points(monkeypatch):
         def begin_nested(self):
             return nullcontext()
 
+        def rollback(self):
+            self.rolled_back = True
+
         def commit(self):
             self.committed = True
 
     class Loader:
         def capture(self, **_kwargs):
+            assert database.rolled_back
             return {
                 "assets": 6, "cache_hits": 0, "cache_misses": 6,
                 "errors": {}, "provider_duration_ms": {},

@@ -48,7 +48,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -r requirements.txt pip-audit ruff
+      - run: pip install -r requirements.txt pip-audit ruff coverage
       - run: python -m compileall -q app alembic
       - run: ruff check app tests scripts --select E9,F63,F7,F82
       - run: python -m pip_audit -r requirements.txt
@@ -57,8 +57,19 @@ jobs:
       # test_microscale runs on its own. Run the raster microscale tests in a
       # separate process so accumulated GDAL/PROJ native state from earlier
       # tests cannot poison them. `-v` names the crashing test if it recurs.
-      - run: pytest -v -p no:cacheprovider --ignore=tests/test_microscale.py
-      - run: pytest -v -p no:cacheprovider tests/test_microscale.py
+      - run: coverage run --parallel-mode --source=app,scripts -m pytest -v -p no:cacheprovider --ignore=tests/test_microscale.py
+      - run: coverage run --parallel-mode --source=app,scripts -m pytest -v -p no:cacheprovider tests/test_microscale.py
+      - name: Backend coverage baseline
+        run: |
+          coverage combine
+          coverage report --fail-under=73
+          coverage xml -o coverage-backend.xml
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-coverage
+          path: coverage-backend.xml
+          if-no-files-found: error
       - run: python scripts/cleanup_media.py --grace-hours 0
       - run: python scripts/cleanup_personal_data.py
       - name: Migration round trip
@@ -76,12 +87,18 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      - run: npm run test:coverage
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          if-no-files-found: error
       - run: npx tsc --noEmit --pretty false
       - name: Public build and budget
         run: npm run build && npm run check:bundle

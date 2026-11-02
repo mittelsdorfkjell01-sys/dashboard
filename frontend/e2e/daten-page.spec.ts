@@ -9,7 +9,7 @@ import type { CommunityImage } from "../src/lib/api";
 // "Karte" button links into the one weather map, framed on the spot and locked
 // to the wind field.
 
-const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
+const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", content_status: "verified", content_reviewed_at: "2026-08-24T00:00:00Z", content_review_due_at: "2027-08-24T00:00:00Z", content_sources: [], image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
 const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
@@ -245,7 +245,7 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   await mockApi(page);
   await page.goto("/spot/laboe/info");
 
-  const map = page.getByRole("region", { name: "Lage" });
+  const map = page.getByRole("region", { name: "Lage", exact: true });
   await expect(map).toBeAttached();
   await map.scrollIntoViewIfNeeded();
   const tile = map.locator(".leaflet-tile").first();
@@ -372,7 +372,7 @@ test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abru
   await locatorRegion.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await expect(page.locator(".swd-locator-map")).toBeVisible();
   await expect(page.locator(".swd-locator-map [data-observation-type]")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Hinweise zur aktuellen Lage" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sicherheits- und Lagehinweise" })).toBeVisible();
   await expect(page.getByText("Eine Reise wert")).toBeVisible();
   await expect(page.getByText(/Community · Lena K\./)).toBeVisible();
   await expect(page.getByText(/Voraussichtlich 23 °C Lufttemperatur und 18 °C Wassertemperatur/)).toBeVisible();
@@ -385,7 +385,7 @@ test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", a
   await page.setViewportSize({ width: 320, height: 720 });
   await mockApi(page);
   await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Hinweise zur aktuellen Lage" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sicherheits- und Lagehinweise" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });

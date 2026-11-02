@@ -52,12 +52,15 @@ jobs:
         run: python -m alembic upgrade head
 
       - name: Verify target through direct and pooled connections
+        id: postflight
         env:
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
           POOLED_DATABASE_URL: ${{ secrets.POOLED_DATABASE_URL }}
-        run: python -m scripts.production_readiness database --require-target
+        run: python -m scripts.production_readiness database --require-target --github-output
 
       - name: Readiness and minimal public API smoke tests
         env:
           PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_API_BASE_URL }}
+          EXPECTED_SCHEMA_FINGERPRINT: ${{ steps.postflight.outputs.schema_fingerprint }}
+          EXPECTED_CATALOG_VERSION: ${{ steps.postflight.outputs.catalog_version }}
         run: python -m scripts.production_readiness api-smoke

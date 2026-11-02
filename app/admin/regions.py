@@ -80,6 +80,8 @@ def create_region(
         center=center,
         bounds=bounds,
         description=data.get("description"),
+        description_en=data.get("description_en"),
+        content_sources=data.get("content_sources") or [],
         defaults=data.get("defaults") or {},
         season=data.get("season"),
         image=data.get("image"),
@@ -222,6 +224,22 @@ def set_region_status(region_id, status: str, *, db: Session) -> Any:
     region = db.get(Region, region_id)
     if region is None:
         raise LookupError(f"unknown region {region_id}")
+    if status == "published":
+        gaps: list[str] = []
+        if region.content_status != "verified": gaps.append("Inhaltsprüfung ist nicht verifiziert")
+        if not (region.description and region.description.strip()): gaps.append("deutsche Beschreibung fehlt")
+        if not (region.description_en and region.description_en.strip()): gaps.append("englische Beschreibung fehlt")
+        if not any(
+            isinstance(item, dict) and item.get("field") == "description"
+            and isinstance(item.get("url"), str) and item["url"].startswith(("https://", "http://"))
+            for item in (region.content_sources or [])
+        ): gaps.append("Quelle der Regionsbeschreibung fehlt")
+        image = region.image if isinstance(region.image, dict) else {}
+        if not image.get("url"): gaps.append("Regionsbild fehlt")
+        if not image.get("credit"): gaps.append("Bild-Credit fehlt")
+        if not image.get("license"): gaps.append("Bildlizenz fehlt")
+        if gaps:
+            raise ValueError("Region kann nicht veröffentlicht werden: " + "; ".join(gaps))
     region.status = status
     db.commit()
     db.refresh(region)
@@ -297,14 +315,43 @@ def update_region(
         region.name = data["name"]
     if "country" in data:
         region.country = data["country"]
+    editorial_changed = False
     if "description" in data:
         region.description = data["description"]
+        editorial_changed = True
+    if "description_en" in data:
+        region.description_en = data["description_en"]
+        editorial_changed = True
+    if "content_sources" in data:
+        region.content_sources = data["content_sources"] or []
+        editorial_changed = True
     if "season" in data:
         region.season = data["season"]
     if "defaults" in data and data["defaults"] is not None:
         merged = dict(region.defaults or {})
         merged.update(data["defaults"])
         region.defaults = merged
+    if editorial_changed and region.content_status == "verified":
+        region.content_status = "review_due"
+    if "content_status" in data:
+        next_status = data["content_status"]
+        if next_status == "verified":
+            sources = region.content_sources or []
+            has_description_source = any(
+                isinstance(item, dict)
+                and item.get("field") == "description"
+                and isinstance(item.get("url"), str)
+                and item["url"].startswith(("https://", "http://"))
+                for item in sources
+            )
+            if not region.description or not region.description_en or not has_description_source:
+                raise ValueError(
+                    "Für 'verifiziert' sind deutsche und englische Beschreibung sowie eine Beschreibungsquelle erforderlich."
+                )
+            from datetime import datetime, timezone
+            region.content_reviewed_at = datetime.now(timezone.utc)
+            region.content_reviewed_by = actor
+        region.content_status = next_status
     db.commit()
     db.refresh(region)
     if duplicate_candidates:

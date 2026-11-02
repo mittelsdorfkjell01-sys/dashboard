@@ -232,6 +232,17 @@ def validate_editorial(value: dict | None) -> dict | None:
             if len(notice) > 2_000:
                 raise ValueError("editorial.safety_notice must be at most 2000 characters")
             cleaned["safety_notice"] = notice or None
+    if "classification_reason" in cleaned:
+        reason = cleaned["classification_reason"]
+        if reason is not None and not isinstance(reason, str):
+            raise ValueError("editorial.classification_reason must be a string or null")
+        if isinstance(reason, str):
+            reason = " ".join(reason.split())
+            if len(reason) > 1_000:
+                raise ValueError(
+                    "editorial.classification_reason must be at most 1000 characters"
+                )
+            cleaned["classification_reason"] = reason or None
     tide = cleaned.get("tide")
     if isinstance(tide, dict) and tide.get("window") is not None:
         window = tide["window"]

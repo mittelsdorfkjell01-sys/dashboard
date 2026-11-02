@@ -11,7 +11,7 @@
  * stays a pure route list.
  */
 export const SITE_LINKS = [
-  { to: "/faq", key: "siteLinks.faq" },
+  { to: "/fragen", key: "siteLinks.faq" },
   { to: "/kontakt", key: "siteLinks.contact" },
   { to: "/ueber-uns", key: "siteLinks.about" },
   { to: "/nutzungsbedingungen", key: "siteLinks.terms" },

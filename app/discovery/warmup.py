@@ -59,8 +59,9 @@ def warm_landing_recommendations(
     them twice.
     """
     from app.recommendations.multisport import AGGREGATE_SPORTS, scored_recommendations
-    from app.recommendations.service import RecommendationSurface, recommendations
+    from app.recommendations.service import RecommendationSurface, catalog_discovery, recommendations
     from app.scoring.rider.resolve import resolve_rider
+    from app.weather.decision_gates import capability_status
 
     recommendation_client = client or default_client()
     recommendation_cache = cache or default_cache()
@@ -79,15 +80,16 @@ def warm_landing_recommendations(
         RecommendationSurface.NEXT_WEEK,
         RecommendationSurface.SEASON,
     ):
-        rows = scored_recommendations(
-            db,
-            surface=surface,
-            sports=AGGREGATE_SPORTS,
-            client=recommendation_client,
-            cache=recommendation_cache,
-            weeks=weeks if surface == RecommendationSurface.SEASON else None,
-            limit=LANDING_RECOMMENDATION_LIMIT,
-            now=now,
+        gate = capability_status(db, "forecast_sorting", sport="all", region_id=None, horizon_bucket="48_240h" if surface == RecommendationSurface.NEXT_WEEK else "0_48h") if surface != RecommendationSurface.SEASON else {"ready": True}
+        rows = (
+            scored_recommendations(
+                db, surface=surface, sports=AGGREGATE_SPORTS,
+                client=recommendation_client, cache=recommendation_cache,
+                weeks=weeks if surface == RecommendationSurface.SEASON else None,
+                limit=LANDING_RECOMMENDATION_LIMIT, now=now,
+            )
+            if gate["ready"]
+            else catalog_discovery(db, sport=None, region_id=None, limit=LANDING_RECOMMENDATION_LIMIT)
         )
         counts[f"all:{surface.value}"] = len(rows)
         print(
@@ -103,17 +105,16 @@ def warm_landing_recommendations(
         RecommendationSurface.NEXT_WEEK,
         RecommendationSurface.SEASON,
     ):
-        rows = recommendations(
-            db,
-            rider,
-            surface=surface,
-            sport="kitesurf",
-            client=recommendation_client,
-            cache=recommendation_cache,
-            weeks=weeks if surface == RecommendationSurface.SEASON else None,
-            limit=LANDING_RECOMMENDATION_LIMIT,
-            now=now,
-            write_audit_log=False,
+        gate = capability_status(db, "forecast_sorting", sport="kitesurf", region_id=None, horizon_bucket="48_240h" if surface == RecommendationSurface.NEXT_WEEK else "0_48h") if surface != RecommendationSurface.SEASON else {"ready": True}
+        rows = (
+            recommendations(
+                db, rider, surface=surface, sport="kitesurf",
+                client=recommendation_client, cache=recommendation_cache,
+                weeks=weeks if surface == RecommendationSurface.SEASON else None,
+                limit=LANDING_RECOMMENDATION_LIMIT, now=now, write_audit_log=False,
+            )
+            if gate["ready"]
+            else catalog_discovery(db, sport="kitesurf", region_id=None, limit=LANDING_RECOMMENDATION_LIMIT)
         )
         counts[f"kitesurf:{surface.value}"] = len(rows)
         print(
@@ -143,14 +144,16 @@ def warm_once(
     try:
         for sport in sports:
             for limit in limits:
-                ids = top_spot_ids(
-                    db,
-                    limit=limit,
-                    sport=sport,
-                    client=client,
-                    cache=cache,
-                    today=today,
-                    allow_stale=False,
+                from app.recommendations.service import catalog_discovery
+                from app.weather.decision_gates import capability_status
+                gate = capability_status(db, "forecast_sorting", sport=sport or "all", region_id=None, horizon_bucket="0_48h")
+                ids = (
+                    top_spot_ids(
+                        db, limit=limit, sport=sport, client=client,
+                        cache=cache, today=today, allow_stale=False,
+                    )
+                    if gate["ready"]
+                    else [row.id for row in catalog_discovery(db, sport=sport, region_id=None, limit=limit)]
                 )
                 results.append((sport, limit, len(ids)))
                 print(

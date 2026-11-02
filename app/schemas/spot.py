@@ -12,6 +12,21 @@ from app.scoring.context import typical_figures
 EditorialClassification = Literal[
     "world_class", "worth_trip", "worth_checking_out"
 ]
+ContentStatus = Literal[
+    "unreviewed", "in_review", "verified", "review_due", "conflict"
+]
+
+
+class SpotContentSourceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    field_path: str
+    url: str
+    title: str
+    publisher: str | None = None
+    checked_at: datetime
+    verification_status: Literal["unreviewed", "verified", "rejected", "conflict"]
 
 
 def _public_editorial(value: Any) -> dict[str, Any] | None:
@@ -58,6 +73,9 @@ class SpotSummary(BaseModel):
     editorial_classification: EditorialClassification | None = None
     # Credit for a community spot; None for an editorial one.
     contributor_name: str | None = None
+    content_status: ContentStatus = "unreviewed"
+    content_reviewed_at: datetime | None = None
+    content_review_due_at: datetime | None = None
     # Variant keys this spot actually offers (suitability geeignet/eingeschraenkt).
     # Derived so tiles/filters can act on variants without the full blob.
     variants: list[str] = []
@@ -92,6 +110,9 @@ class SpotSummary(BaseModel):
             origin=getattr(spot, "origin", None) or "editorial",
             editorial_classification=getattr(spot, "editorial_classification", None),
             contributor_name=getattr(spot, "contributor_name", None),
+            content_status=getattr(spot, "content_status", None) or "unreviewed",
+            content_reviewed_at=getattr(spot, "content_reviewed_at", None),
+            content_review_due_at=getattr(spot, "content_review_due_at", None),
             variants=offered_variants(getattr(spot, "variant_conditions", None)),
             typical_wind_kt=typical_wind_kt,
             typical_wave_height_m=typical_wave_height_m,
@@ -131,6 +152,10 @@ class SpotRead(BaseModel):
     origin: str = "editorial"
     editorial_classification: EditorialClassification | None = None
     contributor_name: str | None = None
+    content_status: ContentStatus = "unreviewed"
+    content_reviewed_at: datetime | None = None
+    content_review_due_at: datetime | None = None
+    content_sources: list[SpotContentSourceRead] = []
     editorial: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
     variant_conditions: dict[str, Any] | None = None
@@ -144,6 +169,15 @@ class SpotRead(BaseModel):
     def from_orm_spot(cls, spot: Any, *, public: bool = False) -> "SpotRead":
         """Build a read schema from an ORM spot, converting the geography column."""
         region = getattr(spot, "region", None)
+        sources = list(getattr(spot, "content_sources", None) or [])
+        if public:
+            # A source verified for an older field value must not look current
+            # after an edit has moved the spot back to review_due/in_review.
+            sources = [
+                source for source in sources
+                if getattr(spot, "content_status", None) == "verified"
+                and source.verification_status == "verified"
+            ]
         return cls(
             id=spot.id,
             slug=spot.slug,
@@ -166,6 +200,10 @@ class SpotRead(BaseModel):
             origin=getattr(spot, "origin", None) or "editorial",
             editorial_classification=getattr(spot, "editorial_classification", None),
             contributor_name=getattr(spot, "contributor_name", None),
+            content_status=getattr(spot, "content_status", None) or "unreviewed",
+            content_reviewed_at=getattr(spot, "content_reviewed_at", None),
+            content_review_due_at=getattr(spot, "content_review_due_at", None),
+            content_sources=[SpotContentSourceRead.model_validate(source) for source in sources],
             editorial=_public_editorial(spot.editorial) if public else spot.editorial,
             overrides=spot.overrides,
             variant_conditions=getattr(spot, "variant_conditions", None),

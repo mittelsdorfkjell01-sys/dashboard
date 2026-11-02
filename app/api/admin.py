@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.admin import dashboard as admin_dashboard
+from app.admin import content_governance as content_governance
 from app.admin import notifications as admin_notifications
 from app.admin import regions as admin_regions
 from app.admin import spots as admin_spots
@@ -61,7 +62,7 @@ from app.media.gc import (
     schedule_media_gc,
 )
 from app.media.lifecycle import purge_if_unreferenced
-from app.models import Region, Spot
+from app.models import Region, Spot, SpotContentSource
 from app.schemas import RegionRead, SpotRead, SpotSummary
 from app.schemas.admin import (
     AssignRegionRequest,
@@ -77,6 +78,10 @@ from app.schemas.admin import (
     RegionUpdate,
     RevertRequest,
     SpotCreate,
+    SpotContentReviewUpdate,
+    SpotContentSourceAdminRead,
+    SpotContentSourceCreate,
+    SpotContentSourceUpdate,
     SpotUpdate,
 )
 
@@ -645,6 +650,14 @@ def overview(db: Session = Depends(get_db)) -> dict:
     return admin_dashboard.overview(db)
 
 
+@router.get("/catalog/coverage")
+def catalog_coverage(db: Session = Depends(get_db)) -> dict:
+    """Region × sport editorial coverage; counts never imply publication."""
+    from app.admin.catalog_coverage import catalogue_coverage
+
+    return catalogue_coverage(db)
+
+
 @router.get("/map-spots")
 def map_spots(
     db: Session = Depends(get_db),
@@ -686,6 +699,11 @@ def list_spots(
         description="Image work list: missing hero, unverified location, "
         "reused photo, or dead source.",
     ),
+    content_attention: str | None = Query(
+        default=None,
+        pattern="^(incomplete|unreviewed|in_review|review_due|conflict|stale|license)$",
+        description="Editorial work list by review, evidence, or licensing state.",
+    ),
 ) -> dict:
     """Filtered, paginated spot list for the admin table (with total count)."""
     from app.media.worklist import duplicate_photo_keys, image_flags
@@ -693,7 +711,7 @@ def list_spots(
     rows, total, readiness = admin_dashboard.list_spots(
         db, status=status, region_id=region_id, sport=sport, q=q,
         sort=sort, limit=limit, offset=offset, exclude_status=exclude_status,
-        completeness=completeness, media=media,
+        completeness=completeness, media=media, content_attention=content_attention,
     )
     duplicates = duplicate_photo_keys(db)
     items = []
@@ -708,6 +726,9 @@ def list_spots(
         # Shipped on every row, not only when filtering, so the table can mark
         # the problems without a second request per spot.
         item["media_flags"] = image_flags(spot.image, duplicates)
+        from app.admin.content_governance import content_attention_flags
+
+        item["content_flags"] = content_attention_flags(spot)
         items.append(item)
     return {
         "items": items,
@@ -762,6 +783,8 @@ def create_spot(
         raise HTTPException(status_code=404, detail=str(exc))
     except (ExactDuplicateError, LikelyDuplicateError) as exc:
         raise _duplicate_conflict(exc, principal)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
     return SpotRead.from_orm_spot(spot)
@@ -1112,6 +1135,125 @@ def get_spot_record(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> SpotRe
     spot = db.get(Spot, spot_id)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
+    return SpotRead.from_orm_spot(spot)
+
+
+@router.get(
+    "/spots/{spot_id}/content-sources",
+    response_model=list[SpotContentSourceAdminRead],
+)
+def get_spot_content_sources(
+    spot_id: uuid.UUID, db: Session = Depends(get_db)
+) -> list[SpotContentSourceAdminRead]:
+    try:
+        return [
+            SpotContentSourceAdminRead.model_validate(source)
+            for source in content_governance.list_sources(spot_id, db=db)
+        ]
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+
+
+@router.post(
+    "/spots/{spot_id}/content-sources",
+    response_model=SpotContentSourceAdminRead,
+    status_code=201,
+)
+def create_spot_content_source(
+    spot_id: uuid.UUID,
+    body: SpotContentSourceCreate,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> SpotContentSourceAdminRead:
+    try:
+        source = content_governance.create_source(
+            spot_id, body.to_data(), db=db, actor=actor
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Diese Quelle ist diesem Feld bereits zugeordnet.",
+        )
+    return SpotContentSourceAdminRead.model_validate(source)
+
+
+@router.patch(
+    "/spots/{spot_id}/content-sources/{source_id}",
+    response_model=SpotContentSourceAdminRead,
+)
+def update_spot_content_source(
+    spot_id: uuid.UUID,
+    source_id: uuid.UUID,
+    body: SpotContentSourceUpdate,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> SpotContentSourceAdminRead:
+    if body.expected_updated_at is not None:
+        _guard_version(db, SpotContentSource, source_id, body.expected_updated_at)
+    try:
+        source = content_governance.update_source(
+            spot_id, source_id, body.to_data(), db=db, actor=actor
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Quelle nicht gefunden")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Diese Quelle ist diesem Feld bereits zugeordnet.",
+        )
+    return SpotContentSourceAdminRead.model_validate(source)
+
+
+@router.delete(
+    "/spots/{spot_id}/content-sources/{source_id}", status_code=204
+)
+def delete_spot_content_source(
+    spot_id: uuid.UUID,
+    source_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> Response:
+    try:
+        content_governance.delete_source(spot_id, source_id, db=db, actor=actor)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Quelle nicht gefunden")
+    return Response(status_code=204)
+
+
+@router.patch("/spots/{spot_id}/content-review", response_model=SpotRead)
+def update_spot_content_review(
+    spot_id: uuid.UUID,
+    body: SpotContentReviewUpdate,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_actor),
+) -> SpotRead:
+    if body.expected_updated_at is not None:
+        _guard_version(db, Spot, spot_id, body.expected_updated_at)
+    try:
+        spot = content_governance.set_content_status(
+            spot_id, body.status, db=db, actor=actor
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    except content_governance.ContentReviewError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "content_review_incomplete",
+                "message": "Der Inhalt erfüllt den Prüfstandard noch nicht.",
+                "gaps": exc.gaps,
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     return SpotRead.from_orm_spot(spot)
 
 
@@ -1589,6 +1731,8 @@ def update_region(
         raise HTTPException(status_code=404, detail="Region not found")
     except (ExactDuplicateError, LikelyDuplicateError) as exc:
         raise _duplicate_conflict(exc, principal)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     except IntegrityError as exc:
         raise _catalog_conflict(db, exc)
     return RegionRead.from_orm_region(region)
@@ -1600,6 +1744,8 @@ def publish_region(region_id: uuid.UUID, db: Session = Depends(get_db)):
         region = admin_regions.set_region_status(region_id, "published", db=db)
     except LookupError:
         raise HTTPException(status_code=404, detail="Region not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return RegionRead.from_orm_region(region)
 
 

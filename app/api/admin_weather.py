@@ -23,6 +23,7 @@ from app.weather.usable_directions import (
     apply_geometry_to_profile,
     usable_direction_state,
 )
+from app.weather.decision_gates import CAPABILITIES, capability_status
 from app.models import (
     ForecastProcessingJob,
     ForecastSectorGateEvidence,
@@ -50,6 +51,33 @@ router = APIRouter(
     tags=["admin-weather"],
     dependencies=[Depends(require_role("admin", "curator"))],
 )
+
+
+@router.get("/decision-support/status")
+def decision_support_status(
+    sport: str = Query(default="kitesurf"),
+    region_id: uuid.UUID | None = Query(default=None),
+    horizon_bucket: str = Query(default="0_48h", pattern=r"^(0_48h|48_240h|seasonal)$"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Read-only, scope-specific product gate report.
+
+    It intentionally does not accept or activate evidence. Review and artifact
+    registration remain separate operational steps, so an inspection request
+    cannot mutate public decision support.
+    """
+    return {
+        "sport": sport,
+        "region_id": str(region_id) if region_id else None,
+        "horizon_bucket": horizon_bucket,
+        "capabilities": {
+            capability: capability_status(
+                db, capability, sport=sport, region_id=region_id,
+                horizon_bucket=horizon_bucket,
+            )
+            for capability in CAPABILITIES
+        },
+    }
 
 
 @router.get("/live-wind/operations")

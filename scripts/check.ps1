@@ -16,8 +16,18 @@ function Invoke-BoundedCheck {
         [Parameter(Mandatory)] [scriptblock]$Command
     )
     Write-Output "check=$Name"
-    $output = @(& $Command 2>&1)
-    $code = $LASTEXITCODE
+    # Native tools legitimately write warnings to stderr (Vite's chunk-size
+    # advisory is one example). Under PowerShell's global Stop preference that
+    # stderr record used to abort this function before the actual exit code was
+    # evaluated. Capture both streams and let the process exit code decide.
+    $previousErrorPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = @(& $Command 2>&1)
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorPreference
+    }
     if ($code -ne 0) {
         $output | Select-Object -Last $TailLines
         if ($output.Count -gt $TailLines) {

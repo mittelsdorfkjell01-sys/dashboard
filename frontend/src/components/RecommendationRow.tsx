@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRecommendations, useSpotsLive } from "../lib/hooks";
 import type { RecommendationSurface } from "../lib/api";
 import SpotCard from "./SpotCard";
+import { useTranslation } from "react-i18next";
 
 const GRID =
   "grid auto-rows-fr grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-5";
@@ -56,6 +57,7 @@ export default function RecommendationRow({
   /** Keep parent-owned chrome in sync when this category has no usable data. */
   onVisibilityChange?: (visible: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const sectionRef = useRef<HTMLElement | null>(null);
   const [inRange, setInRange] = useState(!defer);
 
@@ -134,6 +136,9 @@ export default function RecommendationRow({
           <h2 className="text-title font-semibold text-ink">{title}</h2>
           {action}
         </div>
+      )}
+      {surface !== "season" && (
+        <p className="mb-4 max-w-measure text-caption leading-relaxed text-muted">{t("recommendations.limits")}</p>
       )}
       {loading ? (
         <RowSkeleton />

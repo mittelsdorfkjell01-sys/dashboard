@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     api_debug: bool = True
 
     # Whether this deployment exposes the back office (auth + /admin* routers) and
-    # runs the admin bootstrap. True on the admin deployment (kjellmittelsdorf.de);
+    # runs the admin bootstrap. True on the dedicated Vercel admin deployment;
     # set ENABLE_ADMIN_API=false on the public deployment (surfwinddata.com) so its
     # origin serves only the public + community endpoints — no /auth, no /admin.
     enable_admin_api: bool = False

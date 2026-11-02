@@ -148,6 +148,33 @@ export type EditorialClassification =
   | "world_class"
   | "worth_trip"
   | "worth_checking_out";
+export type ContentReviewStatus =
+  | "unreviewed"
+  | "in_review"
+  | "verified"
+  | "review_due"
+  | "conflict";
+export type ContentSourceStatus =
+  | "unreviewed"
+  | "verified"
+  | "rejected"
+  | "conflict";
+
+export interface SpotContentSource {
+  id: string;
+  spot_id: string;
+  field_path: string;
+  url: string;
+  title: string;
+  publisher: string | null;
+  checked_at: string;
+  verification_status: ContentSourceStatus;
+  note: string | null;
+  created_by?: string | null;
+  reviewed_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface SpotSummary {
   id: string;
@@ -173,6 +200,10 @@ export interface SpotSummary {
   origin?: SpotOrigin;
   editorial_classification?: EditorialClassification | null;
   contributor_name?: string | null;
+  /** Optional while older immutable catalogue responses age out at the CDN. */
+  content_status?: ContentReviewStatus;
+  content_reviewed_at?: string | null;
+  content_review_due_at?: string | null;
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
   wind_availability: number[] | null;
@@ -184,6 +215,7 @@ export interface SpotRead extends SpotSummary {
   editorial: Record<string, any> | null;
   overrides: Record<string, any> | null;
   finish_rank: Rank | null;
+  content_sources?: SpotContentSource[];
   created_at: string;
   updated_at: string;
 }
@@ -302,6 +334,16 @@ export interface Region {
   country: string | null;
   center: GeoPoint | null;
   description: string | null;
+  description_en?: string | null;
+  content_sources?: Array<{
+    field: string;
+    url: string;
+    title?: string | null;
+    publisher?: string | null;
+    checked_at?: string | null;
+  }>;
+  content_status?: "unreviewed" | "in_review" | "verified" | "review_due" | "conflict";
+  content_reviewed_at?: string | null;
   image: ImageRecord | null;
   season: Record<string, any> | null;
   defaults: Record<string, any> | null;
@@ -643,6 +685,7 @@ export interface Readiness {
   ready: boolean;
   checklist: ReadinessItem[];
   gaps: string[];
+  warnings?: string[];
   scoring?: {
     kitesurf: {
       applicable: boolean;
@@ -1650,6 +1693,33 @@ export interface AdminOverview {
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
 
+export interface CatalogCoverageRow {
+  region_id: string;
+  region_name: string;
+  country: string | null;
+  region_spot_count: number;
+  sport: string;
+  total: number;
+  publication: Record<"draft" | "published" | "archived", number>;
+  content: Record<ContentReviewStatus, number>;
+  classification: Record<EditorialClassification | "unranked", number>;
+}
+
+export interface CatalogCoverage {
+  summary: {
+    spots: number;
+    regions: number;
+    unassigned: number;
+    single_spot_regions: number;
+    publication: Record<"draft" | "published" | "archived", number>;
+    content: Record<ContentReviewStatus, number>;
+  };
+  rows: CatalogCoverageRow[];
+}
+
+export const getCatalogCoverage = () =>
+  request<CatalogCoverage>("/admin/catalog/coverage");
+
 /** Local/prod safety indicator for the back-office banner. */
 export interface AdminEnvironment {
   app_env: "development" | "test" | "production";
@@ -1916,12 +1986,25 @@ export interface AdminSpotsQuery {
   exclude_status?: string;
   completeness?: "complete" | "incomplete";
   media?: MediaFilterKey;
+  content_attention?: ContentAttentionFilter;
 }
+
+export type ContentAttentionFilter =
+  | "incomplete"
+  | "unreviewed"
+  | "in_review"
+  | "review_due"
+  | "conflict"
+  | "stale"
+  | "license";
+
+export type ContentAttentionFlags = Record<ContentAttentionFilter, boolean>;
 
 export interface AdminSpotSummary extends SpotSummary {
   confidence: number | null;
   readiness: { ready: boolean; missing_count: number; gaps: string[] };
   media_flags: MediaFlags;
+  content_flags: ContentAttentionFlags;
 }
 
 export interface AdminSpotsResponse {
@@ -1938,6 +2021,53 @@ export const getAdminSpots = (params: AdminSpotsQuery = {}) =>
 
 export const getAdminSpot = (id: string) =>
   request<SpotRead>(`/admin/spots/${id}/record`);
+
+export const getSpotContentSources = (id: string) =>
+  request<SpotContentSource[]>(`/admin/spots/${id}/content-sources`);
+
+export type SpotContentSourceInput = {
+  field_path: string;
+  url: string;
+  title: string;
+  publisher?: string | null;
+  checked_at: string;
+  verification_status?: ContentSourceStatus;
+  note?: string | null;
+};
+
+export const createSpotContentSource = (
+  spotId: string,
+  body: SpotContentSourceInput,
+) => request<SpotContentSource>(`/admin/spots/${spotId}/content-sources`, {
+  method: "POST",
+  body: JSON.stringify(body),
+});
+
+export const updateSpotContentSource = (
+  spotId: string,
+  sourceId: string,
+  body: Partial<SpotContentSourceInput> & { expected_updated_at?: string },
+) => request<SpotContentSource>(
+  `/admin/spots/${spotId}/content-sources/${sourceId}`,
+  { method: "PATCH", body: JSON.stringify(body) },
+);
+
+export const deleteSpotContentSource = (spotId: string, sourceId: string) =>
+  request<void>(`/admin/spots/${spotId}/content-sources/${sourceId}`, {
+    method: "DELETE",
+  });
+
+export const setSpotContentReview = (
+  spotId: string,
+  status: ContentReviewStatus,
+  expectedUpdatedAt?: string,
+) => request<SpotRead>(`/admin/spots/${spotId}/content-review`, {
+  method: "PATCH",
+  body: JSON.stringify({
+    status,
+    ...(expectedUpdatedAt ? { expected_updated_at: expectedUpdatedAt } : {}),
+  }),
+});
 
 export const getTideProfile = (id: string) =>
   request<TideProfile>(`/admin/spots/${id}/tide`);
@@ -2059,6 +2189,9 @@ export const updateRegion = (
     name?: string;
     country?: string | null;
     description?: string | null;
+    description_en?: string | null;
+    content_sources?: NonNullable<Region["content_sources"]>;
+    content_status?: NonNullable<Region["content_status"]>;
     defaults?: Record<string, unknown>;
     season?: Record<string, unknown> | null;
     /** Optimistic-locking token; omit to force an overwrite after a 409. */

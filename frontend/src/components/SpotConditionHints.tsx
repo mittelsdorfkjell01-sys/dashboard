@@ -26,7 +26,18 @@ export default function SpotConditionHints({ spot, forecast }: { spot: Spot; for
               <div className="min-w-0">
                 <p className="text-ui leading-relaxed text-ink">{hint.sentence}</p>
                 <p className="mt-1 text-caption leading-relaxed text-muted">
-                  <span className="font-medium text-ink-soft">{hint.sourceLabel}</span>
+                  {hint.sourceUrl ? (
+                    <a
+                      href={hint.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-ink-soft underline underline-offset-2"
+                    >
+                      {hint.sourceLabel}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-ink-soft">{hint.sourceLabel}</span>
+                  )}
                   {hint.timing ? ` · ${hint.timing}` : ""}
                 </p>
               </div>

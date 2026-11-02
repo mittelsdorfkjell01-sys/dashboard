@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.admin.constants import (
     validate_bottom_types,
@@ -24,6 +24,117 @@ from app.admin.constants import (
 
 class AdminWriteModel(BaseModel):
     model_config = {"extra": "forbid"}
+
+
+ContentReviewStatus = Literal[
+    "unreviewed", "in_review", "verified", "review_due", "conflict"
+]
+ContentSourceStatus = Literal["unreviewed", "verified", "rejected", "conflict"]
+
+
+class SpotContentSourceCreate(AdminWriteModel):
+    field_path: str = Field(
+        min_length=1,
+        max_length=160,
+        pattern=r"^[a-z][a-z0-9_]*(?:[.:][a-z0-9_-]+)*$",
+    )
+    url: AnyHttpUrl
+    title: str = Field(min_length=1, max_length=300)
+    publisher: str | None = Field(default=None, max_length=200)
+    checked_at: datetime
+    verification_status: ContentSourceStatus = "unreviewed"
+    note: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("field_path", "title")
+    @classmethod
+    def _strip_required_source_text(cls, value: str) -> str:
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("Pflichtangabe darf nicht leer sein.")
+        return cleaned
+
+    @field_validator("publisher", "note")
+    @classmethod
+    def _strip_source_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = " ".join(value.split())
+        return cleaned or None
+
+    def to_data(self) -> dict[str, Any]:
+        return self.model_dump()
+
+
+class SpotContentSourceUpdate(AdminWriteModel):
+    field_path: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=160,
+        pattern=r"^[a-z][a-z0-9_]*(?:[.:][a-z0-9_-]+)*$",
+    )
+    url: AnyHttpUrl | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    publisher: str | None = Field(default=None, max_length=200)
+    checked_at: datetime | None = None
+    verification_status: ContentSourceStatus | None = None
+    note: str | None = Field(default=None, max_length=1000)
+    expected_updated_at: datetime | None = None
+
+    @field_validator("field_path", "title")
+    @classmethod
+    def _strip_optional_required_source_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("Pflichtangabe darf nicht leer sein.")
+        return cleaned
+
+    @field_validator("publisher", "note")
+    @classmethod
+    def _strip_source_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = " ".join(value.split())
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def _not_empty(self):
+        changed = self.model_fields_set - {"expected_updated_at"}
+        if not changed:
+            raise ValueError("Mindestens ein Quellenfeld muss geändert werden.")
+        required_when_set = {
+            "field_path", "url", "title", "checked_at", "verification_status"
+        }
+        if any(getattr(self, field) is None for field in changed & required_when_set):
+            raise ValueError("Pflichtfelder einer Quelle dürfen nicht geleert werden.")
+        return self
+
+    def to_data(self) -> dict[str, Any]:
+        return self.model_dump(exclude_unset=True, exclude={"expected_updated_at"})
+
+
+class SpotContentSourceAdminRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    spot_id: uuid.UUID
+    field_path: str
+    url: str
+    title: str
+    publisher: str | None = None
+    checked_at: datetime
+    verification_status: ContentSourceStatus
+    note: str | None = None
+    created_by: str | None = None
+    reviewed_by: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class SpotContentReviewUpdate(AdminWriteModel):
+    status: ContentReviewStatus
+    expected_updated_at: datetime | None = None
 
 
 def _bounded_json(value: Any, *, label: str, max_bytes: int = 64_000) -> Any:
@@ -233,6 +344,8 @@ class RegionCreate(AdminWriteModel):
     lat: float | None = Field(default=None, ge=-90, le=90)
     lon: float | None = Field(default=None, ge=-180, le=180)
     description: str | None = Field(default=None, max_length=20_000)
+    description_en: str | None = Field(default=None, max_length=20_000)
+    content_sources: list[dict[str, Any]] | None = None
     defaults: dict[str, Any] | None = None
     season: dict[str, Any] | None = None
     allow_duplicate: bool = False
@@ -256,7 +369,7 @@ class RegionCreate(AdminWriteModel):
     def _upper_country(cls, value: str | None) -> str | None:
         return value.upper() if value else value
 
-    @field_validator("defaults", "season")
+    @field_validator("defaults", "season", "content_sources")
     @classmethod
     def _limit_json(cls, value: Any, info) -> Any:
         return _bounded_json(value, label=info.field_name)
@@ -275,6 +388,12 @@ class RegionUpdate(AdminWriteModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     country: str | None = Field(default=None, min_length=2, max_length=2, pattern=r"^[A-Za-z]{2}$")
     description: str | None = Field(default=None, max_length=20_000)
+    description_en: str | None = Field(default=None, max_length=20_000)
+    content_sources: list[dict[str, Any]] | None = None
+    content_status: str | None = Field(
+        default=None,
+        pattern=r"^(unreviewed|in_review|verified|review_due|conflict)$",
+    )
     defaults: dict[str, Any] | None = None
     season: dict[str, Any] | None = None
     # See SpotUpdate.expected_updated_at.
@@ -292,7 +411,7 @@ class RegionUpdate(AdminWriteModel):
     def _upper_country(cls, value: str | None) -> str | None:
         return value.upper() if value else value
 
-    @field_validator("defaults", "season", "expected_values")
+    @field_validator("defaults", "season", "content_sources", "expected_values")
     @classmethod
     def _limit_json(cls, value: Any, info) -> Any:
         return _bounded_json(value, label=info.field_name)

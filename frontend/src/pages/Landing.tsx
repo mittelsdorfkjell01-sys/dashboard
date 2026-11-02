@@ -13,6 +13,7 @@ import { countryName } from "../lib/flags";
 import { MapIcon } from "../lib/icons";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 type SortMode = "recommended" | "az";
 
@@ -46,6 +47,7 @@ const SPOT_REVEAL_STEP = 40;
  *     a seamless hand-off.
  */
 export default function Landing() {
+  const { t } = useTranslation();
   const location = useLocation();
   const { user } = useAuth();
   // Global landing filters (opened from the "Filter" panel, top-right). "" = no
@@ -66,7 +68,6 @@ export default function Landing() {
   // other sports use level offsets, and the aggregate is always anonymous.
   const rowSport = filterSport || AGGREGATE_SPORT;
   const personalized = Boolean(user) && !ignorePersonalization;
-  const personalizedTitle = personalized && rowSport !== AGGREGATE_SPORT;
   // The three recommendation rows only make sense in "recommended" order.
   const showRows = sortMode === "recommended";
   const [currentRecommendationsVisible, setCurrentRecommendationsVisible] = useState(true);
@@ -270,7 +271,7 @@ export default function Landing() {
           <div className="mb-6 flex min-h-11 items-center justify-between gap-4">
             {showRows && currentRecommendationsVisible ? (
               <h2 className="text-lead font-semibold text-ink">
-                {personalizedTitle ? "Deine aktuellen Topspots" : "Aktuelle Topspots"}
+                {t("recommendations.currentTitle")}
               </h2>
             ) : (
               <span aria-hidden />
@@ -284,7 +285,7 @@ export default function Landing() {
                   className="hidden min-h-11 shrink-0 items-center gap-2 px-2 text-body font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70 lg:inline-flex"
                 >
                   <MapIcon className="text-lead" />
-                  <span className="hidden sm:inline">Karte</span>
+                  <span className="hidden sm:inline">{t("recommendations.map")}</span>
                 </Link>
               )}
               <LandingFilters
@@ -313,7 +314,7 @@ export default function Landing() {
           {showRows && (
             <>
               <RecommendationRow
-                title={personalizedTitle ? "Deine aktuellen Topspots" : "Aktuelle Topspots"}
+                title={t("recommendations.currentTitle")}
                 surface="now"
                 sport={rowSport}
                 personalized={personalized}
@@ -321,14 +322,14 @@ export default function Landing() {
                 onVisibilityChange={setCurrentRecommendationsVisible}
               />
               <RecommendationRow
-                title="Topspots in der nächsten Woche"
+                title={t("recommendations.nextWeekTitle")}
                 surface="next_week"
                 sport={rowSport}
                 personalized={personalized}
                 className="mt-12"
               />
               <RecommendationRow
-                title="Topspots in der nächsten Zeit"
+                title={t("recommendations.seasonTitle")}
                 surface="season"
                 sport={rowSport}
                 personalized={personalized}
@@ -340,7 +341,7 @@ export default function Landing() {
         </div>
 
         <div className="mx-auto max-w-page px-4 pb-16 pt-12 sm:px-8">
-          <h2 className="text-lead font-semibold text-ink">Alle Spots entdecken</h2>
+          <h2 className="text-lead font-semibold text-ink">{t("recommendations.allSpots")}</h2>
 
           {spotsError && spots.length === 0 && (
             <div className="mt-6 max-w-2xl">

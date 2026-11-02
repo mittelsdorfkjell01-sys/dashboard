@@ -6,14 +6,19 @@ import {
   getSubmissionsState,
   refreshFavorites,
   refreshSubmissions,
+  refreshVisits,
   FAVORITES_EVENT,
   SUBMISSIONS_EVENT,
+  VISITS_EVENT,
+  getVisitsState,
   type FavoriteSpot,
   type MySubmission,
   type CollectionState,
+  type VisitedSpot,
 } from "../../lib/account";
 import { initialsOf } from "../../lib/initials";
 import { sportLabel } from "../../lib/labels";
+import { spotPath } from "../../lib/spotRoutes";
 import {
   BookmarkIcon,
   SpotAddIcon,
@@ -38,17 +43,22 @@ export default function Profil() {
   const { user } = useAuth();
   const [favState, setFavState] = useState<CollectionState<FavoriteSpot>>(getFavoritesState);
   const [subState, setSubState] = useState<CollectionState<MySubmission>>(getSubmissionsState);
+  const [visitState, setVisitState] = useState<CollectionState<VisitedSpot>>(getVisitsState);
 
   useEffect(() => {
     const refreshFavs = () => setFavState(getFavoritesState());
     const refreshSubs = () => setSubState(getSubmissionsState());
+    const syncVisits = () => setVisitState(getVisitsState());
     window.addEventListener(FAVORITES_EVENT, refreshFavs);
     window.addEventListener(SUBMISSIONS_EVENT, refreshSubs);
+    window.addEventListener(VISITS_EVENT, syncVisits);
     void refreshFavorites();
     void refreshSubmissions();
+    void refreshVisits();
     return () => {
       window.removeEventListener(FAVORITES_EVENT, refreshFavs);
       window.removeEventListener(SUBMISSIONS_EVENT, refreshSubs);
+      window.removeEventListener(VISITS_EVENT, syncVisits);
     };
   }, []);
 
@@ -56,7 +66,7 @@ export default function Profil() {
 
   const savedCount = favState.items.length;
   const addedCount = subState.items.length;
-  const visitedCount = 0; // No visits backend yet — see BesuchteSpots.
+  const visitedCount = visitState.items.length;
   const sports = user.preferences?.sports ?? [];
 
   return (
@@ -133,7 +143,13 @@ export default function Profil() {
             }
           />
           <PlannedBox>
-            <p className="max-w-[46ch] text-ui text-muted">Die Spots, an denen du wirklich warst, sammeln sich hier.</p>
+            {visitState.items.length > 0 ? (
+              <ul className="space-y-2">
+                {visitState.items.slice(0, 3).map((visit) => (
+                  <li key={visit.id}><Link to={spotPath({ id: visit.spotId, name: visit.name })} className="text-ui font-semibold text-ink underline underline-offset-4">{visit.name}</Link></li>
+                ))}
+              </ul>
+            ) : <p className="max-w-[46ch] text-ui text-muted">Die Spots, an denen du wirklich warst, sammeln sich hier.</p>}
             <Link
               to="/search"
               className="mt-4 inline-flex items-center gap-2 text-ui font-semibold text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"

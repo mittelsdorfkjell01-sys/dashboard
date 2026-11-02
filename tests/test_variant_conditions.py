@@ -18,6 +18,7 @@ from app.admin.constants import (
 )
 from app.scoring.context import scoring_sport, variant_editorial, variant_is_offered
 from app.scoring.engine import SeasonalRuleScorer
+from tests.content_helpers import verify_spot_content
 
 
 # --- pure vocabulary / validation ------------------------------------------
@@ -235,6 +236,7 @@ def _create(admin, region_id, publish=False, **overrides):
             "url": "https://images.example.com/hero.jpg", "source": "unsplash",
             "license": "Unsplash License", "credit": "Test",
         })
+        verify_spot_content(admin, sid)
         live = admin.post(f"/admin/spots/{sid}/live")
         assert live.status_code == 200, live.text
     return resp

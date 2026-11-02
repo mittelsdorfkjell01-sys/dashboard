@@ -18,6 +18,10 @@ class RegionRead(BaseModel):
     center: GeoPoint | None = None
     bounds: GeoPolygon | None = None
     description: str | None = None
+    description_en: str | None = None
+    content_sources: list[dict[str, Any]] = []
+    content_status: str = "unreviewed"
+    content_reviewed_at: datetime | None = None
     image: dict[str, Any] | None = None
     season: dict[str, Any] | None = None
     defaults: dict[str, Any] | None = None
@@ -44,6 +48,10 @@ class RegionRead(BaseModel):
             center=GeoPoint.from_geo(region.center),
             bounds=GeoPolygon.from_geo(region.bounds),
             description=region.description,
+            description_en=getattr(region, "description_en", None),
+            content_sources=list(getattr(region, "content_sources", None) or []),
+            content_status=getattr(region, "content_status", "unreviewed"),
+            content_reviewed_at=getattr(region, "content_reviewed_at", None),
             image=(
                 compact_image(image)
                 if (image := upgrade_legacy(region.image)) is not None

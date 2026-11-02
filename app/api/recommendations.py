@@ -21,7 +21,8 @@ from app.recommendations.multisport import (
     SCORED_SPORTS,
     scored_recommendations,
 )
-from app.recommendations.service import RecommendationSurface, bucket_location, recommendations
+from app.recommendations.service import RecommendationSurface, bucket_location, catalog_discovery, recommendations
+from app.weather.decision_gates import capability_status
 from app.schemas import SpotSummary
 from app.scoring.rider.resolve import resolve_rider
 from sqlalchemy import select
@@ -97,6 +98,35 @@ def get_recommendations(
     # toggle) ranks a signed-in visitor exactly like a logged-out one: no
     # profile, and the shared edge-cacheable variant.
     effective_account = account if personalized else None
+
+    # Current-condition ordering is a product decision, not merely a forecast
+    # display. It stays fail-closed until evidence exists for this exact sport,
+    # region and horizon. The fallback is transparent catalogue order and never
+    # performs provider I/O.
+    if surface != RecommendationSurface.SEASON:
+        horizon = "48_240h" if surface == RecommendationSurface.NEXT_WEEK else "0_48h"
+        gate_sport = sport if sport != AGGREGATE_SPORT else "all"
+        gate = capability_status(
+            db, "forecast_sorting", sport=gate_sport,
+            region_id=region_id, horizon_bucket=horizon,
+        )
+        response.headers["X-Surfwinddata-Decision-Mode"] = (
+            "forecast-gated" if gate["ready"] else "catalog-manual"
+        )
+        if gate["ready"]:
+            response.headers["X-Surfwinddata-Gate-Evidence"] = ",".join(gate["evidence_ids"])
+        else:
+            rows = catalog_discovery(
+                db,
+                sport=None if sport == AGGREGATE_SPORT else sport,
+                region_id=region_id,
+                limit=limit,
+            )
+            set_recommendation_cache(response, private=False)
+            response.headers["Server-Timing"] = (
+                f'recommendations;dur={(time.perf_counter() - started) * 1000:.1f}'
+            )
+            return _safe_summaries(rows, db)
 
     if sport == "kitesurf":
         # Personalized rider-band engine (the average-rider band when anonymous).

@@ -10,6 +10,11 @@ EXPECTED_TABLES = {
     "notifications",
     "scoring_params",
     "spot_audit",
+    "spot_content_sources",
+    "trips",
+    "trip_stops",
+    "spot_visits",
+    "decision_support_gates",
     "required_fields",
     "tide_profiles",
     "tide_profile_revisions",
@@ -66,6 +71,56 @@ def test_all_tables_created(db):
     inspector = inspect(db.get_bind())
     tables = set(inspector.get_table_names())
     assert EXPECTED_TABLES.issubset(tables)
+
+
+def test_content_governance_schema_matches_review_contract(db):
+    inspector = inspect(db.get_bind())
+    spot_columns = {column["name"] for column in inspector.get_columns("spots")}
+    assert {
+        "content_status", "content_reviewed_at", "content_reviewed_by",
+        "content_review_due_at",
+    } <= spot_columns
+
+    source_columns = {
+        column["name"] for column in inspector.get_columns("spot_content_sources")
+    }
+    assert {
+        "id", "spot_id", "field_path", "url", "title", "publisher",
+        "checked_at", "verification_status", "note", "created_by",
+        "reviewed_by", "created_at", "updated_at",
+    } <= source_columns
+    unique_constraints = {
+        constraint["name"]
+        for constraint in inspector.get_unique_constraints("spot_content_sources")
+    }
+    assert "uq_spot_content_sources_field_url" in unique_constraints
+
+
+def test_region_content_and_trip_planner_schema(db):
+    inspector = inspect(db.get_bind())
+    region_columns = {column["name"] for column in inspector.get_columns("regions")}
+    assert {
+        "description_en", "content_sources", "content_status",
+        "content_reviewed_at", "content_reviewed_by",
+    } <= region_columns
+
+    trip_columns = {column["name"] for column in inspector.get_columns("trips")}
+    assert {"days", "share_token", "share_notes"} <= trip_columns
+    trip_stop_columns = {column["name"] for column in inspector.get_columns("trip_stops")}
+    assert {"role", "spot_updated_at"} <= trip_stop_columns
+    trip_columns = {column["name"] for column in inspector.get_columns("trips")}
+    assert {"app_user_id", "title", "start_date", "end_date", "checklist", "status"} <= trip_columns
+    stop_columns = {column["name"] for column in inspector.get_columns("trip_stops")}
+    assert {"trip_id", "spot_id", "spot_name", "position", "planned_date", "notes"} <= stop_columns
+    visit_columns = {column["name"] for column in inspector.get_columns("spot_visits")}
+    assert {"app_user_id", "spot_id", "visited_at", "outcome", "notes"} <= visit_columns
+    gate_columns = {column["name"] for column in inspector.get_columns("decision_support_gates")}
+    assert {
+        "data_kind", "sport", "region_id", "horizon_bucket", "source_model",
+        "status", "artifact_uri", "artifact_sha256", "dataset_start", "dataset_end",
+        "observation_count", "distinct_days", "coverage_ratio", "quality_ratio",
+        "metrics", "policy_version", "monitor_fresh_at", "reviewed_at", "reviewed_by",
+    } <= gate_columns
 
 
 def test_migration_0081_classifies_only_existing_published_spots(db):
