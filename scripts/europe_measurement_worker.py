@@ -36,6 +36,10 @@ def _catalog_due(
     station_limit: int,
 ) -> bool:
     state = db.get(WeatherStationCatalogState, provider)
+    active = db.scalar(select(func.count()).select_from(WeatherStation).where(
+        WeatherStation.campaign_key == campaign_id,
+        WeatherStation.active.is_(True),
+    )) or 0
     qualified = db.scalar(select(func.count()).select_from(WeatherStation).where(
         WeatherStation.campaign_key == campaign_id,
         WeatherStation.active.is_(True),
@@ -46,10 +50,20 @@ def _catalog_due(
         WeatherStation.representativeness_status != "unreviewed",
     )) or 0
     return (
-        qualified < station_limit
+        active != station_limit
+        or qualified < station_limit
         or state is None
         or state.last_success_at is None
         or state.last_success_at <= now - timedelta(hours=20)
+    )
+
+
+def _observation_import_is_partial(report: dict) -> bool:
+    """Treat any station-provider failure as a partial campaign cycle."""
+    provider_reports = report.get("provider_reports") or {}
+    return bool(report.get("errors")) or any(
+        int(item.get("errors", 0) or 0) > 0
+        for item in provider_reports.values()
     )
 
 
@@ -176,10 +190,7 @@ def run_cycle(*, now: datetime | None = None) -> dict:
             )
             partial = (
                 exact.get("status") != "available"
-                or any(
-                    item.get("status") not in {"success", "no_work"}
-                    for item in (observations.get("providers") or {}).values()
-                )
+                or _observation_import_is_partial(observations)
             )
             db.add(WeatherStationCaptureCycle(
                 job_type="campaign",

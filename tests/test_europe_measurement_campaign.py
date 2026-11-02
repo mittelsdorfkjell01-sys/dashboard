@@ -5,7 +5,10 @@ from app.weather.europe_campaign import load_campaign, select_balanced_stations
 from app.weather.providers.common import ObservationStation
 from app.weather.observation_worker import sync_campaign_stations
 from scripts.europe_measurement_status import health_status, status
-from scripts.europe_measurement_worker import validate_hosted_environment
+from scripts.europe_measurement_worker import (
+    _observation_import_is_partial,
+    validate_hosted_environment,
+)
 
 
 def test_campaign_is_exactly_three_weeks_and_shadow_only():
@@ -53,6 +56,23 @@ def test_hosted_worker_requires_a_dedicated_shadow_database_identity():
         assert str(exc) == "hosted_measurement_database_identity_mismatch"
     else:
         raise AssertionError("production-like database identity must fail closed")
+
+
+def test_campaign_worker_reads_observation_provider_reports_contract():
+    assert not _observation_import_is_partial({
+        "providers": ["eumetnet_esoh"],
+        "errors": 0,
+        "provider_reports": {
+            "eumetnet_esoh": {"stations": 64, "errors": 0},
+        },
+    })
+    assert _observation_import_is_partial({
+        "providers": ["eumetnet_esoh"],
+        "errors": 1,
+        "provider_reports": {
+            "eumetnet_esoh": {"stations": 64, "errors": 1},
+        },
+    })
 
 
 def test_campaign_health_requires_fresh_shadow_evidence():
