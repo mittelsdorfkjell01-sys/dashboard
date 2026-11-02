@@ -74,6 +74,12 @@ def capture_exact_cycle(
     targets.sort(key=lambda item: (item[0], str(item[1])))
     if not targets:
         return {"tiles": 0, "assets": 0, "errors": {}, "status": "no_locations"}
+    # Do not hold a pooled database connection while downloading model assets.
+    # Hosted captures can spend several minutes on provider I/O, long enough
+    # for Neon or another pooler to recycle the idle connection.  The target
+    # rows above are plain values, so a rollback safely releases the read-only
+    # transaction; persistence below starts a fresh transaction on demand.
+    db.rollback()
     point_limit = max(1, point_limit or limit)
     cycle = int(instant.timestamp() // 600)
     offset = (cycle * point_limit) % len(targets)
