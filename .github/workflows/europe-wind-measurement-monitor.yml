@@ -18,7 +18,11 @@ jobs:
       TZ: UTC
       APP_ENV: development
       DEPLOYMENT_MODE: development
-      DATABASE_URL: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_2: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_2 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_3: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_3 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_4: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_4 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -32,6 +36,9 @@ jobs:
 
       - name: Install status dependencies
         run: pip install -r requirements.txt
+
+      - name: Select bounded measurement database shard
+        run: python -m scripts.europe_measurement_shards --github-env
 
       - name: Require fresh, isolated campaign evidence
         run: python -m scripts.europe_measurement_status --require-healthy

@@ -1,0 +1,40 @@
+{
+  "campaign_id": "europe-wind-shadow-2026-11-v2",
+  "shards": [
+    {
+      "number": 1,
+      "neon_project_id": "icy-mode-69543754",
+      "starts_at": "2026-10-31T17:00:00Z",
+      "ends_at": "2026-11-05T00:00:00Z",
+      "database_id": "surfwind_measurement_202611_v2"
+    },
+    {
+      "number": 2,
+      "neon_project_id": "morning-mud-57183681",
+      "starts_at": "2026-11-05T00:00:00Z",
+      "ends_at": "2026-11-09T06:00:00Z",
+      "database_id": "surfwind_measurement_202611_v2_s2"
+    },
+    {
+      "number": 3,
+      "neon_project_id": "super-frog-77014286",
+      "starts_at": "2026-11-09T06:00:00Z",
+      "ends_at": "2026-11-13T12:00:00Z",
+      "database_id": "surfwind_measurement_202611_v2_s3"
+    },
+    {
+      "number": 4,
+      "neon_project_id": "wispy-hat-26077841",
+      "starts_at": "2026-11-13T12:00:00Z",
+      "ends_at": "2026-11-17T18:00:00Z",
+      "database_id": "surfwind_measurement_202611_v2_s4"
+    },
+    {
+      "number": 5,
+      "neon_project_id": "rough-hill-65985492",
+      "starts_at": "2026-11-17T18:00:00Z",
+      "ends_at": "2026-11-21T17:00:00Z",
+      "database_id": "surfwind_measurement_202611_v2_s5"
+    }
+  ]
+}
