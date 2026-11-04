@@ -52,12 +52,11 @@ def catalog_discovery(
 ) -> list[Spot]:
     """Stable, forecast-free fallback while decision gates are closed.
 
-    Only a verified editorial relevance tier affects order. Everything else is
+    The editorial relevance tier affects order. Spots without a tier remain
     alphabetical, so missing weather evidence cannot masquerade as a current
     recommendation.
     """
     tier = case(
-        (Spot.content_status != "verified", 4),
         (Spot.editorial_classification == "world_class", 0),
         (Spot.editorial_classification == "worth_trip", 1),
         (Spot.editorial_classification == "worth_checking_out", 2),

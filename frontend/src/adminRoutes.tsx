@@ -15,7 +15,6 @@ import { AdminThemeProvider } from "./components/admin/theme";
 const AdminLogin = React.lazy(() => import("./pages/AdminLogin"));
 const AdminHome = React.lazy(() => import("./pages/AdminHome"));
 const AdminSpots = React.lazy(() => import("./pages/AdminSpots"));
-const AdminCatalogCoverage = React.lazy(() => import("./pages/AdminCatalogCoverage"));
 const AdminHero = React.lazy(() => import("./pages/AdminHero"));
 const AdminRegions = React.lazy(() => import("./pages/AdminRegions"));
 const AdminRegionForm = React.lazy(() => import("./pages/AdminRegionForm"));
@@ -57,7 +56,6 @@ const adminRoutes: RouteObject[] = [
         children: [
           { index: true, element: <AdminHome /> },
           { path: "spots", element: <AdminSpots /> },
-          { path: "catalog", element: <AdminCatalogCoverage /> },
           { path: "hero", element: <AdminHero /> },
           { path: "weather", element: <AdminWeatherProfiles /> },
           { path: "weather/:spotId", element: <AdminWeatherProfile /> },

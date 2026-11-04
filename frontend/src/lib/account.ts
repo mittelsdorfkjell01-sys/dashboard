@@ -47,8 +47,6 @@ export interface FavoriteSpot {
   sports?: string[];
   levels?: string[];
   waterCharacter?: string[];
-  contentStatus?: "unreviewed" | "in_review" | "verified" | "review_due" | "conflict";
-  classification?: "world_class" | "worth_trip" | "worth_checking_out" | null;
   addedAt: string;
 }
 export interface VisitedSpot {

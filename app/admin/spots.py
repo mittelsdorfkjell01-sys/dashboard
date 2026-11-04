@@ -277,13 +277,7 @@ def update_spot(
                 merged[key] = value
         spot.editorial = merged or None
 
-    from app.admin.content_governance import mark_content_changed
-
-    content_review_invalidated = mark_content_changed(spot, fields=set(data))
-
     changes: dict[str, Any] = {"fields": sorted(data)}
-    if content_review_invalidated:
-        changes["content_review"] = "review_due"
     if duplicate_candidates:
         changes["duplicate_override"] = [item["id"] for item in duplicate_candidates]
     record_audit(db, spot.id, "update", changes, actor)
@@ -339,9 +333,6 @@ def update_spot_metadata(
         else:
             merged[key] = value
     spot.editorial = merged
-    from app.admin.content_governance import mark_content_changed
-
-    mark_content_changed(spot, fields={"editorial"})
     record_audit(db, spot.id, "update", {"editorial_keys": sorted(editorial or {})}, actor)
     db.commit()
     db.refresh(spot)
@@ -366,9 +357,6 @@ def override_auto_field(
     previous = overrides.get(field)
     overrides[field] = value
     spot.overrides = overrides
-    from app.admin.content_governance import mark_content_changed
-
-    mark_content_changed(spot, fields={field})
     record_audit(
         db, spot.id, "override",
         {"field": field, "auto": auto_value, "from": previous, "to": value}, actor,
@@ -388,9 +376,6 @@ def revert_override(
         raise ValueError(f"no override for field: {field!r}")
     previous = overrides.pop(field)
     spot.overrides = overrides or None
-    from app.admin.content_governance import mark_content_changed
-
-    mark_content_changed(spot, fields={field})
     record_audit(db, spot.id, "revert", {"field": field, "from": previous}, actor)
     db.commit()
     db.refresh(spot)
@@ -422,9 +407,6 @@ def manage_spot_image(
     if retire_previous and old_url != next_image["url"]:
         retire_replaced_hero_rows(db, "spot", spot.id, old_url)
     spot.image = next_image
-    from app.admin.content_governance import mark_content_changed
-
-    mark_content_changed(spot, fields={"image"})
     if retire_previous and previous and old_url != next_image["url"]:
         retire_usage_if_unreferenced(
             db, entity_type="spot", entity_id=spot.id,
@@ -448,9 +430,6 @@ def update_image_attribution(
     spot.image = with_fields(
         spot.image, credit=credit, license=license, source=source
     )
-    from app.admin.content_governance import mark_content_changed
-
-    mark_content_changed(spot, fields={"image"})
     record_audit(db, spot.id, "image", {"attribution": True}, actor)
     db.commit()
     db.refresh(spot)

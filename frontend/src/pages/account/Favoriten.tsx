@@ -101,7 +101,6 @@ export default function Favoriten() {
       [t("favorites.sports"), (item: FavoriteSpot) => (item.sports ?? []).map(sportLabel).join(", ")],
       [t("favorites.level"), (item: FavoriteSpot) => (item.levels ?? []).join(", ")],
       [t("favorites.water"), (item: FavoriteSpot) => (item.waterCharacter ?? []).join(", ")],
-      [t("favorites.review"), (item: FavoriteSpot) => item.contentStatus === "verified" ? t("favorites.verified") : t("favorites.pending")],
       [t("favorites.region"), (item: FavoriteSpot) => item.region ?? ""],
     ] as Array<[string, (item: FavoriteSpot) => string]>).map(([label, value]) => <tr key={label} className="border-b border-line last:border-0"><th className="p-3 font-semibold text-muted">{label}</th>{state.items.map((item) => <td key={item.id} className="p-3 text-ink-soft">{value(item) || t("favorites.unknown")}</td>)}</tr>)}</tbody></table></div></section>}
     </AccountPage>

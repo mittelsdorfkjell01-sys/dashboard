@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from app.admin.readiness import (
@@ -20,26 +19,12 @@ _IMAGE = {"url": "u", "source": "unsplash", "license": "Unsplash License", "cred
 
 
 def _spot(**kw):
-    now = datetime.now(timezone.utc)
-    source_fields = (
-        "location", "sports", "level", "editorial.description",
-        "editorial.safety_notice",
-    )
     base = dict(
         sports=["kitesurf"], water_type="sea", bottom_type="sand", level="beginner",
         water_character="chop", style=[], facilities=None,
         facing=45, editorial=None, climatology=None, image=None, overrides=None,
         name="X", model_pref=None, confidence=None,
-        location=object(), content_status="verified", content_reviewed_at=now,
-        content_review_due_at=now + timedelta(days=365),
-        content_sources=[
-            SimpleNamespace(
-                field_path=field,
-                verification_status="verified",
-                checked_at=now,
-            )
-            for field in source_fields
-        ],
+        location=object(),
     )
     base.update(kw)
     return SimpleNamespace(**base)

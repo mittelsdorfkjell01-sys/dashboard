@@ -125,9 +125,6 @@ export default function RegionDetail() {
 
   const description =
     (i18n.resolvedLanguage === "en" ? backendRegion.description_en : backendRegion.description) ?? "";
-  const descriptionSource = backendRegion.content_sources?.find(
-    (source) => source.field === "description" && source.url,
-  );
 
   // A spot photo must not silently present itself as representative of a whole
   // region. Without a reviewed region image, use the designed fallback.
@@ -196,16 +193,6 @@ export default function RegionDetail() {
         {/* Lede */}
         <SectionBand tone="page" pad="md">
           <Lede>{description || t("region.descriptionPending")}</Lede>
-          {backendRegion.content_status === "verified" && (
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-ui text-muted">
-              <span>{t("region.verified")}</span>
-              {descriptionSource && (
-                <a href={descriptionSource.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink underline underline-offset-4">
-                  {descriptionSource.title || t("region.source")} ↗
-                </a>
-              )}
-            </div>
-          )}
         </SectionBand>
 
         <SectionBand tone="page" pad="md" width="spotBody">

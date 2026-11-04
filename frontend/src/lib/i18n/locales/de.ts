@@ -54,8 +54,7 @@ export const de = {
   region: {
     notFound: "Region nicht gefunden", overview: "Übersicht", backOverview: "Zurück zur Übersicht",
     spotCount_one: "{{count}} Spot in der Region", spotCount_other: "{{count}} Spots in der Region",
-    descriptionPending: "Die Regionsbeschreibung wird noch redaktionell geprüft.", verified: "Inhalt geprüft",
-    source: "Quelle zur Regionsbeschreibung", top: "Spot-Auswahl in {{name}}", when: "Wann hinfahren",
+    descriptionPending: "Für diese Region ist noch keine Beschreibung verfügbar.", top: "Spot-Auswahl in {{name}}", when: "Wann hinfahren",
     windUnknown: "Windverfügbarkeit für Regionen: Unbekannt", windHelp: "Warum ist die regionale Windverfügbarkeit noch unbekannt?",
     spots: "Die Spots", noSpots: "Keine Spots für diese Auswahl.", map: "Auf der Karte", similar: "Ähnliche Regionen",
   },
@@ -87,7 +86,7 @@ export const de = {
   favorites: {
     title: "Gespeichert", emptyTitle: "Noch nichts gespeichert", emptyBody: "Tippe an einem Spot auf das Lesezeichen, um ihn hier zu sammeln.", discover: "Spots entdecken",
     count_one: "{{count}} Spot gespeichert", count_other: "{{count}} Spots gespeichert", removeFailed: "Spot konnte nicht entfernt werden. Bitte versuche es erneut.", remove: "{{name}} aus Gespeichert entfernen", plan: "Planen",
-    compare: "Spots vergleichen", compareHint: "Es werden nur vorhandene, strukturierte Angaben verglichen. Fehlende Werte bleiben unbekannt.", property: "Eigenschaft", sports: "Sportarten", level: "Niveau", water: "Wassercharakter", review: "Inhaltsprüfung", region: "Region", verified: "Redaktionell geprüft", pending: "Prüfung offen", unknown: "Unbekannt",
+    compare: "Spots vergleichen", compareHint: "Es werden nur vorhandene, strukturierte Angaben verglichen. Fehlende Werte bleiben unbekannt.", property: "Eigenschaft", sports: "Sportarten", level: "Niveau", water: "Wassercharakter", region: "Region", unknown: "Unbekannt",
   },
   account: {
     loading: "Konto wird geladen …",

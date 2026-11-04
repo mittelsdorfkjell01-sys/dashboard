@@ -14,8 +14,7 @@ export const en = {
   region: {
     notFound: "Region not found", overview: "Overview", backOverview: "Back to overview",
     spotCount_one: "{{count}} spot in this region", spotCount_other: "{{count}} spots in this region",
-    descriptionPending: "The region description is still being reviewed.", verified: "Content reviewed",
-    source: "Source for the region description", top: "Spot selection in {{name}}", when: "When to go",
+    descriptionPending: "No description is available for this region yet.", top: "Spot selection in {{name}}", when: "When to go",
     windUnknown: "Regional wind availability: unknown", windHelp: "Why is regional wind availability still unknown?",
     spots: "The spots", noSpots: "No spots match this selection.", map: "On the map", similar: "Similar regions",
   },
@@ -47,7 +46,7 @@ export const en = {
   favorites: {
     title: "Saved", emptyTitle: "Nothing saved yet", emptyBody: "Use the bookmark on a spot to collect it here.", discover: "Discover spots",
     count_one: "{{count}} spot saved", count_other: "{{count}} spots saved", removeFailed: "The spot could not be removed. Please try again.", remove: "Remove {{name}} from saved spots", plan: "Plan",
-    compare: "Compare spots", compareHint: "Only available structured details are compared. Missing values remain unknown.", property: "Property", sports: "Sports", level: "Level", water: "Water character", review: "Content review", region: "Region", verified: "Editorially reviewed", pending: "Review pending", unknown: "Unknown",
+    compare: "Compare spots", compareHint: "Only available structured details are compared. Missing values remain unknown.", property: "Property", sports: "Sports", level: "Level", water: "Water character", region: "Region", unknown: "Unknown",
   },
   account: { loading: "Loading account …", unavailableTitle: "Account currently unavailable" },
   accountNav: { profile: "Profile", setup: "My setup", saved: "Saved", visited: "Spots visited", trips: "Trip planner", addSpots: "Add spots", settings: "Settings" },
