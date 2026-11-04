@@ -511,33 +511,23 @@ test.describe("media picker", () => {
     );
   });
 
-  test("the right edit rail scrolls while the pointer is over it", async ({ page }) => {
+  test("the right edit rail remains in the normal page flow", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 600 });
     await page.goto(`/admin/spot/${SPOT_ID}/edit`);
 
     const rail = page.locator("[data-spot-edit-rail]");
     await expect(rail).toBeVisible();
-    await rail.evaluate((element) => {
-      element.style.height = "180px";
-      element.style.maxHeight = "180px";
-    });
-
-    const metrics = await rail.evaluate((element) => {
+    const styles = await rail.evaluate((element) => {
       const styles = window.getComputedStyle(element);
       return {
+        position: styles.position,
         overflowY: styles.overflowY,
-        scrollbarWidth: styles.scrollbarWidth,
-        scrollHeight: element.scrollHeight,
-        clientHeight: element.clientHeight,
+        maxHeight: styles.maxHeight,
       };
     });
-    expect(metrics.overflowY).toBe("auto");
-    expect(metrics.scrollbarWidth).not.toBe("none");
-    expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
-
-    await rail.hover();
-    await page.mouse.wheel(0, 300);
-    await expect.poll(() => rail.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    expect(styles.position).toBe("static");
+    expect(styles.overflowY).toBe("visible");
+    expect(styles.maxHeight).toBe("none");
   });
 
   test("keyboard navigation and Escape work in the grid", async ({ page }) => {

@@ -1399,19 +1399,12 @@ export default function AdminSpotForm() {
 
         </div>
 
-        {/* Right column: sticky on wide viewports. As a grid track it starts on
-            the same row as "Basisdaten", so its top aligns with that card when
-            scrolled to the top. Below xl it stacks below the form as before.
-            The top offset reads the admin header's real rendered height from
-            --admin-header-h (set in AdminShell) instead of a guessed pixel
-            value, so the panel locks flush under the header with no visible
-            creep. When its content exceeds the viewport, data-lenis-prevent
-            gives mouse-wheel and touch scrolling to this nested rail instead
-            of the page-wide smooth-scroll handler. */}
+        {/* Right column: part of the normal page flow. It starts on the same
+            grid row as "Basisdaten", but deliberately does not follow the
+            operator while the long form scrolls. */}
         <aside
           data-spot-edit-rail
-          data-lenis-prevent
-          className="mt-8 space-y-4 xl:sticky xl:top-[var(--admin-header-h,64px)] xl:mt-0 xl:max-h-[calc(100vh-var(--admin-header-h,64px)-16px)] xl:self-start xl:overflow-y-auto xl:overscroll-y-contain xl:pr-2 xl:[scrollbar-gutter:stable]"
+          className="mt-8 space-y-4 xl:mt-0 xl:self-start"
         >
           {isEdit && id ? (
             <div id="f-operations" className="scroll-mt-24">

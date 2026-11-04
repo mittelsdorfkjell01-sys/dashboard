@@ -252,6 +252,12 @@
 .admin-scope .bg-ink {
   background-color: var(--a-primary);
 }
+/* Shared chips use a white label on the public ocean fill. In the admin dark
+   theme that fill is intentionally inverted to near-white, so the label must
+   use the matching on-primary token instead of remaining white-on-white. */
+.admin-scope .swd-chip-control[aria-checked="true"] {
+  color: var(--a-primary-fg);
+}
 .admin-scope .bg-teal-hover,
 .admin-scope .hover\:bg-teal-hover:hover {
   background-color: var(--a-primary-hover);
