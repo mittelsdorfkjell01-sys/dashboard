@@ -2,13 +2,7 @@
 // src/data/*.ts alongside mock data; the mock data is gone (all pages read the
 // API now), the types stay.
 
-import type {
-  ContentReviewStatus,
-  EditorialClassification,
-  FacilityMap,
-  SpotContentSource,
-  SpotOrigin,
-} from "./api";
+import type { EditorialClassification, FacilityMap, SpotOrigin } from "./api";
 import type { CreditSource } from "./imageCredit";
 
 // --- spot / region view models ---------------------------------------------
@@ -48,7 +42,7 @@ export interface Spot {
   regionId?: string;
   sports?: string[];
   description?: string;
-  /** Redaktionell geprüfter, statischer Sicherheitshinweis zum Spot. */
+  /** Statischer Sicherheitshinweis zum Spot. */
   safetyNotice?: string;
   level?: string[];
   waterTypes?: string[];
@@ -79,13 +73,6 @@ export interface Spot {
   origin?: SpotOrigin;
   /** Optional editorial travel classification; independent of authorship. */
   editorialClassification?: EditorialClassification | null;
-  /** Concise editorial reason for the travel-relevance classification. */
-  classificationReason?: string;
-  /** Review maturity is independent from publication, origin and relevance. */
-  contentStatus?: ContentReviewStatus;
-  contentReviewedAt?: string | null;
-  contentReviewDueAt?: string | null;
-  contentSources?: SpotContentSource[];
   /** Name der Person, die einen Community-Spot eingetragen hat. */
   contributorName?: string | null;
   /** Weighted monthly daylight availability for 15–20 kt from active V2. */

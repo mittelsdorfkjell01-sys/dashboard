@@ -95,18 +95,11 @@ export function buildSpotConditionHints(
 ): SpotConditionHint[] {
   const hints: SpotConditionHint[] = [];
   if (spot.safetyNotice?.trim()) {
-    const source = spot.contentSources?.find(
-      (item) => item.field_path === "editorial.safety_notice" && item.verification_status === "verified",
-    );
     hints.push({
       id: "safety",
       kind: "safety",
       sentence: spot.safetyNotice.trim(),
       sourceLabel: "Redaktioneller Sicherheitshinweis",
-      ...(source ? {
-        timing: `Quelle geprüft: ${formatCheckedDate(source.checked_at)}`,
-        sourceUrl: source.url,
-      } : {}),
     });
   }
   const hour = forecast?.hour;
@@ -148,11 +141,4 @@ export function buildSpotConditionHints(
     hints.push({ id: "bottom", kind: "bottom", sentence: bottom, sourceLabel: "Geprüftes Spotprofil" });
   }
   return hints;
-}
-
-function formatCheckedDate(value: string): string {
-  const parsed = validDate(value);
-  return parsed
-    ? new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" }).format(parsed)
-    : "Datum unbekannt";
 }

@@ -20,7 +20,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -29,9 +28,9 @@ from app.admin.constants import SPORTS
 from app.admin.duplicates import find_spot_duplicates
 from app.db.session import SessionLocal
 from app.media.image_object import CANONICAL_KEYS, build_image
-from app.models import Region, Spot, SpotContentSource
+from app.models import Region, Spot
 from app.names import normalize_name
-from app.schemas.admin import SpotContentSourceCreate, SpotCreate
+from app.schemas.admin import SpotCreate
 from app.config import get_settings
 
 
@@ -41,7 +40,7 @@ ARRAY_FIELDS = {
 JSON_FIELDS = {"editorial", "facilities", "image"}
 ALLOWED_FIELDS = {
     "slug", "name", "region_slug", "lat", "lon", "location", "description",
-    "facing", "model_pref", "editorial_classification", "content_sources",
+    "facing", "model_pref", "editorial_classification",
     *ARRAY_FIELDS, *JSON_FIELDS,
 }
 REQUIRED_FIELDS = {"slug", "name", "region_slug", "sports"}
@@ -168,31 +167,6 @@ def normalize_row(raw: dict[str, Any], row_number: int) -> dict[str, Any]:
         except (TypeError, ValueError) as exc:
             raise ImportFormatError(f"image: {exc}") from exc
 
-    if "content_sources" in row:
-        raw_sources = _parse_json_cell(row["content_sources"], "content_sources")
-        if not isinstance(raw_sources, list):
-            raise ImportFormatError("content_sources: erwartet eine Liste")
-        sources: list[dict[str, Any]] = []
-        for index, source in enumerate(raw_sources, start=1):
-            if not isinstance(source, dict):
-                raise ImportFormatError(
-                    f"content_sources[{index}]: erwartet ein Objekt"
-                )
-            if source.get("verification_status", "unreviewed") != "unreviewed":
-                raise ImportFormatError(
-                    f"content_sources[{index}]: Batch-Import darf Quellen nicht vorab verifizieren"
-                )
-            try:
-                validated_source = SpotContentSourceCreate.model_validate({
-                    **source, "verification_status": "unreviewed"
-                })
-            except ValidationError as exc:
-                raise ImportFormatError(
-                    f"content_sources[{index}]: {exc}"
-                ) from exc
-            sources.append(validated_source.to_data())
-        row["content_sources"] = sources
-
     editorial = dict(row.get("editorial") or {})
     if "description" in row:
         editorial["description"] = str(row.pop("description")).strip()
@@ -267,7 +241,6 @@ def import_spots(
                 raise ImportFormatError("Region nicht gefunden")
             payload = {**row, "region_id": region.id, "allow_duplicate": allow_duplicates}
             image = payload.pop("image", None)
-            content_sources = payload.pop("content_sources", [])
             validated = SpotCreate.model_validate(payload)
             existing_spot = db.scalar(
                 select(Spot.id).where(
@@ -309,18 +282,6 @@ def import_spots(
             )
             if image is not None:
                 spot.image = image
-            for source in content_sources:
-                db.add(SpotContentSource(
-                    spot_id=spot.id,
-                    field_path=source["field_path"],
-                    url=str(source["url"]),
-                    title=source["title"],
-                    publisher=source.get("publisher"),
-                    checked_at=source["checked_at"],
-                    verification_status="unreviewed",
-                    note=source.get("note"),
-                    created_by=actor,
-                ))
             report.created.append(slug)
             report.preview.append({
                 "row": number,
@@ -328,8 +289,6 @@ def import_spots(
                 "action": "would_create" if dry_run else "created",
                 "region": region.slug,
                 "status": "draft",
-                "content_status": "unreviewed",
-                "source_count": len(content_sources),
                 "image_rights_present": image is not None,
                 "duplicates": candidates,
             })

@@ -1,15 +1,14 @@
 # Catalogue and product audit — 2026-10-29
 
-This is an evidence snapshot, not a product concept. Reproduce catalogue counts
-with:
+This is a historical evidence snapshot, not a product concept. The former
+content-governance catalogue audit was retired with the associated UI and API.
+The measurement status can still be reproduced with:
 
 ```powershell
-python -m scripts.catalog_content_audit --api-base https://surfwinddata.com/api
 python -m scripts.backtest_status
 ```
 
-Both commands are read-only. The catalogue audit uses public GET endpoints and
-does not open a database connection.
+The command is read-only.
 
 ## Revision and access boundary
 

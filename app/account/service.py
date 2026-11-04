@@ -434,8 +434,6 @@ def list_favorites(db: Session, user: AppUser) -> list[dict]:
                 "sports": list(spot.sports or []),
                 "levels": list(spot.level or []),
                 "waterCharacter": list(spot.water_character or []),
-                "contentStatus": spot.content_status,
-                "classification": spot.editorial_classification,
                 "addedAt": fav.created_at.isoformat(),
             }
         )

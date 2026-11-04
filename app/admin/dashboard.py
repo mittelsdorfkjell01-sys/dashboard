@@ -59,7 +59,6 @@ def list_spots(
     exclude_status: str | None = None,
     completeness: str | None = None,
     media: str | None = None,
-    content_attention: str | None = None,
 ) -> tuple[list[Spot], int, dict[uuid.UUID, dict]]:
     """Filtered, sorted spot page plus readiness from the canonical rules."""
     base = _spot_filters(
@@ -68,7 +67,7 @@ def list_spots(
     )
     ordered = base.order_by(_SORTS.get(sort, Spot.name.asc()))
 
-    if media or completeness or content_attention:
+    if media or completeness:
         # Media state is derived from the JSONB image object plus the usage
         # index, so it is filtered in Python like `completeness` above rather
         # than pushed into SQL. The admin catalogue is small enough that this
@@ -88,13 +87,6 @@ def list_spots(
             expected = completeness == "complete"
             candidates = [
                 s for s in candidates if readiness_all[s.id]["ready"] is expected
-            ]
-        if content_attention:
-            from app.admin.content_governance import content_attention_flags
-
-            candidates = [
-                spot for spot in candidates
-                if content_attention_flags(spot).get(content_attention, False)
             ]
         total = len(candidates)
         rows = candidates[offset:offset + limit]

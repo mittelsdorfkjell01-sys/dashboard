@@ -50,7 +50,7 @@ def test_normalize_csv_row_parses_pipe_lists_and_json_objects():
     assert row["facilities"] == {"parking": {"available": True}}
 
 
-def test_normalize_validates_image_rights_and_keeps_sources_unreviewed():
+def test_normalize_validates_image_rights():
     row = normalize_row(
         {
             "slug": "nordstrand",
@@ -65,41 +65,10 @@ def test_normalize_validates_image_rights_and_keeps_sources_unreviewed():
                 "license": "CC BY 4.0",
                 "credit": "Example Photographer",
             },
-            "content_sources": [{
-                "field_path": "location",
-                "url": "https://example.test/location",
-                "title": "Official location page",
-                "checked_at": "2026-10-20T12:00:00Z",
-            }],
         },
         1,
     )
     assert row["image"]["credit"] == "Example Photographer"
-    assert row["content_sources"][0]["verification_status"] == "unreviewed"
-
-
-def test_normalize_rejects_preverified_import_sources():
-    with pytest.raises(ImportFormatError, match="nicht vorab verifizieren"):
-        normalize_row(
-            {
-                "slug": "nordstrand",
-                "name": "Nordstrand",
-                "region_slug": "kiel",
-                "lat": 54.41,
-                "lon": 10.22,
-                "sports": ["wing"],
-                "content_sources": [{
-                    "field_path": "location",
-                    "url": "https://example.test/location",
-                    "title": "Official location page",
-                    "checked_at": "2026-10-20T12:00:00Z",
-                    "verification_status": "verified",
-                }],
-            },
-            1,
-        )
-
-
 def test_normalize_rejects_unknown_columns_and_missing_coordinates():
     base = {
         "slug": "nordstrand",

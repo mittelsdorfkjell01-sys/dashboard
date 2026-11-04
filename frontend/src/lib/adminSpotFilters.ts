@@ -1,6 +1,5 @@
 const FILTER_KEYS = [
   "q", "status", "region_id", "sport", "completeness", "media",
-  "content_attention",
 ] as const;
 
 export function countActiveAdminSpotFilters(params: URLSearchParams): number {
