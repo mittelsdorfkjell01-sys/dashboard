@@ -24,8 +24,11 @@ jobs:
       APP_ENV: development
       DEPLOYMENT_MODE: development
       ENABLE_ADMIN_API: "false"
-      DATABASE_URL: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL }}
-      EUROPE_WIND_MEASUREMENT_DATABASE_ID: ${{ vars.EUROPE_WIND_MEASUREMENT_DATABASE_ID }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_2: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_2 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_3: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_3 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_4: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_4 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5 }}
       LIVE_WIND_ROLLOUT_STAGE: shadow
       LIVE_WIND_FORCE_BASELINE: "true"
       LIVE_WIND_ENABLED_REGION_SLUGS: ""
@@ -53,6 +56,9 @@ jobs:
           cache_dir="$RUNNER_TEMP/europe-wind-exact"
           mkdir -p "$cache_dir"
           printf 'LIVE_WIND_EXACT_RUN_CACHE_DIR=%s\n' "$cache_dir" >> "$GITHUB_ENV"
+
+      - name: Select bounded measurement database shard
+        run: python -m scripts.europe_measurement_shards --github-env
 
       - name: Install worker dependencies
         run: pip install -r requirements.txt

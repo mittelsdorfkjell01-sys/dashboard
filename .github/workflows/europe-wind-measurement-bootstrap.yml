@@ -7,6 +7,16 @@ on:
         description: "Type APPLY-0094 to migrate the dedicated measurement database"
         required: true
         type: string
+      shard:
+        description: "Dedicated database shard to migrate"
+        required: true
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          - "5"
 
 permissions:
   contents: read
@@ -20,8 +30,11 @@ jobs:
       TZ: UTC
       APP_ENV: development
       DEPLOYMENT_MODE: development
-      DATABASE_URL: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL }}
-      EUROPE_WIND_MEASUREMENT_DATABASE_ID: ${{ vars.EUROPE_WIND_MEASUREMENT_DATABASE_ID }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_2: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_2 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_3: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_3 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_4: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_4 }}
+      EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5: ${{ secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5 }}
       LIVE_WIND_ROLLOUT_STAGE: shadow
       LIVE_WIND_FORCE_BASELINE: "true"
       LIVE_WIND_ENABLED_REGION_SLUGS: ""
@@ -38,6 +51,9 @@ jobs:
 
       - name: Install migration dependencies
         run: pip install -r requirements.txt
+
+      - name: Select dedicated measurement database shard
+        run: python -m scripts.europe_measurement_shards --shard "${{ inputs.shard }}" --github-env
 
       - name: Validate dedicated database identity
         run: python -m scripts.europe_measurement_worker --validate-only

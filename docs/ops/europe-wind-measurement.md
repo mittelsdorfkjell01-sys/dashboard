@@ -49,12 +49,13 @@ result precisely:
   run; it is not evidence of an active backtest;
 - the run URL opens the exact Summary and Logs in GitHub Actions.
 
-The Europe campaign uses its dedicated measurement database and remains
+The Europe campaign uses five dedicated, time-bounded Neon measurement
+databases and remains
 separate from the public and admin deployment database. Do not delete or
-repurpose its database, workflow variables or secrets while the configured
+repurpose its databases, workflow variables or secrets while the configured
 campaign window is active.
 
-Read-only progress counters from the configured database:
+Read-only progress counters from the currently selected database:
 
 ```powershell
 python -m scripts.europe_measurement_status --database
@@ -77,24 +78,29 @@ dedicated online PostgreSQL database. Redis is not part of this path.
 
 Fail-closed repository configuration:
 
-- secret `EUROPE_WIND_MEASUREMENT_DATABASE_URL` points only to the dedicated
+- secrets `EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_1` through
+  `EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_5` each point to one dedicated
   measurement database;
-- variable `EUROPE_WIND_MEASUREMENT_DATABASE_ID` exactly matches its database
-  name and starts with `surfwind_measurement_`;
+- `config/europe-wind-measurement-shards.json` assigns the five contiguous
+  time windows and expected database names. The selector refuses missing,
+  overlapping or mismatched identities before any database write;
 - variable `EUROPE_WIND_MEASUREMENT_ENABLED` stays `false` through bootstrap;
 - the legacy self-hosted capture variables remain `false`.
 
 Bootstrap order:
 
-1. Create the dedicated online database.
-2. Add the secret and database-ID variable.
+1. Create the five dedicated online databases.
+2. Add all five shard secrets.
 3. Publish the campaign implementation to the default branch.
-4. Manually run `Bootstrap Europe Wind Measurement Database` with confirmation
-   `APPLY-0094`.
+4. Manually run `Bootstrap Europe Wind Measurement Database` once per shard
+   with confirmation `APPLY-0094` and the corresponding shard number.
 5. Manually run `Europe Wind Measurement` once and inspect its counters.
 6. Set `EUROPE_WIND_MEASUREMENT_ENABLED=true`.
 
-`Monitor Europe Wind Measurement` runs at minutes 14, 29, 44 and 59. It fails
+`Monitor Europe Wind Measurement` runs at minutes 14, 29, 44 and 59. Both the
+measurement and monitor workflows retain their native GitHub schedules as a
+deduplicated fallback; QStash dispatches the same workflows at those UTC cron
+times with retries. The monitor fails
 after two missed 30-minute intervals plus a ten-minute scheduler grace period,
 if station coverage is below 64, operational observations are missing or older
 than three hours, latest-cycle exact coverage is below 90%, station identity

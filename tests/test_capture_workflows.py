@@ -132,8 +132,12 @@ def test_europe_measurement_runs_on_free_hosted_runner_without_redis():
     assert "runs-on: ubuntu-latest" in workflow
     assert 'cron: "7,22,37,52 * * * *"' in workflow
     assert "EUROPE_WIND_MEASUREMENT_ENABLED == 'true'" in workflow
-    assert "secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL" in workflow
-    assert "vars.EUROPE_WIND_MEASUREMENT_DATABASE_ID" in workflow
+    for shard in range(1, 6):
+        assert (
+            f"secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_{shard}"
+            in workflow
+        )
+    assert "europe_measurement_shards --github-env" in workflow
     assert "vars.EUROPE_WIND_MEASUREMENT_CODE_REF" in workflow
     assert "europe_measurement_worker --once" in workflow
     assert "europe_measurement_status --require-active" in workflow
@@ -152,6 +156,7 @@ def test_europe_measurement_bootstrap_is_manual_and_confirmed():
     assert "workflow_dispatch" in workflow
     assert "schedule:" not in workflow
     assert "inputs.confirmation == 'APPLY-0094'" in workflow
+    assert 'inputs.shard }}" --github-env' in workflow
     assert "europe_measurement_worker --validate-only" in workflow
     assert "alembic upgrade head" in workflow
 
@@ -163,6 +168,7 @@ def test_europe_measurement_monitor_fails_on_unhealthy_evidence():
     assert 'cron: "14,29,44,59 * * * *"' in workflow
     assert "runs-on: ubuntu-latest" in workflow
     assert "europe_measurement_status --require-healthy" in workflow
+    assert "europe_measurement_shards --github-env" in workflow
     assert "issues: write" in workflow
     assert "gh issue create" in workflow
     assert "REDIS_URL" not in workflow
