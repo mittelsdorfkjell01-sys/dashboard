@@ -145,6 +145,9 @@ def test_europe_measurement_runs_on_free_hosted_runner_without_redis():
     assert 'LIVE_WIND_EXACT_POINT_BATCH_SIZE: "64"' in workflow
     assert 'WEATHER_OBSERVATION_CRON_BATCH_SIZE: "64"' in workflow
     assert "RUNNER_TEMP/europe-wind-exact" in workflow
+    assert workflow.index("Install worker dependencies") < workflow.index(
+        "Select bounded measurement database shard"
+    )
     assert "self-hosted" not in workflow
     assert "REDIS_URL" not in workflow
 
@@ -172,3 +175,19 @@ def test_europe_measurement_monitor_fails_on_unhealthy_evidence():
     assert "issues: write" in workflow
     assert "gh issue create" in workflow
     assert "REDIS_URL" not in workflow
+
+
+def test_europe_measurement_evaluation_is_manual_read_only_and_five_sharded():
+    workflow = (
+        ROOT / ".github/workflows/europe-wind-measurement-evaluation.yml"
+    ).read_text(encoding="utf-8")
+    assert "workflow_dispatch" in workflow
+    assert "schedule:" not in workflow
+    assert "contents: read" in workflow
+    assert "europe_measurement_evaluation --output" in workflow
+    assert "actions/upload-artifact@" in workflow
+    for shard in range(1, 6):
+        assert (
+            f"secrets.EUROPE_WIND_MEASUREMENT_DATABASE_URL_SHARD_{shard}"
+            in workflow
+        )

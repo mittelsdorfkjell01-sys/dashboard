@@ -137,5 +137,13 @@ At campaign end, run a formal evaluation before any rollout decision. Report:
 - error distributions and uncertainty by region, lead time and condition;
 - all quality rules, known biases and limits on what the sample can prove.
 
+Run the manual `Evaluate Europe Wind Measurement Shards` workflow to create a
+30-day JSON evidence artifact. It opens every dedicated database read-only,
+validates each database identity, and combines due versus usable cycles,
+observations, exact bundles, residuals, storage and the public-activation
+boundary. The artifact is an operational completeness input; it does not by
+itself approve forecast corrections or replace the scientific regional and
+condition-level analysis.
+
 Do not activate corrections from this campaign automatically. Activation needs
 a separately reviewed evidence record and explicit operational approval.

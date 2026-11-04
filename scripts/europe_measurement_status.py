@@ -84,6 +84,14 @@ def database_status(campaign_id: str) -> dict:
         ).where(
             WeatherStationCaptureCycle.job_type == "campaign",
         ).order_by(WeatherStationCaptureCycle.started_at.desc()).limit(1)).one_or_none()
+        cycle_rows = db.execute(
+            select(
+                WeatherStationCaptureCycle.status,
+                func.count(WeatherStationCaptureCycle.id),
+            )
+            .where(WeatherStationCaptureCycle.job_type == "campaign")
+            .group_by(WeatherStationCaptureCycle.status)
+        ).all()
         recent_exact_stations = 0
         if latest_cycle is not None:
             recent_exact_stations = db.scalar(select(
@@ -157,6 +165,7 @@ def database_status(campaign_id: str) -> dict:
             latest_cycle.finished_at.isoformat() if latest_cycle else None
         ),
         "latest_campaign_cycle_status": latest_cycle.status if latest_cycle else None,
+        "campaign_cycles": {cycle_status: count for cycle_status, count in cycle_rows},
         "station_metadata": {
             "with_country": station_metadata[0],
             "with_wigos_identity": station_metadata[1],
