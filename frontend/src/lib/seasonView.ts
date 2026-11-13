@@ -36,7 +36,7 @@ function windowYears(window: unknown): number {
 /** Spot climatology → monthly bars of *rideable wind hours per week*, or null.
  *
  * For each week we sum the histogram hours across all directions in the wind
- * bins ≥ 14 kt and divide by the number of climatology years, giving an average
+ * bins ≥ 14 kn and divide by the number of climatology years, giving an average
  * "hours of rideable wind per week". This surfaces the **windy season** — unlike
  * the near-flat median wind, which barely moves month to month. Returns null when
  * a spot has no usable histogram (so the panel hides instead of inventing data).
@@ -49,7 +49,7 @@ export function climatologyToMonths(clim: Record<string, any> | null | undefined
   for (const w of weeks) {
     const joint = w?.wind?.joint;
     if (!Array.isArray(joint)) continue;
-    // Hours (all directions) in the rideable ≥ 14 kt speed bins, per year.
+    // Hours (all directions) in the rideable ≥ 14 kn speed bins, per year.
     const strongHours = joint.reduce(
       (sum: number, row: number[]) =>
         sum +

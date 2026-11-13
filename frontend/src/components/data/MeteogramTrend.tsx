@@ -29,4 +29,4 @@ export default function MeteogramTrend({ days, windUnit }: { days: NormalizedFor
   </section>;
 }
 
-const windValue = (number: number | null | undefined, unit: WindUnit) => number == null ? "—" : `${formatWind(number,unit)} ${unit === "ms" ? "m/s" : "kt"}`;
+const windValue = (number: number | null | undefined, unit: WindUnit) => number == null ? "—" : `${formatWind(number,unit)} ${unit === "ms" ? "m/s" : "kn"}`;

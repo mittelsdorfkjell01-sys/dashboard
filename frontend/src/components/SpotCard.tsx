@@ -22,7 +22,7 @@ const recordedImpressions = new Set<string>();
  * surface. No hover treatment on the card (no bg change) — the whole tile
  * is the tap target, `focus-visible` covers keyboard/a11y.
  *
- * Every tile shows wind (kts) with wave height (m) stacked below it. Wind
+ * Every tile shows wind (kn) with wave height (m) stacked below it. Wind
  * gets a live green-dot reading when the caller passes `live` (see
  * lib/hooks.ts's useSpotsLive, chunked to the `/spots/live` endpoint's
  * 20-id cap); otherwise it falls back to the typical/editorial figure.

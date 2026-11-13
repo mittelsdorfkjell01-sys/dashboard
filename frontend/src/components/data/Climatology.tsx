@@ -21,7 +21,7 @@ function storedYears(): YearWindow | null {
 }
 
 const MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-const WINDOWS: [WindWindowKey, string][] = [["10_15", "10–15 kt"], ["15_20", "15–20 kt"], ["20_30", "20–30 kt"], ["30_plus", "30+ kt"]];
+const WINDOWS: [WindWindowKey, string][] = [["10_15", "10–15 kn"], ["15_20", "15–20 kn"], ["20_30", "20–30 kn"], ["30_plus", "30+ kn"]];
 
 export function metricValue(section: WindClimatologySection, windowKey: WindWindowKey, unit: "percent" | "hours"): number | null {
   const metric = section.windows[windowKey];

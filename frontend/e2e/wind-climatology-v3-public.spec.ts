@@ -97,19 +97,19 @@ async function baseRoutes(page: Page, opts: { v3: "ready" | "404"; usableAvailab
   });
 }
 
-test("V3 module loads with the default 15–20 kt window and matching selection summary", async ({ page }) => {
+test("V3 module loads with the default 15–20 kn window and matching selection summary", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
   await expect(page.getByRole("heading", { name: "Windmonate" })).toBeVisible();
-  await expect(page.getByText("15–20 kt · passende Richtung · 2006–2025")).toBeVisible();
+  await expect(page.getByText("15–20 kn · passende Richtung · 2006–2025")).toBeVisible();
 });
 
 test("changing the preset updates the URL and the selection summary", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("15–20 kt · passende Richtung · 2006–2025")).toBeVisible();
-  await page.getByRole("button", { name: "20–30 kt", exact: true }).click();
-  await expect(page.getByText("20–30 kt · passende Richtung · 2006–2025")).toBeVisible();
+  await expect(page.getByText("15–20 kn · passende Richtung · 2006–2025")).toBeVisible();
+  await page.getByRole("button", { name: "20–30 kn", exact: true }).click();
+  await expect(page.getByText("20–30 kn · passende Richtung · 2006–2025")).toBeVisible();
   await expect(page).toHaveURL(/wind_min=20&wind_max=30/);
 });
 
@@ -123,14 +123,14 @@ test("turning off the direction filter switches to alle Richtungen", async ({ pa
   // Controlled checkbox: its state only flips once the re-fetch resolves, so
   // click and wait on the resulting summary rather than uncheck()'s eager check.
   await toggle.click();
-  await expect(page.getByText("15–20 kt · alle Richtungen · 2006–2025")).toBeVisible();
+  await expect(page.getByText("15–20 kn · alle Richtungen · 2006–2025")).toBeVisible();
   await expect(page).toHaveURL(/wind_dir=all/);
 });
 
 test("a spot without reviewed directions disables the filter and shows the explanatory note", async ({ page }) => {
   await baseRoutes(page, { v3: "ready", usableAvailable: false });
   await page.goto("/spot/test/daten");
-  await expect(page.getByText("15–20 kt · alle Richtungen · 2006–2025")).toBeVisible();
+  await expect(page.getByText("15–20 kn · alle Richtungen · 2006–2025")).toBeVisible();
   // The direction filter lives inside the collapsible "Anpassen" panel.
   await page.getByRole("button", { name: /Anpassen/ }).click();
   await expect(page.getByLabel("Passende Windrichtung berücksichtigen")).toBeDisabled();

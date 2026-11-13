@@ -17,7 +17,7 @@ export interface Spot {
   id: string;
   name: string;
   region: string;
-  wind: number; // kts, typical/editorial value — never a live reading (see adapt.ts)
+  wind: number; // kn, typical/editorial value — never a live reading (see adapt.ts)
   favorite?: boolean;
   tags: Tag[];
   image: string; // "" = no image → branded fallback
@@ -66,10 +66,10 @@ export interface Spot {
   regionName?: string;
   /** ISO country code (e.g. "PT") — resolved to a display name via lib/flags. */
   regionCountry?: string | null;
-  /** Typical wind, kts — exactly one of typicalWindKt/typicalWaveHeightM is
+  /** Typical wind, kn — exactly one of typicalWindKt/typicalWaveHeightM is
    *  set, gated by the spot's primary sport (see app.scoring.context on the
    *  backend). Distinct from `wind` above, which non-tile consumers rely on
-   *  as a plain always-kts fallback. */
+   *  as a plain always-kn fallback. */
   typicalWindKt?: number | null;
   /** Typical wave height, m — set for surf spots instead of typicalWindKt. */
   typicalWaveHeightM?: number | null;
@@ -82,7 +82,7 @@ export interface Spot {
   editorialClassification?: EditorialClassification | null;
   /** Name der Person, die einen Community-Spot eingetragen hat. */
   contributorName?: string | null;
-  /** Weighted monthly daylight availability for 15–20 kt from active V2. */
+  /** Weighted monthly daylight availability for 15–20 kn from active V2. */
   windAvailability?: number[] | null;
 }
 

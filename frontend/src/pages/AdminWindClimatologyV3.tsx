@@ -38,7 +38,7 @@ export function WeekChart({data,min,max,mode}:{data:V3Variant;min:number;max:num
         <div tabIndex={0} role="img" aria-label={`Saisonwoche ${i+1}: ${w.reliability_percent == null?"keine veröffentlichbare Zuverlässigkeit":`${w.reliability_percent} Prozent`}`}
           className="w-full bg-admin-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-fg" style={{height:`${Math.max(0,Math.min(100,value))}%`}} />
         <div className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden w-56 rounded-md bg-admin-elevated p-3 text-caption shadow-admin-pop group-hover:block group-focus-within:block ${i<4?"left-0":i>47?"right-0":"left-1/2 -translate-x-1/2"}`}>
-          <strong>Woche {i+1}</strong><br/>{min}–{max??"40+"} kt · {mode==="all"?"alle":"passende"} Richtungen<br/>
+          <strong>Woche {i+1}</strong><br/>{min}–{max??"40+"} kn · {mode==="all"?"alle":"passende"} Richtungen<br/>
           Zuverlässigkeit: {w.reliability_percent??"—"}%<br/>Jahre: {w.successful_years}/{w.sample_years}<br/>
           Median Windtage: {w.median_usable_days??"—"}<br/>Median Sessionstunden: {w.median_session_hours??"—"}<br/>
           P25–P75: {String(w.p25_session_hours??"—")}–{String(w.p75_session_hours??"—")}<br/>Qualität: {String(w.quality_status??"—")}

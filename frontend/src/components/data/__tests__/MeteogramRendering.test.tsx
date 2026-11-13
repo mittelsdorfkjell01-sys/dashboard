@@ -54,8 +54,8 @@ describe("Meteogram rendering grammar", () => {
     expect(table).toContain('scope="col"');
     expect(table).toContain('scope="row"');
     expect(table).toContain(view.slots[0].localTimeWithOffset);
-    expect(table).toContain("12 kt");
-    expect(table).toContain("9 kt bis 15 kt (3 Modelle)");
+    expect(table).toContain("12 kn");
+    expect(table).toContain("9 kn bis 15 kn (3 Modelle)");
     expect(table).toContain("Nicht verfügbar");
   });
 });
