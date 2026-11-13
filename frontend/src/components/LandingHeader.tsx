@@ -268,7 +268,7 @@ export default function LandingHeader({
                   mobileSpotControls ? "hidden sm:flex" : "flex"
                 }`}
               >
-                <Wordmark size="xl" />
+                <Wordmark size="md" />
               </Link>
             )}
 

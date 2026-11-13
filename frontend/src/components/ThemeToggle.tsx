@@ -47,7 +47,7 @@ export default function ThemeToggle({
         aria-checked={dark}
         aria-label={label}
         className={`flex w-full items-center justify-between px-3 font-medium text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-          sheet ? "min-h-[52px] text-body" : "min-h-11 text-ui hover:opacity-70"
+          sheet ? "min-h-11 text-body" : "min-h-11 text-ui hover:opacity-70"
         }`}
       >
         <span>{targetLabel}</span>

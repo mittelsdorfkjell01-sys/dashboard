@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import LandingHeader from "../components/LandingHeader";
 import Footer from "../components/Footer";
 
@@ -15,6 +16,11 @@ const contactEmail = (import.meta.env.VITE_LEGAL_EMAIL || "").trim();
 const emailConfigured = contactEmail !== "" && !contactEmail.endsWith(".invalid");
 
 export default function Nutzungsbedingungen() {
+  // The terms themselves are German-only prose below. The accessibility
+  // statement is the exception: it moved here from the help page, where it was
+  // already translated, and dropping it to German only would have taken that
+  // away from English readers for no reason.
+  const { t } = useTranslation();
   return (
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
@@ -142,6 +148,29 @@ export default function Nutzungsbedingungen() {
             <p>
               Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.
               Zwingende verbraucherschützende Vorschriften Ihres Aufenthaltsstaates bleiben unberührt.
+            </p>
+          </Section>
+
+          {/* Moved here from the help page's "Rechtliches" section. For a
+              service, the accessibility information belongs in the terms or an
+              equivalent document; Impressum and Datenschutzerklärung keep their
+              own pages, which is where their own statutory accessibility
+              requirements attach. */}
+          <Section title={`12. ${t("terms.accessibility.q")}`}>
+            <p>{t("terms.accessibility.p1")}</p>
+            <p>{t("terms.accessibility.p2")}</p>
+            <p>
+              <Trans
+                i18nKey="terms.accessibility.p3"
+                components={{
+                  contact: (
+                    <Link
+                      to="/fragen#kontakt"
+                      className="font-semibold text-ink underline underline-offset-4 hover:opacity-70"
+                    />
+                  ),
+                }}
+              />
             </p>
           </Section>
         </div>

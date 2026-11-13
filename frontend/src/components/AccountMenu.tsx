@@ -237,7 +237,7 @@ function DesktopDropdown({
       ref={ref}
       role="menu"
       aria-label={t("menu.account")}
-      className="absolute right-0 top-[calc(100%+10px)] hidden w-72 rounded-card bg-surface p-2 shadow-float ring-1 ring-line sm:block"
+      className="absolute right-0 top-[calc(100%+10px)] hidden w-80 rounded-card bg-surface p-2 shadow-float ring-1 ring-line sm:block"
     >
       {user ? (
         <ProfileHeader user={user} onNavigate={onClose} />

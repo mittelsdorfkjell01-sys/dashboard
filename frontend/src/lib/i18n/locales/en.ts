@@ -7,7 +7,7 @@ type TranslationShape<T> = {
 /** English catalogue. `satisfies` keeps every public key in lockstep with German. */
 export const en = {
   common: { loading: "Loading…", retry: "Try again", back: "Back", cancel: "Cancel", close: "Close", sending: "Sending…" },
-  siteLinks: { faq: "Data & questions", contact: "Contact", about: "About the project", terms: "Terms of use", imprint: "Legal notice", privacy: "Privacy" },
+  siteLinks: { faq: "Data & questions", contact: "Contact", terms: "Terms of use", imprint: "Legal notice", privacy: "Privacy" },
   footer: { copyright: "© {{year}} surfwind data" },
   header: { searchPlaceholder: "Place, region or spot", tagline: "A clear view of the best surf spots", openSearch: "Open search", addSpots: "Add spots" },
   language: { label: "Language", german: "Deutsch", english: "English", switchTo: "Switch to {{language}}" },
@@ -35,7 +35,6 @@ export const en = {
       account: "Account",
       contribute: "Contribute",
       contact: "Contact",
-      legal: "Legal",
     },
     section: {
       safety: "Safety",
@@ -47,7 +46,6 @@ export const en = {
       account: "Account, units & setup",
       contribute: "Contribute & community",
       contact: "Contact",
-      legal: "Legal",
     },
     safety: {
       approval: {
@@ -281,20 +279,25 @@ export const en = {
       responseTime: "There is no fixed response time. We'll look into your request as soon as we can.",
       notEmergency: "This contact address is not an emergency or rescue service.",
     },
-    legal: {
-      accessibility: {
-        q: "Accessibility",
-        p1: "Surfwinddata aims to be usable by everyone, including with a keyboard, screen reader or high magnification. Notices are given as text, not by colour alone. Accessibility has already been reviewed; the resulting changes are still being tested.",
-        p2: "Known limitation: the wind and wave field on the map is purely visual. The same forecast values are available as text on the spot's data page.",
-        p3: "If you run into a barrier, <contact>contact</contact> the operator: which page, what you were trying to do and which assistive technology you use, for example screen reader and browser.",
-      },
-    },
     outro: {
       claim: "Discover spots. Understand conditions. Plan your time on the water.",
       discover: "Discover spots",
       suggest: "Suggest a spot",
     },
   },
+  // The accessibility statement lives with the terms: for a service the
+  // accessibility information belongs in the terms or an equivalent
+  // document. The rest of /nutzungsbedingungen is German-only prose in the
+  // component; these keys keep this one statement bilingual.
+  terms: {
+    accessibility: {
+        q: "Accessibility",
+        p1: "Surfwinddata aims to be usable by everyone, including with a keyboard, screen reader or high magnification. Notices are given as text, not by colour alone. Accessibility has already been reviewed; the resulting changes are still being tested.",
+        p2: "Known limitation: the wind and wave field on the map is purely visual. The same forecast values are available as text on the spot's data page.",
+        p3: "If you run into a barrier, <contact>contact</contact> the operator: which page, what you were trying to do and which assistive technology you use, for example screen reader and browser.",
+    },
+  },
+
   trips: {
     title: "Trip planner", intro: "Plan dates, spots and preparation manually — without automated weather promises.",
     new: "New trip", emptyTitle: "No trip planned yet", emptyBody: "Create a trip and collect the spots you want to visit.",
