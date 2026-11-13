@@ -25,9 +25,11 @@ import type { TranslationKey } from "../lib/i18n";
  * own last section.
  *
  * Layout: the page runs the full `max-w-page` width with a side navigation —
- * sticky on a wide screen, a horizontally scrolling strip on a narrow one —
- * and the prose columns stay capped at `max-w-measure`, so a wide window buys
- * a visible nav and whitespace rather than 200-character lines.
+ * pinned on a wide screen, a horizontally scrolling strip on a narrow one. The
+ * body is one centred `max-w-measure-wide` column (82ch, a third wider than
+ * the usual reading measure, which this page can afford because the nav frames
+ * it). Everything inside shares that one width, headings and accordion rows
+ * included, so nothing runs wider than the text it belongs to.
  *
  * The section anchors are public URLs (RegionDetail links to
  * `#regionale-windverfuegbarkeit`, the footer to `#kontakt`), so they are
@@ -376,18 +378,26 @@ export default function Fragen() {
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
       <main className="mx-auto max-w-page px-4 pb-24 pt-32 sm:px-8">
-        <h1 className="text-heading-lg font-semibold text-ink">{t("help.title")}</h1>
-        <p className="mt-3 max-w-measure text-lead text-ink-soft">{t("help.lede")}</p>
-
         {/* One grid, one nav landmark. Narrow: a single column, the nav a
             horizontally scrolling strip above the content (the strip scrolls,
-            never the page). Wide: a sticky column beside it. Same links, same
-            44px targets — only the direction changes, so there is no second
-            copy of the navigation to keep in step. */}
-        <div className="mt-8 grid gap-8 lg:mt-12 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-14">
+            never the page). Wide: a column beside it. Same links, same 44px
+            targets — only the direction changes, so there is no second copy of
+            the navigation to keep in step.
+
+            On a wide screen the nav never moves. It used to drift: `sticky`
+            with a `top` *above* its own starting point scrolls along until it
+            reaches that offset. Here the offset equals the layout position —
+            `main` has `pt-32`, so the nav starts at exactly 128px — which
+            makes the travel zero and pins it from the first pixel.
+
+            Deliberately not `fixed`: that takes the nav out of flow, the grid
+            then auto-places the body in the first column, and the text ends up
+            216px wide. Sticky keeps it a grid item. It scrolls inside itself
+            on a short window so the last entry stays reachable. */}
+        <div className="grid gap-8 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-14">
           <nav
             aria-label={t("help.jump.label")}
-            className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:self-start lg:overflow-visible lg:sticky lg:top-28"
+            className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:mx-0 lg:sticky lg:top-32 lg:max-h-[calc(100vh-11rem)] lg:self-start lg:overflow-y-auto lg:overflow-x-visible lg:px-0"
           >
             <ul className="flex w-max gap-2 lg:w-auto lg:flex-col lg:gap-0.5">
               {JUMP.map((entry) => {
@@ -411,7 +421,12 @@ export default function Fragen() {
             </ul>
           </nav>
 
-          <div className="min-w-0">
+          <div className="mx-auto min-w-0 w-full max-w-measure-wide">
+            {/* The title sits above the body column and shares its width, so
+                it reads as that column's heading instead of floating at the
+                far left edge of a 1570px page. */}
+            <h1 className="text-title font-semibold text-ink">{t("help.title")}</h1>
+            <p className="mt-2 text-ui text-ink-soft">{t("help.lede")}</p>
 
         {/* 1 — Safety. Open by design: this is the only block with liability
             weight, and it used to sit ninth in a closed accordion. */}
@@ -482,7 +497,7 @@ export default function Fragen() {
         {/* 9 — Contact: its own last section, the operator mailbox first and
             "what is it about" underneath. */}
         <Band id={ANCHOR.contact} title={t("help.section.contact")}>
-          <p className="max-w-measure text-body leading-relaxed text-ink-soft">
+          <p className="text-body leading-relaxed text-ink-soft">
             {t("help.contact.intro")}
           </p>
           <ContactCard />
@@ -493,7 +508,7 @@ export default function Fragen() {
             {CONTACT_TOPICS.map((topic) => (
               <div key={topic.term}>
                 <dt className="text-ui font-semibold text-ink">{t(topic.term)}</dt>
-                <dd className="mt-1 max-w-measure text-ui leading-relaxed text-ink-soft">
+                <dd className="mt-1 text-ui leading-relaxed text-ink-soft">
                   <RichText i18nKey={topic.body} components={LINK_COMPONENTS} />
                 </dd>
               </div>
@@ -555,7 +570,7 @@ function Sub({ title, children }: { title: string; children: ReactNode }) {
 
 function Prose({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-2 max-w-measure space-y-3 text-ui leading-relaxed text-ink-soft">
+    <div className="mt-2 space-y-3 text-ui leading-relaxed text-ink-soft">
       {children}
     </div>
   );
@@ -564,7 +579,7 @@ function Prose({ children }: { children: ReactNode }) {
 function Bullets({ keys }: { keys: TranslationKey[] }) {
   const { t } = useTranslation();
   return (
-    <ul className="mt-3 max-w-measure list-disc space-y-1.5 pl-5 text-ui leading-relaxed text-ink-soft">
+    <ul className="mt-3 list-disc space-y-1.5 pl-5 text-ui leading-relaxed text-ink-soft">
       {keys.map((key) => (
         <li key={key}>{t(key)}</li>
       ))}
@@ -603,7 +618,7 @@ function Entry({ item, openTarget }: { item: Item; openTarget: string }) {
           ) : (
             <p
               key={index}
-              className="mt-3 max-w-measure text-ui leading-relaxed text-ink-soft first:mt-0"
+              className="mt-3 text-ui leading-relaxed text-ink-soft first:mt-0"
             >
               {block.kind === "rich" ? (
                 <RichText i18nKey={block.key} components={LINK_COMPONENTS} />
