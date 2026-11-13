@@ -14,7 +14,7 @@ const ClimatologyV2 = lazy(() => import("./Climatology"));
 
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const DEFAULT_SELECTION: WindClimatologyV3Selection = { minWindKn: 15, maxWindKn: 20, directionMode: "all" };
-const PRESETS: [string, number, number | null][] = [["10–15 kt", 10, 15], ["15–20 kt", 15, 20], ["20–30 kt", 20, 30], ["30+ kt", 30, null]];
+const PRESETS: [string, number, number | null][] = [["10–15 kn", 10, 15], ["15–20 kn", 15, 20], ["20–30 kn", 20, 30], ["30+ kn", 30, null]];
 const STORAGE_KEY = "swd.wind-climatology-v3-selection.v1";
 
 // --- selection parsing / URL + storage priority ----------------------------

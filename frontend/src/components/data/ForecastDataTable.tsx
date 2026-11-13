@@ -5,7 +5,7 @@ import type { MeteogramModel } from "./meteogramModel";
 const missing="Nicht verfügbar";
 const number=(value:number|null|undefined,unit:string,digits=0)=>value==null?missing:`${value.toFixed(digits)} ${unit}`;
 const weather:Record<string,string>={clear:"Klar",mainly_clear:"Überwiegend klar",partly_cloudy:"Teilweise bewölkt",overcast:"Bedeckt",fog:"Nebel",drizzle:"Nieselregen",rain:"Regen",rain_showers:"Regenschauer",snow:"Schnee",snow_showers:"Schneeschauer",thunderstorm:"Gewitter",unknown:missing};
-const wind=(value:number|null|undefined,unit:WindUnit)=>value==null?missing:`${formatWind(value,unit)} ${unit==="ms"?"m/s":"kt"}`;
+const wind=(value:number|null|undefined,unit:WindUnit)=>value==null?missing:`${formatWind(value,unit)} ${unit==="ms"?"m/s":"kn"}`;
 const spread=(hour:NormalizedForecastHour,unit:WindUnit)=>hour.wind_spread?.n&&hour.wind_spread.n>=2?`${wind(hour.wind_spread.low,unit)} bis ${wind(hour.wind_spread.high,unit)} (${hour.wind_spread.n} Modelle)`:missing;
 
 export default function ForecastDataTable({model,windUnit}:{model:MeteogramModel;windUnit:WindUnit}){

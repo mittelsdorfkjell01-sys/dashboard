@@ -7,7 +7,7 @@ export const WIND_WINDOW_MAX = 40; // slider position 40 always means "40+" (ope
 const STEP = 1;
 
 export function formatWindWindow(minWindKn: number, maxWindKn: number | null): string {
-  return maxWindKn == null ? `${minWindKn}+ kt` : `${minWindKn}–${maxWindKn} kt`;
+  return maxWindKn == null ? `${minWindKn}+ kn` : `${minWindKn}–${maxWindKn} kn`;
 }
 
 interface Props {
@@ -67,8 +67,8 @@ export default function WindWindowSlider({ minWindKn, maxWindKn, onChange, disab
         />
       </div>
       <div className="mt-1 flex justify-between text-data-caption text-muted">
-        <span>{WIND_WINDOW_MIN} kt</span>
-        <span>{WIND_WINDOW_MAX}+ kt</span>
+        <span>{WIND_WINDOW_MIN} kn</span>
+        <span>{WIND_WINDOW_MAX}+ kn</span>
       </div>
     </div>
   );

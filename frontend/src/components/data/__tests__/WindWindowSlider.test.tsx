@@ -4,10 +4,10 @@ import WindWindowSlider, { formatWindWindow, WIND_WINDOW_MIN, WIND_WINDOW_MAX } 
 
 describe("formatWindWindow", () => {
   it("formats a closed window", () => {
-    expect(formatWindWindow(15, 20)).toBe("15–20 kt");
+    expect(formatWindWindow(15, 20)).toBe("15–20 kn");
   });
   it("formats an open upper bound as N+", () => {
-    expect(formatWindWindow(30, null)).toBe("30+ kt");
+    expect(formatWindWindow(30, null)).toBe("30+ kn");
   });
 });
 

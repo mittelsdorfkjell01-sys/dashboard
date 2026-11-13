@@ -88,7 +88,7 @@ export default function MeteogramDetailChart({ model, selectedAtUtc, setSelected
   const focusSlot=(index:number)=>{const target=hitRefs.current[index];if(target){target.focus();setSelectedAtUtc(model.slots[index].utcKey);}};
   return <div className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] border-y border-line bg-surface sm:grid-cols-[112px_minmax(0,1fr)]">
     <div className="grid" style={{gridTemplateRows:`46px 42px 86px 104px 136px 44px ${model.showMarine?"94px 70px":"0px 0px"} 54px`}}>
-      <AxisRow label="Tag" className="bg-band/50"/><AxisRow label="Wetter"/><AxisRow label="Niederschlag" unit="mm/h · dynamisch" scale={model.scales.precipitation}/><AxisRow label="Temperatur" unit="°C · dynamisch" scale={model.scales.temperature}/><AxisRow label="Wind" unit={`${windUnit === "ms" ? "m/s" : "kt"} · dynamisch`} scale={displayedWindScale}/><AxisRow label="Windrichtung" unit="kommt aus"/>
+      <AxisRow label="Tag" className="bg-band/50"/><AxisRow label="Wetter"/><AxisRow label="Niederschlag" unit="mm/h · dynamisch" scale={model.scales.precipitation}/><AxisRow label="Temperatur" unit="°C · dynamisch" scale={model.scales.temperature}/><AxisRow label="Wind" unit={`${windUnit === "ms" ? "m/s" : "kn"} · dynamisch`} scale={displayedWindScale}/><AxisRow label="Windrichtung" unit="kommt aus"/>
       {model.showMarine&&<><AxisRow label="Wellenhöhe" unit="m · dynamisch" scale={model.scales.wave}/><AxisRow label="Periode" unit="s" scale={model.scales.period}/></>}
       <AxisRow label="Ortszeit"/>
     </div>
@@ -114,7 +114,7 @@ export default function MeteogramDetailChart({ model, selectedAtUtc, setSelected
 
 export function selectedSummary(hour: NormalizedForecastHour | null, windUnit: WindUnit) {
   if(!hour)return null;
-  const missing="Nicht verfügbar", unit=windUnit==="ms"?"m/s":"kt";
+  const missing="Nicht verfügbar", unit=windUnit==="ms"?"m/s":"kn";
   const spread=hasValidSpread(hour)?`${formatWind(hour.wind_spread!.low!,windUnit)}–${formatWind(hour.wind_spread!.high!,windUnit)} ${unit}`:missing;
   const weatherLabels:Record<string,string>={clear:"Klar",mainly_clear:"Überwiegend klar",partly_cloudy:"Teilweise bewölkt",overcast:"Bedeckt",fog:"Nebel",drizzle:"Nieselregen",rain:"Regen",rain_showers:"Regenschauer",snow:"Schnee",snow_showers:"Schneeschauer",thunderstorm:"Gewitter",unknown:missing};
   return [
