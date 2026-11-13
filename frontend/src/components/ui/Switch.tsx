@@ -4,13 +4,14 @@ import type { ReactNode } from "react";
  * The visual on/off track — exported on its own for rows where the whole row
  * is already the `role="switch"` button (e.g. the theme row in the menu).
  * Off: band track with a hairline. On: the brand blue with the thumb slid
- * across. 56×32 track, 24px thumb.
+ * across. 56×28 track, 24px thumb — 44px rows carry the touch target, so the
+ * track itself can sit lower than the row without shrinking what you can hit.
  */
 export function SwitchTrack({ checked, icon }: { checked: boolean; icon?: ReactNode }) {
   return (
     <span
       aria-hidden="true"
-      className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full px-1 transition-colors duration-base ${
+      className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full px-1 transition-colors duration-base ${
         checked ? "bg-teal" : "bg-band ring-1 ring-line"
       }`}
     >

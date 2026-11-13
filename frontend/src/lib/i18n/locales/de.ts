@@ -36,7 +36,6 @@ export const de = {
   siteLinks: {
     faq: "Daten & Fragen",
     contact: "Kontakt",
-    about: "Über das Projekt",
     terms: "Nutzungsbedingungen",
     imprint: "Impressum",
     privacy: "Datenschutz",
@@ -79,7 +78,6 @@ export const de = {
       account: "Konto",
       contribute: "Mitmachen",
       contact: "Kontakt",
-      legal: "Rechtliches",
     },
     section: {
       safety: "Sicherheit",
@@ -91,7 +89,6 @@ export const de = {
       account: "Konto, Einheiten & Setup",
       contribute: "Mitmachen & Community",
       contact: "Kontakt",
-      legal: "Rechtliches",
     },
     safety: {
       approval: {
@@ -325,20 +322,25 @@ export const de = {
       responseTime: "Eine feste Antwortzeit gibt es nicht. Wir kümmern uns so bald wie möglich um dein Anliegen.",
       notEmergency: "Diese Kontaktadresse ist kein Notfall- oder Rettungsdienst.",
     },
-    legal: {
-      accessibility: {
-        q: "Barrierefreiheit",
-        p1: "Surfwinddata soll für alle nutzbar sein, auch mit Tastatur, Screenreader oder starker Vergrößerung. Hinweise stehen als Text, nicht nur als Farbe. Die Barrierefreiheit wurde bereits geprüft; die Umsetzung der Ergebnisse wird derzeit noch getestet.",
-        p2: "Bekannte Grenze: Die Wind- und Wellenfläche auf der Karte ist eine rein visuelle Darstellung. Dieselben Vorhersagewerte findest du als Text auf der Datenseite des Spots.",
-        p3: "Stößt du auf ein Hindernis, schreib dem Betreiber über den <contact>Kontakt</contact>: welche Seite, was du tun wolltest und welches Hilfsmittel du nutzt, zum Beispiel Screenreader und Browser.",
-      },
-    },
     outro: {
       claim: "Spots entdecken. Bedingungen verstehen. Zeit auf dem Wasser planen.",
       discover: "Spots entdecken",
       suggest: "Spot vorschlagen",
     },
   },
+  // The accessibility statement lives with the terms: for a service the
+  // accessibility information belongs in the terms or an equivalent
+  // document. The rest of /nutzungsbedingungen is German-only prose in the
+  // component; these keys keep this one statement bilingual.
+  terms: {
+    accessibility: {
+        q: "Barrierefreiheit",
+        p1: "Surfwinddata soll für alle nutzbar sein, auch mit Tastatur, Screenreader oder starker Vergrößerung. Hinweise stehen als Text, nicht nur als Farbe. Die Barrierefreiheit wurde bereits geprüft; die Umsetzung der Ergebnisse wird derzeit noch getestet.",
+        p2: "Bekannte Grenze: Die Wind- und Wellenfläche auf der Karte ist eine rein visuelle Darstellung. Dieselben Vorhersagewerte findest du als Text auf der Datenseite des Spots.",
+        p3: "Stößt du auf ein Hindernis, schreib dem Betreiber über den <contact>Kontakt</contact>: welche Seite, was du tun wolltest und welches Hilfsmittel du nutzt, zum Beispiel Screenreader und Browser.",
+    },
+  },
+
   trips: {
     title: "Reiseplaner", intro: "Plane Termine, Spots und Vorbereitung manuell — ohne automatische Wetterversprechen.",
     new: "Neue Reise", emptyTitle: "Noch keine Reise geplant", emptyBody: "Lege eine Reise an und sammle die Spots, die du besuchen möchtest.",

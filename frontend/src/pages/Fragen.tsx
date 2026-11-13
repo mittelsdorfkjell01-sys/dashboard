@@ -6,7 +6,6 @@ import LandingHeader from "../components/LandingHeader";
 import Footer from "../components/Footer";
 import { ChevronDownIcon, SafetyIcon } from "../lib/icons";
 import { getLenis } from "../lib/lenis";
-import { SITE_LINKS } from "../lib/siteLinks";
 import type { TranslationKey } from "../lib/i18n";
 
 /**
@@ -22,10 +21,23 @@ import type { TranslationKey } from "../lib/i18n";
  *
  * Shape: a safety block that is deliberately *open* (it is the one statement
  * with liability weight and must not hide behind a closed accordion), then the
- * project as prose, then seven question/answer accordions, the contact card and
- * the legal links. A jump bar links the ten section anchors; those anchors are
- * public URLs (RegionDetail links to `#regionale-windverfuegbarkeit`, the
- * footer to `#kontakt` and `#projekt`), so they are stable and not translated.
+ * project as prose, then seven question/answer accordions, and contact as its
+ * own last section.
+ *
+ * Layout: the page runs the full `max-w-page` width with a side navigation —
+ * sticky on a wide screen, a horizontally scrolling strip on a narrow one —
+ * and the prose columns stay capped at `max-w-measure`, so a wide window buys
+ * a visible nav and whitespace rather than 200-character lines.
+ *
+ * The section anchors are public URLs (RegionDetail links to
+ * `#regionale-windverfuegbarkeit`, the footer to `#kontakt`), so they are
+ * stable and never translated.
+ *
+ * The accessibility statement that used to sit in a "Rechtliches" section
+ * moved to /nutzungsbedingungen: for a service, the accessibility information
+ * belongs in the terms or an equivalent document, and Impressum and
+ * Datenschutz keep their own pages, which is where their statutory
+ * accessibility duties attach.
  */
 
 /** Anchors are part of the URL contract — identical in every language. */
@@ -39,7 +51,6 @@ const ANCHOR = {
   account: "konto",
   contribute: "mitmachen",
   contact: "kontakt",
-  legal: "rechtliches",
   /** Entry-level anchors, linked from outside this page or from other answers. */
   regionUnknown: "regionale-windverfuegbarkeit",
   spotSuggest: "spot-vorschlagen",
@@ -285,7 +296,7 @@ const SECTIONS: Section[] = [
   },
 ];
 
-/** Jump bar order: every section, including the hand-laid-out ones. */
+/** Side-navigation order: every section, including the hand-laid-out ones. */
 const JUMP: { id: string; key: TranslationKey }[] = [
   { id: ANCHOR.safety, key: "help.jump.safety" },
   { id: ANCHOR.project, key: "help.jump.project" },
@@ -296,7 +307,6 @@ const JUMP: { id: string; key: TranslationKey }[] = [
   { id: ANCHOR.account, key: "help.jump.account" },
   { id: ANCHOR.contribute, key: "help.jump.contribute" },
   { id: ANCHOR.contact, key: "help.jump.contact" },
-  { id: ANCHOR.legal, key: "help.jump.legal" },
 ];
 
 const CONTACT_TOPICS: { term: TranslationKey; body: TranslationKey }[] = [
@@ -313,11 +323,6 @@ const CONTACT_TOPICS: { term: TranslationKey; body: TranslationKey }[] = [
  *  than printing a dead placeholder address. */
 const CONTACT_EMAIL = (import.meta.env.VITE_LEGAL_EMAIL || "").trim();
 const EMAIL_CONFIGURED = CONTACT_EMAIL !== "" && !CONTACT_EMAIL.endsWith(".invalid");
-
-/** Only the legal three — the info links now point into this page. */
-const LEGAL_LINKS = SITE_LINKS.filter((link) =>
-  ["/impressum", "/datenschutz", "/nutzungsbedingungen"].includes(link.to),
-);
 
 // --- page ------------------------------------------------------------------
 
@@ -344,32 +349,69 @@ export default function Fragen() {
     else el.scrollIntoView();
   }, [target]);
 
+  // Which section the reader is in, so the side navigation says where they
+  // are. An observer rather than a scroll handler: no work on frames where
+  // nothing crossed. The band is the upper third of the viewport, which is
+  // where a heading sits once it has been scrolled to.
+  const [active, setActive] = useState<string>(JUMP[0].id);
+  useEffect(() => {
+    const sections = JUMP.map((entry) => document.getElementById(entry.id)).filter(
+      (el): el is HTMLElement => el !== null,
+    );
+    if (sections.length === 0) return;
+    const seen = new Map<string, boolean>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) seen.set(entry.target.id, entry.isIntersecting);
+        const current = JUMP.find((entry) => seen.get(entry.id));
+        if (current) setActive(current.id);
+      },
+      { rootMargin: "-96px 0px -66% 0px" },
+    );
+    for (const el of sections) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
-      <main className="mx-auto max-w-content px-4 pb-24 pt-32 sm:px-8">
+      <main className="mx-auto max-w-page px-4 pb-24 pt-32 sm:px-8">
         <h1 className="text-heading-lg font-semibold text-ink">{t("help.title")}</h1>
         <p className="mt-3 max-w-measure text-lead text-ink-soft">{t("help.lede")}</p>
 
-        {/* Jump bar. The strip itself scrolls horizontally on a phone (the page
-            must not), and every chip is a full 44px touch target. */}
-        <nav
-          aria-label={t("help.jump.label")}
-          className="-mx-4 mt-8 overflow-x-auto px-4 sm:mx-0 sm:px-0"
-        >
-          <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-            {JUMP.map((entry) => (
-              <li key={entry.id}>
-                <Link
-                  to={{ hash: `#${entry.id}` }}
-                  className="inline-flex min-h-11 items-center rounded-card border border-line px-3 text-ui font-medium text-ink transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-                >
-                  {t(entry.key)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {/* One grid, one nav landmark. Narrow: a single column, the nav a
+            horizontally scrolling strip above the content (the strip scrolls,
+            never the page). Wide: a sticky column beside it. Same links, same
+            44px targets — only the direction changes, so there is no second
+            copy of the navigation to keep in step. */}
+        <div className="mt-8 grid gap-8 lg:mt-12 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-14">
+          <nav
+            aria-label={t("help.jump.label")}
+            className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:self-start lg:overflow-visible lg:sticky lg:top-28"
+          >
+            <ul className="flex w-max gap-2 lg:w-auto lg:flex-col lg:gap-0.5">
+              {JUMP.map((entry) => {
+                const current = entry.id === active;
+                return (
+                  <li key={entry.id}>
+                    <Link
+                      to={{ hash: `#${entry.id}` }}
+                      aria-current={current ? "true" : undefined}
+                      className={`inline-flex min-h-11 items-center rounded-card border px-3 text-ui font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink lg:w-full lg:border-0 lg:border-l-2 lg:rounded-none lg:px-3 ${
+                        current
+                          ? "border-line bg-band text-ink lg:border-ink lg:bg-transparent lg:font-semibold"
+                          : "border-line text-ink hover:bg-band lg:border-transparent lg:text-ink-soft lg:hover:text-ink"
+                      }`}
+                    >
+                      {t(entry.key)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <div className="min-w-0">
 
         {/* 1 — Safety. Open by design: this is the only block with liability
             weight, and it used to sit ninth in a closed accordion. */}
@@ -437,7 +479,8 @@ export default function Fragen() {
           </Band>
         ))}
 
-        {/* 9 — Contact: the operator mailbox, unchanged in behaviour. */}
+        {/* 9 — Contact: its own last section, the operator mailbox first and
+            "what is it about" underneath. */}
         <Band id={ANCHOR.contact} title={t("help.section.contact")}>
           <p className="max-w-measure text-body leading-relaxed text-ink-soft">
             {t("help.contact.intro")}
@@ -463,35 +506,6 @@ export default function Fragen() {
           </div>
         </Band>
 
-        {/* 10 — Legal: one accordion entry plus the three required links. */}
-        <Band id={ANCHOR.legal} title={t("help.section.legal")}>
-          <div className="divide-y divide-line border-y border-line">
-            <Entry
-              item={{
-                q: "help.legal.accessibility.q",
-                blocks: [
-                  p("help.legal.accessibility.p1"),
-                  p("help.legal.accessibility.p2"),
-                  rich("help.legal.accessibility.p3"),
-                ],
-              }}
-              openTarget={target}
-            />
-          </div>
-          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1">
-            {LEGAL_LINKS.map((link) => (
-              <li key={link.to}>
-                <Link
-                  to={link.to}
-                  className="inline-flex min-h-11 items-center text-ui font-semibold text-ink underline underline-offset-4 hover:opacity-70"
-                >
-                  {t(link.key)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Band>
-
         <div className="mt-16 border-t border-line pt-8">
           <p className="text-lead text-ink-soft">{t("help.outro.claim")}</p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -507,6 +521,8 @@ export default function Fragen() {
             >
               {t("help.outro.suggest")}
             </Link>
+          </div>
+        </div>
           </div>
         </div>
       </main>
