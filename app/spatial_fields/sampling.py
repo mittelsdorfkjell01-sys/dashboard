@@ -92,6 +92,46 @@ def bilinear_uv(
     return wind_sample(interpolate(u), interpolate(v))
 
 
+def bilinear_scalar(
+    longitudes: np.ndarray,
+    latitudes: np.ndarray,
+    values: np.ndarray,
+    *,
+    longitude: float,
+    latitude: float,
+    nodata: float | int | None = None,
+) -> float | None:
+    """Sample one rectilinear scalar field without filling land/coverage holes."""
+
+    field = np.asarray(values, dtype=np.float64)
+    if field.ndim != 2:
+        raise ValueError("scalar grid must be two-dimensional")
+    lons, field = _ascending_axis(longitudes, field, axis=1)
+    lats, field = _ascending_axis(latitudes, field, axis=0)
+    if field.shape != (len(lats), len(lons)):
+        raise ValueError("grid shape does not match latitude/longitude axes")
+    if not (lons[0] <= longitude <= lons[-1] and lats[0] <= latitude <= lats[-1]):
+        return None
+
+    x1 = min(max(int(np.searchsorted(lons, longitude, side="right")), 1), len(lons) - 1)
+    y1 = min(max(int(np.searchsorted(lats, latitude, side="right")), 1), len(lats) - 1)
+    x0, y0 = x1 - 1, y1 - 1
+    neighbours = np.array(
+        [field[y0, x0], field[y0, x1], field[y1, x0], field[y1, x1]]
+    )
+    unavailable = ~np.isfinite(neighbours)
+    if nodata is not None:
+        unavailable |= neighbours == nodata
+    if unavailable.any():
+        return None
+
+    dx = 0.0 if lons[x1] == lons[x0] else (longitude - lons[x0]) / (lons[x1] - lons[x0])
+    dy = 0.0 if lats[y1] == lats[y0] else (latitude - lats[y0]) / (lats[y1] - lats[y0])
+    bottom = neighbours[0] * (1 - dx) + neighbours[1] * dx
+    top = neighbours[2] * (1 - dx) + neighbours[3] * dx
+    return float(bottom * (1 - dy) + top * dy)
+
+
 def temporal_uv(
     lower: WindSample,
     upper: WindSample,

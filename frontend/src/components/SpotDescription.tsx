@@ -47,7 +47,7 @@ export default function SpotDescription({
         {!expanded && clipped && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-8 max-w-measure bg-gradient-to-t from-page to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-6 max-w-measure bg-gradient-to-t from-page/75 via-page/20 to-transparent"
           />
         )}
       </div>

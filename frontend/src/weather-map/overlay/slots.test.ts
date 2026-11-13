@@ -36,7 +36,32 @@ describe("map forecast slots", () => {
     } as WaveFieldSample;
     const [slot] = fieldSampleSlots([wave]);
 
-    expect(slot).toMatchObject({ swell: 1.8, period: 8.5, swellDirection: 285, wind: null });
+    expect(slot).toMatchObject({
+      swell: 1.8,
+      period: 8.5,
+      swellDirection: 285,
+      waveDetailKind: "total_wave",
+      wind: null,
+    });
+  });
+
+  it("labels NOAA primary-wave details without presenting them as total-wave values", () => {
+    const wave = {
+      product: "model_wave",
+      valid_at: "2026-10-10T12:00:00Z",
+      total_wave_height_m: 2.1,
+      total_wave_period_s: null,
+      total_wave_direction_from_deg: null,
+      primary_wave_period_s: 9.5,
+      primary_wave_direction_from_deg: 300,
+    } as WaveFieldSample;
+
+    expect(fieldSampleSlots([wave])[0]).toMatchObject({
+      swell: 2.1,
+      period: 9.5,
+      swellDirection: 300,
+      waveDetailKind: "primary_wave",
+    });
   });
 
   it("groups contiguous hours into one caption per local day", () => {
@@ -55,12 +80,17 @@ describe("map forecast slots", () => {
     }], "wind")[0];
     const wave = fieldTileSeriesSlots([{
       validAt: "2026-10-03T12:00:00Z",
-      values: { wave_u: 1, wave_v: 0, total_wave_height: 1.7, total_wave_period: 9 },
+      values: { wave_u: 1, wave_v: 0, total_wave_height: 1.7, primary_wave_period: 9, primary_wave_direction: 280 },
     }], "waves")[0];
 
     expect(wind.wind).toBeCloseTo(9.719, 2);
     expect(wind.gust).toBeCloseTo(15.551, 2);
     expect(wind.air).toBe(17);
-    expect(wave).toMatchObject({ swell: 1.7, period: 9 });
+    expect(wave).toMatchObject({
+      swell: 1.7,
+      period: 9,
+      swellDirection: 280,
+      waveDetailKind: "primary_wave",
+    });
   });
 });

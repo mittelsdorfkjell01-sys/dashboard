@@ -426,18 +426,39 @@ html { -webkit-tap-highlight-color: transparent; }
       rgba(255, 255, 255, 0) 100%
     );
   }
+  /* --- Landing ink -------------------------------------------------------
+     The start page writes in the brand petrol — the same #1C4E63 the switch
+     track uses — instead of the warm near-black the rest of the site keeps.
+     It is set as a token override on the page root, not per call site, so
+     every `text-ink` / `text-ink-soft` inside (headings, spot cards, region
+     tiles, text buttons) follows without touching any other page.
+
+     Light theme only: in dark mode the ink is near-white by design, and
+     petrol type would sink into the dark page. `--sw-ink-soft` is the
+     matching softer step (6.9:1 on `--sw-page`, so running copy still clears
+     WCAG AA; the primary step is 8.4:1). `--sw-muted` deliberately stays the
+     neutral grey, so captions and meta keep a hierarchy against the petrol
+     instead of the page going monochrome blue. */
+  html:not([data-theme="dark"]) .landing-ink {
+    --sw-ink: #1C4E63;
+    --sw-ink-soft: #2E5B6E;
+  }
+
   /* The landing header while it still sits on the hero photo. It overrides the
      ink tokens locally instead of hard-coding a colour at each call site, so
-     `text-ink`, `text-ink-soft` and the wordmark's orange all resolve to their
-     *light-theme* values in BOTH themes — in dark mode the theme ink is nearly
-     white and would disappear into the light hero wash. Deliberately scoped to
-     the header's own elements (tagline, wordmark, menu trigger), never to the
-     panels they open: the account dropdown is a normal themed surface and must
-     keep the real theme ink. Dropped again once the bar hardens into
-     `bg-surface`, where the theme ink is the correct colour. */
+     `text-ink`, `text-ink-soft` and the wordmark's orange all resolve to one
+     fixed, *light-theme-shaped* set in BOTH themes — the theme ink is nearly
+     white in dark mode and would disappear into the light hero wash. These are
+     the landing's petrol values above, pinned as literals because this bar
+     must not follow the theme at all; the wash under it is light on every
+     photo in both themes. Deliberately scoped to the header's own elements
+     (tagline, wordmark, menu trigger), never to the panels they open: the
+     account dropdown is a normal themed surface and must keep the real theme
+     ink. Dropped again once the bar hardens into `bg-surface`, where the
+     themed ink — petrol on the landing — is the correct colour. */
   .on-hero-ink {
-    --sw-ink: #241C17;
-    --sw-ink-soft: #3D332C;
+    --sw-ink: #1C4E63;
+    --sw-ink-soft: #2E5B6E;
     --sw-orange: #B45309;
   }
   /* Account cover placeholder: a calm-sea gradient standing in for a photo. */

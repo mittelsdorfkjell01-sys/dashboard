@@ -7,6 +7,7 @@ from app.spatial_fields.serving import FieldSampleUnavailable
 from app.schemas.live import ValueProvenance
 from app.spatial_fields.spot_forecast import (
     active_wave_publication_ids,
+    apply_spot_wave_baseline,
     apply_field_wind_to_payload,
     assess_spot_field_readiness,
 )
@@ -76,6 +77,73 @@ def test_marine_field_lineage_survives_public_schema_validation() -> None:
     assert provenance["marine_model"] == "dwd-ewam"
     assert provenance["marine_model_run_at"] == "2026-10-09T06:00:00Z"
     assert provenance["marine_publication_id"] == "7d7e9ac1-d6eb-44ed-bcb3-2a26e25fc5b7"
+
+
+def test_noaa_spot_wave_baseline_keeps_primary_wave_semantics(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.spatial_fields.spot_forecast.to_shape",
+        lambda _location: SimpleNamespace(x=8.0, y=50.0),
+    )
+    monkeypatch.setattr(
+        "app.spatial_fields.spot_forecast.active_wave_publication_ids",
+        lambda *_args, **_kwargs: ("noaa-publication",),
+    )
+    monkeypatch.setattr(
+        "app.spatial_fields.spot_forecast.sample_active_field",
+        lambda *_args, **_kwargs: {
+            "publication_id": "noaa-publication",
+            "model": "noaa-gfs-wave",
+            "model_run": datetime(2026, 10, 3, tzinfo=timezone.utc),
+            "total_wave_height_m": 2.1,
+            "total_wave_period_s": None,
+            "total_wave_direction_from_deg": None,
+            "primary_wave_period_s": 9.5,
+            "primary_wave_direction_from_deg": 300.0,
+            "primary_swell_height_m": 1.6,
+            "primary_swell_period_s": 10.0,
+            "primary_swell_direction_from_deg": 305.0,
+            "wind_sea_height_m": 0.7,
+            "wind_sea_period_s": 4.5,
+            "wind_sea_direction_from_deg": 280.0,
+        },
+    )
+    settings = _settings(
+        wave_field_public_enabled=True,
+        wave_field_scope_key="europe-waves",
+        wave_field_primary_model="dwd-ewam",
+        wave_field_fallback_model="dwd-gwam",
+        wave_field_extended_model="noaa-gfs-wave",
+    )
+    payload = {
+        "days": [
+            {
+                "hours": [
+                    {
+                        "time": "2026-10-10T00:00:00+00:00",
+                        "provenance": {},
+                    }
+                ]
+            }
+        ]
+    }
+
+    result = apply_spot_wave_baseline(
+        object(),
+        spot=SimpleNamespace(location=object()),
+        payload=payload,
+        settings=settings,
+        storage=object(),
+    )
+
+    hour = result.payload["days"][0]["hours"][0]
+    assert result.applied is True
+    assert hour["waves"]["total_wave"]["significant_height_m"] == 2.1
+    assert hour["waves"]["total_wave"]["mean_period_s"] is None
+    assert hour["waves"]["total_wave"]["mean_direction_from_deg"] is None
+    assert hour["waves"]["primary_wave"]["mean_period_s"] == 9.5
+    assert hour["waves"]["primary_wave"]["mean_direction_from_deg"] == 300.0
+    assert hour["period"] == 10.0
+    assert hour["swell_dir"] == 305.0
 
 
 def test_shadow_stage_is_fail_closed_without_database_reads() -> None:

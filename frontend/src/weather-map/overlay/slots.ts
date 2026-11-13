@@ -16,6 +16,7 @@ export type MapForecastSlot = WindBarSlot & {
   swell?: number | null;
   period?: number | null;
   swellDirection?: number | null;
+  waveDetailKind?: "total_wave" | "primary_wave" | null;
 };
 
 const HOUR = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
@@ -33,6 +34,13 @@ export function fieldSampleSlots(samples: Array<FieldSample | WaveFieldSample>):
     .map((sample) => {
       const at = new Date(sample.valid_at);
       if (sample.product === "model_wave") {
+        const usesTotalWaveDetails = sample.total_wave_period_s != null
+          || sample.total_wave_direction_from_deg != null;
+        const hasPrimaryWaveDetails = sample.primary_wave_period_s != null
+          || sample.primary_wave_direction_from_deg != null;
+        const waveDetailKind: MapForecastSlot["waveDetailKind"] = usesTotalWaveDetails
+          ? "total_wave"
+          : hasPrimaryWaveDetails ? "primary_wave" : null;
         return {
           utcKey: sample.valid_at,
           localDate: DATE.format(at),
@@ -41,8 +49,11 @@ export function fieldSampleSlots(samples: Array<FieldSample | WaveFieldSample>):
           wind: null,
           gust: null,
           swell: sample.total_wave_height_m,
-          period: sample.total_wave_period_s,
-          swellDirection: sample.total_wave_direction_from_deg,
+          period: usesTotalWaveDetails ? sample.total_wave_period_s : sample.primary_wave_period_s,
+          swellDirection: usesTotalWaveDetails
+            ? sample.total_wave_direction_from_deg
+            : sample.primary_wave_direction_from_deg,
+          waveDetailKind,
         };
       }
       return {
@@ -72,13 +83,23 @@ export function fieldTileSeriesSlots(
     };
     if (product === "waves") {
       const u = values.wave_u, v = values.wave_v;
+      const usesTotalWaveDetails = values.total_wave_period !== undefined
+        || values.total_wave_direction !== undefined;
+      const hasPrimaryWaveDetails = values.primary_wave_period !== undefined
+        || values.primary_wave_direction !== undefined;
+      const waveDetailKind: MapForecastSlot["waveDetailKind"] = usesTotalWaveDetails
+        ? "total_wave"
+        : hasPrimaryWaveDetails ? "primary_wave" : null;
       return {
         ...common,
         wind: null,
         gust: null,
         swell: values.total_wave_height ?? (u !== undefined && v !== undefined ? Math.hypot(u, v) : null),
-        period: values.total_wave_period,
-        swellDirection: values.total_wave_direction,
+        period: usesTotalWaveDetails ? values.total_wave_period : values.primary_wave_period,
+        swellDirection: usesTotalWaveDetails
+          ? values.total_wave_direction
+          : values.primary_wave_direction,
+        waveDetailKind,
       };
     }
     const u = values.wind_u, v = values.wind_v;

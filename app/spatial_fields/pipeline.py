@@ -59,6 +59,10 @@ from app.spatial_fields.tile_codec import (
     encode_field_tile,
     sha256_hex,
 )
+from app.weather.wave_verification import (
+    archive_wave_source_slice,
+    load_active_wave_platforms,
+)
 
 
 SOURCE_LODS = (4, 5)
@@ -97,8 +101,10 @@ SCALAR_VARIABLES = {
         "range": (0.0, 100.0),
     },
     "total_wave_height": {"unit": "m", "semantic": "wave_height", "height_m": None, "scale": WAVE_HEIGHT_SCALE_M_V2, "range": (0.0, 40.0)},
-    "total_wave_direction": {"unit": "°", "semantic": "direction_from", "height_m": None, "scale": WAVE_DIRECTION_SCALE_DEG_V2, "range": (0.0, 360.0)},
-    "total_wave_period": {"unit": "s", "semantic": "wave_period", "height_m": None, "scale": WAVE_PERIOD_SCALE_S_V2, "range": (0.0, 40.0)},
+    "total_wave_direction": {"unit": "°", "semantic": "mean_direction_from", "height_m": None, "scale": WAVE_DIRECTION_SCALE_DEG_V2, "range": (0.0, 360.0)},
+    "total_wave_period": {"unit": "s", "semantic": "energy_period_tm10", "height_m": None, "scale": WAVE_PERIOD_SCALE_S_V2, "range": (0.0, 40.0)},
+    "primary_wave_direction": {"unit": "°", "semantic": "primary_wave_direction_from", "height_m": None, "scale": WAVE_DIRECTION_SCALE_DEG_V2, "range": (0.0, 360.0)},
+    "primary_wave_period": {"unit": "s", "semantic": "primary_wave_mean_period", "height_m": None, "scale": WAVE_PERIOD_SCALE_S_V2, "range": (0.0, 40.0)},
     "wind_sea_height": {"unit": "m", "semantic": "wave_height", "height_m": None, "scale": WAVE_HEIGHT_SCALE_M_V2, "range": (0.0, 40.0)},
     "wind_sea_direction": {"unit": "°", "semantic": "direction_from", "height_m": None, "scale": WAVE_DIRECTION_SCALE_DEG_V2, "range": (0.0, 360.0)},
     "wind_sea_period": {"unit": "s", "semantic": "wave_period", "height_m": None, "scale": WAVE_PERIOD_SCALE_S_V2, "range": (0.0, 40.0)},
@@ -434,6 +440,17 @@ def process_run(
     integrity_ok = True
     series_builder = FieldSeriesBuilder()
     series_entries: list[dict] = []
+    wave_archive_samples = 0
+    wave_archive_errors: list[str] = []
+    wave_platforms = (
+        load_active_wave_platforms(
+            db,
+            limit=int(getattr(settings, "wave_backtest_max_platforms", 2000)),
+        )
+        if (model.model_metadata or {}).get("product") == "wave"
+        and getattr(settings, "wave_backtest_archive_enabled", True)
+        else []
+    )
 
     try:
         for forecast_hour in expected_hours:
@@ -453,6 +470,21 @@ def process_run(
             coordinate_checksums.add(source.u.coordinate_checksum)
             if source.product == "wind" and source.gust is None:
                 raise ValueError("weather-field source is missing wind gust")
+            if source.product == "wave" and wave_platforms:
+                try:
+                    with db.begin_nested():
+                        wave_archive_samples += archive_wave_source_slice(
+                            db,
+                            run=run,
+                            model=model,
+                            source=source,
+                            platforms=wave_platforms,
+                        )
+                except Exception as exc:
+                    # Verification evidence is a shadow product and must not make
+                    # the public forecast unavailable. The bounded diagnostic is
+                    # retained on the run for operational follow-up.
+                    wave_archive_errors.append(type(exc).__name__)
 
             for component in (source.u.values, source.v.values):
                 finite = component[np.isfinite(component)]
@@ -761,6 +793,11 @@ def process_run(
             "series_tile_count": len(series_entries),
             "asset_bytes": sum(item["bytes"] for item in all_index_entries),
             "quality": metrics,
+            "wave_backtest_archive": {
+                "platforms": len(wave_platforms),
+                "samples": wave_archive_samples,
+                "errors": wave_archive_errors[:10],
+            },
         }
         finalize_run_quality(db, run.id, completed_at=published_at)
         publication = stage_publication(
@@ -779,16 +816,26 @@ def process_run(
         if run.status != "ready":
             publication.status = "rejected"
         activation_blockers: list[str] = []
-        if run.status == "ready" and settings.weather_field_auto_activate:
+        auto_activate = (
+            getattr(settings, "wave_field_auto_activate", True)
+            if first_source.product == "wave"
+            else settings.weather_field_auto_activate
+        )
+        if run.status == "ready" and auto_activate:
             try:
                 activate_publication(
                     db,
                     publication.id,
                     actor="weather-field-worker",
-                    reason="all hard gates and shadow rollout gates passed",
+                    reason=(
+                        "wave technical integrity gates passed; verification runs in parallel"
+                        if first_source.product == "wave"
+                        else "all hard gates and shadow rollout gates passed"
+                    ),
                     # Wind uses the existing station/shadow evidence rollout.
-                    # Wave fields have no equivalent observation network yet;
-                    # their GRIB, range, continuity and integrity gates remain mandatory.
+                    # Wave verification is deliberately non-blocking shadow
+                    # evidence; GRIB, range, continuity and integrity gates are
+                    # still mandatory before every public activation.
                     rollout_policy=None if first_source.product == "wave" else settings,
                 )
             except PublicationNotReady as exc:
@@ -804,6 +851,7 @@ def process_run(
             "asset_bytes": sum(item["bytes"] for item in all_index_entries),
             "downloaded_bytes": downloaded_bytes,
             "quality": gates,
+            "wave_backtest_samples": wave_archive_samples,
             "public_effect": "field-publication" if publication.active else "none",
             "activation_blockers": activation_blockers,
         }

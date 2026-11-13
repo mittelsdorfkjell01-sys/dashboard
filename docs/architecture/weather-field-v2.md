@@ -282,6 +282,9 @@ T+120 by default.
 - `GET /weather-fields/waves`: automatically selects EWAM in Europe, GWAM
   globally, and NOAA GFS-Wave when `valid_at` lies in the ten-day tail
   for global fallback coverage;
+- DWD manifests expose total-wave `TM10`/`MWD`, while NOAA manifests expose
+  `PERPW`/`DIRPW` as explicitly named primary-wave fields; consumers must not
+  merge those semantics even though both accompany total significant height;
 - `GET /weather-fields/waves/health`: reports the EWAM, GWAM and GFS-Wave scopes
   independently so one healthy model cannot hide a stale or failed partner;
 - `GET /weather-fields/wind/runs`: authenticated diagnostic alias when the admin
@@ -297,13 +300,16 @@ require an explicit confirmation plus a recorded reason and actor.
 
 ### Safe rollout and operations
 
-The three independent switches default to false:
+Wind ingestion and publication remain opt-in. The wave serving surface defaults
+to public so an active, technically valid EWAM/GWAM/GFS-Wave publication is
+immediately available:
 
 ```text
 WEATHER_FIELD_PIPELINE_ENABLED=false
 WEATHER_FIELD_PUBLIC_ENABLED=false
 WEATHER_FIELD_AUTO_ACTIVATE=false
-WAVE_FIELD_PUBLIC_ENABLED=false
+WAVE_FIELD_PUBLIC_ENABLED=true
+WAVE_FIELD_AUTO_ACTIVATE=true
 ```
 
 The first switch permits cron/worker ingestion in shadow mode. The second makes
@@ -312,6 +318,11 @@ is separately gated and is enabled only after the required consecutive shadow
 cycles and resource budgets are configured for production. Failed or rejected
 replacements never alter the active pointer. Retention always protects the
 active run and its immediate predecessor, enabling constant-time rollback.
+Wave auto-activation is independent: it still requires every technical hard
+gate but does not wait for the parallel observation backtest.
+Wave backtesting is separate, parallel shadow evidence and never blocks a
+technically valid publication. Nearshore transformation and suitability ratings
+remain outside this rollout.
 
 Run `python scripts/weather_field_worker.py` for one manual bounded batch or
 `python scripts/weather_field_worker.py --loop` for the interruptible worker

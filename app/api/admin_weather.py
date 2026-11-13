@@ -1342,6 +1342,10 @@ def activate_sectors(
 @router.get("/spots/{spot_id}/operations")
 def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -> dict:
     """Read model, cell, validation, job and publication state without implying inactive layers are live."""
+    from app.config import get_settings
+    from app.spatial_fields.forecast_profile import wave_model_keys
+    from app.spatial_fields.spot_forecast import active_wave_publication_ids
+
     spot = db.get(Spot, spot_id)
     if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
@@ -1354,6 +1358,11 @@ def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -
     calibration = get_calibration(spot_id, db)
     marine = ((snapshot.internal or {}).get("marine") if snapshot else None) or {}
     profile = getattr(spot, "weather_profile", None)
+    settings = get_settings()
+    wave_publication_ids = active_wave_publication_ids(db, settings=settings)
+    wave_public = bool(
+        settings.wave_field_public_enabled and wave_publication_ids
+    )
     return {
         "spot_id": str(spot_id),
         "public_point_forecast": {"enabled": True, "path": "open_meteo_transition", "observation_type": "forecast"},
@@ -1372,7 +1381,19 @@ def weather_wave_operations(spot_id: uuid.UUID, db: Session = Depends(get_db)) -
         "jobs": [_job_view(job) for job in jobs],
         "layers": {
             "wind_field": {"public": False, "reason": "No gridded provider publication configured"},
-            "wave_field": {"public": False, "reason": "Copernicus credentials/licence and ingestion decision required"},
+            "wave_field": {
+                "public": wave_public,
+                "reason": (
+                    None
+                    if wave_public
+                    else "No active EWAM/GWAM/GFS-Wave publication is available."
+                    if settings.wave_field_public_enabled
+                    else "Wave-field publication is disabled."
+                ),
+                "models": list(wave_model_keys(settings)),
+                "active_publication_ids": list(wave_publication_ids),
+                "verification": "parallel_shadow",
+            },
             "nearshore": {"public": False, "reason": "Bathymetry and holdout validation gates not passed"},
         },
     }

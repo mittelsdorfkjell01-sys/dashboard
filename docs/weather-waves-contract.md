@@ -13,10 +13,19 @@ Wind and wave directions are bearings the vector comes **from**. Direction field
 Wave components are separate:
 
 - `total_wave`: combined sea state;
+- `primary_wave`: the dominant NOAA wave system when supplied; its period and
+  direction must never be relabelled as combined-sea values;
 - `wind_sea`: locally forced sea;
 - `primary_swell` and `secondary_swell`: spectral swell partitions when supplied.
 
 Deprecated `swell`, `period`, `swell_dir`, and `swell_max` fields contain primary swell only. They are never populated from total-wave fields. Missing components remain `null`. Phase/group speed and breaking information remain unavailable without depth-aware nearshore computation.
+
+DWD EWAM/GWAM publish `TM10` and `MWD` as total-wave energy period and mean
+direction. NOAA GFS-Wave publishes `PERPW` and `DIRPW` as primary-wave period
+and direction. The spatial-field contract therefore uses
+`total_wave_period`/`total_wave_direction` only for DWD and
+`primary_wave_period`/`primary_wave_direction` for NOAA. The significant height
+remains `total_wave_height` for all three models.
 
 ## Spatial fields and tiles
 

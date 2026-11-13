@@ -34,7 +34,7 @@ def publish_wave_run(
     now: datetime | None = None,
 ) -> dict:
     settings = get_settings()
-    settings.weather_field_auto_activate = activate
+    settings.wave_field_auto_activate = activate
     forecast_hours = forecast_hours_for_model(
         model_key, hours if hours is not None else _configured_hours(settings, model_key)
     )

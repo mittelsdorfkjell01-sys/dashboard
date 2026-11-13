@@ -192,6 +192,8 @@ export interface WaveComponent {
 }
 export interface WaveComponents {
   total_wave?: WaveComponent | null;
+  // NOAA exposes PERPW/DIRPW as primary-wave details, not total-wave details.
+  primary_wave?: WaveComponent | null;
   wind_sea?: WaveComponent | null;
   primary_swell?: WaveComponent | null;
   secondary_swell?: WaveComponent | null;

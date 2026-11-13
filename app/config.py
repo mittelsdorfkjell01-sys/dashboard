@@ -96,9 +96,17 @@ class Settings(BaseSettings):
     wave_field_primary_model: str = "dwd-ewam"
     wave_field_fallback_model: str = "dwd-gwam"
     wave_field_extended_model: str = "noaa-gfs-wave"
-    wave_field_public_enabled: bool = False
+    # Wave fields are a public forecast product. Technical integrity gates and
+    # atomic publication rollback remain mandatory; verification runs in parallel.
+    wave_field_public_enabled: bool = True
+    # Wave activation is independent from the observation-gated wind rollout.
+    wave_field_auto_activate: bool = True
+    # Cost-free verification stores only point samples at imported observation
+    # platforms; no additional provider or object-storage service is required.
+    wave_backtest_archive_enabled: bool = True
+    wave_backtest_max_platforms: int = Field(default=2000, ge=1, le=10_000)
     weather_field_processing_version: str = "field-v2.1.0"
-    wave_field_processing_version: str = "wave-v2.0.0"
+    wave_field_processing_version: str = "wave-v2.1.0"
     weather_field_forecast_hours: Annotated[list[int], NoDecode] = Field(
         default_factory=lambda: [
             *range(0, 25),

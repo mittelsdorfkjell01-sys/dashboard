@@ -47,6 +47,8 @@ FieldVariable = Literal[
     "total_wave_height",
     "total_wave_direction",
     "total_wave_period",
+    "primary_wave_direction",
+    "primary_wave_period",
     "wind_sea_height",
     "wind_sea_direction",
     "wind_sea_period",
@@ -94,6 +96,10 @@ class VariableDefinition(StrictModel):
         "wave_height",
         "direction_from",
         "wave_period",
+        "mean_direction_from",
+        "energy_period_tm10",
+        "primary_wave_direction_from",
+        "primary_wave_mean_period",
     ]
     height_m: float | None = Field(default=None, gt=0)
 

@@ -90,8 +90,14 @@ export default function MapForecastSheet({
                     {selected.gust != null && <> · Böen {windValue(selected.gust, windUnit)}</>}
                     {selected.air != null && <> · {tempValue(selected.air, tempUnit)}°</>}
                     {selected.swell != null && <> · Welle {waveValue(selected.swell, waveUnit)} {WAVE_UNIT_SUFFIX[waveUnit]}</>}
-                    {selected.period != null && <> · {selected.period.toFixed(1).replace(".", ",")} s</>}
-                    {selected.swellDirection != null && <> · aus {Math.round(selected.swellDirection)}°</>}
+                    {selected.period != null && <>
+                      {selected.waveDetailKind === "primary_wave" ? " · Primärperiode " : " · "}
+                      {selected.period.toFixed(1).replace(".", ",")} s
+                    </>}
+                    {selected.swellDirection != null && <>
+                      {selected.waveDetailKind === "primary_wave" ? " · Primärrichtung aus " : " · aus "}
+                      {Math.round(selected.swellDirection)}°
+                    </>}
                     {meta && <> · {meta}</>}
                   </>
                 : "Keine Vorhersage für diesen Punkt"}

@@ -194,6 +194,7 @@ class WaveComponentRead(BaseModel):
 
 class WaveComponentsRead(BaseModel):
     total_wave: WaveComponentRead | None = None
+    primary_wave: WaveComponentRead | None = None
     wind_sea: WaveComponentRead | None = None
     primary_swell: WaveComponentRead | None = None
     secondary_swell: WaveComponentRead | None = None
