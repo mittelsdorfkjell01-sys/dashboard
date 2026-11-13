@@ -197,7 +197,10 @@ export default function Landing() {
   }, [browseAll, visibleSpotLimit, gridSpots.length, revealMore]);
 
   return (
-    <div className="relative bg-page">
+    // `landing-ink` rebinds the ink tokens to the brand petrol for this page
+    // only (see index.css) — the start page's dark type is the switch blue,
+    // every other page keeps the warm near-black.
+    <div className="landing-ink relative bg-page">
       <LandingHeader sticky showMenu onMobileSearch={openSearch} />
 
       {/* 1 — Hero screen. The hero image sits at z-0 (a positioned descendant, so

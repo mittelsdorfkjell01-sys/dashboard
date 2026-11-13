@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import httpx
 import numpy as np
 
+from app.models.wave_verification import WaveForecastSample, WaveObservationPlatform
 from app.models.weather_field import WeatherFieldPublication
 from app.forecast.refresh_worker import build_plan
 from app.spatial_fields.catalog import sync_free_model_catalog
@@ -13,6 +14,7 @@ from app.spatial_fields.pipeline import process_run
 from app.spatial_fields.providers import (
     DwdWaveFieldProvider,
     FieldSourceSlice,
+    NOAA_GFS_WAVE_ROLES,
     NoaaGfsWaveProvider,
     _normalize_wave_field,
 )
@@ -75,6 +77,40 @@ class SyntheticWaveProvider:
         )
 
 
+class SyntheticNoaaWaveProvider:
+    model_key = "noaa-gfs-wave"
+
+    def fetch(self, run_at: datetime, forecast_hour: int) -> FieldSourceSlice:
+        height = np.full((41, 57), 2.1)
+        direction = np.full_like(height, 300.0)
+        radians = np.radians(direction)
+        scalars = {
+            "total_wave_height": _grid(height),
+            "primary_wave_direction": _grid(direction),
+            "primary_wave_period": _grid(np.full_like(height, 9.5)),
+            "wind_sea_height": _grid(np.full_like(height, 0.7)),
+            "wind_sea_direction": _grid(np.full_like(height, 280.0)),
+            "wind_sea_period": _grid(np.full_like(height, 4.5)),
+            "primary_swell_height": _grid(np.full_like(height, 1.6)),
+            "primary_swell_direction": _grid(np.full_like(height, 305.0)),
+            "primary_swell_period": _grid(np.full_like(height, 10.0)),
+        }
+        return FieldSourceSlice(
+            forecast_hour=forecast_hour,
+            valid_time=run_at + timedelta(hours=forecast_hour),
+            u=_grid(-height * np.sin(radians)),
+            v=_grid(-height * np.cos(radians)),
+            gust=None,
+            source_urls=("memory://noaa-gfs-wave/synthetic",),
+            downloaded_bytes=1024,
+            scalar_fields=scalars,
+            product="wave",
+            vector_u_name="wave_u",
+            vector_v_name="wave_v",
+            magnitude_name="total_wave_height",
+        )
+
+
 def test_dwd_wave_url_uses_public_ewam_layout() -> None:
     provider = DwdWaveFieldProvider("dwd-ewam")
     url = provider.file_url(datetime(2026, 10, 9, 12, tzinfo=timezone.utc), "swh", 7)
@@ -114,6 +150,12 @@ def test_noaa_gfs_wave_uses_free_global_subset_and_discovers_ten_day_tail() -> N
     assert query["rightlon"] == "360.0"
 
 
+def test_noaa_primary_wave_fields_are_not_mapped_to_total_wave_semantics() -> None:
+    assert NOAA_GFS_WAVE_ROLES["swh"] == "total_wave_height"
+    assert NOAA_GFS_WAVE_ROLES["perpw"] == "primary_wave_period"
+    assert NOAA_GFS_WAVE_ROLES["dirpw"] == "primary_wave_direction"
+
+
 def test_wave_run_publishes_and_samples_arbitrary_point(db) -> None:
     model = next(row for row in sync_free_model_catalog(db) if row.model_key == "dwd-ewam")
     model_run = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
@@ -127,6 +169,18 @@ def test_wave_run_publishes_and_samples_arbitrary_point(db) -> None:
         native_grid={"status": "pending_source_inspection"},
         valid_times=[model_run.isoformat().replace("+00:00", "Z")],
     )
+    platform = WaveObservationPlatform(
+        provider_key="copernicus-marine",
+        external_id="synthetic-north-sea-buoy",
+        name="Synthetic North Sea buoy",
+        latitude=50.0,
+        longitude=8.0,
+        region_code="north-sea",
+        location_class="offshore",
+        active=True,
+        platform_metadata={},
+    )
+    db.add(platform)
     db.commit()
     settings = SimpleNamespace(
         weather_field_scope_key="wind-test",
@@ -135,7 +189,8 @@ def test_wave_run_publishes_and_samples_arbitrary_point(db) -> None:
         wave_field_primary_model="dwd-ewam",
         weather_field_public_base_url="/weather-field-assets",
         weather_field_max_run_download_bytes=10_000_000,
-        weather_field_auto_activate=True,
+        weather_field_auto_activate=False,
+        wave_field_auto_activate=True,
     )
     storage = MemoryFieldObjectStorage(public_base_url="/weather-field-assets")
     result = process_run(
@@ -143,11 +198,20 @@ def test_wave_run_publishes_and_samples_arbitrary_point(db) -> None:
     )
     publication = db.get(WeatherFieldPublication, result["publication_id"])
     assert publication.active is True
+    archived = db.query(WaveForecastSample).filter_by(platform_id=platform.id).one()
+    assert archived.significant_height_m > 1.7
+    assert archived.period_s == 8.5
+    assert archived.period_semantic == "energy_period_tm10"
+    assert archived.direction_semantic == "mean_direction_from"
+    assert result["wave_backtest_samples"] >= 1
     active = load_active_manifest(db, storage=storage, scope_key="waves-test")
     assert active is not None
     assert {item.name for item in active.manifest.variables} >= {
         "wave_u", "wave_v", "total_wave_height", "primary_swell_height"
     }
+    semantics = {item.name: item.semantic for item in active.manifest.variables}
+    assert semantics["total_wave_period"] == "energy_period_tm10"
+    assert semantics["total_wave_direction"] == "mean_direction_from"
     sample = sample_active_field(
         db,
         storage=storage,
@@ -190,3 +254,69 @@ def test_wave_run_publishes_and_samples_arbitrary_point(db) -> None:
     )
     assert publication_ids == (str(publication.id),)
     assert plan.wave_context_changed_spot_ids == (spot_id,)
+
+
+def test_noaa_wave_run_exposes_primary_wave_details_without_relabeling(db) -> None:
+    model = next(
+        row
+        for row in sync_free_model_catalog(db)
+        if row.model_key == "noaa-gfs-wave"
+    )
+    model_run = datetime.now(timezone.utc).replace(
+        minute=0, second=0, microsecond=0
+    )
+    valid_at = model_run + timedelta(hours=168)
+    run = get_or_create_run(
+        db,
+        model=model,
+        model_run_at=model_run,
+        processing_version="wave-noaa-semantics-v1",
+        contract_version="weather-field-v2",
+        coverage={"west": -10.5, "south": 30.0, "east": 42.0, "north": 66.0},
+        native_grid={"status": "pending_source_inspection"},
+        valid_times=[valid_at.isoformat().replace("+00:00", "Z")],
+    )
+    db.commit()
+    settings = SimpleNamespace(
+        weather_field_scope_key="wind-test",
+        weather_field_primary_model="icon-eu",
+        wave_field_scope_key="waves-noaa-semantics",
+        wave_field_primary_model="dwd-ewam",
+        weather_field_public_base_url="/weather-field-assets",
+        weather_field_max_run_download_bytes=10_000_000,
+        weather_field_auto_activate=False,
+        wave_field_auto_activate=True,
+    )
+    storage = MemoryFieldObjectStorage(public_base_url="/weather-field-assets")
+
+    result = process_run(
+        db,
+        run.id,
+        provider=SyntheticNoaaWaveProvider(),
+        storage=storage,
+        settings=settings,
+    )
+    scope = "waves-noaa-semantics:noaa-gfs-wave"
+    active = load_active_manifest(db, storage=storage, scope_key=scope)
+    assert active is not None
+    semantics = {item.name: item.semantic for item in active.manifest.variables}
+    assert "total_wave_period" not in semantics
+    assert "total_wave_direction" not in semantics
+    assert semantics["primary_wave_period"] == "primary_wave_mean_period"
+    assert semantics["primary_wave_direction"] == "primary_wave_direction_from"
+
+    sample = sample_active_field(
+        db,
+        storage=storage,
+        scope_key=scope,
+        latitude=50.0,
+        longitude=8.0,
+        valid_at=valid_at,
+        model_key="noaa-gfs-wave",
+    )
+    assert sample["total_wave_height_m"] == 2.1
+    assert sample["total_wave_period_s"] is None
+    assert sample["total_wave_direction_from_deg"] is None
+    assert sample["primary_wave_period_s"] == 9.5
+    assert sample["primary_wave_direction_from_deg"] == 300.0
+    assert result["public_effect"] == "field-publication"

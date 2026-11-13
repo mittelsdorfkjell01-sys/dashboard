@@ -116,6 +116,13 @@ from app.models.weather_field_shadow import (
     WeatherFieldShadowRun,
     WeatherFieldShadowSample,
 )
+from app.models.wave_verification import (
+    WaveForecastSample,
+    WaveObservation,
+    WaveObservationPlatform,
+    WaveVerificationRun,
+    WaveVerificationScore,
+)
 
 __all__ = [
     "Base",
@@ -222,4 +229,6 @@ __all__ = [
     "WeatherFieldModel", "WeatherFieldJob", "WeatherFieldRun", "WeatherFieldAsset", "WeatherFieldQualityEvent",
     "WeatherFieldPublication",
     "WeatherFieldShadowRun", "WeatherFieldShadowSample", "WeatherFieldShadowMetric",
+    "WaveObservationPlatform", "WaveObservation", "WaveForecastSample",
+    "WaveVerificationRun", "WaveVerificationScore",
 ]

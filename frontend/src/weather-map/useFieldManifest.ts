@@ -69,7 +69,7 @@ export function useFieldManifest(
           setState({
             status: "unavailable",
             message: product === "waves"
-              ? "Der erste validierte DWD-Wellenlauf wird noch vorbereitet."
+              ? "Aktuell ist noch keine aktive Wellenprognose verfügbar."
               : "Das Wetterfeld wird gerade vorbereitet. Die Spotkarte bleibt verfügbar.",
           });
           return;

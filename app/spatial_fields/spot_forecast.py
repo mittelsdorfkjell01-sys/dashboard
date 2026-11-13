@@ -147,8 +147,16 @@ def apply_spot_wave_baseline(
             height = field.get("total_wave_height_m")
             period = field.get("total_wave_period_s")
             direction = field.get("total_wave_direction_from_deg")
-            if not all(isinstance(value, (int, float)) and math.isfinite(value) for value in (height, period, direction)):
+            if not isinstance(height, (int, float)) or not math.isfinite(height):
                 continue
+            primary_wave_period = field.get("primary_wave_period_s")
+            primary_wave_direction = field.get("primary_wave_direction_from_deg")
+            has_primary_wave_period = isinstance(primary_wave_period, (int, float)) and math.isfinite(
+                primary_wave_period
+            )
+            has_primary_wave_direction = isinstance(primary_wave_direction, (int, float)) and math.isfinite(
+                primary_wave_direction
+            )
             primary_height = field.get("primary_swell_height_m")
             primary_period = field.get("primary_swell_period_s")
             primary_direction = field.get("primary_swell_direction_from_deg")
@@ -168,11 +176,30 @@ def apply_spot_wave_baseline(
                 waves={
                     "total_wave": {
                         "significant_height_m": round(float(height), 2),
-                        "mean_period_s": round(float(period), 1),
-                        "mean_direction_from_deg": round(float(direction) % 360.0, 1),
+                        "mean_period_s": round(float(period), 1) if isinstance(period, (int, float)) else None,
+                        "mean_direction_from_deg": round(float(direction) % 360.0, 1) if isinstance(direction, (int, float)) else None,
                         "source": marine_source,
                         "quality_tier": "model_field",
                     },
+                    "primary_wave": (
+                        {
+                            "significant_height_m": None,
+                            "mean_period_s": (
+                                round(float(primary_wave_period), 1)
+                                if has_primary_wave_period
+                                else None
+                            ),
+                            "mean_direction_from_deg": (
+                                round(float(primary_wave_direction) % 360.0, 1)
+                                if has_primary_wave_direction
+                                else None
+                            ),
+                            "source": marine_source,
+                            "quality_tier": "model_field",
+                        }
+                        if has_primary_wave_period or has_primary_wave_direction
+                        else None
+                    ),
                     "wind_sea": {
                         "significant_height_m": field.get("wind_sea_height_m"),
                         "mean_period_s": field.get("wind_sea_period_s"),

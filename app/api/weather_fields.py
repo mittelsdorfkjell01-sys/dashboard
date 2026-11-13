@@ -606,7 +606,7 @@ def wave_field_manifest(
     settings = get_settings()
     if not settings.wave_field_public_enabled:
         return FieldAvailability(
-            reason="Wave fields are waiting for their first validated DWD publication."
+            reason="Wave-field publication is disabled."
         ).model_dump(mode="json")
     if (lat is None) != (lon is None):
         raise HTTPException(status_code=422, detail="lat and lon must be provided together.")

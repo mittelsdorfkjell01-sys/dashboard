@@ -21,12 +21,14 @@ def provenance(**patch):
     return ValueProvenance.model_validate(data)
 
 
-def test_total_wave_and_primary_swell_are_distinct():
+def test_total_primary_wave_and_primary_swell_are_distinct():
     waves = WaveComponentsRead.model_validate({
         "total_wave": {"significant_height_m": 2.4, "mean_direction_from_deg": 250},
+        "primary_wave": {"mean_period_s": 9.5, "mean_direction_from_deg": 260},
         "primary_swell": {"significant_height_m": 1.7, "mean_direction_from_deg": 270},
     })
     assert waves.total_wave.significant_height_m == 2.4
+    assert waves.primary_wave.mean_period_s == 9.5
     assert waves.primary_swell.significant_height_m == 1.7
     assert waves.phase_speed_ms is None
 

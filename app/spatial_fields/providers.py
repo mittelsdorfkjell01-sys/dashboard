@@ -483,6 +483,20 @@ class DwdWaveFieldProvider:
         )
 
 
+NOAA_GFS_WAVE_ROLES = {
+    "swh": "total_wave_height",
+    # PERPW/DIRPW describe the primary wave system, not the combined sea state.
+    "perpw": "primary_wave_period",
+    "dirpw": "primary_wave_direction",
+    "shww": "wind_sea_height",
+    "mpww": "wind_sea_period",
+    "wvdir": "wind_sea_direction",
+    "shts": "primary_swell_height",
+    "mpts": "primary_swell_period",
+    "swdir": "primary_swell_direction",
+}
+
+
 def decode_gfs_wave_fields(data: bytes) -> dict[str, RegularGrid]:
     """Decode the bounded NOAA GFS-Wave subset used by the ten-day tail."""
     try:
@@ -495,17 +509,6 @@ def decode_gfs_wave_fields(data: bytes) -> dict[str, RegularGrid]:
     except ImportError as exc:  # pragma: no cover - deployment dependency
         raise ProviderUnavailable("ecCodes runtime is not installed") from exc
 
-    roles = {
-        "swh": "total_wave_height",
-        "perpw": "total_wave_period",
-        "dirpw": "total_wave_direction",
-        "shww": "wind_sea_height",
-        "mpww": "wind_sea_period",
-        "wvdir": "wind_sea_direction",
-        "shts": "primary_swell_height",
-        "mpts": "primary_swell_period",
-        "swdir": "primary_swell_direction",
-    }
     fields: dict[str, RegularGrid] = {}
     temporary_path: Path | None = None
     try:
@@ -516,7 +519,7 @@ def decode_gfs_wave_fields(data: bytes) -> dict[str, RegularGrid]:
             while (handle := codes_grib_new_from_file(stream)) is not None:
                 try:
                     short_name = str(codes_get(handle, "shortName")).casefold()
-                    role = roles.get(short_name)
+                    role = NOAA_GFS_WAVE_ROLES.get(short_name)
                     if role is None or role in fields:
                         continue
                     # SWELL/SWPER/SWDIR contain three ordered partitions. The
@@ -545,7 +548,7 @@ def decode_gfs_wave_fields(data: bytes) -> dict[str, RegularGrid]:
                     if attempt < 2:
                         time.sleep(0.02)
 
-    required = set(roles.values())
+    required = set(NOAA_GFS_WAVE_ROLES.values())
     missing = sorted(required - fields.keys())
     if missing:
         raise InvalidModelData(
@@ -663,7 +666,7 @@ class NoaaGfsWaveProvider:
         source_url, data = self._request(run_at, forecast_hour)
         grids = decode_gfs_wave_fields(data)
         reference = grids["total_wave_height"]
-        direction = np.radians(grids["total_wave_direction"].values)
+        direction = np.radians(grids["primary_wave_direction"].values)
         height = reference.values
         return FieldSourceSlice(
             forecast_hour=forecast_hour,

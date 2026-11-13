@@ -3,7 +3,12 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import pytest
 
-from app.spatial_fields.sampling import bilinear_uv, temporal_uv, wind_sample
+from app.spatial_fields.sampling import (
+    bilinear_scalar,
+    bilinear_uv,
+    temporal_uv,
+    wind_sample,
+)
 from app.weather.vectors import wind_to_uv
 
 
@@ -60,6 +65,28 @@ def test_bilinear_returns_none_outside_coverage() -> None:
         values,
         values,
         longitude=-0.1,
+        latitude=0.5,
+    ) is None
+
+
+def test_bilinear_scalar_interpolates_and_refuses_missing_neighbour() -> None:
+    longitudes = np.array([0.0, 1.0])
+    latitudes = np.array([0.0, 1.0])
+    values = np.array([[1.0, 3.0], [3.0, 5.0]])
+
+    assert bilinear_scalar(
+        longitudes,
+        latitudes,
+        values,
+        longitude=0.5,
+        latitude=0.5,
+    ) == pytest.approx(3.0)
+    values[0, 1] = np.nan
+    assert bilinear_scalar(
+        longitudes,
+        latitudes,
+        values,
+        longitude=0.5,
         latitude=0.5,
     ) is None
 

@@ -12,9 +12,9 @@ export interface FieldViewportBounds {
 }
 
 export interface FieldVariableDefinition {
-  name: "wind_u" | "wind_v" | "wind_gust" | "temperature_2m" | "precipitation" | "pressure_msl" | "cloud_cover" | "wave_u" | "wave_v" | "total_wave_height" | "total_wave_direction" | "total_wave_period" | "wind_sea_height" | "wind_sea_direction" | "wind_sea_period" | "primary_swell_height" | "primary_swell_direction" | "primary_swell_period";
+  name: "wind_u" | "wind_v" | "wind_gust" | "temperature_2m" | "precipitation" | "pressure_msl" | "cloud_cover" | "wave_u" | "wave_v" | "total_wave_height" | "total_wave_direction" | "total_wave_period" | "primary_wave_direction" | "primary_wave_period" | "wind_sea_height" | "wind_sea_direction" | "wind_sea_period" | "primary_swell_height" | "primary_swell_direction" | "primary_swell_period";
   unit: "m/s" | "°C" | "mm" | "hPa" | "%" | "m" | "°" | "s";
-  semantic: "eastward" | "northward" | "magnitude" | "air_temperature" | "accumulation" | "mean_sea_level_pressure" | "fraction" | "wave_eastward" | "wave_northward" | "wave_height" | "direction_from" | "wave_period";
+  semantic: "eastward" | "northward" | "magnitude" | "air_temperature" | "accumulation" | "mean_sea_level_pressure" | "fraction" | "wave_eastward" | "wave_northward" | "wave_height" | "direction_from" | "wave_period" | "mean_direction_from" | "energy_period_tm10" | "primary_wave_direction_from" | "primary_wave_mean_period";
   height_m: number | null;
 }
 
@@ -128,6 +128,8 @@ export interface WaveFieldSample {
   total_wave_height_m: number | null;
   total_wave_direction_from_deg: number | null;
   total_wave_period_s: number | null;
+  primary_wave_direction_from_deg: number | null;
+  primary_wave_period_s: number | null;
   wind_sea_height_m: number | null;
   wind_sea_direction_from_deg: number | null;
   wind_sea_period_s: number | null;
