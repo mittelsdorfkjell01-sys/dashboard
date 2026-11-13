@@ -13,9 +13,9 @@ const baseSpot = (over: Partial<Spot>): Spot => ({
 });
 
 describe("facilitiesFromMap", () => {
-  it("always renders all five kinds, in canonical order", () => {
+  it("always renders all six kinds, in canonical order", () => {
     const out = facilitiesFromMap({ parking: { available: true } });
-    expect(out.map((f) => f.kind)).toEqual(["parking", "shower", "food", "camping", "school"]);
+    expect(out.map((f) => f.kind)).toEqual(["parking", "shower", "toilet", "changing", "food", "school"]);
   });
 
   it("marks an absent key as unknown (available: null), not hidden", () => {
@@ -33,15 +33,15 @@ describe("facilitiesFromMap", () => {
     });
   });
 
-  it("keeps custom notes", () => {
-    const out = facilitiesFromMap({ camping: { available: true, note: "am Platz" } });
-    expect(out.find((f) => f.kind === "camping")?.note).toBe("am Platz");
+  it("keeps custom notes in the data model", () => {
+    const out = facilitiesFromMap({ toilet: { available: true, note: "am Parkplatz" } });
+    expect(out.find((f) => f.kind === "toilet")?.note).toBe("am Parkplatz");
   });
 
   it("treats null/empty map as all-unknown, never as all-absent", () => {
     for (const map of [null, {}]) {
       const out = facilitiesFromMap(map);
-      expect(out).toHaveLength(5);
+      expect(out).toHaveLength(6);
       expect(out.every((f) => f.available === null)).toBe(true);
     }
   });

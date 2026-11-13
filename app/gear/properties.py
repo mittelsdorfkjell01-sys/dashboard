@@ -150,18 +150,3 @@ def validate_property(claim: dict[str, Any], *, default_scope: PropertyScope) ->
         value = {"code": code.strip(), "name": name.strip()}
 
     return ValidatedProperty(field, value, unit, scope, definition.group)
-
-
-def public_property_registry() -> list[dict[str, Any]]:
-    """Return a stable, JSON-compatible description for tooling and agents."""
-    return [
-        {
-            "field": item.field,
-            "group": item.group,
-            "kind": item.kind,
-            "scopes": list(item.scopes),
-            "units": list(item.units),
-            "choices": list(item.choices),
-        }
-        for item in PROPERTY_REGISTRY.values()
-    ]

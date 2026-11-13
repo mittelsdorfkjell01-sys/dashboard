@@ -16,6 +16,7 @@ from app.tides import ALGORITHM_VERSION
 from app.tides.anchor import FesMaskAnchorSelector
 from app.tides.calculation import corrected_time, detect_extrema, effective_uncertainty
 from app.tides.fes import Fes2022Provider
+from app.tides.preflight import assert_tide_assets_ready
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,7 @@ logger = logging.getLogger(__name__)
 class TideWorker:
     def __init__(self):
         settings = get_settings()
-        if not all((settings.tide_pyfes_config, settings.tide_mask_file, settings.tide_land_geojson)):
-            raise RuntimeError("Tide-Worker ist nicht konfiguriert: PyFES-Konfiguration, FES-Maske und Land-GeoJSON werden benötigt")
+        assert_tide_assets_ready(settings)
         self.settings = settings
         self.provider = Fes2022Provider(settings.tide_pyfes_config)
         self.selector = FesMaskAnchorSelector(settings.tide_mask_file, settings.tide_land_geojson)

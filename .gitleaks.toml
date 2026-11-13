@@ -1,15 +1,23 @@
 # gitleaks configuration.
 #
 # Keep the full default rule set, but stop the generic-api-key heuristic from
-# flagging the obviously fake passwords used as fixtures in the account tests
-# (e.g. "owner-pw-123", "attacker-pw-123"). These are literal test inputs, not
-# real credentials — see tests/test_account.py.
+# flagging two kinds of false positive: the obviously fake passwords used as
+# fixtures in the account tests (e.g. "owner-pw-123", see tests/test_account.py)
+# and the prose research notes under research/.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "Obvious fake passwords used only as account-test fixtures"
+description = "Test fixtures and prose research notes, not credentials"
 regexTarget = "match"
 regexes = [
   '''(attacker-pw|owner-pw|again-owner)-\d+''',
+]
+# research/ holds spot research notes: long German and English prose in JSON
+# string fields. The generic-api-key heuristic scores sentences like
+# "access_rules": "Kite/windsurf prohibitions apply in some reserves ..." as
+# high-entropy secrets. No credential belongs in this tree; anything that
+# reads like one here is a sentence.
+paths = [
+  '''^research/''',
 ]

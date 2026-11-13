@@ -3,9 +3,8 @@ import { Link } from "react-router-dom";
 import type { LiveConditionsRead } from "../../../lib/api";
 import type { Spot } from "../../../lib/types";
 import type { NormalizedForecastSeries } from "../../../lib/forecastNormalization";
-import { sportLabel } from "../../../lib/labels";
 import { formatMonthDayRange } from "../../../lib/bestSeason";
-import { CheckCircleIcon, MapIcon } from "../../../lib/icons";
+import { MapIcon } from "../../../lib/icons";
 import { SpotDataScopeProvider } from "../../../state/SpotDataScope";
 import { EmptyState } from "../../AsyncStates";
 import "./daten-theme.css";
@@ -47,6 +46,9 @@ export default function DatenPage({
   bestSeason?: { start_date: string; end_date: string } | null;
 }) {
   const hasForecast = !!forecast && forecast.days.length > 0;
+  const hasMarineWater = (spot.waterTypes ?? []).some((kind) =>
+    kind === "ocean" || kind === "sea" || kind === "lagoon",
+  );
 
   // Arriving from the Info-tab "Beste Reisezeit" link lands on /daten#windmonate.
   // The section is lazy-loaded and far down the page, so native hash scrolling
@@ -77,19 +79,10 @@ export default function DatenPage({
       <div className="daten-dark min-h-screen">
         {/* Same page frame as the landing grid and every other public page. */}
         <div className="mx-auto max-w-page px-5 pb-24 pt-10 sm:px-8">
-          {/* Location + sport (Figma: "Alcyons" / "Surfen"). */}
+          {/* Quiet location context; the page is already inside this spot and
+              does not repeat its sport taxonomy above the forecast. */}
           <header>
-            <h1 className="text-title font-semibold tracking-tight text-ink">{spot.name}</h1>
-            {spot.sports && spot.sports.length > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-                {spot.sports.map((s) => (
-                  <span key={s} className="inline-flex items-center gap-1 text-ui font-medium text-ink">
-                    {sportLabel(s)}
-                    <CheckCircleIcon checkOnly width={15} height={15} className="text-ink" />
-                  </span>
-                ))}
-              </div>
-            )}
+            <h1 className="text-ui font-medium text-muted">{spot.name}</h1>
 
             {/* The page's core answer — "when should I go?" — surfaced right up
                 top as a jump link to the detailed Windmonate section below, so
@@ -135,7 +128,7 @@ export default function DatenPage({
             </section>
           )}
 
-          {spot.uuid && <TidePanel spotId={spot.uuid} />}
+          {spot.uuid && hasMarineWater && !forecastLoading && <TidePanel spotId={spot.uuid} />}
 
           {/* 3) The map is no longer a second map of its own: the "Karte"
               button below opens the one weather map, framed on this spot. */}

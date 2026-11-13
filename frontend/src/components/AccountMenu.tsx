@@ -49,7 +49,22 @@ const ACCOUNT_NAV: NavItem[] = [
  * signed-out visitors get a clear sign-in / register entry that returns them to
  * the page they were on after authenticating.
  */
-export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: boolean }) {
+export default function AccountMenu({
+  bareOnMobile = false,
+  onHero = false,
+  onOpenChange,
+}: {
+  bareOnMobile?: boolean;
+  /** The trigger sits on the landing hero photo: keep it brand-dark in both
+   *  themes (see `.on-hero-ink`). Never applied to the menu itself, which is a
+   *  normal themed surface. */
+  onHero?: boolean;
+  /** Fires whenever the menu opens or closes, so a header that sits in a lower
+   *  stacking layer than the page content below it can lift itself while the
+   *  dropdown is out (see LandingHeader: the landing's hero search bar is
+   *  `z-modal` and otherwise paints over the open dropdown). */
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +72,10 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
   const desktop = useDesktopViewport();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   const close = () => setOpen(false);
 
@@ -80,7 +99,7 @@ export default function AccountMenu({ bareOnMobile = false }: { bareOnMobile?: b
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t("menu.trigger")}
-        className={`flex h-11 w-11 items-center justify-center p-0 text-ink transition-opacity hover:opacity-60 sm:w-auto sm:gap-2.5 sm:px-2 ${bareOnMobile ? "max-sm:justify-end" : ""}`}
+        className={`flex h-11 w-11 items-center justify-center p-0 text-ink transition-opacity hover:opacity-60 sm:w-auto sm:gap-2.5 sm:px-2 ${bareOnMobile ? "max-sm:justify-end" : ""} ${onHero ? "on-hero-ink" : ""}`}
       >
         <MenuIcon className="text-lead" />
         <span className="hidden h-7 w-7 place-items-center sm:grid">
@@ -239,8 +258,10 @@ function DesktopDropdown({
       )}
 
       <div className="mt-1.5 border-t border-line pt-1.5">
+        {/* Both display preferences read as the same control: label left,
+            switch right. */}
         <ThemeToggle menuItem />
-        <div className="px-2 py-2"><LanguageSwitcher compact /></div>
+        <LanguageSwitcher variant="menu" />
         {SITE_LINKS.map((item) => (
           <Link key={item.to} to={item.to} role="menuitem" onClick={onClose} className={rowClass}>
             {t(item.key)}
@@ -353,11 +374,10 @@ function MobileSheet({
           </nav>
         )}
 
-        {/* Darkmode switch sits on its own, set apart from the account areas. */}
+        {/* The two display preferences sit together, set apart from the
+            account areas: identical rows, label left and switch right. */}
         <div className="mt-6">
           <ThemeToggle variant="switch" />
-        </div>
-        <div className="mt-4">
           <LanguageSwitcher />
         </div>
 

@@ -78,7 +78,10 @@ export function adaptSpot(
     // Windrichtung noch die fachlich gepflegte Küstennormale.
     facingDeg: s.facing ?? undefined,
     sports: s.sports,
+    variantConditions: s.variant_conditions ?? null,
+    variants: s.variants ?? [],
     level: s.level,
+    bestWindDirections: s.best_wind_directions ?? [],
     waterTypes: s.water_type,
     bottomType: s.bottom_type,
     waterCharacter: s.water_character,

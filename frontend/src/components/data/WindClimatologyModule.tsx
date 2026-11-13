@@ -4,6 +4,7 @@ import type { WindClimatologyV3Read, WindClimatologyV3Week, WindDirectionMode } 
 import { usePersistedState, useWindClimatologyV3, type WindClimatologyV3Selection } from "../../lib/hooks";
 import type { Spot } from "../../lib/types";
 import { formatMonthDayRange } from "../../lib/bestSeason";
+import { ChevronDownIcon } from "../../lib/icons";
 import WindWindowSlider, { WIND_WINDOW_MAX, WIND_WINDOW_MIN, formatWindWindow } from "./WindWindowSlider";
 import YearRangeSlider from "./YearRangeSlider";
 
@@ -160,10 +161,9 @@ export default function WindClimatologyModule({ spot }: { spot: Spot }) {
 
 function V3Skeleton() {
   return (
-    <div className="p-4" role="status" aria-label="Windzuverlässigkeit wird geladen">
-      <div className="h-5 w-64 animate-pulse rounded bg-line" />
-      <div className="mt-2 h-4 w-96 max-w-full animate-pulse rounded bg-line" />
-      <div className="mt-6 flex h-40 items-end gap-1">
+    <div className="py-2" role="status" aria-label="Windzuverlässigkeit wird geladen">
+      <div className="h-5 w-36 animate-pulse rounded bg-line" />
+      <div className="mt-4 flex h-28 items-end gap-1">
         {Array.from({ length: 52 }).map((_, i) => (
           <span key={i} className="flex-1 animate-pulse rounded-t bg-line-soft" style={{ height: `${20 + ((i * 37) % 60)}%` }} />
         ))}
@@ -174,8 +174,8 @@ function V3Skeleton() {
 
 function V3ErrorState({ message }: { message: string }) {
   return (
-    <div className="p-4" role="alert">
-      <h3 className="font-display text-lg text-ink">Beste Reisezeit</h3>
+    <div className="py-2" role="alert">
+      <h3 className="text-lg font-semibold text-ink">Windmonate</h3>
       <p className="mt-2 text-sm text-muted">Die Windzuverlässigkeit konnte nicht geladen werden. {message}</p>
     </div>
   );
@@ -225,41 +225,32 @@ function V3Panel({
     onYearWindowChange(availableYears && nextFrom > availableYears.min ? { fromYear: nextFrom, toYear: availableYears.max } : null);
 
   return (
-    <div className="p-4">
+    <div className="py-2">
       <div ref={liveRegionRef} aria-live="polite" className="sr-only" />
 
-      <h3 className="font-display text-lg text-ink">Beste Reisezeit</h3>
-      <p className="mt-1 text-sm text-muted">Wann regelmäßig Wind weht: historische Wahrscheinlichkeit für mindestens zwei Windtage mit jeweils drei zusammenhängenden brauchbaren Stunden.</p>
-      {data.best_season ? (
-        <p className="mt-1 text-sm font-medium text-orange">Beste Planungszeit: {formatMonthDayRange(data.best_season.start_date, data.best_season.end_date)}</p>
-      ) : (
-        <p className="mt-1 text-sm text-muted">Kein klarer verlässlicher Saisonzeitraum erkennbar.</p>
-      )}
-
-      <p className="mt-3 text-data-value text-ink-soft">
-        {formatWindWindow(data.selection.min_wind_kn, data.selection.max_wind_kn)} · {directionSummary} · {data.period[0]}–{data.period[1]}
-      </p>
-
-      {availableYears && fromYear != null && availableYears.max > availableYears.min && (
-        <div className="mt-4 max-w-sm">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-data-label font-medium uppercase tracking-wider text-muted">Zeitraum</span>
-            <span className="text-data-value tabular-nums text-ink">{fromYear}–{availableYears.max}</span>
-          </div>
-          <YearRangeSlider fromYear={fromYear} min={availableYears.min} max={availableYears.max} onChange={onYearChange} />
+      <div className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 className="text-lg font-semibold text-ink">Windmonate</h3>
+          {data.best_season && (
+            <p className="text-sm font-medium text-orange">
+              Beste Zeit: {formatMonthDayRange(data.best_season.start_date, data.best_season.end_date)}
+            </p>
+          )}
         </div>
-      )}
+        <p className="text-data-caption tabular-nums text-muted">
+          {formatWindWindow(data.selection.min_wind_kn, data.selection.max_wind_kn)} · {directionSummary} · {data.period[0]}–{data.period[1]}
+        </p>
+      </div>
 
-      <div className="mt-4">
-        <span className="text-data-label font-medium uppercase tracking-wider text-muted">Windfenster</span>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-3">
+        <div className="flex flex-wrap items-center gap-2" aria-label="Windfenster">
           {PRESETS.map(([label, min, max]) => (
             <button
               key={label}
               type="button"
               onClick={() => onSelectionChange({ ...selection, minWindKn: min, maxWindKn: max })}
               aria-pressed={selection.minWindKn === min && selection.maxWindKn === max}
-              className={`min-h-[44px] rounded-full border px-3 py-1 text-label ${selection.minWindKn === min && selection.maxWindKn === max ? "border-teal bg-teal text-white" : "border-line text-muted hover:border-line-soft"}`}
+              className={`min-h-11 rounded-full border px-3 py-1 text-label ${selection.minWindKn === min && selection.maxWindKn === max ? "border-teal bg-teal text-white" : "border-line text-muted hover:border-line-soft"}`}
             >
               {label}
             </button>
@@ -269,14 +260,15 @@ function V3Panel({
             aria-expanded={customOpen}
             aria-controls={customControlsId}
             onClick={() => setCustomOpen((open) => !open)}
-            className="ml-1 min-h-[44px] rounded-full border border-line px-3 py-1 text-label text-muted hover:border-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+            className="inline-flex min-h-11 items-center gap-1 rounded-full border border-line px-3 py-1 text-label text-muted hover:border-line-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
           >
-            Anpassen {customOpen ? "▴" : "▾"}
+            Anpassen
+            <ChevronDownIcon className={`transition-transform ${customOpen ? "rotate-180" : ""}`} width={14} height={14} />
           </button>
         </div>
 
         {customOpen && (
-          <div id={customControlsId} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
+          <div id={customControlsId} className="mt-3 grid grid-cols-1 gap-4 border-t border-line-soft pt-3 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <span className="text-data-label font-medium uppercase tracking-wider text-muted">Genaues Fenster</span>
               <div className="mt-2 max-w-md">
@@ -306,22 +298,36 @@ function V3Panel({
                 <p className="mt-1 text-data-caption text-muted">Für diesen Spot sind noch keine geprüften Windrichtungen hinterlegt.</p>
               )}
             </div>
+            {availableYears && fromYear != null && availableYears.max > availableYears.min && (
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-data-label font-medium uppercase tracking-wider text-muted">Zeitraum</span>
+                  <span className="text-data-value tabular-nums text-ink">{fromYear}–{availableYears.max}</span>
+                </div>
+                <div className="mt-2">
+                  <YearRangeSlider fromYear={fromYear} min={availableYears.min} max={availableYears.max} onChange={onYearChange} />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className={`mt-6 transition-opacity ${switching ? "opacity-60" : ""}`}>
+      <div className={`mt-4 transition-opacity ${switching ? "opacity-60" : ""}`}>
         <WeekChart weeks={data.weeks} monthGroups={monthGroups} currentWeek={currentWeek} selectedWeek={selectedWeek} onSelect={setSelectedWeek} scrollerRef={scroller} />
         {switching && <p className="mt-1 text-data-caption text-muted">Aktualisiere Auswahl …</p>}
       </div>
 
-      {week && <WeekDetail week={week} selection={data.selection} />}
+      {week && <WeekDetail week={week} />}
 
-      <p className="mt-4 text-data-caption leading-relaxed text-muted">
-        Historische Orientierung, keine Vorhersage. ERA5 · 10-Meter-Wind · {data.period[0]}–{data.period[1]} · Tageslichtstunden · Drei-Stunden-Sessionregel · erfolgreiche Woche = mindestens zwei brauchbare Windtage · ca. {data.grid_resolution_degrees}° Raster · {data.updated_at ? new Date(data.updated_at).toLocaleDateString("de-DE") : "–"} · {data.attribution}
-        <br />
-        Lokale Thermik, Gelände und kleinräumige Effekte können vom ERA5-Raster abweichen. {data.direction.selected_mode === "usable" ? "Es zählen nur die für diesen Spot freigegebenen Windrichtungen." : "Die Windrichtung ist in dieser Ansicht nicht eingeschränkt."}
-      </p>
+      <details className="mt-3 border-t border-line-soft pt-2 text-data-caption text-muted">
+        <summary className="min-h-11 cursor-pointer py-3 font-medium text-ink-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal">
+          Methodik und Datenquelle
+        </summary>
+        <p className="max-w-measure pb-2 leading-relaxed">
+          Historische Orientierung, keine Vorhersage. ERA5 · 10-Meter-Wind · {data.period[0]}–{data.period[1]} · Tageslichtstunden · Drei-Stunden-Sessionregel · erfolgreiche Woche = mindestens zwei brauchbare Windtage · ca. {data.grid_resolution_degrees}° Raster · {data.updated_at ? new Date(data.updated_at).toLocaleDateString("de-DE") : "–"} · {data.attribution}. Lokale Thermik, Gelände und kleinräumige Effekte können abweichen. {data.direction.selected_mode === "usable" ? "Es zählen nur die für diesen Spot freigegebenen Windrichtungen." : "Die Windrichtung ist nicht eingeschränkt."}
+        </p>
+      </details>
     </div>
   );
 }
@@ -358,8 +364,8 @@ export function WeekChart({
         <span>Chance auf mindestens zwei brauchbare Windtage</span>
       </div>
       <div className="mt-2 flex gap-2">
-        <div aria-hidden="true" className="flex h-40 w-8 shrink-0 flex-col justify-between text-right text-data-caption leading-none text-muted">
-          {[100, 75, 50, 25, 0].map((value) => <span key={value}>{value}%</span>)}
+        <div aria-hidden="true" className="flex h-28 w-8 shrink-0 flex-col justify-between text-right text-data-caption leading-none text-muted">
+          {[100, 50, 0].map((value) => <span key={value}>{value}%</span>)}
         </div>
         {/* Horizontal scroller: on phones the 52 weekly bars keep a real minimum
             width so each week is legible and the track scrolls month-to-month;
@@ -376,7 +382,7 @@ export function WeekChart({
               aria-valuemax={52}
               aria-valuenow={selected.week}
               aria-valuetext={selectedLabel}
-              className="relative h-40 cursor-crosshair border-b border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+              className="relative h-28 cursor-crosshair border-b border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
               onKeyDown={(event) => {
                 if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
                   event.preventDefault();
@@ -486,31 +492,21 @@ export function WeekBar({ week, isCurrent, isSelected }: { week: WindClimatology
 
 // --- detail panel below the chart -------------------------------------
 
-export function WeekDetail({ week, selection }: { week: WindClimatologyV3Week; selection: WindClimatologyV3Read["selection"] }) {
+export function WeekDetail({ week }: { week: WindClimatologyV3Week }) {
   const rows: [string, string][] = [
     ["Zeitraum", formatDateRange(week)],
     ["Zuverlässigkeit", week.reliability_percent == null ? "keine ausreichende Datenbasis" : `${week.reliability_percent}%`],
-    ["Gültige Jahre", String(week.sample_years)],
-    ["Erfolgreiche Jahre", String(week.successful_years)],
-    ["Median brauchbare Windtage", week.median_usable_days == null ? "–" : String(week.median_usable_days)],
-    ["Median Sessionstunden", week.median_session_hours == null ? "–" : `${week.median_session_hours} h`],
-    ["Typische Spanne (25.–75. Perzentil)", week.p25_session_hours == null || week.p75_session_hours == null ? "–" : `${week.p25_session_hours}–${week.p75_session_hours} h`],
-    ["Median längste Session", week.median_longest_session == null ? "–" : `${week.median_longest_session} h`],
-    ["Mind. 1 Windtag", week.probability_at_least_1_day == null ? "–" : `${week.probability_at_least_1_day}%`],
-    ["Mind. 2 Windtage", week.probability_at_least_2_days == null ? "–" : `${week.probability_at_least_2_days}%`],
-    ["Mind. 3 Windtage", week.probability_at_least_3_days == null ? "–" : `${week.probability_at_least_3_days}%`],
-    ["Windfenster", formatWindWindow(selection.min_wind_kn, selection.max_wind_kn)],
-    ["Richtungsmodus", selection.direction_mode === "usable" ? "passende Richtung" : "alle Richtungen"],
-    ["Datenqualität", { high: "hoch", limited: "eingeschränkt", insufficient: "unzureichend" }[week.quality_status]],
+    ["Windtage", week.median_usable_days == null ? "–" : `${week.median_usable_days} im Median`],
+    ["Sessionstunden", week.median_session_hours == null ? "–" : `${week.median_session_hours} h im Median`],
+    ["Datenbasis", `${week.successful_years}/${week.sample_years} erfolgreiche Jahre`],
   ];
   return (
-    <div className="mt-4 rounded-lg border border-line-soft bg-band p-4">
-      <h4 className="text-data-label font-medium uppercase tracking-wider text-muted">Wochendetail</h4>
-      <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
+    <div className="mt-3 border-t border-line-soft pt-3">
+      <dl className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-5">
         {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between gap-3 border-b border-line-soft/60 py-1 text-data-value">
-            <dt className="text-ink-soft">{label}</dt>
-            <dd className="text-right font-medium text-ink">{value}</dd>
+          <div key={label} className="min-w-0">
+            <dt className="text-data-caption text-muted">{label}</dt>
+            <dd className="mt-0.5 break-words text-data-value font-medium tabular-nums text-ink">{value}</dd>
           </div>
         ))}
       </dl>

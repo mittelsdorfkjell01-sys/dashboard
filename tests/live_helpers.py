@@ -4,6 +4,7 @@ responses, and a minimal fake DB returning a single in-memory spot."""
 from __future__ import annotations
 
 import uuid
+import math
 from datetime import datetime, timedelta
 
 from geoalchemy2.shape import from_shape
@@ -192,6 +193,12 @@ def make_marine_response(days: int = 8) -> dict:
             "secondary_swell_wave_period": [12.0 + (i % 5) for i in range(n)],
             "secondary_swell_wave_direction": [(180 + i) % 360 for i in range(n)],
             "sea_surface_temperature": [19.0 + (i % 3) for i in range(n)],
+            # Semidiurnal water level with a modest weather-scale modulation.
+            # This is absolute model height above MSL, not a normalized tide.
+            "sea_level_height_msl": [
+                round(0.8 * math.sin(2 * math.pi * i / 12.42) + 0.08 * math.sin(2 * math.pi * i / 48), 3)
+                for i in range(n)
+            ],
         },
     }
 

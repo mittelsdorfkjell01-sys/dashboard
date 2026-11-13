@@ -53,6 +53,9 @@ class Spot(Base, TimestampMixin):
     level: Mapped[list[str]] = mapped_column(
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
+    best_wind_directions: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
+    )
 
     # Wasserart — distinct from water_type: flach | chop | welle_klein |
     # welle_gross | tiefes_wasser. Multi-select.
@@ -64,7 +67,8 @@ class Spot(Base, TimestampMixin):
         ARRAY(String), nullable=False, server_default=text("'{}'::varchar[]")
     )
     # Facilities: {kind: {"available": bool, "note"?: str}}; a missing kind =
-    # "unknown" (frontend hides it). Kinds: parking|shower|food|camping|school.
+    # "unknown" (frontend presents it separately). Kinds:
+    # parking|shower|toilet|changing|food|school.
     facilities: Mapped[dict | None] = mapped_column(JSONB)
 
     status: Mapped[str] = mapped_column(

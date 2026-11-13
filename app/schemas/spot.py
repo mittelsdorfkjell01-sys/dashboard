@@ -44,6 +44,7 @@ class SpotSummary(BaseModel):
     water_type: list[str] = []
     bottom_type: list[str] = []
     level: list[str] = []
+    best_wind_directions: list[str] = []
     water_character: list[str] = []
     style: list[str] = []
     facilities: dict[str, Any] | None = None
@@ -81,6 +82,9 @@ class SpotSummary(BaseModel):
             water_type=list(spot.water_type or []),
             bottom_type=list(spot.bottom_type or []),
             level=list(spot.level or []),
+            best_wind_directions=list(
+                getattr(spot, "best_wind_directions", None) or []
+            ),
             water_character=list(spot.water_character or []),
             style=list(spot.style or []),
             facilities=spot.facilities,
@@ -121,6 +125,7 @@ class SpotRead(BaseModel):
     water_type: list[str] = []
     bottom_type: list[str] = []
     level: list[str] = []
+    best_wind_directions: list[str] = []
     water_character: list[str] = []
     style: list[str] = []
     facilities: dict[str, Any] | None = None
@@ -156,6 +161,9 @@ class SpotRead(BaseModel):
             water_type=list(spot.water_type or []),
             bottom_type=list(spot.bottom_type or []),
             level=list(spot.level or []),
+            best_wind_directions=list(
+                getattr(spot, "best_wind_directions", None) or []
+            ),
             water_character=list(spot.water_character or []),
             style=list(spot.style or []),
             facilities=spot.facilities,

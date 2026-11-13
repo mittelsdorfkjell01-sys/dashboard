@@ -80,6 +80,7 @@ export default tseslint.config(
       "src/components/AccountMenu.tsx",
       "src/components/SpotCommunity.tsx",
       "src/components/Footer.tsx",
+      "src/pages/Fragen.tsx",
       "src/components/Header.tsx",
       "src/pages/account/AccountLayout.tsx",
       "src/pages/account/Einstellungen.tsx",

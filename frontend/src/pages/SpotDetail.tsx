@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import LandingHeader from "../components/LandingHeader";
-import Facilities from "../components/Facilities";
 import SpotTabs from "../components/SpotTabs";
 import DatenPage from "../components/data/daten/DatenPage";
 import SpotGalleryTile from "../components/SpotGalleryTile";
@@ -16,17 +15,19 @@ import VisitedButton from "../components/VisitedButton";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotOriginMark, { SpotOriginLine } from "../components/SpotOriginMark";
-import SpotMetaGrid from "../components/SpotMetaGrid";
+import SpotProfileCard from "../components/SpotProfileCard";
 import SpotDescription from "../components/SpotDescription";
 import SpotConditionHints from "../components/SpotConditionHints";
 import SpotEditorialClassification from "../components/SpotEditorialClassification";
+import SpotVariants from "../components/SpotVariants";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
 import { CalendarIcon, ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
-import { useSpot, useSpotLive, useSpotForecast, useSpotForecastSummary, useCommunityFeed, useSpotBestSeason } from "../lib/hooks";
+import { useSpot, useSpotLive, useSpotForecast, useSpotForecastSummary, useSpotBestSeason } from "../lib/hooks";
+import { useCommunityFeed } from "../lib/communityHooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { spotPath } from "../lib/spotRoutes";
@@ -96,10 +97,12 @@ export default function SpotDetail() {
   const galleryFrameRef = useRef<HTMLDivElement>(null);
   const [galleryHeight, setGalleryHeight] = useState<number>();
   const [galleryRightInset, setGalleryRightInset] = useState(0);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const mapSlotRef = useRef<HTMLDivElement>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
+    if (descriptionExpanded) return;
     const frame = galleryFrameRef.current;
     if (!frame) return;
     const measure = () => {
@@ -111,7 +114,7 @@ export default function SpotDetail() {
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [activeTab, loading, photos.length]);
+  }, [activeTab, descriptionExpanded, loading, photos.length]);
 
   useEffect(() => {
     if (activeTab !== "info" || loading || mapReady) return;
@@ -255,7 +258,7 @@ export default function SpotDetail() {
                   "--spot-gallery-right-inset": `${galleryRightInset}px`,
                 } as CSSProperties}
               >
-                <div className="order-1 flex min-w-0 flex-col self-stretch">
+                <section aria-label="Spotbeschreibung und Hinweise" className="order-1 flex min-w-0 flex-col self-stretch">
                   {/* Spot identity: breadcrumb, name + community score inline
                       (Figma Frame_9) — replaces the hero namebox. */}
                   {(regionPart || country) && (
@@ -299,22 +302,23 @@ export default function SpotDetail() {
                     </div>
                   )}
 
-                  {/* The real spot description (editorial.description from the DB);
-                      falls back to a gentle note when a spot has none yet. On
-                      mobile it starts collapsed with a "Mehr anzeigen" toggle. */}
-                  <SpotDescription text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."} />
+                  {/* Foil variants carry their own, separately reviewed
+                      suitability — never inherited from the sport above. */}
+                  <SpotVariants spot={spot} />
+
+                  <SpotDescription
+                    text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
+                    onExpandedChange={setDescriptionExpanded}
+                  />
                   <SpotConditionHints spot={spot} forecast={forecastSummary} />
+                </section>
 
-                  <div className="mt-auto flex w-full items-center justify-center gap-4 pt-6 sm:pt-10">
-                    <FavoriteButton spot={spot} />
-                    <ShareButton spot={spot} />
-                    {spotId && <VisitedButton spotId={spotId} />}
-                    {spotId && <Link to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`} aria-label={t("trips.planSpot")} title={t("trips.planSpot")} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"><CalendarIcon className="text-lead" /></Link>}
-                    <SuggestEditButton spot={spot} />
-                  </div>
-                </div>
-
-                <div ref={galleryFrameRef} className="spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2">
+                <div
+                  ref={galleryFrameRef}
+                  className={`spot-gallery-compact order-4 w-full min-w-0 justify-self-center lg:order-2 ${
+                    descriptionExpanded ? "lg:h-[var(--spot-gallery-height)] lg:self-start" : ""
+                  }`}
+                >
                   <SpotGalleryTile
                     photos={photos}
                     onOpenGallery={() => setGalleryOpen(true)}
@@ -322,16 +326,26 @@ export default function SpotDetail() {
                   />
                 </div>
 
-                <aside aria-label="Spotprofil und Ausstattung" className="order-2 flex min-w-0 flex-col lg:order-3">
-                  <SpotMetaGrid spot={spot} bestSeason={bestSeason} />
-                  {facilities.length > 0 && (
-                    <div className="mt-8 lg:mt-12">
-                      <h2 className="text-ui font-semibold text-ink">Ausstattung</h2>
-                      <div className="mt-4 sm:mt-6">
-                        <Facilities items={facilities} variant="list" />
-                      </div>
-                    </div>
-                  )}
+                {/* Profile column: the centred action row, then one spec card
+                    that runs the gallery's full height (min-height, so a very
+                    tall card grows instead of clipping). */}
+                <aside
+                  aria-label="Spotprofil und Ausstattung"
+                  className="order-2 flex min-w-0 flex-col lg:order-3 lg:min-h-[var(--spot-gallery-height,630px)] lg:self-start"
+                >
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <FavoriteButton spot={spot} />
+                    <ShareButton spot={spot} />
+                    {spotId && <VisitedButton spotId={spotId} />}
+                    {spotId && <Link to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`} aria-label={t("trips.planSpot")} title={t("trips.planSpot")} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"><CalendarIcon className="text-lead" /></Link>}
+                    <SuggestEditButton spot={spot} />
+                  </div>
+                  <SpotProfileCard
+                    spot={spot}
+                    bestSeason={bestSeason}
+                    facilities={facilities}
+                    className="mt-5 lg:flex-1"
+                  />
                 </aside>
                   {spot.coords ? (
                     <section ref={mapSlotRef} aria-label="Lage" className="spot-locator-compact order-3 min-w-0 lg:order-4 lg:col-span-2">

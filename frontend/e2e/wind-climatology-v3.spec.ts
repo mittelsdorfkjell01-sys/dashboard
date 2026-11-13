@@ -51,7 +51,7 @@ test("administrator verwaltet V3 ohne Providerabruf",async({page},testInfo)=>{
 
 test("Betriebsansicht trennt V3 und Legacy eindeutig",async({page},testInfo)=>{
   await page.route("**/admin/weather/wind-climatology-v3/operations",r=>r.fulfill({json:{counts:{current:18,stale:3,missing:20,failed:2,inflight:4},queue_depth:2,recent_runs:[{run_id:"run-1",spot_id:"spot-1",spot_name:"Ein außergewöhnlich langer Spotname an der Nordseeküste",status:"failed",period:[2006,2025],algorithm_version:"wind-climatology-v3.0",quality_status:"limited",created_at:"2026-08-22T10:00:00Z",started_at:"2026-08-22T10:01:00Z",completed_at:"2026-08-22T10:04:00Z",duration_s:180,error_category:"provider",has_active_version:true}]}}));
-  await page.route("**/admin/operations",r=>r.request().resourceType()==="document"?r.continue():r.fulfill({json:{freshness:{missing:4,stale:1,current:40,failed:1},queue_depth:0,job_status:{},recent_jobs:[],public_update:{climatology_cron:"halbjährlich",edge_cache:"Legacy-Cache"}}}));
+  await page.route("**/admin/operations",r=>r.request().resourceType()==="document"?r.continue():r.fulfill({json:{freshness:{missing:4,stale:1,current:40,failed:1},queue_depth:0,job_status:{},recent_jobs:[],public_update:{climatology_cron:"halbjährlich",edge_cache:"Legacy-Cache"},cache:{scope:"current_process_since_start",captured_at:"2026-08-22T10:05:00Z",namespaces:{}}}}));
   await page.goto("/admin/operations");
   await expect(page.getByRole("heading",{name:"Windklimatologie V3"})).toBeVisible();
   await expect(page.getByRole("heading",{name:"Legacy V1/V2"})).toBeVisible();

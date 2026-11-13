@@ -246,6 +246,7 @@ def test_the_same_photo_is_accepted_for_the_gallery(db, spot, unsplash_fetch):
     row = db.get(SpotImage, outcome.gallery_image_id)
     assert row.spot_id == spot.id and row.kind == "gallery"
     assert row.provider == "unsplash" and row.delivery == "hotlinked"
+    assert row.retrieved_at is not None
 
 
 def test_a_noncommercial_license_is_refused(db, spot, monkeypatch):

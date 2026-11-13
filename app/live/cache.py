@@ -12,6 +12,8 @@ import json
 import logging
 import threading
 import time
+from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Any, Protocol
 
 from app.config import get_settings
@@ -20,6 +22,96 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TTL_SECONDS = 900  # 15 min
 CACHE_ENVELOPE_VERSION = 1
+_metrics_lock = threading.Lock()
+_metrics: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+
+
+def _namespace(key: str) -> str:
+    parts = key.split(":")
+    if parts[0] == "public" and len(parts) > 1:
+        return f"public:{parts[1]}"
+    return parts[0] if parts and parts[0] else "other"
+
+
+def _record_metric(
+    key: str,
+    event: str,
+    *,
+    count: int = 1,
+    elapsed_seconds: float = 0.0,
+) -> None:
+    with _metrics_lock:
+        values = _metrics[_namespace(key)]
+        values[event] += count
+        if elapsed_seconds > 0:
+            values["latency_ms_total"] += elapsed_seconds * 1000
+            values["latency_samples"] += 1
+
+
+def record_provider_fetch(
+    key: str,
+    *,
+    elapsed_seconds: float,
+    success: bool,
+) -> None:
+    """Record bounded provider timing without coordinates or cache keys."""
+    with _metrics_lock:
+        values = _metrics[_namespace(key)]
+        values["provider_fetch_success" if success else "provider_fetch_error"] += 1
+        values["provider_fetch_latency_ms_total"] += elapsed_seconds * 1000
+        values["provider_fetch_latency_samples"] += 1
+
+
+def cache_metrics_snapshot(*, reset: bool = False) -> dict:
+    """Return bounded process-local cache evidence for the admin dashboard."""
+    with _metrics_lock:
+        snapshot = {namespace: dict(values) for namespace, values in _metrics.items()}
+        if reset:
+            _metrics.clear()
+    namespaces: dict[str, dict[str, float | int | None]] = {}
+    for namespace, values in sorted(snapshot.items()):
+        hits = int(values.get("hit", 0))
+        misses = int(values.get("miss", 0))
+        requests = hits + misses
+        samples = int(values.get("latency_samples", 0))
+        provider_samples = int(values.get("provider_fetch_latency_samples", 0))
+        writes = int(values.get("write", 0))
+        namespaces[namespace] = {
+            "requests": requests,
+            "hits": hits,
+            "misses": misses,
+            "hit_rate": round(hits / requests, 4) if requests else None,
+            "errors": int(values.get("error", 0)),
+            "writes": writes,
+            "average_entry_bytes": (
+                round(values.get("bytes_written", 0.0) / writes)
+                if writes
+                else None
+            ),
+            "lock_acquired": int(values.get("lock_acquired", 0)),
+            "lock_contended": int(values.get("lock_contended", 0)),
+            "average_latency_ms": (
+                round(values.get("latency_ms_total", 0.0) / samples, 3)
+                if samples
+                else None
+            ),
+            "provider_fetches": int(values.get("provider_fetch_success", 0)),
+            "provider_fetch_errors": int(values.get("provider_fetch_error", 0)),
+            "provider_fetch_average_ms": (
+                round(
+                    values.get("provider_fetch_latency_ms_total", 0.0)
+                    / provider_samples,
+                    3,
+                )
+                if provider_samples
+                else None
+            ),
+        }
+    return {
+        "scope": "current_process_since_start",
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "namespaces": namespaces,
+    }
 
 
 def cache_key(model: str, lat: float, lon: float, var: str) -> str:
@@ -66,8 +158,21 @@ class RedisCache:
             raw = self._r.get(key)
         except Exception as exc:  # redis.RedisError + socket errors
             logger.warning("live cache get failed (%s) — treating as miss", type(exc).__name__)
+            _record_metric(key, "error")
             return None
-        return _unpack(json.loads(raw)) if raw is not None else None
+        if raw is None:
+            return None
+        try:
+            return _unpack(json.loads(raw))
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "live cache payload invalid for namespace %s (%s) — deleting entry",
+                _namespace(key),
+                type(exc).__name__,
+            )
+            _record_metric(key, "error")
+            self.delete(key)
+            return None
 
     def get_many(self, keys: list[str]) -> dict[str, Any]:
         if not keys:
@@ -76,11 +181,22 @@ class RedisCache:
             values = self._r.mget(keys)
         except Exception as exc:
             logger.warning("live cache mget failed (%s) — treating as misses", type(exc).__name__)
+            for key in keys:
+                _record_metric(key, "error")
             return {}
         result: dict[str, Any] = {}
         for key, raw in zip(keys, values):
             if raw is not None:
-                result[key] = _unpack(json.loads(raw))
+                try:
+                    result[key] = _unpack(json.loads(raw))
+                except (TypeError, ValueError, json.JSONDecodeError) as exc:
+                    logger.warning(
+                        "live cache payload invalid for namespace %s (%s) — deleting entry",
+                        _namespace(key),
+                        type(exc).__name__,
+                    )
+                    _record_metric(key, "error")
+                    self.delete(key)
         return result
 
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
@@ -88,18 +204,21 @@ class RedisCache:
             self._r.set(key, json.dumps(_pack(value)), ex=ttl)
         except Exception as exc:  # redis.RedisError + socket errors
             logger.warning("live cache set failed (%s) — skipping cache", type(exc).__name__)
+            _record_metric(key, "error")
 
     def delete(self, key: str) -> None:
         try:
             self._r.delete(key)
         except Exception as exc:  # redis.RedisError + socket errors
             logger.warning("live cache delete failed (%s) — leaving entry to expire", type(exc).__name__)
+            _record_metric(key, "error")
 
     def acquire_lock(self, key: str, token: str, ttl: int) -> bool | None:
         try:
             return bool(self._r.set(key, token, ex=max(1, ttl), nx=True))
         except Exception as exc:
             logger.warning("live cache lock failed (%s)", type(exc).__name__)
+            _record_metric(key, "error")
             return None
 
     def release_lock(self, key: str, token: str) -> None:
@@ -111,6 +230,7 @@ class RedisCache:
             self._r.eval(script, 1, key, token)
         except Exception as exc:
             logger.warning("live cache unlock failed (%s)", type(exc).__name__)
+            _record_metric(key, "error")
 
 
 class InMemoryCache:
@@ -222,26 +342,49 @@ class FailOpenCache:
         self.primary, self.fallback = primary, fallback
 
     def get(self, key: str) -> Any | None:
+        started = time.perf_counter()
         value = self.primary.get(key)
-        return value if value is not None else self.fallback.get(key)
+        value = value if value is not None else self.fallback.get(key)
+        _record_metric(
+            key,
+            "hit" if value is not None else "miss",
+            elapsed_seconds=time.perf_counter() - started,
+        )
+        return value
 
     def get_many(self, keys: list[str]) -> dict[str, Any]:
+        started = time.perf_counter()
         primary_get_many = getattr(self.primary, "get_many", None)
         primary = primary_get_many(keys) if primary_get_many is not None else {
             key: value for key in keys if (value := self.primary.get(key)) is not None
         }
         missing = [key for key in keys if key not in primary]
-        if not missing:
-            return primary
-        fallback_get_many = getattr(self.fallback, "get_many", None)
-        fallback = fallback_get_many(missing) if fallback_get_many is not None else {
-            key: value for key in missing if (value := self.fallback.get(key)) is not None
-        }
-        return {**fallback, **primary}
+        fallback: dict[str, Any] = {}
+        if missing:
+            fallback_get_many = getattr(self.fallback, "get_many", None)
+            fallback = fallback_get_many(missing) if fallback_get_many is not None else {
+                key: value for key in missing if (value := self.fallback.get(key)) is not None
+            }
+        result = {**fallback, **primary}
+        elapsed = time.perf_counter() - started
+        for key in keys:
+            _record_metric(
+                key,
+                "hit" if key in result else "miss",
+                elapsed_seconds=elapsed / max(1, len(keys)),
+            )
+        return result
 
     def set(self, key: str, value: Any, ttl: int = DEFAULT_TTL_SECONDS) -> None:
         self.primary.set(key, value, ttl)
         self.fallback.set(key, value, ttl)
+        _record_metric(key, "write")
+        try:
+            size = len(json.dumps(value, default=str).encode("utf-8"))
+        except (TypeError, ValueError):
+            size = 0
+        if size:
+            _record_metric(key, "bytes_written", count=size)
 
     def delete(self, key: str) -> None:
         self.primary.delete(key)
@@ -252,9 +395,12 @@ class FailOpenCache:
         if acquire is not None:
             acquired = acquire(key, token, ttl)
             if acquired is not None:
+                _record_metric(key, "lock_acquired" if acquired else "lock_contended")
                 return acquired
         fallback_acquire = getattr(self.fallback, "acquire_lock", None)
-        return bool(fallback_acquire and fallback_acquire(key, token, ttl))
+        acquired = bool(fallback_acquire and fallback_acquire(key, token, ttl))
+        _record_metric(key, "lock_acquired" if acquired else "lock_contended")
+        return acquired
 
     def release_lock(self, key: str, token: str) -> None:
         for cache in (self.primary, self.fallback):

@@ -9,7 +9,7 @@ import type { CommunityImage } from "../src/lib/api";
 // "Karte" button links into the one weather map, framed on the spot and locked
 // to the wind field.
 
-const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: null, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", content_status: "verified", content_reviewed_at: "2026-08-24T00:00:00Z", content_review_due_at: "2027-08-24T00:00:00Z", content_sources: [], image: null, era5_cell: null, model_pref: null, editorial: { description: "Testspot" }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
+const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: { parking: { available: true, note: "Direkt am Deich" }, school: { available: true, note: "Kurse vor Ort" }, shower: { available: false, note: null }, food: { available: true, note: "Saisonal geöffnet" } }, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", content_status: "verified", content_reviewed_at: "2026-08-24T00:00:00Z", content_review_due_at: "2027-08-24T00:00:00Z", content_sources: [], image: null, era5_cell: null, model_pref: null, editorial: { description: "Ein vielseitiger Küstenspot mit ausreichend Platz auf dem Wasser und einem gut erreichbaren Einstieg. Bei wechselnden Bedingungen lohnt sich vor der Anfahrt ein genauer Blick auf Windrichtung, Wasserstand und lokale Hinweise. Der Uferbereich kann je nach Wetter deutlich anspruchsvoller werden, deshalb sollten weniger erfahrene Wassersportlerinnen und Wassersportler besonders aufmerksam planen." }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
 const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
@@ -54,6 +54,50 @@ const forecastSummary = {
       quality_tier: "provider_point", uncertainty: "not_determined", data_issues: [],
     },
   },
+};
+
+const tideStart = new Date();
+tideStart.setUTCMinutes(0, 0, 0);
+const tideSeries = Array.from({ length: 73 }, (_, index) => {
+  const level = Math.sin((2 * Math.PI * index) / 12.42);
+  return {
+    time: new Date(tideStart.getTime() + index * 3_600_000).toISOString(),
+    level_normalized: (level + 1) / 2,
+    level_m: Number((0.72 * level).toFixed(3)),
+    phase: level >= 0 ? "rising" : "falling",
+  };
+});
+const tideEvents = Array.from({ length: 10 }, (_, index) => ({
+  id: `tide-${index}`,
+  event_type: index % 2 === 0 ? "high" : "low",
+  time: new Date(tideStart.getTime() + (index * 6 + 3) * 3_600_000).toISOString(),
+  uncertainty_minutes: 90,
+}));
+const modelledTide = {
+  available: true,
+  product_type: "modelled_sea_level",
+  message: "Begrenzte Genauigkeit an Küsten, in Buchten und Flussmündungen.",
+  timezone: "Europe/Berlin",
+  phase: "rising",
+  cycle_position: 0.4,
+  quality: "model_only",
+  approximate: true,
+  last_calculated_at: tideStart.toISOString(),
+  valid_until: tideSeries.at(-1)!.time,
+  forecast_start: tideSeries[0].time,
+  forecast_end: tideSeries.at(-1)!.time,
+  horizon_days: 3,
+  partial: true,
+  datum: "mean_sea_level",
+  current_level_m: 0.18,
+  navigational: false,
+  model_name: "Open-Meteo Marine Best Match",
+  model_version: null,
+  source_name: "Open-Meteo Marine",
+  source_url: "https://open-meteo.com/en/docs/marine-weather-api",
+  attribution: "Open-Meteo Marine · Datenquelle: Copernicus Marine / Météo-France",
+  events: tideEvents,
+  series: tideSeries,
 };
 
 function weatherFieldTile(z: number, x: number, y: number): Buffer {
@@ -181,7 +225,7 @@ async function mockApi(page: Page, photos: CommunityImage[] = [], withWeatherFie
       if (!match) return route.fulfill({ status: 404 });
       return route.fulfill({ body: weatherFieldTile(Number(match[1]), Number(match[2]), Number(match[3])), contentType: "application/gzip" });
     }
-    if (path === "/spots/test/tides") return route.fulfill({ status: 404, json: { detail: "none" } });
+    if (path === "/spots/test/tides") return route.fulfill({ json: modelledTide });
     if (path === "/spots/test/ratings") return route.fulfill({ json: { items: [], aggregate: { count: 0, average: null } } });
     if (path === "/spots/test/tips") return route.fulfill({ json: [] });
     if (path === "/spots/test/images") return route.fulfill({ json: { items: photos } });
@@ -318,6 +362,19 @@ test("Daten-Seite zeigt Meteogramm und Ausblick", async ({ page }) => {
   await expect(page.locator("#spot-meteogram-scroll [data-forecast-day]")).toHaveCount(10);
 });
 
+test("Daten-Seite kennzeichnet den kostenlosen Meeresspiegel-Fallback eindeutig", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/daten");
+
+  const tide = page.getByRole("region", { name: "Gezeitenvorhersage" });
+  await tide.scrollIntoViewIfNeeded();
+  await expect(tide.getByRole("heading", { name: "Modellierter Meeresspiegel" })).toBeVisible();
+  await expect(tide.getByText("Aktueller Modellwert:")).toBeVisible();
+  await expect(tide.getByText(/Nicht zur Navigation/)).toBeVisible();
+  await expect(tide.getByRole("link", { name: "Quelle: Open-Meteo Marine" })).toBeVisible();
+});
+
 test("Die Daten-Seite hat keine eigene Karte mehr, sondern führt auf die Wetterkarte", async ({ page }) => {
   // One map for the whole site: the spot's own MapLibre/Leaflet overlay was
   // deleted (2026-10-10). "Karte" now opens the shared weather map, framed on
@@ -372,10 +429,10 @@ test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abru
   await locatorRegion.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await expect(page.locator(".swd-locator-map")).toBeVisible();
   await expect(page.locator(".swd-locator-map [data-observation-type]")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Sicherheits- und Lagehinweise" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
   await expect(page.getByText("Eine Reise wert")).toBeVisible();
   await expect(page.getByText(/Community · Lena K\./)).toBeVisible();
-  await expect(page.getByText(/Voraussichtlich 23 °C Lufttemperatur und 18 °C Wassertemperatur/)).toBeVisible();
+  await expect(page.getByText(/Luft 23 °C · Wasser 18 °C/)).toBeVisible();
   expect(liveRequests).toBe(0);
   expect(forecastRequests).toBe(0);
   expect(forecastSummaryRequests).toBe(1);
@@ -385,9 +442,62 @@ test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", a
   await page.setViewportSize({ width: 320, height: 720 });
   await mockApi(page);
   await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Sicherheits- und Lagehinweise" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+});
+
+test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklappen stabil bleibt", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+
+  const gallery = page.locator(".spot-gallery-compact > div");
+  const details = page.getByRole("region", { name: "Spotbeschreibung und Hinweise" });
+  const profile = page.getByRole("complementary", { name: "Spotprofil und Ausstattung" });
+  const more = details.getByRole("button", { name: "Mehr anzeigen" });
+  await expect(gallery).toBeVisible();
+  await expect(details).toBeVisible();
+  await expect(profile).toBeVisible();
+  await expect(more).toBeVisible();
+  await expect(details.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
+  const hintsCard = details.getByRole("region", { name: "Sicherheit", exact: true });
+  await expect(hintsCard).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(profile.getByRole("heading", { name: "Sicherheit", exact: true })).toHaveCount(0);
+  await expect(profile.getByRole("heading", { name: "Spotprofil" })).toHaveCount(0);
+  await expect(profile.getByText(/Ein vielseitiger Küstenspot/)).toHaveCount(0);
+  await expect(profile.getByRole("button", { name: "Zu Favoriten hinzufügen" })).toBeVisible();
+  await expect(details.getByRole("button", { name: "Zu Favoriten hinzufügen" })).toHaveCount(0);
+  await expect(profile).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+
+  const [collapsedGallery, collapsedProfile] = await Promise.all([gallery.boundingBox(), profile.boundingBox()]);
+  expect(collapsedGallery).not.toBeNull();
+  expect(collapsedProfile).not.toBeNull();
+  expect(collapsedGallery!.width / collapsedGallery!.height).toBeCloseTo(2 / 3, 2);
+  expect(Math.abs(collapsedProfile!.height - collapsedGallery!.height)).toBeLessThanOrEqual(1);
+  const facilityTable = profile.getByRole("table", { name: "Ausstattung am Spot" });
+  await expect(facilityTable.getByRole("row")).toHaveCount(7);
+  await expect(facilityTable.getByText("Camping")).toHaveCount(0);
+  await expect(facilityTable.getByText("Direkt am Deich")).toHaveCount(0);
+  const profileContent = await profile.locator(":scope > *").evaluateAll((elements) => {
+    const first = elements[0].getBoundingClientRect();
+    const last = elements[elements.length - 1].getBoundingClientRect();
+    return { top: first.top, bottom: last.bottom };
+  });
+  const freeAbove = profileContent.top - collapsedProfile!.y;
+  const freeBelow = collapsedProfile!.y + collapsedProfile!.height - profileContent.bottom;
+  expect(Math.abs(freeAbove - freeBelow)).toBeLessThanOrEqual(6);
+  await more.click();
+  await expect(details.getByRole("button", { name: "Weniger anzeigen" })).toBeVisible();
+  const expandedGallery = await gallery.boundingBox();
+  expect(expandedGallery).not.toBeNull();
+  expect(Math.abs(expandedGallery!.height - collapsedGallery!.height)).toBeLessThanOrEqual(1);
+  const description = details.getByText(/Ein vielseitiger Küstenspot/);
+  const hints = details.getByRole("region", { name: "Sicherheit", exact: true });
+  const [descriptionBox, hintsBox] = await Promise.all([description.boundingBox(), hints.boundingBox()]);
+  expect(descriptionBox).not.toBeNull();
+  expect(hintsBox).not.toBeNull();
+  expect(hintsBox!.y).toBeGreaterThanOrEqual(descriptionBox!.y + descriptionBox!.height);
 });
 
 for (const width of [320, 375, 768, 1280, 1440]) {

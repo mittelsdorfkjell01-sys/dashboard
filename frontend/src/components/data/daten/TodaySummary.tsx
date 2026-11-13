@@ -5,6 +5,7 @@ import { useSpotDataScope, windUnitLabel } from "../../../state/SpotDataScope";
 import { tempColor } from "../../../lib/tempScale";
 import { useOptionalUnits } from "../../../context/PrefsContext";
 import { tempValue, formatWind, formatWave, windValue } from "../../../lib/units";
+import { headlineWaveM } from "../../../lib/waveReading";
 import WeatherGlyph, { weatherLabel } from "./WeatherGlyph";
 
 // Celestial-body colours — the only chroma on the sky arc besides the glow.
@@ -61,7 +62,10 @@ export default function TodaySummary({ forecast }: { forecast: NormalizedForecas
   const condition = anchorHour?.weather_condition ?? day?.summary.weather_condition;
   const wind = anchorHour?.wind ?? null;
   const gust = anchorHour?.gust ?? null;
-  const swell = anchorHour?.swell ?? null;
+  // "Welle" is the total wave, not the deprecated primary-swell field — the
+  // spot page and the weather map used to print different numbers under the
+  // same word (see lib/waveReading.ts).
+  const swell = headlineWaveM(anchorHour);
 
   return (
     <div className="flex flex-col gap-6">

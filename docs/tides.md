@@ -32,21 +32,53 @@ Die Rohdateien gehören nie ins Repository, Neon, Vercel Blob oder den
 Vercel-Function-Build. Der externe Worker benötigt ein privates persistentes
 Volume. Nach Erhalt des AVISO-Zugangs:
 
-1. FES2022b Ocean Tide Elevations und die extrapolierte Rastermaske laden.
-2. Prüfsummen und Modellversion protokollieren.
-3. Dateien auf das private Worker-Volume entpacken.
-4. Eine PyFES-YAML mit allen gelieferten Komponenten anlegen.
-5. Eine aktuelle Natural-Earth-Landmaske als GeoJSON ablegen. Natural Earth ist
-   gemeinfrei; Downloadversion und Prüfsumme werden zusammen mit dem Modell
-   dokumentiert: https://www.naturalearthdata.com/about/terms-of-use/
-6. `requirements-tide.txt` in einer Python-3.11-Umgebung installieren.
-7. `TIDE_PYFES_CONFIG`, `TIDE_MASK_FILE` und `TIDE_LAND_GEOJSON` setzen.
-8. `python -m app.tides.worker --limit 1` zunächst manuell ausführen.
+1. In **My AVISO+ → My products** prüfen, dass **FES (Finite Element Solution
+   – Oceanic Tides Heights)** aktiv ist. Ein AVISO-Konto ohne diese
+   Produktfreigabe erhält beim Download weiterhin HTTP 401.
+2. Benutzername und Passwort ausschließlich für die aktuelle Installationsshell
+   setzen; nie in `.env`, GitHub, Vercel oder das Repository schreiben:
+   `AVISO_USERNAME` und `AVISO_PASSWORD`.
+3. Den Zugriff ohne Modelldownload prüfen:
+   `python -m scripts.fes2022_assets access`.
+4. Ziel und Platzbedarf gegen den aktuellen offiziellen Katalog prüfen:
+   `python -m scripts.fes2022_assets plan --target /opt/surfwinddata/fes2022b`.
+5. FES2022b Ocean Tide Elevations und die extrapolierte Rastermaske
+   reproduzierbar installieren:
+   `python -m scripts.fes2022_assets install --target /opt/surfwinddata/fes2022b --license-accepted-at YYYY-MM-DD`.
+   Der Installer lädt genau die 34 offiziellen Höhenkonstituenten und die
+   FES-Maske, setzt abgebrochene Downloads fort, entpackt atomar und erzeugt
+   `fes2022.yaml`, die gemeinfreie Natural-Earth-Landmaske,
+   `tide-assets.json` sowie eine geheimnisfreie `worker.env`. Das Ziel muss
+   außerhalb dieses Repositorys liegen. `load_tide` ist nicht nötig, weil der
+   Surfwinddata-Worker die astronomische Wasserhöhe und nicht die elastische
+   Gezeitenlast berechnet.
+   Unter Windows führt
+   `.\scripts\install-fes2022.ps1 -LicenseAcceptedAt YYYY-MM-DD` Zugangstest
+   und Installation zusammen aus. Das Passwort wird verdeckt abgefragt, nur an
+   den Kindprozess übergeben und anschließend aus der Prozessumgebung entfernt.
+6. `requirements-tide.txt` in einer Python-3.11-Umgebung installieren; es bindet
+   die gemeinsame Anwendungslaufzeit automatisch ein.
+7. Die fünf `TIDE_*`-Pfade aus der erzeugten `worker.env` in der privaten
+   Worker-Umgebung setzen. Die Datei enthält keine AVISO-Zugangsdaten.
+8. Den vollständigen Preflight ausführen:
+   `python -m scripts.tide_europe_rollout preflight --verify-checksums`.
+9. Den ersten Batch nur ansehen:
+    `python -m scripts.tide_europe_rollout bootstrap --limit 5`.
+10. Den Batch einplanen:
+    `python -m scripts.tide_europe_rollout bootstrap --apply --limit 5`.
+11. `python -m app.tides.worker --limit 1` zunächst manuell ausführen.
 
 Die GitHub Action `tide-worker.yml` erwartet einen privaten Self-hosted Runner
 mit Label `tide-worker` und dem persistenten Volume. Erst danach wird die
 Repository-Variable `TIDE_WORKER_ENABLED=true` gesetzt. AVISO-Zugangsdaten und
 Modelldateien werden nicht über GitHub Actions übertragen.
+
+Bei aktivierter Variable läuft der Worker täglich in begrenzten Batches. Der
+Bootstrap berücksichtigt ausschließlich veröffentlichte Spots mit `ocean`,
+`sea` oder `lagoon`, aktiviert Profile privat und veröffentlicht niemals
+automatisch. Die Freigabe erfolgt nach Ankerprüfung in **FES-Tide Europa** im
+Adminbereich. `python -m scripts.tide_europe_rollout status` zeigt den
+betrieblichen Stand.
 
 ## Ablauf
 

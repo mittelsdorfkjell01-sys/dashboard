@@ -41,10 +41,17 @@ export interface Spot {
   slug?: string;
   regionId?: string;
   sports?: string[];
+  /** Per-variant suitability keyed by "<sport>:<variant>". A missing entry is
+   *  "unbekannt" (not reviewed), which is never the same as "ungeeignet". */
+  variantConditions?: Record<string, { suitability?: string }> | null;
+  /** Variants the spot offers (geeignet/eingeschraenkt), as derived by the API. */
+  variants?: string[];
   description?: string;
   /** Statischer Sicherheitshinweis zum Spot. */
   safetyNotice?: string;
   level?: string[];
+  /** Beste meteorologische Windrichtungen (Wind kommt aus …). */
+  bestWindDirections?: string[];
   waterTypes?: string[];
   bottomType?: string[];
   waterCharacter?: string[];
@@ -89,7 +96,7 @@ export interface RegionInfo {
 
 // --- spot-detail panel types ------------------------------------------------
 
-export type FacilityKind = "parking" | "school" | "shower" | "food" | "camping";
+export type FacilityKind = "parking" | "school" | "shower" | "toilet" | "changing" | "food";
 export interface Facility {
   kind: FacilityKind;
   title: string;

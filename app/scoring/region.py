@@ -142,21 +142,6 @@ def aggregate_region_season(
     return season
 
 
-def region_when_to_go(
-    region_id, *, db, sport: str | None = None, profile: dict | None = None,
-    window: int = 5,
-) -> dict:
-    """Smoothed 52-week region curve (best-spot ``pct_usable``, circular-smoothed)."""
-    region, spots = _load_region_and_spots(db, region_id)
-    raw = region_score_series(spots, sport, profile, db)
-    return {
-        "region_id": str(region.id),
-        "sport": sport,
-        "curve": smooth_circular(raw, window),
-        "raw": [round(v, 4) for v in raw],
-    }
-
-
 def aggregate_all_regions(db) -> int:
     """(Re)aggregate every region's season. Returns the count processed."""
     from sqlalchemy import select

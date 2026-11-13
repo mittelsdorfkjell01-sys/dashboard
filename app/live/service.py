@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import math
+import time
 import uuid
 from zoneinfo import ZoneInfo
 
@@ -24,7 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, load_only, selectinload
 
 from app.config import get_settings
-from app.live.cache import Cache, cache_key, default_cache
+from app.live.cache import Cache, cache_key, default_cache, record_provider_fetch
 from app.live.client import MAX_FORECAST_DAYS, OpenMeteoClient, default_client
 from app.live.live_wind import (
     build_live_wind_baseline,
@@ -203,6 +204,75 @@ def _model_set(lat: float, lon: float, pref: str | None) -> tuple[str, list[str]
 
 # --- cached fetches --------------------------------------------------------
 
+_PROVIDER_LOCK_TTL_SECONDS = 20
+_PROVIDER_LOCK_WAIT_SECONDS = 1.0
+
+
+def _cached_provider_payload(
+    key: str,
+    *,
+    cache: Cache,
+    ttl: int,
+    fetch,
+) -> dict:
+    """Fetch one provider payload with bounded cross-request single-flight."""
+    hit = cache.get(key)
+    if hit is not None:
+        return hit
+
+    token = uuid.uuid4().hex
+    lock_key = f"lock:provider:{key}"
+    acquire = getattr(cache, "acquire_lock", None)
+    acquired = bool(acquire and acquire(lock_key, token, _PROVIDER_LOCK_TTL_SECONDS))
+
+    def fetch_fresh() -> dict:
+        started = time.perf_counter()
+        try:
+            value = fetch()
+        except Exception:
+            record_provider_fetch(
+                key,
+                elapsed_seconds=time.perf_counter() - started,
+                success=False,
+            )
+            raise
+        record_provider_fetch(
+            key,
+            elapsed_seconds=time.perf_counter() - started,
+            success=True,
+        )
+        return value
+
+    if acquired:
+        try:
+            # Another request may have populated the value between our first
+            # miss and lock acquisition.
+            hit = cache.get(key)
+            if hit is not None:
+                return hit
+            data = fetch_fresh()
+            data = {
+                **data,
+                "_cache_captured_at": datetime.now(timezone.utc).isoformat(),
+            }
+            cache.set(key, data, ttl)
+            return data
+        finally:
+            cache.release_lock(lock_key, token)
+
+    # The lock holder normally finishes quickly. Wait briefly for its value;
+    # provider availability still wins after the bounded wait expires.
+    deadline = time.monotonic() + _PROVIDER_LOCK_WAIT_SECONDS
+    while time.monotonic() < deadline:
+        time.sleep(0.025)
+        hit = cache.get(key)
+        if hit is not None:
+            return hit
+    data = fetch_fresh()
+    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
+    cache.set(key, data, ttl)
+    return data
+
 def _cached_forecast(
     lat: float,
     lon: float,
@@ -215,53 +285,59 @@ def _cached_forecast(
     # `forecast_multi` namespaces the multi-model payload away from any legacy
     # single-model `forecast` entries. One request covers every model in the set.
     key = cache_key(models_csv, lat, lon, f"forecast_multi_{MAX_FORECAST_DAYS}d_v2")
-    hit = cache.get(key)
-    if hit is not None:
-        return hit
-    data = client.fetch_forecast(lat, lon, models_csv, MAX_FORECAST_DAYS)
-    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
-    cache.set(key, data, get_settings().weather_forecast_cache_ttl)
-    return data
+    return _cached_provider_payload(
+        key,
+        cache=cache,
+        ttl=get_settings().weather_forecast_cache_ttl,
+        fetch=lambda: client.fetch_forecast(
+            lat, lon, models_csv, MAX_FORECAST_DAYS
+        ),
+    )
 
 
 def _cached_nowcast(lat, lon, models_csv, *, client, cache) -> dict:
     key = cache_key(models_csv, lat, lon, "atmosphere_nowcast_v1")
-    hit = cache.get(key)
-    if hit is not None:
-        return hit
     fetch = getattr(client, "fetch_nowcast", None)
-    data = fetch(lat, lon, models_csv) if fetch else client.fetch_forecast(lat, lon, models_csv, 1)
-    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
-    cache.set(key, data, get_settings().weather_nowcast_cache_ttl)
-    return data
+    return _cached_provider_payload(
+        key,
+        cache=cache,
+        ttl=get_settings().weather_nowcast_cache_ttl,
+        fetch=(
+            (lambda: fetch(lat, lon, models_csv))
+            if fetch
+            else (lambda: client.fetch_forecast(lat, lon, models_csv, 1))
+        ),
+    )
 
 
-def _cached_marine(
+def cached_marine(
     lat: float, lon: float, *, client: OpenMeteoClient, cache: Cache, current_only: bool = False
 ) -> dict:
     # Marine model is independent of the atmospheric model -> fixed key segment.
-    # v2: marine payload now also carries wind_wave_* and secondary_swell_wave_*
-    # (wind_sea / secondary_swell components) — bump so stale v1 entries without
-    # those fields are not served after the shape change.
-    key = cache_key("marine", lat, lon, "marine_current_v2" if current_only else "marine_forecast_v2")
-    hit = cache.get(key)
-    if hit is not None:
-        return hit
+    # v3 adds sea_level_height_msl. The tide endpoint shares this payload with
+    # the wave forecast, so the UI can reuse one provider response for both.
+    key = cache_key("marine", lat, lon, "marine_current_v3" if current_only else "marine_forecast_v3")
     fetch = getattr(client, "fetch_current_marine", None) if current_only else None
-    data = fetch(lat, lon) if fetch else client.fetch_marine(lat, lon, MAX_FORECAST_DAYS)
-    data = {**data, "_cache_captured_at": datetime.now(timezone.utc).isoformat()}
     ttl = get_settings().weather_marine_current_cache_ttl if current_only else get_settings().weather_forecast_cache_ttl
-    cache.set(key, data, ttl)
-    return data
+    return _cached_provider_payload(
+        key,
+        cache=cache,
+        ttl=ttl,
+        fetch=(
+            (lambda: fetch(lat, lon))
+            if fetch
+            else (lambda: client.fetch_marine(lat, lon, MAX_FORECAST_DAYS))
+        ),
+    )
 
 
-def _marine_for_spot(spot, lat: float, lon: float, *, client, cache, current_only=False):
+def marine_for_spot(spot, lat: float, lon: float, *, client, cache, current_only=False):
     eligibility = marine_classification(spot)
     diagnostics = {"status": eligibility.value, "requested_coordinate": {"latitude": lat, "longitude": lon}}
     if eligibility is not Availability.AVAILABLE:
         return {}, diagnostics
     try:
-        marine = _cached_marine(lat, lon, client=client, cache=cache, current_only=current_only)
+        marine = cached_marine(lat, lon, client=client, cache=cache, current_only=current_only)
     except Exception as exc:
         diagnostics.update(status=Availability.UNAVAILABLE_PROVIDER.value, error_class=type(exc).__name__)
         return {}, diagnostics
@@ -464,38 +540,21 @@ def _latest_measurement(
     """
     if not hasattr(db, "scalar"):
         return None
-    from app.weather.station_selection import select_stations_for_spot
-
-    now = datetime.now(timezone.utc)
-    selection = select_stations_for_spot(
+    return public_station_measurements(
         db,
-        spot_id,
-        now=now,
-        wind_direction_deg=wind_direction_deg,
-        purpose="measurement",
-    )
-    selected = selection.selected
-    if (
-        selected is None
-        or selected.station_id is None
-        or selected.observed_at is None
-    ):
-        return None
-    station = db.get(WeatherStation, uuid.UUID(selected.station_id))
-    if station is None:
-        return None
-    selected_observed_at = datetime.fromisoformat(selected.observed_at)
-    observation = db.scalar(select(WeatherObservation).where(
-        WeatherObservation.station_id == station.id,
-        WeatherObservation.observed_at == selected_observed_at,
-    ).limit(1))
-    if observation is None:
-        return None
+        [spot_id],
+        cache=cache,
+        wind_directions={spot_id: wind_direction_deg},
+    ).get(spot_id)
+
+
+def _measurement_payload(*, station, observation, selected, now: datetime) -> dict:
     observed = observation.observed_at.astimezone(timezone.utc)
-    result = {
+    age = max(0, int((now - observed).total_seconds()))
+    return {
         "observation_type": "measurement", "station_id": str(station.id),
         "provider": station.provider, "provider_station_id": station.provider_station_id,
-        "observed_at": observed.isoformat(), "age_seconds": max(0, int((now - observed).total_seconds())),
+        "observed_at": observed.isoformat(), "age_seconds": age,
         "distance_km": selected.distance_km, "wind_speed_ms": observation.wind_speed_ms,
         "wind_gust_ms": observation.wind_gust_ms, "wind_direction_from_deg": observation.wind_direction_deg,
         "quality": observation.quality,
@@ -509,7 +568,7 @@ def _latest_measurement(
                 or observation.fetched_at
                 or observation.created_at
             ),
-            "model_run_quality": "unknown", "age_seconds": max(0, int((now-observed).total_seconds())),
+            "model_run_quality": "unknown", "age_seconds": age,
             "stale": False, "availability": "available", "quality_tier": "quality_checked_station",
             "attribution": [{
                 "provider": station.provider,
@@ -520,11 +579,86 @@ def _latest_measurement(
             "grid_distance_km": selected.distance_km, "uncertainty": "limited", "data_issues": observation.data_issues or [],
         },
     }
-    if cache is not None:
-        from app.live.public_cache import set_public_measurement
 
-        set_public_measurement(cache, spot_id, result)
-    return result
+
+def public_station_measurements(
+    db,
+    spot_ids,
+    *,
+    cache: Cache | None = None,
+    wind_directions: dict | None = None,
+) -> dict:
+    """Load separate station measurements for many spots in set-based queries."""
+    if not hasattr(db, "scalar"):
+        return {}
+    from app.weather.station_selection import select_stations_for_spots
+
+    ordered_ids = list(dict.fromkeys(spot_ids))
+    if not ordered_ids:
+        return {}
+    now = datetime.now(timezone.utc)
+    selections = select_stations_for_spots(
+        db,
+        ordered_ids,
+        now=now,
+        wind_directions=wind_directions,
+        purpose="measurement",
+    )
+    selected_by_spot = {
+        spot_id: selection.selected
+        for spot_id, selection in selections.items()
+        if selection.selected is not None
+        and selection.selected.station_id is not None
+        and selection.selected.observed_at is not None
+    }
+    station_ids = {
+        uuid.UUID(selected.station_id) for selected in selected_by_spot.values()
+    }
+    stations = {
+        station.id: station
+        for station in db.scalars(
+            select(WeatherStation).where(WeatherStation.id.in_(station_ids))
+        ).all()
+    } if station_ids else {}
+    observed_times = {
+        datetime.fromisoformat(selected.observed_at)
+        for selected in selected_by_spot.values()
+    }
+    observations = {
+        (observation.station_id, observation.observed_at): observation
+        for observation in db.scalars(
+            select(WeatherObservation).where(
+                WeatherObservation.station_id.in_(station_ids),
+                WeatherObservation.observed_at.in_(observed_times),
+            )
+        ).all()
+    } if station_ids and observed_times else {}
+
+    results: dict = {}
+    for spot_id in ordered_ids:
+        selected = selected_by_spot.get(spot_id)
+        if selected is None:
+            results[spot_id] = None
+            continue
+        station_id = uuid.UUID(selected.station_id)
+        observed_at = datetime.fromisoformat(selected.observed_at)
+        station = stations.get(station_id)
+        observation = observations.get((station_id, observed_at))
+        if station is None or observation is None:
+            results[spot_id] = None
+            continue
+        result = _measurement_payload(
+            station=station,
+            observation=observation,
+            selected=selected,
+            now=now,
+        )
+        results[spot_id] = result
+        if cache is not None:
+            from app.live.public_cache import set_public_measurement
+
+            set_public_measurement(cache, spot_id, result)
+    return results
 
 
 def public_station_measurement(
@@ -738,7 +872,7 @@ def get_live_conditions_for_spot(
     profile = resolve_weather_profile(getattr(spot, "weather_profile", None))
     primary_model, models = _model_set(lat, lon, spot.model_pref)
     fc = _cached_nowcast(lat, lon, ",".join(models), client=client, cache=cache)
-    mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache, current_only=True)
+    mar, marine_diagnostics = marine_for_spot(spot, lat, lon, client=client, cache=cache, current_only=True)
     cur_f = fc.get("current") or {}
     cur_m = mar.get("current") or {}
     captured_at = _parse_provider_time(fc.get("_cache_captured_at")) or datetime.now(timezone.utc)
@@ -1233,7 +1367,7 @@ def get_forecast_series(
     fc = _cached_forecast(
         lat, lon, primary_model, ",".join(models), client=client, cache=cache
     )
-    mar, marine_diagnostics = _marine_for_spot(spot, lat, lon, client=client, cache=cache)
+    mar, marine_diagnostics = marine_for_spot(spot, lat, lon, client=client, cache=cache)
     resolved_profile = resolve_weather_profile(getattr(spot, "weather_profile", None))
     # Open-Meteo does not reliably expose a run time for every selected model.
     # The cache capture is the stable sample identity: repeated requests for the

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -12,6 +14,7 @@ from app.tides.marine_field import (
     MarineFieldManifest,
     MarineVariableDefinition,
 )
+from app.tides.modelled_sea_level import public_modelled_sea_level
 from app.tides.service import _normalized_hourly_series
 from app.tides.station_import import evidence_hash
 from app.tides.stations import ProviderObservation
@@ -80,3 +83,28 @@ def test_station_evidence_hash_is_deterministic_for_raw_key_order():
     assert evidence_hash(ProviderObservation(**common, raw={"a": 1, "b": 2})) == evidence_hash(
         ProviderObservation(**common, raw={"b": 2, "a": 1})
     )
+
+
+def test_modelled_sea_level_is_explicitly_non_navigational_and_partial():
+    now = datetime(2026, 11, 11, 10, 30, tzinfo=timezone.utc)
+    start = now.replace(minute=0) - timedelta(hours=15)
+    times = [(start + timedelta(hours=index)).isoformat() for index in range(80)]
+    levels = [
+        0.6 * math.sin(2 * math.pi * index / 12.42)
+        for index in range(len(times))
+    ]
+    result = public_modelled_sea_level(
+        uuid.uuid4(),
+        {"timezone": "GMT", "hourly": {"time": times, "sea_level_height_msl": levels}},
+        days=10,
+        display_timezone="Europe/Berlin",
+        now=now,
+    )
+    assert result["available"] is True
+    assert result["product_type"] == "modelled_sea_level"
+    assert result["datum"] == "mean_sea_level"
+    assert result["navigational"] is False
+    assert result["partial"] is True
+    assert result["timezone"] == "Europe/Berlin"
+    assert result["events"]
+    assert all(point["level_m"] is not None for point in result["series"])

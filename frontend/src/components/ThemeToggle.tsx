@@ -8,9 +8,14 @@ type Variant = "icon" | "menu" | "switch";
 /**
  * Theme control in three shapes:
  *  - "icon"   → a bare sun/moon button for header rails
- *  - "menu"   → a dropdown row with a small label + sun/moon (desktop account menu)
- *  - "switch" → a full-width "Darkmode" row with an iOS-style pill switch, matching
- *               the mobile account sheet in Figma (Frame 76).
+ *  - "menu"   → the same switch row at dropdown metrics (desktop account menu)
+ *  - "switch" → a full-width row with an iOS-style pill switch, matching the
+ *               mobile account sheet in Figma (Frame 76).
+ *
+ * Both menu shapes are now the same control: a label on the left naming the
+ * mode you switch *to* and a real switch on the right. The desktop dropdown
+ * previously used an underlined text row, which read as a link and gave no
+ * indication of the current state.
  */
 export default function ThemeToggle({
   menuItem = false,
@@ -32,7 +37,8 @@ export default function ThemeToggle({
   const targetLabel = dark ? "Whitemode" : "Darkmode";
   const label = `${targetLabel} aktivieren`;
 
-  if (variant === "switch") {
+  if (variant === "switch" || variant === "menu") {
+    const sheet = variant === "switch";
     return (
       <button
         type="button"
@@ -40,7 +46,9 @@ export default function ThemeToggle({
         role="switch"
         aria-checked={dark}
         aria-label={label}
-        className="flex min-h-[52px] w-full items-center justify-between px-3 text-body font-medium text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className={`flex w-full items-center justify-between px-3 font-medium text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+          sheet ? "min-h-[52px] text-body" : "min-h-11 text-ui hover:opacity-70"
+        }`}
       >
         <span>{targetLabel}</span>
         <SwitchTrack checked={dark} icon={<MoonIcon width={12} height={12} />} />
@@ -48,19 +56,13 @@ export default function ThemeToggle({
     );
   }
 
-  const visibleLabel = targetLabel;
   return (
     <button
       type="button"
       onClick={toggle}
       aria-label={label}
-      className={
-        variant === "menu"
-          ? "flex min-h-11 w-full items-center justify-between px-3 text-ui font-medium text-ink transition-opacity hover:underline hover:underline-offset-4 hover:opacity-70"
-          : "inline-flex h-11 w-11 items-center justify-center text-ink transition-opacity hover:opacity-60"
-      }
+      className="inline-flex h-11 w-11 items-center justify-center text-ink transition-opacity hover:opacity-60"
     >
-      {variant === "menu" && <span>{visibleLabel}</span>}
       <span className="relative grid h-5 w-5 place-items-center" aria-hidden>
         <span className={`absolute grid place-items-center transition-[opacity,transform] duration-base motion-reduce:transition-none ${theme === "light" ? "scale-100 rotate-0 opacity-100" : "scale-75 rotate-[35deg] opacity-0"}`}>
           <MoonIcon width={18} height={18} />

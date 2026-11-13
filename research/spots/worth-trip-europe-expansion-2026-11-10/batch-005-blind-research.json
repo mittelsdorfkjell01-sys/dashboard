@@ -1,0 +1,1034 @@
+{
+  "schema_version": 1,
+  "batch": "005",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Search/catalogue data selected candidates but did not establish acceptance.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless an authority explicitly covers the sport and zone.",
+    "Image search returned no reviewable candidates because both providers failed; none is approved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Lancieux",
+      "country": "FR",
+      "identity": "Lancieux Bay public riding areas; exact launch changes with tide and seasonal beach use.",
+      "entry": {
+        "lat": 48.607,
+        "lon": -2.151,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Very large tidal range, exposed rocks and strong drift consequence; south wind is offshore.",
+      "access_rules": "Never ride alone in offshore wind; attach current summer beach restrictions and a tide-specific launch.",
+      "trip_value": "Broad multi-orientation bay and established nautical use justify worth_trip after launch/rule correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.mairie-lancieux.fr/nautisme-et-voile.html",
+          "publisher": "Lancieux municipality",
+          "supports": [
+            "sports",
+            "winds",
+            "tides",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://lancieuxtourisme.fr/fr/activites-nautiques-a-lancieux-guide-complet-pour-profiter-de-la-baie/",
+          "publisher": "Lancieux Tourism",
+          "supports": [
+            "sports",
+            "season",
+            "restrictions"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Saint-Brevin – Les Rochelets",
+      "country": "FR",
+      "identity": "The designated Les Rochelets kite section at Saint-Brevin-les-Pins.",
+      "entry": {
+        "lat": 47.211,
+        "lon": -2.165,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Atlantic sandbanks provide flatter low-tide water or waves depending on wind and bank state.",
+      "access_rules": "Summer kite use is restricted to Rochelets and marked corridors; schools and bathers have priority.",
+      "trip_value": "A current official seasonal kite beach plus varied sandbank conditions support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.loire-atlantique.fr/44/sport/kitesurf-la-plage-des-rochelets-saint-brevin-les-pins/c_1209306",
+          "publisher": "Loire-Atlantique department",
+          "supports": [
+            "official_zone",
+            "season",
+            "school_priority"
+          ]
+        },
+        {
+          "url": "https://spots.universkite.fr/item/spot-de-kitesurf-rochelets-saint-brevin-pins/",
+          "publisher": "Universkite",
+          "supports": [
+            "conditions",
+            "hazards",
+            "summer_rules"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "La Baule – K13",
+      "country": "FR",
+      "identity": "La Baule's K13 summer launch corridor, not the entire bathing bay.",
+      "entry": {
+        "lat": 47.278,
+        "lon": -2.392,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Large tidal bay with adequate wet-sand launch space only at suitable tide; crowded in summer.",
+      "access_rules": "Use K13 in summer, remain beyond the bathing area and follow the winter low-tide/coefficient rules.",
+      "trip_value": "Iconic bay and a defined advanced-rider corridor support worth_trip once the current ordinance is attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.labaule.fr/fileadmin/La_Baule/Connaitre_ma_ville_et_ses_fonctionnements/Arretes_permanents/2016_arrete_kite_surf_plage_3.pdf",
+          "publisher": "La Baule municipality",
+          "supports": [
+            "official_corridor",
+            "experience",
+            "tide_rules"
+          ]
+        },
+        {
+          "url": "https://kitecenter44.fr/elementor-3045",
+          "publisher": "Kite Center 44",
+          "supports": [
+            "current_practice",
+            "summer_zone",
+            "launch_space"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Les Sables-d'Olonne – Tanchet",
+      "country": "FR",
+      "identity": "Tanchet beach and its established surf facilities south of the city centre.",
+      "entry": {
+        "lat": 46.48,
+        "lon": -1.774,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Atlantic beachbreak with changing banks; exact current/rip and level guidance must be locally maintained.",
+      "access_rules": "Respect supervised bathing sectors and school instructions.",
+      "trip_value": "Year-round schools, rental, city services and a named surf beach justify worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ville.lessablesdolonne.fr/sport-nautisme/equipements-sportifs/equipements-nautiques/",
+          "publisher": "Les Sables-d'Olonne municipality",
+          "supports": [
+            "Tanchet",
+            "schools",
+            "facilities"
+          ]
+        },
+        {
+          "url": "https://www.lessablesdolonne.fr/sports-nautiques/",
+          "publisher": "Les Sables-d'Olonne Tourism",
+          "supports": [
+            "surf",
+            "year_round",
+            "rental"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Pontaillac",
+      "country": "FR",
+      "identity": "Pontaillac's urban supervised beach in Royan.",
+      "entry": {
+        "lat": 45.625,
+        "lon": -1.05,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard",
+        "windsurf"
+      ],
+      "conditions": "Small urban bay with seasonal supervision and variable swell exposure.",
+      "access_rules": "Surf follows bathing flags, supervision and municipal signage.",
+      "trip_value": "Good local access, but the evidence does not establish a dedicated-trip experience beyond nearby Atlantic alternatives.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.royanatlantique.fr/en/charente-maritime-beaches/pontaillac-royan-beach/",
+          "publisher": "Royan Atlantique Tourism",
+          "supports": [
+            "sports",
+            "supervision",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://www.ville-royan.fr/component/hob_royan/?view=pdf",
+          "publisher": "Royan municipality",
+          "supports": [
+            "municipal_surf_rule"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Hourtin Lake",
+      "country": "FR",
+      "identity": "Marked wind-sport sectors on Lac d'Hourtin-Carcans, outside the national reserve.",
+      "entry": {
+        "lat": 45.179,
+        "lon": -1.06,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Large freshwater lake with shallow sectors; wind and depth vary by launch.",
+      "access_rules": "Use marked buoy zones, remain outside reserve and swimming sectors, and attach the current municipal map.",
+      "trip_value": "Large lake, established zones and multi-discipline access support worth_trip after an exact launch is selected.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gironde.gouv.fr/contenu/telechargement/68044/507321/file/Fiche%204%20-%20R%C3%A8gles%20de%20navigation%20sur%20les%20lacs.pdf",
+          "publisher": "Gironde prefecture",
+          "supports": [
+            "official_zones",
+            "reserve",
+            "seasonal_rules"
+          ]
+        },
+        {
+          "url": "https://mairie-hourtin.fr/wp-content/uploads/2026/06/Guide-usagers-lac_2025_VF.pdf",
+          "publisher": "Hourtin municipality",
+          "supports": [
+            "zone_map",
+            "protected_areas"
+          ]
+        },
+        {
+          "url": "https://intranet.ffvl.fr/terrain/2305",
+          "publisher": "FFVL",
+          "supports": [
+            "buoys",
+            "bathers"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Biscarrosse Plage",
+      "country": "FR",
+      "identity": "Biscarrosse's central ocean beachbreak, with peaks selected outside bathing sectors.",
+      "entry": {
+        "lat": 44.444,
+        "lon": -1.254,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Exposed shifting sandbanks, shorebreak and rips; west swell and easterly wind are commonly favourable.",
+      "access_rules": "Follow flags and lifeguard zones; conditions can exceed beginner level.",
+      "trip_value": "Reliable Atlantic surf identity, services and multiple banks support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.ville-biscarrosse.fr/securite-des-plages/",
+          "publisher": "Biscarrosse municipality",
+          "supports": [
+            "lifeguards",
+            "flags",
+            "nautical_zone"
+          ]
+        },
+        {
+          "url": "https://surfspoting.com/spot/fr/13-biscarrosse-plage-centrale/",
+          "publisher": "Surfspoting",
+          "supports": [
+            "conditions",
+            "rips",
+            "skill_level"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Gruissan – Plage des Chalets",
+      "country": "FR",
+      "identity": "Gruissan wind-sport coast around Plage des Chalets and its event corridors.",
+      "entry": {
+        "lat": 43.107,
+        "lon": 3.111,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Strong Tramontane can be offshore and extreme; exact discipline corridor varies by event and season.",
+      "access_rules": "Use the current nautical map and event/municipal closures.",
+      "trip_value": "The Défi events draw riders globally and the official destination frames Gruissan as an international benchmark; exceeds worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gruissan-mediterranee.com/wp-content/uploads/2026/04/Guide-nautique-Gruissan_2026_WEB.pdf",
+          "publisher": "Gruissan Tourism",
+          "supports": [
+            "current_clubs",
+            "sports",
+            "zones"
+          ]
+        },
+        {
+          "url": "https://www.gruissan-mediterranee.com/en/defi-wind-and-defi-kite/",
+          "publisher": "Gruissan Tourism",
+          "supports": [
+            "global_event",
+            "international_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Almanarre",
+      "country": "FR",
+      "identity": "The Almanarre launch channel on the Giens tombolo at Hyères.",
+      "entry": {
+        "lat": 43.057,
+        "lon": 6.127,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Mistral-exposed Mediterranean venue with flat and wave states across the tombolo; strong-wind competence required.",
+      "access_rules": "Kites launch only through official channels and current seasonal rules.",
+      "trip_value": "Long-established international competition and training reputation exceeds worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.hyeres.fr/sites/default/files/atoms/files/regles_bonnes_pratique_kite_hyeres_fr_eng.pdf",
+          "publisher": "Hyères municipality",
+          "supports": [
+            "official_channels",
+            "rules",
+            "confirmed_riders"
+          ]
+        },
+        {
+          "url": "https://www.hyeres-tourisme.com/en/discover/the-sea/water-sports/",
+          "publisher": "Hyères Tourism",
+          "supports": [
+            "windsports",
+            "destination_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Leucate – La Franqui",
+      "country": "FR",
+      "identity": "La Franqui/Coussoules wind-sport system; cliff beach and kite zone are distinct.",
+      "entry": {
+        "lat": 42.934,
+        "lon": 3.042,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Very strong offshore Tramontane can exceed 100 km/h; discipline-specific sections differ.",
+      "access_rules": "Kiting is prohibited at the cliff section and must use mapped sectors beyond it.",
+      "trip_value": "Official sources call it a kitesurf mecca and an internationally recognised event venue; world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://en.tourisme-leucate.com/discover/riding-in-leucate/leucate-top-spots/",
+          "publisher": "Leucate Tourism",
+          "supports": [
+            "spots",
+            "extreme_wind",
+            "events"
+          ]
+        },
+        {
+          "url": "https://www.tourisme-leucate.com/app/uploads/leucate/2025/04/LEUCATE-OT-Guide-Spots-2025-26_WEB.pdf",
+          "publisher": "Leucate Tourism",
+          "supports": [
+            "current_map",
+            "kite_prohibition"
+          ]
+        },
+        {
+          "url": "https://www.sports.gouv.fr/beach-park-la-franqui",
+          "publisher": "French Sports Ministry",
+          "supports": [
+            "international_reputation",
+            "event_history"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Pantín",
+      "country": "ES",
+      "identity": "Pantín's Atlantic competition beach in Valdoviño.",
+      "entry": {
+        "lat": 43.64,
+        "lon": -8.108,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Consistent winds and strong Atlantic swell with changing beachbreak peaks.",
+      "access_rules": "Competition and bathing management apply; retain current and skill warnings.",
+      "trip_value": "Long-running world-circuit status and international reputation exceed worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://turismo.dacoruna.gal/es/descubre/praia/pantin",
+          "publisher": "A Coruña Tourism",
+          "supports": [
+            "conditions",
+            "world_circuit"
+          ]
+        },
+        {
+          "url": "https://www.spain.info/export/sites/gcc/gcc/.content/comun/documentos/Eventos-deportivos-EN.pdf",
+          "publisher": "Spain Tourism",
+          "supports": [
+            "WSL_event",
+            "consistency"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Patos",
+      "country": "ES",
+      "identity": "Patos beach and the Pico de Patos wave near Nigrán.",
+      "entry": {
+        "lat": 42.166,
+        "lon": -8.824,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Atlantic beach and reef peaks with level-dependent hazards; exact take-off identity must be separated.",
+      "access_rules": "Attach current bathing zones, parking and reef/level guidance.",
+      "trip_value": "One of southern Galicia's best-known waves and a strong coastal trip setting support worth_trip after correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://blog.turismo.gal/las-mejores-playas-para-practicar-surf-en-galicia/",
+          "publisher": "Galicia Tourism",
+          "supports": [
+            "Pico_de_Patos",
+            "reputation"
+          ]
+        },
+        {
+          "url": "https://www.turismo.gal/docs/mdaw/mzey/~edisp/turga312309.pdf?langId=gl_ES",
+          "publisher": "Galicia Tourism",
+          "supports": [
+            "regional_prominence",
+            "landscape"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Somo",
+      "country": "ES",
+      "identity": "Somo-Loredo's open-sea beachbreak, with access chosen outside supervised bathing.",
+      "entry": {
+        "lat": 43.455,
+        "lon": -3.742,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Long exposed beach with frequent waves and multiple shifting peaks.",
+      "access_rules": "High seasonal occupancy requires bathing-zone separation and local school guidance.",
+      "trip_value": "Cantabrian surf heritage, dense schools and long beach support worth_trip without clear world_class proof.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://turismo.ribamontanalmar.es/somo/",
+          "publisher": "Ribamontán al Mar Tourism",
+          "supports": [
+            "surf_history",
+            "schools",
+            "occupancy"
+          ]
+        },
+        {
+          "url": "https://www.turicantabria.com/playa-de-somo/",
+          "publisher": "Cantabria Tourism",
+          "supports": [
+            "waves",
+            "surf_use"
+          ]
+        },
+        {
+          "url": "https://www.spain.info/es/playa/somo/",
+          "publisher": "Spain Tourism",
+          "supports": [
+            "length",
+            "schools"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Salinas",
+      "country": "ES",
+      "identity": "Salinas-San Juan's long Atlantic beach in Castrillón.",
+      "entry": {
+        "lat": 43.578,
+        "lon": -5.966,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Three-kilometre exposed beach with moderate-to-strong swell and multiple banks.",
+      "access_rules": "Use supervised areas and current local hazard information.",
+      "trip_value": "Long surf beach, services and established practice area support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-salinas",
+          "publisher": "Asturias Tourism",
+          "supports": [
+            "length",
+            "surf",
+            "swell",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.spain.info/en/beach/salinas-salinas/",
+          "publisher": "Spain Tourism",
+          "supports": [
+            "surf_area",
+            "facilities"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Trabucador",
+      "country": "ES",
+      "identity": "The narrow Trabucador sandbar in the Ebro Delta, with sea and bay sides kept distinct.",
+      "entry": {
+        "lat": 40.65,
+        "lon": 0.744,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Shallow bay and exposed sea sides provide different conditions; storm erosion and habitat sensitivity are material.",
+      "access_rules": "Vehicle, parking, night-access and nesting restrictions apply; exact sport corridor must be mapped.",
+      "trip_value": "Unusual two-sided delta geography and established wind-sport use support worth_trip after conservation correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://parcsnaturals.gencat.cat/es/xarxa-de-parcs/delta-ebre/gaudeix-del-parc/com-accedir-hi/index.html",
+          "publisher": "Ebro Delta Natural Park",
+          "supports": [
+            "access",
+            "parking",
+            "night_rules",
+            "nesting"
+          ]
+        },
+        {
+          "url": "https://www.turismodeltadelebro.com/playa-el-trabucador/",
+          "publisher": "Ebro Delta Tourism",
+          "supports": [
+            "sports",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://turismelarapita.cat/es/trabucador/",
+          "publisher": "La Ràpita Tourism",
+          "supports": [
+            "destination",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Castelldefels – La Pineda",
+      "country": "ES",
+      "identity": "The regulated La Pineda summer kitesurf zone at Castelldefels.",
+      "entry": {
+        "lat": 41.27,
+        "lon": 1.996,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Thermal sea breeze and wide sand support riding, but summer beach density is high.",
+      "access_rules": "Licence/bib, designated zone and current seasonal hours are mandatory.",
+      "trip_value": "Defined metropolitan access and official seasonal infrastructure support worth_trip after current rules are embedded.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.castelldefels.org/playas/platges-esportives/kitesurf",
+          "publisher": "Castelldefels municipality",
+          "supports": [
+            "official_zone",
+            "licence",
+            "2026_hours"
+          ]
+        },
+        {
+          "url": "https://www.castelldefels.org/es/actualidad/el-castell/noticias/empieza-la-temporada-regulada-de-kitesurf-en-castelldefels/normas-de-uso-kitersurf-castellano.pdf",
+          "publisher": "Castelldefels municipality",
+          "supports": [
+            "rules",
+            "zone_map"
+          ]
+        },
+        {
+          "url": "https://fsurf.cat/normativa-capitania-maritima-barcelona-2025/",
+          "publisher": "Catalan Surf Federation",
+          "supports": [
+            "maritime_rules"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "El Palmar",
+      "country": "ES",
+      "identity": "El Palmar's long Atlantic beachbreak at Vejer de la Frontera.",
+      "entry": {
+        "lat": 36.233,
+        "lon": -6.07,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard",
+        "windsurf"
+      ],
+      "conditions": "Windy exposed beach with moderate-to-strong surf, shifting peaks and steep-shore sections.",
+      "access_rules": "Respect bathing zones and local flags; currents and shorebreak require level judgement.",
+      "trip_value": "Andalusian surf reputation, long beach and trip infrastructure support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.spain.info/en/beach/palmar-vejer-frontera/",
+          "publisher": "Spain Tourism",
+          "supports": [
+            "length",
+            "wind",
+            "waves",
+            "surf"
+          ]
+        },
+        {
+          "url": "https://www.cadizturismo.com/es/playas/el-palmar",
+          "publisher": "Cádiz Tourism",
+          "supports": [
+            "surf_reputation",
+            "conditions",
+            "competitions"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Mar Menor – La Mota",
+      "country": "ES",
+      "identity": "Proposed La Mota launch at San Pedro del Pinatar on the Mar Menor.",
+      "entry": {
+        "lat": 37.826,
+        "lon": -0.786,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Shallow lagoon setting is plausible for training, but current conditions and legal launch proof are weak.",
+      "access_rules": "Protected salt-flat and bathing constraints require an authority map.",
+      "trip_value": "Do not count until current official sport permission, exact zone and independent trip value are documented.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://es.wikipedia.org/wiki/Playa_de_La_Mota_%28San_Pedro_del_Pinatar%29",
+          "publisher": "Wikipedia",
+          "supports": [
+            "secondary_sport_claim"
+          ]
+        },
+        {
+          "url": "https://www.medlandspann.is/iforms/brochures/download/3-brochures/1-costa-blanca-costa-calida/data.pdf",
+          "publisher": "Regional travel brochure",
+          "supports": [
+            "regional_kite_centre_only"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Cape Drepano",
+      "country": "GR",
+      "identity": "The lighthouse-side wind-sport beach at Cape Drepano near Patras.",
+      "entry": {
+        "lat": 38.328,
+        "lon": 21.852,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Strong wind with flat-water and wave sections; local rescue and level matching are important.",
+      "access_rules": "Use established school/rescue access and keep clear of the lighthouse/reef hazards.",
+      "trip_value": "Distinctive cape geometry, year-round use and established services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.greekmap.eu/index.php/api/pdf_export/1390/en",
+          "publisher": "Greek Map destination guide",
+          "supports": [
+            "exact_area",
+            "wind",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://grecorama.gr/en/windsurf/",
+          "publisher": "Grecorama",
+          "supports": [
+            "year_round",
+            "school",
+            "rescue"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Raches Lighthouse",
+      "country": "GR",
+      "identity": "The lighthouse wind-sport launch at Raches in Phthiotis.",
+      "entry": {
+        "lat": 38.855,
+        "lon": 22.75,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Stable wind with flat and wave sections separated by the point.",
+      "access_rules": "Exact public launch, rescue coverage and seasonal operating rules require confirmation.",
+      "trip_value": "Recognised Mediterranean wind venue with visitor infrastructure supports worth_trip after launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://nisi.com.gr/en/nisi-and-activities/",
+          "publisher": "Nisi destination operator",
+          "supports": [
+            "lighthouse",
+            "winds",
+            "flat_wave",
+            "visitors"
+          ]
+        },
+        {
+          "url": "https://www.visitlamia.com/en/activities/water-sports",
+          "publisher": "Lamia regional tourism",
+          "supports": [
+            "regional_watersports",
+            "destination_context"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Vassiliki",
+      "country": "GR",
+      "identity": "Vassiliki Bay's established windsurf zones on southern Lefkada.",
+      "entry": {
+        "lat": 38.628,
+        "lon": 20.608,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Strong afternoon thermal accelerates into the bay; crowded high-season water requires zone discipline.",
+      "access_rules": "Use school and current local zones; distinguish beginner mornings from strong afternoon wind.",
+      "trip_value": "Official sources rank it among the Mediterranean/world's best and report hundreds of daily riders; world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://lefkada.gov.gr/en/dimotikes-enotites-apollonion-vasiliki/",
+          "publisher": "Lefkada municipality",
+          "supports": [
+            "global_reputation",
+            "wind",
+            "daily_riders"
+          ]
+        },
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/nature/mountains/lefkada-the-paradise-of-sea-sports",
+          "publisher": "Visit Greece",
+          "supports": [
+            "world_reputation",
+            "sea_sports"
+          ]
+        },
+        {
+          "url": "https://lefkada.gr/en/wind-surf/",
+          "publisher": "Lefkada Tourism",
+          "supports": [
+            "conditions",
+            "infrastructure"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Nea Kios",
+      "country": "GR",
+      "identity": "Proposed wind-sport teaching coast at Nea Kios near Nafplio.",
+      "entry": {
+        "lat": 37.59,
+        "lon": 22.741,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Seasonal teaching conditions are documented by operators, but exact public zone and hazards are not.",
+      "access_rules": "Attach a municipal launch, season, rescue and bathing separation before publication.",
+      "trip_value": "Nafplio access and established instruction may support worth_trip, but only after identity/rule correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://bnbe.gr/wp-content/uploads/2024/03/Tours-Activities_BnBe.pdf",
+          "publisher": "Nafplio activities guide",
+          "supports": [
+            "distance",
+            "courses",
+            "season",
+            "certification"
+          ]
+        },
+        {
+          "url": "https://www.kitemed.gr/",
+          "publisher": "KiteMed school",
+          "supports": [
+            "local_school",
+            "lessons",
+            "spot_use"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Ai Giannis, Lefkada",
+      "country": "GR",
+      "identity": "Ai Giannis beach on Lefkada's northwestern coast.",
+      "entry": {
+        "lat": 38.841,
+        "lon": 20.677,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Afternoon wind and wave potential; exact kite and windsurf sections must be separated.",
+      "access_rules": "Use current training-centre zones and preserve swimmer separation.",
+      "trip_value": "Island setting, reliable wind-sport use and training infrastructure support worth_trip after zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/nature/mountains/lefkada-the-paradise-of-sea-sports",
+          "publisher": "Visit Greece",
+          "supports": [
+            "kite_hotspot",
+            "training_centres"
+          ]
+        },
+        {
+          "url": "https://lefkada.gr/en/wind-surf/",
+          "publisher": "Lefkada Tourism",
+          "supports": [
+            "winds",
+            "wave_riding",
+            "spot_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Prasonisi",
+      "country": "GR",
+      "identity": "Prasonisi's two-sided sandbar wind-sport destination at southern Rhodes.",
+      "entry": {
+        "lat": 35.887,
+        "lon": 27.774,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Flat and wave sides, strong wind and seasonal sandbar geometry create advanced as well as teaching conditions.",
+      "access_rules": "Keep discipline/level zones and seasonal access current.",
+      "trip_value": "Official destination sources describe a globally leading venue with dedicated accommodation and schools; world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitrhodes.com/what-to-see/beaches/prasonisi-beach",
+          "publisher": "Visit Rhodes",
+          "supports": [
+            "courses",
+            "surfer_accommodation",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://site.rhodes.gr/tourist-guide/?lang=en",
+          "publisher": "Rhodes municipality",
+          "supports": [
+            "ideal_conditions",
+            "operators"
+          ]
+        },
+        {
+          "url": "https://visit-rhodes.gr/destination/prasonisi/",
+          "publisher": "Rhodes destination guide",
+          "supports": [
+            "world_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Karpathos – Afiartis",
+      "country": "GR",
+      "identity": "The Afiartis/Makrys Gialos windsurf area near Karpathos airport.",
+      "entry": {
+        "lat": 35.425,
+        "lon": 27.15,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Exceptionally strong reliable Meltemi with distinct bay sections and skill levels.",
+      "access_rules": "Separate Makrys Gialos and stronger-water sectors; follow school/rescue guidance.",
+      "trip_value": "Internationally recognised exceptional wind reliability and specialist infrastructure place it above worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/nature/mountains/beaches-of-karpathos",
+          "publisher": "Visit Greece",
+          "supports": [
+            "Makrys_Gialos",
+            "windsports"
+          ]
+        },
+        {
+          "url": "https://www.ebed.gr/backOffice/backOfficeFiles/2022-06-08-125622O395f42820029b4a2a5c233ab5aef70a.pdf",
+          "publisher": "Dodecanese Chamber",
+          "supports": [
+            "strong_reliable_wind",
+            "Afiartis",
+            "clubs"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    }
+  ]
+}

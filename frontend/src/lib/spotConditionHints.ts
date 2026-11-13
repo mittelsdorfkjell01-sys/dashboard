@@ -1,5 +1,6 @@
 import type { ForecastSummaryRead, WeatherProvenance } from "./api";
 import { bottomTypeLabel } from "./labels";
+import { DEFAULT_UNITS, formatTemp, type TempUnit } from "./units";
 import type { Spot } from "./types";
 
 export type SpotConditionHint = {
@@ -51,7 +52,7 @@ function provenanceTiming(provenance: WeatherProvenance | null | undefined) {
   if (!provenance?.valid_at || !provenance.captured_at) return null;
   const valid = instantLabel(provenance.valid_at, provenance.spot_timezone);
   const captured = instantLabel(provenance.captured_at, provenance.spot_timezone);
-  return valid && captured ? `Gültig: ${valid} · Datenstand: ${captured}` : null;
+  return valid && captured ? `Gültig: ${valid} · Stand: ${captured}` : null;
 }
 
 function usableForecast(provenance: WeatherProvenance | null | undefined) {
@@ -66,24 +67,28 @@ function usableForecast(provenance: WeatherProvenance | null | undefined) {
   );
 }
 
-function temperatureSentence(air: number | null, water: number | null) {
+function temperatureSentence(air: number | null, water: number | null, unit: TempUnit) {
+  // Values arrive in the canonical °C and are formatted into the visitor's
+  // chosen unit here, so this sentence agrees with every other temperature on
+  // the page instead of always printing Celsius.
+  const read = (value: number) => formatTemp(value, unit);
   if (air != null && water != null) {
-    return `Voraussichtlich ${Math.round(air)} °C Lufttemperatur und ${Math.round(water)} °C Wassertemperatur.`;
+    return `Luft ${read(air)} · Wasser ${read(water)}`;
   }
-  if (air != null) return `Voraussichtlich ${Math.round(air)} °C Lufttemperatur.`;
-  if (water != null) return `Voraussichtlich ${Math.round(water)} °C Wassertemperatur.`;
+  if (air != null) return `Luft ${read(air)}`;
+  if (water != null) return `Wasser ${read(water)}`;
   return null;
 }
 
 function bottomSentence(values: string[]) {
   if (values.length === 1 && values[0] === "rock") {
-    return "Laut Spotprofil felsiger Untergrund.";
+    return "Untergrund: Fels";
   }
   if (values.length === 1 && values[0] === "reef") {
-    return "Laut Spotprofil Untergrund aus Riff.";
+    return "Untergrund: Riff";
   }
   const labels = values.map(bottomTypeLabel).filter(Boolean);
-  return labels.length ? `Laut Spotprofil Untergrund: ${labels.join(" und ")}.` : null;
+  return labels.length ? `Untergrund: ${labels.join(" und ")}` : null;
 }
 
 /** Build factual, independently sourced hints. Missing, stale or unreviewed
@@ -92,6 +97,9 @@ function bottomSentence(values: string[]) {
 export function buildSpotConditionHints(
   spot: Spot,
   forecast: ForecastSummaryRead | null | undefined,
+  /** Display unit for the temperature chip; defaults to the canonical °C so
+   *  callers outside a PrefsProvider (tests, isolated renders) keep working. */
+  tempUnit: TempUnit = DEFAULT_UNITS.temp,
 ): SpotConditionHint[] {
   const hints: SpotConditionHint[] = [];
   if (spot.safetyNotice?.trim()) {
@@ -130,7 +138,7 @@ export function buildSpotConditionHints(
 
   const air = dynamicUsable && Number.isFinite(hour?.air) ? hour!.air : null;
   const water = dynamicUsable && Number.isFinite(hour?.sst) ? hour!.sst : null;
-  const sentence = temperatureSentence(air, water);
+  const sentence = temperatureSentence(air, water, tempUnit);
   const timing = provenanceTiming(provenance);
   if (sentence && timing) {
     hints.push({ id: "temperature", kind: "temperature", sentence, sourceLabel: "Vorhersage", timing });

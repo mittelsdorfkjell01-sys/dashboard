@@ -126,6 +126,7 @@ export default function AdminOperations() {
     { label: "Fehlend", value: f.missing, tone: "neutral" },
     { label: "Fehlgeschlagen", value: f.failed, tone: "danger" },
   ];
+  const cacheNamespaces = Object.entries(data.cache.namespaces);
 
   return (
     <div>
@@ -296,6 +297,71 @@ export default function AdminOperations() {
         </span>
         <span>Neuberechnung: {data.public_update.climatology_cron}</span>
         <span>{data.public_update.edge_cache}</span>
+      </div>
+
+      <h2 className="mt-8 text-label font-semibold text-admin-fg">
+        Laufzeit-Cache
+      </h2>
+      <p className="mt-1 text-caption text-admin-muted">
+        Aggregierte Werte dieses API-Prozesses seit seinem Start; ohne Cache-Keys
+        oder Nutzerdaten.
+      </p>
+      <div
+        tabIndex={0}
+        aria-label="Cachemetriken horizontal scrollen"
+        className="mt-3 overflow-x-auto rounded-lg border border-admin-border bg-admin-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-admin-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+      >
+        <table className="w-full min-w-[720px] text-left text-ui">
+          <thead className="border-b border-admin-border bg-admin-hover text-caption uppercase text-admin-muted">
+            <tr>
+              {[
+                "Namespace",
+                "Anfragen",
+                "Trefferquote",
+                "Fehler",
+                "Lock-Konflikte",
+                "Ø Cache-Latenz",
+                "Ø Eintrag",
+                "Ø Provider-Fetch",
+              ].map((label) => (
+                <th key={label} className="px-3 py-2 font-semibold">{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-admin-border-subtle">
+            {cacheNamespaces.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-admin-muted">
+                  Seit dem Prozessstart wurden noch keine Cachezugriffe erfasst.
+                </td>
+              </tr>
+            ) : cacheNamespaces.map(([namespace, metrics]) => (
+              <tr key={namespace}>
+                <td className="admin-mono px-3 py-3 text-admin-fg">{namespace}</td>
+                <td className="admin-mono px-3 py-3">{metrics.requests}</td>
+                <td className="admin-mono px-3 py-3">
+                  {metrics.hit_rate == null ? "—" : `${Math.round(metrics.hit_rate * 100)} %`}
+                  <span className="ml-2 text-admin-muted">
+                    ({metrics.hits}/{metrics.requests})
+                  </span>
+                </td>
+                <td className="admin-mono px-3 py-3">{metrics.errors}</td>
+                <td className="admin-mono px-3 py-3">{metrics.lock_contended}</td>
+                <td className="admin-mono px-3 py-3">
+                  {metrics.average_latency_ms == null ? "—" : `${metrics.average_latency_ms} ms`}
+                </td>
+                <td className="admin-mono px-3 py-3">
+                  {metrics.average_entry_bytes == null ? "—" : `${metrics.average_entry_bytes} B`}
+                </td>
+                <td className="admin-mono px-3 py-3">
+                  {metrics.provider_fetch_average_ms == null
+                    ? "—"
+                    : `${metrics.provider_fetch_average_ms} ms (${metrics.provider_fetches})`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Recent ERA5 runs. */}

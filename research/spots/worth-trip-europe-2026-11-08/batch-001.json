@@ -1,0 +1,766 @@
+{
+  "batch_id": "worth-trip-europe-001",
+  "checked_at": "2026-11-09",
+  "write_status": "blocked",
+  "write_blockers": [
+    "Kein authentifizierter Zugriff auf die Live-Entwürfe; die öffentliche Duplikatsprüfung deckt nur 46 veröffentlichte Spots ab.",
+    "Der unterstützte Bulk-Importer kann spot_content_sources nicht anlegen.",
+    "Der Bulk-Importer akzeptiert best_wind_directions und variant_conditions noch nicht, obwohl der aktuelle lokale Spot-Schema-Stand diese Felder kennt.",
+    "Der Cloud-Adminweg ist ohne Sitzung oder Admin-Schlüssel nicht autorisiert nutzbar."
+  ],
+  "candidates": [
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "zeeland-domburg-noordduine",
+        "name": "Domburg Noordduine",
+        "region_slug": "zeeland",
+        "lat": 51.5550262,
+        "lon": 3.4712174,
+        "sports": ["surf"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["SE"],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true, "note": "Parkplätze nördlich und südlich des Golfplatzes; aktuelle Gebühren prüfen."},
+          "food": {"available": true, "note": "Strandpavillon Noordduine am Einstieg."},
+          "school": {"available": true, "note": "Surfschool Domburg mit Kursen und Verleih am Sportstrand."}
+        },
+        "facing": 315,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Am Sportstrand Noordduine trifft ein weitläufiger, nach Nordwesten offener Sandstrand auf einen etablierten Surfbereich mit Schule und Verleih. Domburg verbindet niederländischen Beachbreak mit Dünen, Küstenort und Waldlandschaft; der Reisegrund liegt deshalb sowohl im Surfen als auch in der Umgebung. Bei kleineren Bedingungen wird hier geschult, während Strömung und Buhnen bei mehr Energie deutlich mehr Erfahrung verlangen. Im Juli und August ist das Surfen am Abschnitt beim Strandpavillon Strand Domburg 30 laut kommunaler Verordnung untersagt; Beschilderung und aktuelle Zonen sind vor Ort zu prüfen.",
+          "safety_notice": "Rippströmungen, Strömung und Holz-Buhnen beachten. Im Juli und August gilt am Abschnitt Strand Domburg 30 ein kommunales Surfverbot."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Domburg", "Noordduine", "Strand Noordduine", "Domburg Surf Beach"],
+      "unsupported_research": {
+        "access": "Surfschule an Strand Domburg 32; Zugang über den Strandübergang bei Noordduine.",
+        "season": "Surfguide nennt September bis Februar als beste Phase; im Juli und August gilt die belegte lokale Einschränkung am Abschnitt Strand Domburg 30.",
+        "rules": "Das Verbot ist abschnittsbezogen. Es darf nicht als pauschales Sommerverbot für die gesamte Küste von Domburg gespeichert werden."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Brouwersdam",
+        "nearest_distance_km": 35.1,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=51.5550262&mlon=3.4712174#map=18/51.5550262/3.4712174",
+          "title": "Noordduine, Strand Domburg 30",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt liegt am Strandpavillon Noordduine unmittelbar neben der Surfschule; kein Ortsmittelpunkt."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.visitdomburg.com/en/domburg-surf-school",
+          "title": "Surf School Domburg",
+          "publisher": "Visit Domburg",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surfkurse und Verleih direkt am Northduine-Strand."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.zeeland.com/en/visit/things-to-do/water-sports/surfing",
+          "title": "Surfing in Zeeland",
+          "publisher": "Zeeland.com",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Bezeichnet Domburg als einen der niederländischen Surf-Hotspots."
+        },
+        {
+          "field_path": "level",
+          "url": "https://www.surfline.com/surf-report/domburg/584204204e65fad6a77095f9/spot-guide",
+          "title": "Domburg Surf Guide",
+          "publisher": "Surfline",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt Beginner bis Intermediate bei kleinen Bedingungen sowie Sand, Rips, Strömung und Buhnen."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://www.surfline.com/surf-report/domburg/584204204e65fad6a77095f9/spot-guide",
+          "title": "Domburg Surf Guide",
+          "publisher": "Surfline",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt Südost als idealen Wind und den Strand als nordwestlich ausgerichtet."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://lokaleregelgeving.overheid.nl/CVDR750027",
+          "title": "Algemene plaatselijke verordening Veere 2026",
+          "publisher": "Gemeente Veere / Overheid.nl",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Artikel 5.41 untersagt Wellenreiten im Juli und August am Strandabschnitt beim Pavillon Strand Domburg 30."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "zeeland-vrouwenpolder",
+        "name": "Vrouwenpolder",
+        "region_slug": "zeeland",
+        "lat": 51.5878683,
+        "lon": 3.6312758,
+        "sports": ["kitesurf"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": ["beginner"],
+        "best_wind_directions": ["W", "NW", "N", "NE", "E"],
+        "water_character": ["flach"],
+        "style": ["freeride", "freestyle"],
+        "facilities": {
+          "parking": {"available": true, "note": "Bezahltes Parken laut NKV-Spotkarte."},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Kiteschule und NKV-Informationspunkt am Strand."}
+        },
+        "facing": 0,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Vrouwenpolder liegt auf der Nordseeseite des Veerse Dam und verbindet einen sehr breiten Sandstrand mit einer tideabhängigen flachen Lagune. Der ausgewiesene Kitebereich, eine Schule und ein lokaler NKV-Informationspunkt machen den Ort besonders für Einsteiger interessant; die weite Küste und der Blick auf die Oosterscheldekering geben ihm zusätzlichen Reisewert. Die nutzbare Zone und der Wassercharakter verändern sich mit Tide und Saison. Kitesurfen auf dem Veerse Meer ist nicht erlaubt, und ab Mai markieren Schilder und Bojen den zulässigen Bereich am Hauptstrand.",
+          "safety_notice": "Nur die ausgeschilderte Kitezone nutzen. Ab Mai rechts der gelben Boje fahren; das Veerse Meer ist für Kitesurfen gesperrt. Tide, Badegäste und aktuelle Beschilderung prüfen.",
+          "tide": "Die flache Lagune bildet sich vor allem bei Hochwasser oder Springtide; bei sinkendem Wasser ändern sich Tiefe und Wassercharakter."
+        },
+        "variant_conditions": {
+          "kitesurf:classic": {
+            "suitability": "geeignet",
+            "entry": "Breiter Sandstrand am ersten Fußgängersteg über die N57.",
+            "launch_area": "Große Sandfläche innerhalb der ausgeschilderten Kitezone.",
+            "local_rules": "Ab Mai rechts der gelben Boje; Veerse Meer nicht befahren; Beschilderung beachten.",
+            "level": ["beginner"],
+            "discipline": ["freeride", "freestyle"],
+            "tide": "Lagunenbedingungen bei Hochwasser oder Springtide."
+          }
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Vrouwenpolder Kitestrand", "Veerse Dam Vrouwenpolder", "Breezand Vrouwenpolder"],
+      "unsupported_research": {
+        "public_transport": "Nicht belastbar belegt; offen.",
+        "nature": "Die umliegenden Veerse-Meer-Schutzbereiche dürfen nicht auf die Nordsee-Kitezone übertragen werden; aktuelle Schutzgebietsschilder prüfen."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Brouwersdam",
+        "nearest_distance_km": 24.9,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=51.5878683&mlon=3.6312758#map=18/51.5878683/3.6312758",
+          "title": "Vertigo Vrouwenpolder / Strandrestaurant De Dam",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Einstieg bei Kiteschule und Strandrestaurant, nicht im Dorfzentrum."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://kitesurfvereniging.nl/kitespot/vrouwenpolder/",
+          "title": "Kitespot Vrouwenpolder",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kitesurfen, ausgewiesene Zone, Einsteiger-Niveau sowie Freeride und Freestyle."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://www.vertigo-sports.com/en/kitesurfschool/kitesurfspot-vrouwenpolder/",
+          "title": "Kitesurfen Vrouwenpolder",
+          "publisher": "Vertigo Sports",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt W, NW, N, NE und E als geeignete Windrichtungen und S bis SW/SE als ablandig."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://kitesurfvereniging.nl/kitespot/vrouwenpolder/",
+          "title": "Kitespot Vrouwenpolder",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet Essen, Getränke, Toilette, Dusche, Schule/Info-Punkt und bezahltes Parken."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.zeeland.com/en/visit/islands/walcheren/towns-and-villages/vrouwenpolder",
+          "title": "Vrouwenpolder",
+          "publisher": "Zeeland.com",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den breiten Strand, die Lage zwischen Nordsee und Veerse Meer sowie den Blick auf die Oosterscheldekering."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://kitesurfvereniging.nl/kitespot/vrouwenpolder/",
+          "title": "Kitespot Vrouwenpolder",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt saisonale Schilder, gelbe Boje und zulässige Fahrseite."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "naxos-agios-georgios-lagoon",
+        "name": "Agios Georgios Lagoon",
+        "region_slug": "naxos",
+        "lat": 37.0893385,
+        "lon": 25.3701413,
+        "sports": ["windsurf"],
+        "water_type": ["lagoon"],
+        "bottom_type": ["sand"],
+        "level": ["beginner"],
+        "best_wind_directions": ["N"],
+        "water_character": ["flach"],
+        "style": ["freestyle"],
+        "facilities": {
+          "parking": {"available": true},
+          "food": {"available": true, "note": "Tavernen und Cafés am Agios-Georgios-Strand."},
+          "school": {"available": true, "note": "Windsurfzentrum mit Kursen und Verleih an der Lagune."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Die Lagune am südlichen Ende von Agios Georgios bietet flaches, seichtes Wasser und ist laut offizieller Naxos-Information besonders freundlich für erste Schritte im Windsurfen. Gleichzeitig liegt der Einstieg nur etwa 15 Gehminuten von Chora entfernt und verbindet Wassersport mit dem Ort, Strandgastronomie und den weiteren Revieren der Insel. Der sommerliche Meltemi liefert den sportlichen Rahmen, ohne dass die Lagune als international herausragender Wettkampfspot beschrieben wird. Kitesurfen ist hier wegen der Nähe zum Flughafen ausdrücklich verboten.",
+          "safety_notice": "Kitesurfen ist am Strand und in der Lagune von Agios Georgios wegen der Flughafennähe verboten. Lokale Trennung der Nutzungsbereiche beachten."
+        },
+        "variant_conditions": {
+          "windsurf:fin": {
+            "suitability": "geeignet",
+            "entry": "Lagune am südlichen Ende des Agios-Georgios-Strands.",
+            "launch_area": "Seichter Sandbereich bei der Windsurfschule.",
+            "level": ["beginner"],
+            "discipline": ["freestyle"]
+          }
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Saint George Lagoon", "St. George Lagoon", "Laguna Agios Georgios", "Agios Georgios Beach Lagoon"],
+      "unsupported_research": {
+        "access": "Sieben Minuten vom Strand, etwa 15 Minuten zu Fuß von Naxos-Stadt; Zufahrt gegenüber Naxos Camping, Bushaltestelle und Parkplatz vorhanden.",
+        "season": "Windsurfzentrum laut offizieller Seite ungefähr Ende April bis Mitte Oktober geöffnet.",
+        "discipline_gap": "Slalom wird offiziell genannt, ist aber kein zulässiger Stilwert im aktuellen Spotmodell."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Mikri Vigla",
+        "nearest_distance_km": 6.9,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständige Lagune und eigenständiger Einstieg; nicht derselbe Nutzungsbereich wie Mikri Vigla."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=37.0893385&mlon=25.3701413#map=18/37.0893385/25.3701413",
+          "title": "Naxos Surf Club",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Windsurfzentrum in der Lagune, nicht im Zentrum von Chora."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.naxos.gr/naxos-surf-club-st-george-beach-agios-georgios/?lang=en",
+          "title": "Naxos-Surf Club – St. George Beach (Agios Georgios)",
+          "publisher": "Municipality of Naxos and Small Cyclades",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Windsurfzentrum, Kurse, Verleih und Lage an der Lagune."
+        },
+        {
+          "field_path": "water_character",
+          "url": "https://www.naxos.gr/swim-sail-smooth-ride-the-wave/?lang=en",
+          "title": "Swim. Sail Smooth. Ride the wave.",
+          "publisher": "Municipality of Naxos and Small Cyclades",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt die Lagune als seicht und ruhig sowie freundlich für Windsurf-Einsteiger."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://www.naxos.gr/wp-content/uploads/2018/04/Naxos-Guide-EN.pdf",
+          "title": "Naxos Guide – Water Sports",
+          "publisher": "Municipality of Naxos and Small Cyclades",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt den nördlichen Meltemi als typischen Sommerwind und Agios Georgios/Lagune für Windsurfen."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.naxos.gr/agios-georgios-beach/?lang=en",
+          "title": "Agios Georgios Beach",
+          "publisher": "Municipality of Naxos and Small Cyclades",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Sportzentrum, Tavernen, Cafés und Sandstrand."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://www.naxos.gr/swim-sail-smooth-ride-the-wave/?lang=en",
+          "title": "Swim. Sail Smooth. Ride the wave.",
+          "publisher": "Municipality of Naxos and Small Cyclades",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt das Kitesurfverbot an Strand und Lagune wegen der Nähe zum Flughafen."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "rhodes-theologos",
+        "name": "Theologos",
+        "region_slug": "rhodes",
+        "lat": 36.3839093,
+        "lon": 28.0279257,
+        "sports": ["kitesurf", "windsurf", "wing"],
+        "water_type": ["sea"],
+        "bottom_type": [],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["SW"],
+        "water_character": [],
+        "style": ["freeride", "freestyle"],
+        "facilities": {
+          "food": {"available": true, "note": "Beachbar am Stationsbereich."},
+          "school": {"available": true, "note": "Getrennte Kite- und Windsurfstationen, Wing-Angebot, Verleih und Rettungsservice."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Theologos verbindet auf Rhodos drei Winddisziplinen an einem zusammenhängenden Strandabschnitt: Kite- und Windsurfstation liegen wenige Meter auseinander, Wing-Angebote ergänzen das Revier. Der lokale Betreiber beschreibt den sommerlichen Meltemi als seitlich bis schräg auflandig und die Bedingungen als geeignet für Einsteiger und Fortgeschrittene. Kurze Wege, Material, Rettungsservice, Beachbar und die Inselumgebung machen den Ort zu einem nachvollziehbaren Reiseziel, ohne ihn mit Prasonisi als World-Class-Spot gleichzusetzen. Die getrennten Start- und Fahrbereiche müssen vor Ort beachtet werden.",
+          "safety_notice": "Kite-, Windsurf- und Badebereiche sind getrennt. Vor dem Start lokale Zonen, Stationsregeln und den aktuellen Rettungsbetrieb prüfen."
+        },
+        "variant_conditions": {
+          "kitesurf:classic": {
+            "suitability": "geeignet",
+            "launch_area": "Großer, separat organisierter Kitebereich am Strand.",
+            "level": ["beginner", "advanced"],
+            "discipline": ["freeride", "freestyle"]
+          },
+          "windsurf:fin": {
+            "suitability": "geeignet",
+            "launch_area": "Eigene Windsurfstation wenige Meter vom Kitebereich entfernt.",
+            "level": ["beginner", "advanced"],
+            "discipline": ["freeride", "freestyle"]
+          }
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Tholos", "Theologos Beach", "Surf & Kite Theologos"],
+      "unsupported_research": {
+        "season": "Betreiber nennt April bis November für die Stationen und April bis Oktober für den typischen Meltemi-Betrieb.",
+        "rescue": "Jet-Ski-Rettung ist laut Betreiber in bestimmten gebuchten Leistungen enthalten; nicht als allgemeine öffentliche Rettungsgarantie darstellen.",
+        "foil_taxonomy": "Der Betreiber nennt Foiler allgemein. Ohne eindeutige Zuordnung zu Windfoil oder Kitefoil wird keine Foilvariante positiv gesetzt."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Prasonisi",
+        "nearest_distance_km": 59.7,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=36.3839093&mlon=28.0279257#map=18/36.3839093/28.0279257",
+          "title": "Surf and Kite Theologos",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Wassersportbereich an der Küste, nicht im Ortszentrum."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.surftheologos.com/en/water-sports/",
+          "title": "Water sports – Surf & Kite Theologos",
+          "publisher": "Surf & Kite Theologos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kitesurfen, Windsurfen und Wingfoilen sowie getrennte Stationsbereiche."
+        },
+        {
+          "field_path": "level",
+          "url": "https://www.surftheologos.com/en/location/spot/",
+          "title": "Spot – Surf & Kite Theologos",
+          "publisher": "Surf & Kite Theologos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt Einsteiger und Fortgeschrittene sowie ausreichend Platz zum Lernen und Üben."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://www.surftheologos.com/en/location/spot/",
+          "title": "Spot – Surf & Kite Theologos",
+          "publisher": "Surf & Kite Theologos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt den Meltemi mittags mit rund 20 Knoten side-onshore aus Südwest."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.surftheologos.com/en/location/spot/",
+          "title": "Spot – Surf & Kite Theologos",
+          "publisher": "Surf & Kite Theologos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Schule, Material, Beachbar/Verpflegung und stationsgebundenen Rettungsservice."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://wetskillz.com/beach-rules/",
+          "title": "Beach Rules – Theologos",
+          "publisher": "WetSkillz Kite Center Rhodes",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Unabhängige lokale Quelle für getrennte Bereiche und die Pflicht, Betreiberregeln am Theologos-Strand zu beachten; Details können stationsspezifisch sein."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "sardinia-chia-su-giudeu",
+        "name": "Chia – Su Giudeu",
+        "region_slug": "sardinia",
+        "lat": 38.8821866,
+        "lon": 8.8642382,
+        "sports": ["kitesurf"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": ["advanced"],
+        "best_wind_directions": ["E", "SE", "NE", "SW"],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Coaching/Betreuung auf Anfrage; kein Einsteiger-Lehrspot."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Su Giudeu bei Chia ist ein wellenorientierter Kitespot an einer landschaftlich außergewöhnlichen Bucht mit weißem Sand, Dünen, mediterraner Vegetation und Lagunen, in denen Flamingos vorkommen können. Der sportliche Reisegrund liegt vor allem in den Herbst-, Winter- und Frühjahrsbedingungen für erfahrene Wave-Rider; für Anfänger verweist die lokale Schule ausdrücklich auf andere Lehrreviere. Von Mitte Juni bis Mitte September ist der direkte Kitestart am Strand wegen des Badebetriebs nicht erlaubt. Besucher müssen die saisonalen Regeln und die jeweils nutzbare Zone vorab prüfen.",
+          "safety_notice": "Kein Einsteiger-Spot. Von Mitte Juni bis Mitte September ist der direkte Kitestart am Strand laut lokaler Quelle nicht erlaubt; dann nur zulässige, organisierte Alternativen nutzen."
+        },
+        "variant_conditions": {
+          "kitesurf:classic": {
+            "suitability": "eingeschraenkt",
+            "launch_area": "Sandstrand von Su Giudeu außerhalb der sommerlichen Startverbotsphase.",
+            "hazards": "Wellenrevier; solide Wasserstart- und Selbstrettungsfähigkeiten erforderlich.",
+            "local_rules": "Direkter Strandstart etwa Mitte Juni bis Mitte September nicht erlaubt.",
+            "level": ["advanced"],
+            "discipline": ["wave_riding"]
+          }
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Su Giudeu", "Chia", "Baia di Chia", "Chia Kite Spot"],
+      "unsupported_research": {
+        "season": "Lokale Quelle beschreibt September bis Mai als sauberere und beständigere Wave-Phase.",
+        "foil_taxonomy": "Die Quelle nennt Foil allgemein, ordnet es aber weder Kitefoil noch Windfoil eindeutig zu; daher keine positive Foilvariante.",
+        "other_sports": "Windsurfen und Wellenreiten werden von einer lokalen Quelle genannt, aber für diesen Einstieg noch nicht durch eine zweite unabhängige Quelle ausreichend belegt."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Poetto",
+        "nearest_distance_km": 43.1,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=38.8821866&mlon=8.8642382#map=18/38.8821866/8.8642382",
+          "title": "Su Giudeu beach access",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Strandzugang von Su Giudeu, nicht im Ort Chia."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://kitehousesardinia.com/kitesurf/chia/",
+          "title": "Chia – Wave Kitesurf Spot in South Sardinia",
+          "publisher": "Kite House Sardinia",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kitesurfen und Wave-Riding am konkreten Einstieg Su Giudeu."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.sardegnaturismo.it/en/kitesurfing-spotlight-sardinia?language=en-gb",
+          "title": "Kitesurfing spotlight: Sardinia",
+          "publisher": "Sardegna Turismo",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Offizielle regionale Tourismusseite nennt Chia als Kitesurfziel im Süden Sardiniens."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://kitehousesardinia.com/kitesurf/chia/",
+          "title": "Chia – Wave Kitesurf Spot in South Sardinia",
+          "publisher": "Kite House Sardinia",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt E, SE, NE und SW und beschreibt E/SE als besonders relevant für Wellen."
+        },
+        {
+          "field_path": "level",
+          "url": "https://kitehousesardinia.com/kitesurf/chia/",
+          "title": "Chia – Wave Kitesurf Spot in South Sardinia",
+          "publisher": "Kite House Sardinia",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt den Spot für Intermediate/Advanced und verweist Anfänger an Punta Trettu; im Modell wird nur der gültige Wert advanced gesetzt."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://kitehousesardinia.com/kitesurf/chia/",
+          "title": "Chia – Wave Kitesurf Spot in South Sardinia",
+          "publisher": "Kite House Sardinia",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt das saisonale Verbot direkter Strandstarts etwa Mitte Juni bis Mitte September."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "cornwall-perranporth",
+        "name": "Perranporth",
+        "region_slug": "cornwall",
+        "lat": 50.3471122,
+        "lon": -5.1540792,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner"],
+        "best_wind_directions": [],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true, "note": "Großer Parkplatz an der Promenade beim Sommerstandort der Surfschule."},
+          "shower": {"available": true, "note": "Laut Surfschule innerhalb von 100 Metern."},
+          "toilet": {"available": true, "note": "Laut Surfschule innerhalb von 100 Metern."},
+          "food": {"available": true, "note": "Strandcafé laut RNLI."},
+          "school": {"available": true, "note": "Surfkurse und Ausrüstungsverleih am Hauptstrand."}
+        },
+        "facing": 270,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Perranporth bietet einen kilometerlangen Atlantik-Sandstrand mit viel Platz für Surfkurse und freie Peaks bei kleinen bis mittleren Bedingungen. Der Reisegrund geht über das Wasser hinaus: Dünen, die raue Nordküste Cornwalls, der Küstenpfad und der direkt angeschlossene Ort lassen sich gut zu einer Surfreise verbinden. Für Einsteiger gibt es Unterricht, Material, saisonale Rettungsschwimmer und kurze Wege zu Infrastruktur. Die offene Küste hat jedoch ein hohes Risiko für Rippströmungen; aktuelle Flaggen, Tide und die Einschätzung der Lifeguards sind entscheidend.",
+          "safety_notice": "Die Met Office-Strandvorhersage weist ein hohes Rippströmungsrisiko aus. Nur innerhalb des eigenen Könnens und bei besetzter Station zwischen den vorgesehenen Surfflaggen fahren; aktuelle Tide und Lifeguard-Hinweise beachten."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Perranporth Beach", "Perran Sands", "Porthperan"],
+      "unsupported_research": {
+        "lifeguards": "RNLI nennt für 2026 tägliche Patrouillen vom 3. April bis 1. November, 10 bis 18 Uhr; Zeiten können sich kurzfristig ändern.",
+        "access": "Hauptzugang über Beach Road und Promenade; großer Parkplatz am Meer.",
+        "tide": "Makrotidaler Strand; aktuelle Tide vor jeder Nutzung prüfen."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Fistral Beach (Newquay)",
+        "nearest_distance_km": 8.6,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständiger Strand und Ort südwestlich von Newquay; nicht Teil des Fistral-Einstiegs."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=50.3471122&mlon=-5.1540792#map=18/50.3471122/-5.1540792",
+          "title": "Perranporth Surf School / main beach access",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Sommerstandort der Surfschule am Hauptstrand, nicht im Ortszentrum."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/perranporth-beach",
+          "title": "Perranporth Beach – RNLI Lifeguarded Beach",
+          "publisher": "RNLI",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den großen Sandstrand und seine Nutzung durch Surfer und Bodyboarder."
+        },
+        {
+          "field_path": "level",
+          "url": "https://www.perranporthsurfschool.co.uk/",
+          "title": "Surf Lessons on Perranporth Beach",
+          "publisher": "Perranporth Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Unterricht, Ausrüstung und die Durchführung nur bei für Anfänger sicheren Bedingungen."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.perranporthsurfschool.co.uk/",
+          "title": "Surf Lessons on Perranporth Beach",
+          "publisher": "Perranporth Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt nahes Parken sowie Toiletten und Duschen innerhalb von 100 Metern."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.visitcornwall.com/destinations/perranporth",
+          "title": "Perranporth: A Seaside Resort Town on the Rugged North Cornwall Coast",
+          "publisher": "Visit Cornwall",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den Reisegrund aus großer Strandfläche, Dünen, Küstenpfad und rauer Nordküstenlandschaft."
+        },
+        {
+          "field_path": "facing",
+          "url": "https://www.surfline.com/surf-report/perranporth-overview/5842041f4e65fad6a7708c94",
+          "title": "Perranporth Surf Guide",
+          "publisher": "Surfline",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt den Hauptstrand ausdrücklich als westlich ausgerichtet; daraus wird der Kardinalwert 270° übernommen."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://weather.metoffice.gov.uk/forecast/gbuq6tz2f",
+          "title": "Perranporth – Village (Beach) weather",
+          "publisher": "UK Met Office",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Weist für den Strand auf ein hohes Rippströmungsrisiko hin."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/perranporth-beach",
+          "title": "Perranporth Beach – RNLI Lifeguarded Beach",
+          "publisher": "RNLI",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt saisonale Lifeguard-Zeiten und dokumentierte Rettungen aus Rippströmungen."
+        }
+      ]
+    },
+    {
+      "research_status": "blocked_exact_entry_coordinates",
+      "spot": {
+        "slug": "kos-marmari-fun2fun",
+        "name": "Marmari – Fun2Fun",
+        "region_slug": "kos",
+        "lat": null,
+        "lon": null,
+        "sports": ["kitesurf", "windsurf", "wing"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["N", "W"],
+        "water_character": [],
+        "style": ["freestyle"],
+        "facilities": {"school": {"available": true}},
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Der Fun2Fun-Bereich am Rand von Marmari kombiniert getrennte Kite- und Windsurfzonen, Wingfoil-Angebot, Sandbänke für Schulung und stärkere Nachmittagsbedingungen. Der lange Sandstrand, Dünen, Unterkünfte und der nahe Salzsee Alykes geben dem Revier zusätzlichen Insel- und Naturwert. Der Datensatz bleibt blockiert, bis der genaue Einstieg unabhängig vom Orts- oder Hotelmittelpunkt bestätigt ist.",
+          "safety_notice": "Kite- und Windsurf-Startbereiche sind getrennt; aktuelle Stationsregeln und die Lage der Sandbänke vor Ort prüfen."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Fun2Fun Kos", "Marmari Beach", "Agios Georgios Beach Marmari"],
+      "write_blocker": "Die verfügbaren Kartenquellen liefern widersprüchliche Punkte. Die offizielle Tourismusseite nennt Koordinaten für Marmari, nicht eindeutig den Startbereich. Keine grobe Ortskoordinate übernehmen.",
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot_using_provisional_point": "Psalidi",
+        "nearest_distance_km": 18.3,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "sports",
+          "url": "https://fun2fun-kos.com/en/spot-station/",
+          "title": "Spot & Station",
+          "publisher": "Fun2Fun Kos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt getrennte Kite- und Windsurfzonen sowie Wingfoil-Angebot."
+        },
+        {
+          "field_path": "level",
+          "url": "https://fun2fun-kos.com/en/spot-station/",
+          "title": "Spot & Station",
+          "publisher": "Fun2Fun Kos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Schulungs-Sandbänke, Anfängerbedingungen und stärkere Bedingungen für Erfahrene."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://fun2fun-kos.com/en/spot-station/",
+          "title": "Spot & Station",
+          "publisher": "Fun2Fun Kos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt stärkeren Nordwind und moderaten bis thermisch verstärkten Westwind."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://kos.gr/settlements/marmari",
+          "title": "Marmari",
+          "publisher": "Municipality of Kos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt langen Sandstrand, Dünen, Zugangsmöglichkeiten, Wassersport und den nahen Salzsee Alykes."
+        },
+        {
+          "field_path": "location",
+          "url": "https://kos.gr/settlements/marmari",
+          "title": "Marmari",
+          "publisher": "Municipality of Kos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "unreviewed",
+          "note": "Die angegebenen Koordinaten bezeichnen Marmari allgemein und dürfen nicht als exakter Einstieg importiert werden."
+        }
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "name": "Gruissan – Plage des Chalets",
+      "region_slug": "languedoc",
+      "reason": "world_class_boundary",
+      "note": "Austragungsort des Défi Wind mit mehr als 1.350 Teilnehmenden und international herausragender Wettkampfidentität; für diese Stufe bewusst ausgeschlossen.",
+      "sources": [
+        "https://www.gruissan-mediterranee.com/wp-content/uploads/2026/04/Guide-nautique-Gruissan_2026_WEB.pdf"
+      ]
+    },
+    {
+      "name": "Gomati",
+      "region_slug": "lemnos",
+      "reason": "insufficient_spot_specific_evidence",
+      "note": "Lokale Quellen nennen Gomati für erfahrene Wassersportler, liefern aber noch keine ausreichende unabhängige Belegkette zu Einstieg, Regeln, Bedingungen und konkreter Sportzuordnung."
+    }
+  ]
+}

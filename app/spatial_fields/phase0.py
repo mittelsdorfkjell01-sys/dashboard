@@ -9,9 +9,6 @@ import math
 import numpy as np
 
 
-WEB_MERCATOR_LIMIT = 20_037_508.342789244
-
-
 @dataclass(frozen=True)
 class RegularGrid:
     longitudes: np.ndarray
@@ -143,15 +140,6 @@ def xyz_tiles_for_bounds(
         for y in range(_tile_y(north, zoom), _tile_y(south, zoom) + 1)
         for x in range(_tile_x(west, zoom), _tile_x(east, zoom) + 1)
     ]
-
-
-def xyz_bounds_mercator(z: int, x: int, y: int) -> tuple[float, float, float, float]:
-    size = 2 * WEB_MERCATOR_LIMIT / (1 << z)
-    west = -WEB_MERCATOR_LIMIT + x * size
-    east = west + size
-    north = WEB_MERCATOR_LIMIT - y * size
-    south = north - size
-    return west, south, east, north
 
 
 def xyz_center_lonlat(z: int, x: int, y: int) -> tuple[float, float]:

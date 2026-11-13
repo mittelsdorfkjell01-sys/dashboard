@@ -558,6 +558,7 @@ class Settings(BaseSettings):
     tide_pyfes_config: str | None = None
     tide_mask_file: str | None = None
     tide_land_geojson: str | None = None
+    tide_asset_manifest: str | None = None
     tide_horizon_days: int = 60
     tide_refresh_before_days: int = 14
     tide_sample_minutes: int = 5
@@ -566,6 +567,11 @@ class Settings(BaseSettings):
     tide_offset_soft_limit_minutes: int = 90
     tide_offset_hard_limit_minutes: int = 360
     tide_reason_required_minutes: int = 30
+    # Zero-cost, explicitly lower-confidence fallback for published marine
+    # spots while the private FES atlas/worker is unavailable. It uses the same
+    # cached Open-Meteo Marine response as the wave forecast and is never
+    # labelled as an astronomical or navigational tide product.
+    tide_modelled_sea_level_fallback_enabled: bool = True
 
     # Optional comma-separated override of the independent global models whose
     # disagreement forms the Sprint 18 consensus band (default: the DWD/NOAA/ECMWF

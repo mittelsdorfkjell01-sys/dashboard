@@ -154,11 +154,26 @@ export default function LandingHeader({
   // by `docked` and eased by the touch-only CSS transition on the element.
   const surfaceOpacity = desktop ? Math.min(1, progress * 3) : docked ? 1 : 0;
 
+  // On the landing the bar starts out on the hero photo and only later hardens
+  // into the opaque surface. While it is on the photo, its ink is theme-fixed
+  // brand-dark (`.on-hero-ink`) rather than the old white-on-photo treatment:
+  // white vanished on bright heroes, and the theme ink would vanish in dark
+  // mode, so the hero carries a light wash under the bar (`.hero-top-wash`) and
+  // the bar stays dark on every image in both themes. Once docked the bar is a
+  // normal themed surface again and the themed ink is the correct colour.
+  const onHero = sticky && !docked;
+  const heroInk = onHero ? "on-hero-ink" : "";
+  // The bar normally sits at `z-header` (1000), below the landing's hero search
+  // bar (`z-modal`). The account dropdown is a child of the bar, so it cannot
+  // escape that layer on its own and the search bar painted straight over it.
+  // Lift the whole bar into the menu layer for as long as the dropdown is out.
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const innerWidth = width === "body" ? "max-w-page sm:px-8" : "max-w-page sm:px-10";
 
   return (
     <header
-      className={`${sticky ? "fixed" : "absolute"} pointer-events-none inset-x-0 top-0 z-header bg-transparent`}
+      className={`${sticky ? "fixed" : "absolute"} pointer-events-none inset-x-0 top-0 bg-transparent ${menuOpen ? "z-menu" : "z-header"}`}
       // Desktop uses the CSS var (from React `progress`) only for the padding
       // tightening; mobile doesn't need it.
       style={sticky && desktop ? ({ "--header-progress": progress } as CSSProperties) : undefined}
@@ -205,7 +220,7 @@ export default function LandingHeader({
               ref={gliderRef}
               to="/"
               aria-label="surfwind data"
-              className="pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform"
+              className={`pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform ${heroInk}`}
               style={{
                 transform: docked
                   ? "translateY(-50%) scale(0.54)"
@@ -224,9 +239,13 @@ export default function LandingHeader({
             {left ?? (
               <div className="relative flex min-h-11 items-center">
                 <span
+                  // The sticky landing tagline is dark ink on the hero wash
+                  // (see `onHero` above). Other hero pages (spot, region) keep
+                  // the white-on-photo treatment — they have no wash, so dark
+                  // text there would be the same problem in reverse.
                   className={`hidden select-none whitespace-nowrap text-caption font-medium uppercase tracking-caps sm:block ${
-                    onLight ? "text-ink-soft" : "text-on-photo"
-                  }`}
+                    onLight || sticky ? "text-ink-soft" : "text-on-photo"
+                  } ${heroInk}`}
                   style={sticky ? { opacity: 1 - progress } : undefined}
                 >
                   {t("header.tagline")}
@@ -303,13 +322,17 @@ export default function LandingHeader({
             {INCLUDE_ADMIN && (
               <Link
                 to="/admin/spot/new"
-                className="hidden text-body font-medium text-ink transition-opacity hover:opacity-70 sm:block"
+                className={`hidden text-body font-medium text-ink transition-opacity hover:opacity-70 sm:block ${heroInk}`}
               >
                 {t("header.addSpots")}
               </Link>
             )}
 
-            {showMenu && <AccountMenu bareOnMobile={mobileSpotControls} />}
+            {/* `onHero` only dresses the trigger: the menu it opens is a normal
+                themed surface and must keep the real theme ink. */}
+            {showMenu && (
+              <AccountMenu bareOnMobile={mobileSpotControls} onHero={onHero} onOpenChange={setMenuOpen} />
+            )}
           </div>
         </div>
       </div>

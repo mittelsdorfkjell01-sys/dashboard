@@ -4,7 +4,7 @@
 // page renders cached data instantly and refreshes in the background, instead of
 // flashing a skeleton and re-fetching from scratch every time.
 
-import { useEffect, useReducer } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { ApiError } from "./api";
 
 const errMessage = (e: unknown) =>
@@ -28,15 +28,35 @@ function storeEntry(key: string, entry: Entry<unknown>) {
   store.delete(key);
   store.set(key, entry);
   while (store.size > MAX_ENTRIES) {
-    const oldest = store.keys().next().value as string | undefined;
-    if (!oldest) break;
-    store.delete(oldest);
-    subscribers.delete(oldest);
+    const oldestEvictable = [...store.entries()].find(
+      ([candidate, value]) =>
+        !value.inflight && !(subscribers.get(candidate)?.size),
+    )?.[0];
+    // Active consumers and in-flight requests are correctness state, not LRU
+    // candidates. A temporary overflow is safer than detaching a mounted view.
+    if (!oldestEvictable) break;
+    store.delete(oldestEvictable);
+    versions.delete(oldestEvictable);
   }
 }
 
 function notify(key: string) {
   subscribers.get(key)?.forEach((fn) => fn());
+}
+
+/** Subscribe to one immutable cache entry. Exported for non-React consumers
+ * and focused cache-contract tests; React uses the same function below. */
+export function subscribeToKey(key: string, listener: () => void): () => void {
+  let set = subscribers.get(key);
+  if (!set) {
+    set = new Set();
+    subscribers.set(key, set);
+  }
+  set.add(listener);
+  return () => {
+    set!.delete(listener);
+    if (set!.size === 0) subscribers.delete(key);
+  };
 }
 
 /** Fire (or join) a fetch for `key`, update the cache, then notify subscribers. */
@@ -191,26 +211,28 @@ export function useSwr<T>(
   fetcher: () => Promise<T>,
   options: SwrOptions = {},
 ): SwrState<T> {
-  const [, force] = useReducer((n: number) => n + 1, 0);
+  const subscribe = useCallback(
+    (listener: () => void) => key ? subscribeToKey(key, listener) : () => undefined,
+    [key],
+  );
+  const getSnapshot = useCallback(
+    () => key ? store.get(key) : undefined,
+    [key],
+  );
+  const entry = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getSnapshot,
+  ) as Entry<T> | undefined;
 
   useEffect(() => {
     if (!key) return;
-    let set = subscribers.get(key);
-    if (!set) {
-      set = new Set();
-      subscribers.set(key, set);
-    }
-    set.add(force);
     const cached = store.get(key);
     const fresh = cached?.data !== undefined && cached.ts !== undefined &&
       Date.now() - cached.ts <= (options.maxAgeMs ?? MAX_AGE_MS);
     if (options.revalidateOnMount !== "stale" || !fresh) {
       void revalidate(key, fetcher);
     }
-    return () => {
-      set!.delete(force);
-      if (set!.size === 0) subscribers.delete(key);
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -236,7 +258,6 @@ export function useSwr<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, options.refreshIntervalMs, options.jitterRatio, options.refreshOnFocus, options.refreshOnReconnect]);
 
-  const entry = key ? (store.get(key) as Entry<T> | undefined) : undefined;
   const expired = !!entry?.ts && Date.now() - entry.ts > (options.maxAgeMs ?? MAX_AGE_MS);
   const hasData = !!entry && entry.data !== undefined;
   return {

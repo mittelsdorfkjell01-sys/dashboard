@@ -12,8 +12,10 @@
  */
 export const SITE_LINKS = [
   { to: "/fragen", key: "siteLinks.faq" },
-  { to: "/kontakt", key: "siteLinks.contact" },
-  { to: "/ueber-uns", key: "siteLinks.about" },
+  // Contact and the project background are sections of the same page now; the
+  // old standalone routes redirect to these very anchors (see main.tsx).
+  { to: "/fragen#kontakt", key: "siteLinks.contact" },
+  { to: "/fragen#projekt", key: "siteLinks.about" },
   { to: "/nutzungsbedingungen", key: "siteLinks.terms" },
   { to: "/impressum", key: "siteLinks.imprint" },
   { to: "/datenschutz", key: "siteLinks.privacy" },

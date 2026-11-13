@@ -83,18 +83,3 @@ def persist_shadow(
         )
     db.flush()
     return row
-
-
-def blocked_shadow(db, *, spot_id, coordinate_hash: str, status: str, reason: str):
-    return persist_shadow(
-        db,
-        spot_id=spot_id,
-        coordinate_hash=coordinate_hash,
-        dataset_versions=["cop-dem:2024_1", "worldcover:v200"],
-        asset_hashes=[],
-        analysis={"block_reason": reason},
-        sectors=[],
-        profile_class="D",
-        status=status,
-        warnings=[reason],
-    )

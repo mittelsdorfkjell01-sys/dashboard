@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from geoalchemy2.shape import to_shape
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.names import normalize_name
@@ -67,18 +67,30 @@ def find_spot_duplicates(
     region_id: uuid.UUID | None,
     lat: float,
     lon: float,
+    aliases: list[str] | str | None = None,
     exclude_id: uuid.UUID | None = None,
 ) -> DuplicateResult:
     from app.models import Region, Spot
 
     normalized = normalize_name(name)
     similarity = func.similarity(Spot.normalized_name, normalized)
+    proposed_aliases = [aliases] if isinstance(aliases, str) else (aliases or [])
+    candidate_names = {
+        normalize_name(value)
+        for value in [name, *proposed_aliases]
+        if isinstance(value, str) and value.strip()
+    }
+    candidate_filter = similarity >= 0.60
+    if region_id is not None:
+        # Alias-only matches can have no trigram similarity to the primary name.
+        # Include the complete region, then compare its curated aliases in Python.
+        candidate_filter = or_(candidate_filter, Spot.region_id == region_id)
     stmt = (
         select(Spot, Region.name, similarity)
         .outerjoin(Region, Region.id == Spot.region_id)
-        .where(similarity >= 0.60)
+        .where(candidate_filter)
         .order_by(similarity.desc())
-        .limit(50)
+        .limit(200)
     )
     if exclude_id is not None:
         stmt = stmt.where(Spot.id != exclude_id)
@@ -89,6 +101,17 @@ def find_spot_duplicates(
         coords = _coordinates(candidate.location)
         distance = _distance_m(lat, lon, *coords) if coords is not None else None
         same_region = candidate.region_id == region_id
+        candidate_editorial = getattr(candidate, "editorial", None)
+        editorial = candidate_editorial if isinstance(candidate_editorial, dict) else {}
+        stored_aliases = editorial.get("aliases") or []
+        if isinstance(stored_aliases, str):
+            stored_aliases = [stored_aliases]
+        existing_names = {
+            normalize_name(value)
+            for value in [candidate.name, *stored_aliases]
+            if isinstance(value, str) and value.strip()
+        }
+        matched_names = sorted(candidate_names & existing_names)
         item = {
             "id": str(candidate.id),
             "name": candidate.name,
@@ -96,10 +119,14 @@ def find_spot_duplicates(
             "region_name": region_name,
             "distance_m": _rounded_distance(distance),
             "similarity": round(float(score), 3),
+            "status": getattr(candidate, "status", None),
+            "matched_names": matched_names,
         }
-        if candidate.normalized_name == normalized and same_region:
+        if matched_names and same_region:
             exact.append(item)
-        elif (same_region and score >= 0.82) or (
+        elif (matched_names and distance is not None and distance <= 10_000) or (
+            same_region and score >= 0.82
+        ) or (
             distance is not None and distance <= 10_000 and score >= 0.72
         ):
             likely.append(item)

@@ -759,11 +759,6 @@ def decode_gfs_fields(
     return fields
 
 
-def decode_gfs_wind_fields(data: bytes) -> tuple[RegularGrid, RegularGrid, RegularGrid | None]:
-    fields = decode_gfs_fields(data, forecast_hour=0)
-    return fields["u"], fields["v"], fields.get("gust")
-
-
 class GfsFieldProvider:
     provider_key = "noaa"
     model_key = "gfs-0p25"

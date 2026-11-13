@@ -6,6 +6,7 @@ import { useSpotDataScope, formatWind, windUnitLabel } from "../../../state/Spot
 import { tempColor } from "../../../lib/tempScale";
 import { useOptionalUnits } from "../../../context/PrefsContext";
 import { waveValue, tempValue } from "../../../lib/units";
+import { headlineWaveM } from "../../../lib/waveReading";
 import WeatherGlyph from "./WeatherGlyph";
 import MeteogramWindBar, {
   METEOGRAM_COLUMN_WIDTH,
@@ -89,19 +90,24 @@ export default function MeteoChart({ forecast }: { forecast: NormalizedForecastS
     <>
       {/* WELLE — wave-height bars. */}
       <Row h={WAVE_ROW_H}>
-        {slots.map((s, i) => (
+        {slots.map((s, i) => {
+          // Total wave — the same component the weather map colours, and the
+          // one the scale above is built from (see lib/waveReading.ts).
+          const wave = headlineWaveM(s);
+          return (
           <Cell key={i}>
-            {s.swell != null && (
+            {wave != null && (
               <>
-                <span className="mb-0.5 leading-none text-white" style={{ fontSize: 10 }}>{waveValue(s.swell, units.wave)}</span>
+                <span className="mb-0.5 leading-none text-white" style={{ fontSize: 10 }}>{waveValue(wave, units.wave)}</span>
                 <span
                   className="w-[22px] rounded-[4px]"
-                  style={{ height: Math.max(3, (s.swell / waveMax) * WAVE_H), background: "var(--sw-data-swell)" }}
+                  style={{ height: Math.max(3, (wave / waveMax) * WAVE_H), background: "var(--sw-data-swell)" }}
                 />
               </>
             )}
           </Cell>
-        ))}
+          );
+        })}
       </Row>
 
       {/* WETTER — glyph + precipitation stub. */}

@@ -228,21 +228,29 @@ export const ShowerIcon = (p: IconProps) => (
   </svg>
 );
 
+/** Facility: toilet — cistern, seat and bowl in the shared outline style. */
+export const ToiletIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M7 3.5h7v7H7zM9 6h3" />
+    <path d="M7 10.5h10c0 4.2-1.7 6.4-5 6.4s-5-2.2-5-6.4Z" />
+    <path d="M10.2 16.7 9 20.5h6l-1.2-3.8" />
+  </svg>
+);
+
+/** Facility: changing room — clothes hanger as a compact, universal cue. */
+export const ChangingRoomIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M10 6.2a2 2 0 1 1 2.8 1.8c-.8.4-.8 1-.8 1.7" />
+    <path d="m12 9.7 8 6.1a1.3 1.3 0 0 1-.8 2.3H4.8a1.3 1.3 0 0 1-.8-2.3l8-6.1Z" />
+  </svg>
+);
+
 /** Facility: gastronomy — crossed fork and knife. */
 export const FoodIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <path d="M16.8 4v4.2a2.2 2.2 0 0 1-4.4 0V4" />
     <path d="M14.6 8.4v1.9L7 20" />
     <path d="M8 4.2c1.7 0 2.7 1.5 2.7 3.4 0 1.3-.8 2.3-1.9 2.6L17 20" />
-  </svg>
-);
-
-/** Facility: camping — pitched tent with crossed poles and entrance. */
-export const CampingIcon = (p: IconProps) => (
-  <svg {...base} {...p}>
-    <path d="M12 5 3.5 20.5h17L12 5Z" />
-    <path d="M12 11 8.7 20.5M12 11l3.3 9.5" />
-    <path d="M10.3 3.5 13.2 6.6M13.7 3.5 10.8 6.6" />
   </svg>
 );
 

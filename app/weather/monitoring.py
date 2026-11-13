@@ -10,10 +10,6 @@ import re
 SECRET_PATTERN = re.compile(r"(?i)(password|token|secret|api[_-]?key|authorization)=?[^\s,;]*")
 
 
-def safe_error_class(error: BaseException) -> str:
-    return error.__class__.__name__
-
-
 def incident_fingerprint(check: str, error_class: str) -> str:
     return hashlib.sha256(f"weather-monitor:v1:{check}:{error_class}".encode()).hexdigest()[:20]
 

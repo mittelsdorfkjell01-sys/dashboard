@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import math
 import uuid
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
 from app.models import (
@@ -97,6 +98,10 @@ def _validate_timezone(value: str | None) -> None:
 
 def update_profile(spot_id: uuid.UUID, changes: dict, *, db: Session, actor: str) -> TideProfile:
     profile = get_or_create_profile(spot_id, db=db, actor=actor)
+    if changes.get("public_enabled") and (
+        profile.anchor_status != "reviewed" or profile.calculation_status != "ready"
+    ):
+        raise ValueError("Die astronomische Tide kann erst nach geprüfter, erfolgreicher FES-Berechnung veröffentlicht werden")
     settings = get_settings()
     offsets = {
         key: changes.get(key, getattr(profile, key))
@@ -608,7 +613,97 @@ def monitoring(*, db: Session) -> dict:
         TideProfile.enabled.is_(True),
         (TideProfile.last_calculated_at.is_(None)) | (TideProfile.last_calculated_at < now - timedelta(days=get_settings().tide_horizon_days - get_settings().tide_refresh_before_days)),
     )) or 0
+    awaiting_review = db.scalar(select(func.count()).select_from(TideProfile).where(
+        TideProfile.enabled.is_(True), TideProfile.anchor_status == "auto_selected"
+    )) or 0
+    public = db.scalar(select(func.count()).select_from(TideProfile).where(
+        TideProfile.enabled.is_(True), TideProfile.public_enabled.is_(True),
+        TideProfile.anchor_status == "reviewed",
+    )) or 0
+    failed = db.scalar(select(func.count()).select_from(TideProfile).where(
+        TideProfile.enabled.is_(True), TideProfile.calculation_status == "failed"
+    )) or 0
     last_run = db.scalar(select(TideCalculationRun).where(
         TideCalculationRun.status == "succeeded"
     ).order_by(TideCalculationRun.completed_at.desc()).limit(1))
-    return {"active_spots": active, "spots_without_anchor": no_anchor, "stale_spots": stale, "last_successful_job": last_run.completed_at if last_run else None, "model": MODEL_NAME, "model_version": MODEL_VERSION}
+    return {
+        "active_spots": active,
+        "public_spots": public,
+        "awaiting_anchor_review": awaiting_review,
+        "failed_spots": failed,
+        "spots_without_anchor": no_anchor,
+        "stale_spots": stale,
+        "last_successful_job": last_run.completed_at if last_run else None,
+        "model": MODEL_NAME,
+        "model_version": MODEL_VERSION,
+    }
+
+
+def rollout_queue(*, db: Session) -> dict:
+    """Return the complete marine review queue without creating profiles."""
+
+    spots = list(db.scalars(
+        select(Spot)
+        .where(
+            Spot.status == "published",
+            Spot.water_type.overlap(["ocean", "sea", "lagoon"]),
+        )
+        .options(selectinload(Spot.region))
+        .order_by(Spot.name)
+    ))
+    spot_ids = [spot.id for spot in spots]
+    profiles = {
+        profile.spot_id: profile
+        for profile in db.scalars(select(TideProfile).where(TideProfile.spot_id.in_(spot_ids)))
+    } if spot_ids else {}
+    latest_runs: dict[uuid.UUID, TideCalculationRun] = {}
+    if spot_ids:
+        for run in db.scalars(
+            select(TideCalculationRun)
+            .where(TideCalculationRun.spot_id.in_(spot_ids))
+            .order_by(TideCalculationRun.created_at.desc())
+        ):
+            if run.spot_id is not None:
+                latest_runs.setdefault(run.spot_id, run)
+
+    items = []
+    status_counts: Counter[str] = Counter()
+    for spot in spots:
+        profile = profiles.get(spot.id)
+        run = latest_runs.get(spot.id)
+        if profile is None:
+            status = "missing_profile"
+        elif not profile.enabled:
+            status = "disabled"
+        elif profile.calculation_status == "failed":
+            status = "failed"
+        elif profile.anchor_status == "invalid":
+            status = "invalid"
+        elif profile.anchor_status == "reviewed" and profile.public_enabled:
+            status = "public"
+        elif profile.calculation_status in {"queued", "running"}:
+            status = "processing"
+        elif profile.anchor_status == "auto_selected":
+            status = "anchor_review"
+        elif profile.anchor_status == "reviewed":
+            status = "reviewed_private"
+        else:
+            status = "needs_anchor"
+        status_counts[status] += 1
+        items.append({
+            "spot_id": str(spot.id),
+            "spot_name": spot.name,
+            "region_name": spot.region.name if spot.region else None,
+            "country": spot.region.country if spot.region else None,
+            "status": status,
+            "enabled": bool(profile and profile.enabled),
+            "public_enabled": bool(profile and profile.public_enabled),
+            "anchor_status": profile.anchor_status if profile else None,
+            "anchor_distance_m": profile.anchor_distance_m if profile else None,
+            "anchor_warnings": profile.anchor_warnings if profile else [],
+            "calculation_status": profile.calculation_status if profile else "not_configured",
+            "calculation_error": profile.calculation_error if profile else None,
+            "last_calculated_at": profile.last_calculated_at if profile else None,
+            "latest_run_status": run.status if run else None,
+        })
+    return {"items": items, "summary": dict(status_counts), "total": len(items)}

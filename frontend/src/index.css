@@ -317,8 +317,7 @@ html { -webkit-tap-highlight-color: transparent; }
   }
 
   .spot-gallery-compact > div {
-    aspect-ratio: 3 / 4;
-    max-height: 660px;
+    aspect-ratio: 2 / 3;
   }
 
   .spot-locator-compact > div > div:first-child {
@@ -359,8 +358,8 @@ html { -webkit-tap-highlight-color: transparent; }
 
   @media (min-width: 1024px) {
     .spot-gallery-compact > div {
-      aspect-ratio: 4 / 5;
-      max-height: 660px;
+      height: auto;
+      aspect-ratio: 2 / 3;
     }
 
     .spot-locator-compact > div > div:first-child {
@@ -411,6 +410,35 @@ html { -webkit-tap-highlight-color: transparent; }
   .hero-reel-base { background-color: #161210; }
   .hero-reel-gradient {
     background-image: linear-gradient(to bottom, #2A2420 0%, #241C17 50%, #161210 100%);
+  }
+  /* Light wash across the top of the hero, under the header bar. The landing
+     header's ink is brand-dark on every hero photo (see `.on-hero-ink`), and a
+     dark header on a dark photo would vanish exactly like the old light one on
+     a bright photo. This guarantees a light field behind the header row on any
+     image without turning into a visible bar: it fades out well before the
+     header's bottom edge and leaves the rest of the photo untouched. */
+  .hero-top-wash {
+    background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(255, 255, 255, 0.62) 38%,
+      rgba(255, 255, 255, 0.28) 70%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+  /* The landing header while it still sits on the hero photo. It overrides the
+     ink tokens locally instead of hard-coding a colour at each call site, so
+     `text-ink`, `text-ink-soft` and the wordmark's orange all resolve to their
+     *light-theme* values in BOTH themes — in dark mode the theme ink is nearly
+     white and would disappear into the light hero wash. Deliberately scoped to
+     the header's own elements (tagline, wordmark, menu trigger), never to the
+     panels they open: the account dropdown is a normal themed surface and must
+     keep the real theme ink. Dropped again once the bar hardens into
+     `bg-surface`, where the theme ink is the correct colour. */
+  .on-hero-ink {
+    --sw-ink: #241C17;
+    --sw-ink-soft: #3D332C;
+    --sw-orange: #B45309;
   }
   /* Account cover placeholder: a calm-sea gradient standing in for a photo. */
   .profile-cover-gradient {

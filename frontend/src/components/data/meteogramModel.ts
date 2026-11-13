@@ -1,5 +1,6 @@
 import type { AvailabilityStatus } from "../../lib/api";
 import type { NormalizedForecastDay, NormalizedForecastHour, NormalizedForecastSeries } from "../../lib/forecastNormalization";
+import { headlineWaveM } from "../../lib/waveReading";
 
 export type ChartScale = { min: number; mid: number; max: number };
 export type MeteogramDayGroup = { date: string; start: number; count: number; confidence: string | null; confidenceSource: "spread" | "calendar" | null };
@@ -76,7 +77,9 @@ export function buildMeteogramModel(
   const precipitation = slots.map((slot) => slot.precip).filter(finite);
   const temperature = slots.map((slot) => slot.air).filter(finite);
   const wind = slots.flatMap((slot) => [slot.wind, slot.gust, slot.wind_spread?.high]).filter(finite);
-  const wave = slots.map((slot) => slot.swell).filter(finite);
+  // Total wave, not the deprecated primary-swell field — the bars and this
+  // scale must measure the same component (see lib/waveReading.ts).
+  const wave = slots.map((slot) => headlineWaveM(slot)).filter(finite);
   const period = slots.map((slot) => slot.period).filter(finite);
   const marineStatus = forecast.availability?.marine ?? null;
   const showMarine = (marineStatus === "available" || marineStatus === "available_stale") && (wave.length > 0 || period.length > 0);

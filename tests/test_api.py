@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy import select
 
+from app.api._http_cache import PUBLIC_CACHE_CONTROL
 from app.seed.seed import seed
 from app.admin.spots import _point
 from app.models import Region, Spot
@@ -54,7 +55,10 @@ def test_landing_spots_is_bounded_and_reports_catalogue(client):
     assert body["total"] >= len(body["spots"])
     assert len(body["spots"]) <= 36
     assert body["version"].startswith(f'{body["total"]}:')
-    assert "s-maxage=21600" in response.headers["cache-control"]
+    # Editorial spot data can carry access restrictions and hazards, so it is
+    # held at the edge only briefly; the former six-hour window now belongs to
+    # the daily featured ranking alone. See app/api/_http_cache.py.
+    assert response.headers["cache-control"] == PUBLIC_CACHE_CONTROL
 
 
 def test_spot_catalog_version_changes_with_public_markers(client, db):

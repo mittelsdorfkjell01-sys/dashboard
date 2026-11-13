@@ -4,7 +4,7 @@ import {
   type PublicTides,
   type PublicTideEvent,
   type PublicTideSeriesPoint,
-} from "../lib/api";
+} from "../lib/api/tides";
 import { formatTideTime } from "../lib/tideTime";
 
 export { formatTideTime } from "../lib/tideTime";
@@ -72,12 +72,15 @@ export default function TidePanel({ spotId }: { spotId: string }) {
       .then((result) => active && setData(result))
       .catch(() => active && setData({
         available: false,
+        product_type: "astronomical_tide",
         message: "Für diesen Spot sind derzeit keine verlässlichen Gezeitenangaben verfügbar.",
         timezone: null, phase: "unavailable", cycle_position: null,
         quality: "unavailable", approximate: true, last_calculated_at: null,
         valid_until: null, forecast_start: null, forecast_end: null,
         horizon_days: 0, partial: false, datum: "relative_low_high",
-        model_name: null, model_version: null, events: [], series: [],
+        current_level_m: null, navigational: false,
+        model_name: null, model_version: null, source_name: null,
+        source_url: null, attribution: null, events: [], series: [],
       }))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
@@ -95,16 +98,33 @@ export default function TidePanel({ spotId }: { spotId: string }) {
   const curve = useMemo(() => (data ? buildTideCurve(data.series) : null), [data]);
 
   if (loading) return <div className="h-48 animate-pulse bg-band" role="status" aria-label="Gezeiten werden geladen" />;
-  if (!data?.available || !data.timezone) return null;
+  if (!data?.available || !data.timezone) {
+    return (
+      <section aria-label="Gezeitenvorhersage nicht verfügbar" className="mt-12 border-t border-line pt-8">
+        <p className="text-caption font-medium uppercase tracking-wider text-muted">Gezeiten</p>
+        <h2 className="mt-1 text-subtitle font-semibold text-ink">Momentan nicht verfügbar</h2>
+        <p className="mt-3 max-w-2xl text-ui leading-relaxed text-muted">
+          {data?.message ?? "Für diesen Küstenpunkt liegen derzeit keine belastbaren Modelldaten vor."}
+        </p>
+      </section>
+    );
+  }
+
+  const isAstronomical = data.product_type === "astronomical_tide";
+  const title = isAstronomical ? "Astronomische Tide" : "Modellierter Meeresspiegel";
+  const datumLabel = isAstronomical ? "relativer Pegelstand" : "Höhe über mittlerem Meeresspiegel";
+  const ariaCurve = isAstronomical
+    ? `Gezeitenrhythmus der nächsten 48 Stunden, aktuell ${PHASE_LABELS[data.phase].toLowerCase()}. Werte relativ, keine absolute Höhe.`
+    : `Modellierter Meeresspiegel der nächsten 48 Stunden, aktuell ${PHASE_LABELS[data.phase].toLowerCase()}.`;
 
   return (
     <section aria-label="Gezeitenvorhersage" className="mt-12 border-t border-line pt-8">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-caption font-medium uppercase tracking-wider text-muted">Gezeiten · 10 Tage</p>
-          <h2 className="mt-1 text-subtitle font-semibold text-ink">Astronomische Tide</h2>
+          <p className="text-caption font-medium uppercase tracking-wider text-muted">Wasserstand · bis zu {data.horizon_days} Tage</p>
+          <h2 className="mt-1 text-subtitle font-semibold text-ink">{title}</h2>
         </div>
-        <p className="text-caption text-muted">{QUALITY_LABELS[data.quality]} · relativer Pegelstand</p>
+        <p className="text-caption text-muted">{QUALITY_LABELS[data.quality]} · {datumLabel}</p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <div className="min-w-0">
@@ -121,7 +141,7 @@ export default function TidePanel({ spotId }: { spotId: string }) {
               preserveAspectRatio="none"
               className="mt-3 h-20 w-full"
               role="img"
-              aria-label={`Gezeitenrhythmus der nächsten 48 Stunden, aktuell ${PHASE_LABELS[data.phase].toLowerCase()}. Werte relativ, keine absolute Höhe.`}
+              aria-label={ariaCurve}
             >
               <path d={curve.path} fill="none" stroke="var(--sw-teal)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
               <circle cx={curve.nowX} cy={curve.nowY} r={2.2} fill="var(--sw-surface)" stroke="var(--sw-teal)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
@@ -132,12 +152,25 @@ export default function TidePanel({ spotId }: { spotId: string }) {
             {next.high && <EventTime event={next.high} timezone={data.timezone} prominent />}
             {next.low && <EventTime event={next.low} timezone={data.timezone} prominent />}
           </div>
+          {!isAstronomical && data.current_level_m !== null && (
+            <p className="mt-4 text-ui font-semibold text-ink">
+              Aktueller Modellwert: {data.current_level_m.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m
+              <span className="ml-2 text-caption font-normal text-muted">über MSL</span>
+            </p>
+          )}
           <p className="mt-4 text-caption leading-relaxed text-muted">
-            Astronomische Prognose, ungefähr und gegebenenfalls lokal korrigiert. Wetter, Sturmflut, Abfluss und Strömung können abweichen.
+            {isAstronomical
+              ? "Astronomische Prognose, ungefähr und gegebenenfalls lokal korrigiert. Wetter, Sturmflut, Abfluss und Strömung können abweichen."
+              : "Enthält Tide und wetterbedingte Meeresspiegelanteile. An Küsten, in Buchten und Flussmündungen ist die Genauigkeit begrenzt."}
           </p>
           <p className="mt-2 text-caption text-muted">
-            Modell: {data.model_name ?? "FES2022"}{data.model_version ? ` ${data.model_version}` : ""}. Keine Navigations- oder Sturmflutwarnung.
+            Modell: {data.model_name ?? "FES2022"}{data.model_version ? ` ${data.model_version}` : ""}. Nicht zur Navigation oder als Sturmflutwarnung verwenden.
           </p>
+          {data.source_url && data.source_name && (
+            <a className="mt-2 inline-flex min-h-11 items-center text-caption text-ink underline decoration-ink/40 underline-offset-4" href={data.source_url} target="_blank" rel="noreferrer">
+              Quelle: {data.source_name}
+            </a>
+          )}
         </div>
         <div className="min-w-0 border-t border-line pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
           <p className="mb-3 text-caption font-medium uppercase text-muted">Nächste Ereignisse</p>
@@ -146,12 +179,16 @@ export default function TidePanel({ spotId }: { spotId: string }) {
               <EventTime key={event.id} event={event} timezone={data.timezone!} />
             ))}
           </div>
+          {futureEvents.length === 0 && (
+            <p className="text-ui text-muted">Im verfügbaren Zeitraum wurden keine Hoch- oder Niedrigwasserpunkte erkannt.</p>
+          )}
           {data.last_calculated_at && (
             <p className="mt-4 text-caption text-muted">
               Zuletzt berechnet: {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: data.timezone }).format(new Date(data.last_calculated_at))}
             </p>
           )}
           {data.message && <p className="mt-2 text-caption text-warning">{data.message}</p>}
+          {data.attribution && <p className="mt-2 text-caption text-muted">{data.attribution}</p>}
         </div>
       </div>
     </section>

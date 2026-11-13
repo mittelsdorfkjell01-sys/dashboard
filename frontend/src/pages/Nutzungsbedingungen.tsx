@@ -31,8 +31,8 @@ export default function Nutzungsbedingungen() {
 
           <Section title="1. Anbieter und Angebot">
             <p>
-              Surfwinddata ist derzeit ein nicht monetarisiertes Webtool und wird von einer Einzelperson
-              in Deutschland entwickelt und betrieben. Angaben zum Anbieter finden Sie im{" "}
+              Surfwinddata wird von einem kleinen Team in Deutschland entwickelt und betrieben. Das
+              Angebot ist nicht auf Gewinn ausgelegt. Angaben zum Anbieter finden Sie im{" "}
               <Link to="/impressum" className="text-ink underline">
                 Impressum
               </Link>

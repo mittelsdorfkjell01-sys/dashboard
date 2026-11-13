@@ -202,6 +202,36 @@ def list_tips(db: Session, spot_id) -> list[LocalTip]:
     )
 
 
+class ReplyPresent(Exception):
+    """The comment carries replies, so deleting it would take someone else's
+    text with it (``local_tips.parent_id`` cascades). The author is told to ask
+    the operator instead; see the help page, "Mitmachen & Community"."""
+
+
+def delete_own_tip(db: Session, tip_id, user_id) -> None:
+    """Remove a comment the signed-in account itself wrote.
+
+    Self-service deletion covers the author's *own* words only. A comment that
+    has replies is deliberately refused rather than cascaded away: the public
+    feed drops orphan replies, so a cascade would silently remove contributions
+    by other people who never agreed to that.
+    """
+    tip = db.get(LocalTip, tip_id)
+    if tip is None or tip.status != "published":
+        raise LookupError("Kommentar nicht gefunden.")
+    if tip.app_user_id is None or tip.app_user_id != user_id:
+        raise PermissionError("Nur eigene Kommentare lassen sich löschen.")
+    replies = db.scalar(
+        select(func.count())
+        .select_from(LocalTip)
+        .where(LocalTip.parent_id == tip.id, LocalTip.status == "published")
+    )
+    if replies:
+        raise ReplyPresent()
+    db.delete(tip)
+    db.commit()
+
+
 # --- authenticated comment upvotes ---------------------------------------
 
 def _upvote_target(db: Session, kind: str, target_id):

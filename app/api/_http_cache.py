@@ -15,13 +15,13 @@ windows, and the /admin* write endpoints never set these headers.
 
 from fastapi import Response
 
-# Public catalogue/editorial reads are far more frequent than writes. Keep a
-# short browser cache, a six-hour edge copy and serve that copy for up to a day
-# while Vercel refreshes it. This protects cold/new-device visits from both
-# serverless cold starts and brief database outages, while editorial changes
-# still reach the edge without requiring every visitor to wake Postgres.
+# Editorial spot and region data can contain access restrictions and hazards.
+# Bound the complete fresh + stale edge lifetime to six minutes so a curator's
+# correction becomes visible quickly even without a provider-specific purge.
+# Immutable/version-addressed map data and daily rankings have their own,
+# deliberately longer policies below.
 PUBLIC_CACHE_CONTROL = (
-    "public, max-age=300, s-maxage=21600, stale-while-revalidate=86400"
+    "public, max-age=60, s-maxage=300, stale-while-revalidate=60"
 )
 
 # The featured ranking is deliberately stable for a UTC day. Keep it at the
@@ -72,7 +72,7 @@ def _vary(response: Response, value: str) -> None:
 
 
 def set_public_cache(response: Response) -> None:
-    """Mark ``response`` edge-cacheable for the public near-static reads."""
+    """Cache editable public content with a tightly bounded stale window."""
     response.headers["Cache-Control"] = PUBLIC_CACHE_CONTROL
 
 

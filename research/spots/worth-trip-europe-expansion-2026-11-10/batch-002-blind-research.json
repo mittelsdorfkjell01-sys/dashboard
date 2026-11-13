@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "batch": "002",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Catalogue entries were used only to select names, never as confirmation.",
+  "method_limits": [
+    "Coordinates from Nominatim/OpenStreetMap are discovery points and are explicitly marked when they do not prove a launch.",
+    "Rules were treated as confirmed only where an authority, municipality, federation or current zone operator supported them.",
+    "Image search candidates are stored separately and none is approved by search relevance alone.",
+    "Pexels and Unsplash API credentials were unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Podersdorf Nordstrand",
+      "country": "AT",
+      "identity": "North/North-North kite and windsurf zones at Podersdorf am See, not the whole Neusiedler See.",
+      "entry": {"lat": 47.8675427, "lon": 16.8328813, "status": "plausible_named_kite_zone"},
+      "sports": ["kitesurf", "windsurf", "wing"],
+      "conditions": "Shallow steppe lake, predominantly NW and usable W/SW; flat to choppy. Foil depth varies with the unusually shallow lake.",
+      "access_rules": "Marked corridors and launch zones; visible zone lycra required. From 10 May to 20 September the 200 m shore restriction applies outside statutory exceptions/zones.",
+      "trip_value": "Austria's strongest multi-school lake destination with strong infrastructure and a distinct landscape; worth a dedicated trip but world_class boundary remains editorial.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.podersdorfamsee.at/en/aktivitaet/kitesurfen/", "publisher": "Podersdorf tourism", "supports": ["sports", "winds", "schools", "trip_value"]},
+        {"url": "https://www.ris.bka.gv.at/NormDokument.wxe?Abfrage=LrBgld&Gesetzesnummer=20000738&Paragraf=1", "publisher": "Austrian legal information system", "supports": ["seasonal_rules", "zones"]},
+        {"url": "https://www.dpc-neusiedlersee.com/more/how-to-find-us", "publisher": "Duotone Pro Center", "supports": ["entry", "parking", "fees", "lycra_rule"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Lake Silvaplana",
+      "country": "CH",
+      "identity": "Official water-sports area and marked entries on Lake Silvaplana; adjacent Lej Suot and Lej da Champfèr are prohibited waters.",
+      "entry": {"lat": 46.4482753, "lon": 9.7944684, "status": "lake_centroid_launch_open"},
+      "sports": ["kitesurf", "windsurf", "wing", "windfoil"],
+      "conditions": "High alpine lake with reliable SW Maloja thermal, typically 3–6 Bft from mid-May to mid-October. S/W can be gusty; WNW is gusty/offshore and N is unsafe for kite.",
+      "access_rules": "Official entries and zones only; kite membership/day fee, skill licence and insurance required; private kite instruction prohibited; rescue is seasonal.",
+      "trip_value": "One of Europe's most distinctive and established high-alpine wind-sports destinations; too internationally exceptional for worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://silvaplana.ch/wassersport", "publisher": "Silvaplana tourism", "supports": ["sports", "winds", "zones", "season", "hazards", "rescue"]},
+        {"url": "https://gemeinde-silvaplana.ch/leben-in-silvaplana/freizeit/sport", "publisher": "Municipality of Silvaplana", "supports": ["kite_requirements", "official_entry", "zones"]},
+        {"url": "https://www.kitesailing.ch/en/spot/spotinfo-kitesurfing", "publisher": "Swiss Kitesurf", "supports": ["kite_rules", "launch"]}
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Ahrenshoop",
+      "country": "DE",
+      "identity": "Baltic beach at Ahrenshoop/Hohes Ufer; must not be conflated with Saaler Bodden launches.",
+      "entry": {"lat": 54.3789509, "lon": 12.4191920, "status": "town_point_exact_launch_open"},
+      "sports": ["windsurf", "kitesurf"],
+      "conditions": "Exposed Baltic wave venue described for advanced riders; exact wind window and launch remain insufficiently current.",
+      "access_rules": "Beach ordinance controls storage/camping; national-park zoning applies to nearby Bodden waters. Exact currently authorized launch needs confirmation.",
+      "trip_value": "Strong art-village and dune-cliff setting, but current sport and launch evidence is too thin for acceptance.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.darss-fischland.de/de/dokumente/touristisches-entwicklungskonzept-ostseebad-ahrenshoop-2014.pdf?cid=5ap", "publisher": "Ahrenshoop municipality/tourism", "supports": ["historic_sport_use", "landscape"]},
+        {"url": "https://www.darss-fischland.de/de/satzungen-sammlung/ahrenshoop/strand-und-badeordnung/strand-und-badeordnung-satzung-text.pdf?cid=2v7", "publisher": "Municipality of Ahrenshoop", "supports": ["beach_rules"]},
+        {"url": "https://www.nationalpark-vorpommersche-boddenlandschaft.de/fileadmin/boddenlandschaften/Inhaltsseiten/service/Downloads/Wassersport_im_NLP_09_2024_web.pdf", "publisher": "Vorpommersche Boddenlandschaft National Park", "supports": ["protected_area_rules", "approved_launch_principle"]}
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Amrum Norddorf",
+      "country": "DE",
+      "identity": "Water-sports school and launch area at Norddorfer Strand; the protected Amrumer Odde farther north is excluded.",
+      "entry": {"lat": 54.6795702, "lon": 8.3340657, "status": "town_point_launch_needs_zone_map"},
+      "sports": ["kitesurf", "windsurf"],
+      "conditions": "Tidal North Sea venue with large standing area and flatter water around low tide; stronger wind brings waves. Tides and changing wind make independent riding demanding.",
+      "access_rules": "Use designated National Park areas; no landing or riding at Amrumer Odde. Local school briefing and current signage are material.",
+      "trip_value": "Island journey, exceptional Kniepsand landscape and both flat/wave potential support worth_trip once the exact zone geometry is attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.amrum-news.de/2025/07/10/hinweise-fuer-wassersportler-an-der-amrumer-odde/", "publisher": "AmrumTouristik nature conservation coordination", "supports": ["zones", "protected_area", "sport_use"]},
+        {"url": "https://boyens-amrum.de/wassersport/kiten/", "publisher": "Boyens Amrum", "supports": ["school", "courses", "Norddorf_identity"]},
+        {"url": "https://www.nationalpark-wattenmeer.de/wp-content/uploads/2025/12/Wassersport-Folder-2025.pdf", "publisher": "Wadden Sea National Park", "supports": ["national_park_rules", "zone_principle"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Bork Havn",
+      "country": "DK",
+      "identity": "Surf beach immediately beside WestWind at the southern end of Ringkøbing Fjord.",
+      "entry": {"lat": 55.8477884, "lon": 8.2841326, "status": "plausible_center_area"},
+      "sports": ["kitesurf", "windsurf", "surf"],
+      "conditions": "Very shallow flat-water bay, best broadly SW through W to NE; good beginner and freestyle terrain. Shoals, rocks and sudden depth transitions can damage fins.",
+      "access_rules": "Large rigging areas, nearby parking, toilets, showers, shop, school and rental; navigation near harbour and shifting shoals needs local briefing.",
+      "trip_value": "High-quality family and learner destination within the Ringkøbing Fjord/North Sea system, strong enough for worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitvesterhavet.dk/vesterhavet/vesterhavsferie/bork-havn-surfspot-gdk1111635", "publisher": "VisitVesterhavet", "supports": ["sports", "winds", "facilities", "identity"]},
+        {"url": "https://westwind.dk/en/pages/lokationer/westwind-bork-havn", "publisher": "WestWind Bork Havn", "supports": ["conditions", "levels", "school", "facilities"]},
+        {"url": "https://devil-line.com/en/spots/", "publisher": "Devil-line spot guide", "supports": ["depth_hazards", "winds", "water_character"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Agger",
+      "country": "DK",
+      "identity": "A multi-launch area: Agger Tange ocean jetties and Krik Vig flat-water bay must be stored as related but distinct subspots.",
+      "entry": {"lat": 56.7397559, "lon": 8.2378018, "status": "area_point_multiple_launches"},
+      "sports": ["surf", "windsurf", "kitesurf", "wing"],
+      "conditions": "Ocean launches are advanced/expert with strong current and shorebreak; Krik Vig is shallow flat water usable from beginner to expert.",
+      "access_rules": "Protected wetland access restrictions apply on the tange; Nature Agency states no surfing within 1.5 km of the tange in the described Krik context, so exact zone mapping is essential.",
+      "trip_value": "Southern gateway to Cold Hawaii with complementary ocean and fjord riding; clearly worth a trip when represented as a cluster, not one homogeneous point.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://visitagger.dk/steder/surfspots/", "publisher": "Visit Agger", "supports": ["subspots", "sports", "levels", "hazards", "swell"]},
+        {"url": "https://naturstyrelsen.dk/find-et-naturomraade/naturguider/thy-og-vendsyssel/agger-tange-og-flade-soe/praktisk", "publisher": "Danish Nature Agency", "supports": ["Krik_sport_use", "protected_area_rules", "facilities"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Bredene – Twins Club",
+      "country": "BE",
+      "identity": "Marked surf zone at Strandpost 1/Twins Club, not the entire four-kilometre Bredene beach.",
+      "entry": {"lat": 51.2468762, "lon": 2.9528249, "status": "exact_club_point"},
+      "sports": ["surf", "kitesurf", "windsurf", "wing"],
+      "conditions": "Open Belgian North Sea beach; detailed wind, current and level evidence remains incomplete.",
+      "access_rules": "Kitesurfing only in designated zone; bathing zones take priority in season. Club, food and instruction present.",
+      "trip_value": "Useful urban-coast club spot, but evidence does not show a distinctive enough travel reason beyond the wider Belgian coast.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.bredene.be/en/twins-club-surf-zone", "publisher": "Municipality of Bredene", "supports": ["identity", "sports", "club", "food"]},
+        {"url": "https://bredene.org/en/faq/beach.html", "publisher": "Bredene visitor information", "supports": ["kite_zone", "bathing_rules", "facilities"]},
+        {"url": "https://www.wwsv.be/sites/default/files/210615_kitesafe.pdf", "publisher": "WWSV", "supports": ["Belgian_coast_zones", "club_identity"]}
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Hindeloopen",
+      "country": "NL",
+      "identity": "Designated IJsselmeer kite location behind the dike at Hindeloopen; no sandy beach.",
+      "entry": {"lat": 52.9426184, "lon": 5.4004822, "status": "town_point_zone_geometry_open"},
+      "sports": ["kitesurf"],
+      "conditions": "Shallow water, safe directions S–SW–W–NW, grass launch with limited space; open year-round.",
+      "access_rules": "Kitesurfing is prohibited elsewhere in the municipality unless a location is designated. Waterfront parking and shop exist; no beach or refreshments at the launch.",
+      "trip_value": "A valuable fallback when Workum is crowded, but that framing and limited launch experience indicate worth_checking_out rather than worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.friesland.nl/en/locations/617173448/kitesurfing-spot-at-hindeloopen", "publisher": "Friesland tourism", "supports": ["identity", "winds", "depth", "facilities"]},
+        {"url": "https://sudwestfryslan.nl/onderwerp/kitesurflessen-geven/", "publisher": "Municipality Súdwest-Fryslân", "supports": ["designated_location", "instruction_rules"]},
+        {"url": "https://kitesurfvereniging.nl/provincie/friesland/", "publisher": "Dutch Kitesurf Association", "supports": ["season", "winds", "level", "launch_surface"]}
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Cadzand-Bad – kite zone",
+      "country": "NL",
+      "identity": "Current official kite area is described around Moio Beach and a separate 't Zwin area; the raw name 't Haventje is not independently confirmed as the correct current identity.",
+      "entry": {"lat": 51.3839225, "lon": 3.4052043, "status": "exact_Moio_point_raw_subspot_conflict"},
+      "sports": ["kitesurf", "surf"],
+      "conditions": "Broad flat sandy North Sea beach; spot-specific wind and level claims remain open.",
+      "access_rules": "Only marked zones; availability can depend on crowding. Local dune-transition signs and yellow buoys govern use; camping is prohibited.",
+      "trip_value": "Potentially worth_trip as part of the Zeeland/Flanders coast, but identity and subspot geometry must be resolved first.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.gastvrijzeeuwsvlaanderen.nl/actief-aan-zee", "publisher": "West Zeeuws-Vlaanderen tourism", "supports": ["current_zones", "identity", "crowding_condition"]},
+        {"url": "https://www.cadzand-bad.eu/portfolio_page/sicherheit-am-strand", "publisher": "Cadzand-Bad visitor information", "supports": ["zone_only_rule", "seasonal_beach_rules"]}
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Razo",
+      "country": "ES",
+      "identity": "Praia de Razo at Carballo, distinct from the connected Baldaio landscape and its separate access points.",
+      "entry": {"lat": 43.2904055, "lon": -8.7062144, "status": "exact_beach_point"},
+      "sports": ["surf"],
+      "conditions": "Exposed sandy beachbreak with high consistency, variable peaks, wind and strong-current potential; level depends heavily on swell.",
+      "access_rules": "Parking, toilets, lifeguards, accessibility and nearby restaurants are documented; protected natural setting requires marked access.",
+      "trip_value": "Costa da Morte scenery, consistent surf and WSL QS status make it worth_trip without clearly reaching world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.coruna.gal/tourism/en/what-to-do-in-a-coruna/nature-and-sports/beaches/playa/razo-beach-carballo/entidad/1453797446339?argIdioma=en", "publisher": "A Coruña tourism", "supports": ["identity", "surf", "facilities", "protected_area"]},
+        {"url": "https://www.turismo.gal/osdam/filestore/1/5/7/8/6_b339a1340e1bc76/15786_7d91ee75d38a8ea.pdf", "publisher": "Galicia tourism", "supports": ["surf_consistency", "peaks", "trip_value"]},
+        {"url": "https://as.com/deportes_accion/surf/yago-dominguez-y-ariane-ochoa-ganan-en-el-estreno-de-razo-como-qs2000-f202610-n/", "publisher": "AS", "supports": ["2026_WSL_QS", "current_sport_status"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Platja del Grau, Pals",
+      "country": "ES",
+      "identity": "Platja del Grau is the most sport-specific part of the wider 3.5 km Platja de Pals; Platja Gran should not be silently merged.",
+      "entry": {"lat": 42.0033226, "lon": 3.1976080, "status": "exact_named_beach"},
+      "sports": ["windsurf", "surf", "kitesurf"],
+      "conditions": "Sandy open beach with N/NE Tramuntana/Gregal and SW/S/SE winds documented; conditions range from beginner instruction to exposed sea.",
+      "access_rules": "Kitesurf is restricted during peak beach use from 1 June to 30 September; marked access channels, two schools and a sailing club.",
+      "trip_value": "Long scenic Costa Brava beach with multiple wind systems and strong cultural/nature surroundings supports worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitpals.com/en/what-to-do/water-sports/", "publisher": "Visit Pals", "supports": ["identity", "sports", "winds", "seasonal_rule", "schools"]},
+        {"url": "https://www.catalunya.com/en/continguts/territori/pals-2-1-171241", "publisher": "Catalonia tourism", "supports": ["beach_length", "windsurf", "landscape"]},
+        {"url": "https://windsurfpals.net/", "publisher": "Windsurf Pals", "supports": ["exact_Grau_location", "school", "rental"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Baie de Pont-Mahé",
+      "country": "FR",
+      "identity": "Shallow bay at Assérac/Pénestin; launch and seasonal glide/swim separation must be assigned to the correct side of the inter-regional bay.",
+      "entry": {"lat": 47.4416502, "lon": -2.4493797, "status": "exact_beach_general_launch_open"},
+      "sports": ["kitesurf", "windsurf"],
+      "conditions": "Very shallow, highly tide-dependent Atlantic bay; broad standing area at suitable tide, with foil depth a material limitation.",
+      "access_rules": "Natura 2000 landscape; seasonal kite zoning and a buffer from bathing must be followed. Tide planning is essential.",
+      "trip_value": "Distinct shallow-water learning/freeride bay on an attractive coast; worth_trip after exact launch and current zoning are attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.asserac.fr/decouvrir-asserac/les-plages-les-dunes-les-etangs-et-les-marais-salants/", "publisher": "Municipality of Assérac", "supports": ["identity", "sports", "Natura_2000"]},
+        {"url": "https://labellebretagne.bzh/plages/loire-atlantique/plage-plage-de-pont-mahe-asserac", "publisher": "La Belle Bretagne", "supports": ["tide", "seasonal_zoning", "bathing_buffer", "facilities"]},
+        {"url": "https://www.newkite.fr/pont-mahe/", "publisher": "NewKite school", "supports": ["kite_use", "foil_depth"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Algajola / Aregno Plage",
+      "country": "FR",
+      "identity": "Aregno Plage is the long sandy beach serving Algajola; the nearby San Damiano cove is a separate calmer site.",
+      "entry": {"lat": 42.6106840, "lon": 8.8726701, "status": "exact_named_beach"},
+      "sports": ["surf", "kitesurf", "windsurf"],
+      "conditions": "Libecciu/Maestral can create wind and waves; at other times the bay can be calm. Exposed days require condition-specific level guidance.",
+      "access_rules": "Local windsurf/kayak/paddle base operates seasonally; exact kite launch zoning and bathing-season rules remain open.",
+      "trip_value": "Corsican mountain-and-sea landscape, village access and wave/wind variety create a defensible worth_trip reason.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://tourisme.aircorsica.com/c/villages/haute-corse/balagne/algajola/", "publisher": "Air Corsica tourism", "supports": ["identity", "surf", "kite", "winds", "landscape"]},
+        {"url": "https://asn.corsica/fr", "publisher": "Algajola Sport et Nature", "supports": ["windsurf", "school", "season", "conditions"]},
+        {"url": "https://guide.corsica/poi/nord/algajola/activite-kite-algajola/", "publisher": "Guide Corsica", "supports": ["kite_school", "Maestral", "coordinate"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Beauduc – Plage de la Comtesse",
+      "country": "FR",
+      "identity": "The authorized kite sector is Plage de la Comtesse at Beauduc; central beach and bird-protection point have different uses.",
+      "entry": {"lat": 43.4024147, "lon": 4.5955805, "status": "area_point_exact_Comtesse_launch_open"},
+      "sports": ["kitesurf"],
+      "conditions": "Remote, spacious Camargue flat/chop kite environment with variable access-track condition and high wind exposure.",
+      "access_rules": "Kite only in Comtesse sector; vehicles park at natural lot and width restriction applies; camping/caravanning prohibited; bird enclosure restrictions 1 April–30 September.",
+      "trip_value": "An iconic European kite destination with exceptional landscape and established travel identity; classify world_class rather than worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://arles.fr/vivre-a-arles/faire-du-sport/les-equipements-de-loisirs/plage/beauduc/", "publisher": "City of Arles", "supports": ["authorized_zone", "access", "camping", "bird_rules"]},
+        {"url": "https://www.parc-camargue.fr/parc-camargue/202300101/0001/CS_2023_111_Rapport.d-activite.Ecogardes.2022.2023.pdf", "publisher": "Camargue Regional Nature Park", "supports": ["kite_use", "zone_pressure", "protected_area"]},
+        {"url": "https://www.lilikitesurf.com/pratique/", "publisher": "Lili Kitesurf", "supports": ["2026_access_track", "school", "local_rules"]}
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Keros Beach, Lemnos",
+      "country": "GR",
+      "identity": "Keros Bay on eastern Lemnos, within a Natura 2000 ecosystem; school concessions and protected-beach policy require current confirmation.",
+      "entry": {"lat": 39.8957420, "lon": 25.3549004, "status": "exact_beach_general"},
+      "sports": ["kitesurf", "windsurf", "wing"],
+      "conditions": "Long sandy bay, 50–100 m standing area, flat and wave sections, N/NE Meltemi roughly June–November; rocks mainly at bay ends.",
+      "access_rules": "Organized activity is politically and environmentally sensitive because of Natura 2000 and the 'untouched beaches' decision; current concession/zone status must be checked before publication.",
+      "trip_value": "Official municipality calls it globally known and a top European wind/kite destination; world_class rather than worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://limnos.gov.gr/%CE%B5%CF%80%CE%B9%CE%B2%CE%B5%CE%B2%CE%BB%CE%B7%CE%BC%CE%AD%CE%BD%CE%B7-%CE%B7-%CE%B1%CE%BD%CE%B1%CE%B8%CE%B5%CF%8E%CF%81%CE%B7%CF%83%CE%B7-%CF%84%CE%B7%CF%82-%CE%B1%CF%80%CF%8C%CF%86%CE%B1%CF%83/", "publisher": "Municipality of Lemnos", "supports": ["international_status", "Natura_2000", "policy_conflict"]},
+        {"url": "https://www.dpc-limnos.com/spot", "publisher": "Duotone Pro Center Lemnos", "supports": ["sports", "winds", "depth", "bottom", "levels"]},
+        {"url": "https://www.discovergreece.com/travel-ideas/article/most-popular-watersports-destinations-greece", "publisher": "Discover Greece", "supports": ["national_destination_status", "sports"]}
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Sigri",
+      "country": "GR",
+      "identity": "Wind-sports centre at the northern end of the Gulf of Sigri; the village beach and Panagia Faneromeni are separate beaches.",
+      "entry": {"lat": 39.2115185, "lon": 25.8520903, "status": "village_point_exact_surf_center_open"},
+      "sports": ["windsurf", "kitesurf"],
+      "conditions": "Wind-exposed western Lesvos with a protected island/harbour geography; detailed launch winds, depth and level remain insufficiently primary-sourced.",
+      "access_rules": "Organized centre and lessons documented; ferry access is seasonal and exact centre/launch coordinate must be confirmed.",
+      "trip_value": "Remote island setting plus Petrified Forest and multi-day wind destination support worth_trip after launch details are corrected.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitlesvos.gr/en/drastiotites-taxonomy/wind-kite-surfing-en/", "publisher": "Visit Lesvos", "supports": ["sports", "school", "destination"]},
+        {"url": "https://www.petrifiedforest.gr/wp-content/uploads/2020/04/%4032_SELIDO_FOREIS_17_12_2019_WORK_AGGLIKO_TELIKO.pdf", "publisher": "Lesvos Petrified Forest", "supports": ["center_location", "courses"]},
+        {"url": "https://www.mwlesvos.gr/economy/toyrismos/metakiniseis/", "publisher": "Municipality of Western Lesvos", "supports": ["seasonal_ferry_access"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Neretva Estuary kite beach",
+      "country": "HR",
+      "identity": "Official kite area on the sandy Neretva river mouth near the coastal Komin/Ploče area; not inland Komin and not the whole wetland.",
+      "entry": {"lat": 43.0326, "lon": 17.4294, "status": "estimated_estuary_coordinate_requires_authority_map"},
+      "sports": ["kitesurf", "windsurf"],
+      "conditions": "Shallow flat estuary water and steady thermal wind, with open sections for advanced riders; river temperature/current and bird habitat are material.",
+      "access_rules": "Official kite area and camping exist next to sensitive waterbird habitat; exact authorized polygon, season and conservation conditions remain open.",
+      "trip_value": "Unusual river-sea landscape, flat water and Croatian travel context support worth_trip only with strict environmental and coordinate correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://visitdubrovnik.hr/activities/kitesurfing-windsurfing/", "publisher": "Dubrovnik-Neretva tourism", "supports": ["sports", "depth", "levels", "schools", "trip_value"]},
+        {"url": "https://www.euronatur.org/fileadmin/docs/Vogeljagd-Kampagne/AF3_complete_small.pdf", "publisher": "EuroNatur", "supports": ["official_kite_area", "camping", "waterbird_impact"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Bol / Zlatni Rat",
+      "country": "HR",
+      "identity": "Wind-sports use around protected Zlatni Rat west of Bol; exact windsurf launch may be adjacent to, not on, the crowded tip.",
+      "entry": {"lat": 43.2570897, "lon": 16.6346469, "status": "exact_landmark_launch_geometry_open"},
+      "sports": ["windsurf", "kitesurf"],
+      "conditions": "Thermal/Maestral wind and clear Adriatic water; pebble spit, currents, heavy bathing use and boat traffic require zone-specific guidance.",
+      "access_rules": "Protected natural area two kilometres from Bol with car, walking, tourist train and boat access; current sport corridors need primary confirmation.",
+      "trip_value": "Globally recognizable landscape and riders from around the world make this an internationally outstanding destination; world_class boundary is exceeded.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitbrac.com/destinations/bol/zlatni-rat", "publisher": "Brač tourism", "supports": ["identity", "protected_area", "surfer_use", "access"]},
+        {"url": "https://bol.hr/o-bolu/o-bolu-1/", "publisher": "Bol tourism board", "supports": ["landscape", "distance", "trip_value"]},
+        {"url": "https://tocroatia.eu/en/places/bol-zlatni-rat/", "publisher": "ToCroatia", "supports": ["beach_rules_reference", "access", "identity"]}
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Badesi – Li Junchi",
+      "country": "IT",
+      "identity": "Authorized kite area near the end of the Li Junchi seafront, distinct from Badesi's other long beaches.",
+      "entry": {"lat": 40.9737016, "lon": 8.8534110, "status": "exact_named_beach_area_zone_open"},
+      "sports": ["kitesurf", "windsurf", "surf"],
+      "conditions": "Long exposed sandy north Sardinian coast, Maestrale and waves; likely intermediate outside supervised instruction. Rocky ends and seasonal bathers are hazards.",
+      "access_rules": "Authorized kite area and recovery service reported by local association; paid parking, toilets, showers, changing and food documented. Current coastguard corridor rule still needed.",
+      "trip_value": "Long scenic Sardinian beach with multiple board sports and less fame than Porto Pollo supports worth_trip after legal-zone confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitbadesi.com/sport-outdoor/", "publisher": "Visit Badesi", "supports": ["sports", "schools", "trip_context"]},
+        {"url": "https://www.bluedreaming.it/centri/northshorekite/", "publisher": "Blue Dreaming / Northshore Kite Sardinia", "supports": ["authorized_area", "sports", "rescue", "facilities"]},
+        {"url": "https://letskite.ch/en/spots/16967/kitesurf/li-junchi-badesi", "publisher": "Let's Kite", "supports": ["Maestrale", "level", "hazards"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Talamone – Fertilia Bay",
+      "country": "IT",
+      "identity": "Shallow wind-sports area at Fertilia beach/eastern Talamone bay, not the rocky village beaches Cannone or Bagno delle Donne.",
+      "entry": {"lat": 42.575, "lon": 11.166, "status": "estimated_Fertilia_area_requires_exact_corridor"},
+      "sports": ["kitesurf", "windsurf", "wing"],
+      "conditions": "Shallow flat sandy bay; summer NW Maestrale thermal can be side-off/gusty, southern winds more onshore. Beginner suitability is conditional on school and direction.",
+      "access_rules": "Schools, rental, camping and accommodation present. Bathing-season corridor and coastguard rules must be linked to the exact launch.",
+      "trip_value": "Distinct Maremma landscape, thermal flat water and cultural/nature surroundings support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visittuscany.com/en/towns-and-villages/talamone/", "publisher": "Visit Tuscany", "supports": ["Fertilia_identity", "sports", "landscape"]},
+        {"url": "https://www.visittuscany.com/en/ideas/watersports-in-tuscany/", "publisher": "Visit Tuscany", "supports": ["thermal_wind", "school", "rental"]},
+        {"url": "https://www.kitesurftoscana.it/talamone/", "publisher": "Kitesurf Toscana", "supports": ["winds", "depth", "bottom", "levels", "accommodation"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Mellieħa Bay / Għadira Bay",
+      "country": "MT",
+      "identity": "Malta's large sandy Għadira/Mellieħa bathing bay; no exact dedicated windsurf launch was independently established.",
+      "entry": {"lat": 35.9707704, "lon": 14.3536410, "status": "exact_bay_general_no_launch"},
+      "sports": ["windsurf"],
+      "conditions": "Shallow sheltered family bay; NE can create choppy exposure, but the source base does not establish reliable wind-sports travel conditions.",
+      "access_rules": "Public beach, showers/changing, buses and seasonal water-sports concessions; exact windsurf zone and rental availability remain open.",
+      "trip_value": "Strong general Malta beach value but insufficient evidence for a dedicated windsurf worth_trip listing.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitmalta.co.uk/mellieha-bay-beach", "publisher": "VisitMalta.co.uk", "supports": ["identity", "shallow_water", "facilities", "access"]},
+        {"url": "https://maltacentral.com/beaches/ghadira-bay/", "publisher": "Malta Central", "supports": ["identity", "NE_exposure"]},
+        {"url": "https://en.wikipedia.org/wiki/Mellie%C4%A7a_Bay", "publisher": "Wikipedia", "supports": ["windsurf_use_secondary_only"]}
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Rewa",
+      "country": "PL",
+      "identity": "Puck Bay water-sports area at Rewa and its sand spit; distinct from Puck town and Chałupy corridor.",
+      "entry": {"lat": 54.6312382, "lon": 18.4979138, "status": "exact_village_waterfront_launch_open"},
+      "sports": ["windsurf", "kitesurf"],
+      "conditions": "Shallow relatively warm bay water with favourable winds; conditions and level vary across the spit sides, and the exact beginner claim needs modern primary support.",
+      "access_rules": "Several schools documented, but current local zones, nature constraints and launch geometry remain open.",
+      "trip_value": "Distinct sand-spit landscape and alternative Puck Bay base plausibly support worth_trip after current rules and entry are verified.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.rewa.net.pl/atrakcje/windsurfing-w-rewie", "publisher": "Rewa visitor portal", "supports": ["sports", "depth", "schools"]},
+        {"url": "https://baltykteraz.pl/rewa-2026-kitesurfing-dla-sredniozaawansowanych-warunki-szkoly-wypozyczalnie/", "publisher": "BałtykTeraz", "supports": ["2026_conditions", "winds", "level", "season"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Esposende – Cávado estuary",
+      "country": "PT",
+      "identity": "Authorized kite area on Rio Cávado in front of the Esposende lifeboat station, south/southwest of two marked yellow buoys.",
+      "entry": {"lat": 41.5315, "lon": -8.7865, "status": "derived_from_legal_zone_coordinates_approximate"},
+      "sports": ["kitesurf", "surf"],
+      "conditions": "Tidal estuary flat/chop with Atlantic wave beach across the spit; current and tide can materially reinforce or oppose wind.",
+      "access_rules": "Legal kite polygon is explicitly coordinate-defined; navigation channel and yellow buoys must remain clear. Nature and dune context need exact protected-area guidance.",
+      "trip_value": "Combination of authorized flat-water estuary, Atlantic surf and northern Portugal travel setting supports worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://diariodarepublica.pt/dr/detalhe/edital/321-2023-207987312", "publisher": "Diário da República", "supports": ["authorized_zone", "legal_coordinates"]},
+        {"url": "https://estacao-nautica.visitesposende.com/wp-content/uploads/2022/05/brochura-2022_FINAL_pt_en.pdf", "publisher": "Esposende Nautical Station", "supports": ["kite", "surf", "tourism_services"]},
+        {"url": "https://fpkite.pt/", "publisher": "Portuguese kite federation", "supports": ["current_local_governance_context"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Praia do Cabedelo, Figueira da Foz",
+      "country": "PT",
+      "identity": "Cabedelo beach south of the Mondego mouth; Cabedelinho and Buarcos are separate spots.",
+      "entry": {"lat": 40.1359563, "lon": -8.8627103, "status": "exact_named_beach"},
+      "sports": ["surf", "kitesurf", "bodyboard"],
+      "conditions": "Long sandy beachbreak beside river mouth and breakwater; currents near the bar and winter swell can be strong. Summer learning conditions are more common.",
+      "access_rules": "Wooden dune walkways, parking, surveillance, accessibility and schools documented; bath zones take priority and sport must stay outside marked swimming areas.",
+      "trip_value": "Established surf history, varied peaks and strong city/region infrastructure support worth_trip without current proof of world_class status.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://www.visitportugal.com/en/content/praia-do-cabedelo-figueira-da-foz", "publisher": "Visit Portugal", "supports": ["identity", "sports", "facilities", "schools"]},
+        {"url": "https://visitregiaodecoimbra.pt/wp-content/uploads/2024/08/guia-Digital-Portugues-2.pdf", "publisher": "Coimbra Region tourism", "supports": ["beach_geometry", "surf", "access"]},
+        {"url": "https://www.cm-figfoz.pt/cmfigueiradafoz/uploads/writer_file/document/326/boaspraticas.pdf", "publisher": "Figueira da Foz municipality", "supports": ["windsurf_locations", "local_sport_governance"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Lagoa de Óbidos",
+      "country": "PT",
+      "identity": "Large tidal lagoon with multiple schools and launches; Foz do Arelho ocean beach and Bom Sucesso side require separate entry records.",
+      "entry": {"lat": 39.4082320, "lon": -9.2096777, "status": "lagoon_centroid_multiple_launches"},
+      "sports": ["kitesurf", "windsurf", "wing"],
+      "conditions": "Flat/shallow lagoon sections, tidal current and variable depth/weed; open-ocean conditions outside the mouth are separate.",
+      "access_rules": "Spatial water-use plan has unrestricted and restricted areas. A 2026 seasonal navigation prohibition affected the downstream lagoon from 13 June to 13 September; future-year notices must be rechecked.",
+      "trip_value": "Distinct lagoon, multiple disciplines and nearby Peniche/Óbidos travel context support worth_trip after exact launch and current-year legal map are attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {"url": "https://diariodarepublica.pt/dr/detalhe/aviso/12492-2019-123737290", "publisher": "Diário da República", "supports": ["water_use_plan", "zones"]},
+        {"url": "https://kiteinsider.com/spots/obidos-lagoon-portugal", "publisher": "Kite Insider", "supports": ["2026_seasonal_rule", "schools", "conditions"]},
+        {"url": "https://pt.wikipedia.org/wiki/Lagoa_de_%C3%93bidos", "publisher": "Wikipedia", "supports": ["sports_secondary_only", "identity"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    }
+  ]
+}

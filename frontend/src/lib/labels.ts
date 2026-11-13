@@ -22,11 +22,22 @@ export const STYLES = [
 ] as const;
 export const SPORTS = ["kitesurf", "windsurf", "wing", "surf"] as const;
 export const WATER_TYPES = ["ocean", "sea", "lake", "lagoon"] as const;
+export const WIND_DIRECTIONS = [
+  "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+  "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+] as const;
+
+const WIND_DIRECTION_LABELS: Record<string, string> = {
+  N: "N", NNE: "NNO", NE: "NO", ENE: "ONO", E: "O", ESE: "OSO",
+  SE: "SO", SSE: "SSO", S: "S", SSW: "SSW", SW: "SW", WSW: "WSW",
+  W: "W", WNW: "WNW", NW: "NW", NNW: "NNW",
+};
 export const FACILITY_KINDS: FacilityKind[] = [
   "parking",
   "shower",
+  "toilet",
+  "changing",
   "food",
-  "camping",
   "school",
 ];
 
@@ -83,8 +94,9 @@ export const STYLE_LABELS: Record<string, string> = {
 export const FACILITY_LABELS: Record<FacilityKind, string> = {
   parking: "Parkplatz",
   shower: "Dusche",
+  toilet: "Toilette",
+  changing: "Umkleide",
   food: "Gastronomie",
-  camping: "Camping",
   school: "Surfschule / Verleih",
 };
 
@@ -231,6 +243,8 @@ export const waterTypeLabel = (k?: string | null) =>
   k ? WATER_TYPE_LABELS[k] ?? k : "";
 export const bottomTypeLabel = (k?: string | null) =>
   k ? BOTTOM_TYPE_LABELS[k] ?? k : "";
+export const windDirectionLabel = (k?: string | null) =>
+  k ? WIND_DIRECTION_LABELS[k] ?? k : "";
 export const styleLabel = (k: string) => STYLE_LABELS[k] ?? k;
 export const facilityLabel = (k: FacilityKind) => FACILITY_LABELS[k] ?? k;
 export const sportLabel = (k: string) => SPORT_LABELS[k] ?? k;

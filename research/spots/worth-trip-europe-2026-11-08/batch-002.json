@@ -1,0 +1,555 @@
+{
+  "batch_id": "worth-trip-europe-002",
+  "checked_at": "2026-11-09",
+  "write_status": "blocked",
+  "write_blockers": [
+    "Kein authentifizierter Zugriff auf die Live-Entwürfe; die öffentliche Duplikatsprüfung deckt nur 46 veröffentlichte Spots ab.",
+    "Der unterstützte Bulk-Importer kann spot_content_sources nicht anlegen.",
+    "Der Bulk-Importer akzeptiert best_wind_directions und variant_conditions noch nicht, obwohl der aktuelle lokale Spot-Schema-Stand diese Felder kennt.",
+    "Der Cloud-Adminweg ist ohne Sitzung oder Admin-Schlüssel nicht autorisiert nutzbar."
+  ],
+  "candidates": [
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "zeeland-neeltje-jans",
+        "name": "Neeltje Jans",
+        "region_slug": "zeeland",
+        "lat": 51.62424172138486,
+        "lon": 3.680559354492172,
+        "sports": ["kitesurf"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": ["advanced"],
+        "best_wind_directions": ["N", "NW", "W", "SW"],
+        "water_character": ["flach", "chop"],
+        "style": ["freeride", "wave_riding"],
+        "facilities": {
+          "parking": {
+            "available": true,
+            "note": "Parkplatz Roompotsluis; von dort längerer Fußweg nach Norden bis zum südlichsten erlaubten Strandabschnitt."
+          }
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Neeltje Jans ist ein anspruchsvoller Kitespot auf der künstlich geschaffenen Insel inmitten der Oosterscheldekering. Die Kombination aus großem Sand-Startbereich, je nach Tide flacherem Wasser oder kurzem Chop und der ungewöhnlichen Kulisse der Deltawerke begründet den Reise- und Erlebniswert. Die niederländische Kitesurfvereinigung ordnet den Spot Fortgeschrittenen zu und nennt Freeride sowie Wellenfahren. Vom Parkplatz Roompotsluis ist ein längerer Fußweg nötig; gestartet wird nur im ausgewiesenen südlichen Strandbereich. Zur saisonalen Freigabe widersprechen sich aktuelle Verbandsangaben und eine ältere offizielle Beschilderungsquelle, deshalb ist vor der Anreise die aktuelle Beschilderung maßgeblich.",
+          "safety_notice": "Nur den ausgewiesenen Start- und Fahrbereich nutzen. Süd- bis Südwestwind kann in Deichnähe durch Windkraftanlagen unruhig sein. Saisonale Freigabe und Naturschutzbeschilderung vor Ort prüfen; die ausgewerteten Quellen sind hierzu nicht widerspruchsfrei.",
+          "tide": "Bei Niedrigwasser beschreibt die lokale Spotkarte eher flache Bedingungen; bei Hochwasser kurzen Chop."
+        },
+        "variant_conditions": {
+          "kitesurf:classic": {
+            "suitability": "geeignet",
+            "entry": "Vom Parkplatz Roompotsluis nach Norden zum südlichsten erlaubten Teil des Strandes.",
+            "launch_area": "Große Sandfläche innerhalb der ausgewiesenen Zone.",
+            "hazards": "Unruhiger Wind in Lee von Deich und Windkraftanlagen bei südlichen Komponenten.",
+            "local_rules": "Nur die ausgeschilderte Zone nutzen; saisonale Freigabe wegen widersprüchlicher Quellen vor Ort bestätigen.",
+            "level": ["advanced"],
+            "discipline": ["freeride", "wave_riding"]
+          }
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Neeltje Jans – Roompotsluis", "Roompotsluis", "Kitestrand Neeltje Jans"],
+      "unsupported_research": {
+        "season_rule_conflict": "Die NKV-Spotkarte nennt ganzjährige Öffnung. Eine ältere Rijkswaterstaat-Zonenkarte nennt für Neeltje Jans eine Freigabe vom 15. März bis 1. November. Ohne aktuelle behördliche Einzelbestätigung wird keine Saison als gesicherte Tatsache gespeichert.",
+        "other_sports": "Windsurfen und Wingfoilen werden in regionalen Quellen erwähnt, sind für diesen konkreten Einstieg aber noch nicht mit einer gleich starken, sportartspezifischen Belegkette geprüft.",
+        "nature": "Die Insel umfasst Natur- und Vogelbereiche. Aus den Quellen wird kein pauschales Verbot abgeleitet; aktuelle Zonenbeschilderung bleibt entscheidend."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Brouwersdam",
+        "nearest_distance_km": 19.6,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständige Insel und eigener Startbereich an der Roompotsluis; nicht Teil des Brouwersdam-Einstiegs."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://kitesurfvereniging.nl/spotkaart/",
+          "title": "Kitesurf Spotkaart Nederland",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Die strukturierte Spotkarte nennt 51.62424172138486, 3.680559354492172 für den Neeltje-Jans-Startbereich; kein Inselmittelpunkt."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://kitesurfvereniging.nl/kitespot/neeltje-jans/",
+          "title": "Kitespot Neeltje Jans",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kitesurfen am konkreten Strandabschnitt sowie die Zuordnung zu Freeride und Wellenfahren."
+        },
+        {
+          "field_path": "level",
+          "url": "https://kitesurfvereniging.nl/kitespot/neeltje-jans/",
+          "title": "Kitespot Neeltje Jans",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Ordnet den Spot Fortgeschrittenen zu und beschreibt tiefes Wasser sowie eine große Sand-Startfläche."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://kitesurfvereniging.nl/kitespot/neeltje-jans/",
+          "title": "Kitespot Neeltje Jans",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt N, NW, W und SW als geeignete Richtungen und warnt vor gestörtem Wind bei südlichen Komponenten in Deichnähe."
+        },
+        {
+          "field_path": "water_character",
+          "url": "https://kitesurfvereniging.nl/kitespot/neeltje-jans/",
+          "title": "Kitespot Neeltje Jans",
+          "publisher": "Nederlandse Kitesurf Vereniging",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt bei Niedrigwasser eher flaches Wasser und bei Hochwasser kurzen Chop."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.zeeland.com/en/visit/things-to-do/sights/delta-works",
+          "title": "The Delta Works",
+          "publisher": "Zeeland.com",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den besonderen Reisegrund: künstliche Insel im Zentrum der Oosterscheldekering, Naturgebiet, Dünen und weite Strände."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://rwsnatura2000.nl/gebieden/project%2Bwesterschelde/documenten-westerschelde/documenten%2B-%2Bwesterschelde/HandlerDownloadFiles.ashx?idnv=1822335",
+          "title": "Publieksbord kitesurfzones Zeeland",
+          "publisher": "Rijkswaterstaat Natura 2000",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "unreviewed",
+          "note": "Offizielle, aber ältere Zonenkarte nennt eine saisonale Freigabe. Wegen Widerspruch zur aktuellen NKV-Angabe wird die Saison nicht als verifiziert gespeichert."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "cornwall-gwithian-towans",
+        "name": "Gwithian Towans",
+        "region_slug": "cornwall",
+        "lat": 50.2217795,
+        "lon": -5.3945487,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": [],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {
+            "available": true,
+            "note": "Hauptparkplatz Gwithian Towans nahe am Strand."
+          },
+          "food": {
+            "available": true,
+            "note": "Sunset Surf Café und ein weiteres Café in Strandnähe."
+          },
+          "school": {
+            "available": true,
+            "note": "Makai-Surfschulbasis am Sunset Surf Café."
+          }
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Gwithian Towans ist ein großzügiger, dünenhinterlegter Atlantikstrand in der St Ives Bay. Der beständige Swell, viel Platz und entlang des Strandes unterschiedlich große Wellen ermöglichen laut regionaler Tourismusquelle Sessions für verschiedene Erfahrungsstufen; eine Surfschule sitzt direkt am Einstieg beim Sunset Surf Café. Der zusätzliche Reisegrund liegt in der rauen Dünen- und Klippenlandschaft, dem Blick Richtung Godrevy Lighthouse und den kurzen Wegen zu St Ives. Der Strand bleibt ein offenes Atlantikrevier: Tide, Swell, Wind und die tagesaktuellen Lifeguard-Zonen müssen vor jeder Session geprüft werden.",
+          "safety_notice": "Offener Atlantikstrand mit wechselnder Tide und Swell. In der bewachten Saison die getrennten Bade- und Surfbereiche sowie aktuelle Lifeguard-Hinweise beachten; außerhalb der Patrouillenzeiten gibt es keine solche Betreuung."
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Gwithian", "Gwithian Beach", "Gwithian South Beach", "Gwithian Towans Beach"],
+      "unsupported_research": {
+        "wind": "Keine statische Best-Windrichtung eingetragen; die ausgewerteten belastbaren Quellen belegen Swell und Windanfälligkeit, aber keine ausreichend präzise dauerhafte Windrichtungszuordnung.",
+        "kite": "Visit Cornwall nennt Kitesurfen allgemein, doch Einstieg, Zonen und lokale Regeln sind für eine positive Kite-Zuordnung noch nicht ausreichend belegt.",
+        "lifeguards": "RNLI nennt für 2026 tägliche Patrouillen am Gwithian South Beach vom 16. Mai bis 27. September, 10 bis 18 Uhr; Zeiten vor Reiseantritt erneut prüfen."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Fistral Beach (Newquay)",
+        "nearest_distance_km": 30.1,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständiger Strand in der St Ives Bay; kein Teil des Fistral-Einstiegs."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=50.2217795&mlon=-5.3945487#map=19/50.2217795/-5.3945487",
+          "title": "Sunset Surf Shop – Gwithian Towans",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Surfshop und Café unmittelbar am Strandzugang, nicht im Ortszentrum von Gwithian."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.visitcornwall.com/things-to-do/beaches/gwithian-towans-beach",
+          "title": "Gwithian Towans Beach",
+          "publisher": "Visit Cornwall",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Nutzung, beständigen Atlantikswell und den großen Sandstrand."
+        },
+        {
+          "field_path": "level",
+          "url": "https://www.visitcornwall.com/things-to-do/insider-recommendations/vitamin-sea",
+          "title": "Vitamin Sea – Cornwall surf beaches",
+          "publisher": "Visit Cornwall",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt unterschiedlich große Wellen entlang des weiten Strandes und Eignung für verschiedene Surf-Niveaus."
+        },
+        {
+          "field_path": "facilities.school",
+          "url": "https://makai.co.uk/locations/gwithian/",
+          "title": "Gwithian",
+          "publisher": "Makai Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt die Surfschulbasis am Sunset Surf Café und die bedingungsabhängige Auswahl eines sicheren Unterrichtsorts."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/hayle-gwithian-south-beach",
+          "title": "Gwithian South Beach",
+          "publisher": "RNLI",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Parkplatz, zwei nahe Cafés, Surf- und Windsurfnutzung sowie die aktuellen Patrouillenzeiten 2026."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.visitcornwall.com/things-to-do/beaches/gwithian-towans-beach",
+          "title": "Gwithian Towans Beach",
+          "publisher": "Visit Cornwall",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt die besondere Kulisse aus weitläufigem Strand, Dünen, Klippen, Rockpools und möglicher Sicht auf Kegelrobben."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/hayle-gwithian-south-beach",
+          "title": "Gwithian South Beach",
+          "publisher": "RNLI",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt saisonale Lifeguard-Betreuung und die Notwendigkeit, aktuelle Flaggen und fehlende Betreuung außerhalb der Zeiten zu berücksichtigen."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "cornwall-sennen-cove",
+        "name": "Sennen Cove",
+        "region_slug": "cornwall",
+        "lat": 50.0787408,
+        "lon": -5.6970943,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["E"],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {
+            "available": true,
+            "note": "Mehrere Parkmöglichkeiten am Strand, am Hafen und oberhalb der Bucht."
+          },
+          "shower": {
+            "available": true,
+            "note": "Kalte Stranddusche an der Surfschule."
+          },
+          "changing": {
+            "available": true,
+            "note": "Umkleidemöglichkeit in der strandnahen Schulbasis."
+          },
+          "food": {
+            "available": true,
+            "note": "Café, Restaurant und weitere Gastronomie im Ort."
+          },
+          "school": {
+            "available": true,
+            "note": "Sennen Surfing Centre direkt am Strand mit Kursen und Ausrüstung."
+          }
+        },
+        "facing": 315,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Sennen Cove liegt unmittelbar nordöstlich von Land's End und verbindet einen langen Sand-Beachbreak mit dem ausgeprägten End-of-the-road-Charakter West Cornwalls. Die Bucht nimmt Atlantikswell zuverlässig auf; am südlichen Hauptstrand sitzt eine Surfschule direkt auf dem Sand, während der Strand je nach Bedingungen sowohl Unterricht als auch anspruchsvollere Sessions ermöglicht. Küstenpfad, Granitklippen, Hafenort und die Nähe zu Land's End liefern einen eigenständigen Reisegrund. Starke Strömungen, große brechende Wellen und unter Wasser liegende Hindernisse sind ausgeschilderte Gefahren; Tide, Flaggen und aktuelle Lifeguard-Hinweise müssen berücksichtigt werden.",
+          "safety_notice": "Warnschilder nennen starke Unterströmungen, große brechende Wellen und unter Wasser liegende Hindernisse. In der Lifeguard-Saison nur in der ausgewiesenen Surfzone fahren und täglich Tide, Flaggen und Bedingungen prüfen."
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Sennen Beach", "Whitesand Bay – Sennen", "Sennen Cove Beach"],
+      "unsupported_research": {
+        "level_note": "Das Modell kennt keinen Wert intermediate. Beginner ist durch Unterricht belegt; advanced bildet nur die belegte Nutzung bei größeren Bedingungen ab und ist keine pauschale Tagesempfehlung.",
+        "lifeguards": "RNLI nennt für 2026 tägliche Patrouillen vom 3. April bis 1. November, 10 bis 18 Uhr; Angaben können kurzfristig geändert werden.",
+        "dog_rule": "Visit Cornwall nennt eine saisonale Hunderegel aus 2023. Sie ist für Wassersport nicht als aktuelle Regel übernommen worden."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Fistral Beach (Newquay)",
+        "nearest_distance_km": 56.6,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=50.0787408&mlon=-5.6970943#map=19/50.0787408/-5.6970943",
+          "title": "Sennen Surfing Centre",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt an der Surfschule im Strandparkplatz unmittelbar am Hauptstrand, nicht im Dorfmittelpunkt."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/sennen-beach",
+          "title": "Sennen Beach",
+          "publisher": "RNLI",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den meilenlangen Sandstrand, Atlantikexposition und die starke Surf-Nutzung."
+        },
+        {
+          "field_path": "level",
+          "url": "https://sennensurfingcentre.co.uk/faqs/",
+          "title": "FAQs",
+          "publisher": "Sennen Surfing Centre",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt strukturierte Anfängerkurse, Softboards und bedingungs- sowie tideabhängige Unterrichtszeiten."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://www.surf-forecast.com/breaks/Sennen-Cove",
+          "title": "Sennen Cove Surf Guide",
+          "publisher": "Surf-Forecast.com",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Der statische Spotguide nennt Ostwind als offshore und Westswell als passende Kombination."
+        },
+        {
+          "field_path": "facing",
+          "url": "https://surfspoting.com/spot/gb/15-sennen-cove/",
+          "title": "Sennen Cove surf forecast and spot guide",
+          "publisher": "Surf Spoting",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt den Beachbreak ausdrücklich als nordwestlich ausgerichtet; übernommen als 315 Grad."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://sennensurfingcentre.co.uk/faqs/",
+          "title": "FAQs",
+          "publisher": "Sennen Surfing Centre",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surfschule, Ausrüstung, Umkleide, kalte Dusche sowie Café und Restaurant nebenan."
+        },
+        {
+          "field_path": "facilities.parking",
+          "url": "https://www.visitcornwall.com/things-to-do/beaches/sennen-cove-beach",
+          "title": "Sennen Cove Beach",
+          "publisher": "Visit Cornwall",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt zwei Parkplätze unten an der Bucht und einen größeren Parkplatz oberhalb."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.visitcornwall.com/things-to-do/beaches/sennen-cove-beach",
+          "title": "Sennen Cove Beach",
+          "publisher": "Visit Cornwall",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Reisewert, Sandbucht, Granitklippen, Küstenpfad, Gastronomie und Nähe zu Land's End."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://www.cornwallbeachguide.co.uk/westcornwall/sennen/sennen.pdf",
+          "title": "Sennen Cove Beach Guide",
+          "publisher": "Cornwall Beach Guide",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Dokumentiert Warnschilder zu starken Unterströmungen, großen brechenden Wellen und unter Wasser liegenden Hindernissen."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/sennen-beach",
+          "title": "Sennen Beach",
+          "publisher": "RNLI",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt die Patrouillenzeiten 2026 und weist darauf hin, dass außerhalb der Flaggenzeiten keine Lifeguard-Betreuung besteht."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "donegal-rossnowlagh",
+        "name": "Rossnowlagh",
+        "region_slug": "donegal",
+        "lat": 54.5578,
+        "lon": -8.2073,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": [],
+        "water_character": ["welle_klein"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {
+            "available": true,
+            "note": "Kostenloses Parken am Strandzugang laut örtlicher Surfschule; aktuelle Fahrzeugregeln am Strand prüfen."
+          },
+          "changing": {
+            "available": true,
+            "note": "Umkleiden im Fin-McCool-Komplex."
+          },
+          "school": {
+            "available": true,
+            "note": "Mehrere örtliche Surfschulen mit Kursen, Coaching und Verleih."
+          }
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Rossnowlagh ist ein langer, offener Sandstrand an der Donegal Bay und ein etablierter Lern- und Longboardspot am Wild Atlantic Way. Mehrere Schulen bieten Unterricht, Coaching und Verleih; eine regionale Schule nutzt Rossnowlagh bei zu großen oder windigen Bedingungen in Bundoran wegen der sanfteren, geschützteren Wellen. Der Reisegrund liegt in der Verbindung aus zugänglichem Beachbreak, weitem Atlantikstrand, Dünenlandschaft und der nahen Surfregion um Bundoran. Rossnowlagh wird dabei bewusst nicht mit dem anspruchsvollen World-Class-Riff The Peak gleichgesetzt. Auch sanftere Wellen sind keine Sicherheitsfreigabe: aktuelle Tide, Swell, Wind, Strandzufahrt und saisonale Lifeguard-Hinweise müssen geprüft werden.",
+          "safety_notice": "Offener Atlantikstrand. Aktuelle Bade- und Surfbereiche, Tide, Swell, Wind sowie saisonale Lifeguard-Hinweise prüfen. Fahrzeugzugang auf den Strand nicht voraussetzen; Beschilderung und lokale Anweisungen beachten."
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Rossnowlagh Beach", "Rossnowlagh Strand", "Belalt Strand", "Belall Strand"],
+      "unsupported_research": {
+        "wind": "Keine Best-Windrichtung eingetragen; die geprüften Primär- und Lokalquellen belegen Nutzung und Charakter, aber keine ausreichend präzise statische Windrichtung.",
+        "world_class_boundary": "Rossnowlagh war Austragungsort historischer Wettbewerbe, wird hier aber als weitläufiger Beachbreak und Lern-/Longboardrevier eingeordnet. Der öffentlich vorhandene World-Class-Spot The Peak in Bundoran ist ein eigenständiger Riffbreak etwa zehn Kilometer entfernt.",
+        "lifeguards": "Donegal County Council dokumentiert Lifeguards in der Badesaison 2024. Da keine gleichwertige aktuelle 2026-Seite gefunden wurde, wird keine konkrete aktuelle Saison als Spotfeld gespeichert.",
+        "other_sports": "Windsurfen und Kitesurfen werden in allgemeinen Strandquellen erwähnt; Bedingungen, Zonen und Regeln sind für eine positive Zuordnung noch nicht ausreichend feldbezogen geprüft."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "The Peak (Bundoran)",
+        "nearest_distance_km": 10.1,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständiger Sand-Beachbreak nördlich von Bundoran; nicht derselbe Einstieg oder Break wie das Riff The Peak."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=54.5578&mlon=-8.2073#map=18/54.5578/-8.2073",
+          "title": "Rossnowlagh public beach access",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am öffentlichen Strandzugang im Hauptnutzungsbereich; kein Dorfmittelpunkt. Die Koordinate wird zusätzlich durch einen regionalen Donegal-Besucherführer bestätigt."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://govisitdonegal.com/attractions/rossnowlagh-blue-flag-beach/",
+          "title": "Rossnowlagh Blue Flag Beach",
+          "publisher": "Go Visit Donegal",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Rossnowlagh als einen der Haupt-Surfstrände Irlands, seine Lage am Wild Atlantic Way und die Surf-Nutzung."
+        },
+        {
+          "field_path": "level",
+          "url": "https://bundoransurfco.com/beginner-lessons/",
+          "title": "Beginner Lessons – Rossnowlagh",
+          "publisher": "Bundoran Surf Co",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Rossnowlagh als Schulungsort mit sanfteren, geschützteren Wellen und besonderer Eignung für Familien und jüngere Einsteiger."
+        },
+        {
+          "field_path": "level",
+          "url": "https://rossnowlaghsurfschool.com/surf-school/",
+          "title": "Surf School – Rossnowlagh",
+          "publisher": "Rossnowlagh Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kurse für Anfänger sowie Intermediate-/Advanced-Coaching am Strand."
+        },
+        {
+          "field_path": "facilities.school",
+          "url": "https://finmccoolsurfschool.com/",
+          "title": "Fin McCool Surf School",
+          "publisher": "Fin McCool Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt ISA-anerkannte Kurse, Surfshop, Ausrüstungsverleih und Unterricht für verschiedene Niveaus."
+        },
+        {
+          "field_path": "facilities.parking",
+          "url": "https://rossnowlaghsurfschool.com/contact/",
+          "title": "Contact and travel information",
+          "publisher": "Rossnowlagh Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt kostenlosen Parkplatz am Strandbereich und die Zufahrt per Auto; Fahrzeugzugang auf den Sand wird daraus nicht pauschal abgeleitet."
+        },
+        {
+          "field_path": "facilities.changing",
+          "url": "https://finmccoolsurfschool.com/",
+          "title": "Fin McCool Surf School",
+          "publisher": "Fin McCool Surf School",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Umkleiden im Schul- und Shopkomplex."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://govisitdonegal.com/attractions/rossnowlagh-blue-flag-beach/",
+          "title": "Rossnowlagh Blue Flag Beach",
+          "publisher": "Go Visit Donegal",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt langen Strand, Surf-Reisewert, Unterricht und Verleih sowie die Lage an der Donegal Bay und am Wild Atlantic Way."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://www.donegalcoco.ie/media/e4rdem2k/2024-annual-report-english-web.pdf",
+          "title": "Donegal County Council Annual Report 2024",
+          "publisher": "Donegal County Council",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "unreviewed",
+          "note": "Belegt eine saisonale Lifeguard-Betreuung in 2024. Der historische Stand wird nicht als aktuelle 2026-Zeitangabe übernommen."
+        }
+      ]
+    }
+  ],
+  "excluded": []
+}

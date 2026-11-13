@@ -29,11 +29,13 @@ class PublicTideEventRead(BaseModel):
 class PublicTideSeriesPointRead(BaseModel):
     time: datetime
     level_normalized: float
+    level_m: float | None = None
     phase: Literal["rising", "high", "falling", "low"]
 
 
 class PublicTideRead(BaseModel):
     available: bool
+    product_type: Literal["astronomical_tide", "modelled_sea_level"] = "astronomical_tide"
     message: str | None = None
     timezone: str | None = None
     phase: Literal["rising", "high", "falling", "low", "unavailable"] = "unavailable"
@@ -46,9 +48,14 @@ class PublicTideRead(BaseModel):
     forecast_end: datetime | None = None
     horizon_days: int = 0
     partial: bool = False
-    datum: Literal["relative_low_high"] = "relative_low_high"
+    datum: Literal["relative_low_high", "mean_sea_level"] = "relative_low_high"
+    current_level_m: float | None = None
+    navigational: bool = False
     model_name: str | None = None
     model_version: str | None = None
+    source_name: str | None = None
+    source_url: str | None = None
+    attribution: str | None = None
     events: list[PublicTideEventRead] = Field(default_factory=list)
     series: list[PublicTideSeriesPointRead] = Field(default_factory=list)
 

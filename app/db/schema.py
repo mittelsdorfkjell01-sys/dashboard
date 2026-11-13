@@ -2,5 +2,5 @@
 
 from hashlib import sha256
 
-EXPECTED_DB_REVISION = "0094_campaign_run_evidence"
+EXPECTED_DB_REVISION = "0095_best_wind_directions"
 EXPECTED_DB_FINGERPRINT = sha256(EXPECTED_DB_REVISION.encode("utf-8")).hexdigest()[:12]

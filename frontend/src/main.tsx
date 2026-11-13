@@ -31,9 +31,7 @@ const RegionDetail = React.lazy(() => import("./pages/RegionDetail"));
 const SearchResults = React.lazy(() => import("./pages/SearchResults"));
 const Impressum = React.lazy(() => import("./pages/Impressum"));
 const Datenschutz = React.lazy(() => import("./pages/Datenschutz"));
-const FAQ = React.lazy(() => import("./pages/FAQ"));
-const Kontakt = React.lazy(() => import("./pages/Kontakt"));
-const UeberUns = React.lazy(() => import("./pages/UeberUns"));
+const Fragen = React.lazy(() => import("./pages/Fragen"));
 const Nutzungsbedingungen = React.lazy(() => import("./pages/Nutzungsbedingungen"));
 const Auth = React.lazy(() => import("./pages/Auth"));
 const AccountAccess = React.lazy(() => import("./pages/AccountAccess"));
@@ -92,10 +90,12 @@ async function bootstrap() {
     { path: "/region/:slug", element: <RegionDetail /> },
     { path: "/impressum", element: <Impressum /> },
     { path: "/datenschutz", element: <Datenschutz /> },
-    { path: "/faq", element: <FAQ /> },
-    { path: "/fragen", element: <FAQ /> },
-    { path: "/kontakt", element: <Kontakt /> },
-    { path: "/ueber-uns", element: <UeberUns /> },
+    { path: "/faq", element: <Fragen /> },
+    { path: "/fragen", element: <Fragen /> },
+    // Help, project background and contact live on one page now. The two old
+    // URLs stay valid and land on their section instead of 404-ing.
+    { path: "/kontakt", element: <Navigate to="/fragen#kontakt" replace /> },
+    { path: "/ueber-uns", element: <Navigate to="/fragen#projekt" replace /> },
     { path: "/nutzungsbedingungen", element: <Nutzungsbedingungen /> },
     { path: "/reise/:token", element: <SharedTrip /> },
     { path: "/anmelden", element: <Auth /> },

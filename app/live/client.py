@@ -1,8 +1,8 @@
 """Open-Meteo client seam.
 
 Two endpoints are used: the Forecast API (wind/gusts/direction/temperature/
-precipitation) and the Marine API (swell height/period/direction +
-sea-surface temperature). The :class:`OpenMeteoClient` protocol lets tests
+precipitation) and the Marine API (swell height/period/direction,
+sea-surface temperature and modelled sea level). The :class:`OpenMeteoClient` protocol lets tests
 inject a fake so no HTTP call is made in the suite.
 """
 
@@ -33,7 +33,7 @@ MARINE_HOURLY = (
     "wind_wave_height,wind_wave_period,wind_wave_direction,"
     "swell_wave_height,swell_wave_period,swell_wave_direction,"
     "secondary_swell_wave_height,secondary_swell_wave_period,secondary_swell_wave_direction,"
-    "sea_surface_temperature"
+    "sea_surface_temperature,sea_level_height_msl"
 )
 MARINE_DAILY = "wave_height_max,wave_direction_dominant,wave_period_max"
 
