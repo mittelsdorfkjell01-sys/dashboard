@@ -9,6 +9,9 @@ import pytest
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import select
 
+from app.live.cache import InMemoryCache
+from app.live.deps import get_cache, get_om_client
+from app.main import app
 from app.models import (
     Region,
     Spot,
@@ -25,6 +28,31 @@ from app.tides.calculation import (
     detect_extrema,
     phase_at,
 )
+from app.tides.rollout import bootstrap_europe_profiles
+
+
+class _UnavailableMarineClient:
+    def fetch_marine(self, lat, lon, days=7):
+        return {"timezone": "GMT", "hourly": {"time": [], "sea_level_height_msl": []}}
+
+
+@pytest.fixture(autouse=True)
+def _local_tide_provider():
+    """Never let a tide endpoint test reach an external weather provider."""
+
+    previous_client = app.dependency_overrides.get(get_om_client)
+    previous_cache = app.dependency_overrides.get(get_cache)
+    app.dependency_overrides[get_om_client] = lambda: _UnavailableMarineClient()
+    app.dependency_overrides[get_cache] = lambda: InMemoryCache()
+    yield
+    if previous_client is None:
+        app.dependency_overrides.pop(get_om_client, None)
+    else:
+        app.dependency_overrides[get_om_client] = previous_client
+    if previous_cache is None:
+        app.dependency_overrides.pop(get_cache, None)
+    else:
+        app.dependency_overrides[get_cache] = previous_cache
 
 
 def _curve(start: datetime, hours: int = 36, step_minutes: int = 10):
@@ -111,20 +139,99 @@ def tide_spot(db):
     db.commit()
 
 
-def test_public_tides_fail_closed_and_hide_admin_notes(anon_client, client, db, tide_spot):
+def test_publishing_needs_a_reviewed_anchor_and_a_finished_calculation(client, tide_spot):
+    """The admin gate refuses to publish before the anchor is reviewed and the
+    FES calculation has succeeded."""
     created = client.get(f"/admin/spots/{tide_spot.id}/tide")
     assert created.status_code == 200
-    updated = client.patch(f"/admin/spots/{tide_spot.id}/tide", json={
+    refused = client.patch(f"/admin/spots/{tide_spot.id}/tide", json={
         "enabled": True,
         "public_enabled": True,
         "timezone": "Europe/Berlin",
+    })
+    assert refused.status_code == 422, refused.text
+
+
+def test_public_tides_fail_closed_and_hide_admin_notes(anon_client, client, db, tide_spot):
+    """Second line of defence: even with the published flag forced on in the
+    database, an unreviewed, uncalculated profile serves nothing — and the
+    internal note never reaches the public payload."""
+    created = client.get(f"/admin/spots/{tide_spot.id}/tide")
+    assert created.status_code == 200
+    noted = client.patch(f"/admin/spots/{tide_spot.id}/tide", json={
+        "enabled": True,
+        "timezone": "Europe/Berlin",
         "note": "interne fachliche Notiz",
     })
-    assert updated.status_code == 200
+    assert noted.status_code == 200, noted.text
+
+    # Set the flag past the admin gate on purpose: the public read must stand
+    # on its own, not on the write path having been careful.
+    db.expire_all()
+    profile = db.scalar(select(TideProfile).where(TideProfile.spot_id == tide_spot.id))
+    profile.public_enabled = True
+    db.commit()
+
     response = anon_client.get(f"/spots/{tide_spot.id}/tides")
     assert response.status_code == 200
     assert response.json()["available"] is False
     assert "interne fachliche Notiz" not in response.text
+
+
+def test_public_tides_use_modelled_sea_level_when_fes_is_unavailable(anon_client, tide_spot):
+    class CurrentMarineClient:
+        def fetch_marine(self, lat, lon, days=7):
+            start = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0) - timedelta(hours=18)
+            count = 11 * 24
+            return {
+                "timezone": "GMT",
+                "hourly": {
+                    "time": [(start + timedelta(hours=i)).isoformat() for i in range(count)],
+                    "sea_level_height_msl": [
+                        round(0.7 * math.sin(2 * math.pi * i / 12.42), 3)
+                        for i in range(count)
+                    ],
+                },
+            }
+
+    app.dependency_overrides[get_om_client] = lambda: CurrentMarineClient()
+    app.dependency_overrides[get_cache] = lambda: InMemoryCache()
+
+    response = anon_client.get(f"/spots/{tide_spot.id}/tides?days=10")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["available"] is True
+    assert body["product_type"] == "modelled_sea_level"
+    assert body["datum"] == "mean_sea_level"
+    assert body["navigational"] is False
+    assert body["current_level_m"] is not None
+    assert body["events"]
+    assert body["source_name"] == "Open-Meteo Marine"
+
+
+def test_europe_bootstrap_is_bounded_private_and_idempotent(db, tide_spot):
+    preview = bootstrap_europe_profiles(db, apply=False, limit=1000)
+    assert any(item["spot_id"] == str(tide_spot.id) for item in preview["planned"])
+    assert db.scalar(select(TideProfile).where(TideProfile.spot_id == tide_spot.id)) is None
+
+    applied = bootstrap_europe_profiles(db, apply=True, limit=1000)
+    assert applied["queued"] >= 1
+    profile = db.scalar(select(TideProfile).where(TideProfile.spot_id == tide_spot.id))
+    assert profile is not None
+    assert profile.enabled is True
+    assert profile.public_enabled is False
+    run_count = len(list(db.scalars(select(TideCalculationRun).where(
+        TideCalculationRun.spot_id == tide_spot.id,
+        TideCalculationRun.status == "queued",
+    ))))
+    assert run_count == 1
+
+    second = bootstrap_europe_profiles(db, apply=True, limit=1000)
+    assert second["pending"] >= 1
+    assert len(list(db.scalars(select(TideCalculationRun).where(
+        TideCalculationRun.spot_id == tide_spot.id,
+        TideCalculationRun.status == "queued",
+    )))) == run_count
 
 
 def test_admin_tide_permissions_and_offset_validation(anon_client, curator_client, tide_spot):

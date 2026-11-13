@@ -100,7 +100,7 @@ async function baseRoutes(page: Page, opts: { v3: "ready" | "404"; usableAvailab
 test("V3 module loads with the default 15–20 kt window and matching selection summary", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Windmonate" })).toBeVisible();
   await expect(page.getByText("15–20 kt · passende Richtung · 2006–2025")).toBeVisible();
 });
 
@@ -142,7 +142,7 @@ test("selecting a week shows its detail values below the chart", async ({ page }
   await page.goto("/spot/test/daten");
   const bar = page.locator('[data-week="30"]');
   await bar.click();
-  await expect(page.getByText("Wochendetail")).toBeVisible();
+  await expect(page.getByText("Zeitraum", { exact: true })).toBeVisible();
   await expect(page.getByText("Zuverlässigkeit", { exact: true }).locator("..").getByText("70%", { exact: true })).toBeVisible();
 });
 
@@ -157,7 +157,7 @@ test("mobile: chart keeps the complete year visible and the page never scrolls s
   await page.setViewportSize({ width: 375, height: 800 });
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Windmonate" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
@@ -178,7 +178,7 @@ test("chart supports keyboard week selection without 52 tab stops", async ({ pag
 test("V3 module has no serious/critical accessibility violations", async ({ page }) => {
   await baseRoutes(page, { v3: "ready" });
   await page.goto("/spot/test/daten");
-  await expect(page.getByRole("heading", { name: "Beste Reisezeit" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Windmonate" })).toBeVisible();
   const results = await new AxeBuilder({ page }).include('[aria-label*="52 Wochen"]').analyze();
   expect(results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""))).toEqual([]);
 });
