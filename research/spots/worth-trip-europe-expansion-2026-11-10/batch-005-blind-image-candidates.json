@@ -1,0 +1,329 @@
+{
+  "generated_at": "2026-11-10T16:16:19.512079+00:00",
+  "independence_statement": "Created before local/database comparison for batch 005.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual, geographic, resolution and licence review."
+  ],
+  "spots": [
+    {
+      "spot": "Lancieux",
+      "query": "Lancieux kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Saint-Brevin Rochelets",
+      "query": "Saint Brevin Rochelets kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "La Baule",
+      "query": "La Baule kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Les Sables d'Olonne",
+      "query": "Les Sables d'Olonne surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pontaillac",
+      "query": "Pontaillac surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Hourtin Lake",
+      "query": "Hourtin Lake kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Biscarrosse Plage",
+      "query": "Biscarrosse surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gruissan Chalets",
+      "query": "Gruissan Chalets kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Almanarre",
+      "query": "Almanarre kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Leucate La Franqui",
+      "query": "Leucate La Franqui kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pantin",
+      "query": "Pantin Galicia surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Patos",
+      "query": "Patos Galicia surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Somo",
+      "query": "Somo Cantabria surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Salinas Asturias",
+      "query": "Salinas Asturias surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Trabucador",
+      "query": "Trabucador kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Castelldefels La Pineda",
+      "query": "Castelldefels kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "El Palmar",
+      "query": "El Palmar Cadiz surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Mar Menor La Mota",
+      "query": "Mar Menor La Mota windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Cape Drepano",
+      "query": "Cape Drepano kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Raches Lighthouse",
+      "query": "Raches Greece kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Vassiliki",
+      "query": "Vassiliki windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Nea Kios",
+      "query": "Nea Kios kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ai Giannis Lefkada",
+      "query": "Ai Giannis Lefkada kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Prasonisi",
+      "query": "Prasonisi windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Karpathos Afiartis",
+      "query": "Karpathos Afiartis windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: URLError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

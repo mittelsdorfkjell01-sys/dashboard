@@ -1,0 +1,384 @@
+{
+  "batch_id": "worth-trip-europe-003",
+  "checked_at": "2026-11-09",
+  "write_status": "blocked",
+  "write_blockers": [
+    "Kein authentifizierter Zugriff auf die Live-Entwürfe; die öffentliche Duplikatsprüfung deckt nur 46 veröffentlichte Spots ab.",
+    "Der unterstützte Bulk-Importer kann spot_content_sources nicht anlegen.",
+    "Der Cloud-Adminweg ist ohne Sitzung oder Admin-Schlüssel nicht autorisiert nutzbar."
+  ],
+  "candidates": [
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "asturias-salinas",
+        "name": "Salinas",
+        "region_slug": "asturias",
+        "lat": 43.57874,
+        "lon": -5.953169,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["SE"],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {
+            "available": true,
+            "note": "Mehrere registrierte Surfschulen; der Bezugspunkt liegt an der Espartal Salinas Surf School."
+          }
+        },
+        "facing": 315,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Salinas verbindet einen langen asturischen Sand-Beachbreak mit einer ausgeprägten Surfkultur und guter Infrastruktur. Zusammen mit San Juan und El Espartal entsteht ein rund drei Kilometer langer Küstenabschnitt aus Strand und Dünen; direkt in Salinas ergänzen Promenade, Gastronomie und das Ankermuseum den Aufenthalt. Die offizielle Tourismusseite nennt Salinas ausdrücklich als guten Lern- und Übungsstrand, während lokale Spotquellen je nach Swell auch anspruchsvollere Peaks beschreiben. Der Reisegrund liegt damit in der Kombination aus verlässlicher Surf-Nutzung, Schulen, langen Strandwegen und Kultur am Ort. Die Einstufung bleibt unter World Class: Longboard- und Surfveranstaltungen geben dem Ort Profil, ohne dass eine einzelne Welle international als Ausnahmebreak etabliert ist.",
+          "safety_notice": "Offener Beachbreak mit wechselnden Sandbänken, Strömung und je nach Swell deutlich unterschiedlicher Leistung. Tagesaktuelle Flaggen, Tide, Wasserqualität und Hinweise der Rettungskräfte oder Schulen prüfen."
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Playa de Salinas", "Salinas–El Espartal", "Salinas Beach Castrillón"],
+      "unsupported_research": {
+        "entry_coordinate_note": "Die Koordinate ist der von Turismo Asturias veröffentlichte Punkt der Surfschule rund 50 Meter vom Strand; sie bezeichnet den konkreten Schul- und Zugangskorridor, nicht die Ortsmitte.",
+        "other_sports": "Windsurfen und Kitesurfen werden in allgemeinen Strandverzeichnissen erwähnt, sind für Einstieg, Regeln und Bedingungen jedoch noch nicht ausreichend feldbezogen geprüft.",
+        "world_class_boundary": "Das Salinas-Longboard-Festival und weitere Veranstaltungen belegen besonderen Reisewert, führen aber ohne international herausragende Einzelwelle nicht zur Stufe world_class."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Rodiles",
+        "nearest_distance_km": 46.4,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.turismoasturias.es/en/organiza-tu-viaje/deporte-y-aventura/aventura/espartal-salinas-surf-school",
+          "title": "Espartal Salinas Surf School",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Veröffentlicht GPS 43.578740, -5.953169 für die Schule 50 Meter vom Salinas-Strand."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-salinas",
+          "title": "Salinas Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Nutzung, goldenen Sand, moderaten Swell und den zusammenhängenden, rund drei Kilometer langen Küstenabschnitt."
+        },
+        {
+          "field_path": "level",
+          "url": "https://www.turismoasturias.es/en/organiza-tu-viaje/deporte-y-aventura/aventura/espartal-salinas-surf-school",
+          "title": "Espartal Salinas Surf School",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Bezeichnet Salinas als einen der guten asturischen Strände zum Lernen und Üben und nennt Unterricht vom Einstieg bis zur Verbesserung."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://simplewavesearch.com/en/playas/salinas/guia",
+          "title": "Surf guide to Salinas",
+          "publisher": "Simple Wave Search",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Statischer lokaler Spotguide nennt Südost als offshore und beschreibt die tatsächliche nordwestliche Ausrichtung."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-salinas",
+          "title": "Salinas Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet Rettungsdienst, Toiletten, Parkplätze, Duschen und Gastronomie."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.turismoasturias.es/documents/39908/2270244/Costa_EN.pdf/21e0a480-db5b-1627-37f9-c66cc5bb304b",
+          "title": "Asturian Coast",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surfqualität und die besondere Veranstaltungs- und Longboardkultur von Salinas."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "cantabria-valdearenas-liencres",
+        "name": "Valdearenas – Liencres",
+        "region_slug": "cantabria",
+        "lat": 43.4499,
+        "lon": -3.9624,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["S", "SE", "E"],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {
+            "available": true,
+            "note": "Großer Parkplatz am Hauptzugang; sommerliche Überlastung und aktuelle Zufahrtsregeln prüfen."
+          },
+          "shower": {"available": true},
+          "school": {
+            "available": true,
+            "note": "Surfunterricht und Materialverleih werden am Strand angeboten."
+          }
+        },
+        "facing": 0,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Valdearenas ist der lange, offene Sandstrand im Naturpark Dunas de Liencres an der Mündung des Río Pas. Der nahezu drei Kilometer lange Küstenabschnitt verbindet regelmäßig surfbare Beachbreak-Peaks mit einer außergewöhnlichen Dünen-, Flussmündungs- und Pinienlandschaft nahe Santander. Schulen bieten Einsteiger- und Aufbaukurse sowie Verleih; die Bedingungen reichen jedoch deutlich über einen reinen Lernstrand hinaus. Starke Strömungen und Wirbel werden von der Gemeinde ausdrücklich genannt, sodass Anfänger nur an passenden Tagen und mit lokaler Betreuung einsteigen sollten. Der Naturpark ist Teil des Reisegrunds und zugleich Anlass, ausschließlich ausgewiesene Zugänge zu benutzen und Dünenvegetation zu schonen.",
+          "safety_notice": "Die Gemeinde warnt vor starkem Strom und Wirbeln am offenen Meer. Flaggen, Tide und Rettungsdienst beachten; bei Lernniveau nur mit Schule und kleinen, geeigneten Bedingungen. Ausgewiesene Wege im geschützten Dünengebiet nutzen."
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Playa de Valdearenas", "Playa de Liencres", "Valdearenas Beach"],
+      "unsupported_research": {
+        "public_transport": "Ein saisonaler Bus wurde 2025 gemeldet; für 2026 ist die Betriebszeit nicht belastbar bestätigt und wird nicht als aktuelle Tatsache gespeichert.",
+        "nature_rules": "Der Schutzstatus ist belegt. Einzelne Verbote werden ohne aktuelle Parkordnung nicht verallgemeinert; vor Ort gelten ausgeschilderte Wege und Regeln.",
+        "world_class_boundary": "Valdearenas ist ein vielseitiger, landschaftlich starker Beachbreak, aber keine einzelne international herausragende Referenzwelle wie der vorhandene World-Class-Spot Somo."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Somo",
+        "nearest_distance_km": 16.5,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständiger Strand im Naturpark westlich von Santander; nicht Teil des Somo-Einstiegs auf der anderen Seite der Bucht."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=43.4499&mlon=-3.9624#map=18/43.4499/-3.9624",
+          "title": "Main parking and access – Valdearenas",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am großen Hauptparkplatz und Strandzugang; kein Mittelpunkt des 2,8 Kilometer langen Strandes."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.spain.info/en/beach/valdearenas/",
+          "title": "Beach: Valdearenas",
+          "publisher": "Turespaña / Spain.info",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surfbereich, Sand, starken Swell und die Lage im Naturpark Liencres."
+        },
+        {
+          "field_path": "level",
+          "url": "https://www.escuelavaldearenasurf.com/",
+          "title": "Valdearenas Surf School",
+          "publisher": "Escuela Valdearenas Surf",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kurse für alle Alters- und Erfahrungsstufen, einschließlich Einstieg und Verbesserung, sowie Materialverleih."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://www.surfcantabria.com/playas-surf-cantabria/playa-de-liencres/",
+          "title": "Playa de Liencres",
+          "publisher": "Surf Cantabria",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Lokaler Surfguide nennt S, SE und E für die Peaks von Valdearenas sowie Sandboden und niedrige bis mittlere Tide."
+        },
+        {
+          "field_path": "facing",
+          "url": "https://www.pielagos.es/playas/playa/valdearenas",
+          "title": "Valdearenas",
+          "publisher": "Ayuntamiento de Piélagos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Die Gemeinde beschreibt den Strand ausdrücklich als nach Norden orientiert; übernommen als 0 Grad."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.pielagos.es/playas/playa/valdearenas",
+          "title": "Valdearenas",
+          "publisher": "Ayuntamiento de Piélagos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Parkplatz, Duschen und Zugang am kommunalen Strand."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://www.pielagos.es/playas/playa/valdearenas",
+          "title": "Valdearenas",
+          "publisher": "Ayuntamiento de Piélagos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Warnt ausdrücklich vor offenem Meer, starken Strömungen und Wirbeln."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.spain.info/en/beach/valdearenas/",
+          "title": "Beach: Valdearenas",
+          "publisher": "Turespaña / Spain.info",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den Reisegrund aus langem Sandarm, Dünen, Vegetation und isoliertem Naturparkcharakter."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "basque-country-bakio",
+        "name": "Bakio Beach",
+        "region_slug": "basque-country",
+        "lat": 43.4305,
+        "lon": -2.8087,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["mixed"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["S", "SE", "NE"],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "school": {
+            "available": true,
+            "note": "Mehrere Surfschulen; Unterricht, Verleih und angepasste Surfangebote sind belegt."
+          }
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Bakio ist ein offener, ganzjährig surfbarer Strand an der baskischen Küste mit mehreren deutlich unterschiedlichen Peaks. Die offizielle Tourismusseite beschreibt sowohl anfängerfreundliche Abschnitte als auch kräftigere Wellen über Sand und Fels für erfahrenere Surfer; Schulen und Verleih sitzen unmittelbar am Ort. Promenade, Küstenlandschaft und die Nähe zu San Juan de Gaztelugatxe geben dem Spot einen klaren zusätzlichen Reisegrund. Trotz internationaler Veranstaltungen bleibt Bakio unter World Class: Es ist ein vielseitiger Stadt- und Beachbreak, nicht die singuläre weltbekannte Welle des benachbarten Mundaka. Bei größerem Swell unterscheiden sich Leistung und Gefahren der drei Bereiche stark, daher sind tagesaktuelle Zonen und lokale Hinweise wesentlich.",
+          "safety_notice": "Mehrere Peaks mit Sand- und Felsboden sowie stark unterschiedlicher Leistung bei größerem Swell. Tide, Strömung, Badezonen, Felsbereiche und aktuelle Lifeguard-Hinweise prüfen."
+        }
+      },
+      "intended_lifecycle": {
+        "origin": "editorial",
+        "status": "draft",
+        "content_status": "unreviewed"
+      },
+      "aliases": ["Playa de Bakio", "Bakioko Aritza", "Bakio"],
+      "unsupported_research": {
+        "entry_coordinate_note": "Punkt am zentralen Promenaden- und Strandzugang zwischen den beschriebenen Surfbereichen; der Datensatz umfasst den Strand, nicht nur einen einzelnen Peak.",
+        "intermediate_taxonomy": "Offizielle Spotquelle nennt Beginner/Intermediate. Da intermediate kein zulässiger Modellwert ist, wird beginner gesetzt; advanced ist durch größere, kräftige Peaks und Schulangebote bis Competition separat belegt.",
+        "world_class_boundary": "Bakio trägt bedeutende Veranstaltungen und hat hochwertige Peaks. Die Quellen stellen jedoch Mundaka, nicht Bakio, als eine der weltbesten Wellen heraus; Bakio bleibt deshalb worth_trip."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Mundaka",
+        "nearest_distance_km": 9.2,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständiger offener Strand westlich von Mundaka; kein Teil des Mundaka-Flussmündungsbreaks."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=43.4305&mlon=-2.8087#map=19/43.4305/-2.8087",
+          "title": "Bakio central beach access",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am zentralen Promenaden- und Strandzugang; kein Ortsmittelpunkt."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/bakio-beach/webtur00-content/en/",
+          "title": "Bakio Beach",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Nutzung, drei unterschiedliche Bereiche, ganzjährige Wellen und lokale Schulen."
+        },
+        {
+          "field_path": "level",
+          "url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/bakio-beach/webtur00-content/en/",
+          "title": "Bakio Beach",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt Eignung für alle Niveaus und beschreibt eine kräftige West-Rechte sowie weitere Qualitätspeaks."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://tourism.euskadi.eus/en/surf-euskadi/",
+          "title": "Surfing Euskadi",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt S, SE und NE, mittleren NW-Swell, Sandboden und eine typische Größe von ein bis zwei Metern."
+        },
+        {
+          "field_path": "bottom_type",
+          "url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/bakio-beach/webtur00-content/en/",
+          "title": "Bakio Beach",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt Sand- und Felsboden in den unterschiedlichen Peakbereichen; deshalb Modellwert mixed."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/bakio-beach/webtur00-content/en/",
+          "title": "Bakio Beach",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet öffentliche Toiletten, Duschen, Parken, Surfkurse und sommerlichen Rettungsdienst."
+        },
+        {
+          "field_path": "facilities.school",
+          "url": "https://tourism.euskadi.eus/en/active-tourism/bakio-rip-curl-surf-eskola/webtur00-content/en/",
+          "title": "Bakio Rip Curl Surf Eskola",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt ganzjährigen Unterricht für Einstieg bis Competition, Verleih, Duschen und angepasstes Surfen."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://tourism.euskadi.eus/webtur00-pagcont/en/contenidos/informacion/playas_euskadi/en_playas/playas-olas-zona-mundaka.html",
+          "title": "Surfing Euskadi – Mundaka area",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Bakio als eigenständigen Mehrpeak-Strand und die Nähe zum kulturell und landschaftlich markanten Küstenraum um Gaztelugatxe."
+        }
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "name": "Barinatxe / La Salvaje",
+      "region_slug": "basque-country",
+      "reason": "current_access_and_facility_change_unresolved",
+      "note": "Sport- und Reisewert sind gut belegt. Im Oktober 2026 wurde jedoch eine bevorstehende Regenerierung mit Abriss des Servicegebäudes und möglicher Änderung des Hauptzugangs gemeldet. Bis Zugang, Schulen, Duschen und Umkleiden nach der Maßnahme aktuell bestätigt sind, wird kein Importdatensatz vorbereitet.",
+      "sources": [
+        "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/barinatxe-beach/webtur00-content/en/",
+        "https://www.euskadi.eus/anuncio_contratacion/autorizacion-demanial-explotacion-del-servicio-escuelas-surf-playas-arriatera-y-barinatxe/web01-tramite/es/",
+        "https://cadenaser.com/euskadi/2026/10/19/la-escuela-de-surf-de-eneko-acero-en-barinatxe-se-queda-sin-alternativa-tras-la-orden-de-desalojo-radio-bilbao/"
+      ]
+    }
+  ]
+}

@@ -34,7 +34,7 @@ export default function SpotGalleryTile({
   }, [photos]);
 
   return (
-    <div className="spot-media-frame relative aspect-[3/4] overflow-hidden bg-band sm:aspect-[4/3] lg:aspect-auto">
+    <div className="spot-media-frame relative aspect-[2/3] overflow-hidden bg-band">
       {photo && (
         <img
           key={photo.id}

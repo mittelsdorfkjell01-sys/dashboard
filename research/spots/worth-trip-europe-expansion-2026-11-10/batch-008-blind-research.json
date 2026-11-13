@@ -1,0 +1,991 @@
+{
+  "schema_version": 1,
+  "batch": "008",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Candidate selection used external discovery only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless explicitly sourced.",
+    "Image candidates remain unapproved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Seča Cape, Portorož",
+      "country": "SI",
+      "identity": "Seča Cape wind-sport water near Portorož, not the whole resort frontage.",
+      "entry": {
+        "lat": 45.494,
+        "lon": 13.603,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Slovenia's national outdoor guide identifies Seča for both sports; exact wind windows remain open.",
+      "access_rules": "Pin the legal launch and attach bathing, harbour and protected-area constraints.",
+      "trip_value": "Named national destination with nearby instruction supports worth_trip after launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.slovenia.info/uploads/publikacije/Slovenija%20na%20prostem/2024/2024_ENG_Slovenia_Outdoor_My_way_of_moving_in_nature.pdf",
+          "publisher": "Slovenian Tourist Board",
+          "supports": [
+            "named_spot",
+            "sports",
+            "season"
+          ]
+        },
+        {
+          "url": "https://www.portoroz.si/en/discover/active/water-sports/",
+          "publisher": "Portorož & Piran Tourism",
+          "supports": [
+            "services",
+            "water_sports"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Izola – Petelin Cape",
+      "country": "SI",
+      "identity": "Lighthouse beach at Petelin Cape, not Izola's entire shore.",
+      "entry": {
+        "lat": 45.54,
+        "lon": 13.656,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "The national guide names Petelin Cape; launch geometry and wind statistics remain open.",
+      "access_rules": "Define the sector and separate swimmers, harbour traffic and nature areas.",
+      "trip_value": "A named coastal launch supports worth_trip after correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.slovenia.info/uploads/publikacije/Slovenija%20na%20prostem/2024/2024_ENG_Slovenia_Outdoor_My_way_of_moving_in_nature.pdf",
+          "publisher": "Slovenian Tourist Board",
+          "supports": [
+            "named_spot",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://www.slovenia.info/en/stories/active-fun-on-the-slovenian-coast",
+          "publisher": "Slovenian Tourist Board",
+          "supports": [
+            "coastal_destination",
+            "active_trip"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Koper – Žusterna",
+      "country": "SI",
+      "identity": "Žusterna summer water-sports beach and windsurf teaching area.",
+      "entry": {
+        "lat": 45.548,
+        "lon": 13.711,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Beginner teaching in weak to moderate summer wind with supplied equipment.",
+      "access_rules": "Use the supervised teaching area and current bathing-zone separation.",
+      "trip_value": "Useful local learning infrastructure but no distinctive dedicated-trip experience.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitkoper.si/sport-rekreacija/vodni-sporti-plaza-zusterna/",
+          "publisher": "Visit Koper",
+          "supports": [
+            "windsurf",
+            "summer_services"
+          ]
+        },
+        {
+          "url": "https://visitkoper.si/dozivetja/tecaj-jadranja-na-deski/",
+          "publisher": "Visit Koper",
+          "supports": [
+            "courses",
+            "wind_strength",
+            "equipment"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Strunjan",
+      "country": "SI",
+      "identity": "Broad protected-coast candidate without a verified wind-sport launch.",
+      "entry": {
+        "lat": 45.53,
+        "lon": 13.605,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "The wider coast has sport use, but no located source names Strunjan as the operative spot.",
+      "access_rules": "Do not infer permission inside the landscape park; exact legal use must be proven.",
+      "trip_value": "Scenic value alone is not sport-trip evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.slovenia.info/uploads/publikacije/Slovenija%20na%20prostem/2024/2024_ENG_Slovenia_Outdoor_My_way_of_moving_in_nature.pdf",
+          "publisher": "Slovenian Tourist Board",
+          "supports": [
+            "regional_sports",
+            "other_named_spots"
+          ]
+        },
+        {
+          "url": "https://parkstrunjan.si/en/",
+          "publisher": "Strunjan Landscape Park",
+          "supports": [
+            "protected_area",
+            "visitor_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Lake Bohinj",
+      "country": "SI",
+      "identity": "Protected alpine lake where rules recognition and actual sport use are separate questions.",
+      "entry": {
+        "lat": 46.282,
+        "lon": 13.865,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Rules recognise sailboards and kites, but repeatable destination-level use is not established.",
+      "access_rules": "Resolve national-park rules, 100 m bathing separation and launch practicality.",
+      "trip_value": "Exceptional landscape does not replace wind, use and launch evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://promet.bohinj.si/en/other-info/navigation-regulations-in-bohinj/",
+          "publisher": "Bohinj municipality",
+          "supports": [
+            "rules",
+            "sailboards",
+            "kites"
+          ]
+        },
+        {
+          "url": "https://bohinj.si/informacije/pravila-plovbe/",
+          "publisher": "Bohinj Tourism",
+          "supports": [
+            "bathing_exclusion",
+            "protected_area"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Punat Bay, Krk",
+      "country": "HR",
+      "identity": "Punat Bay's established windsurf and sailing water.",
+      "entry": {
+        "lat": 45.017,
+        "lon": 14.628,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "sailing"
+      ],
+      "conditions": "The sheltered bay is presented as a favoured, comparatively safe windsurf area, including in bora.",
+      "access_rules": "Retain harbour, marina, navigation and bora-specific safety separation.",
+      "trip_value": "Defined bay, services and island journey support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://tzpunat.hr/en/tourist-offer/sport-and-recreation/",
+          "publisher": "Punat Tourist Board",
+          "supports": [
+            "windsurf",
+            "bora",
+            "services"
+          ]
+        },
+        {
+          "url": "https://tzpunat.hr/files/file/katalog_punat_gb.pdf",
+          "publisher": "Punat Tourist Board",
+          "supports": [
+            "bay_identity",
+            "sports",
+            "destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Baška, Krk",
+      "country": "HR",
+      "identity": "Baška's middle/southern bay sectors, not an unrestricted whole-beach launch.",
+      "entry": {
+        "lat": 44.968,
+        "lon": 14.753,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "ENE bora can reach 27–30 kt with 1–1.5 m waves; NE is gustier and summer thermal often weak.",
+      "access_rules": "Separate expert bora sectors from bathers and confirm current launch/service status.",
+      "trip_value": "A dramatic, technically specific island spot supports worth_trip after sector correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitbaska.com/en/water-activities-in-baska/",
+          "publisher": "Visit Baška",
+          "supports": [
+            "winds",
+            "waves",
+            "levels",
+            "sectors"
+          ]
+        },
+        {
+          "url": "https://visitbaska.com/en/",
+          "publisher": "Visit Baška",
+          "supports": [
+            "destination",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Nin – Ždrijac",
+      "country": "HR",
+      "identity": "Ždrijac/Nin lagoon candidate whose boundary with Sabunike must remain explicit.",
+      "entry": {
+        "lat": 44.244,
+        "lon": 15.192,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Shallow sandy lagoon and recurring winds are promoted for learning.",
+      "access_rules": "Map the exact launch, shallow bars, bathers and overlap with Sabunike.",
+      "trip_value": "Lagoon conditions and teaching infrastructure support worth_trip after identity correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.zadar.hr/datastore/filestore/10/Zadar_Region_Active_holiday.pdf",
+          "publisher": "Zadar Region Tourist Board",
+          "supports": [
+            "lagoon",
+            "winds",
+            "beginner"
+          ]
+        },
+        {
+          "url": "https://www.zadar.hr/datastore/filestore/10/Zadar_region_MAP_ENG.pdf",
+          "publisher": "Zadar Region Tourist Board",
+          "supports": [
+            "wind_and_kitesurf",
+            "location"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Sabunike",
+      "country": "HR",
+      "identity": "Sabunike's shallow sandy wind-sport beach west of Nin.",
+      "entry": {
+        "lat": 44.248,
+        "lon": 15.164,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Strong bura and shallow water underpin a nationally prominent destination.",
+      "access_rules": "Keep launch corridors, bathers and within-cluster identity explicit.",
+      "trip_value": "Official regional tourism calls it Croatia's second most famous surf destination after Bol.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.zadar.hr/en/experience/beaches",
+          "publisher": "Zadar Region Tourist Board",
+          "supports": [
+            "bura",
+            "sports",
+            "reputation"
+          ]
+        },
+        {
+          "url": "https://www.zadar.hr/en/experience/explore/family-fun-guaranteed-in-zaton",
+          "publisher": "Zadar Region Tourist Board",
+          "supports": [
+            "Sabunike",
+            "shallow_beach"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Privlaka",
+      "country": "HR",
+      "identity": "Family-beach candidate near the Nin wind-sport cluster.",
+      "entry": {
+        "lat": 44.266,
+        "lon": 15.124,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Official material stresses protection from bura, mild maestral and shallow bathing.",
+      "access_rules": "A specific launch, operator and specialist conditions need proof.",
+      "trip_value": "Proximity to strong spots is insufficient for a separate travel-worthy entry.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.zadar.hr/en/experience/beaches",
+          "publisher": "Zadar Region Tourist Board",
+          "supports": [
+            "beaches",
+            "wind_context"
+          ]
+        },
+        {
+          "url": "https://www.zadar.hr/datastore/filestore/10/Zadar_region_MAP_ENG.pdf",
+          "publisher": "Zadar Region Tourist Board",
+          "supports": [
+            "regional_sports",
+            "map"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Jadrija",
+      "country": "HR",
+      "identity": "Exposed year-round windsurf shore near Šibenik.",
+      "entry": {
+        "lat": 43.727,
+        "lon": 15.842,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Official tourism calls it the region's surfing mecca; local currents can strengthen materially.",
+      "access_rules": "Pin the launch and retain cape currents, bora amplification and navigation instructions.",
+      "trip_value": "Long-standing regional prominence supports worth_trip after safety correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitsibenik.hr/en/destinacije/jadrija-2",
+          "publisher": "Visit Šibenik",
+          "supports": [
+            "windsurf",
+            "year_round",
+            "reputation"
+          ]
+        },
+        {
+          "url": "https://luskz.hr/luke/jadrija/",
+          "publisher": "Šibenik-Knin Port Authority",
+          "supports": [
+            "currents",
+            "bora",
+            "navigation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Zaton, Šibenik",
+      "country": "HR",
+      "identity": "Sheltered bay candidate without spot-specific wind-sport proof.",
+      "entry": {
+        "lat": 43.789,
+        "lon": 15.825,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Regional sport use exists, but no source establishes Zaton as a repeatable launch.",
+      "access_rules": "Do not infer a legal launch; harbour and bathing constraints remain open.",
+      "trip_value": "Insufficient evidence for a separate trip-worthy entry.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.sibenikregion.com/en/",
+          "publisher": "Šibenik Region Tourist Board",
+          "supports": [
+            "regional_destination"
+          ]
+        },
+        {
+          "url": "https://www.visitsibenik.hr/en/destinacije/jadrija-2",
+          "publisher": "Visit Šibenik",
+          "supports": [
+            "nearby_named_spot",
+            "comparison"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Omiš – Ribnjak / Lokva Rogoznica",
+      "country": "HR",
+      "identity": "Two officially named windsurf locations requiring separate operational entries.",
+      "entry": {
+        "lat": 43.443,
+        "lon": 16.684,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Stable warm thermal winds support schools and several ability levels.",
+      "access_rules": "Split the launches and document beach, swimmer and wind constraints separately.",
+      "trip_value": "Reliable thermal use and schools support worth_trip after splitting.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitomis.hr/en/active-holiday?page=2",
+          "publisher": "Visit Omiš",
+          "supports": [
+            "named_locations",
+            "thermal",
+            "schools"
+          ]
+        },
+        {
+          "url": "https://www.visitomis.hr/en/beaches",
+          "publisher": "Visit Omiš",
+          "supports": [
+            "windsurf",
+            "school"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Bačvice, Split",
+      "country": "HR",
+      "identity": "Urban beach whose official sport identity is picigin, not windsurfing.",
+      "entry": {
+        "lat": 43.501,
+        "lon": 16.442,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Official material directs windsurfing to Žnjan in south wind and Kaštelet in maestral.",
+      "access_rules": "Reject this identity; research Žnjan and Kaštelet separately.",
+      "trip_value": "No evidence supports Bačvice as a distinct wind-sport travel spot.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitsplit.com/clients/1/downloads/63mbniuyaxa33rr.pdf?lang=en",
+          "publisher": "Split Tourist Board",
+          "supports": [
+            "actual_spots",
+            "wind_directions"
+          ]
+        },
+        {
+          "url": "https://visitsplit.com/index.php/hr/1335/rekreacija",
+          "publisher": "Split Tourist Board",
+          "supports": [
+            "city_sports",
+            "picigin"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Kučište, Pelješac",
+      "country": "HR",
+      "identity": "Kučište school beach beside Viganj in the Pelješac thermal corridor.",
+      "entry": {
+        "lat": 42.983,
+        "lon": 17.111,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Strong maestral, instruction and rental; tourism treats Kučište and Viganj as linked centres.",
+      "access_rules": "Determine whether it is distinct or a Viganj subspot, then pin the launch.",
+      "trip_value": "International reputation and a quieter teaching beach support worth_trip if independently countable.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitorebic-croatia.hr/destinations/kuciste/",
+          "publisher": "Orebić Tourist Board",
+          "supports": [
+            "sports",
+            "maestral",
+            "Viganj_link"
+          ]
+        },
+        {
+          "url": "https://visitorebic-croatia.hr/hr/plaza/ponta-zamosce-kuciste/",
+          "publisher": "Orebić Tourist Board",
+          "supports": [
+            "school",
+            "rental",
+            "beginner"
+          ]
+        },
+        {
+          "url": "https://visitorebic-croatia.hr/wp-content/uploads/2021/12/Centar-za-aktivni-odmor-Kuciste-Viganj.pdf",
+          "publisher": "Orebić Tourist Board",
+          "supports": [
+            "reputation",
+            "combined_destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Neum",
+      "country": "BA",
+      "identity": "Adriatic resort candidate without discipline-specific evidence.",
+      "entry": {
+        "lat": 42.923,
+        "lon": 17.615,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Sources establish general water sports and a sheltered bay, not repeatable conditions or a launch.",
+      "access_rules": "Legal launch, sport-specific use, wind window and hazards remain unproven.",
+      "trip_value": "General resort water sports do not meet the threshold.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitneum.com/en/",
+          "publisher": "Neum Tourism",
+          "supports": [
+            "destination",
+            "general_sports"
+          ]
+        },
+        {
+          "url": "https://visit-bosniaherzegovina.com/Destinations/Neum",
+          "publisher": "Bosnia and Herzegovina portal",
+          "supports": [
+            "general_water_sports",
+            "crowding"
+          ]
+        },
+        {
+          "url": "https://turizambih.ba/wp-content/uploads/2024/03/hub_and_spoke_mostar_usaid-turizam.pdf",
+          "publisher": "USAID Turizam",
+          "supports": [
+            "general_water_sports",
+            "season"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Tivat Bay",
+      "country": "ME",
+      "identity": "Broad bay candidate dominated by ports, marinas and navigation constraints.",
+      "entry": {
+        "lat": 42.431,
+        "lon": 18.699,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Bora and maestral are documented, but no source proves a public wind-sport launch.",
+      "access_rules": "Resolve shallow areas, farms, marina/airport conflicts and exact permission.",
+      "trip_value": "Wind presence alone is insufficient for a travel entry.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://opstinativat.me/gradski-info/tivat/",
+          "publisher": "Municipality of Tivat",
+          "supports": [
+            "bora",
+            "maestral"
+          ]
+        },
+        {
+          "url": "https://www.montenegro.travel/uploads/brochures/Sailing/Guide-for-sailboats-and-motor-boats-Montenegro.pdf",
+          "publisher": "Montenegro Tourism",
+          "supports": [
+            "navigation",
+            "shallows",
+            "airport"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Orahovac, Bay of Kotor",
+      "country": "ME",
+      "identity": "Small bathing shore without verified wind-sport identity.",
+      "entry": {
+        "lat": 42.487,
+        "lon": 18.76,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Sources document beaches and capacity, not a launch or reliable conditions.",
+      "access_rules": "Bathing zones, traffic, mountain gusts and permission remain unresolved.",
+      "trip_value": "Insufficient sport evidence and specialist trip value.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://montenegro.com/en/beaches/orahovac",
+          "publisher": "Montenegro.com",
+          "supports": [
+            "beach",
+            "access"
+          ]
+        },
+        {
+          "url": "https://www.fms-tivat.me/download/spec-radovi/Veselinka_Arsic.pdf",
+          "publisher": "University tourism study",
+          "supports": [
+            "beach_scale",
+            "capacity"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Lake Skadar – Vranjina",
+      "country": "ME",
+      "identity": "Lake candidate with old rental evidence but no current official confirmation.",
+      "entry": {
+        "lat": 42.278,
+        "lon": 19.132,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "A historic operator offered equipment; current operation, wind and permission are unverified.",
+      "access_rules": "Confirm national-park permission, launch, wildlife, navigation and rescue.",
+      "trip_value": "Potentially distinctive, but outdated evidence cannot support confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://pelikansurf.wordpress.com/oprema-i-najam/",
+          "publisher": "Pelikan Surf",
+          "supports": [
+            "historic_rental",
+            "Vranjina"
+          ]
+        },
+        {
+          "url": "https://www.montenegro.travel/uploads/brochures/Panoramic%20Roads/ENG/Map-Sea-and-Heights.pdf",
+          "publisher": "Montenegro Tourism",
+          "supports": [
+            "visitor_centre",
+            "national_park"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Vjosa–Narta / Pishë Poro",
+      "country": "AL",
+      "identity": "Pishë Poro kite candidate inside the Vjosa–Narta protected landscape.",
+      "entry": {
+        "lat": 40.589,
+        "lon": 19.409,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "A current local source describes kite use; official sources stress wetland and bird habitat.",
+      "access_rules": "Confirm authority permission, protected zones, access changes and legal launch.",
+      "trip_value": "Strong potential, but conservation and access uncertainty block confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://akt.gov.al/en/attractions/Narte-Lagoon-2/",
+          "publisher": "Albanian National Tourism Agency",
+          "supports": [
+            "protected_lagoon",
+            "habitat"
+          ]
+        },
+        {
+          "url": "https://vlora.gov.al/turizem/informacion-per-vizitoret/",
+          "publisher": "Municipality of Vlorë",
+          "supports": [
+            "protected_landscape",
+            "dunes"
+          ]
+        },
+        {
+          "url": "https://bregdet.al/pishe-poro.html",
+          "publisher": "Bregdet portal",
+          "supports": [
+            "kite_use",
+            "school",
+            "access_change"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Golem Beach",
+      "country": "AL",
+      "identity": "Popular shallow resort beach south of Durrës.",
+      "entry": {
+        "lat": 41.245,
+        "lon": 19.52,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Official sources mention only light/general water sports, not specialist conditions.",
+      "access_rules": "A sport-specific operator, corridor and wind/hazard evidence are required.",
+      "trip_value": "Resort demand and shallow water do not establish dedicated-trip value.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://akt.gov.al/en/tourist_areas/golem-beach/",
+          "publisher": "Albanian National Tourism Agency",
+          "supports": [
+            "beach",
+            "shallow",
+            "light_sports"
+          ]
+        },
+        {
+          "url": "https://daco.al/visitdurres/",
+          "publisher": "Durrës County",
+          "supports": [
+            "coastal_destination",
+            "tourism"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Lalzit Bay",
+      "country": "AL",
+      "identity": "Developing bay candidate without verified wind-sport use.",
+      "entry": {
+        "lat": 41.509,
+        "lon": 19.519,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Planning and tourism evidence establishes the bay, not a recurring sport scene.",
+      "access_rules": "Launch, public access, conditions and permission remain unproven.",
+      "trip_value": "Insufficient evidence for wind-sport classification.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://azht.gov.al/wp-content/uploads/2024/06/dokumeti-shoqerues-i-vendimit-nr-2-date-02.04.2024.pdf",
+          "publisher": "Albanian Territorial Planning Agency",
+          "supports": [
+            "bay",
+            "planning"
+          ]
+        },
+        {
+          "url": "https://akt.gov.al/en/",
+          "publisher": "Albanian National Tourism Agency",
+          "supports": [
+            "national_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Lake Shkodra – Shiroka",
+      "country": "AL",
+      "identity": "Shiroka lakefront candidate without sport-specific proof.",
+      "entry": {
+        "lat": 42.06,
+        "lon": 19.448,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Visitor sources document nature, swimming and food, not wind-sport use.",
+      "access_rules": "Protected-lake constraints, legal launch and conditions need direct evidence.",
+      "trip_value": "Scenic value alone does not qualify a wind-sport trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://akt.gov.al/en/attractions/shiroke-bird-koplik/",
+          "publisher": "Albanian National Tourism Agency",
+          "supports": [
+            "nature",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://visitshkoder.org/shiroka/",
+          "publisher": "Visit Shkoder",
+          "supports": [
+            "swimming",
+            "lakefront"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Struga, Lake Ohrid",
+      "country": "MK",
+      "identity": "Northern Lake Ohrid city candidate; regional use is not proof of a Struga launch.",
+      "entry": {
+        "lat": 41.177,
+        "lon": 20.677,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Official tourism details local winds and the kite community lists Lake Ohrid generally; Struga use is unproven.",
+      "access_rules": "Pin a launch and prove use, gust/offshore behavior, rescue and protected-lake compatibility.",
+      "trip_value": "The lake has travel value, but this candidate lacks exact sport evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://northmacedonia-timeless.com/eng/cities_and_regions/cities/struga/",
+          "publisher": "North Macedonia Timeless",
+          "supports": [
+            "local_winds",
+            "lake"
+          ]
+        },
+        {
+          "url": "https://kitesports.mk/",
+          "publisher": "KiteSports Macedonia",
+          "supports": [
+            "Lake_Ohrid",
+            "community"
+          ]
+        },
+        {
+          "url": "https://www.struga.org/eng/sport.htm",
+          "publisher": "Struga portal",
+          "supports": [
+            "sailing",
+            "paddling"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Lake Prespa – Stenje",
+      "country": "MK",
+      "identity": "Stenje candidate on a lake with verified kitesurf use but no exact verified launch.",
+      "entry": {
+        "lat": 40.933,
+        "lon": 20.935,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "The kite community calls Prespa the country's most popular kite lake; reporting supports broad training beaches but not Stenje specifically.",
+      "access_rules": "Confirm Stenje, monument-of-nature permission, wildlife constraints and access.",
+      "trip_value": "Prespa has potential, but the entry and authority position remain unresolved.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://kitesports.mk/",
+          "publisher": "KiteSports Macedonia",
+          "supports": [
+            "popularity",
+            "wind_range",
+            "season"
+          ]
+        },
+        {
+          "url": "https://novamakedonija.com.mk/zivot/magazin/%D0%B5%D1%81%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D1%82%D0%B5-%D0%B1%D1%80%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8-%D1%81%D0%BE%D0%B2%D1%80%D1%88%D0%B5%D0%BD%D0%B8-%D0%B7%D0%B0-%D0%BA%D0%B0%D1%98%D1%82%D1%81%D1%83/",
+          "publisher": "Nova Makedonija",
+          "supports": [
+            "kite_use",
+            "training",
+            "season"
+          ]
+        },
+        {
+          "url": "https://www.lakeprespa.com/en/",
+          "publisher": "Lake Prespa guide",
+          "supports": [
+            "protected_status",
+            "Stenje"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    }
+  ]
+}

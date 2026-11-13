@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.api import (
     account,
     admin,
+    admin_operations,
     admin_media,
     admin_tides,
     admin_moderation,
@@ -170,6 +171,7 @@ app.include_router(cron.router)
 if settings.enable_admin_api:
     app.include_router(auth.router)
     app.include_router(admin.router)
+    app.include_router(admin_operations.router)
     app.include_router(admin_media.router)
     app.include_router(admin_tides.router)
     app.include_router(admin_users.router)

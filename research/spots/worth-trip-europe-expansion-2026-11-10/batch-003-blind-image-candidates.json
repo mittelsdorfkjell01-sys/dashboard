@@ -1,0 +1,557 @@
+{
+  "generated_at": "2026-11-10T15:27:00.421414+00:00",
+  "independence_statement": "Created before local/database comparison for batch 003.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual and source-page review.",
+    "Pexels and Unsplash API credentials were unavailable."
+  ],
+  "spots": [
+    {
+      "spot": "Gott Bay, Tiree",
+      "query": "Gott Bay Tiree windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "West Wittering",
+      "query": "West Wittering kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Llangennith",
+      "query": "Llangennith surfing Wales",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Breaking surf at Rhossili Bay - geograph.org.uk - 7407508.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Breaking_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7407508.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Breaking_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7407508.jpg/960px-Breaking_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7407508.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2879,
+            "height": 3840,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/4582\">Eirian Evans</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Breaking_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7407508.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "description": "Breaking surf at Rhossili Bay <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Breaking_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7407508.jpg#ooui-php-4\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "coordinates": {
+              "lat": 51.59515656,
+              "lon": -4.29461604
+            }
+          },
+          {
+            "title": "File:Llangennith - geograph.org.uk - 873433.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Llangennith_-_geograph.org.uk_-_873433.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/Llangennith_-_geograph.org.uk_-_873433.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 428,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/26281\">Graham Taylor</a>",
+            "description": "Llangennith PJ's Surf Shop, formerly the village general store and Post Office.",
+            "coordinates": {
+              "lat": 51.60096,
+              "lon": -4.2697
+            }
+          },
+          {
+            "title": "File:Making the most of the surf at Rhossili Bay - geograph.org.uk - 7014572.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Making_the_most_of_the_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7014572.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Making_the_most_of_the_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7014572.jpg/960px-Making_the_most_of_the_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7014572.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 4000,
+            "height": 3000,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/4582\">Eirian Evans</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Making_the_most_of_the_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7014572.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "description": "Making the most of the surf at Rhossili Bay <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Making_the_most_of_the_surf_at_Rhossili_Bay_-_geograph.org.uk_-_7014572.jpg#ooui-php-4\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "coordinates": {
+              "lat": 51.59497894,
+              "lon": -4.29451978
+            }
+          },
+          {
+            "title": "File:Surfing with RIPNROCK.JPG",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Surfing_with_RIPNROCK.JPG",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Surfing_with_RIPNROCK.JPG/960px-Surfing_with_RIPNROCK.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1100,
+            "height": 1100,
+            "license": "CC BY-SA 3.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:RIPNROCK&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:RIPNROCK (page does not exist)\">RIPNROCK</a>",
+            "description": "Eight surfers Llangennith in Gower, Wales, with Rip N Rock adventures using surfboards that are around 240 cm (8 ft).",
+            "coordinates": null
+          },
+          {
+            "title": "File:Surfs up at Rhossili Bay^ - geograph.org.uk - 2052795.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Surfs_up_at_Rhossili_Bay%5E_-_geograph.org.uk_-_2052795.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d7/Surfs_up_at_Rhossili_Bay%5E_-_geograph.org.uk_-_2052795.jpg/960px-Surfs_up_at_Rhossili_Bay%5E_-_geograph.org.uk_-_2052795.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2330,
+            "height": 1049,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/22311\">Dave Croker</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Surfs_up_at_Rhossili_Bay%5E_-_geograph.org.uk_-_2052795.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "description": "Surfs up at Rhossili Bay! <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Surfs_up_at_Rhossili_Bay%5E_-_geograph.org.uk_-_2052795.jpg#ooui-php-4\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "coordinates": {
+              "lat": 51.59107251,
+              "lon": -4.2946699
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Daymer Bay",
+      "query": "Daymer Bay kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Brandon Bay",
+      "query": "Brandon Bay windsurf Ireland",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Candiha, Cabbages and windsurfing - geograph.org.uk - 272123.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Candiha,_Cabbages_and_windsurfing_-_geograph.org.uk_-_272123.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Candiha%2C_Cabbages_and_windsurfing_-_geograph.org.uk_-_272123.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 480,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/2798\">Nigel Cox</a>",
+            "description": "Candiha: Cabbages and windsurfing The two main economies of The Magharees Peninsula are represented here. Jamie Knox's Watersports facility is visited by people from around the world for the fine surfing available in Brandon and Tralee Bays, website here <a rel=\"nofollow\" class=\"external free\" href=\"https://www.jamieknox.com/\">https://www.jamieknox.com/</a> while the sandy soil of the spit of land has long been used for the cultivation of vegetables and in particular cabbages, carrots, potatoes and onions.",
+            "coordinates": null
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Keel / Trawmore, Achill",
+      "query": "Keel Beach Achill surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Inch Strand",
+      "query": "Inch Strand Kerry surf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Surf School on Inch Strand - geograph.org.uk - 4669412.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Surf_School_on_Inch_Strand_-_geograph.org.uk_-_4669412.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/c/c3/Surf_School_on_Inch_Strand_-_geograph.org.uk_-_4669412.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 480,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/3462\">Oliver Dixon</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Surf_School_on_Inch_Strand_-_geograph.org.uk_-_4669412.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "description": "Surf School on Inch Strand <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Surf_School_on_Inch_Strand_-_geograph.org.uk_-_4669412.jpg#ooui-php-4\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "coordinates": {
+              "lat": 52.14158927,
+              "lon": -9.9822002
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Strandhill",
+      "query": "Strandhill surfing Ireland",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Strandhill Surf School - geograph.org.uk - 1634385.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Strandhill_Surf_School_-_geograph.org.uk_-_1634385.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Strandhill_Surf_School_-_geograph.org.uk_-_1634385.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 480,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/16341\">Willie Duffin</a>",
+            "description": "Strandhill Surf School One of many in the town catering for many surfers who visit the area.",
+            "coordinates": {
+              "lat": 54.27073,
+              "lon": -8.6093
+            }
+          },
+          {
+            "title": "File:Strandhill surf diptyche.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Strandhill_surf_diptyche.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Strandhill_surf_diptyche.jpg/960px-Strandhill_surf_diptyche.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1237,
+            "height": 1750,
+            "license": "CC BY-SA 3.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Niallio77&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Niallio77 (page does not exist)\">Niallio77</a>",
+            "description": "Strandhill, Co Sligo, northwest coast of Ireland, 2012",
+            "coordinates": null
+          },
+          {
+            "title": "File:Surf strandhill.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Surf_strandhill.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Surf_strandhill.jpg/960px-Surf_strandhill.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1237,
+            "height": 1750,
+            "license": "CC BY-SA 3.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Niallio77&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Niallio77 (page does not exist)\">Niallio77</a>",
+            "description": "northwest coast of Ireland",
+            "coordinates": null
+          },
+          {
+            "title": "File:Surfers at Strandhill - geograph.org.uk - 4788971.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Surfers_at_Strandhill_-_geograph.org.uk_-_4788971.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Surfers_at_Strandhill_-_geograph.org.uk_-_4788971.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 480,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/22976\">Rod Allday</a> <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Surfers_at_Strandhill_-_geograph.org.uk_-_4788971.jpg#P170\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "description": "Surfers at Strandhill <span class=\"mw-valign-text-top noprint\" typeof=\"mw:File/Frameless\"><a href=\"//commons.wikimedia.org/wiki/File:Surfers_at_Strandhill_-_geograph.org.uk_-_4788971.jpg#ooui-php-4\" title=\"Edit this at Structured Data on Commons\"><img alt=\"Edit this at Structured Data on Commons\" src=\"https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/OOjs_UI_icon_edit-ltr-progressive.svg/20px-OOjs_UI_icon_edit-ltr-progressive.svg.png?utm_source=commons.wikimedia.org&amp;utm_campaign=parser&amp;utm_content=thumbnail\" decoding=\"async\" loading=\"lazy\" width=\"10\" height=\"10\" class=\"mw-file-element\" data-file-width=\"20\" data-file-height=\"20\"></a></span>",
+            "coordinates": {
+              "lat": 54.26932591,
+              "lon": -8.61160895
+            }
+          },
+          {
+            "title": "File:West coast surf school, Strandhill - geograph.org.uk - 1634369.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:West_coast_surf_school,_Strandhill_-_geograph.org.uk_-_1634369.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/West_coast_surf_school%2C_Strandhill_-_geograph.org.uk_-_1634369.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 480,
+            "license": "CC BY-SA 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.geograph.org.uk/profile/16341\">Willie Duffin</a>",
+            "description": "West coast surf school, Strandhill One of many in the area.",
+            "coordinates": {
+              "lat": 54.26955,
+              "lon": -8.6108
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Hoddevik",
+      "query": "Hoddevik surfing Norway",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Hoddevik-beach-surfing-tunliweb.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Hoddevik-beach-surfing-tunliweb.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bf/Hoddevik-beach-surfing-tunliweb.jpg/960px-Hoddevik-beach-surfing-tunliweb.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 6566,
+            "height": 4377,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Svein_Magne_Tunli\" title=\"User:Svein Magne Tunli\">Svein Magne Tunli</a>",
+            "description": "The photograph shows Hoddviksanden beach in Hoddevik on Stadlandet, Stad municipality, Vestland, Norway. The image documents the beach, waves and surfing-related activity at the shoreline.",
+            "coordinates": null
+          },
+          {
+            "title": "File:Hoddevik-surfing-tunliweb.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Hoddevik-surfing-tunliweb.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/Hoddevik-surfing-tunliweb.jpg/960px-Hoddevik-surfing-tunliweb.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 6689,
+            "height": 4459,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Svein_Magne_Tunli\" title=\"User:Svein Magne Tunli\">Svein Magne Tunli</a>",
+            "description": "The photograph shows surfers at Hoddviksanden beach in Hoddevik on Stadlandet, Stad municipality, Vestland, Norway. The image documents surfing activity at the beach and the exposed coastal setting.",
+            "coordinates": {
+              "lat": 62.124022,
+              "lon": 5.161673
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Borestranda",
+      "query": "Borestranda kitesurf Norway",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sola Beach",
+      "query": "Solastranden kitesurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Kiting at Solastrand.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Kiting_at_Solastrand.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f3/Kiting_at_Solastrand.jpg/960px-Kiting_at_Solastrand.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2848,
+            "height": 4288,
+            "license": "CC BY 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/35166455@N00\">Lars Christopher Nøttaasen</a>",
+            "description": "Kiting at Solastrand",
+            "coordinates": null
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lomsesanden, Lista",
+      "query": "Lomsesanden kitesurf Lista",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Thorlakshofn",
+      "query": "Thorlakshofn surfing Iceland",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sandvik, Reykjanes",
+      "query": "Sandvik Reykjanes surfing",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Toro Stenstrand",
+      "query": "Toro Stenstrand surfing Sweden",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lomma Beach",
+      "query": "Lomma Beach kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Yyteri",
+      "query": "Yyteri surfing Finland",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Tulliniemi Beach",
+      "query": "Tulliniemi Beach Hanko windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ristna Beach",
+      "query": "Ristna Beach surfing Estonia",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Parnu Beach",
+      "query": "Parnu Beach kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Pärnu, Estonia 2016",
+            "source_page": "https://www.flickr.com/photos/65265630@N03/30857719086",
+            "thumbnail_url": "https://api.openverse.org/v1/images/00238fbe-5241-432f-8f64-8aa5bf3b36ad/thumb/",
+            "width": 683,
+            "height": 1024,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Janitors",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Pärnu, Estonia 2016",
+            "source_page": "https://www.flickr.com/photos/65265630@N03/30592648010",
+            "thumbnail_url": "https://api.openverse.org/v1/images/47a55e35-3b0c-4afc-be6f-221f41983889/thumb/",
+            "width": 683,
+            "height": 1024,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Janitors",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Pärnu, Estonia 2016",
+            "source_page": "https://www.flickr.com/photos/65265630@N03/30261893344",
+            "thumbnail_url": "https://api.openverse.org/v1/images/812adaed-6343-4dff-828b-56a557ffefe4/thumb/",
+            "width": 1024,
+            "height": 683,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Janitors",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Pärnu, Estonia 2016",
+            "source_page": "https://www.flickr.com/photos/65265630@N03/30261891554",
+            "thumbnail_url": "https://api.openverse.org/v1/images/b1f5757f-4688-4100-93a6-d265e35d59a9/thumb/",
+            "width": 1024,
+            "height": 683,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Janitors",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "PÃ¤rnu, Estonia 2016",
+            "source_page": "https://www.flickr.com/photos/65265630@N03/30261893644",
+            "thumbnail_url": "https://api.openverse.org/v1/images/7537d3b5-a157-495c-9fea-58c60339c4c8/thumb/",
+            "width": 819,
+            "height": 1024,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Janitors",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pavilosta",
+      "query": "Pavilosta surfing Latvia",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Karosta Beach, Liepaja",
+      "query": "Karosta Beach Liepaja kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Nida",
+      "query": "Nida Lithuania windsurf Curonian Lagoon",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kintai",
+      "query": "Kintai kitesurf Lithuania",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sventoji",
+      "query": "Sventoji Lithuania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

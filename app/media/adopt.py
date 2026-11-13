@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 from time import perf_counter
 from typing import Callable
 
@@ -415,6 +416,11 @@ def _gallery_row(
         license_name=image.get("license"),
         license_url=image.get("license_url"),
         source_url=source_url,
+        retrieved_at=(
+            datetime.fromisoformat(image["retrieved_at"])
+            if image.get("retrieved_at")
+            else None
+        ),
         geo_verified=bool(image.get("geo_verified")),
         position=_next_position(db, entity_type, entity_id),
         status=status,

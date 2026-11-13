@@ -42,6 +42,14 @@ WATER_CHARACTERS: tuple[str, ...] = (
 # now a controlled multi-select so the admin chips and validation agree.
 WATER_TYPES: tuple[str, ...] = ("ocean", "sea", "lake", "lagoon")
 
+# Meteorological direction the wind comes *from*. Sixteen points preserve the
+# precision commonly used by spot guides while remaining a controlled,
+# touch-friendly multi-select in the admin editor.
+WIND_DIRECTIONS: tuple[str, ...] = (
+    "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+    "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+)
+
 # Riding style ("Fahrstil") — multi-select.
 STYLES: tuple[str, ...] = (
     "freeride",
@@ -51,8 +59,15 @@ STYLES: tuple[str, ...] = (
     "wavekite",
 )
 
-# Facility kinds — exactly these five.
-FACILITY_KINDS: tuple[str, ...] = ("parking", "shower", "food", "camping", "school")
+# Facility kinds shown on the public spot page and maintained in the dashboard.
+FACILITY_KINDS: tuple[str, ...] = (
+    "parking",
+    "shower",
+    "toilet",
+    "changing",
+    "food",
+    "school",
+)
 
 # Sports offered by a spot / attached to a rating. Wavekite is a riding style,
 # derived from a spot supporting both kitesurfing and surfing.
@@ -213,6 +228,11 @@ def validate_water_types(values: Iterable[str] | None) -> list[str]:
     return _validate_multi(values, WATER_TYPES, "water_type")
 
 
+def validate_best_wind_directions(values: Iterable[str] | None) -> list[str]:
+    """Normalise researched best wind directions (meteorological ``from``)."""
+    return _validate_multi(values, WIND_DIRECTIONS, "best_wind_directions")
+
+
 def validate_editorial(value: dict | None) -> dict | None:
     """Validate typed editorial fields while preserving the open metadata blob."""
     if value is None:
@@ -263,16 +283,6 @@ def parent_sport(variant_key: str) -> str:
     variants uniformly.
     """
     return variant_key.split(":", 1)[0]
-
-
-def variant_keys_for_sports(sports: Iterable[str] | None) -> list[str]:
-    """Variant keys selectable given a spot's sports (order-preserved)."""
-    out: list[str] = []
-    for sport in sports or []:
-        for key in SPORT_VARIANTS.get(sport, ()):  # type: ignore[arg-type]
-            if key not in out:
-                out.append(key)
-    return out
 
 
 def _validate_wind_directions(value: Any) -> list[list[float]]:
@@ -431,7 +441,7 @@ def variant_consistency_warnings(
 def validate_facilities(value: dict | None) -> dict | None:
     """Validate the ``facilities`` JSONB blob.
 
-    Structure is ``{kind: {"available": bool, "note"?: str}}``. Only the five
+    Structure is ``{kind: {"available": bool, "note"?: str}}``. Only the six
     known kinds are allowed; a *missing* kind means "unknown" (shown as its own
     dimmed, non-strikethrough state on the spot page — distinct from
     ``available: false``, which is a demonstrable "not here"), so we never

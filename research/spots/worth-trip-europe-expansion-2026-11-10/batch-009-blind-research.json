@@ -1,0 +1,1024 @@
+{
+  "schema_version": 1,
+  "batch": "009",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Candidate selection used external discovery only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless explicitly sourced.",
+    "Image candidates remain unapproved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Chalikounas, Corfu",
+      "country": "GR",
+      "identity": "The long sand strip beside Lake Korission, not the whole southwest Corfu coast.",
+      "entry": {
+        "lat": 39.448,
+        "lon": 19.875,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Regular afternoon northwesterly and shallow nearshore learning water; a school and rescue are documented.",
+      "access_rules": "Map the legal sport section against the lake/dune nature reserve and current bathing zones.",
+      "trip_value": "A distinctive sea-wetland setting with established daily use supports worth_trip after conservation correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visit.corfu.gr/el/drasthriothtes/surf-center-corfu/",
+          "publisher": "Visit Corfu",
+          "supports": [
+            "daily_use",
+            "wind",
+            "school",
+            "reserve"
+          ]
+        },
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/architecture/picturesque-villages/beaches-of-corfu",
+          "publisher": "Visit Greece",
+          "supports": [
+            "beach",
+            "shallow_water",
+            "wetland"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Devil's Bay / Paradise Beach, Karpathos",
+      "country": "GR",
+      "identity": "A strong-wind Afiartis bay used for international windsurf competition.",
+      "entry": {
+        "lat": 35.423,
+        "lon": 27.145,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Exceptionally reliable strong Meltemi and recorded competition conditions.",
+      "access_rules": "Retain strong-wind level, rescue and exact bay boundaries.",
+      "trip_value": "International competition history and exceptional wind place it above worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.internationalwindsurfing.com/userfiles/documents/press_kit_karpathos_2008.pdf",
+          "publisher": "International Windsurfing Association",
+          "supports": [
+            "competition",
+            "wind_statistics",
+            "spot_identity"
+          ]
+        },
+        {
+          "url": "https://www.visitgreece.gr/islands/dodecanese/karpathos/",
+          "publisher": "Visit Greece",
+          "supports": [
+            "island_destination",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Fanes, Rhodes",
+      "country": "GR",
+      "identity": "Fanes' open west-coast beach outside its fishing harbour.",
+      "entry": {
+        "lat": 36.356,
+        "lon": 27.986,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Constant breeze, open rigging space and strong-wind exposure with rentals/services.",
+      "access_rules": "Keep clear of the fishing harbour and mark swim, launch and strong-wind sectors.",
+      "trip_value": "Defined dual-discipline beach, services and island setting support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://site.rhodes.gr/tourist-guide/?lang=en",
+          "publisher": "Municipality of Rhodes",
+          "supports": [
+            "windsurf",
+            "kitesurf",
+            "centres"
+          ]
+        },
+        {
+          "url": "https://www.visitrhodes.com/what-to-see/beaches/fanes-beach",
+          "publisher": "Visit Rhodes",
+          "supports": [
+            "constant_wind",
+            "space",
+            "services"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Kefalos Bay, Kos",
+      "country": "GR",
+      "identity": "The windsurf/wing bay stations, separate from nearby Kohilari kite and wave beaches.",
+      "entry": {
+        "lat": 36.736,
+        "lon": 26.966,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Accelerated Meltemi and local thermal produce very flat cross-offshore water, lighter mornings and strong afternoons.",
+      "access_rules": "Pin the rescue-covered station area and retain offshore-wind and level/time guidance.",
+      "trip_value": "Long records, high reliability, schools and condition variety support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.kefaloswindsurfing.com/spot/",
+          "publisher": "Kefalos Windsurfing",
+          "supports": [
+            "thermal",
+            "Meltemi",
+            "flat_water",
+            "records"
+          ]
+        },
+        {
+          "url": "https://kos.gr/activities/wind-and-kite-surfing",
+          "publisher": "Kos municipality tourism",
+          "supports": [
+            "season",
+            "clubs",
+            "Kefalos"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Nissakia / Agios Nikolaos, Artemida",
+      "country": "GR",
+      "identity": "The Nissakia club and adjacent Agios Nikolaos sport sectors east of Athens.",
+      "entry": {
+        "lat": 37.983,
+        "lon": 24.015,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Strong exposed northerlies, flat water downwind and bump-and-jump waves upwind; water becomes crowded.",
+      "access_rules": "Split ability sectors, confirm kite permission and attach rescue, swimmer and airport/harbour constraints.",
+      "trip_value": "Long-running clubs, competition use and easy access support worth_trip after exact-zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.thisisathens.org/activities/sports-outdoors/windsurfing-kitesurfing",
+          "publisher": "Official Athens Guide",
+          "supports": [
+            "conditions",
+            "levels",
+            "clubs",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://www.athensnauticalclub.gr/",
+          "publisher": "Athens Nautical Club",
+          "supports": [
+            "sports",
+            "closed_bay",
+            "events",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Marmari, Kos",
+      "country": "GR",
+      "identity": "Marmari's long north-coast sand beach and its wind/kite club sectors.",
+      "entry": {
+        "lat": 36.88,
+        "lon": 27.145,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "High wind probability, steady side-shore summer Meltemi and channel acceleration.",
+      "access_rules": "Pin the club/launch section and protect dunes, swimmers and nearby Alykes habitat.",
+      "trip_value": "Officially recognised hotspot, multiple clubs and family services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://kos.gr/settlements/marmari",
+          "publisher": "Kos municipality tourism",
+          "supports": [
+            "wind_probability",
+            "clubs",
+            "beach"
+          ]
+        },
+        {
+          "url": "https://kos.gr/activities/wind-and-kite-surfing",
+          "publisher": "Kos municipality tourism",
+          "supports": [
+            "season",
+            "side_shore",
+            "levels"
+          ]
+        },
+        {
+          "url": "https://www.marmari-windsurfing.com/",
+          "publisher": "Marmari Windsurfing",
+          "supports": [
+            "current_season",
+            "rental",
+            "instruction"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Marmari – Megali Ammos, Evia",
+      "country": "GR",
+      "identity": "Megali Ammos wind-sport beach in South Evia, not Marmari harbour.",
+      "entry": {
+        "lat": 38.046,
+        "lon": 24.318,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Regular northerlies, waves, sheltered Petalioi-side waters and strong channel currents.",
+      "access_rules": "Map the launch, currents, harbour/navigation separation and current operator/rescue coverage.",
+      "trip_value": "Distinct sand-spit landscape and established sport use support worth_trip after safety correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.greekmap.eu/index.php/api/pdf_export/287/en",
+          "publisher": "Greek Map destination guide",
+          "supports": [
+            "sport_use",
+            "wind",
+            "beach"
+          ]
+        },
+        {
+          "url": "https://www.amore.rs/wp-content/uploads/2014/12/Island-of-Evia-Tourist-Guide_2010_ENGLISH_.pdf",
+          "publisher": "Evia tourism guide",
+          "supports": [
+            "northerly_wind",
+            "currents",
+            "windsurf"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Mikri Vigla, Naxos",
+      "country": "GR",
+      "identity": "Mikri Vigla's divided Parthena/Limanaki bay with discipline-specific sections.",
+      "entry": {
+        "lat": 37.027,
+        "lon": 25.37,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Side to side-onshore Meltemi May–October, sandy water, schools and rescue.",
+      "access_rules": "Preserve the north/south section split and current swimmer/launch corridors.",
+      "trip_value": "International meeting point, reliable wind and full services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.naxos.gr/mikri-vigla-parthena-limanaki/?lang=en",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "sports",
+            "wind",
+            "beach_sections"
+          ]
+        },
+        {
+          "url": "https://www.naxos.gr/flisvos-sportclub-mikri-vigla-beach/?lang=en",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "Meltemi",
+            "season",
+            "school",
+            "rescue"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Ftelia, Mykonos",
+      "country": "GR",
+      "identity": "The north-facing Ftelia bay, distinct from Kalafatis and other Mykonos wind beaches.",
+      "entry": {
+        "lat": 37.462,
+        "lon": 25.376,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Exposed northerly Meltemi creates a recognised windsurf setting; detailed hazards and active services remain open.",
+      "access_rules": "Pin the launch and document onshore strong-wind, wave, archaeological and bathing constraints.",
+      "trip_value": "National tourism identifies a windsurf paradise, supporting worth_trip after operational correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/nature/beaches/the-beaches-of-mykonos",
+          "publisher": "Visit Greece",
+          "supports": [
+            "windsurf_paradise",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/leisure/nightlife/mykonos-nightlife",
+          "publisher": "Visit Greece",
+          "supports": [
+            "strong_winds",
+            "surf_beaches"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Golden Beach, Paros",
+      "country": "GR",
+      "identity": "Chrysi Akti's long shallow windsurf beach, separate from Tserdakia/New Golden.",
+      "entry": {
+        "lat": 37.012,
+        "lon": 25.24,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Northerly Meltemi dominates summer; shallow water and schools serve all levels.",
+      "access_rules": "Keep the operational boundary with New Golden explicit and map schools/swimmers.",
+      "trip_value": "Paros travel value, reliable wind and mature services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/activities/eco-tourism-activities/sea-activities-on-paros",
+          "publisher": "Visit Greece",
+          "supports": [
+            "world_class_context",
+            "spot_split",
+            "conditions",
+            "levels"
+          ]
+        },
+        {
+          "url": "https://sunwind.gr/",
+          "publisher": "SunWind Surf Club",
+          "supports": [
+            "Meltemi",
+            "school",
+            "rental",
+            "levels"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "New Golden Beach / Tserdakia, Paros",
+      "country": "GR",
+      "identity": "The stronger-wind Tserdakia competition beach, not generic Golden Beach.",
+      "entry": {
+        "lat": 37.02,
+        "lon": 25.253,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "The island's strongest winds, speed/jump conditions and an official former PWA World Cup venue.",
+      "access_rules": "Retain expert wind, competition, rescue and beach-sector guidance.",
+      "trip_value": "PWA history, global athlete draw and exceptional reliability exceed worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/activities/eco-tourism-activities/sea-activities-on-paros",
+          "publisher": "Visit Greece",
+          "supports": [
+            "world_class_context",
+            "spot_split",
+            "conditions",
+            "levels"
+          ]
+        },
+        {
+          "url": "https://paroswindsurfcenter.com/",
+          "publisher": "Paros Windsurf Center",
+          "supports": [
+            "PWA",
+            "wind_reliability",
+            "school"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Tsoukalia, Paros",
+      "country": "GR",
+      "identity": "Northeast Paros wave-oriented windsurf beach.",
+      "entry": {
+        "lat": 37.078,
+        "lon": 25.261,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing",
+        "kitesurf"
+      ],
+      "conditions": "N/NNE Meltemi is slightly weaker than southern Paros; open waves and a rocky reef zone require experience.",
+      "access_rules": "Mark reef/sandy entries, no-centre self-sufficiency, swimmers and strong-wind level.",
+      "trip_value": "A quieter, wave-focused alternative supports worth_trip after hazard and launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://parola-paros-freepress.gr/en/playing-with-the-waves-surfing/",
+          "publisher": "Parola Paros",
+          "supports": [
+            "waves",
+            "reef",
+            "levels",
+            "facilities"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/11718/tsoukalia-paros",
+          "publisher": "Let's Kite",
+          "supports": [
+            "Meltemi",
+            "season",
+            "hazards"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Pounta, Paros",
+      "country": "GR",
+      "identity": "Pounta's kite beach on the narrow Paros–Antiparos channel.",
+      "entry": {
+        "lat": 37.038,
+        "lon": 25.1,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Constant steady side-shore Meltemi accelerated by the channel, with established schools.",
+      "access_rules": "Map launch/swim sectors and channel/boat traffic; do not confuse with Pounda Beach Club elsewhere.",
+      "trip_value": "World-renowned kite beach, services and inter-island setting support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/activities/eco-tourism-activities/sea-activities-on-paros",
+          "publisher": "Visit Greece",
+          "supports": [
+            "world_class_context",
+            "spot_split",
+            "conditions",
+            "levels"
+          ]
+        },
+        {
+          "url": "https://www.paroskite.com/",
+          "publisher": "Paros Kite",
+          "supports": [
+            "steady_side_shore",
+            "school",
+            "international_draw"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Ixia Bay, Rhodes",
+      "country": "GR",
+      "identity": "The Ixia windsurf centre strip on Rhodes' west coast.",
+      "entry": {
+        "lat": 36.422,
+        "lon": 28.187,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Strong April–October northwesterly Meltemi and wavy/choppy water; multiple centres operate.",
+      "access_rules": "Select a centre/launch and retain pebbly shorebreak, gust, swimmer and rescue guidance.",
+      "trip_value": "One of Rhodes' officially preferred windsurf areas with mature infrastructure supports worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://site.rhodes.gr/tourist-guide/?lang=en",
+          "publisher": "Municipality of Rhodes",
+          "supports": [
+            "ideal_conditions",
+            "centres",
+            "windsurf"
+          ]
+        },
+        {
+          "url": "https://www.aegeanislands.gr/pois/rhodes-water-sports-en/",
+          "publisher": "Aegean Islands tourism",
+          "supports": [
+            "Meltemi",
+            "season",
+            "popular_centres"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Kokkari, Samos",
+      "country": "GR",
+      "identity": "Kokkari's north-facing pebbly beach and seasonal windsurf centre.",
+      "entry": {
+        "lat": 37.779,
+        "lon": 26.891,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Terrain-enhanced constant cross-onshore northerlies, with wave/chop and quickly deepening water.",
+      "access_rules": "Mark the supervised school section, pebble entry, swimmers, shorebreak and strong-wind limits.",
+      "trip_value": "Distinct terrain wind, school and Samos destination support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://samosgreece.gr/en/beaches_e/",
+          "publisher": "Samos municipality tourism",
+          "supports": [
+            "constant_wind",
+            "windsurf",
+            "beach"
+          ]
+        },
+        {
+          "url": "https://tourism.samoscci.gr/minipage/index/en/activity/44811/s",
+          "publisher": "Samos Chamber tourism",
+          "supports": [
+            "school",
+            "cross_onshore",
+            "levels"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Agios Georgios, Naxos",
+      "country": "GR",
+      "identity": "The southern windsurf end of Agios Georgios bay and its shallow lagoon area.",
+      "entry": {
+        "lat": 37.096,
+        "lon": 25.371,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Shallow calm lagoon enables beginner, speed, slalom and freestyle use under summer Meltemi.",
+      "access_rules": "Kites are prohibited near the airport; pin the windsurf corridor and reef/swimmer boundary.",
+      "trip_value": "Long-running clubs, friendly water and town access support worth_trip after exact-zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.naxos.gr/swim-sail-smooth-ride-the-wave/?lang=en",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "clubs",
+            "lagoon",
+            "kite_ban",
+            "conditions"
+          ]
+        },
+        {
+          "url": "https://www.naxos.gr/wp-content/uploads/2018/04/Naxos-Guide-EN.pdf",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "Meltemi",
+            "sports",
+            "clubs"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Theologos, Rhodes",
+      "country": "GR",
+      "identity": "Theologos' separated windsurf and kite stations on Rhodes' west coast.",
+      "entry": {
+        "lat": 36.449,
+        "lon": 28.035,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "About 20 kt side-onshore southwest wind from midday, April–November, with rescue.",
+      "access_rules": "Retain separated discipline zones, airport proximity, swimmer and stronger-gust guidance.",
+      "trip_value": "Reliable conditions, full services and broad-level suitability support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitrhodes.com/what-to-see/beaches/theologos-beach",
+          "publisher": "Visit Rhodes",
+          "supports": [
+            "strong_wind",
+            "windsurf",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.surftheologos.com/en/location/spot/",
+          "publisher": "Surf and Kite Theologos",
+          "supports": [
+            "20kt",
+            "side_onshore",
+            "season",
+            "rescue"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Plaka, Naxos",
+      "country": "GR",
+      "identity": "The organised windsurf school section on long Plaka/Maragkas beach.",
+      "entry": {
+        "lat": 37.054,
+        "lon": 25.368,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Summer north Meltemi crosses a flat bay with wide sandy shallows and teaching for all levels.",
+      "access_rules": "Pin the school section and distinguish it from Agios Georgios and Mikri Vigla; map swimmers.",
+      "trip_value": "A long-running school and broad beach support worth_trip after identity correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.naxos.gr/swim-sail-smooth-ride-the-wave/?lang=en",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "clubs",
+            "lagoon",
+            "kite_ban",
+            "conditions"
+          ]
+        },
+        {
+          "url": "https://www.naxos.gr/wp-content/uploads/2018/04/Naxos-Guide-EN.pdf",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "Meltemi",
+            "sports",
+            "clubs"
+          ]
+        },
+        {
+          "url": "https://www.ventosurf.com/school/plaka-watersports",
+          "publisher": "VentoSurf",
+          "supports": [
+            "school",
+            "Meltemi",
+            "launch",
+            "levels"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Laguna, Naxos",
+      "country": "GR",
+      "identity": "The shallow Laguna/Flisvos windsurf water immediately adjoining Agios Georgios.",
+      "entry": {
+        "lat": 37.087,
+        "lon": 25.371,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "An internationally used shallow lagoon suited to beginner, slalom and freestyle sessions.",
+      "access_rules": "Kites are forbidden near the airport; determine whether this is one entry with Agios Georgios.",
+      "trip_value": "Strong travel value exists, but the candidate identity requires consolidation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.naxos.gr/swim-sail-smooth-ride-the-wave/?lang=en",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "clubs",
+            "lagoon",
+            "kite_ban",
+            "conditions"
+          ]
+        },
+        {
+          "url": "https://www.naxos.gr/wp-content/uploads/2018/04/Naxos-Guide-EN.pdf",
+          "publisher": "Naxos municipality tourism",
+          "supports": [
+            "Meltemi",
+            "sports",
+            "clubs"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Schinias, Marathon",
+      "country": "GR",
+      "identity": "The southern Schinias Bay wind-sport area inside a Natura 2000 national park.",
+      "entry": {
+        "lat": 38.149,
+        "lon": 24.036,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Established wind use and winter southerly kitesurfing on a long shallow sandy bay.",
+      "access_rules": "Current park permission, fire closures, vehicle access and exact launch sector require authority confirmation.",
+      "trip_value": "Nature and sport value are strong, but protected-area rules block confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/en/experiences/nature/gorges/schinias-marathon-national-park",
+          "publisher": "Visit Greece",
+          "supports": [
+            "national_park",
+            "Natura",
+            "shallow_water"
+          ]
+        },
+        {
+          "url": "https://www.welovemarathon.gr/beaches?lang=en",
+          "publisher": "Marathon destination portal",
+          "supports": [
+            "winter_kitesurf",
+            "access",
+            "fire_closure"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Anavyssos, Attica",
+      "country": "GR",
+      "identity": "Athens Riviera windsurf base with conditional south-wind kitesurfing.",
+      "entry": {
+        "lat": 37.728,
+        "lon": 23.944,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Flat/gusty local conditions; kitesurfing is specifically associated with southerly winds.",
+      "access_rules": "Pin the club launch and retain gust, wind-direction and bathing restrictions.",
+      "trip_value": "Useful regional access and training, but evidence does not show distinctive dedicated-trip value.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.thisisathens.org/activities/sports-outdoors/windsurfing-kitesurfing",
+          "publisher": "Official Athens Guide",
+          "supports": [
+            "south_wind_kite",
+            "gusts",
+            "club"
+          ]
+        },
+        {
+          "url": "https://thisisyourgreece.com/beaches/anavyssos-beach",
+          "publisher": "This Is Your Greece",
+          "supports": [
+            "windsurf_base",
+            "access",
+            "shallows"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Nea Iraklitsa – Alana",
+      "country": "GR",
+      "identity": "Alana beach windsurf candidate west of Kavala.",
+      "entry": {
+        "lat": 40.877,
+        "lon": 24.318,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Official tourism calls the large beach suitable because of local winds, but coarse climatology is light and general water sports dominate.",
+      "access_rules": "Confirm the exact wind window, operator status, launch and bathing corridor.",
+      "trip_value": "Insufficient evidence of reliability or specialist travel value beyond a regional activity beach.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitkavala.gr/en/sightseeing/water-sports-2/",
+          "publisher": "Visit Kavala",
+          "supports": [
+            "windsurf",
+            "operator",
+            "beach"
+          ]
+        },
+        {
+          "url": "https://katatopisi.gr/en/beach/nea-iraklitsa/",
+          "publisher": "Katatopisi",
+          "supports": [
+            "bathing_water",
+            "wind_climatology",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Paliouri / Chrouso, Halkidiki",
+      "country": "GR",
+      "identity": "Popular shallow resort beach with generic water-sports marketing.",
+      "entry": {
+        "lat": 39.928,
+        "lon": 23.681,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Official sources establish beach services but not recurring windsurf use or a specialist launch.",
+      "access_rules": "Do not infer windsurf suitability from generic motorised water sports.",
+      "trip_value": "Insufficient discipline-specific evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visit-centralmacedonia.gr/en/what-to-do/73/sun-sea/103/paliouri-beach",
+          "publisher": "Visit Central Macedonia",
+          "supports": [
+            "beach_identity",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.discovergreece.com/experiences/explore-timeless-villages-halkidiki",
+          "publisher": "Discover Greece / Halkidiki Tourism",
+          "supports": [
+            "general_water_sports",
+            "shallow_water"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Lake Volvi",
+      "country": "GR",
+      "identity": "Protected lake windsurf destination whose exact southern-shore launch remains open.",
+      "entry": {
+        "lat": 40.68,
+        "lon": 23.5,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Rentina-strait winds create waves and draw windsurfers nationally.",
+      "access_rules": "Pin a legal launch and confirm Ramsar/Natura permission, wildlife seasons and rescue.",
+      "trip_value": "Rare inland wave/wind character and national draw support worth_trip after protected-area correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitgreece.gr/routes/waterways-discovering-the-lakes",
+          "publisher": "Visit Greece",
+          "supports": [
+            "windsurf_destination",
+            "Rentina_wind",
+            "national_draw",
+            "protected_area"
+          ]
+        },
+        {
+          "url": "https://www.foreaskv.gr/wp-content/uploads/2021/03/xenoglwssos_podhlatikos_xartis.pdf",
+          "publisher": "Koronia-Volvi National Park",
+          "supports": [
+            "windsurf",
+            "protected_area",
+            "map"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Lake Vegoritida",
+      "country": "GR",
+      "identity": "Large alpine lake with sailing/canoe use but no verified windsurf scene.",
+      "entry": {
+        "lat": 40.725,
+        "lon": 21.754,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "sailing"
+      ],
+      "conditions": "Official tourism supports sailing and general activity; available coarse wind means are light.",
+      "access_rules": "A current windsurf operator, usable wind window, legal launch and rescue are unproven.",
+      "trip_value": "Scenic and sailing value do not establish a windsurf trip destination.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visit-centralmacedonia.gr/en/where-to-go/58/1-pella/36/lake-vegoritida-",
+          "publisher": "Visit Central Macedonia",
+          "supports": [
+            "sailing",
+            "canoe",
+            "environment"
+          ]
+        },
+        {
+          "url": "https://visitwestmacedonia.gr/places-box/limni-vegoritida/",
+          "publisher": "Visit West Macedonia",
+          "supports": [
+            "ecosystem",
+            "visitor_activities"
+          ]
+        },
+        {
+          "url": "https://katatopisi.gr/en/beach/vegoritida/",
+          "publisher": "Katatopisi",
+          "supports": [
+            "bathing_water",
+            "light_mean_wind"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    }
+  ]
+}

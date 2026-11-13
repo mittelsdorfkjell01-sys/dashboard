@@ -2,6 +2,8 @@ name: Tide worker
 
 on:
   workflow_dispatch: {}
+  schedule:
+    - cron: "40 3 * * *"
 
 permissions:
   contents: read
@@ -28,6 +30,8 @@ jobs:
       TIDE_PYFES_CONFIG: ${{ vars.TIDE_PYFES_CONFIG }}
       TIDE_MASK_FILE: ${{ vars.TIDE_MASK_FILE }}
       TIDE_LAND_GEOJSON: ${{ vars.TIDE_LAND_GEOJSON }}
+      TIDE_ASSET_MANIFEST: ${{ vars.TIDE_ASSET_MANIFEST }}
+      TIDE_BOOTSTRAP_BATCH_SIZE: ${{ vars.TIDE_BOOTSTRAP_BATCH_SIZE || '25' }}
       JWT_SECRET: ${{ secrets.WORKER_JWT_SECRET }}
       CORS_ORIGINS: https://surfwinddata.com
     steps:
@@ -36,12 +40,20 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements-tide.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-tide.txt
       - name: Verify private model mount
         shell: bash
         run: |
+          test -n "$TIDE_MODEL_DIR" && test -d "$TIDE_MODEL_DIR"
           test -n "$TIDE_PYFES_CONFIG" && test -f "$TIDE_PYFES_CONFIG"
           test -n "$TIDE_MASK_FILE" && test -f "$TIDE_MASK_FILE"
           test -n "$TIDE_LAND_GEOJSON" && test -f "$TIDE_LAND_GEOJSON"
+          test -n "$TIDE_ASSET_MANIFEST" && test -f "$TIDE_ASSET_MANIFEST"
       - run: pip install -r requirements-tide.txt
+      - name: Validate licensed FES assets
+        run: python -m scripts.tide_europe_rollout preflight
+      - name: Queue the next bounded Europe batch
+        run: python -m scripts.tide_europe_rollout bootstrap --apply --limit "$TIDE_BOOTSTRAP_BATCH_SIZE"
       - run: python -m app.tides.worker

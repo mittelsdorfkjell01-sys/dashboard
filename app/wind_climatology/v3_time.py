@@ -63,10 +63,6 @@ def utc_datetime(value: str | int | float | datetime) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def local_datetime(value: str | int | float | datetime, timezone_name: str) -> datetime:
-    return utc_datetime(value).astimezone(ZoneInfo(timezone_name))
-
-
 def expected_hours_by_week(year: int, timezone_name: str) -> dict[int, int]:
     """Real UTC hours in each seven-local-day window, including DST."""
     tz = ZoneInfo(timezone_name)

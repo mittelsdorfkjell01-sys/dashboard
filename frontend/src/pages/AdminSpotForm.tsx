@@ -42,6 +42,7 @@ import {
   STYLES,
   WATER_CHARACTERS,
   WATER_TYPES,
+  WIND_DIRECTIONS,
   facilityLabel,
   bottomTypeLabel,
   normalizeBottomTypes,
@@ -52,6 +53,7 @@ import {
   styleLabel,
   waterCharacterLabel,
   waterTypeLabel,
+  windDirectionLabel,
 } from "../lib/labels";
 import { Chip, Field, fieldClass as inputCls } from "../components/ui";
 import { PageHeader, Button } from "../components/admin/ui";
@@ -123,6 +125,7 @@ export default function AdminSpotForm() {
   const [beginnerOffshoreOk, setBeginnerOffshoreOk] = useState(false);
   const [waterType, setWaterType] = useState<string[]>([]);
   const [bottomType, setBottomType] = useState<string[]>([]);
+  const [bestWindDirections, setBestWindDirections] = useState<string[]>([]);
   const [tide, setTide] = useState("");
   const [facilities, setFacilities] = useState<
     Record<FacilityKind, { state: Availability; note: string }>
@@ -221,6 +224,7 @@ export default function AdminSpotForm() {
     beginnerOffshoreOk,
     waterType,
     bottomType,
+    bestWindDirections,
     tide,
     facilities,
     modelPref,
@@ -333,6 +337,7 @@ export default function AdminSpotForm() {
     setBeginnerOffshoreOk(s.editorial?.beginner_offshore_ok === true);
     setWaterType(s.water_type ?? []);
     setBottomType(normalizeBottomTypes(s.bottom_type));
+    setBestWindDirections(s.best_wind_directions ?? []);
     setTide(typeof s.editorial?.tide === "string" ? s.editorial.tide : "");
     setFacilities(() => {
       const next = {} as Record<FacilityKind, { state: Availability; note: string }>;
@@ -452,6 +457,11 @@ export default function AdminSpotForm() {
     add("style", styles, loaded.style ?? []);
     add("water_type", waterType, loaded.water_type ?? []);
     add("bottom_type", bottomType, loaded.bottom_type ?? []);
+    add(
+      "best_wind_directions",
+      bestWindDirections,
+      loaded.best_wind_directions ?? [],
+    );
     add("facing", facing !== "" ? Number(facing) : null, loaded.facing ?? null);
     add(
       "editorial_classification",
@@ -507,6 +517,7 @@ export default function AdminSpotForm() {
         style: styles,
         water_type: waterType,
         bottom_type: bottomType,
+        best_wind_directions: bestWindDirections,
         facing: facing !== "" ? Number(facing) : null,
         editorial_classification: editorialClassification || null,
         facilities: buildFacilities(),
@@ -921,6 +932,28 @@ export default function AdminSpotForm() {
                       }}
                     >
                       {bottomTypeLabel(bottom)}
+                    </Chip>
+                  ))}
+                </div>
+              </Field>
+              <Field
+                label="Beste Windrichtung"
+                hint="Meteorologische Richtung: Der Wind kommt aus der gewählten Himmelsrichtung. Mehrfachauswahl möglich."
+              >
+                <div
+                  id="f-best_wind_directions"
+                  className="grid grid-cols-4 gap-1.5 scroll-mt-24 sm:grid-cols-8 xl:grid-cols-4"
+                >
+                  {WIND_DIRECTIONS.map((direction) => (
+                    <Chip
+                      key={direction}
+                      active={bestWindDirections.includes(direction)}
+                      onClick={() => {
+                        markDirty("main");
+                        setBestWindDirections(toggle(bestWindDirections, direction));
+                      }}
+                    >
+                      {windDirectionLabel(direction)}
                     </Chip>
                   ))}
                 </div>

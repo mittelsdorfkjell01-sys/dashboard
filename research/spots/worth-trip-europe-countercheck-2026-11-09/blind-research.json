@@ -1,0 +1,458 @@
+{
+  "schema_version": 1,
+  "research_mode": "blind_countercheck",
+  "created_at": "2026-11-09T00:00:00+01:00",
+  "checked_at": "2026-11-09",
+  "independence_statement": "Created before opening the existing worth-trip batch files, candidate spot records, image-review-001.json or progress.md. Only candidate names/countries from the assignment were used.",
+  "method_limits": [
+    "No authorized full cloud-database access was available.",
+    "Coordinates from search/geocoding are not treated as exact launch coordinates unless an official or operator source identifies the access point.",
+    "Pexels and Unsplash API credentials were unavailable; public indexed results were checked, but absence of a result does not mean absence of an image.",
+    "Wikimedia/Openverse title matches are candidates only. A name match without coordinates or unmistakable landmarks is not geo-verification.",
+    "Fields not positively supported remain open; not found is never interpreted as not present."
+  ],
+  "spots": [
+    {
+      "name": "Domburg Noordduine",
+      "country": "NL",
+      "identity": {"canonical": "Noordduine, Domburg", "aliases": ["Noordduine Domburg"], "separate_subspot": "Likely a named beach sector north-west of Domburg; boundary against Domburg Badstrand/Westkapelle requires local map confirmation."},
+      "entry": {"lat": null, "lon": null, "confidence": "open", "note": "No independent exact launch point established."},
+      "sports": {"surf": "confirmed", "kitesurf": "confirmed_with_caveat", "windsurf": "confirmed", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "North Sea beach break; exposed surf", "bottom": ["sand"], "level": ["advanced", "expert"], "wind_from": [], "facing": null, "tide_current": "Open; exposed North Sea conditions and currents require caution."},
+      "access_rules": "Municipal rules identify the Noordduine sector as an exception zone for wind/surf/kite activities, but July-August surfing restrictions near the Noordduine pavilion and current on-site zoning must be checked.",
+      "facilities": {"parking": "open", "school": "open", "toilet": "open", "shower": "open", "food": "open", "camping": "open"},
+      "trip_value": {"assessment": "hold", "reason": "Strong Zeeland surf context, but the named sector is insufficiently separated from the wider Domburg/Westkapelle destination."},
+      "image_review": {"result": "no_verified_candidate", "note": "Openverse exact-name results were non-commercial/no-derivatives and too small; no independently geo-verified hero found."},
+      "sources": [
+        {"url": "https://lokaleregelgeving.overheid.nl/CVDR648112/1", "title": "Algemene plaatselijke verordening Veere 2021", "publisher": "Overheid.nl / Gemeente Veere", "supports": ["rules", "zones", "seasonal restrictions"]},
+        {"url": "https://rwsnatura2000.nl/gebieden/project%2Bvoordelta/vd-documenten/documenten%2B-%2Bvoordelta/HandlerDownloadFiles.ashx?idnv=593301", "title": "Voordelta use/rules documentation", "publisher": "Rijkswaterstaat Natura 2000", "supports": ["historic/current-rule context", "Noordduine restriction"]}
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Vrouwenpolder",
+      "country": "NL",
+      "identity": {"canonical": "Vrouwenpolder / Breezand kite zone", "aliases": ["Breezand", "Veerse Dam"], "separate_subspot": "North Sea kite zone and Veerse Meer windsurf/wing area are distinct launches and should not be collapsed into one coordinate."},
+      "entry": {"lat": null, "lon": null, "confidence": "coordinate_risk", "note": "At least two activity areas; exact launch must identify North Sea versus Veerse Meer."},
+      "sports": {"surf": "confirmed", "kitesurf": "confirmed", "windsurf": "confirmed", "wing": "confirmed", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "North Sea waves plus calmer Veerse Meer", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": ["N", "NE", "E", "W", "NW"], "facing": null, "tide_current": "Kite lagoon effect reported mainly at high/spring tide; Veerse Meer is a separate flat-water setting."},
+      "access_rules": "Marked kite zone with signs/buoys in season; use only permitted side of buoys. Municipal exception zone exists. Paid parking; local NKV information point and school.",
+      "facilities": {"parking": "paid", "school": "confirmed", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Two complementary water settings, broad sport support and established infrastructure make it a credible Zeeland trip anchor."},
+      "image_review": {"result": "candidate_gallery_only", "note": "Commons CC BY-SA beach images and an exact Breezand Unsplash kite image exist. Exact launch/landmark verification and full-resolution check are still required before hero use."},
+      "sources": [
+        {"url": "https://kitesurfvereniging.nl/kitespot/vrouwenpolder/", "title": "Kitespot Vrouwenpolder", "publisher": "Nederlandse Kitesurfvereniging", "supports": ["kite zone", "wind", "level", "facilities", "parking"]},
+        {"url": "https://windsurfschoolzeeland.nl/en/windsurfspots-zeeland/", "title": "Windsurfspot Vrouwenpolder", "publisher": "Windsurfschool Zeeland", "supports": ["windsurf", "wing", "Veerse Meer launch", "parking"]},
+        {"url": "https://www.zeeland.com/en/visit/islands/walcheren/towns-and-villages/vrouwenpolder", "title": "Vrouwenpolder", "publisher": "Zeeland.com", "supports": ["travel context", "sports", "geography"]},
+        {"url": "https://commons.wikimedia.org/wiki/File:00_2541_Beach_of_Vrouwenpolder.jpg", "title": "Beach of Vrouwenpolder", "publisher": "Wikimedia Commons", "supports": ["image candidate", "CC BY-SA 4.0"]},
+        {"url": "https://unsplash.com/fr/photos/de-nombreux-kitesurfeurs-profitent-des-vagues-de-locean-dJt7EmomG78", "title": "Kitesurfers at Breezand, Vrouwenpolder", "publisher": "Unsplash / Fab Lentz", "supports": ["image candidate", "exact named area"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Agios Georgios Lagoon, Naxos",
+      "country": "GR",
+      "identity": {"canonical": "Agios Georgios Lagoon (St George), Naxos", "aliases": ["St George Lagoon", "Laguna"], "separate_subspot": "Lagoon/windsurf centre is the southern Agios Georgios area, not the whole urban bathing beach."},
+      "entry": {"lat": null, "lon": null, "confidence": "open", "note": "Official source gives access opposite Naxos Camping but no exact launch coordinate."},
+      "sports": {"surf": "open", "kitesurf": "contradicted", "windsurf": "confirmed", "wing": "open", "kitefoil": "contradicted", "windfoil": "open"},
+      "conditions": {"water": "shallow calm lagoon", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "No reliable independent tide/current detail found."},
+      "access_rules": "Official Naxos tourism information explicitly says kitesurfing is forbidden at the beach and lagoon because of airport proximity. Windsurf school, rental, parking and bus stop confirmed.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "open", "shower": "open", "food": "nearby", "camping": "nearby_not_verified"},
+      "trip_value": {"assessment": "accept_for_windsurf_only", "reason": "Credible beginner-friendly windsurf lagoon within a strong Naxos wind destination; not a kite destination."},
+      "image_review": {"result": "no_verified_candidate", "note": "Commons search was dominated by unrelated churches; official tourism imagery has no reusable license established."},
+      "sources": [
+        {"url": "https://www.naxos.gr/swim-sail-smooth-ride-the-wave/?lang=en", "title": "Swim, sail, ride the wave", "publisher": "Municipality of Naxos and Small Cyclades", "supports": ["windsurf", "levels", "kite prohibition"]},
+        {"url": "https://www.naxos.gr/naxos-surf-club-st-george-beach-agios-georgios/?lang=en", "title": "Naxos-Surf Club – St. George Beach", "publisher": "Municipality of Naxos and Small Cyclades", "supports": ["identity", "access", "school", "season", "parking"]},
+        {"url": "https://www.naxos.gr/agios-georgios-beach/?lang=en", "title": "Agios Georgios Beach", "publisher": "Municipality of Naxos and Small Cyclades", "supports": ["sand", "shallow water", "windsurf sector", "facilities"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Theologos, Rhodes",
+      "country": "GR",
+      "identity": {"canonical": "Theologos Beach, Rhodes", "aliases": ["Tholos"], "separate_subspot": "Kite and windsurf stations are close but separately managed beach sectors."},
+      "entry": {"lat": null, "lon": null, "confidence": "coordinate_risk", "note": "Village geocode is not a launch coordinate; operator location is about 5 km south of Rhodes airport."},
+      "sports": {"surf": "open", "kitesurf": "confirmed", "windsurf": "confirmed", "wing": "confirmed", "kitefoil": "claimed_by_operator", "windfoil": "open"},
+      "conditions": {"water": "chop/small wind waves on exposed west coast", "bottom": ["pebble", "sand"], "level": ["beginner", "advanced"], "wind_from": ["SW"], "facing": null, "tide_current": "No reliable tide/current evidence found."},
+      "access_rules": "Operator reports side-onshore SW Meltemi, separate stations, rental/lessons and rescue. No current public authority zoning source found.",
+      "facilities": {"parking": "open", "school": "confirmed", "toilet": "likely_operator_only", "shower": "open", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Established multi-sport wind centre with seasonal reliability and destination infrastructure."},
+      "image_review": {"result": "no_verified_candidate", "note": "Commons and Unsplash searches returned unrelated Theologos village/church imagery, not the water-sports launch."},
+      "sources": [
+        {"url": "https://www.surftheologos.com/en/location/spot/", "title": "Theologos spot", "publisher": "Surf & Kite Theologos", "supports": ["sports", "wind", "level", "stations", "rescue", "facilities"]},
+        {"url": "https://www.visitrhodes.com/what-to-see/beaches/theologos-beach", "title": "Theologos Beach", "publisher": "Visit Rhodes", "supports": ["alias", "windy west coast", "windsurf", "bars", "tavernas"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Chia – Su Giudeu",
+      "country": "IT",
+      "identity": {"canonical": "Spiaggia di Su Giudeu, Chia", "aliases": ["Su Giudeu", "Chia"], "separate_subspot": "Su Giudeu is one beach within the wider Chia coast; Cala Cipolla and Porto Campana are not aliases."},
+      "entry": {"lat": 38.8840142, "lon": 8.8634758, "confidence": "beach_centroid_only", "note": "OpenStreetMap beach point, not a verified rigging/launch point."},
+      "sports": {"surf": "open", "kitesurf": "confirmed_with_major_caveat", "windsurf": "secondary_claim", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "Mediterranean beach with wave conditions mainly in stronger weather", "bottom": ["sand", "rock_edges"], "level": ["advanced", "expert"], "wind_from": ["W", "NW"], "facing": null, "tide_current": "Currents and wave action reported; no quantified primary evidence."},
+      "access_rules": "No confirmed public kite corridor for 2026. Peak-season beach launching is reported as unavailable due to swimmers; paid boat launch may be required. Dunes may not be crossed and wild camping is prohibited.",
+      "facilities": {"parking": "paid_in_season_reported", "school": "no_on_site_kite_school_found", "toilet": "open", "shower": "open", "food": "open", "camping": "wild_camping_prohibited"},
+      "trip_value": {"assessment": "hold", "reason": "Scenic and potentially strong wave-kite conditions, but access/rules are too restrictive and insufficiently primary-sourced for a confident travel recommendation."},
+      "image_review": {"result": "verified_location_candidate", "note": "Several Commons files explicitly show Spiaggia Su Giudeu with CC BY/CC BY-SA licenses. Dimensions and exact composition must be checked; suitable at least for gallery, potential hero after resolution review."},
+      "sources": [
+        {"url": "https://www.regione.sardegna.it/notizie/le-4-semplici-regole-per-tutelare-le-spiagge", "title": "Beach and dune protection rules 2026", "publisher": "Regione Autonoma della Sardegna", "supports": ["dunes", "vehicles", "camping", "coastal material rules"]},
+        {"url": "https://kiteinsider.com/spots/chia-italy", "title": "Chia kitesurf spot", "publisher": "Kite Insider", "supports": ["kite conditions", "launch restrictions", "hazards"], "verification": "secondary"},
+        {"url": "https://commons.wikimedia.org/wiki/File:Spiaggia_Su_Giudeu_1.jpg", "title": "Spiaggia Su Giudeu 1", "publisher": "Wikimedia Commons / Vid Pogacnik", "supports": ["image identity", "CC BY-SA 4.0"]}
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Perranporth",
+      "country": "GB",
+      "identity": {"canonical": "Perranporth Beach", "aliases": [], "separate_subspot": "Joins Perran Sands at low tide; should not be treated as identical to the entire combined beach."},
+      "entry": {"lat": 50.3471122, "lon": -5.1540792, "confidence": "access_proxy", "note": "Geocode resolves to surf school/access, not a universal launch."},
+      "sports": {"surf": "confirmed", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "Atlantic beach break", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "Large tidal beach; rip-current specifics not independently confirmed here."},
+      "access_rules": "RNLI flags/zones and lifeguard instructions apply; busy family beach. Large seafront parking, cafes and multiple surf schools.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "likely", "shower": "open", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Established Cornish surf destination with long beach, lessons and good access; travel value is surfing-led."},
+      "image_review": {"result": "verified_location_candidate", "note": "Commons has a CC BY 4.0 image explicitly titled Perranporth beach waves; resolution/composition needs hero review."},
+      "sources": [
+        {"url": "https://rnli.org/find-my-nearest/lifeguarded-beaches/perranporth-beach", "title": "Perranporth Beach", "publisher": "RNLI", "supports": ["surf", "lifeguards", "parking", "cafe", "safety"]},
+        {"url": "https://www.visitcornwall.com/things-to-do/beaches/perranporth-beach", "title": "Perranporth Beach", "publisher": "Visit Cornwall", "supports": ["surf value", "schools", "parking", "bus"]},
+        {"url": "https://commons.wikimedia.org/wiki/File:Perranporth_beach_waves.jpg", "title": "Perranporth beach waves", "publisher": "Wikimedia Commons / Kmtextor", "supports": ["image identity", "CC BY 4.0"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Neeltje Jans",
+      "country": "NL",
+      "identity": {"canonical": "Neeltje Jans beach sector", "aliases": [], "separate_subspot": "Artificial island has multiple shores; the permitted kite/wind sector must be named and pinned separately from the visitor attraction."},
+      "entry": {"lat": 51.6383239, "lon": 3.7136005, "confidence": "coordinate_risk", "note": "Geocoder returned Speelstrand; not proven to be the launch."},
+      "sports": {"surf": "confirmed", "kitesurf": "confirmed", "windsurf": "confirmed", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "North Sea/Oosterschelde-influenced exposed water", "bottom": ["sand"], "level": ["advanced", "expert"], "wind_from": [], "facing": null, "tide_current": "Tidal/current risk likely material but not sufficiently quantified in independent sources."},
+      "access_rules": "Municipal exception zone runs from Roompotsluis side to De Slufter crossing. Site is within National Park Oosterschelde/Voordelta context; current signage controls exact use.",
+      "facilities": {"parking": "confirmed_area_not_launch", "school": "open", "toilet": "open", "shower": "open", "food": "nearby_attraction", "camping": "open"},
+      "trip_value": {"assessment": "accept_with_caveat", "reason": "Distinctive Delta Works setting and exposed conditions, but launch/current details need strong local verification."},
+      "image_review": {"result": "gallery_candidate_only", "note": "Commons/Unsplash images verify Neeltje Jans island/engineering landscape but not the launch; suitable only as regional gallery until launch landmarks are confirmed."},
+      "sources": [
+        {"url": "https://lokaleregelgeving.overheid.nl/CVDR648112/1", "title": "Algemene plaatselijke verordening Veere 2021", "publisher": "Overheid.nl / Gemeente Veere", "supports": ["permitted beach sector", "seasonal rules"]},
+        {"url": "https://www.natuurmonumenten.nl/natuurgebieden/neeltje-jans", "title": "Neeltje Jans", "publisher": "Natuurmonumenten", "supports": ["identity", "nature context"]},
+        {"url": "https://commons.wikimedia.org/wiki/File:Neeltje-Jans-Zeeland-2020-Luka-Peternel.jpg", "title": "Neeltje Jans Zeeland 2020", "publisher": "Wikimedia Commons / Luka Peternel", "supports": ["island image", "CC BY-SA 4.0"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Gwithian Towans",
+      "country": "GB",
+      "identity": {"canonical": "Gwithian Towans Beach", "aliases": [], "separate_subspot": "Connected to Godrevy/Hayle Towans at low tide but remains a distinct access and named beach."},
+      "entry": {"lat": 50.2170385, "lon": -5.3901378, "confidence": "access_proxy", "note": "Geocode is a bus stop/access proxy, not the launch."},
+      "sports": {"surf": "confirmed", "kitesurf": "confirmed_with_zoning", "windsurf": "confirmed_with_zoning", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "exposed Atlantic beach break", "bottom": ["sand", "rock_pools"], "level": ["beginner", "advanced", "expert"], "wind_from": ["S", "SE", "E"], "facing": null, "tide_current": "Serious rip currents documented; beach joins neighbouring sands at low tide."},
+      "access_rules": "Seasonal activity zoning sends wind/kite sports south of the marked restricted area and outside bathing/surf zones. Dune code prohibits vehicles, fires, BBQs and overnight camping.",
+      "facilities": {"parking": "confirmed", "school": "surf_hire_likely", "toilet": "confirmed", "shower": "open", "food": "confirmed", "camping": "prohibited_on_towans"},
+      "trip_value": {"assessment": "accept", "reason": "Consistent surf, broad skill range and a highly scenic St Ives Bay setting support a surf-led trip."},
+      "image_review": {"result": "verified_location_candidate", "note": "Commons exact-location CC BY-SA images exist, including lifeguard/access landmarks; hero suitability depends on resolution and composition."},
+      "sources": [
+        {"url": "https://www.southwestwater.co.uk/environment/rivers-and-bathing-waters/waterfitlive/bathing-water-quality-map/gwithian-towans", "title": "Gwithian Towans", "publisher": "South West Water", "supports": ["exposure", "surf", "rip currents"]},
+        {"url": "https://www.kernowkitesurfclub.co.uk/PDFs/Godrevey_beach_safety%20flyer_2009.pdf", "title": "Beach Activities Seasonal Zoning", "publisher": "Towans Partnership / Cornwall Council context", "supports": ["kite/windsurf zoning", "bathing separation"], "verification": "historic; current signage must prevail"},
+        {"url": "https://www.gwithian.org.uk/code-of-conduct.html", "title": "Sand Dunes Code of Conduct", "publisher": "Gwithian Towans local guide", "supports": ["dune access", "camping", "fires"]},
+        {"url": "https://commons.wikimedia.org/wiki/File:Gwithian_Towans_Lifeguard_station_-_geograph.org.uk_-_1036054.jpg", "title": "Gwithian Towans Lifeguard station", "publisher": "Wikimedia Commons / Rod Allday", "supports": ["image identity", "CC BY-SA 2.0"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Sennen Cove",
+      "country": "GB",
+      "identity": {"canonical": "Sennen Cove / Whitesands Bay", "aliases": ["Sennen Beach"], "separate_subspot": "Gwynver is a neighbouring quieter surf access, not an alias."},
+      "entry": {"lat": 50.0823704, "lon": -5.6937872, "confidence": "beach_centroid", "note": "Beach point; access varies with flags and tide."},
+      "sports": {"surf": "confirmed", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "Atlantic beach break with sometimes large rollers", "bottom": ["sand"], "level": ["beginner", "advanced", "expert"], "wind_from": [], "facing": null, "tide_current": "RNLI flags move with tidal conditions; current detail remains open."},
+      "access_rules": "Follow RNLI flags; lifeguarded April/early season through October in published 2026 schedule context. Multiple car parks, year-round bus, surf school/hire and food.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "likely", "shower": "open", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Iconic far-west Cornwall setting and established surfing infrastructure justify travel value."},
+      "image_review": {"result": "gallery_candidate_only", "note": "Commons exact-location images exist but sampled results are street/coastal-path or historical views, not a strong verified surf hero."},
+      "sources": [
+        {"url": "https://www.visitcornwall.com/things-to-do/beaches/sennen-cove-beach", "title": "Sennen Cove Beach", "publisher": "Visit Cornwall", "supports": ["surf", "parking", "bus", "lifeguards", "facilities"]},
+        {"url": "https://sennenbeach.com/", "title": "Sennen Beach Cornwall", "publisher": "Sennen Beach", "supports": ["surf school", "hire", "food", "parking", "lifeguards"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Rossnowlagh",
+      "country": "IE",
+      "identity": {"canonical": "Rossnowlagh Beach", "aliases": ["Ros Neamhlach"], "separate_subspot": "Large beach with multiple accesses; not one precise launch."},
+      "entry": {"lat": null, "lon": null, "confidence": "coordinate_risk", "note": "Village geocode (54.5543518, -8.2097755) is not the beach access."},
+      "sports": {"surf": "confirmed", "kitesurf": "confirmed", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "Atlantic/Donegal Bay beach break", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "Winter surf can be large; exact rip/tide behaviour remains open."},
+      "access_rules": "Summer lifeguards and flag system. Beach access/vehicle practices must follow current local signs. Several surf schools and a kite school operate locally.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "open", "shower": "open", "food": "nearby", "camping": "unverified_and_not_to_be_inferred_from_custom"},
+      "trip_value": {"assessment": "accept", "reason": "One of Ireland's established beginner-friendly surf beaches with multiple schools and Wild Atlantic Way context."},
+      "image_review": {"result": "verified_location_candidate", "note": "Several Commons CC BY-SA files explicitly show Rossnowlagh Beach; assess dimensions/composition before hero selection."},
+      "sources": [
+        {"url": "https://govisitdonegal.com/attractions/rossnowlagh-blue-flag-beach/", "title": "Rossnowlagh Blue Flag Beach", "publisher": "Go Visit Donegal", "supports": ["identity", "surf", "level", "lifeguards", "school"]},
+        {"url": "https://www.discoverireland.ie/donegal/donegal-kitesurf-school", "title": "Donegal Kitesurf School", "publisher": "Discover Ireland", "supports": ["kitesurf", "school", "location"]},
+        {"url": "https://commons.wikimedia.org/wiki/File:Rossnowlagh_Beach_-_geograph.org.uk_-_737177.jpg", "title": "Rossnowlagh Beach", "publisher": "Wikimedia Commons / Gordon Dunn", "supports": ["image identity", "CC BY-SA 2.0"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Salinas, Asturias",
+      "country": "ES",
+      "identity": {"canonical": "Playa de Salinas, Castrillón", "aliases": [], "separate_subspot": "Must be distinguished from Playa de Salinas near Luarca/Valdés."},
+      "entry": {"lat": 43.577406, "lon": -5.962143, "confidence": "official_beach_coordinate", "note": "Official Asturias tourism coordinate; beach centroid/access reference, not a chosen surf peak."},
+      "sports": {"surf": "confirmed", "kitesurf": "allowed_outside_bathing_zones", "windsurf": "allowed_outside_bathing_zones", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "moderate-swell urban beach break", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "No reliable spot-specific tide/current evidence found."},
+      "access_rules": "Castrillón ordinance allows individual surf/wind/kite activities outside marked bathing zones. Lifeguards June-September; strong facilities and accessible access.",
+      "facilities": {"parking": "confirmed", "school": "confirmed_in_area", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Long, accessible and well-equipped Asturian surf beach with established surf culture; useful destination base."},
+      "image_review": {"result": "candidate_with_rights_gap", "note": "Openverse exact-name results include one CC BY image but title alone does not resolve the Salinas-name ambiguity; require visible Castrillón landmarks or geotag."},
+      "sources": [
+        {"url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-salinas", "title": "Salinas Beach", "publisher": "Turismo Asturias", "supports": ["coordinates", "surf", "sand", "facilities", "lifeguards"]},
+        {"url": "https://miprincipado.asturias.es/ast/bopa/disposiciones?_pa_sede_bopa_web_portlet_SedeBopaDispositionWeb_isTextDateSearch=false&_pa_sede_bopa_web_portlet_SedeBopaDispositionWeb_mvcRenderCommandName=%2Fdisposition%2Fdetail&p_p_id=pa_sede_bopa_web_portlet_SedeBopaDispositionWeb&p_p_lifecycle=0&p_p_mode=view&p_p_state=normal&p_r_p_dispositionDate=11%2F07%2F2014&p_r_p_dispositionReference=2014-11780", "title": "Castrillón beach ordinance", "publisher": "Principado de Asturias", "supports": ["surf/windsurf/kitesurf zoning", "dune protection"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Valdearenas – Liencres",
+      "country": "ES",
+      "identity": {"canonical": "Playa de Valdearenas, Liencres", "aliases": ["Playa de Liencres"], "separate_subspot": "Canallave is a neighbouring beach within the park, not an alias."},
+      "entry": {"lat": 43.4482796, "lon": -3.9546703, "confidence": "access_proxy", "note": "Geocoder resolves to the access road."},
+      "sports": {"surf": "confirmed", "kitesurf": "secondary_confirmation", "windsurf": "secondary_confirmation", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "strong-wave, windy open Cantabrian beach", "bottom": ["sand"], "level": ["advanced", "expert"], "wind_from": [], "facing": 315, "tide_current": "Strong currents and whirlpools documented."},
+      "access_rules": "Protected dune system/Natura context; park access controls and parking management have changed recently. Stay on access routes and observe local controls.",
+      "facilities": {"parking": "confirmed_but_capacity_controlled", "school": "open", "toilet": "open", "shower": "confirmed", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Exceptional protected dune landscape and serious surf make this a credible trip spot, with hazards clearly communicated."},
+      "image_review": {"result": "candidate_with_rights_gap", "note": "Openverse exact-name results include CC BY-SA and non-commercial files; only commercial/modifiable candidates should advance and geotag/landmark must be checked."},
+      "sources": [
+        {"url": "https://www.inspain.org/en/cantabria/pielagos/beaches/valdearenas/", "title": "Valdearenas Beach", "publisher": "InSpain / government beach inventory source", "supports": ["hazards", "protected status", "facilities", "surf zone"]},
+        {"url": "https://iepnb.gob.es/areas-tematicas/espacios-protegidos/63492_CDDA/dunas-de-liencres-y-costa-quebrada", "title": "Dunas de Liencres y Costa Quebrada", "publisher": "Spanish natural heritage inventory", "supports": ["protected area", "dune formation"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Bakio Beach",
+      "country": "ES",
+      "identity": {"canonical": "Bakio Beach", "aliases": [], "separate_subspot": "Contains named peaks El Callejón and Peñas Rojas; those are subspots, not aliases."},
+      "entry": {"lat": 43.431161, "lon": -2.8032875, "confidence": "beach_centroid", "note": "Beach point; peak-specific entry remains open."},
+      "sports": {"surf": "confirmed", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "open Basque beach break with several peaks", "bottom": ["sand", "rock"], "level": ["beginner", "advanced", "expert"], "wind_from": [], "facing": null, "tide_current": "Open."},
+      "access_rules": "Urban beach with lifeguards in summer, two surf schools, parking, toilets and showers; camping prohibited.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed_nearby", "camping": "prohibited"},
+      "trip_value": {"assessment": "accept", "reason": "Year-round surf, multiple quality peaks and strong Basque Coast travel context support worth-trip status."},
+      "image_review": {"result": "verified_location_candidate", "note": "Openverse has a commercial CC BY 2.0 image titled Bakio beach at 1024px; commercial rights appear usable but dimensions are gallery-grade, below project hero gate."},
+      "sources": [
+        {"url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/bakio-beach/webtur00-content/en/", "title": "Bakio Beach", "publisher": "Basque Government Tourism", "supports": ["surf", "peaks", "levels", "schools", "facilities", "camping ban"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Xagó",
+      "country": "ES",
+      "identity": {"canonical": "Playa de Xagó", "aliases": ["Xagón"], "separate_subspot": "Beach has multiple peaks; no distinct subspot verified."},
+      "entry": {"lat": 43.604547, "lon": -5.9193343, "confidence": "beach_centroid", "note": "Beach point, not a launch."},
+      "sports": {"surf": "confirmed", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "strong-swell exposed beach break", "bottom": ["sand"], "level": ["advanced", "expert"], "wind_from": ["NE"], "facing": null, "tide_current": "Strong surf; specific currents open."},
+      "access_rules": "Natural beach with protected dune context; summer rescue service. Easy foot/car access and parking; caution due to strong waves and NE exposure.",
+      "facilities": {"parking": "confirmed", "school": "open", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Large natural dune-backed Asturian beach with strong, varied surf and competition history."},
+      "image_review": {"result": "no_verified_candidate", "note": "Openverse search results were unrelated or ambiguous; official tourism gallery lacks reusable license evidence."},
+      "sources": [
+        {"url": "https://turismogozon.es/que-ver-en-gozon/playas/playa-de-xago/", "title": "Playa de Xagó", "publisher": "Turismo Gozón", "supports": ["surf", "waves", "wind exposure", "facilities", "access"]},
+        {"url": "https://en.asturias.com/xago-beach/", "title": "Xagó Beach", "publisher": "Asturias.com", "supports": ["dunes", "surf events"], "verification": "secondary"}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Vega / Berbes",
+      "country": "ES",
+      "identity": {"canonical": "Playa de Vega (Berbes), Ribadesella", "aliases": ["Playa de Vega-Berbes"], "separate_subspot": "Berbes is locality/context; the beach is Playa de Vega."},
+      "entry": {"lat": 43.4801753, "lon": -5.1405219, "confidence": "beach_centroid", "note": "Beach point only."},
+      "sports": {"surf": "confirmed", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "Atlantic/Cantabrian beach break", "bottom": ["sand", "pebble"], "level": ["advanced"], "wind_from": [], "facing": null, "tide_current": "Open."},
+      "access_rules": "Beach and Entrepeñes are a protected Natural Monument; access and dune/vegetation protection require care. Detailed current sport zoning not found.",
+      "facilities": {"parking": "likely", "school": "open", "toilet": "open", "shower": "open", "food": "nearby_camping", "camping": "nearby_authorized_only"},
+      "trip_value": {"assessment": "hold", "reason": "Strong scenic/protected-area appeal and surf reputation, but independent sport-detail and access evidence is thin."},
+      "image_review": {"result": "rights_gap", "note": "Openverse exact-title result was CC BY-NC-SA and therefore unusable for the commercial catalogue; no usable verified alternative found."},
+      "sources": [
+        {"url": "https://www.campingsdeasturias.es/wp-content/uploads/2025/01/GUIA-CAMPINGS-DE-ASTURIAS-2024-web.pdf", "title": "Asturias camping guide – Playa de Vega", "publisher": "Campings de Asturias", "supports": ["identity", "surf", "nearby camping"], "verification": "secondary"},
+        {"url": "https://es.wikipedia.org/wiki/Entrepe%C3%B1es_y_Playa_de_Vega", "title": "Entrepeñes y Playa de Vega", "publisher": "Wikipedia citing Decreto 142/2001", "supports": ["protected natural monument"], "verification": "secondary; decree should be checked before publication"}
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Los Locos",
+      "country": "ES",
+      "identity": {"canonical": "Playa de Los Locos, Suances", "aliases": [], "separate_subspot": "Distinct from La Concha and La Tablía."},
+      "entry": {"lat": 43.4386872, "lon": -4.0467882, "confidence": "beach_centroid", "note": "Official GIS-derived source gives 43.44127, -4.04551; difference suggests centroid/access choice must be explicit."},
+      "sports": {"surf": "confirmed", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "strong-wave, windy surf beach", "bottom": ["sand", "pebble"], "level": ["advanced", "expert"], "wind_from": [], "facing": null, "tide_current": "Open; strong surf and rock exposure require caution."},
+      "access_rules": "Surf-designated area with summer rescue. Main steep stair access is important; a secondary wooden stair was temporarily closed in July 2026 and may since have reopened, so current status is open.",
+      "facilities": {"parking": "confirmed", "school": "confirmed_in_municipality", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "world_class_risk", "reason": "Declared Surf Natural Reserve, deeply established community and national reputation may exceed ordinary worth-trip classification."},
+      "image_review": {"result": "rights_gap", "note": "Sampled Openverse images were non-commercial/no-derivatives; official imagery has no reusable license established."},
+      "sources": [
+        {"url": "https://turismo.suances.es/nuestras-playas/los-locos/", "title": "Los Locos", "publisher": "Turismo Suances", "supports": ["surf natural reserve", "reputation"]},
+        {"url": "https://www.suances.net/en/los-locos/p-14", "title": "Los Locos beach", "publisher": "Suances municipal tourism", "supports": ["strong waves", "access", "parking", "rescue", "facilities"]},
+        {"url": "https://suances.es/wp-content/uploads/2022/05/PANEL-LOCOS.pdf", "title": "Playa Los Locos information panel", "publisher": "Ayuntamiento de Suances", "supports": ["services", "surf importance", "safety"]}
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Plentzia",
+      "country": "ES",
+      "identity": {"canonical": "Plentzia Beach", "aliases": [], "separate_subspot": "Adjacent to Gorliz beach; the small estuary-mouth wave is the relevant surf feature."},
+      "entry": {"lat": 43.4112397, "lon": -2.9458821, "confidence": "beach_centroid", "note": "Beach point."},
+      "sports": {"surf": "confirmed_beginner", "kitesurf": "open", "windsurf": "confirmed", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "calm protected bay/estuary mouth", "bottom": ["sand"], "level": ["beginner"], "wind_from": [], "facing": null, "tide_current": "Low undercurrent reported; tide materially affects small wave."},
+      "access_rules": "Urban/family beach with lifeguards, bus/car/walk access and full bathing facilities.",
+      "facilities": {"parking": "confirmed", "school": "open", "toilet": "confirmed", "shower": "confirmed", "food": "nearby", "camping": "open"},
+      "trip_value": {"assessment": "reject", "reason": "Official descriptions frame it as a calm family/beginner alternative when exposed beaches are rough, not a standalone watersports travel draw."},
+      "image_review": {"result": "rights_gap", "note": "Openverse exact-title results were CC BY-NC-SA and unusable commercially."},
+      "sources": [
+        {"url": "https://visitplentzia.eus/en/what-to-do/seafaring-life/plentzia-beach/", "title": "Plentzia beach", "publisher": "Visit Plentzia", "supports": ["calm water", "beginner surf", "facilities", "access"]},
+        {"url": "https://tourism.euskadi.eus/en/natural-areas/the-bay-of-plentzia/webtur00-content/en/", "title": "The bay of Plentzia", "publisher": "Basque Government Tourism", "supports": ["bay context", "windsurf/surf/kayak", "parking"]}
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Karraspio",
+      "country": "ES",
+      "identity": {"canonical": "Karraspio Beach, Mendexa", "aliases": [], "separate_subspot": "Near Lekeitio but administratively Mendexa; San Nicolás/Garraitz island shapes the break."},
+      "entry": {"lat": 43.3628144, "lon": -2.4945091, "confidence": "beach_centroid", "note": "Beach point."},
+      "sports": {"surf": "confirmed_beginner", "kitesurf": "open", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "sheltered, tide-dependent small surf", "bottom": ["sand"], "level": ["beginner"], "wind_from": [], "facing": null, "tide_current": "Needs large swell; wave varies by tide."},
+      "access_rules": "Summer lifeguards, surf lessons, parking and full beach facilities; camping prohibited.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed", "camping": "prohibited"},
+      "trip_value": {"assessment": "reject", "reason": "Pleasant beginner beach and scenic Lekeitio adjunct, but requires large swell and lacks evidence of standalone watersports trip value."},
+      "image_review": {"result": "verified_gallery_candidate", "note": "Wikimedia/Openverse has a very high-resolution CC BY-SA panorama identified as Garraitz-Karraspio; strong location evidence, but panoramic aspect may not work as hero."},
+      "sources": [
+        {"url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/karraspio-beach/webtur00-content/en/", "title": "Karraspio Beach", "publisher": "Basque Government Tourism", "supports": ["beginner surf", "tide", "large-swell need", "facilities", "camping ban"]},
+        {"url": "https://commons.wikimedia.org/w/index.php?curid=10744143", "title": "Garraitz-karraspio", "publisher": "Wikimedia Commons / Mikel Iturbe Urretxa", "supports": ["image identity", "CC BY-SA 3.0", "8312x1236"]}
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Praia da Arrifana",
+      "country": "PT",
+      "identity": {"canonical": "Praia da Arrifana, Aljezur", "aliases": [], "separate_subspot": "Beach and fishing village share name; Pedra da Agulha/north-end dive area are landmarks, not aliases."},
+      "entry": {"lat": 37.29442, "lon": -8.86601, "confidence": "official_beach_coordinate", "note": "Blue Flag profile coordinate; access/parking is on cliff above."},
+      "sports": {"surf": "confirmed", "kitesurf": "not_supported", "windsurf": "not_supported", "wing": "not_supported", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "sheltered Atlantic bay surf", "bottom": ["sand", "rock_edges"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "Mesotidal; cliff and landslide risk zones are material."},
+      "access_rules": "Within protected natural park/Natura 2000. Use existing access paths, stay outside bathing zones for sport, observe cliff-fall risk areas and summer lifeguards. Parking is above the steep access.",
+      "facilities": {"parking": "confirmed_above_cliff", "school": "surf_schools_in_area", "toilet": "confirmed", "shower": "confirmed", "food": "confirmed", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Highly scenic, year-round respected surf beach in the Costa Vicentina, with clear travel value despite access pressure."},
+      "image_review": {"result": "verified_location_candidate", "note": "Openverse/Wikimedia has CC BY-SA images explicitly titled Praia da Arrifana, including a 3052x1530 file; gallery-ready, but below the project's 3840px hero width gate."},
+      "sources": [
+        {"url": "https://www.visitportugal.com/pt-pt/content/praia-da-arrifana", "title": "Praia da Arrifana", "publisher": "Visit Portugal", "supports": ["surf", "facilities", "travel landscape"]},
+        {"url": "https://bandeiraazul.abaae.pt/plataforma/index.php?id=110&p=beaches&s=beach", "title": "Arrifana beach profile", "publisher": "Associação Bandeira Azul", "supports": ["coordinates", "protected status", "surf", "physical setting"]},
+        {"url": "https://apambiente.pt/sites/default/files/_SNIAMB_Prevencao_gestao_riscos/Faixas_risco_arribas/Aljezur/Aljezur_Arrifana.pdf", "title": "Arrifana cliff risk map", "publisher": "Agência Portuguesa do Ambiente", "supports": ["cliff hazard"]},
+        {"url": "https://commons.wikimedia.org/w/index.php?curid=12114135", "title": "Praia da Arrifana", "publisher": "Wikimedia Commons / Patrice78500", "supports": ["image identity", "CC BY-SA 3.0", "dimensions"]}
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Saunton Sands",
+      "country": "GB",
+      "identity": {"canonical": "Saunton Sands", "aliases": [], "separate_subspot": "Long beach adjoining Braunton Burrows; multiple peaks/access contexts."},
+      "entry": {"lat": 51.0918996, "lon": -4.2271359, "confidence": "beach_centroid", "note": "Beach point."},
+      "sports": {"surf": "confirmed", "kitesurf": "secondary_confirmation", "windsurf": "open", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "long Atlantic beach break known for longboarding", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "No lifeguard; tide/current detail open."},
+      "access_rules": "Not lifeguarded. Internationally protected dune/biosphere environment; stay on routes and avoid disturbance. Paid ANPR parking; no overnight parking/camping in car park.",
+      "facilities": {"parking": "paid", "school": "confirmed_in_area", "toilet": "confirmed", "shower": "confirmed_outdoor", "food": "confirmed", "camping": "prohibited_in_car_park"},
+      "trip_value": {"assessment": "accept", "reason": "Iconic North Devon longboard beach and exceptional dune landscape provide clear surf-trip value."},
+      "image_review": {"result": "rights_gap", "note": "Sampled Openverse results were no-derivatives or non-commercial; no reusable exact-location hero established."},
+      "sources": [
+        {"url": "https://www.sauntonbeach.info/plan-your-visit/", "title": "Plan your visit", "publisher": "Saunton Beach", "supports": ["parking", "facilities", "no lifeguard", "protected area", "camping rule"]},
+        {"url": "https://en.wikipedia.org/wiki/Saunton_Sands", "title": "Saunton Sands", "publisher": "Wikipedia", "supports": ["longboard reputation", "biosphere context"], "verification": "secondary"}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Carrowniskey Strand",
+      "country": "IE",
+      "identity": {"canonical": "Carrowniskey Beach / Strand", "aliases": ["Carrownisky", "Carrowinskey"], "separate_subspot": "Spelling variants refer to the same beach; village/townland centroid is not the beach access."},
+      "entry": {"lat": 53.7225, "lon": -9.9056, "confidence": "secondary_verified_car_park", "note": "Published as verified car-park pin by IrishBeaches; primary council coordinate still needed."},
+      "sports": {"surf": "confirmed", "kitesurf": "weak_secondary", "windsurf": "weak_secondary", "wing": "weak_secondary", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "exposed Atlantic beach break", "bottom": ["sand", "gravel", "cobble"], "level": ["advanced"], "wind_from": [], "facing": null, "tide_current": "Open; weever fish warning reported by secondary guide."},
+      "access_rules": "Summer lifeguard at peak times; free parking reported; surf school confirmed. Current beach bylaws/signage govern activities.",
+      "facilities": {"parking": "confirmed", "school": "confirmed", "toilet": "reported_absent", "shower": "open", "food": "open", "camping": "open"},
+      "trip_value": {"assessment": "accept_with_caveat", "reason": "Scenic Wild Atlantic Way beach with established surf school and reliable exposure, but evidence for wind sports and facilities is limited."},
+      "image_review": {"result": "rights_gap", "note": "Exact-title Openverse image is CC BY-NC-ND and unusable; a nearby CC BY landscape is not proven to show the strand."},
+      "sources": [
+        {"url": "https://www.discoverireland.ie/mayo/carrowniskey-beach", "title": "Carrowniskey Beach", "publisher": "Discover Ireland", "supports": ["surf", "school", "travel context"]},
+        {"url": "https://irishbeaches.ie/beaches/carrowniskey-beach", "title": "Carrowniskey Beach", "publisher": "IrishBeaches.ie", "supports": ["car park coordinate", "lifeguard", "facilities", "hazards"], "verification": "secondary"},
+        {"url": "https://gsi.geodata.gov.ie/downloads/Geoheritage/Reports/MO024_Carrownisky.pdf", "title": "Carrownisky geological site report", "publisher": "Geological Survey Ireland", "supports": ["sand/gravel/cobble", "parking-area imagery"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Chałupy – Puck Bay",
+      "country": "PL",
+      "identity": {"canonical": "Chałupy, Zatoka Pucka", "aliases": ["Chalupy", "Chałëpë"], "separate_subspot": "Multiple campsite/school launches line the bay shore; Chałupy village is not one exact entry."},
+      "entry": {"lat": null, "lon": null, "confidence": "coordinate_risk", "note": "No exact independent launch established; each campsite launch may differ."},
+      "sports": {"surf": "open", "kitesurf": "confirmed", "windsurf": "confirmed", "wing": "confirmed", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "shallow protected Puck Bay", "bottom": ["sand"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "Shallow-water/foil hazards require launch-specific depth evidence; no reliable depth captured."},
+      "access_rules": "Puck Bay is Natura 2000 and within the Coastal Landscape Park. Use established launches, respect bathers/navigation and current local rules. Police explicitly notes shared use by kite, windsurf and wingfoil.",
+      "facilities": {"parking": "campsite_dependent", "school": "confirmed_area", "toilet": "campsite_dependent", "shower": "campsite_dependent", "food": "confirmed_area", "camping": "authorized_campsites_only"},
+      "trip_value": {"assessment": "world_class_risk", "reason": "Internationally established shallow-water wind-sports corridor with dense schools/campsites; likely stronger than ordinary worth-trip."},
+      "image_review": {"result": "verified_gallery_candidate", "note": "Wikimedia/Openverse CC BY-SA image explicitly shows Chałupy/Puck Bay pier; location is credible but not a sports launch hero."},
+      "sources": [
+        {"url": "https://puck.policja.gov.pl/m11/informacje/wiadomosci/157764%2CPamietaj-o-podstawowych-zasadach-bezpieczenstwa-podczas-uprawiania-sportow-wodny.html", "title": "Water-sports safety on Puck Bay", "publisher": "Policja Puck", "supports": ["kite", "windsurf", "wingfoil", "shared-use safety"]},
+        {"url": "https://www.gov.pl/web/rdos-gdansk/plb220005-zatoka-pucka", "title": "PLB220005 Zatoka Pucka", "publisher": "Regional Directorate for Environmental Protection Gdańsk", "supports": ["Natura 2000"]},
+        {"url": "https://commons.wikimedia.org/w/index.php?curid=945566", "title": "Zatoka Pucka – Chałupy", "publisher": "Wikimedia Commons", "supports": ["image identity", "CC BY-SA 3.0"]}
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Agios Ioannis / Myloi",
+      "country": "GR",
+      "identity": {"canonical": "Myloi kite beach beside Agios Ioannis, Lefkada", "aliases": ["Milos Beach", "Ai Giannis"], "separate_subspot": "Agios Ioannis/Milos and Myloi are adjacent but the official source calls Myloi the registered kite-exclusive beach; store as subspots or define boundary explicitly."},
+      "entry": {"lat": 38.8419241, "lon": 20.6824808, "confidence": "coordinate_risk", "note": "Geocode is Agios Ioannis beach, not independently proven Myloi launch."},
+      "sports": {"surf": "open", "kitesurf": "confirmed", "windsurf": "confirmed_secondary", "wing": "open", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "open Ionian sea with chop/small waves and occasional shore break", "bottom": ["sand", "rock_slabs"], "level": ["advanced"], "wind_from": ["SW", "W", "NW", "N"], "facing": null, "tide_current": "Alongshore current and rocky entry reported secondarily; primary confirmation needed."},
+      "access_rules": "Lefkada tourism identifies Myloi as the only registered kite-exclusive beach. Zoning between kite/windsurf sectors is reported but lacks a located authority ordinance in this review.",
+      "facilities": {"parking": "reported", "school": "confirmed_area", "toilet": "open", "shower": "open", "food": "confirmed_area", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Established Lefkada thermal-wind destination with distinctive windmills and kite competition history."},
+      "image_review": {"result": "verified_location_candidate", "note": "Unsplash has a 2025 image explicitly captioned Agios Ioannis kitespot with kitesurfers; exact Myloi-versus-Agios-Ioannis boundary and API attribution fields must be preserved."},
+      "sources": [
+        {"url": "https://lefkada.gr/en/kite-surf/", "title": "Kite Surf", "publisher": "Municipality/Regional tourism of Lefkada", "supports": ["Myloi identity", "exclusive kite beach", "wind", "competition"]},
+        {"url": "https://www.lefkadaathletics.com/kite-surfing", "title": "Kite Surfing in Lefkada", "publisher": "Lefkada Athletics", "supports": ["aliases", "season", "wind directions", "subspots"], "verification": "secondary"},
+        {"url": "https://unsplash.com/photos/kitesurfers-enjoy-a-beautiful-day-at-the-beach-zh2v_mxCbaI", "title": "Kitesurfers at Agios Ioannis kitespot", "publisher": "Unsplash / Marine Freixinos-Rugala", "supports": ["image identity", "sports context", "Unsplash License"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Apelviken",
+      "country": "SE",
+      "identity": {"canonical": "Apelviken, Varberg", "aliases": [], "separate_subspot": "Lilla Apelviken/Kåsa and Träslövsläge are separate nearby spots."},
+      "entry": {"lat": 57.082543, "lon": 12.258718, "confidence": "official_area_coordinate", "note": "Varberg municipality event-area coordinate; exact surf parking/launch may differ."},
+      "sports": {"surf": "confirmed", "kitesurf": "confirmed", "windsurf": "confirmed", "wing": "foil_general_confirmed", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "shallow sandy Kattegat bay with wind waves", "bottom": ["sand", "rock_north"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "Dangerous currents can occur in windy conditions."},
+      "access_rules": "Busy bathing and surf beach; respect bathers and local water rules. Do not confuse with nearby Gamla Varberg reserve where windsurf/kitesurf are prohibited.",
+      "facilities": {"parking": "confirmed", "school": "rental_and_courses_confirmed_area", "toilet": "confirmed", "shower": "open", "food": "confirmed_many", "camping": "confirmed_nearby"},
+      "trip_value": {"assessment": "accept", "reason": "Varberg's established surf hub with multiple disciplines, year-round draw and strong supporting infrastructure."},
+      "image_review": {"result": "rights_gap", "note": "Official Visit Varberg imagery clearly identifies Apelviken but no reusable license was established; Openverse timed out and remains open."},
+      "sources": [
+        {"url": "https://visitvarberg.se/uppleva/surfing", "title": "Surfing in Varberg", "publisher": "Visit Varberg", "supports": ["surf", "kite", "windsurf", "foil", "levels", "rental"]},
+        {"url": "https://visitvarberg.se/uppleva/apelvikens-badstrand", "title": "Apelvikens badstrand", "publisher": "Visit Varberg", "supports": ["beach setting", "facilities", "current hazard"]},
+        {"url": "https://varberg.se/jobb-och-foretagande/arrangera-evenemang/evenemangsplatser/evenemangsplatser-i-varberg/2025-12-11-apelviken", "title": "Apelviken event area", "publisher": "Varbergs kommun", "supports": ["coordinate", "parking", "toilet", "surf use"]}
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Marmari – Fun2Fun",
+      "country": "GR",
+      "identity": {"canonical": "Fun2Fun watersports centre, Marmari, Kos", "aliases": [], "separate_subspot": "Not identical to Marmari village centre or the Caravia/Golden Beach station further along the coast."},
+      "entry": {"lat": null, "lon": null, "confidence": "coordinate_risk", "note": "Official Kos tourism coordinate 36.8801296, 27.1454636 identifies Marmari generally, not Fun2Fun. Exact Fun2Fun beach entrance remains unverified."},
+      "sports": {"surf": "open", "kitesurf": "confirmed", "windsurf": "confirmed", "wing": "confirmed", "kitefoil": "open", "windfoil": "open"},
+      "conditions": {"water": "sandy, gently sloping north-coast beach; onshore/side-onshore learning conditions reported by operator", "bottom": ["sand", "sandbanks"], "level": ["beginner", "advanced"], "wind_from": [], "facing": null, "tide_current": "Open."},
+      "access_rules": "Operator centre offers lessons, rental and rescue boats. No public authority zoning source found in this blind pass.",
+      "facilities": {"parking": "open", "school": "confirmed", "toilet": "operator_likely", "shower": "open", "food": "confirmed_area", "camping": "open"},
+      "trip_value": {"assessment": "accept", "reason": "Multi-sport school and reliable north-coast wind support travel value, but only with the actual centre launch pinned."},
+      "image_review": {"result": "no_verified_candidate", "note": "No independently licensed exact Fun2Fun launch image established; operator images cannot be reused without permission/license."},
+      "sources": [
+        {"url": "https://fun2fun-kos.com/en/", "title": "Fun2Fun Kos", "publisher": "Fun2Fun", "supports": ["sports", "school", "level", "rescue", "north-side location"]},
+        {"url": "https://kos.gr/settlements/marmari", "title": "Marmari", "publisher": "Kos Island official tourism", "supports": ["general coordinate", "wind-sport destination", "transport", "facilities"]},
+        {"url": "https://www.windsurfingkos.com/en/windsurfing-spots", "title": "Kos windsurfing spots", "publisher": "Windsurfing Kos", "supports": ["distinct Marmari stations", "coastal separation"], "verification": "operator source"}
+      ],
+      "blind_verdict": "accept_after_correction"
+    }
+  ]
+}

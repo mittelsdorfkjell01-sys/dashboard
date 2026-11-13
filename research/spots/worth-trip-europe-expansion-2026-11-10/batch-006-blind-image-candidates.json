@@ -1,0 +1,731 @@
+{
+  "generated_at": "2026-11-10T16:22:38.134252+00:00",
+  "independence_statement": "Created before local/database comparison for batch 006.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual, geographic, resolution and licence review."
+  ],
+  "spots": [
+    {
+      "spot": "Moledo",
+      "query": "Praia de Moledo Portugal surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Cabedelo Viana",
+      "query": "Cabedelo Viana do Castelo kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ofir",
+      "query": "Praia de Ofir surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Matosinhos",
+      "query": "Matosinhos surf Portugal",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Castelo do Queijo (1749457483).jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Castelo_do_Queijo_(1749457483).jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Castelo_do_Queijo_%281749457483%29.jpg/960px-Castelo_do_Queijo_%281749457483%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1010,
+            "height": 444,
+            "license": "CC BY 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/32334994@N00\">lilivanili</a> from London, UK",
+            "description": "Castelo do Queijo",
+            "coordinates": {
+              "lat": 41.17615,
+              "lon": -8.692116
+            }
+          },
+          {
+            "title": "File:Menino faz surf na praia.JPG",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Menino_faz_surf_na_praia.JPG",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Menino_faz_surf_na_praia.JPG/960px-Menino_faz_surf_na_praia.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1280,
+            "height": 960,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Favoritus&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Favoritus (page does not exist)\">Joao Pires</a>",
+            "description": "Menino faz surf na praia em Matosinhos, Portugal.",
+            "coordinates": null
+          },
+          {
+            "title": "File:Porto e Matosinhos 2007-10-26 004 (4222389050).jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Porto_e_Matosinhos_2007-10-26_004_(4222389050).jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Porto_e_Matosinhos_2007-10-26_004_%284222389050%29.jpg/960px-Porto_e_Matosinhos_2007-10-26_004_%284222389050%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 3072,
+            "height": 2304,
+            "license": "CC BY 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/8503026@N04\">Hugo Cadavez</a> from Maia, Portugal",
+            "description": "Porto e Matosinhos 2007-10-26 004",
+            "coordinates": {
+              "lat": 41.172927,
+              "lon": -8.689328
+            }
+          },
+          {
+            "title": "File:Porto e Matosinhos 2007-10-26 005 (1777417291).jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Porto_e_Matosinhos_2007-10-26_005_(1777417291).jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/Porto_e_Matosinhos_2007-10-26_005_%281777417291%29.jpg/960px-Porto_e_Matosinhos_2007-10-26_005_%281777417291%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1754,
+            "height": 1316,
+            "license": "CC BY 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/8503026@N04\">Hugo Cadavez</a> from Maia, Portugal",
+            "description": "Porto e Matosinhos 2007-10-26 005",
+            "coordinates": {
+              "lat": 41.172929,
+              "lon": -8.689327
+            }
+          },
+          {
+            "title": "File:Porto e Matosinhos 2007-10-26 006 (1777425421).jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Porto_e_Matosinhos_2007-10-26_006_(1777425421).jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Porto_e_Matosinhos_2007-10-26_006_%281777425421%29.jpg/960px-Porto_e_Matosinhos_2007-10-26_006_%281777425421%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 3072,
+            "height": 2304,
+            "license": "CC BY 2.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/8503026@N04\">Hugo Cadavez</a> from Maia, Portugal",
+            "description": "Porto e Matosinhos 2007-10-26 006",
+            "coordinates": {
+              "lat": 41.172929,
+              "lon": -8.689327
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Espinho Praia da Baia",
+      "query": "Espinho Praia da Baia surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Praia da Barra Aveiro",
+      "query": "Praia da Barra Aveiro surf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Praia Da Barra (91988459).jpeg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Praia_Da_Barra_(91988459).jpeg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/Praia_Da_Barra_%2891988459%29.jpeg/960px-Praia_Da_Barra_%2891988459%29.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 724,
+            "license": "CC BY-SA 3.0",
+            "artist": "<div class=\"fn value\">\n<a rel=\"nofollow\" class=\"external text\" href=\"https://500px.com/JuriKowski\">Jurikowski</a></div>",
+            "description": "<div class=\"description\">\n500px provided description: Praia Da Barra [#Beach ,#Canon ,#Water ,#Autumn ,#Herbst ,#Surf ,#Urlaub ,#Wasser ,#Portugal ,#Aveiro ,#Strand ,#Wellen ,#Surfen ,#600D ,#Atlantik ,#Praia da Barra ,#EF 24-70mm f/2.8L USM ,#Canon eos 600d ,#Popular Tags ,#Juri Kowski ,#Costa Barra ,#Creative-commons ,#Praia da Nova]</div>",
+            "coordinates": {
+              "lat": 40.63672029,
+              "lon": -8.74940872
+            }
+          }
+        ],
+        "openverse": [
+          {
+            "title": "No waves ?",
+            "source_page": "https://www.flickr.com/photos/25451918@N07/9509712883",
+            "thumbnail_url": "https://api.openverse.org/v1/images/2c112ac5-8b52-4832-844a-d24c122cec8e/thumb/",
+            "width": 1024,
+            "height": 680,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "AndreBCorreia",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "T3 na Praia da Barra",
+            "source_page": "https://www.flickr.com/photos/25860364@N06/10930835703",
+            "thumbnail_url": "https://api.openverse.org/v1/images/a9d781dc-d474-4a4b-9674-b022eccee04e/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by-nc",
+            "license_version": "2.0",
+            "creator": "João Ramos",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "T3 na Praia da Barra",
+            "source_page": "https://www.flickr.com/photos/25860364@N06/10930653303",
+            "thumbnail_url": "https://api.openverse.org/v1/images/2ad37caa-1331-406d-850b-79166526c572/thumb/",
+            "width": 1024,
+            "height": 225,
+            "license": "by-nc",
+            "license_version": "2.0",
+            "creator": "João Ramos",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "T3 na Praia da Barra",
+            "source_page": "https://www.flickr.com/photos/25860364@N06/10930681936",
+            "thumbnail_url": "https://api.openverse.org/v1/images/601df1a2-41b5-411d-8c8d-f86e6f5c5fca/thumb/",
+            "width": 768,
+            "height": 1024,
+            "license": "by-nc",
+            "license_version": "2.0",
+            "creator": "João Ramos",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "T3 na Praia da Barra",
+            "source_page": "https://www.flickr.com/photos/25860364@N06/10930865703",
+            "thumbnail_url": "https://api.openverse.org/v1/images/e6828e9f-75f3-4753-8ed5-77e97ca8ec69/thumb/",
+            "width": 1024,
+            "height": 225,
+            "license": "by-nc",
+            "license_version": "2.0",
+            "creator": "João Ramos",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Cabedelo Figueira da Foz",
+      "query": "Cabedelo Figueira da Foz surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Buarcos",
+      "query": "Buarcos surf Portugal",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sao Pedro de Moel",
+      "query": "Sao Pedro de Moel surf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Black-and-white high-angle view of tilted rock strata and ocean surf, São Pedro de Moel, Marinha Grande, Portugal julesvernex2.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Black-and-white_high-angle_view_of_tilted_rock_strata_and_ocean_surf,_S%C3%A3o_Pedro_de_Moel,_Marinha_Grande,_Portugal_julesvernex2.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/98/Black-and-white_high-angle_view_of_tilted_rock_strata_and_ocean_surf%2C_S%C3%A3o_Pedro_de_Moel%2C_Marinha_Grande%2C_Portugal_julesvernex2.jpg/960px-Black-and-white_high-angle_view_of_tilted_rock_strata_and_ocean_surf%2C_S%C3%A3o_Pedro_de_Moel%2C_Marinha_Grande%2C_Portugal_julesvernex2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 6251,
+            "height": 9145,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Julesvernex2\" title=\"User:Julesvernex2\">Jules Verne Times Two</a>",
+            "description": "Black-and-white high-angle view of tilted rock strata and ocean surf, São Pedro de Moel, Marinha Grande, Portugal",
+            "coordinates": {
+              "lat": 39.76024325,
+              "lon": -9.03221692
+            }
+          },
+          {
+            "title": "File:Black-and-white view of tilted coastal rock formations and a lone fisherman on the beach, São Pedro de Moel, Marinha Grande, Portugal julesvernex2.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Black-and-white_view_of_tilted_coastal_rock_formations_and_a_lone_fisherman_on_the_beach,_S%C3%A3o_Pedro_de_Moel,_Marinha_Grande,_Portugal_julesvernex2.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Black-and-white_view_of_tilted_coastal_rock_formations_and_a_lone_fisherman_on_the_beach%2C_S%C3%A3o_Pedro_de_Moel%2C_Marinha_Grande%2C_Portugal_julesvernex2.jpg/960px-Black-and-white_view_of_tilted_coastal_rock_formations_and_a_lone_fisherman_on_the_beach%2C_S%C3%A3o_Pedro_de_Moel%2C_Marinha_Grande%2C_Portugal_julesvernex2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 8409,
+            "height": 5426,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Julesvernex2\" title=\"User:Julesvernex2\">Jules Verne Times Two</a>",
+            "description": "Black-and-white view of tilted coastal rock formations and a lone fisherman on the beach, São Pedro de Moel, Marinha Grande, Portugal",
+            "coordinates": {
+              "lat": 39.76187817,
+              "lon": -9.03219425
+            }
+          },
+          {
+            "title": "File:Black-and-white view over foreground boulders toward tilted coastal rock formations and surf, São Pedro de Moel, Marinha Grande, Portugal julesvernex2.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Black-and-white_view_over_foreground_boulders_toward_tilted_coastal_rock_formations_and_surf,_S%C3%A3o_Pedro_de_Moel,_Marinha_Grande,_Portugal_julesvernex2.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Black-and-white_view_over_foreground_boulders_toward_tilted_coastal_rock_formations_and_surf%2C_S%C3%A3o_Pedro_de_Moel%2C_Marinha_Grande%2C_Portugal_julesvernex2.jpg/960px-Black-and-white_view_over_foreground_boulders_toward_tilted_coastal_rock_formations_and_surf%2C_S%C3%A3o_Pedro_de_Moel%2C_Marinha_Grande%2C_Portugal_julesvernex2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 6334,
+            "height": 7773,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Julesvernex2\" title=\"User:Julesvernex2\">Jules Verne Times Two</a>",
+            "description": "Black-and-white view over foreground boulders toward tilted coastal rock formations and surf, São Pedro de Moel, Marinha Grande, Portugal",
+            "coordinates": {
+              "lat": 39.76024325,
+              "lon": -9.03221692
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Foz do Arelho",
+      "query": "Foz do Arelho windsurf surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Santa Cruz Torres Vedras",
+      "query": "Santa Cruz Torres Vedras surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Areia Branca",
+      "query": "Praia da Areia Branca surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Ilha do Campeche",
+            "source_page": "https://www.flickr.com/photos/8865243@N02/3443233267",
+            "thumbnail_url": "https://api.openverse.org/v1/images/ef3208a8-b4a2-424a-ab63-54384920f851/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Rodrigo_Soldon",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Ilha do Campeche",
+            "source_page": "https://www.flickr.com/photos/8865243@N02/3443056887",
+            "thumbnail_url": "https://api.openverse.org/v1/images/6c460782-dad5-40d0-aacf-60e8e2d848a0/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Rodrigo_Soldon",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Galinha de coco 5 / Coconut chicken 5",
+            "source_page": "https://www.flickr.com/photos/7704455@N02/1469406138",
+            "thumbnail_url": "https://api.openverse.org/v1/images/439297da-ed98-40b2-a2b0-6b41492456e3/thumb/",
+            "width": 334,
+            "height": 500,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Marcio Cabral de Moura",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Ilha do Campeche",
+            "source_page": "https://www.flickr.com/photos/8865243@N02/3443290315",
+            "thumbnail_url": "https://api.openverse.org/v1/images/2f9d8c45-3543-4ed3-a63b-26f458fff59e/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Rodrigo_Soldon",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Orelhão 1 / Public telephone 1",
+            "source_page": "https://www.flickr.com/photos/7704455@N02/1468559019",
+            "thumbnail_url": "https://api.openverse.org/v1/images/d5276505-1c23-4153-89fe-1aaf6bf7c8b6/thumb/",
+            "width": 332,
+            "height": 500,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Marcio Cabral de Moura",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lagoa de Albufeira",
+      "query": "Lagoa de Albufeira kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Fonte da Telha",
+      "query": "Fonte da Telha kitesurf surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sao Joao da Caparica",
+      "query": "Sao Joao da Caparica surf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Praia do Meco",
+      "query": "Praia do Meco surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Troia",
+      "query": "Troia Portugal kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sao Torpes",
+      "query": "Sao Torpes surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Milfontes Malhao",
+      "query": "Vila Nova Milfontes Malhao surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Odeceixe",
+      "query": "Odeceixe surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Arrifana",
+      "query": "Arrifana surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Praia do Amado",
+      "query": "Praia do Amado surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Surfer",
+            "source_page": "https://www.flickr.com/photos/107521854@N05/16600828085",
+            "thumbnail_url": "https://api.openverse.org/v1/images/ec081665-bb3b-4c01-bc6a-d7a7c5682d4d/thumb/",
+            "width": 667,
+            "height": 1000,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Luis Ascenso",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Surfista desolado",
+            "source_page": "https://www.flickr.com/photos/63471394@N04/6220433280",
+            "thumbnail_url": "https://api.openverse.org/v1/images/7032dccf-8e09-4dbf-93d9-e97c1ce3a6b0/thumb/",
+            "width": 1024,
+            "height": 685,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Dani Alvarez Cañellas",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Praia do Amado",
+            "source_page": "https://www.flickr.com/photos/24352437@N06/3208154598",
+            "thumbnail_url": "https://api.openverse.org/v1/images/c8f4a11f-5fc9-407c-a512-19e911bcd1b4/thumb/",
+            "width": 1024,
+            "height": 685,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Flashpacking Life",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Scoping the Surf",
+            "source_page": "https://www.flickr.com/photos/24352437@N06/3207340877",
+            "thumbnail_url": "https://api.openverse.org/v1/images/0e2fa29d-47a5-4a74-a7f0-d1792f309acd/thumb/",
+            "width": 1024,
+            "height": 685,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Flashpacking Life",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "praia do amado",
+            "source_page": "https://www.flickr.com/photos/67504970@N08/9368858835",
+            "thumbnail_url": "https://api.openverse.org/v1/images/c04b370b-c838-4baa-80cc-1d03e53a4258/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by-nc",
+            "license_version": "2.0",
+            "creator": "Annabelle Orozco",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Jardim do Mar",
+      "query": "Jardim do Mar Madeira surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Surfing Madeira Island 2013",
+            "source_page": "https://www.flickr.com/photos/38502136@N06/11468941405",
+            "thumbnail_url": "https://api.openverse.org/v1/images/b9445a23-9169-49f5-bf7b-58a9d25e668d/thumb/",
+            "width": 1024,
+            "height": 576,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "YODspica™",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Jardim do Mar",
+            "source_page": "https://www.flickr.com/photos/49583217@N00/33405079335",
+            "thumbnail_url": "https://api.openverse.org/v1/images/c1707b9c-48ad-4122-9c9a-7ed8c2d82840/thumb/",
+            "width": 1024,
+            "height": 1024,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Svedek",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Surfing Madeira Island 2013",
+            "source_page": "https://www.flickr.com/photos/38502136@N06/11469126753",
+            "thumbnail_url": "https://api.openverse.org/v1/images/87b046ce-665c-4cdc-9881-f06ac30ea8f3/thumb/",
+            "width": 1024,
+            "height": 576,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "YODspica™",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Surfing Madeira Island 2013",
+            "source_page": "https://www.flickr.com/photos/38502136@N06/11468988164",
+            "thumbnail_url": "https://api.openverse.org/v1/images/8401f0c7-9882-473b-bf7f-2d3b3e16aa51/thumb/",
+            "width": 1024,
+            "height": 576,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "YODspica™",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Surfing Madeira Island 2013",
+            "source_page": "https://www.flickr.com/photos/38502136@N06/11469002424",
+            "thumbnail_url": "https://api.openverse.org/v1/images/e84cb06a-11b0-4e25-9c58-0da19d6c94f1/thumb/",
+            "width": 1024,
+            "height": 576,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "YODspica™",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Paul do Mar",
+      "query": "Paul do Mar Madeira surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Waves & Surfers",
+            "source_page": "https://www.flickr.com/photos/55231259@N00/5288489475",
+            "thumbnail_url": "https://api.openverse.org/v1/images/c47b5638-fa3d-45c5-8820-2609c1751d74/thumb/",
+            "width": 1024,
+            "height": 682,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "futureshape",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Waves",
+            "source_page": "https://www.flickr.com/photos/55231259@N00/5288487427",
+            "thumbnail_url": "https://api.openverse.org/v1/images/92a21245-20a6-4f78-8a3f-338dd9fd3b33/thumb/",
+            "width": 1024,
+            "height": 683,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "futureshape",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Waves & Surfers",
+            "source_page": "https://www.flickr.com/photos/55231259@N00/5289092342",
+            "thumbnail_url": "https://api.openverse.org/v1/images/64aaff1b-ec45-4d0f-a3ef-ec06e8a0a769/thumb/",
+            "width": 1024,
+            "height": 682,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "futureshape",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "File:Bodyboardingpauldomar2.JPG",
+            "source_page": "https://commons.wikimedia.org/w/index.php?curid=6336411",
+            "thumbnail_url": "https://api.openverse.org/v1/images/35b81da1-2b2c-458c-a302-991ecd27ba87/thumb/",
+            "width": 800,
+            "height": 600,
+            "license": "by-sa",
+            "license_version": "3.0",
+            "creator": "Abbiati2",
+            "provider": "wikimedia",
+            "source": "wikimedia"
+          },
+          {
+            "title": "Waves & Surfers",
+            "source_page": "https://www.flickr.com/photos/55231259@N00/5289091274",
+            "thumbnail_url": "https://api.openverse.org/v1/images/50109443-ce5e-4936-b867-5bc68090cbe6/thumb/",
+            "width": 1024,
+            "height": 683,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "futureshape",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Santa Barbara Sao Miguel",
+      "query": "Santa Barbara Sao Miguel Azores surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

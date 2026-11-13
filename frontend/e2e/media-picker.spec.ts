@@ -368,7 +368,7 @@ test.describe("media picker", () => {
     if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
 
     const buttons = facilities.locator("[data-facility-availability] [role=checkbox]");
-    await expect(buttons).toHaveCount(15);
+    await expect(buttons).toHaveCount(18);
     for (const width of [320, 640, 1024, 1280, 1440]) {
       await page.setViewportSize({ width, height: 800 });
       for (const button of await buttons.all()) {

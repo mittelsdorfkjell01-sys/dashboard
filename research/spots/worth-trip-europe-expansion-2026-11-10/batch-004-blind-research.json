@@ -1,0 +1,969 @@
+{
+  "schema_version": 1,
+  "batch": "004",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Search/catalogue data selected candidates but did not establish acceptance.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless an authority explicitly covers the sport and zone.",
+    "Image candidates are separate and none is approved by relevance alone.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Apelviken",
+      "country": "SE",
+      "identity": "Apelviken's public surf beach south of Varberg.",
+      "entry": {
+        "lat": 57.091,
+        "lon": 12.247,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Long shallow horseshoe bay; S–NNW usable, W–NW preferred and onshore wind builds waves quickly.",
+      "access_rules": "Busy multi-use beach: riders must maintain safe separation from swimmers and each other; exact summer swim zoning remains open.",
+      "trip_value": "Sweden-leading multi-discipline beach, schools and year-round destination infrastructure justify worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.naturkartan.se/sv/hallands-lan/surfspot-apelviken",
+          "publisher": "Naturkartan / Varberg municipality",
+          "supports": [
+            "sports",
+            "winds",
+            "facilities",
+            "safety"
+          ]
+        },
+        {
+          "url": "https://www.visithalland.com/en/late-summer-guide-apelviken/",
+          "publisher": "Visit Halland",
+          "supports": [
+            "sports",
+            "waves",
+            "trip_value"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Toppilansaari kitesurf beach",
+      "country": "FI",
+      "identity": "The sandy beach and breakwater at northern Toppilansaari, not Nallikari swimming beach.",
+      "entry": {
+        "lat": 65.03,
+        "lon": 25.41,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Bothnian Bay venue used on open water; nearby sea ice supports winter kite activity but is a separate risk state.",
+      "access_rules": "Exact launch, swimming separation and ice-safety regime need municipal confirmation.",
+      "trip_value": "Oulu access and unusual northern/seasonal setting support worth_trip after the entry is fixed.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitfinland.com/en/product/0026f225-9e0a-4426-b690-3059c7eed678/splash-tastic-water-activities-all-year-round/",
+          "publisher": "Visit Finland / Oulu City Tourist Info",
+          "supports": [
+            "exact_area",
+            "kite_use"
+          ]
+        },
+        {
+          "url": "https://visitoulu.fi/en/product/nallikari-pohjolan-riviera/",
+          "publisher": "Visit Oulu",
+          "supports": [
+            "regional_services",
+            "winter_kite_context"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Hiekkasärkät, Kalajoki",
+      "country": "FI",
+      "identity": "Kalajoki Surf Center beach within the 3.5 km Hiekkasärkät area.",
+      "entry": {
+        "lat": 64.23,
+        "lon": 23.807,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "SUP"
+      ],
+      "conditions": "Mostly shallow sand coast, but sudden deeps, currents and quickly changing waves occur around sandbanks.",
+      "access_rules": "No official lifeguards; use the Surf Center area and heed current/sudden-depth warnings.",
+      "trip_value": "Finland's largest surf center, instruction, rental and dune-resort setting support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitkalajoki.fi/en/info/",
+          "publisher": "Visit Kalajoki",
+          "supports": [
+            "beach_length",
+            "depth",
+            "currents",
+            "no_lifeguard"
+          ]
+        },
+        {
+          "url": "https://topcampingkalajoki.fi/en/activities/surf-center/",
+          "publisher": "Top Camping Kalajoki",
+          "supports": [
+            "sports",
+            "courses",
+            "rental",
+            "center_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Svencelė",
+      "country": "LT",
+      "identity": "The established kite/sailing complex at Svencelės g. 49A on the Curonian Lagoon.",
+      "entry": {
+        "lat": 55.493,
+        "lon": 21.248,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wakeboard"
+      ],
+      "conditions": "Lagoon flat/chop with open meadows and established teaching areas; exact depth and nature-season constraints remain open.",
+      "access_rules": "Use the established centre and respect adjacent reserves; camping/parking follows operator rules.",
+      "trip_value": "Lithuania's strongest purpose-built wind-sports village has clear destination value but not enough global proof for world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://lithuania.travel/en/why-lithuania/by-the-baltic-sea/klaipeda-district/svencele",
+          "publisher": "Lithuania Travel",
+          "supports": [
+            "sports",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.klaipedosrajonas.lt/en/things-to-do/kite-surfing-and-sailing-spot-svencele/",
+          "publisher": "Klaipėda District Tourism",
+          "supports": [
+            "schools",
+            "exact_address",
+            "training"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Juodkrantė Beach",
+      "country": "LT",
+      "identity": "Juodkrantė's sport beach on the Curonian Spit; lagoon and Baltic sides must not be conflated.",
+      "entry": {
+        "lat": 55.541,
+        "lon": 21.119,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Wind-exposed Curonian setting; exact water side, bottom and wind window were not specified by official tourism.",
+      "access_rules": "Curonian Spit National Park and reserve rules apply; exact legal launch must be attached.",
+      "trip_value": "National-level kite reputation plus UNESCO landscape support worth_trip after identity/rules correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://lithuania.travel/en/where-to-visit/nature/waterside-recreation/juodkrante-beach",
+          "publisher": "Lithuania Travel",
+          "supports": [
+            "kite",
+            "national_reputation"
+          ]
+        },
+        {
+          "url": "https://nerija.lrv.lt/lt/lankytojams/lankymo-taisykles/",
+          "publisher": "Curonian Spit National Park",
+          "supports": [
+            "reserve_access_rules"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Saulkrasti – Koklīte",
+      "country": "LV",
+      "identity": "The beach beside Koklīte café, not Saulkrasti's entire 17 km coast.",
+      "entry": {
+        "lat": 57.274,
+        "lon": 24.413,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "kitesurf"
+      ],
+      "conditions": "Gulf of Riga wind-sport beach; depth begins closer to shore than at Jūrmala and conditions vary by wind.",
+      "access_rules": "Separate from Centre bathing beach; nearby Piejūra nature-park limits need an exact map.",
+      "trip_value": "Accessible Riga-region coast, defined gathering point and resort landscape support worth_trip after zoning confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.latvia.travel/en/sight/saulkrasti",
+          "publisher": "Latvia Travel",
+          "supports": [
+            "exact_area",
+            "sports",
+            "nature_park",
+            "trip_value"
+          ]
+        },
+        {
+          "url": "https://media.voog.com/0000/0033/5655/files/Saulkrasti_2020_LV_ENG_web.pdf",
+          "publisher": "Saulkrasti Tourism",
+          "supports": [
+            "kite_windsurf_rental",
+            "coordinates"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Ventspils South Beach",
+      "country": "LV",
+      "identity": "Proposed wind-sports area south of Ventspils city beach.",
+      "entry": {
+        "lat": 57.375,
+        "lon": 21.533,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Open Baltic sand beach; detailed wind, current and skill information comes only from a spot aggregator.",
+      "access_rules": "Current municipal sport corridor and bathing-season separation were not found.",
+      "trip_value": "City and coast have travel value, but sport-specific primary evidence is insufficient.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://lets-kite.com/en/spots/4697/kitesurf/ventspils-beach",
+          "publisher": "Let's Kite",
+          "supports": [
+            "proposed_location",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://www.visitventspils.com/app/uploads/2025/01/web_final_eng_brosura2025.pdf",
+          "publisher": "Visit Ventspils",
+          "supports": [
+            "destination_context_only"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Łeba / Sarbsko Lake",
+      "country": "PL",
+      "identity": "Sarbsko Lake school area near Łeba; the open Baltic beach is a separate venue.",
+      "entry": {
+        "lat": 54.759,
+        "lon": 17.598,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Lagoon/lake training water beside an exposed Baltic coast; exact depth and seasonal wind window remain open.",
+      "access_rules": "Launch must be pinned to a licensed school area and separated from port and national-park constraints.",
+      "trip_value": "Moving dunes, lake-and-sea choice, schools and resort services support worth_trip after launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://lotleba.pl/sporty-wodne/",
+          "publisher": "Łeba Local Tourism Organisation",
+          "supports": [
+            "schools",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://www.prot.gda.pl/wp-content/uploads/2020/01/Pomorskie-atrakcje-turystyczne-210x210-EN-200103-PREV.pdf",
+          "publisher": "Pomorskie Tourism",
+          "supports": [
+            "Sarbsko_identity",
+            "sports",
+            "trip_value"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Jastarnia – Puck Bay",
+      "country": "PL",
+      "identity": "Bay-side Jastarnia riding areas around, but outside, the pier and fishing harbours.",
+      "entry": {
+        "lat": 54.698,
+        "lon": 18.678,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Very shallow sandy Puck Bay with fin/foil grounding risk and long downwind drift exposure.",
+      "access_rules": "Avoid pier, harbours, school teaching areas and marked bathing zones; current municipal kite ordinance remains unproven.",
+      "trip_value": "Dense school infrastructure and peninsula travel setting support worth_trip, distinct from Chałupy.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.jastarnia.com/kitesurfing",
+          "publisher": "Jastarnia visitor portal",
+          "supports": [
+            "schools",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://zmigm.org.pl/wp-content/uploads/2025/06/PRZEWODNIK_PL_net-na-09.07.2020.pdf",
+          "publisher": "Polish coastal municipalities guide",
+          "supports": [
+            "Puck_Bay",
+            "windsurf",
+            "destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Dąbki – Lake Bukowo",
+      "country": "PL",
+      "identity": "Water Sports Centre at Dąbkowicka 7 on Lake Bukowo, not the Baltic swimming beach.",
+      "entry": {
+        "lat": 54.38,
+        "lon": 16.305,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "sailing"
+      ],
+      "conditions": "Lake venue with shallow and deeper sections; prevailing west/sea wind at the southeast-shore base.",
+      "access_rules": "Use the centre or verified private base; lake/sea connection and navigation require local briefing.",
+      "trip_value": "Modern instruction/rental plus a spa-and-sea destination support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://gminadarlowo.pl/atrakcje/771/strona/1/centrum-sportow-wodnych-w-dabkach",
+          "publisher": "Darłowo municipality",
+          "supports": [
+            "exact_center",
+            "sports",
+            "courses",
+            "rental"
+          ]
+        },
+        {
+          "url": "https://www.poland.travel/en/dabki/",
+          "publisher": "Poland Travel",
+          "supports": [
+            "lake_sea_identity",
+            "destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Viganj – Ponta Liberan",
+      "country": "HR",
+      "identity": "Ponta Liberan at Viganj in the Pelješac Channel.",
+      "entry": {
+        "lat": 42.986,
+        "lon": 17.092,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Daily summer mistral accelerated through the narrow channel; busy shared water and cross-channel traffic require local control.",
+      "access_rules": "Use school/rescue areas and current beach rules; the small launch must not be generalized to all Viganj shore.",
+      "trip_value": "World championship history, global visitors and Croatia-leading reputation exceed worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitorebic-croatia.hr/destinations/viganj/",
+          "publisher": "Orebić Tourist Board",
+          "supports": [
+            "winds",
+            "sports",
+            "world_championship",
+            "schools"
+          ]
+        },
+        {
+          "url": "https://dalmatia-dubrovnik.croatia.hr/en-gb/windsurfing",
+          "publisher": "Croatian Tourism / Dubrovnik-Neretva County",
+          "supports": [
+            "sports",
+            "regional_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Premantura",
+      "country": "HR",
+      "identity": "Town-level Premantura candidate; no exact launch was established.",
+      "entry": {
+        "lat": 44.8,
+        "lon": 13.91,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Exposed Istrian peninsula with multiple coves; no authoritative spot-specific conditions were found.",
+      "access_rules": "Protected Kamenjak coast and exact permitted launch require authority confirmation.",
+      "trip_value": "Scenery is strong but the candidate is not yet a defensible spot record.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.dalmatiasibenik.hr/en/experience/active-vacation/windsurfing/",
+          "publisher": "Šibenik-Knin tourism",
+          "supports": [
+            "Croatia_windsurf_context_only"
+          ]
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Premantura",
+          "publisher": "Wikipedia",
+          "supports": [
+            "identity_secondary_only"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Velika Plaža, Ulcinj",
+      "country": "ME",
+      "identity": "The established kite-school sections of 13 km Velika Plaža, excluding Ada Bojana island.",
+      "entry": {
+        "lat": 41.9,
+        "lon": 19.27,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Broad shallow sand beach with frequent 5–10 m/s summer mistral, main season May–October.",
+      "access_rules": "Use school/rescue sections; bathing and commercial beach concessions must be respected; no wild camping.",
+      "trip_value": "Official tourism calls it a leading European/global destination; it is beyond worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ulcinj.travel/en/kitesurfing/",
+          "publisher": "Ulcinj Tourism Organisation",
+          "supports": [
+            "winds",
+            "season",
+            "international_use"
+          ]
+        },
+        {
+          "url": "https://ulcinj.travel/en/kitesurf-2/",
+          "publisher": "Ulcinj Tourism Organisation",
+          "supports": [
+            "leading_Europe_destination",
+            "schools",
+            "rescue"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Ada Bojana",
+      "country": "ME",
+      "identity": "Island/delta-end candidate immediately adjacent to the Velika Plaža kite destination.",
+      "entry": {
+        "lat": 41.864,
+        "lon": 19.351,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Shares the same summer mistral system and sandy delta setting as Velika Plaža.",
+      "access_rules": "Exact independent public launch and separation from resort/naturist areas were not established.",
+      "trip_value": "Current evidence treats Ada as part of the same Ulcinj kite destination; do not count it as a second spot.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ulcinj.travel/en/kitesurfing/",
+          "publisher": "Ulcinj Tourism Organisation",
+          "supports": [
+            "Ada_as_nearby_subarea"
+          ]
+        },
+        {
+          "url": "https://www.visit-montenegro.com/me/destinacije/ulcinj/atrakcije/velika-plaza/",
+          "publisher": "Visit Montenegro",
+          "supports": [
+            "Ada_relationship",
+            "regional_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_duplicate"
+    },
+    {
+      "name": "Velipoja",
+      "country": "AL",
+      "identity": "Velipoja beach near the Buna mouth; no exact kite launch established.",
+      "entry": {
+        "lat": 41.861,
+        "lon": 19.425,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Very long, wide, gently shelving sandy coast beside protected wetland and river mouth.",
+      "access_rules": "Summer bathing areas and nearby protected habitats require mapping; sport proof is not authoritative.",
+      "trip_value": "Travel setting is plausible but dedicated wind-sport value is unproven.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://akt.gov.al/en/atraksionet/bregdeti-i-velipojes/",
+          "publisher": "Albanian National Tourism Agency",
+          "supports": [
+            "identity",
+            "length",
+            "protected_context"
+          ]
+        },
+        {
+          "url": "https://akt.gov.al/en/tourist_areas/Velipoja-beach/",
+          "publisher": "Albanian National Tourism Agency",
+          "supports": [
+            "shallow_water",
+            "light_water_sports_only"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Krapets Beach",
+      "country": "BG",
+      "identity": "The broad Krapets beach south of Durankulak protected lake.",
+      "entry": {
+        "lat": 43.643,
+        "lon": 28.574,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Six-plus kilometre exposed Black Sea sand coast; waves and currents occur and most areas are unguarded.",
+      "access_rules": "Protect dunes and bird habitat; use legal access and verify seasonal conservation zones.",
+      "trip_value": "Remote natural coast and recognized Bulgarian wind-sport reputation support worth_trip after zone confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://plajovete.bg/en/beaches/krapec",
+          "publisher": "Bulgarian beach guide using ministry data",
+          "supports": [
+            "coordinates",
+            "sports",
+            "hazards",
+            "facilities"
+          ]
+        },
+        {
+          "url": "https://visitbulgaria.com/wp-content/uploads/2021/04/ENG-AdventureTourismBulgaria_web-min.pdf",
+          "publisher": "Visit Bulgaria",
+          "supports": [
+            "top_kite_windsurf_location"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Asparuhovo Beach",
+      "country": "BG",
+      "identity": "Varna's Asparuhovo city beach between the sea-lake canal and Karantinata port.",
+      "entry": {
+        "lat": 43.17,
+        "lon": 27.91,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Wide, shallow, generally calm urban beach with heavy summer bathing and motor-water-sport use.",
+      "access_rules": "Any sail activity must use current marked access corridors and remain outside swimming areas.",
+      "trip_value": "Useful local training beach, but no compelling dedicated-trip value was established.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visit.varna.bg/en/beach-asparuhovo.html",
+          "publisher": "Visit Varna",
+          "supports": [
+            "identity",
+            "water",
+            "facilities",
+            "events"
+          ]
+        },
+        {
+          "url": "https://welcome.bg/en/beaches/asparuhovo-beach/",
+          "publisher": "Welcome Bulgaria",
+          "supports": [
+            "windsurf",
+            "supervision",
+            "urban_access"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Pomorie Lake / coast",
+      "country": "BG",
+      "identity": "Unresolved candidate spanning protected Pomorie Lake and adjacent sea coast.",
+      "entry": {
+        "lat": 42.57,
+        "lon": 27.63,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Salt-lake/coast setting with historic year-round use claims.",
+      "access_rules": "Ramsar material explicitly notes an official water-sport ban but the sentence/map is incomplete in accessible evidence.",
+      "trip_value": "Do not accept until the prohibited and permitted waters are resolved by a current authority.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://rsis.ramsar.org/RISapp/files/RISrep/BG1229RIS.pdf",
+          "publisher": "Ramsar Sites Information Service",
+          "supports": [
+            "historic_use",
+            "official_ban",
+            "conservation"
+          ]
+        },
+        {
+          "url": "https://www.tourism.government.bg/sites/trsm.gateway.bg/files/uploads/registers/materials/bulgaria_sea_eng.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "regional_windsport_context"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Mamaia – Lake Siutghiol",
+      "country": "RO",
+      "identity": "Lake-side nautical bases at Mamaia, not the crowded Black Sea bathing beach.",
+      "entry": {
+        "lat": 44.245,
+        "lon": 28.62,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Sheltered lake training water with multiple nautical operators; exact kite area and wind window remain open.",
+      "access_rules": "Use only ANR-approved recreation sectors and verified operators; separate from Black Sea swim zones.",
+      "trip_value": "Large resort infrastructure and lake/sea combination support worth_trip after the legal sector is attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ctseaus.ro/en/turism-activ/",
+          "publisher": "Constanța tourism organisation",
+          "supports": [
+            "Mamaia_lake_bases",
+            "windsurf",
+            "kitesurf"
+          ]
+        },
+        {
+          "url": "https://portal.rna.ro/siguranta-navigatiei/agrement-nautic/",
+          "publisher": "Romanian Naval Authority",
+          "supports": [
+            "approved_sectors",
+            "seasonal_rules",
+            "safety"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Corbu Beach",
+      "country": "RO",
+      "identity": "Unmanaged Corbu beach within the Danube Delta Biosphere Reserve.",
+      "entry": {
+        "lat": 44.344,
+        "lon": 28.689,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Wide, shallow natural beach with no lifeguard and sensitive dune/bird habitat.",
+      "access_rules": "Reserve permit, legal parking and no-camping/fire/overnight/vehicle rules apply; explicit non-motor wind-sport permission remains unclear.",
+      "trip_value": "Potential wild-coast value exists, but publication must wait for written activity permission and launch boundary.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://peplaiuri.ro/en/guides/wild-beaches-in-romania",
+          "publisher": "Pe Plaiuri, based on reserve rules",
+          "supports": [
+            "reserve",
+            "permits",
+            "no_camping",
+            "no_lifeguard"
+          ]
+        },
+        {
+          "url": "https://deltaromaniei.ro/info-utile/ro",
+          "publisher": "Danube Delta information / ARBDD guidance",
+          "supports": [
+            "permits",
+            "parking",
+            "camping_ban"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Vadu Beach",
+      "country": "RO",
+      "identity": "The small permitted visitor sector at Vadu inside the Danube Delta Biosphere Reserve.",
+      "entry": {
+        "lat": 44.449,
+        "lon": 28.77,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Remote unguarded coast without water, toilets or rescue; protected dunes and Chituc strict zone lie nearby.",
+      "access_rules": "Permit required; no camping, overnight, vehicles on beach, fires or commercial activity. Wind-sport authorization was not proven.",
+      "trip_value": "Conservation/access uncertainty and absence of rescue make it unsuitable for counting now.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://peplaiuri.ro/en/vadu-beach",
+          "publisher": "Pe Plaiuri, based on reserve rules",
+          "supports": [
+            "visitor_sector",
+            "rules",
+            "no_lifeguard"
+          ]
+        },
+        {
+          "url": "https://deltaromaniei.ro/info-utile/ro",
+          "publisher": "Danube Delta information / ARBDD guidance",
+          "supports": [
+            "permits",
+            "no_camping",
+            "parking"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Alaçatı",
+      "country": "TR",
+      "identity": "Natural Alaçatı Port's annually designated windsurf courses.",
+      "entry": {
+        "lat": 38.285,
+        "lon": 26.375,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Very shallow, flat bay with reliable northern summer wind and extensive schools, May–October.",
+      "access_rules": "Use annually announced sport courses and current operator zones.",
+      "trip_value": "Official sources describe it as globally leading and host of premier international events; exclude as world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://izmir.ktb.gov.tr/EN-348267/windsurf.html",
+          "publisher": "İzmir Provincial Directorate of Culture and Tourism",
+          "supports": [
+            "winds",
+            "season",
+            "global_reputation",
+            "annual_courses"
+          ]
+        },
+        {
+          "url": "https://goturkiye.com/cesme/touch",
+          "publisher": "Go Türkiye",
+          "supports": [
+            "world_popularity",
+            "PWA_event",
+            "schools"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Akyaka kite beach",
+      "country": "TR",
+      "identity": "Dedicated kite beach west of Akyaka in Gökova Bay, not the town swimming beach.",
+      "entry": {
+        "lat": 37.03,
+        "lon": 28.33,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Steady warm thermal/onshore wind, flat-to-small-chop sandy water and dense school infrastructure.",
+      "access_rules": "Paid/operator-controlled entries and separate wild lagoon require exact current zone rules.",
+      "trip_value": "National authority and operators present it as one of Turkey's and the world's most reliable kite centres; world_class boundary exceeded.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://mugla.gov.tr/ula",
+          "publisher": "Muğla Governorate",
+          "supports": [
+            "kite_prominence",
+            "winds"
+          ]
+        },
+        {
+          "url": "https://akyaka.info/en/kite",
+          "publisher": "Akyaka destination/operator guide",
+          "supports": [
+            "reliability",
+            "conditions",
+            "infrastructure",
+            "paid_entry"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Gökçeada – Aydıncık / Kefalos",
+      "country": "TR",
+      "identity": "Aydıncık and Kefalos wind-sport beach system on southern Gökçeada.",
+      "entry": {
+        "lat": 40.135,
+        "lon": 25.94,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Poyraz/lodos winds, flat and wave options, typically 15–25 kt in June–September.",
+      "access_rules": "The two beach sections need separate launch/level records; salt-lake habitat and current operator zones must be respected.",
+      "trip_value": "Island journey, dual conditions and established schools support worth_trip; global superlatives are not sufficiently independent for world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitgokceada.com/aktiviteler",
+          "publisher": "Visit Gökçeada",
+          "supports": [
+            "sports",
+            "winds",
+            "season",
+            "conditions"
+          ]
+        },
+        {
+          "url": "https://canakkale.ktb.gov.tr/TR-70540/gokceada.html",
+          "publisher": "Çanakkale Culture and Tourism Directorate",
+          "supports": [
+            "Aydincik_identity",
+            "surf_use"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Gradina Beach",
+      "country": "BG",
+      "identity": "Gradina camping coast candidate south of Sozopol; exact launch unresolved.",
+      "entry": {
+        "lat": 42.41,
+        "lon": 27.67,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Open southern Black Sea beach; current discipline-specific conditions and hazards were not found.",
+      "access_rules": "Summer bathing/camping concessions and exact sport corridor require current local authority evidence.",
+      "trip_value": "A ministry guide names Gradina, but evidence is too generic to prove a trip-worthy spot.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/black_sea_coast.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "windsurf_location",
+            "regional_context"
+          ]
+        },
+        {
+          "url": "https://visitbulgaria.com/wp-content/uploads/2021/04/ENG-AdventureTourismBulgaria_web-min.pdf",
+          "publisher": "Visit Bulgaria",
+          "supports": [
+            "country_windsport_context_only"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    }
+  ]
+}

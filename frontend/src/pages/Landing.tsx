@@ -327,6 +327,7 @@ export default function Landing() {
                 sport={rowSport}
                 personalized={personalized}
                 className="mt-12"
+                defer
               />
               <RecommendationRow
                 title={t("recommendations.seasonTitle")}
@@ -335,6 +336,7 @@ export default function Landing() {
                 personalized={personalized}
                 weeks={nextWeeks}
                 className="mt-12"
+                defer
               />
             </>
           )}

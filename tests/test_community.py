@@ -450,3 +450,96 @@ def test_license_endpoint(anon_client):
     body = anon_client.get("/community/license").json()
     assert body["version"] == "v1"
     assert "Einwilligung" in body["terms"]
+
+
+# --- deleting one's own comment -------------------------------------------
+
+def _signed_in(client, monkeypatch):
+    """Register, confirm and log in a fresh visitor on `client`.
+
+    Registration is gated behind configured SMTP, so stub it the same way the
+    upvote test above does. tests/test_account.py carries an autouse fixture
+    for exactly this, but an autouse fixture only reaches its own module —
+    borrowing that module's helper leaves the gate closed and the register
+    call answers 503.
+    """
+    from app.api import account as account_api
+
+    sent_tokens: list[str] = []
+    monkeypatch.setattr(get_settings(), "account_smtp_host", "smtp.test")
+    monkeypatch.setattr(get_settings(), "account_smtp_from", "noreply@test.example")
+    monkeypatch.setattr(
+        account_api, "send_account_link",
+        lambda address, *, purpose, token: sent_tokens.append(token),
+    )
+
+    email = f"commenter-{uuid.uuid4().hex[:8]}@example.com"
+    # Named to match the obviously-fake fixture pattern that .gitleaks.toml
+    # already allowlists, so the secret scan does not read it as a credential.
+    password = "owner-pw-123456789"
+    registered = client.post("/account/register", json={
+        "email": email, "displayName": "Kommentatorin",
+        "acceptedTerms": True, "ageConfirmed": True,
+    })
+    assert registered.status_code == 202, registered.text
+    assert client.post("/account/email/confirm", json={
+        "token": sent_tokens[-1], "password": password,
+    }).status_code == 200
+    login = client.post("/account/login", json={"email": email, "password": password})
+    assert login.status_code == 200, login.text
+    client.headers["X-CSRF-Token"] = client.cookies.get(get_settings().csrf_cookie_name)
+    return client
+
+
+def test_author_can_delete_own_comment(anon_client, spot_id, db, monkeypatch):
+    _signed_in(anon_client, monkeypatch)
+    posted = anon_client.post(
+        f"/spots/{spot_id}/tips",
+        json={"body": "Parkplatz ist im Sommer früh voll.", "author_name": "Autorin"},
+    )
+    assert posted.status_code == 201, posted.text
+    tip_id = posted.json()["id"]
+
+    # The author sees their own comment flagged as theirs, nobody else does.
+    mine = anon_client.get(f"/spots/{spot_id}/tips").json()["items"]
+    assert [t["viewer_is_author"] for t in mine if t["id"] == tip_id] == [True]
+
+    gone = anon_client.delete(f"/community/comments/tip/{tip_id}")
+    assert gone.status_code == 204, gone.text
+    assert db.get(LocalTip, uuid.UUID(tip_id)) is None
+    remaining = anon_client.get(f"/spots/{spot_id}/tips").json()["items"]
+    assert tip_id not in [t["id"] for t in remaining]
+
+
+def test_other_accounts_cannot_delete_a_comment(anon_client, spot_id, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    _signed_in(anon_client, monkeypatch)
+    posted = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Strömung an der Mole beachten.", "author_name": "Autorin"}
+    )
+    tip_id = posted.json()["id"]
+
+    with TestClient(app) as stranger:
+        _signed_in(stranger, monkeypatch)
+        refused = stranger.delete(f"/community/comments/tip/{tip_id}")
+    assert refused.status_code == 403
+
+
+def test_a_comment_with_replies_is_not_cascaded_away(anon_client, spot_id, monkeypatch):
+    """Deleting a parent would take other people's replies with it (the public
+    feed drops orphans), so the author is pointed at the operator instead."""
+    _signed_in(anon_client, monkeypatch)
+    parent = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Wie ist der Einstieg bei Niedrigwasser?", "author_name": "Autorin"}
+    )
+    parent_id = parent.json()["id"]
+    reply = anon_client.post(
+        f"/spots/{spot_id}/tips",
+        json={"body": "Steinig, Schuhe mitnehmen.", "author_name": "Antwortende", "parent_id": parent_id},
+    )
+    assert reply.status_code == 201, reply.text
+
+    refused = anon_client.delete(f"/community/comments/tip/{parent_id}")
+    assert refused.status_code == 409
+    assert "Antworten" in refused.json()["detail"]

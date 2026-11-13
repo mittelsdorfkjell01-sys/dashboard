@@ -11,6 +11,7 @@ from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_valida
 
 from app.admin.constants import (
     validate_bottom_types,
+    validate_best_wind_directions,
     validate_editorial,
     validate_facilities,
     validate_levels,
@@ -42,6 +43,7 @@ class SpotCreate(AdminWriteModel):
     water_type: list[str] = Field(default_factory=list, max_length=8)
     bottom_type: list[str] = Field(default_factory=list, max_length=8)
     level: list[str] = Field(default_factory=list, max_length=8)
+    best_wind_directions: list[str] = Field(default_factory=list, max_length=16)
     water_character: list[str] = Field(default_factory=list, max_length=8)
     style: list[str] = Field(default_factory=list, max_length=8)
     facilities: dict[str, Any] | None = None
@@ -55,6 +57,9 @@ class SpotCreate(AdminWriteModel):
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
+    _v_best_wind = field_validator("best_wind_directions")(
+        staticmethod(validate_best_wind_directions)
+    )
     _v_sports = field_validator("sports")(staticmethod(validate_sports))
     _v_bottom = field_validator("bottom_type")(staticmethod(validate_bottom_types))
     _v_water = field_validator("water_character")(
@@ -98,6 +103,7 @@ class SpotUpdate(AdminWriteModel):
     water_type: list[str] | None = Field(default=None, max_length=8)
     bottom_type: list[str] | None = Field(default=None, max_length=8)
     level: list[str] | None = Field(default=None, max_length=8)
+    best_wind_directions: list[str] | None = Field(default=None, max_length=16)
     water_character: list[str] | None = Field(default=None, max_length=8)
     style: list[str] | None = Field(default=None, max_length=8)
     facilities: dict[str, Any] | None = None
@@ -116,6 +122,9 @@ class SpotUpdate(AdminWriteModel):
     allow_duplicate: bool = False
 
     _v_level = field_validator("level")(staticmethod(validate_levels))
+    _v_best_wind = field_validator("best_wind_directions")(
+        staticmethod(validate_best_wind_directions)
+    )
     _v_sports = field_validator("sports")(staticmethod(validate_sports))
     _v_bottom = field_validator("bottom_type")(staticmethod(validate_bottom_types))
     _v_water = field_validator("water_character")(
@@ -159,17 +168,6 @@ class SpotUpdate(AdminWriteModel):
             exclude_unset=True,
             exclude={"expected_updated_at", "expected_values", "allow_duplicate"},
         )
-
-
-class MetadataUpdate(AdminWriteModel):
-    """Editorial fields to merge. Each value may be a real value or ``"n/a"``."""
-
-    editorial: dict[str, Any]
-
-    @field_validator("editorial")
-    @classmethod
-    def _limit_editorial(cls, value: Any) -> Any:
-        return _bounded_json(value, label="editorial")
 
 
 class FinishRankRequest(AdminWriteModel):

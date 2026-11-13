@@ -1,0 +1,972 @@
+{
+  "schema_version": 1,
+  "batch": "006",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Candidate selection used external discovery only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless explicitly sourced.",
+    "Image candidates remain unapproved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Moledo",
+      "country": "PT",
+      "identity": "Praia de Moledo at Caminha, outside supervised bathing water.",
+      "entry": {
+        "lat": 41.85,
+        "lon": -8.87,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf"
+      ],
+      "conditions": "Windy exposed beach with strong waves; year-round surf and summer windsurf are documented.",
+      "access_rules": "Attach flags, bathing sectors and Camarido protected-area access.",
+      "trip_value": "Northern scenery, established wind use and year-round surf support worth_trip after rules are attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/NR/exeres/03D6E6C7-24DD-4D2E-BFB0-3DDAA743DD09",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "sports",
+            "waves",
+            "season",
+            "protected_setting"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "national_spot_recommendation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Cabedelo, Viana do Castelo",
+      "country": "PT",
+      "identity": "The north and south sections of Cabedelo's groyne must be treated as different riding areas.",
+      "entry": {
+        "lat": 41.683,
+        "lon": -8.832,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "surf",
+        "wing"
+      ],
+      "conditions": "Strong wind; north section favours windsurf, while the longer south beach supports surf and kite use.",
+      "access_rules": "Map the discipline sections, dunes, supervised water and current rescue coverage.",
+      "trip_value": "International events, dual conditions and dense instruction infrastructure support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ambiente.cm-viana-castelo.pt/media/19234/download",
+          "publisher": "Viana do Castelo municipality",
+          "supports": [
+            "sections",
+            "winds",
+            "sports",
+            "international_events"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/kite-voodoo",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "school",
+            "flat_wave",
+            "rental"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Ofir",
+      "country": "PT",
+      "identity": "The southern surf section of Praia de Ofir, separate from the central bathing area.",
+      "entry": {
+        "lat": 41.516,
+        "lon": -8.785,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard",
+        "windsurf"
+      ],
+      "conditions": "Atlantic beach beside the Cávado mouth; southern section has better swell and low-tide rocks emerge.",
+      "access_rules": "Respect the protected coastal landscape, bathing zone and river-mouth hazards.",
+      "trip_value": "Protected dune/forest setting and established sports make a defensible worth_trip destination.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praia-de-ofir",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "south_section",
+            "sports",
+            "rocks",
+            "protected_area"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "Ofir_Esposende_recommendation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Matosinhos Beach",
+      "country": "PT",
+      "identity": "The sheltered city beach immediately south of Leixões port.",
+      "entry": {
+        "lat": 41.177,
+        "lon": -8.692,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Mostly small sheltered waves suited to learning; rocks and stronger lefts occur at one edge.",
+      "access_rules": "Keep clear of port limits, rocks and crowded supervised bathing water.",
+      "trip_value": "Excellent local training access, but insufficient dedicated-trip value compared with nearby Atlantic destinations.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.cm-matosinhos.pt/cmmatosinhos2020/uploads/writer_file/document/24234/beach_guide.pdf",
+          "publisher": "Matosinhos municipality",
+          "supports": [
+            "conditions",
+            "levels",
+            "schools",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "sport_use"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Espinho – Praia da Baía",
+      "country": "PT",
+      "identity": "The breakwater-defined Praia da Baía and its Casino wave.",
+      "entry": {
+        "lat": 41.007,
+        "lon": -8.646,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Breakwaters shelter much of the bay; the recognised wave and crowd vary with bank and swell.",
+      "access_rules": "Separate concession/bathing space and add current/crowd guidance.",
+      "trip_value": "One of northern Portugal's better-known waves, schools and WSL events support worth_trip after exact peak guidance.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praia-da-baia-espinho",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "wave_reputation",
+            "WSL",
+            "schools"
+          ]
+        },
+        {
+          "url": "https://www.visit.espinho.pt/pt/turismo/praia-da-baia/",
+          "publisher": "Espinho Tourism",
+          "supports": [
+            "identity",
+            "facilities"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Praia da Barra, Aveiro",
+      "country": "PT",
+      "identity": "Ocean beach beside Aveiro harbour entrance; harbour water is excluded.",
+      "entry": {
+        "lat": 40.642,
+        "lon": -8.749,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard",
+        "kitesurf",
+        "sailing"
+      ],
+      "conditions": "Multiple consistent Atlantic peaks; harbour structures and strong water movement need local assessment.",
+      "access_rules": "Follow port exclusion, supervised bathing and flags.",
+      "trip_value": "Consistent multi-sport surf, lighthouse setting and services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/NR/exeres/9C78F9A9-C58C-4556-8989-B88F14F5617C",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "sports",
+            "harbour_identity",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/surfing-in-the-center-of-portugal",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "consistent_waves",
+            "multiple_peaks"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Cabedelo, Figueira da Foz",
+      "country": "PT",
+      "identity": "Praia do Cabedelo south of the Mondego mouth.",
+      "entry": {
+        "lat": 40.137,
+        "lon": -8.864,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "kitesurf",
+        "bodyboard"
+      ],
+      "conditions": "Large dune-backed beachbreak with multiple schools; river-mouth and jetty effects require current guidance.",
+      "access_rules": "Use dune walkways and respect port, swimming and school sectors.",
+      "trip_value": "Historic competition venue, schools and multi-discipline conditions support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/content/praia-do-cabedelo-figueira-da-foz",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "sports",
+            "schools",
+            "dunes"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/surfing-in-the-center-of-portugal",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "competition_history",
+            "long_rights"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Buarcos – Tamargueira",
+      "country": "PT",
+      "identity": "The long right at Tamargueira/Buarcos, not the entire urban beach.",
+      "entry": {
+        "lat": 40.168,
+        "lon": -8.883,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Very long sectional right can run from Cabo Mondego; summer crowd and rocks/sections require advanced judgement.",
+      "access_rules": "Pin entry/exit and add rock, crowd, level and tide constraints.",
+      "trip_value": "Internationally known as Europe's longest wave and a destination of renowned surfers; exceeds worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/content/praia-da-tamargueira",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "international_reputation",
+            "longest_wave",
+            "sections"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/sites/default/files/CenterofPortugal_GB.pdf",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "Europe_leading_right",
+            "global_surfers"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "São Pedro de Moel",
+      "country": "PT",
+      "identity": "The bay beach at São Pedro de Moel.",
+      "entry": {
+        "lat": 39.756,
+        "lon": -9.031,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Bay shelter reduces north wind while surf remains available year-round.",
+      "access_rules": "Respect flags, rocky margins and supervised water.",
+      "trip_value": "Year-round surf, distinctive pine-coast setting and services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praia-de-s%C3%A3o-pedro-de-moel",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "year_round_surf",
+            "facilities"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/surfing-in-the-center-of-portugal",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "north_wind_shelter",
+            "trip_context"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Foz do Arelho",
+      "country": "PT",
+      "identity": "Lagoon windsurf water and ocean surf beach are separate entries at the Óbidos Lagoon mouth.",
+      "entry": {
+        "lat": 39.436,
+        "lon": -9.227,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "surf"
+      ],
+      "conditions": "Calmer windy lagoon contrasts with exposed ocean surf; inlet geometry and current change.",
+      "access_rules": "Map north-bank launch, inlet current, bathers and navigation sectors.",
+      "trip_value": "Two water states, schools and heritage access support worth_trip after launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/node/141386",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "lagoon_ocean_split",
+            "sports",
+            "conditions"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/NR/exeres/6F8F6601-3D1F-4E0A-A822-29A5A576B01F",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "school",
+            "north_shore",
+            "sports"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Santa Cruz, Torres Vedras",
+      "country": "PT",
+      "identity": "Santa Cruz's competition beach system; an exact peak must be selected.",
+      "entry": {
+        "lat": 39.136,
+        "lon": -9.383,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Exposed rugged coast with powerful event-quality waves and multiple peaks.",
+      "access_rules": "Attach peak, level, rocks/current and supervised-zone details.",
+      "trip_value": "International competitions and strong coastal destination value support worth_trip without enough evidence for world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/content/surfing-in-the-center-of-portugal",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "international_competitions",
+            "elite_challenge"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praias-de-santa-cruz",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "beach_identity",
+            "services"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Praia da Areia Branca",
+      "country": "PT",
+      "identity": "The main supervised beach at Areia Branca.",
+      "entry": {
+        "lat": 39.264,
+        "lon": -9.336,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Active sea supports both learning and regular surfing; precise hazards are not published.",
+      "access_rules": "Retain flags, supervision and school-led level choice.",
+      "trip_value": "Consistent region, schools, hostel and services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/NR/exeres/08B367AD-928B-4FC0-BD0A-36AFADA8CC3E",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "surf",
+            "learning",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/ripar-academia-de-surf-unipessoal-lda",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "consistency",
+            "school",
+            "rental"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Lagoa de Albufeira",
+      "country": "PT",
+      "identity": "Lagoon launch and sea-facing surf beach are distinct.",
+      "entry": {
+        "lat": 38.506,
+        "lon": -9.184,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "sailing",
+        "surf"
+      ],
+      "conditions": "Calm lagoon supports wind sports; inlet has dangerous underwater currents and ocean side has strong waves.",
+      "access_rules": "Map the legal launch, seasonal inlet opening, swimmers and protected dunes.",
+      "trip_value": "Unusual lagoon/ocean combination and established use support worth_trip after zoning correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/NR/exeres/85293A7E-3413-4378-839B-0B5832FDCC02",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "sports",
+            "lagoon_ocean",
+            "inlet_hazard"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "national_recommendation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Fonte da Telha",
+      "country": "PT",
+      "identity": "The established beach-school section at Fonte da Telha.",
+      "entry": {
+        "lat": 38.574,
+        "lon": -9.197,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "surf",
+        "SUP"
+      ],
+      "conditions": "Open Atlantic coast with wind and wave use; cliff and seasonal crowd affect access.",
+      "access_rules": "Use current school/rescue sector and protect fossil-cliff landscape and bathers.",
+      "trip_value": "Certified school, rescue/rental and long Caparica coast support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/content/ws-club",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "school",
+            "sports",
+            "rescue",
+            "rental"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "popular_spot"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "São João da Caparica",
+      "country": "PT",
+      "identity": "The wind-sport/surf sections at São João, not the whole Caparica urban frontage.",
+      "entry": {
+        "lat": 38.664,
+        "lon": -9.251,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "surf"
+      ],
+      "conditions": "Atlantic beachbreak and strong coastal wind; groynes and crowd make section selection material.",
+      "access_rules": "Pin a legal launch and current bathing-season corridor.",
+      "trip_value": "Lisbon access and nationally recognised wind-sport use support worth_trip after exact-zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "popular_windsport_spot"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/terras-da-costa-acacias-e-medos",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "coast_identity",
+            "surf",
+            "protected_landscape"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Praia do Meco",
+      "country": "PT",
+      "identity": "Moinho de Baixo/Meco beach; naturist and sports sections must remain explicit.",
+      "entry": {
+        "lat": 38.487,
+        "lon": -9.18,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard",
+        "windsurf"
+      ],
+      "conditions": "Frequently rough sea with powerful swell.",
+      "access_rules": "Respect licensed naturist sector, flags and swimmer separation.",
+      "trip_value": "Strong conditions and distinctive Sesimbra setting support worth_trip after section correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/node/141558",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "sports",
+            "rough_sea",
+            "naturist_zone"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "Sesimbra_windsport_context"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Tróia",
+      "country": "PT",
+      "identity": "Unresolved Tróia peninsula wind-sport candidate; no exact launch established.",
+      "entry": {
+        "lat": 38.487,
+        "lon": -8.904,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Sheltered estuary-facing and exposed ocean-facing waters differ materially.",
+      "access_rules": "Dolphin habitat, navigation, bathing and concession rules require an exact authority map.",
+      "trip_value": "Peninsula trip value is strong, but sport identity and permission are too generic to count now.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/content/windsurfing-and-kitesurfing",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "beginner_conditions",
+            "schools_generic"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/destinos/alentejo/73786",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "peninsula_destination",
+            "protected_context"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "São Torpes",
+      "country": "PT",
+      "identity": "Praia de São Torpes south of Sines.",
+      "entry": {
+        "lat": 37.923,
+        "lon": -8.804,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Consistent exposed coast with level-dependent peaks; precise current/industrial-water context needs updating.",
+      "access_rules": "Use school and supervised sectors; retain local water-quality and current advisories.",
+      "trip_value": "Regional-leading surf, year-round schools and major events support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/system/files_force/N4.BRO_New4_Alentejo_TempoparaSerFeliz_EN.pdf?download=1",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "regional_rank",
+            "schools",
+            "events"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praia-de-sao-torpes",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "identity",
+            "surf",
+            "services"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Malhão / Milfontes",
+      "country": "PT",
+      "identity": "Malhão ocean beach near Vila Nova de Milfontes; Mira estuary is separate.",
+      "entry": {
+        "lat": 37.788,
+        "lon": -8.801,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Consistent Costa Vicentina surf; open beach hazards and remote sections require local selection.",
+      "access_rules": "Natural-park access, dunes and supervised sections must be respected.",
+      "trip_value": "Year-round instruction, consistent waves and protected-coast journey support worth_trip after exact beach mapping.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/pt-pt/regioes-e-localidades/vila-nova-de-milfontes",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "year_round_school",
+            "consistency",
+            "natural_park"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/en/system/files_force/N4.BRO_New4_Alentejo_TempoparaSerFeliz_EN.pdf?download=1",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "Malhao_surf_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Odeceixe",
+      "country": "PT",
+      "identity": "Ocean side of Odeceixe beach at the Seixe river mouth.",
+      "entry": {
+        "lat": 37.441,
+        "lon": -8.798,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "River and Atlantic create changing bars and currents; beach exposure varies by tide.",
+      "access_rules": "Separate river bathing water from ocean surf and retain natural-park/current warnings.",
+      "trip_value": "Dramatic river-mouth setting and established Costa Vicentina surf support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/sites/www.visitportugal.com/files/N4.BRO_New3_Algarve_TurismoNatureza_EN_1.pdf",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "access",
+            "surf",
+            "protected_coast"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praia-de-odeceixe",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "river_ocean_identity",
+            "services"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Arrifana",
+      "country": "PT",
+      "identity": "Arrifana's cliff-enclosed beach and established surf peaks.",
+      "entry": {
+        "lat": 37.294,
+        "lon": -8.865,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Sheltered bay still receives powerful Atlantic swell; cliffs, crowd and access constrain use.",
+      "access_rules": "Follow supervision, parking/access and level guidance.",
+      "trip_value": "Year-round surf, infrastructure and exceptional cliff setting support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/en/node/141536",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "year_round_surf",
+            "facilities",
+            "cliffs"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/algarve-praias-de-um-extremo-ao-outro-da-costa",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "surf_reputation",
+            "regional_trip"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Praia do Amado",
+      "country": "PT",
+      "identity": "Amado's exposed Costa Vicentina beachbreak.",
+      "entry": {
+        "lat": 37.167,
+        "lon": -8.902,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Multiple exposed peaks and strong conditions, with schools and events serving different levels.",
+      "access_rules": "Respect natural-park access, flags, currents and school areas.",
+      "trip_value": "International competitions, schools and remote coast support worth_trip; evidence stops short of world_class.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/algarve-praias-de-um-extremo-ao-outro-da-costa",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "international_events",
+            "surf"
+          ]
+        },
+        {
+          "url": "https://www.visitportugal.com/pt-pt/content/praia-do-amado",
+          "publisher": "Visit Portugal",
+          "supports": [
+            "schools",
+            "conditions",
+            "services"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Jardim do Mar",
+      "country": "PT",
+      "identity": "Madeira's Jardim do Mar point/reef-break system.",
+      "entry": {
+        "lat": 32.737,
+        "lon": -17.212,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Large, constant, powerful North Atlantic point and reef waves for advanced/expert surfers.",
+      "access_rules": "Entry/exit, reef, swell and rescue limits must be explicit.",
+      "trip_value": "Official tourism explicitly assigns world-class status and international cult reputation; exclude from worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitmadeira.com/en/what-to-do/sea-lovers/activities/surf/surfing-in-jardim-do-mar/",
+          "publisher": "Visit Madeira",
+          "supports": [
+            "world_class",
+            "conditions",
+            "level"
+          ]
+        },
+        {
+          "url": "https://www.visitmadeira.com/en/where-to-go/madeira/west-coast/calheta/jardim-do-mar/",
+          "publisher": "Visit Madeira",
+          "supports": [
+            "European_reputation",
+            "international_events"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Paul do Mar",
+      "country": "PT",
+      "identity": "Paul do Mar's wave and wind-sport coast, separate from neighbouring Jardim do Mar.",
+      "entry": {
+        "lat": 32.753,
+        "lon": -17.229,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf"
+      ],
+      "conditions": "Reef/point surf and year-round wind use are documented only at destination level.",
+      "access_rules": "Pin the exact wave/launch, level, entry/exit and rescue limitations.",
+      "trip_value": "Madeira journey and recognised surf support worth_trip only after exact identity correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitmadeira.com/pt/onde-ir/madeira/costa-oeste/calheta/paul-do-mar/",
+          "publisher": "Visit Madeira",
+          "supports": [
+            "surf_reputation",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://visitmadeira.com/pt/o-que-fazer/amantes-de-mar/atividades/windsurf/",
+          "publisher": "Visit Madeira",
+          "supports": [
+            "year_round_windsurf",
+            "regional_conditions"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Santa Bárbara, São Miguel",
+      "country": "PT",
+      "identity": "Areal de Santa Bárbara's long beachbreak at Ribeira Grande.",
+      "entry": {
+        "lat": 37.819,
+        "lon": -25.555,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "bodyboard"
+      ],
+      "conditions": "Exposed experienced-surfer beachbreak with long sand area and changing peaks.",
+      "access_rules": "Retain level, current, flags and seasonal supervision guidance.",
+      "trip_value": "Azorean island journey, established surf and resort/services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitazores.com/en/explore/santa-barbara-beach",
+          "publisher": "Visit Azores",
+          "supports": [
+            "sports",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://www.visitazores.com/storage/media/2022/03/feel-alive-en.pdf",
+          "publisher": "Visit Azores",
+          "supports": [
+            "experienced_level",
+            "beachbreak"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    }
+  ]
+}

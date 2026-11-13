@@ -9,6 +9,7 @@ import json
 import math
 
 from sqlalchemy import select
+from sqlalchemy.orm import load_only, selectinload
 
 from app.models import (
     Spot,
@@ -587,46 +588,20 @@ def _surface_context(spot, profile) -> str | None:
     return None
 
 
-def select_stations_for_spot(
-    db,
-    spot_id,
+def _evaluate_loaded_spot(
+    spot,
+    stations: list,
+    latest_by_station: dict,
+    import_state_by_station: dict,
+    geo_profile,
     *,
-    now: datetime | None = None,
-    wind_direction_deg: float | None = None,
-    policy: StationSelectionPolicy = DEFAULT_STATION_SELECTION_POLICY,
-    purpose: str = "residual",
+    now: datetime,
+    wind_direction_deg: float | None,
+    policy: StationSelectionPolicy,
+    purpose: str,
 ) -> StationSelectionResult:
-    """Load every configured candidate and only then run the common selector."""
+    """Evaluate one spot from an already batch-loaded station context."""
     from geoalchemy2.shape import to_shape
-
-    spot = db.get(Spot, spot_id)
-    if spot is None:
-        raise LookupError("spot_not_found")
-    stations = list(db.scalars(
-        select(WeatherStation).where(WeatherStation.spot_id == spot_id)
-    ).all())
-    latest_by_station = {}
-    import_state_by_station = {}
-    if stations:
-        observations = db.scalars(
-            select(WeatherObservation)
-            .where(WeatherObservation.station_id.in_([station.id for station in stations]))
-            .distinct(WeatherObservation.station_id)
-            .order_by(
-                WeatherObservation.station_id,
-                WeatherObservation.observed_at.desc(),
-            )
-        ).all()
-        for observation in observations:
-            latest_by_station.setdefault(observation.station_id, observation)
-        import_states = db.scalars(
-            select(WeatherObservationImportState).where(
-                WeatherObservationImportState.station_id.in_(
-                    [station.id for station in stations]
-                )
-            )
-        ).all()
-        import_state_by_station = {state.station_id: state for state in import_states}
 
     provider_operational_scores: dict[str, float] = {}
     for provider in {station.provider for station in stations}:
@@ -644,12 +619,6 @@ def select_stations_for_spot(
             ) / len(provider_states)
 
     profile = getattr(spot, "weather_profile", None)
-    geo_profile = db.scalar(
-        select(SpotGeoProfileVersion).where(
-            SpotGeoProfileVersion.spot_id == spot_id,
-            SpotGeoProfileVersion.active.is_(True),
-        ).order_by(SpotGeoProfileVersion.version.desc()).limit(1)
-    )
     geo_payload = geo_profile.profile if geo_profile and isinstance(geo_profile.profile, dict) else {}
     point = to_shape(spot.location)
     target = SpotSelectionContext(
@@ -692,3 +661,120 @@ def select_stations_for_spot(
         policy=policy,
         purpose=purpose,
     )
+
+
+def select_stations_for_spots(
+    db,
+    spot_ids,
+    *,
+    now: datetime | None = None,
+    wind_directions: dict | None = None,
+    policy: StationSelectionPolicy = DEFAULT_STATION_SELECTION_POLICY,
+    purpose: str = "residual",
+) -> dict:
+    """Select stations for many spots with a fixed number of SQL queries.
+
+    All spots, stations, latest observations, import states and active geo
+    profiles are loaded set-wise. Candidate evaluation remains exactly the
+    same as the single-spot path and is performed independently per spot.
+    """
+    ordered_ids = list(dict.fromkeys(spot_ids))
+    if not ordered_ids:
+        return {}
+    evaluated_at = now or datetime.now(timezone.utc)
+    directions = wind_directions or {}
+
+    spots = list(
+        db.scalars(
+            select(Spot)
+            .where(Spot.id.in_(ordered_ids))
+            .options(
+                load_only(Spot.id, Spot.location, Spot.water_type),
+                selectinload(Spot.weather_profile),
+            )
+        ).all()
+    )
+    stations = list(
+        db.scalars(
+            select(WeatherStation).where(WeatherStation.spot_id.in_(ordered_ids))
+        ).all()
+    )
+    stations_by_spot: dict = {spot_id: [] for spot_id in ordered_ids}
+    for station in stations:
+        stations_by_spot.setdefault(station.spot_id, []).append(station)
+
+    station_ids = [station.id for station in stations]
+    latest_by_station: dict = {}
+    import_state_by_station: dict = {}
+    if station_ids:
+        observations = db.scalars(
+            select(WeatherObservation)
+            .where(WeatherObservation.station_id.in_(station_ids))
+            .distinct(WeatherObservation.station_id)
+            .order_by(
+                WeatherObservation.station_id,
+                WeatherObservation.observed_at.desc(),
+            )
+        ).all()
+        for observation in observations:
+            latest_by_station.setdefault(observation.station_id, observation)
+        import_states = db.scalars(
+            select(WeatherObservationImportState).where(
+                WeatherObservationImportState.station_id.in_(station_ids)
+            )
+        ).all()
+        import_state_by_station = {state.station_id: state for state in import_states}
+
+    geo_profiles = db.scalars(
+        select(SpotGeoProfileVersion)
+        .where(
+            SpotGeoProfileVersion.spot_id.in_(ordered_ids),
+            SpotGeoProfileVersion.active.is_(True),
+        )
+        .order_by(
+            SpotGeoProfileVersion.spot_id,
+            SpotGeoProfileVersion.version.desc(),
+        )
+    ).all()
+    geo_profile_by_spot: dict = {}
+    for profile in geo_profiles:
+        geo_profile_by_spot.setdefault(profile.spot_id, profile)
+
+    return {
+        spot.id: _evaluate_loaded_spot(
+            spot,
+            stations_by_spot.get(spot.id, []),
+            latest_by_station,
+            import_state_by_station,
+            geo_profile_by_spot.get(spot.id),
+            now=evaluated_at,
+            wind_direction_deg=directions.get(spot.id),
+            policy=policy,
+            purpose=purpose,
+        )
+        for spot in spots
+    }
+
+
+def select_stations_for_spot(
+    db,
+    spot_id,
+    *,
+    now: datetime | None = None,
+    wind_direction_deg: float | None = None,
+    policy: StationSelectionPolicy = DEFAULT_STATION_SELECTION_POLICY,
+    purpose: str = "residual",
+) -> StationSelectionResult:
+    """Load every configured candidate and run the shared batch selector."""
+    selections = select_stations_for_spots(
+        db,
+        [spot_id],
+        now=now,
+        wind_directions={spot_id: wind_direction_deg},
+        policy=policy,
+        purpose=purpose,
+    )
+    try:
+        return selections[spot_id]
+    except KeyError as exc:
+        raise LookupError("spot_not_found") from exc

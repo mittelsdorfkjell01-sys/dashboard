@@ -1,0 +1,997 @@
+{
+  "schema_version": 1,
+  "batch": "003",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. External catalogues and search results were discovery aids only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Rules count as resolved only when an authority or current operator identifies the relevant zone.",
+    "Image candidates are stored separately and none is approved by search relevance alone.",
+    "Full cloud/admin duplication access was unavailable; local comparison follows after hashing."
+  ],
+  "spots": [
+    {
+      "name": "Gott Bay, Tiree",
+      "country": "GB",
+      "identity": "Gott Bay by Scarinish, not Tiree as an island-wide aggregate.",
+      "entry": {
+        "lat": 56.501,
+        "lon": -6.85,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Broad, shallow and usually flat-to-choppy bay; strong wind can exceed forecasts.",
+      "access_rules": "Tides and rapidly changing Scottish conditions require local checks; exact launch zoning remains open.",
+      "trip_value": "Remote Hebridean setting and Tiree's wind-sports identity justify travel without proving world-class status.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://kitesurfingscotland.com/kitesurfing/tiree/gott-bay/",
+          "publisher": "Kite Surfing Scotland",
+          "supports": [
+            "sport",
+            "conditions",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://www.tireetrust.org.uk/wp-content/uploads/2024/05/2024-Visitors-Guide-Final-1-compressed.pdf",
+          "publisher": "Tiree Community Development Trust",
+          "supports": [
+            "visitor_services",
+            "Gott_Bay_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "West Wittering",
+      "country": "GB",
+      "identity": "The Estate's marked 2XS water-sports area, excluding the swimming zone.",
+      "entry": {
+        "lat": 50.779,
+        "lon": -0.914,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Tidal sand-flat venue; high tide removes safe kite launch space.",
+      "access_rules": "Membership/sign-in applies; marked buoy zone, no high-tide launch, and 75 m separation from shore and swimmers.",
+      "trip_value": "Strong training, rescue and access infrastructure supports a dedicated trip, subject to unusually important operating rules.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.westwitteringestate.co.uk/beach-and-water-activities/",
+          "publisher": "West Wittering Estate",
+          "supports": [
+            "sports",
+            "zones",
+            "membership",
+            "safety"
+          ]
+        },
+        {
+          "url": "https://www.thegreatsussexway.org/about-the-area/west-wittering/",
+          "publisher": "The Great Sussex Way",
+          "supports": [
+            "destination",
+            "beach_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Llangennith",
+      "country": "GB",
+      "identity": "Llangennith/Rhossili beachbreak, with local peaks kept as one venue.",
+      "entry": {
+        "lat": 51.601,
+        "lon": -4.292,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Exposed 4.5 km west-facing beachbreak; east is offshore; rips intensify above roughly 4–6 ft.",
+      "access_rules": "Parking and schools exist; shipwrecks, tides and rips require explicit hazard copy.",
+      "trip_value": "Repeated national/international superlatives place it beyond the intended worth_trip tier.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.llangennith.com/surf/",
+          "publisher": "Llangennith community guide",
+          "supports": [
+            "conditions",
+            "levels",
+            "rips",
+            "peaks"
+          ]
+        },
+        {
+          "url": "https://www.visitswanseabay.com/visitor-information/visit-responsibly/",
+          "publisher": "Visit Swansea Bay",
+          "supports": [
+            "tides",
+            "rips",
+            "wreck_hazards"
+          ]
+        },
+        {
+          "url": "https://wales.org/destinations-in-wales/west-wales/gower-peninsula/",
+          "publisher": "Wales tourism",
+          "supports": [
+            "international_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Daymer Bay",
+      "country": "GB",
+      "identity": "Daymer Bay inside the Camel estuary, not nearby Polzeath.",
+      "entry": {
+        "lat": 50.56,
+        "lon": -4.939,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Sheltered estuary sand venue; NW/N are favoured and currents strengthen around high tide.",
+      "access_rules": "Avoid about two hours around high tide; July–August daytime kite restriction reported and needs annual recheck.",
+      "trip_value": "Scenic estuary, beginner utility and Cornwall travel context support worth_trip once current rules are attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitcornwall.com/things-to-do/beaches/daymer-bay-beach",
+          "publisher": "Visit Cornwall",
+          "supports": [
+            "identity",
+            "kite",
+            "beginner",
+            "landscape"
+          ]
+        },
+        {
+          "url": "https://www.intocornwall.com/engine/azabout.asp?guide=Daymer+Bay",
+          "publisher": "Into Cornwall",
+          "supports": [
+            "winds",
+            "tide",
+            "seasonal_rule",
+            "windsurf"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Brandon Bay",
+      "country": "IE",
+      "identity": "Brandon Bay/Maharees wave cluster; individual reefs and beaches are subspots.",
+      "entry": {
+        "lat": 52.3,
+        "lon": -10.08,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "surf"
+      ],
+      "conditions": "Atlantic bay with reef and beach breaks; wind and waves can be much stronger than forecast.",
+      "access_rules": "National recreational-craft guidance applies; exact subspot, access and rescue data must be stored separately.",
+      "trip_value": "Longstanding international wave-windsurf reputation is too exceptional for the worth_trip tier.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://windsurfing.ie/index.php/locations",
+          "publisher": "Irish Windsurfing Association",
+          "supports": [
+            "sport",
+            "wave_cluster",
+            "hazard"
+          ]
+        },
+        {
+          "url": "https://www.gov.ie/en/department-of-transport/publications/code-of-practice-for-the-safe-operation-of-recreational-craft/",
+          "publisher": "Irish Department of Transport",
+          "supports": [
+            "windsurf",
+            "kite",
+            "foil_safety"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Keel / Trawmore, Achill",
+      "country": "IE",
+      "identity": "Trawmore/Keel beach on Achill, excluding Keem Bay.",
+      "entry": {
+        "lat": 53.974,
+        "lon": -10.076,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Three-kilometre exposed Atlantic strand; the eastern half has dangerous currents.",
+      "access_rules": "Summer lifeguards cover designated areas only; heed dangerous-current warning and national craft guidance.",
+      "trip_value": "Island landscape, several disciplines and schools make it a clear travel destination.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://achilltourism.com/experience-achill/beaches/",
+          "publisher": "Achill Tourism",
+          "supports": [
+            "identity",
+            "surf",
+            "windsurf",
+            "currents",
+            "lifeguards"
+          ]
+        },
+        {
+          "url": "https://achilltourism.com/activities/",
+          "publisher": "Achill Tourism",
+          "supports": [
+            "kite",
+            "schools",
+            "trip_value"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Inch Strand",
+      "country": "IE",
+      "identity": "The five-kilometre Inch Strand on the Dingle Peninsula.",
+      "entry": {
+        "lat": 52.142,
+        "lon": -9.981,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Long exposed sandy strand with variable Atlantic beachbreak; conditions require daily local assessment.",
+      "access_rules": "Seasonal lifeguards and marked bathing areas take priority; current kite/wind zoning is not proven.",
+      "trip_value": "Length, scenery, school/hire and Dingle travel context support worth_trip for surfing.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.discoverireland.ie/kerry/inch",
+          "publisher": "Discover Ireland",
+          "supports": [
+            "identity",
+            "surf",
+            "lifeguards",
+            "trip_value"
+          ]
+        },
+        {
+          "url": "https://www.inchbeach.com/surfing/",
+          "publisher": "Inch Beach visitor operator",
+          "supports": [
+            "school",
+            "hire",
+            "year_round_surf"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Strandhill",
+      "country": "IE",
+      "identity": "Strandhill beach and surf village, not the wider Sligo coast.",
+      "entry": {
+        "lat": 54.272,
+        "lon": -8.608,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Exposed beachbreak with permanent, unpredictable rips; not a swimming beach.",
+      "access_rules": "No swimming or paddling; surf only with appropriate ability and local guidance.",
+      "trip_value": "National Surf Centre and established surf-town services support worth_trip, but safety wording is mandatory.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://surfireland.ie/strandhill-surf-guide",
+          "publisher": "Surf Ireland",
+          "supports": [
+            "surf",
+            "destination",
+            "services"
+          ]
+        },
+        {
+          "url": "https://wheretoswim.eu/ie/sligo/strandhill-beach",
+          "publisher": "Where to Swim / Sligo Council references",
+          "supports": [
+            "rips",
+            "no_swimming",
+            "no_lifeguard"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Hoddevik",
+      "country": "NO",
+      "identity": "Hoddevik bay at Stadlandet.",
+      "entry": {
+        "lat": 62.122,
+        "lon": 5.163,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Sheltered-by-mountains sandy bay, year-round surf; summer suits learners, larger swell brings rips and closeouts.",
+      "access_rules": "Cold-water preparation and local guidance are essential; parking is at the northern point.",
+      "trip_value": "Official tourism explicitly markets it as world-class and internationally attracting; exclude from worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitnorway.com/listings//hoddevik-a-world-class-surf-destination-in-western-norway/212794/",
+          "publisher": "Visit Norway",
+          "supports": [
+            "world_class",
+            "year_round",
+            "trip_value"
+          ]
+        },
+        {
+          "url": "https://www.nordfjord.no/en/surf-nordfjord",
+          "publisher": "Visit Nordfjord",
+          "supports": [
+            "levels",
+            "season",
+            "community"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Borestranda",
+      "country": "NO",
+      "identity": "Borestranda within Jærstrendene, not the entire Jæren coast.",
+      "entry": {
+        "lat": 58.799,
+        "lon": 5.554,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Long exposed sand beach with waves, current and cold water.",
+      "access_rules": "Kite is permitted at Bore, but bird-reserve seasonal restrictions and dune/camping bans must be mapped exactly.",
+      "trip_value": "Excellent access, facilities and Jæren landscape support worth_trip below the region-wide world-class boundary.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.nasjonaleturistveger.no/en/routes/jaren/borestranda/",
+          "publisher": "Norwegian Scenic Routes",
+          "supports": [
+            "coordinates",
+            "surf",
+            "facilities"
+          ]
+        },
+        {
+          "url": "https://www.visitnorway.no/aktiviteter-og-attraksjoner/utendorsaktiviteter/kitesurfing/",
+          "publisher": "Visit Norway",
+          "supports": [
+            "kite_permission",
+            "protected_area_rules",
+            "season"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Sola Beach",
+      "country": "NO",
+      "identity": "Solastranden authorized water-sports beach, not adjacent protected subareas.",
+      "entry": {
+        "lat": 58.884,
+        "lon": 5.55,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "surf"
+      ],
+      "conditions": "Accessible exposed Jæren beach with current, waves and stronger autumn conditions.",
+      "access_rules": "Kite is allowed at Sola; published bird-protection dates conflict (Oct vs Nov start) and require authoritative map/year resolution.",
+      "trip_value": "Airport access and strong water-sports use support worth_trip after the seasonal-rule conflict is resolved.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitnorway.com/listings/sola-strand/30686/",
+          "publisher": "Visit Norway",
+          "supports": [
+            "sports",
+            "access",
+            "protected_area"
+          ]
+        },
+        {
+          "url": "https://www.statsforvalteren.no/nn/rogaland/privatperson/natur-og-friluftsliv/nyheiter/2026/10/jarstrendene/",
+          "publisher": "County Governor of Rogaland",
+          "supports": [
+            "2026_seasonal_rule"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Lomsesanden, Lista",
+      "country": "NO",
+      "identity": "Lomsesanden as the proposed Lista launch, not Lista as an aggregate.",
+      "entry": {
+        "lat": 58.075,
+        "lon": 6.642,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Popular south-coast sand venue; detailed wind window and hazards remain insufficiently sourced.",
+      "access_rules": "Parts of Listastrendene prohibit water sports; exact legal polygon for this launch is unresolved.",
+      "trip_value": "Lista has travel value, but acceptance must wait for a current official zone map.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitnorway.no/aktiviteter-og-attraksjoner/utendorsaktiviteter/kitesurfing/",
+          "publisher": "Visit Norway",
+          "supports": [
+            "popularity",
+            "protected_area_warning"
+          ]
+        },
+        {
+          "url": "https://www.nina.no/archive/nina/pppbasepdf/rapport/2013/998.pdf",
+          "publisher": "Norwegian Institute for Nature Research",
+          "supports": [
+            "historic_use",
+            "conservation_conflict"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Thorlakshofn",
+      "country": "IS",
+      "identity": "Black-sand coast and Thorli surf area by Þorlákshöfn; exact current break footprint unresolved.",
+      "entry": {
+        "lat": 63.856,
+        "lon": -21.379,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Cold North Atlantic surf with powerful winter swells and volcanic-sand/reef setups.",
+      "access_rules": "Local knowledge, Arctic equipment and current harbour-construction status are essential.",
+      "trip_value": "Strong Icelandic surf identity is clear, but the break's current physical/status uncertainty blocks acceptance.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.south.is/en/destinations/towns/thorlakshofn/black-sand",
+          "publisher": "Visit South Iceland",
+          "supports": [
+            "identity",
+            "surf"
+          ]
+        },
+        {
+          "url": "https://www.atlasiceland.com/guides/thorlakshofn-the-surfers-town",
+          "publisher": "Atlas Iceland",
+          "supports": [
+            "season",
+            "cold_water",
+            "local_guide"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Sandvik, Reykjanes",
+      "country": "IS",
+      "identity": "Sandvík beachbreak on Reykjanes; not similarly named Icelandic bays.",
+      "entry": {
+        "lat": 63.846,
+        "lon": -22.715,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Exposed black-sand beachbreak, SW–NW swell and east offshore; very cold, powerful and highly variable.",
+      "access_rules": "No current authority-backed access or rescue guidance was found; local guide and conditions check are mandatory.",
+      "trip_value": "Distinct scenery and surf potential exist, but evidence quality is not yet sufficient for publication.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.surfnerd.com/surf-forecast/sandvik",
+          "publisher": "Surfnerd",
+          "supports": [
+            "break_type",
+            "swell",
+            "wind",
+            "tide"
+          ]
+        },
+        {
+          "url": "https://guidetoiceland.is/travel-info/surfing-in-iceland",
+          "publisher": "Guide to Iceland",
+          "supports": [
+            "cold_water",
+            "Reykjanes_power",
+            "beginner_claim"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Toro Stenstrand",
+      "country": "SE",
+      "identity": "Torö Stenstrand in Ören nature reserve.",
+      "entry": {
+        "lat": 58.835,
+        "lon": 17.838,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Fickle open-Baltic wind swell over a cobble shore; autumn/winter are the main wave season.",
+      "access_rules": "Use marked parking and legal paths; do not cross private plots or disturb reserve habitat.",
+      "trip_value": "Sweden's best-known wave venue and unusual archipelago setting support worth_trip without global superlatives.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://nynashamn.se/uppleva/skargard--batliv/toro",
+          "publisher": "Nynäshamn municipality",
+          "supports": [
+            "sports",
+            "reserve",
+            "parking",
+            "trip_value"
+          ]
+        },
+        {
+          "url": "https://nynashamn.naturskyddsforeningen.se/exempelsida/oren/",
+          "publisher": "Swedish Society for Nature Conservation, Nynäshamn",
+          "supports": [
+            "reserve",
+            "surf_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Lomma Beach",
+      "country": "SE",
+      "identity": "Lomma northern beach water-sports area, excluding southern protected zones.",
+      "entry": {
+        "lat": 55.683,
+        "lon": 13.063,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Very shallow bay with broad standing area; popular with learners and Swedish windsurfers.",
+      "access_rules": "Kite/windsurf prohibitions apply in some reserves and the southern bay; launch must be pinned inside the recreation zone.",
+      "trip_value": "Access, club/hire and shallow-water character support worth_trip once the legal zone is attached.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://lomma.se/upplevaochgora/idrottmotionochfriluftsliv/friluftslivochmotion/spontanidrott.5137.html",
+          "publisher": "Lomma municipality",
+          "supports": [
+            "sports",
+            "conditions",
+            "hire"
+          ]
+        },
+        {
+          "url": "https://lomma.se/upplevaochgora/idrottmotionochfriluftsliv/friluftslivochmotion/naturreservat/dettagallerivaranaturreservat.1987.html",
+          "publisher": "Lomma municipality",
+          "supports": [
+            "reserve_prohibitions",
+            "zones"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Yyteri",
+      "country": "FI",
+      "identity": "Yyteri surf centre/beach at Pori, excluding Munakari seasonal closure.",
+      "entry": {
+        "lat": 61.563,
+        "lon": 21.529,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Shallow sandy bay for learning; storms can produce roughly two-metre waves and advanced conditions.",
+      "access_rules": "Protect dunes; no camping on beach; Munakari access closed 1 April–31 July and boats excluded within 250 m of shore.",
+      "trip_value": "Multi-discipline centre, major dune landscape and rare Finnish wave potential support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://surfkeskusyyteri.fi/fi_FI/spll-surfkeskus-yyteri",
+          "publisher": "SPLL Surf Center Yyteri",
+          "supports": [
+            "sports",
+            "conditions",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.visitpori.fi/en/yyteri/nature-and-outdoors-in-yyteri/sustainable-tourism-in-yyteri/",
+          "publisher": "Visit Pori",
+          "supports": [
+            "dunes",
+            "seasonal_closure",
+            "boating_rule"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Tulliniemi Beach",
+      "country": "FI",
+      "identity": "Tulliniemi south beach water-sports section below the parking area, outside the swimming section.",
+      "entry": {
+        "lat": 59.817,
+        "lon": 22.897,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Windy dune beach; prime published wind range is north through southwest.",
+      "access_rules": "The first section below parking is reserved for swimmers; nature-area rules and exact sport entry need mapping.",
+      "trip_value": "Hanko scenery and established wind use support worth_trip after the launch/swim split is recorded.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visithanko.fi/en/tuotesivu/tulliniemi-beach/",
+          "publisher": "Visit Hanko",
+          "supports": [
+            "sports",
+            "winds",
+            "swimming_zone",
+            "facilities"
+          ]
+        },
+        {
+          "url": "https://hanko.fi/asuminen-ja-ymparisto/ymparisto-ja-luonto/puistot-ja-virkistysalueet/luontopolut/tulliniemi-etelaranta-esteeton-reittiosuus/",
+          "publisher": "City of Hanko",
+          "supports": [
+            "access",
+            "national_urban_park",
+            "dogs"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Ristna Beach",
+      "country": "EE",
+      "identity": "Ristna Beach at western Hiiumaa.",
+      "entry": {
+        "lat": 58.925,
+        "lon": 22.039,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Open Baltic exposure, coarse sand and rapidly deepening bottom; strongest waves commonly occur spring and autumn.",
+      "access_rules": "Experienced-user orientation is appropriate; no current formal launch zoning was found.",
+      "trip_value": "Hiiumaa journey, lighthouse landscape and Estonia-leading wave character support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitestonia.com/en/ristna-beach",
+          "publisher": "Visit Estonia",
+          "supports": [
+            "sports",
+            "waves",
+            "bottom",
+            "season"
+          ]
+        },
+        {
+          "url": "https://visitestonia.com/en/where-to-go/hiiumaa",
+          "publisher": "Visit Estonia",
+          "supports": [
+            "international_visitors",
+            "wing",
+            "island_trip_value"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Parnu Beach",
+      "country": "EE",
+      "identity": "Pärnu central-beach designated surf area, not the entire bay.",
+      "entry": {
+        "lat": 58.371,
+        "lon": 24.497,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Shallow, warm-in-summer bay with urban surf clubs; conditions are generally flat to choppy.",
+      "access_rules": "During bathing season sailboards must remain in the surf zone; craft stay 25 m outside the marked bathing boundary.",
+      "trip_value": "City services and formal surf area support worth_trip after the exact zone geometry is stored.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://parnu.ee/rand-ja-ilm",
+          "publisher": "City of Pärnu",
+          "supports": [
+            "surf_zone",
+            "bathing_season",
+            "craft_rule"
+          ]
+        },
+        {
+          "url": "https://visitestonia.com/en/parnu-beach",
+          "publisher": "Visit Estonia",
+          "supports": [
+            "shallow_water",
+            "surf_clubs",
+            "destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Pavilosta",
+      "country": "LV",
+      "identity": "Pāvilosta beach and Saka river-mouth area; exact discipline launches unresolved.",
+      "entry": {
+        "lat": 56.89,
+        "lon": 21.184,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Open Baltic coast and river mouth with seasonal wind waves.",
+      "access_rules": "Current launch, port-channel separation and protected-coast rules were not established from authoritative sources.",
+      "trip_value": "Town and coast have plausible travel value, but current primary evidence is too thin.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.latvia.travel/sites/default/files/editor/pielikumi/dazadi/east-baltic-coast-cruising-guide.pdf",
+          "publisher": "Latvia Travel",
+          "supports": [
+            "identity",
+            "river_mouth",
+            "visitor_services"
+          ]
+        },
+        {
+          "url": "https://www.visithaapsalu.com/wp-content/uploads/2018/04/Coastal-guide.pdf",
+          "publisher": "Baltic Coastal Hiking guide",
+          "supports": [
+            "historic_surf_school",
+            "sports"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Karosta Beach, Liepaja",
+      "country": "LV",
+      "identity": "Karosta beach at the end of Katedrāles Street, not Liepāja's central bathing beach.",
+      "entry": {
+        "lat": 56.579,
+        "lon": 21.007,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Wide exposed Baltic sand beach with strong wind and wind-wave potential.",
+      "access_rules": "Training/rental is documented; bathing zones, phosphorus hazard and protected-coast law require explicit guidance.",
+      "trip_value": "Unusual military-coast setting plus active centre and city services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://liepaja.travel/en/see-and-do/windserfing-club-rietumkrasts/",
+          "publisher": "Liepāja Travel",
+          "supports": [
+            "exact_entry",
+            "sports",
+            "training",
+            "rental"
+          ]
+        },
+        {
+          "url": "https://www.liepaja.lv/en/baltic-sea-coast/",
+          "publisher": "City of Liepāja",
+          "supports": [
+            "kite",
+            "windsurf",
+            "phosphorus_hazard",
+            "protected_coast"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Nida",
+      "country": "LT",
+      "identity": "Proposed Nida lagoon-side wind venue; Baltic beach and protected dune areas are separate.",
+      "entry": {
+        "lat": 55.303,
+        "lon": 21.006,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Windy Curonian Lagoon/sea setting with shallow-water potential but materially different sides.",
+      "access_rules": "National-park reserve boundaries are strict; exact legal launch and reported beach kite restrictions remain unresolved.",
+      "trip_value": "UNESCO landscape has exceptional trip value, but no publishable launch identity is yet proven.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://nerija.lrv.lt/lt/lankytojams/lankymo-taisykles/",
+          "publisher": "Curonian Spit National Park",
+          "supports": [
+            "reserve_rules",
+            "access_limits"
+          ]
+        },
+        {
+          "url": "https://vstt.lrv.lt/uploads/vstt/documents/files/KURSIU~4.PDF",
+          "publisher": "Lithuanian protected-areas service",
+          "supports": [
+            "kite",
+            "windsurf",
+            "regional_use"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Kintai",
+      "country": "LT",
+      "identity": "Kintai Beach launch on the mainland Curonian Lagoon shore.",
+      "entry": {
+        "lat": 55.42,
+        "lon": 21.264,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Shallow sandy shore with flat-to-choppy water and prevailing W-sector winds; reeds and weed are hazards.",
+      "access_rules": "Use the established beach rather than the small/deeper observation-tower entry; current nature-season rules need recheck.",
+      "trip_value": "Accessible lagoon flat water, instruction and nearby delta/Curonian travel context support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.ikointl.com/destinations/kitesurfing-lithuania",
+          "publisher": "International Kiteboarding Organization",
+          "supports": [
+            "launch",
+            "winds",
+            "conditions",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://kintaiarts.lt/en/apsilankyk-kintuose/",
+          "publisher": "Kintai Arts",
+          "supports": [
+            "kite_club",
+            "trip_value",
+            "lagoon"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Sventoji",
+      "country": "LT",
+      "identity": "Šventoji Baltic beach kite area shown in the Palanga visitor map.",
+      "entry": {
+        "lat": 56.029,
+        "lon": 21.071,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Open Baltic beach; detailed wind window, bottom and hazards were not independently verified.",
+      "access_rules": "A kite location is mapped, but current beach-season zoning and exact launch boundaries remain unverified.",
+      "trip_value": "Resort context is plausible, but evidence is insufficient to distinguish a trip-worthy spot from a local launch.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visit-palanga.lt/wp-content/uploads/2022/05/Sventosios-zemelapis.pdf",
+          "publisher": "Palanga Tourism Information Centre",
+          "supports": [
+            "mapped_kite_location",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://lithuania.travel/en/where-to-visit/top-sites-in-lithuania/curonian-spit-a-kingdom-of-water-sand-and-wind",
+          "publisher": "Lithuania Travel",
+          "supports": [
+            "regional_trip_context_only"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    }
+  ]
+}

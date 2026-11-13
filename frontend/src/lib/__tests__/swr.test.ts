@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { revalidate, peek, __resetCache, hydratePersistent, refreshDelay, shouldRefreshWeather } from "../swr";
+import { revalidate, peek, __resetCache, hydratePersistent, mutate, refreshDelay, shouldRefreshWeather, subscribeToKey } from "../swr";
 
 beforeEach(() => __resetCache());
 
@@ -48,6 +48,23 @@ describe("swr cache", () => {
     await revalidate("k", fetcher);
     expect(calls).toBe(2);
     expect(peek<number>("k")?.data).toBe(2);
+  });
+
+  it("never evicts an actively subscribed entry", async () => {
+    let notifications = 0;
+    const unsubscribe = subscribeToKey("active", () => { notifications += 1; });
+    await revalidate("active", async () => 1);
+    notifications = 0;
+
+    for (let index = 0; index < 200; index += 1) {
+      await revalidate(`other:${index}`, async () => index);
+    }
+
+    expect(peek<number>("active")?.data).toBe(1);
+    mutate<number>("active", (current) => (current ?? 0) + 1);
+    expect(notifications).toBe(1);
+    expect(peek<number>("active")?.data).toBe(2);
+    unsubscribe();
   });
 });
 

@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-11-09",
+  "scope": "24 prepared worth_trip candidates",
+  "environment": "local staging database only",
+  "provider_tabs": {
+    "unsplash": "disabled_missing_local_api_key",
+    "pexels": "disabled_missing_local_api_key",
+    "wikimedia": "available",
+    "openverse": "available_no_superior_unique_selection",
+    "nearby": "available_cross_provider_search_not_a_separate_gallery"
+  },
+  "policy": "Only visually reviewed, spot-specific results with adoptable commercial and modification rights were attached. Nearby or name-only matches were rejected when the depicted location was uncertain.",
+  "summary": {
+    "adopted_local": 18,
+    "hero": 9,
+    "gallery": 9,
+    "left_open": 6,
+    "cloud_writes": 0
+  },
+  "selections": [
+    {"slug": "zeeland-domburg-noordduine", "provider": "wikimedia", "external_id": "52363783", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Domburg_strand_-_panoramio.jpg"},
+    {"slug": "naxos-agios-georgios-lagoon", "provider": "wikimedia", "external_id": "37293267", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:City_beach_Agios_Georgios,_Naxos,_11H2322.jpg"},
+    {"slug": "sardinia-chia-su-giudeu", "provider": "wikimedia", "external_id": "54881424", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Spiagge_Su_Giudeu_e_Campana,_verso_Capo_Spartivento_-_panoramio.jpg"},
+    {"slug": "cornwall-perranporth", "provider": "wikimedia", "external_id": "133072837", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Perranporth_Beach_-_geograph.org.uk_-_4926448.jpg"},
+    {"slug": "cornwall-sennen-cove", "provider": "wikimedia", "external_id": "158690708", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Sennen_Cove_,_Coastal_Scenery_-_geograph.org.uk_-_7297275.jpg"},
+    {"slug": "donegal-rossnowlagh", "provider": "wikimedia", "external_id": "55989699", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Empty_beach_at_Rossnowlagh_-_panoramio_(1).jpg"},
+    {"slug": "asturias-salinas", "provider": "wikimedia", "external_id": "50484558", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Playa_de_Salinas-La_Pe%C3%B1ona._02.jpg"},
+    {"slug": "cantabria-valdearenas-liencres", "provider": "wikimedia", "external_id": "40073059", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Valdearenas_y_Dunas_de_Liencres.JPG"},
+    {"slug": "basque-country-bakio", "provider": "wikimedia", "external_id": "51205238", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Bakio_Beach_4.jpg"},
+    {"slug": "asturias-vega-berbes", "provider": "wikimedia", "external_id": "7733002", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Playa_de_Vega_1_com.jpg"},
+    {"slug": "cantabria-los-locos", "provider": "wikimedia", "external_id": "121574968", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Playa_de_los_Locos_-_Suances_-_Spain.jpg"},
+    {"slug": "basque-country-plentzia", "provider": "wikimedia", "external_id": "2833150", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Cometa_playa_Plencia.jpg"},
+    {"slug": "basque-country-karraspio", "provider": "wikimedia", "external_id": "81131229", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Karraspio_Txiki.jpg"},
+    {"slug": "algarve-arrifana", "provider": "wikimedia", "external_id": "29904187", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Praia_da_Arrifana,_West_Algarve_(3).jpg"},
+    {"slug": "devon-saunton-sands", "provider": "wikimedia", "external_id": "36392739", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Saunton_Sands_-_Panorama-8453-54.jpg"},
+    {"slug": "mayo-carrowniskey", "provider": "wikimedia", "external_id": "74050303", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Sunset_At_Carrowniskey_(134211879).jpeg"},
+    {"slug": "hel-peninsula-chalupy", "provider": "wikimedia", "external_id": "134395968", "role": "hero", "source_page": "https://commons.wikimedia.org/wiki/File:Cha%C5%82upy_-_bulwar.jpg"},
+    {"slug": "halland-apelviken", "provider": "wikimedia", "external_id": "18046071", "role": "gallery", "source_page": "https://commons.wikimedia.org/wiki/File:Varberg_Apelviken_december_2011_(14).JPG"}
+  ],
+  "open": [
+    {"slug": "zeeland-vrouwenpolder", "reason": "The available kitesurf image is labelled only as Zeeland and the exact Vrouwenpolder launch could not be confirmed visually."},
+    {"slug": "rhodes-theologos", "reason": "No exact still image of the watersports beach was found; village, temple and other-island matches were rejected."},
+    {"slug": "zeeland-neeltje-jans", "reason": "The best nearby result shows the storm-surge road, not the actual launch area."},
+    {"slug": "cornwall-gwithian-towans", "reason": "The exact result shows inland dunes without the beach or watersports area and was judged too weak."},
+    {"slug": "asturias-xago", "reason": "The exact result shows only the upper beach and driftwood; it was not representative enough for the spot page."},
+    {"slug": "lefkada-agios-ioannis", "reason": "The only exact sports result was a video; no suitable still image with supported rights metadata was found."}
+  ]
+}

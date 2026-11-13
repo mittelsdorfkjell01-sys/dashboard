@@ -120,13 +120,16 @@ describe("WeekBar", () => {
 });
 
 describe("WeekDetail", () => {
-  it("translates raw API field names into plain-language labels and shows the active window", () => {
+  it("keeps the selected week compact and translates raw API fields", () => {
     const html = renderToStaticMarkup(
-      <WeekDetail week={week(10, { reliability_percent: 68 })} selection={{ min_wind_kn: 15, max_wind_kn: 20, direction_mode: "usable" }} />,
+      <WeekDetail week={week(10, { reliability_percent: 68 })} />,
     );
     expect(html).toContain("68%");
-    expect(html).toContain("15–20 kt");
-    expect(html).toContain("passende Richtung");
+    expect(html).toContain("Windtage");
+    expect(html).toContain("Sessionstunden");
+    expect(html).toContain("Datenbasis");
+    expect(html).not.toContain("Mind. 3 Windtage");
+    expect(html).not.toContain("Richtungsmodus");
     expect(html).not.toContain("reliability_percent");
     expect(html).not.toContain("median_session_hours");
   });

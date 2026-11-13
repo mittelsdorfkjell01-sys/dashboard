@@ -31,7 +31,7 @@ export function spotFactsFrom(spot: Spot): SpotFact[] {
   return facts;
 }
 
-/** All five facility kinds, always, in canonical order — a kind absent from
+/** All six facility kinds, always, in canonical order — a kind absent from
  *  the map is "unbekannt" (available: null), not hidden. Hiding it would read
  *  as "definitely not here" when really nobody has checked yet. */
 export function facilitiesFromMap(map?: FacilityMap | null): Facility[] {

@@ -1,0 +1,24 @@
+{
+  "model_name": "FES2022b",
+  "model_version": "2022b",
+  "license_accepted_at": "YYYY-MM-DDT00:00:00Z",
+  "license_review_due_at": "YYYY-MM-DDT00:00:00Z",
+  "source_url": "https://www.aviso.altimetry.fr/en/data/products/auxiliary-products/global-tide-fes/release-fes22.html",
+  "files": [
+    {
+      "role": "pyfes_config",
+      "path": "fes2022.yaml",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "role": "mask",
+      "path": "fes2022b_mask.nc",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    {
+      "role": "land_geojson",
+      "path": "natural-earth-land.geojson",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  ]
+}

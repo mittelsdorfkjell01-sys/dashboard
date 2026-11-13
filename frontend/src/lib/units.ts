@@ -107,3 +107,46 @@ export const DISTANCE_UNIT_LABELS: Record<DistanceUnit, string> = { km: "Kilomet
 
 /** Short unit suffix as shown next to a reading (e.g. legend header, sidebar). */
 export const WIND_UNIT_SUFFIX: Record<WindUnit, string> = { kn: "kn", bft: "Bft", ms: "m/s" };
+
+// --- form input conversions ------------------------------------------------
+// Readings are *formatted* for display by the helpers above (locale comma,
+// unit suffix). Form fields need the opposite: a plain number in the chosen
+// unit going in, and a canonical value coming back out, with no locale
+// formatting in between — `<input type="number">` only accepts a dot.
+
+/** The unit a wind *threshold* is entered in. Beaufort is a step scale (force 5
+ *  spans 17–21 kn), so letting someone type a limit in Bft would quietly
+ *  coarsen what they stored. Those visitors enter knots instead. */
+export function windInputUnit(unit: WindUnit): Extract<WindUnit, "kn" | "ms"> {
+  return unit === "ms" ? "ms" : "kn";
+}
+
+const round = (value: number, digits: number) => Number(value.toFixed(digits));
+
+/** Canonical knots → the input's unit. */
+export function windToInput(kn: number, unit: WindUnit): number {
+  return windInputUnit(unit) === "ms" ? round(kn * KN_TO_MS, 1) : round(kn, 0);
+}
+
+/** The input's unit → canonical knots. */
+export function windFromInput(value: number, unit: WindUnit): number {
+  return windInputUnit(unit) === "ms" ? value / KN_TO_MS : value;
+}
+
+/** Canonical metres → the chosen wave unit. */
+export function waveToInput(m: number, unit: WaveUnit): number {
+  return unit === "ft" ? round(m * M_TO_FT, 1) : round(m, 1);
+}
+
+export function waveFromInput(value: number, unit: WaveUnit): number {
+  return unit === "ft" ? value / M_TO_FT : value;
+}
+
+/** Canonical °C → the chosen temperature unit. */
+export function tempToInput(c: number, unit: TempUnit): number {
+  return unit === "f" ? round((c * 9) / 5 + 32, 0) : round(c, 0);
+}
+
+export function tempFromInput(value: number, unit: TempUnit): number {
+  return unit === "f" ? ((value - 32) * 5) / 9 : value;
+}

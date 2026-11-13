@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { cardHotlinkSrcSet, hostedSrcSet, objectPosition, unsplashSized } from "../lib/heroSource";
 
-const CARD_LOAD_MARGIN = "100px 0px";
+// Start a below-fold card while it is still roughly one mobile viewport away.
+// The URL remains absent for genuinely distant catalogue rows, and the image
+// keeps native `loading="lazy"`, so the active hero retains network priority.
+// At 100px the request only began once a rider had almost reached the card;
+// that was visibly too late on a mobile connection, especially for older
+// hosted spot photos that do not yet have responsive derivatives.
+const CARD_LOAD_MARGIN = "600px 0px";
 
 /**
  * A spot's image with a branded fallback. When `src` is empty (a seed spot with

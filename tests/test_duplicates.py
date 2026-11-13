@@ -59,6 +59,26 @@ def test_spot_classifier_separates_exact_and_near_similar_candidates():
     assert result.likely[0]["distance_m"] < 200
 
 
+def test_spot_classifier_treats_curated_alias_as_exact_in_same_region():
+    region_id = uuid.uuid4()
+    existing = SimpleNamespace(
+        id=uuid.uuid4(), name="Ai Giannis", normalized_name=normalize_name("Ai Giannis"),
+        region_id=region_id, location=_point(38.84, 20.68), status="draft",
+        editorial={"aliases": ["Agios Ioannis", "Milos Beach"]},
+    )
+    result = find_spot_duplicates(
+        _Db([(existing, "Lefkada", 0.2)]),
+        name="Milos Beach",
+        aliases=["Myloi"],
+        region_id=region_id,
+        lat=38.84,
+        lon=20.68,
+    )
+    assert [item["id"] for item in result.exact] == [str(existing.id)]
+    assert result.exact[0]["matched_names"] == [normalize_name("Milos Beach")]
+    assert result.exact[0]["status"] == "draft"
+
+
 def test_region_classifier_uses_country_without_coordinates_and_bounds_when_present():
     candidate = SimpleNamespace(
         id=uuid.uuid4(), name="Costa Nord", normalized_name=normalize_name("Costa Nord"),

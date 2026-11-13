@@ -1,0 +1,290 @@
+{
+  "generated_at": "2026-11-10T16:56:33.677566+00:00",
+  "independence_statement": "Created before local/database comparison for batch 011.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual, geographic, resolution and licence review."
+  ],
+  "spots": [
+    {
+      "spot": "Odesa Chornomorka",
+      "query": "Odesa Chornomorka Ukraine kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Odesa Arcadia",
+      "query": "Odesa Arcadia Ukraine windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Chornomorsk Ukraine",
+      "query": "Chornomorsk Ukraine kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kobleve Ukraine",
+      "query": "Kobleve Ukraine kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kinburn Spit Ukraine",
+      "query": "Kinburn Spit Ukraine kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Skadovsk Ukraine",
+      "query": "Skadovsk Ukraine windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Arabat Spit Henichesk",
+      "query": "Arabat Spit Henichesk Ukraine kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kyrylivka Fedotova Spit",
+      "query": "Kyrylivka Fedotova Spit Ukraine windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Berdyansk Ukraine",
+      "query": "Berdyansk Ukraine windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lake Svitiaz Ukraine",
+      "query": "Lake Svitiaz Ukraine windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kyiv Sea Vyshhorod",
+      "query": "Kyiv Sea Vyshhorod Ukraine windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Zatoka Dniester Liman",
+      "query": "Zatoka Dniester Liman Ukraine kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ghidighici Reservoir Moldova",
+      "query": "Ghidighici Reservoir Moldova windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Costesti Stanca Reservoir Moldova",
+      "query": "Costesti Stanca Reservoir Moldova windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Batumi Georgia",
+      "query": "Batumi Georgia kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gonio Georgia",
+      "query": "Gonio Georgia kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kvariati Georgia",
+      "query": "Kvariati Georgia windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kobuleti Georgia",
+      "query": "Kobuleti Georgia kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ureki Georgia",
+      "query": "Ureki Georgia kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Maltakva Poti Georgia",
+      "query": "Maltakva Poti Georgia kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Anaklia Georgia",
+      "query": "Anaklia Georgia kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Tbilisi Sea Georgia",
+      "query": "Tbilisi Sea Georgia windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Bazaleti Lake Georgia",
+      "query": "Bazaleti Lake Georgia windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Paravani Lake Georgia",
+      "query": "Paravani Lake Georgia windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lisi Lake Georgia",
+      "query": "Lisi Lake Georgia windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

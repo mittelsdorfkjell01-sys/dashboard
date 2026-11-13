@@ -8,22 +8,18 @@
 // requests, not two. The composer (in the feed) is the only place a photo
 // gets attached to a post; the gallery only ever reads photos back out.
 
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ApiError,
-  getImageLicense,
-  postRating,
-  reportImage,
   resolveMediaUrl,
-  uploadSpotImage,
-  type CommunityImage,
 } from "../lib/api";
+import { deleteOwnTip, getImageLicense, postRating, uploadSpotImage } from "../lib/api/community";
 import { HERO_REQ, validateHeroFile } from "./ImageUpload";
 import { LEVELS, SPORTS, levelLabel, sportLabel } from "../lib/labels";
-import { ChevronDownIcon, CloseIcon, PlusIcon } from "../lib/icons";
+import { CloseIcon, PlusIcon } from "../lib/icons";
 import { GalleryQuickUpload, type GalleryQuickUploadHandle } from "./GalleryQuickUpload";
 import { Button, Input, Select, Textarea } from "./ui";
-import { useCommunityFeed, usePersistedState } from "../lib/hooks";
+import { useCommunityFeed, usePersistedState } from "../lib/communityHooks";
 import { coloredTileUrl } from "../lib/mapLinks";
 import { responsiveImageAttributes } from "../lib/heroSource";
 import {
@@ -38,14 +34,7 @@ import {
 } from "../lib/communityFeed";
 import Checkbox from "./ui/Checkbox";
 import { useTranslation } from "react-i18next";
-import type { TranslationKey } from "../lib/i18n";
-
-const REPORT_REASONS: { key: string; labelKey: TranslationKey }[] = [
-  { key: "copyright", labelKey: "community.report.reasons.copyright" },
-  { key: "inappropriate", labelKey: "community.report.reasons.inappropriate" },
-  { key: "wrong_spot", labelKey: "community.report.reasons.wrongSpot" },
-  { key: "other", labelKey: "community.report.reasons.other" },
-];
+import { CommonsBadge, Lightbox, ReportDialog } from "./community/CommunityMediaDialogs";
 
 const COMPOSER_ID = "community-composer";
 
@@ -93,15 +82,6 @@ function Stars({ value, size = 16 }: { value: number; size?: number }) {
 /** Marks a photo as auto-fetched from Wikimedia Commons rather than posted by
  *  a community member — required by the sprint spec so the two sources never
  *  get confused for one another. */
-function CommonsBadge({ compact = false }: { compact?: boolean }) {
-  const { t } = useTranslation();
-  return (
-    <span className="absolute bottom-1.5 left-1.5 rounded-card bg-ink px-2 py-0.5 text-caption font-medium text-white">
-      {compact ? t("community.commons.badge") : t("community.commons.full")}
-    </span>
-  );
-}
-
 // --- gallery mosaic ----------------------------------------------------------
 
 /**
@@ -473,6 +453,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
   );
   const [votedIds, setVotedIds] = usePersistedState<string[]>(`swd.communityVoted.${spotId}`, []);
   const [reportFor, setReportFor] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const sorted = sortFeed(posts, sort, helpfulCounts);
 
@@ -480,6 +461,21 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
     if (votedIds.includes(id)) return;
     setHelpfulCounts((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
     setVotedIds((prev) => [...prev, id]);
+  };
+
+  // Deleting one's own comment. The feed id is prefixed ("tip:<uuid>"); the API
+  // wants the bare id. A comment that already carries replies is refused by the
+  // server (409) so other people's text is never cascaded away — that reason is
+  // shown verbatim rather than a generic failure.
+  const removeOwnComment = async (post: FeedPost) => {
+    if (!window.confirm(t("community.post.deleteConfirm"))) return;
+    setDeleteError(null);
+    try {
+      await deleteOwnTip(post.id.replace(/^tip:/, ""));
+      reload();
+    } catch (error) {
+      setDeleteError(error instanceof Error && error.message ? error.message : t("community.post.deleteFailed"));
+    }
   };
 
   const composer = <Composer spotId={spotId} spotName={spotName} onPosted={reload} />;
@@ -518,6 +514,11 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
                 ))}
               </div>
 
+              {deleteError && (
+                <p role="alert" className="mt-4 text-ui text-danger">
+                  {deleteError}
+                </p>
+              )}
               <ul className="mt-4 space-y-4">
                 {sorted.map((post) => (
                   <li key={post.id}>
@@ -527,6 +528,7 @@ export default function SpotCommunityFeed({ spotId, spotName }: { spotId: string
                       voted={votedIds.includes(post.id)}
                       onHelpful={() => markHelpful(post.id)}
                       onReport={setReportFor}
+                      onDelete={removeOwnComment}
                     />
                   </li>
                 ))}
@@ -555,16 +557,22 @@ function FeedPostCard({
   voted,
   onHelpful,
   onReport,
+  onDelete,
 }: {
   post: FeedPost;
   helpfulCount: number;
   voted: boolean;
   onHelpful: () => void;
   onReport: (imageId: string) => void;
+  /** Only passed for the viewer's own comments — see `canDelete` below. */
+  onDelete: (post: FeedPost) => void;
 }) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  // Self-service deletion covers the viewer's own *comments* only. Ratings and
+  // photos stay with the operator, which is what the help page promises.
+  const canDelete = post.kind === "tip" && post.viewerIsAuthor;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -648,7 +656,7 @@ function FeedPostCard({
               {helpfulCount > 0 ? t("community.post.helpfulCounted", { count: helpfulCount }) : t("community.post.helpful")}
             </button>
 
-            {post.reportImageId && (
+            {(post.reportImageId || canDelete) && (
               <div ref={menuRef} className="relative ml-auto">
                 <button
                   type="button"
@@ -665,17 +673,32 @@ function FeedPostCard({
                     role="menu"
                     className="absolute right-0 top-[calc(100%+6px)] z-10 w-40 rounded-card border border-line bg-surface p-1"
                   >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        onReport(post.reportImageId!);
-                      }}
-                      className="block w-full rounded-card px-3 py-2 text-left text-ui text-ink hover:bg-band"
-                    >
-                      {t("community.post.report")}
-                    </button>
+                    {post.reportImageId && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onReport(post.reportImageId!);
+                        }}
+                        className="block w-full rounded-card px-3 py-2 text-left text-ui text-ink hover:bg-band"
+                      >
+                        {t("community.post.report")}
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onDelete(post);
+                        }}
+                        className="block w-full rounded-card px-3 py-2 text-left text-ui text-danger hover:bg-band"
+                      >
+                        {t("community.post.delete")}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -684,241 +707,6 @@ function FeedPostCard({
         </div>
       </div>
     </article>
-  );
-}
-
-// --- lightbox + report + hero-candidate proposal -----------------------------
-
-/** Full-screen lightbox: blurred scrim, swipe (touch) / arrow keys (desktop)
- *  to move between images, Esc to close, a Tab-cycling focus trap so
- *  keyboard focus can't escape onto the page behind it, and a quiet "Melden"
- *  action (the mosaic's own thumbnails are too small to carry one each). */
-function Lightbox({
-  items,
-  index,
-  onClose,
-  onIndexChange,
-  onReport,
-}: {
-  items: CommunityImage[];
-  index: number;
-  onClose: () => void;
-  onIndexChange: (i: number) => void;
-  onReport: (imageId: string) => void;
-}) {
-  const { t } = useTranslation();
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
-  const go = useCallback(
-    (delta: number) => onIndexChange((index + delta + items.length) % items.length),
-    [index, items.length, onIndexChange]
-  );
-
-  useEffect(() => {
-    dialogRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (e.key === "ArrowRight") return go(1);
-      if (e.key === "ArrowLeft") return go(-1);
-      if (e.key === "Tab") {
-        const root = dialogRef.current;
-        if (!root) return;
-        const focusables = root.querySelectorAll<HTMLElement>(
-          'button, [href], [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [go, onClose]);
-
-  const img = items[index];
-
-  return (
-    <div
-      ref={dialogRef}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("community.lightbox.label")}
-      tabIndex={-1}
-      className="fixed inset-0 z-header flex items-center justify-center bg-ink p-4"
-      onClick={onClose}
-      onTouchStart={(e) => {
-        touchStartX.current = e.touches[0].clientX;
-      }}
-      onTouchEnd={(e) => {
-        if (touchStartX.current == null) return;
-        const dx = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(dx) > 40) go(dx > 0 ? -1 : 1);
-        touchStartX.current = null;
-      }}
-    >
-      <div className="absolute right-4 top-4 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onReport(img.id);
-          }}
-          className="rounded-card bg-white/10 px-3 py-2 text-caption font-medium text-white transition-colors hover:bg-white/20"
-        >
-          {t("community.post.report")}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t("common.close")}
-          className="grid h-11 w-11 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20"
-        >
-          <CloseIcon width={20} height={20} />
-        </button>
-      </div>
-
-      {items.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              go(-1);
-            }}
-            aria-label={t("community.lightbox.prev")}
-            className="absolute left-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
-          >
-            <ChevronDownIcon width={20} height={20} className="rotate-90" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              go(1);
-            }}
-            aria-label={t("community.lightbox.next")}
-            className="absolute right-4 top-1/2 hidden h-11 w-11 -translate-y-1/2 place-items-center rounded-card bg-white/10 text-white transition-colors hover:bg-white/20 sm:grid"
-          >
-            <ChevronDownIcon width={20} height={20} className="-rotate-90" />
-          </button>
-        </>
-      )}
-
-      <figure className="max-w-[92vw]" onClick={(e) => e.stopPropagation()}>
-        <div className="relative">
-          <img
-            {...responsiveImageAttributes(
-              resolveMediaUrl(img.url),
-              img.width,
-              "100vw",
-            )}
-            alt={img.credit ?? ""}
-            className="max-h-[80vh] max-w-[92vw] rounded-card object-contain"
-            decoding="async"
-          />
-          {img.source === "wikimedia_commons" && <CommonsBadge />}
-        </div>
-        {(img.credit || img.license_name) && (
-          <figcaption className="mt-3 text-center text-caption text-on-photo">
-            {img.credit}
-            {img.credit && img.license_name && " · "}
-            {img.license_name &&
-              (img.license_url ? (
-                <a
-                  href={img.license_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-white"
-                >
-                  {img.license_name}
-                </a>
-              ) : (
-                img.license_name
-              ))}
-          </figcaption>
-        )}
-      </figure>
-    </div>
-  );
-}
-
-function ReportDialog({
-  imageId,
-  onClose,
-  onDone,
-}: {
-  imageId: string;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const { t } = useTranslation();
-  const [reason, setReason] = useState("copyright");
-  const [note, setNote] = useState("");
-  const [contact, setContact] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const submit = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await reportImage(imageId, { reason, note: note || undefined });
-      setContact(res.takedown_contact);
-      setTimeout(onDone, 1600);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : t("community.report.failed"));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="mt-4 rounded-card border border-line bg-band p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-ui font-medium text-ink">{t("community.report.title")}</p>
-        <button type="button" onClick={onClose} className="text-ui text-muted hover:text-accent">
-          {t("common.close")}
-        </button>
-      </div>
-      {contact !== null ? (
-        <p role="status" className="mt-2 text-ui text-green">
-          {t("community.report.thanks")}
-          {contact && <> {t("community.report.contact", { contact })}</>}
-        </p>
-      ) : (
-        <>
-          <Select value={reason} onChange={(e) => setReason(e.target.value)} className="mt-2">
-            {REPORT_REASONS.map((r) => (
-              <option key={r.key} value={r.key}>{t(r.labelKey)}</option>
-            ))}
-          </Select>
-          <Textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t("community.report.notePlaceholder")}
-            className="mt-2"
-            rows={2}
-          />
-          {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
-          <Button type="button" disabled={busy} onClick={submit} className="mt-3">
-            {busy ? t("common.sending") : t("community.report.submit")}
-          </Button>
-        </>
-      )}
-    </div>
   );
 }
 

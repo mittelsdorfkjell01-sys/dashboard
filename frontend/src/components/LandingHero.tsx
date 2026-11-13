@@ -161,11 +161,13 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
     // While the catalogue loads (and for a deliberately empty selection) show a
     // calm brand-dark field — never the old /hero-surfwind stock photo, which is
     // not part of the admin-curated rotation and used to flash in on reload.
+    // The header's wash belongs here too: this fallback field is the darkest
+    // backdrop the dark header ink ever sits on.
     return (
-      <div
-        className="absolute inset-0 z-0 hero-reel-gradient"
-        aria-hidden
-      />
+      <>
+        <div className="absolute inset-0 z-0 hero-reel-gradient" aria-hidden />
+        <HeaderWash />
+      </>
     );
   }
 
@@ -216,6 +218,8 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-[rgba(36,28,23,0.35)]" />
       </div>
 
+      <HeaderWash />
+
       {/* CTA — a small frosted map-pin button that links to the spot on screen.
           No visible name (the spot name stays as the accessible label); just the
           pin, aligned to the same content column as the header. */}
@@ -231,5 +235,25 @@ export default function LandingHero({ spots }: { spots: Spot[] }) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * The light field the landing header reads against. The header's tagline,
+ * wordmark and burger are brand-dark on every hero (`.on-hero-ink`), which the
+ * curated reel cannot guarantee contrast for on its own: a night shot or a dark
+ * water surface swallows dark text exactly as a bright beach swallowed the old
+ * light text. This wash fades to nothing before the hero's search bar, so it
+ * reads as haze over the top of the photo rather than a header bar.
+ *
+ * It sits above the reel (z-0) and below the hero CTA (z-20) and the fixed
+ * header, and is non-interactive.
+ */
+function HeaderWash() {
+  return (
+    <div
+      aria-hidden
+      className="hero-top-wash pointer-events-none absolute inset-x-0 top-0 z-10 h-36 sm:h-44"
+    />
   );
 }

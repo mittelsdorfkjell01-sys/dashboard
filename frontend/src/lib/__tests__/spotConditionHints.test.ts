@@ -77,10 +77,10 @@ describe("spot condition hints", () => {
 
   it("shows temperatures with units, validity, data stand and provenance", () => {
     const hint = buildSpotConditionHints(spot(), forecast()).find((item) => item.id === "temperature");
-    expect(hint?.sentence).toBe("Voraussichtlich 8 °C Lufttemperatur und 15 °C Wassertemperatur.");
+    expect(hint?.sentence).toBe("Luft 8 °C · Wasser 15 °C");
     expect(hint?.sourceLabel).toBe("Vorhersage");
     expect(hint?.timing).toContain("Gültig:");
-    expect(hint?.timing).toContain("Datenstand:");
+    expect(hint?.timing).toContain("Stand:");
   });
 
   it("does not show a wind hint unless the forecast classifies it as offshore", () => {
@@ -90,7 +90,7 @@ describe("spot condition hints", () => {
 
   it("states rocky ground without inventing an entry hazard", () => {
     const hint = buildSpotConditionHints(spot({ bottomType: ["rock"] }), null)[0];
-    expect(hint.sentence).toBe("Laut Spotprofil felsiger Untergrund.");
+    expect(hint.sentence).toBe("Untergrund: Fels");
     expect(hint.sentence.toLowerCase()).not.toContain("einstieg");
     expect(hint.sourceLabel).toBe("Geprüftes Spotprofil");
   });

@@ -174,3 +174,8 @@ def rollback(
 @router.get("/tide/monitoring")
 def tide_monitoring(db: Session = Depends(get_db)) -> dict:
     return service.monitoring(db=db)
+
+
+@router.get("/tide/queue")
+def tide_rollout_queue(db: Session = Depends(get_db)) -> dict:
+    return service.rollout_queue(db=db)

@@ -14,6 +14,7 @@ from app.admin.constants import (
     parent_sport,
     validate_editorial,
     validate_bottom_types,
+    validate_best_wind_directions,
     validate_facilities,
     validate_levels,
     synchronize_wavekite_style,
@@ -107,6 +108,7 @@ def create_spot(
             region_id=region.id,
             lat=lat,
             lon=lon,
+            aliases=(data.get("editorial") or {}).get("aliases") or [],
         ),
         allow_likely=allow_duplicate,
     )
@@ -119,6 +121,7 @@ def create_spot(
     water_character = validate_water_characters(data.get("water_character"))
     water_type = validate_water_types(data.get("water_type"))
     bottom_type = validate_bottom_types(data.get("bottom_type"))
+    best_wind_directions = validate_best_wind_directions(data.get("best_wind_directions"))
     sports, style = synchronize_wavekite_style(data.get("sports"), data.get("style"))
     facilities = validate_facilities(data.get("facilities"))
     variant_conditions = _prune_variants(
@@ -134,6 +137,7 @@ def create_spot(
         water_type=water_type,
         bottom_type=bottom_type,
         level=level,
+        best_wind_directions=best_wind_directions,
         water_character=water_character,
         style=style,
         facilities=facilities,
@@ -197,6 +201,11 @@ def update_spot(
             region_id=proposed_region_id,
             lat=proposed_lat,
             lon=proposed_lon,
+            aliases=(
+                (data.get("editorial") or {}).get("aliases")
+                if "editorial" in data
+                else (spot.editorial or {}).get("aliases")
+            ) or [],
             exclude_id=spot.id,
         ),
         allow_likely=allow_duplicate,
@@ -262,6 +271,10 @@ def update_spot(
         spot.water_type = validate_water_types(data["water_type"])
     if "level" in data:
         spot.level = validate_levels(data["level"])
+    if "best_wind_directions" in data:
+        spot.best_wind_directions = validate_best_wind_directions(
+            data["best_wind_directions"]
+        )
     if "water_character" in data:
         spot.water_character = validate_water_characters(data["water_character"])
     if "facilities" in data:

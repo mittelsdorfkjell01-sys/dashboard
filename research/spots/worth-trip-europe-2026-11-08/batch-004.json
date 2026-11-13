@@ -1,0 +1,504 @@
+{
+  "batch_id": "worth-trip-europe-004",
+  "checked_at": "2026-11-09",
+  "write_status": "blocked",
+  "write_blockers": [
+    "Kein authentifizierter Zugriff auf unveröffentlichte Live-Spots; vollständige Duplikatsprüfung nicht möglich.",
+    "Der lokale Importweg unterstützt feldbezogene Quellen inzwischen transaktional; seine Cloud-Bereitstellung und Autorisierung sind noch nicht verfügbar.",
+    "Kein autorisierter Cloud-Admin-Schreibweg in dieser Sitzung."
+  ],
+  "candidates": [
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "asturias-xago",
+        "name": "Xagó",
+        "region_slug": "asturias",
+        "lat": 43.603176,
+        "lon": -5.920246,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": [],
+        "water_character": ["welle_gross"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Ganzjähriger Unterricht für Einstieg und Fortschritt durch eine lokale Schule."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Xagó ist ein langer, sehr offener Sandstrand im geschützten Küstenraum von Cabo Peñas. Kräftiger Wellengang und mehrere Kilometer Strand treffen auf wissenschaftlich wertvolle Winddünen und dunkle Schieferklippen; eine örtliche Schule bietet Unterricht für unterschiedliche Niveaus. Damit verbindet der Spot belastbaren Surfwert mit einer eigenständigen Landschaft, ohne als international herausragende Einzelwelle aufzutreten. Die Exposition bringt jedoch kräftige Wellen und starken Einfluss nordöstlicher Winde mit sich. Anfänger sollten nur bei passend kleinen Bedingungen und mit lokaler Betreuung einsteigen.",
+          "safety_notice": "Sehr offener Strand mit häufig starkem Wellengang und deutlicher Exposition gegenüber Nordostwind. Flaggen, Strömung, Swell und saisonalen Rettungsdienst prüfen; geschützte Dünen nur über ausgewiesene Wege betreten."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Playa de Xagó", "Xagó Beach", "Xagón"],
+      "unsupported_research": {
+        "wind": "Die Nordost-Exposition ist als Einschränkung belegt, aber keine ausreichend belastbare Best-Windrichtung; Feld bleibt leer.",
+        "nature": "Schutzlandschaft und Dünenwert sind belegt. Einzelne Verbote werden ohne aktuelle Parkordnung nicht erfunden."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Rodiles",
+        "nearest_distance_km": 44.2,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-xago",
+          "title": "Xagó Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Offizielle Seite veröffentlicht GPS 43.603176, -5.920246 am Strandzugang."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-xago",
+          "title": "Xagó Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Nutzung, starken Wellengang, Sand und den offenen Küstencharakter."
+        },
+        {
+          "field_path": "level",
+          "url": "https://surfastur.es/escuela-de-surf-xago/",
+          "title": "Escuela de Surf Xagó",
+          "publisher": "SurfAstur",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt ganzjährigen Unterricht zum Einstieg und zur Weiterentwicklung; Niveau bleibt bedingungsabhängig."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-xago",
+          "title": "Xagó Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet Parkplatz, Toiletten, Duschen, Gastronomie und saisonalen Rettungsdienst."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.turismoasturias.es/en/organiza-tu-viaje/donde-ir/comarcas/cabo-penas",
+          "title": "Cabo Peñas",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den Reisegrund aus geschützter Küstenlandschaft und einem der größten gut erhaltenen Dünensysteme Nordspaniens."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "asturias-vega-berbes",
+        "name": "Vega / Berbes",
+        "region_slug": "asturias",
+        "lat": 43.479964,
+        "lon": -5.138889,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": [],
+        "best_wind_directions": ["SSE"],
+        "water_character": ["welle_gross"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Vega / Berbes ist ein offener Sand-Beachbreak innerhalb des Naturdenkmals Vega y Entrepeñas. Der lange Strand, sein Dünen- und Kliffsystem, ein kleiner Bachlauf und sichtbare Dinosaurierspuren geben dem Ort außergewöhnlichen Reise- und Landschaftswert. Die Surf-Nutzung wird sowohl von Turismo Asturias als auch von einem lokalen Spotguide belegt; der offene Strand liefert regelmäßig Wellen, kann aber kräftig und anspruchsvoll werden. Weil die geprüften Quellen keine stabile allgemeine Niveauzuordnung erlauben, bleibt das Level-Feld bewusst leer.",
+          "safety_notice": "Offener Strand mit häufig kräftigem Wellengang. Tide, Bachmündung, Strömung und Flaggen prüfen; geschützte Naturflächen und ausgewiesene Zugänge respektieren."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Playa de Vega", "Vega Beach", "Playa de Vega-Berbes"],
+      "unsupported_research": {
+        "level": "Nicht als beginner oder advanced gespeichert, weil die Quellen zwar starke und konsistente Wellen, aber keine belastbare allgemeine Niveauklassifikation liefern.",
+        "school": "Ein nahe gelegener Campingplatz nennt Surf-Nutzung; eine direkt am Einstieg gesicherte Surfschule wurde nicht bestätigt."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Rodiles",
+        "nearest_distance_km": 20.4,
+        "hidden_drafts_checked": false,
+        "subspot_assessment": "Eigenständiger Strand westlich von Ribadesella; nicht Teil der Flussmündungswelle Rodiles."
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-vega-berbes",
+          "title": "Vega / Berbes Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Offizielle Seite veröffentlicht GPS 43.479964, -5.138889 für den Strandzugang."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.turismoasturias.es/en/organiza-tu-viaje/donde-dormir/alojamiento/campings/playa-de-vega",
+          "title": "Playa de Vega Camping",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt den konkreten Strand als Surfziel."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://shaman.surf/surf-forecast/spots/asturias-asturies/playa-de-vega",
+          "title": "Playa de Vega Local Knowledge & Surf Guide",
+          "publisher": "SHAMAN Surf Spots",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Statischer Spotguide nennt SSE als ideale Offshore-Windrichtung und NNW-Swell."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-vega-berbes",
+          "title": "Vega / Berbes Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet Parkplatz, Duschen, Toiletten, Gastronomie und saisonalen Rettungsdienst."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-vega-berbes",
+          "title": "Vega / Berbes Beach",
+          "publisher": "Turismo Asturias",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Naturdenkmal, Dünen, Kliffs, Bachmündung, Dinosaurierspuren und starken Wellengang."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "cantabria-los-locos",
+        "name": "Los Locos",
+        "region_slug": "cantabria",
+        "lat": 43.44127,
+        "lon": -4.04551,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["mixed"],
+        "level": [],
+        "best_wind_directions": [],
+        "water_character": ["welle_gross"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true, "note": "Im Sommer stark ausgelastet; aktuelle Gebührenzone prüfen."},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Surf Camp und Schule etwa 50 Meter vom Strand."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Los Locos liegt unter den Klippen von Suances und besitzt als ausgewiesene Surfreserve eine starke regionale Identität. Der offene Strand mit kräftigen Wellen, Surfzone, Schule und Aussichtspunkten verbindet sportlichen Wert mit einem eigenständigen Küsten- und Ortsbesuch. Die Quellen bezeichnen ihn als einen der profilierten Surfstrände Spaniens, aber nicht als singuläre weltweit etablierte Welle; deshalb bleibt die Einstufung bewusst bei worth_trip. Wegen starkem Wellengang, möglichen Strömungen und steilem Treppenzugang wird kein allgemeines Erfahrungsniveau gespeichert.",
+          "safety_notice": "Offener Strand mit starkem Wellengang und Warnung vor Strömungen. Hauptzugang und aktuelle Sperrungen, Flaggen, Surfzone und Rettungsdienst beachten; der Höhenunterschied zum Strand ist erheblich."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Playa de Los Locos", "Los Locos Suances"],
+      "unsupported_research": {
+        "level": "Schule und Surfreserve sind belegt, doch keine belastbare pauschale Niveauzuordnung für die häufig kräftigen Bedingungen; Feld bleibt leer.",
+        "access_update": "Ein Holztreppenzugang war im Juli 2026 kurzfristig geschlossen; der solidere Hauptzugang beim Restaurant wurde als nutzbare Alternative genannt. Vor Ort erneut prüfen.",
+        "world_class_boundary": "Regionale Surfreserve und hohe nationale Bedeutung rechtfertigen worth_trip. Keine Quelle stuft die einzelne Welle als international herausragenden World-Class-Break ein."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Somo",
+        "nearest_distance_km": 23.3,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://cantabriaplayas.com/playas/los-locos/",
+          "title": "Playa Los Locos",
+          "publisher": "Cantabria Playas",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Gibt den mit dem offiziellen Cantabria-GIS abgeglichenen Strandpunkt 43.44127, -4.04551 an."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://www.suances.net/en/los-locos/p-14",
+          "title": "Los Locos",
+          "publisher": "Suances Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Kommunale Tourismusseite belegt den Surfstatus, offenen Strand und starken Wellengang."
+        },
+        {
+          "field_path": "bottom_type",
+          "url": "https://www.spain.info/en/beach/locos/",
+          "title": "Beach: Los Locos",
+          "publisher": "Turespaña / Spain.info",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt Sand und Kiesel; im Modell wird deshalb mixed verwendet."
+        },
+        {
+          "field_path": "facilities.school",
+          "url": "https://surfloslocos.com/localizacion/",
+          "title": "Localización – Escuela de Surf Los Locos",
+          "publisher": "Escuela de Surf Los Locos",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Schule und Camp rund 50 Meter vom Strand."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://cantabriaplayas.com/playas/los-locos/",
+          "title": "Playa Los Locos",
+          "publisher": "Cantabria Playas / Gobierno de Cantabria GIS",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Parken, Toiletten, Duschen, Essen, Trinken, Rettungsdienst und markierte Surfzone."
+        },
+        {
+          "field_path": "editorial.safety_notice",
+          "url": "https://suances.es/wp-content/uploads/2022/05/PANEL-LOCOS.pdf",
+          "title": "Playa Los Locos information panel",
+          "publisher": "Ayuntamiento de Suances",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Kommunales Strandpanel weist auf starke Strömungen und lokale Sicherheitsregeln hin."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "basque-country-plentzia",
+        "name": "Plentzia",
+        "region_slug": "basque-country",
+        "lat": 43.4112,
+        "lon": -2.9459,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner"],
+        "best_wind_directions": ["W", "SW"],
+        "water_character": ["welle_klein"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "changing": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Ganzjährige Schulen und Materialverleih direkt an der Bucht."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Plentzia ist ein geschützter Sandstrand in einer landschaftlich reizvollen Bucht an der Flussmündung. Wenn die offene baskische Küste zu groß wird, kann die lang laufende, gut manövrierbare Welle eine deutlich ruhigere Alternative für Einsteiger und Longboard-Anfänge bieten. Schulen, Verleih, Promenade, Ort und Bahnanschluss im Großraum Bilbao machen den Spot gut in eine Reise integrierbar. Der Reisewert entsteht nicht aus extremen Bedingungen, sondern aus der Kombination von geschütztem Lernrevier, Buchtlandschaft und zuverlässiger Infrastruktur.",
+          "safety_notice": "Die Welle funktioniert nur bei ausreichend großem Außenswell. Flussmündung, Tide, Badebereiche und tagesaktuelle Hinweise der Schulen und Lifeguards beachten."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Playa de Plentzia", "Plentzia–Gorliz", "Plentzia Beach"],
+      "unsupported_research": {
+        "windsurf": "Offizielle Strandseite nennt Windsurfen, aber ohne ausreichende feldbezogene Bedingungen; daher noch keine positive Sportzuordnung.",
+        "subspot_scope": "Der Datensatz bezeichnet den Plentzia-Abschnitt der gemeinsamen Bucht, nicht die gesamte Gorliz-Strandlinie."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Mundaka",
+        "nearest_distance_km": 19.9,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=43.4112&mlon=-2.9459#map=18/43.4112/-2.9459",
+          "title": "Plentzia beachfront access",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Strandzugang vom Paseo Ondarreta, nicht im Ortsmittelpunkt."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://tourism.euskadi.eus/webtur00-content/en/contenidos/g_naturaleza/0000003024_g1_rec_turismo/es_3024/3024-ficha2.html",
+          "title": "Playa de Plentzia",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Nutzung, lange Linke, geschützte Bucht und Nutzung als Alternative bei großem Außenswell."
+        },
+        {
+          "field_path": "level",
+          "url": "https://tourism.euskadi.eus/en/surf-euskadi/",
+          "title": "Surfing Euskadi",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Beschreibt Plentzia-Gorliz als geschützten Einsteiger- und Longboard-Lernspot."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://tourism.euskadi.eus/en/surf-euskadi/",
+          "title": "Surfing Euskadi",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt W und SW, Sandboden, steigende mittlere Tide und starken NW-Swell."
+        },
+        {
+          "field_path": "facilities.school",
+          "url": "https://tourism.euskadi.eus/en/active-tourism/cabo-billano-surf-eskola/webtur00-content/en/",
+          "title": "Cabo Billano Surf Eskola",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surfkurse für mehrere Lernstufen und Verleih direkt am Strand."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://tourism.euskadi.eus/webtur00-content/en/contenidos/g_naturaleza/0000003024_g1_rec_turismo/es_3024/3024-ficha2.html",
+          "title": "Playa de Plentzia",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet Parken, Toiletten, Duschen, Umkleiden, Bar, Surfkurse und Lifeguards."
+        }
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "basque-country-karraspio",
+        "name": "Karraspio",
+        "region_slug": "basque-country",
+        "lat": 43.364215,
+        "lon": -2.493913,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner"],
+        "best_wind_directions": ["S"],
+        "water_character": ["welle_klein"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true, "note": "Parkplatz am Hauptzugang; Gebühren nicht als gesicherte Tatsache gespeichert."},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "changing": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Surfkurse am Strand und ganzjähriger Verleih in Lekeitio."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Karraspio ist ein anfängerfreundlicher Sandstrand unmittelbar gegenüber der Insel San Nicolás und nahe dem Hafenort Lekeitio. Die Bucht braucht größeren Außenswell, um surfbar zu werden; je nach Tide entstehen unterschiedliche Peaks, gelegentlich auch eine längere Linke auf der Ostseite der Insel. Der Reisegrund liegt in der Kombination aus ruhigerem Lernspot, Insel- und Flussmündungskulisse, Promenade nach Lekeitio und vollständiger Strandinfrastruktur. Karraspio ist damit eine lohnende Ergänzung der baskischen Surfküste, aber kein World-Class-Grenzfall.",
+          "safety_notice": "Tide verändert Peaks und Strandfläche deutlich. Badebereiche, Lifeguard-Hinweise und die Strömung nahe Insel und Lea-Mündung beachten; kein aktueller Zustand wird aus einer allgemeinen Spotbeschreibung abgeleitet."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Karraspio Beach", "Karraspio hondartza", "Playa de Karraspio"],
+      "unsupported_research": {
+        "wind_note": "Süd ist als optimale Richtung in der offiziellen regionalen Surfkarte belegt; keine weiteren Windrichtungen ergänzt.",
+        "island_access": "Ein möglicher Fußweg zur Insel bei Niedrigwasser ist nicht Teil der Surfzugangsdaten und wird nicht empfohlen oder als Einrichtung gespeichert."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Mundaka",
+        "nearest_distance_km": 17.2,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {
+          "field_path": "location",
+          "url": "https://www.openstreetmap.org/?mlat=43.364215&mlon=-2.493913#map=18/43.364215/-2.493913",
+          "title": "Karraspio main parking and beach access",
+          "publisher": "OpenStreetMap contributors",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Punkt am Hauptparkplatz und Zugang, nicht in Lekeitio oder in der Strandmitte."
+        },
+        {
+          "field_path": "sports",
+          "url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/karraspio-beach/webtur00-content/en/",
+          "title": "Karraspio Beach",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Surf-Nutzung, Anfängercharakter, erforderlichen größeren Swell und tideabhängige Wellen."
+        },
+        {
+          "field_path": "best_wind_directions",
+          "url": "https://tourism.euskadi.eus/webtur00-pagcont/en/contenidos/informacion/playas_euskadi/en_playas/playas-olas-zona-mundaka.html",
+          "title": "Surfing Euskadi – Mundaka area",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Nennt Süd als optimale Windrichtung, Sandboden, alle Tiden und Beginner/Intermediate."
+        },
+        {
+          "field_path": "facilities",
+          "url": "https://tourism.euskadi.eus/en/beaches-reservoirs-rivers/karraspio-beach/webtur00-content/en/",
+          "title": "Karraspio Beach",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Listet Parkplatz, Toiletten, Duschen, Umkleiden, Bar, Surfkurse und saisonalen Rettungsdienst."
+        },
+        {
+          "field_path": "facilities.school",
+          "url": "https://tourism.euskadi.eus/en/active-tourism/leaktibai-surf-eskola/webtur00-content/en/",
+          "title": "Leaktibai Surf Eskola",
+          "publisher": "Basque Tourism",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Kurse für verschiedene Niveaus und ganzjährigen Verleih; Kursunterlagen nennen Karraspio als Strand."
+        },
+        {
+          "field_path": "editorial.description",
+          "url": "https://www.spain.info/en/beach/karraspio/",
+          "title": "Beach: Karraspio",
+          "publisher": "Turespaña / Spain.info",
+          "checked_at": "2026-11-09T00:00:00+01:00",
+          "verification_status": "verified",
+          "note": "Belegt Sandstrand, Inselkulisse, Lea-Mündung, Parken, Gastronomie und Surf-Nutzung."
+        }
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "name": "Anguileiro – Tapia de Casariego",
+      "region_slug": "asturias",
+      "reason": "world_class_boundary",
+      "note": "Der konkrete Strand ist Austragungsort einer bekannten Station des Surf-Weltmeisterschaftskalenders und wird von Turismo Asturias als Pionierort des kantabrischen Surfens herausgestellt. Für die ausdrücklich eine Stufe unter World Class liegende Sammlung wird der Grenzfall nicht übernommen.",
+      "sources": [
+        "https://www.turismoasturias.es/en/descubre/costa/playas/playa-de-anguileiro",
+        "https://www.turismoasturias.es/descubre/costa/villas-marineras/marinera-tapia-de-casariego"
+      ]
+    }
+  ]
+}

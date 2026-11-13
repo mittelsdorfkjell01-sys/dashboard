@@ -17,6 +17,7 @@ from fastapi import (
     Form,
     HTTPException,
     Request,
+    Response,
     UploadFile,
 )
 from pydantic import BaseModel, EmailStr, Field
@@ -103,15 +104,19 @@ class TipOut(BaseModel):
     parent_id: str | None = None
     upvotes: int = 0
     viewer_upvoted: bool = False
+    # Whether the signed-in viewer wrote this comment. Only their own comments
+    # may offer the delete action (see DELETE /community/comments/tip/{id}).
+    viewer_is_author: bool = False
 
     @classmethod
-    def of(cls, t: LocalTip, vote: dict | None = None) -> "TipOut":
+    def of(cls, t: LocalTip, vote: dict | None = None, viewer_id=None) -> "TipOut":
         vote = vote or {}
         return cls(
             id=str(t.id), body=t.body, title=t.title, author_name=t.author_name,
             created_at=t.created_at.isoformat(),
             parent_id=str(t.parent_id) if t.parent_id else None,
             upvotes=vote.get("count", 0), viewer_upvoted=vote.get("viewer_upvoted", False),
+            viewer_is_author=bool(viewer_id and t.app_user_id == viewer_id),
         )
 
 
@@ -263,7 +268,7 @@ def get_tips(spot_id: uuid.UUID, db: Session = Depends(get_db), account: AppUser
     except LookupError:
         raise HTTPException(status_code=404, detail="Spot not found")
     votes = service.upvote_states(db, "tip", [t.id for t in rows], account.id if account else None)
-    return {"items": [TipOut.of(t, votes.get(t.id)) for t in rows]}
+    return {"items": [TipOut.of(t, votes.get(t.id), account.id if account else None) for t in rows]}
 
 
 @router.put("/community/comments/{kind}/{comment_id}/upvote")
@@ -286,6 +291,36 @@ def delete_upvote(kind: str, comment_id: uuid.UUID, request: Request, db: Sessio
         return service.set_upvote(db, kind, comment_id, account.id, False)
     except LookupError:
         raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+
+
+@router.delete("/community/comments/tip/{comment_id}", status_code=204)
+def delete_own_comment(
+    comment_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    account: AppUser = Depends(current_account),
+) -> Response:
+    """Delete a comment the signed-in account wrote itself.
+
+    Scoped to comments on purpose: ratings, images and spot suggestions stay
+    with the operator, which is what the help page tells people. A comment that
+    already has replies is refused (409) instead of cascading other people's
+    text away.
+    """
+    try:
+        service.delete_own_tip(db, comment_id, account.id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Nur eigene Kommentare lassen sich löschen.")
+    except service.ReplyPresent:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Auf diesen Kommentar gibt es bereits Antworten. Damit keine fremden "
+                "Beiträge verschwinden, entfernt ihn der Betreiber auf Anfrage."
+            ),
+        )
+    return Response(status_code=204)
 
 
 # --- submissions -----------------------------------------------------------

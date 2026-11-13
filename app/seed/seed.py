@@ -8,13 +8,16 @@ the researched European draft batch (``data_europe.py``); ``seed(db)`` without t
 flag stays on the small core catalogue so tests remain small and deterministic.
 """
 
+from datetime import datetime, timezone
+
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point, Polygon
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
-from app.models import Region, Spot
+from app.models import Region, Spot, SpotContentSource
+from app.seed.best_wind_research import BEST_WIND_RESEARCH
 from app.seed.data import REGIONS, SPOTS
 from app.seed.safety_notices import initial_safety_notice
 
@@ -102,6 +105,7 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             editorial["safety_notice"] = safety_notice
         # water_type / level / water_character are multi-select arrays now; the
         # seed data still carries a single scalar each, so wrap into a list.
+        wind_research = BEST_WIND_RESEARCH.get(s["slug"])
         spot = Spot(
             slug=s["slug"],
             name=s["name"],
@@ -114,6 +118,7 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
                 {"intermediate": "advanced", "pro": "expert"}.get(value, value)
                 for value in _as_list(s.get("level"))
             ],
+            best_wind_directions=(wind_research or {}).get("directions", []),
             water_character=_as_list(s.get("water_character")),
             style=s.get("style", []),
             facilities=s.get("facilities"),
@@ -125,6 +130,24 @@ def seed(db: Session, *, include_europe: bool = False) -> dict[str, int]:
             model_pref=region.defaults.get("model_pref") if region.defaults else None,
         )
         db.add(spot)
+        db.flush()
+        if wind_research:
+            db.add(SpotContentSource(
+                spot_id=spot.id,
+                field_path="best_wind_directions",
+                url=wind_research["url"],
+                title=wind_research["title"],
+                publisher=wind_research["publisher"],
+                checked_at=datetime(2026, 11, 8, 12, tzinfo=timezone.utc),
+                verification_status=wind_research["verification_status"],
+                note=wind_research["note"],
+                created_by="seed:best-wind-research",
+                reviewed_by=(
+                    "seed:best-wind-research"
+                    if wind_research["verification_status"] == "verified"
+                    else None
+                ),
+            ))
         created["spots"] += 1
 
     db.commit()

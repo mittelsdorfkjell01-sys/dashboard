@@ -1,0 +1,291 @@
+{
+  "generated_at": "2026-11-10T16:49:27.691409+00:00",
+  "independence_statement": "Created before local/database comparison for batch 010.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual, geographic, resolution and licence review."
+  ],
+  "spots": [
+    {
+      "spot": "Durankulak Shabla",
+      "query": "Durankulak Shabla Bulgaria kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Krapets Bulgaria",
+      "query": "Krapets Bulgaria kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Albena Balchik",
+      "query": "Albena Balchik windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Varna Asparuhovo",
+      "query": "Varna Asparuhovo kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kamchia Bulgaria",
+      "query": "Kamchia Bulgaria kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Obzor Bulgaria",
+      "query": "Obzor Bulgaria windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sunny Beach Nessebar",
+      "query": "Sunny Beach Nessebar windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pomorie Bulgaria",
+      "query": "Pomorie Bulgaria windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sarafovo Burgas",
+      "query": "Sarafovo Burgas kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lake Atanasovsko Burgas",
+      "query": "Lake Atanasovsko Burgas windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gradina Chernomorets",
+      "query": "Gradina Chernomorets kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Harmanite Sozopol",
+      "query": "Harmanite Sozopol windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ahtopol Bulgaria",
+      "query": "Ahtopol Bulgaria windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Silistar Bulgaria",
+      "query": "Silistar Bulgaria kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Mamaia Romania",
+      "query": "Mamaia Romania kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Constanta Modern Beach",
+      "query": "Constanta Modern Beach kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Corbu Romania",
+      "query": "Corbu Romania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Vadu Romania",
+      "query": "Vadu Romania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gura Portitei Razim",
+      "query": "Gura Portitei Romania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sfantu Gheorghe Danube Delta",
+      "query": "Sfantu Gheorghe Romania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Eforie Nord Romania",
+      "query": "Eforie Nord windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Limanu Mangalia",
+      "query": "Limanu Mangalia Romania windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kilyos Istanbul",
+      "query": "Kilyos Istanbul kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gumusdere Istanbul",
+      "query": "Gumusdere Istanbul kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Silivri Istanbul",
+      "query": "Silivri Istanbul windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "batch_id": "worth-trip-europe-005",
+  "checked_at": "2026-11-09",
+  "write_status": "blocked",
+  "write_blockers": [
+    "Kein authentifizierter Zugriff auf unveröffentlichte Live-Spots; vollständige Duplikatsprüfung nicht möglich.",
+    "Der lokale Importweg unterstützt feldbezogene Quellen inzwischen transaktional; seine Cloud-Bereitstellung und Autorisierung sind noch nicht verfügbar.",
+    "Kein autorisierter Cloud-Admin-Schreibweg in dieser Sitzung."
+  ],
+  "candidates": [
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "algarve-arrifana",
+        "name": "Praia da Arrifana",
+        "region_slug": "algarve",
+        "lat": 37.29442,
+        "lon": -8.86601,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": [],
+        "best_wind_directions": [],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Mehrere lokale Anbieter unterrichten am Strand; Öffnung und Treffpunkt saisonal prüfen."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Arrifana ist eine von hohen Klippen eingefasste Atlantikbucht an der Costa Vicentina. Der Strand wird ganzjährig zum Surfen genutzt; Aussicht von der alten Festung, Fischerdorf und Naturparkküste liefern einen klaren Reisegrund über die Session hinaus. Die geschützte Buchtenform macht Arrifana zu einem eigenständigen Ziel, ohne dass die geprüften Quellen den Spot als international herausragende Einzelwelle einordnen. Ein allgemeines Niveau oder eine ideale Windrichtung wird mangels belastbarer lokaler Belege nicht gespeichert.",
+          "safety_notice": "Atlantikbedingungen, Tide, Flaggen und saisonale Aufsicht vor Ort prüfen. Zufahrt und Parkraum liegen an einer steilen Klippenbucht und können in der Hauptsaison stark belastet sein."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Arrifana", "Arrifana Beach"],
+      "unsupported_research": {
+        "level": "Surf-Nutzung ist belegt, eine belastbare allgemeine Niveauklassifikation jedoch nicht.",
+        "wind": "Keine Best-Windrichtung aus einer ausreichend lokalen Primärquelle übernommen."
+      },
+      "public_live_duplicate_check": {
+        "checked_at": "2026-11-09",
+        "name_or_alias_match": false,
+        "nearest_published_spot": "Carcavelos",
+        "nearest_distance_km": 159.3,
+        "hidden_drafts_checked": false
+      },
+      "sources": [
+        {"field_path": "location", "url": "https://bandeiraazul.abaae.pt/local-galardoado/arrifana/", "title": "Arrifana", "publisher": "ABAAE – Programa Bandeira Azul", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Veröffentlicht Strandkoordinaten 37.29442, -8.86601 und die Badesaison 2026."},
+        {"field_path": "sports", "url": "https://www.visitportugal.com/en/node/141536", "title": "Praia da Arrifana", "publisher": "Turismo de Portugal", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt die ganzjährige Nutzung durch Surfer und Bodyboarder."},
+        {"field_path": "facilities", "url": "https://www.visitportugal.com/en/node/141536", "title": "Praia da Arrifana", "publisher": "Turismo de Portugal", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Listet Außenparkplatz, Bar, Restaurant und saisonale Aufsicht."},
+        {"field_path": "facilities.school", "url": "https://arrifanasurfschool.com/", "title": "Arrifana Surf School", "publisher": "Arrifana Surf School", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Unterricht am Standort; konkrete Verfügbarkeit bleibt saisonal zu prüfen."},
+        {"field_path": "editorial.description", "url": "https://www.visitportugal.com/en/destinos/algarve/73807", "title": "Algarve: beaches from one end of the coast to the other", "publisher": "Turismo de Portugal", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Costa-Vicentina-Landschaft, hohe Klippen und den Reisecharakter der westlichen Algarve."}
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "devon-saunton-sands",
+        "name": "Saunton Sands",
+        "region_slug": "devon",
+        "lat": 51.11817,
+        "lon": -4.22057,
+        "sports": ["surf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": [],
+        "water_character": ["welle_klein"],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true, "note": "Gebührenpflichtiger Betreiberparkplatz; Übernachten und Camping sind dort verboten."},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Unterricht und Verleih am Hauptzugang; Zeiten und Verfügbarkeit vor Anreise prüfen."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Saunton Sands verbindet einen kilometerlangen Sandstrand und lange, meist gut zugängliche Wellen mit den Dünen von Braunton Burrows im North Devon Biosphere Reserve. Die offizielle Tourismusinformation hebt den Spot für Einsteiger, fortgeschrittene Surfer und Longboards hervor; Schule und Verleih sitzen am Hauptzugang. Der Reisegrund entsteht aus Surfwert, Weite und geschützter Dünenlandschaft, während die benachbarten World-Class-Beaches bewusst nicht auf Saunton übertragen werden.",
+          "safety_notice": "Die aktuelle Betreiberinformation bezeichnet Saunton als nicht rettungsschwimmerüberwacht. Bedingungen, Tide und Flaggen eigenständig prüfen; empfindliche Dünen nur auf anerkannten Wegen betreten."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Saunton", "Saunton Beach"],
+      "unsupported_research": {"lifeguard": "Ältere Tourismusseiten nennen saisonale Rettungsschwimmer; die aktuelle Betreiberseite sagt ausdrücklich, dass der Strand nicht lifeguarded ist. Gespeichert wird deshalb keine positive Einrichtung.", "camping": "Übernachten und Camping sind auf dem Strandparkplatz verboten; camping ist im aktuellen Facility-Schreibschema nicht zulässig und bleibt daher als Quellenhinweis außerhalb des Spotobjekts."},
+      "public_live_duplicate_check": {"checked_at": "2026-11-09", "name_or_alias_match": false, "nearest_published_spot": "Fistral Beach (Newquay)", "nearest_distance_km": 99.6, "hidden_drafts_checked": false},
+      "sources": [
+        {"field_path": "location", "url": "https://thenorthdevon.com/whats-on/saunton-sands-beach/", "title": "Saunton Sands Beach", "publisher": "North Devon & Exmoor", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Veröffentlicht den Hauptzugang mit 51.11817, -4.22057."},
+        {"field_path": "sports", "url": "https://www.visitdevon.co.uk/things-to-do/watersports/surfing/", "title": "Surfing in Devon", "publisher": "Visit Devon", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Saunton als Surfspot mit langen Wellen und besonderer Eignung für Longboards."},
+        {"field_path": "level", "url": "https://www.visitdevon.co.uk/explore/cities-towns-and-villages/saunton/", "title": "Saunton, Devon – Beaches, Surf & Coastal Walks", "publisher": "Visit Devon", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Nennt Anfänger und erfahrene Surfer sowie lange, konsistente Wellen."},
+        {"field_path": "facilities", "url": "https://www.sauntonbeach.info/plan-your-visit/", "title": "Plan Your Visit", "publisher": "Saunton Beach", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Aktuelle Betreiberangaben zu Gebührenparkplatz, Toiletten, Duschen, Gastronomie, Unterricht, Verleih und Campingverbot im Parkplatz."},
+        {"field_path": "editorial.description", "url": "https://www.visitdevon.co.uk/northdevon/explore/villages-towns/braunton-and-saunton/", "title": "Braunton and Saunton", "publisher": "Visit Devon", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Biosphärenreservat, Braunton Burrows und den Landschafts- und Reisebezug."},
+        {"field_path": "editorial.safety_notice", "url": "https://www.sauntonbeach.info/plan-your-visit/", "title": "Plan Your Visit", "publisher": "Saunton Beach", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Aktuelle Betreiberquelle sagt ausdrücklich: kein Lifeguard; sensible Habitate respektieren."}
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "mayo-carrowniskey",
+        "name": "Carrowniskey Strand",
+        "region_slug": "mayo",
+        "lat": 53.7225,
+        "lon": -9.9056,
+        "sports": ["surf", "kitesurf", "windsurf"],
+        "water_type": ["ocean"],
+        "bottom_type": ["mixed"],
+        "level": [],
+        "best_wind_directions": [],
+        "water_character": [],
+        "style": ["wave_riding"],
+        "facilities": {
+          "parking": {"available": true, "note": "Zufahrt über eine schmale Straße mit Landwirtschafts- und Surfverkehr."},
+          "school": {"available": true, "note": "Lokale Surfschule am Strand seit 1998."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Carrowniskey ist ein offener Atlantikstrand nahe Louisburgh mit beständiger Surf-Nutzung und weitem Blick auf die Berge und Inseln von West Mayo. Eine langjährig am Strand arbeitende Schule und die County-Tourismusstrategie belegen Surf-, Kite- und Windsport; die regionale Küstenlandschaft macht den abgelegenen Spot zum Reiseziel. Weil die Quellen je nach Bedingung unterschiedliche Niveaus nahelegen, bleibt das allgemeine Level-Feld offen.",
+          "safety_notice": "Exponierter Atlantikstrand; Swell, Strömung, Tide, Wasserqualität und lokale Hinweise vor jeder Nutzung prüfen. Die Zufahrtsstraße ist schmal und wird auch landwirtschaftlich genutzt."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Carrowniskey", "Carrownisky", "Carrowniskey Beach"],
+      "unsupported_research": {"level": "Eine Sekundärquelle nennt intermediate, die County-Strategie reicht von novice bis advanced für die Region. Keine pauschale Zuordnung gespeichert.", "facilities": "Toiletten, Duschen und Gastronomie bleiben unbekannt, da keine ausreichend belastbare aktuelle Primärquelle gefunden wurde."},
+      "public_live_duplicate_check": {"checked_at": "2026-11-09", "name_or_alias_match": false, "nearest_published_spot": "Lahinch", "nearest_distance_km": 95.1, "hidden_drafts_checked": false},
+      "sources": [
+        {"field_path": "location", "url": "https://irishbeaches.ie/beaches/carrowniskey-beach", "title": "Carrowniskey Beach", "publisher": "IrishBeaches.ie", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Veröffentlicht einen als geprüft bezeichneten Parkplatz-Pin 53.7225, -9.9056; vor Ort erneut verifizieren."},
+        {"field_path": "sports", "url": "https://eagenda.mayo.ie/FilesUpLoaded/2015341524Item%20no%202%20Destination%20Mayo%20Tourism%20Strategy%202015-2020.pdf", "title": "Destination Mayo Tourism Strategy 2015–2020", "publisher": "Mayo County Council", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Nennt Carrowniskey ausdrücklich für Surf-, Windsurf- und Kitesurf-Nutzung."},
+        {"field_path": "facilities.school", "url": "https://www.surfmayo.com/contact/", "title": "Contact Surf Mayo", "publisher": "Surf Mayo", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Unterricht am Carrowniskey Strand seit 1998 und die tideabhängige Terminplanung."},
+        {"field_path": "access", "url": "https://www.surfmayo.com/contact/", "title": "Contact Surf Mayo", "publisher": "Surf Mayo", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Warnt vor der schmalen Zufahrt mit Landwirtschafts- und Surfverkehr."},
+        {"field_path": "bottom_type", "url": "https://gsi.geodata.gov.ie/downloads/Geoheritage/Reports/MO024_Carrownisky.pdf", "title": "Mayo County Geological Site Report: Carrownisky", "publisher": "Geological Survey Ireland", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Beschreibt Sand-, Kies- und Geröllablagerungen am Strand; daher mixed zusätzlich zu sand."},
+        {"field_path": "editorial.description", "url": "https://irishbeaches.ie/beaches/carrowniskey-beach", "title": "Carrowniskey Beach", "publisher": "IrishBeaches.ie", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt offenen Atlantikcharakter, Surf-Nutzung und die weiten Ausblicke; die Aussagen werden nicht als aktuelle Sicherheitsfreigabe verwendet."}
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "hel-peninsula-chalupy",
+        "name": "Chałupy – Puck Bay",
+        "region_slug": "hel-peninsula",
+        "lat": 54.759967,
+        "lon": 18.504783,
+        "sports": ["kitesurf", "windsurf", "wing"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": [],
+        "water_character": ["flach", "chop"],
+        "style": ["freeride", "freestyle"],
+        "facilities": {
+          "parking": {"available": true, "note": "Mehrere Parkoptionen; in der Hochsaison früh voll. Bahnstation etwa 150 Meter vom Einstieg an der Mole."},
+          "school": {"available": true, "note": "Mehrere Schulen für Kite, Windsurf und Wing; Angebote überwiegend saisonal."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Chałupy liegt auf der schmalen Hel-Halbinsel zwischen offener Ostsee und der flachen Puck-Bucht. Am Einstiegsbereich bei der Mole bündeln sich Schulen für Kite, Windsurf und Wing, Bahnanschluss und saisonale Camping-Infrastruktur; auf der Bucht wechseln flaches Wasser und Chop. Die Kombination aus zwei Wasserseiten, langem Sandhaken und ausgeprägter Wassersportkultur begründet worth_trip, ohne den einzelnen Einstieg als World-Class-Spot zu überhöhen.",
+          "safety_notice": "In der Hauptsaison hohe Dichte aus Schulen und Fahrern sowie knappe Startflächen einplanen. Lokale Startzonen, Betreiberregeln, Badebereiche und Schutzgebietsauflagen der Puck-Bucht vor Ort prüfen; bei ablandigem Wind nicht auf Stehtiefe als Rückweg verlassen."
+        }
+      },
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Chałupy", "Chalupy", "Chałupy Bay", "Chałupy molo"],
+      "unsupported_research": {"wind": "Keine pauschale Best-Windrichtung gespeichert, weil die Eignung zwischen Bucht- und Ostseeseite sowie einzelnen Einstiegen wechselt.", "rules": "Keine kommunale Kite-Verordnung für den gewählten Bucht-Einstieg bestätigt; aktuelle Betreiber-, Badezonen- und Naturschutzregeln sind lokal zu prüfen.", "camping": "Campingplätze an der Bucht sind belegt, aber camping ist im aktuellen Facility-Schreibschema nicht zulässig."},
+      "public_live_duplicate_check": {"checked_at": "2026-11-09", "name_or_alias_match": false, "nearest_published_spot": "Fehmarn Wulfener Hals", "nearest_distance_km": 473.9, "hidden_drafts_checked": false},
+      "sources": [
+        {"field_path": "location", "url": "https://kitesurfing.pl/nasze-bazy/baza-chalupy/", "title": "Baza Chałupy – szkoła kite FunSurf", "publisher": "FunSurf", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Veröffentlicht GPS 54°45.598′ N, 18°30.287′ E für den Einstieg bei der Mole."},
+        {"field_path": "sports", "url": "https://kitesurfing.pl/nasze-bazy/baza-chalupy/", "title": "Baza Chałupy – szkoła kite FunSurf", "publisher": "FunSurf", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Kitesurf-, Windsurf- und Wingfoil-Unterricht direkt am gewählten Einstieg."},
+        {"field_path": "water_character", "url": "https://kiteinsider.com/spots/chalupy-poland", "title": "Chałupy — kitesurf spot, Poland", "publisher": "Kite Insider", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Beschreibt die Puck-Bay-Seite als sandig, flach bis kabbelig und weiträumig seicht."},
+        {"field_path": "facilities", "url": "https://kitesurfing.pl/nasze-bazy/baza-chalupy/", "title": "Baza Chałupy – szkoła kite FunSurf", "publisher": "FunSurf", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Parkoptionen, saisonale Engpässe, Bahnzugang und Schule."},
+        {"field_path": "editorial.description", "url": "https://bip.wladyslawowo.pl/pliki/wladyslawowo/zalaczniki/1725/zeszyt-4-inwentaryzacja-urbanistyczna.pdf", "title": "1.1.8. Chałupy – inwentaryzacja urbanistyczna", "publisher": "Gmina Władysławowo", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt die Lage auf der schmalen Hel-Nehrung, Bahnstation, Camping sowie die Konzentration von Wind- und Kitesurfschulen an der Bucht."},
+        {"field_path": "editorial.safety_notice", "url": "https://kiteinsider.com/spots/chalupy-poland", "title": "Chałupy — kitesurf spot, Poland", "publisher": "Kite Insider", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Dokumentiert enge Startbereiche, sommerliche Auslastung und die Notwendigkeit, lokale Zonen zu beachten."}
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "lefkada-agios-ioannis",
+        "name": "Agios Ioannis / Myloi",
+        "region_slug": "lefkada",
+        "lat": 38.8419,
+        "lon": 20.6825,
+        "sports": ["kitesurf", "windsurf", "wing"],
+        "water_type": ["sea"],
+        "bottom_type": ["mixed"],
+        "level": ["beginner", "advanced"],
+        "best_wind_directions": ["SW", "W", "NW"],
+        "water_character": ["chop", "welle_klein", "tiefes_wasser"],
+        "style": ["freeride", "freestyle"],
+        "facilities": {
+          "parking": {"available": true},
+          "shower": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Kite- und Windsurfzentrum am Strand; Zonen und Kite-Pass vor Ort prüfen."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Agios Ioannis, auch Myloi oder Milos Beach genannt, ist Lefkadas windgeprägter Strand bei den historischen Windmühlen. Offizielle Tourismusseiten belegen Kite- und Windsurfen; lokale Quellen ergänzen Wing, Schule und den sommerlichen thermischen Wind aus West bis Nordwest. Chop, kleine Wellen und der kurze Weg nach Lefkada-Stadt verbinden Sport, Insellandschaft und Kultur. Vasiliki bleibt als international herausragender Windsurfspot bewusst getrennt und wird nicht als Begründung auf Agios Ioannis übertragen.",
+          "safety_notice": "Am Einstieg liegen glatte Felsplatten und Steine; bei stärkerem Nordwind können Shorebreak und Strömung zunehmen. Markierte Kite-/Windsurfzonen, Badebereiche, aktuelle lokale Regeln und mögliche Sommergewitter vor Ort prüfen."
+        }
+      },
+      "variants": ["kitesurf:classic", "windsurf:fin"],
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Ai Giannis", "Agios Ioannis", "Myloi", "Milos Beach", "Anemomylos"],
+      "unsupported_research": {"wing_variant": "Wing ist als Sportwert unterstützt, das Datenmodell besitzt jedoch keine Wingfoil-Variante.", "facing": "Nicht aus einer groben Karte abgeleitet; bleibt null."},
+      "public_live_duplicate_check": {"checked_at": "2026-11-09", "name_or_alias_match": false, "nearest_published_spot": "Keros", "nearest_distance_km": 418.8, "hidden_drafts_checked": false},
+      "sources": [
+        {"field_path": "location", "url": "https://www.ventosurf.com/spot/lefkada-agios-ioannis-milos-beach", "title": "Lefkada – Agios Ioannis (Milos Beach)", "publisher": "VentoSurf", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Veröffentlicht 38.8419, 20.6825 für den Sporteinstieg bei den Windmühlen."},
+        {"field_path": "sports", "url": "https://www.visitgreece.gr/en/experiences/culture/archaeological-sites-monuments/the-beaches-of-lefkada", "title": "The Beaches of Lefkada", "publisher": "Visit Greece", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Offizielle Tourismusquelle nennt Agios Ioannis und Myli ideal für Windsurfing und Kitesurfing."},
+        {"field_path": "sports", "url": "https://www.ventosurf.com/spot/lefkada-agios-ioannis-milos-beach", "title": "Lefkada – Agios Ioannis (Milos Beach)", "publisher": "VentoSurf", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt zusätzlich Wingfoil am konkreten Einstieg."},
+        {"field_path": "best_wind_directions", "url": "https://www.lefkadaathletics.com/kite-surfing", "title": "Kite Surfing in Lefkada", "publisher": "Lefkada Athletics", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Beschreibt thermischen Wind SW, W und NW, side-onshore, von Mittag bis Abend in der Saison Mai bis September."},
+        {"field_path": "facilities", "url": "https://lefkadaopen.gr/en/paralysis/Hey-Giannis%21/", "title": "Agios Ioannis", "publisher": "Lefkada Open", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Listet Autozufahrt, Parkplatz, Beachbar/Restaurant, Wassersport und Duschen."},
+        {"field_path": "editorial.safety_notice", "url": "https://kiteinsider.com/spots/agios-ioannis-lefkada-greece", "title": "Agios Ioannis (Lefkada) — kitesurf spot", "publisher": "Kite Insider", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Dokumentiert glatte Felsplatten, Shorebreak, saisonale Auslastung, Zonen und lokal gemeldete Sommersqualls."},
+        {"field_path": "editorial.description", "url": "https://www.visitgreece.gr/en/experiences/nature/volcanoes/lefkada-the-paradise-of-sea-sports", "title": "Lefkada: A Water Sports Paradise", "publisher": "Visit Greece", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Ai Giannis als Kite-Hotspot und den breiteren Insel-Reisegrund; Vasiliki wird ausdrücklich separat eingeordnet."}
+      ]
+    },
+    {
+      "research_status": "prepared_blocked_live_draft_dedup",
+      "spot": {
+        "slug": "halland-apelviken",
+        "name": "Apelviken",
+        "region_slug": "halland",
+        "lat": 57.082543,
+        "lon": 12.258718,
+        "sports": ["surf", "kitesurf", "windsurf", "wing"],
+        "water_type": ["sea"],
+        "bottom_type": ["sand"],
+        "level": [],
+        "best_wind_directions": ["SW", "W"],
+        "water_character": ["chop", "welle_klein"],
+        "style": ["freeride", "wave_riding", "wavekite"],
+        "facilities": {
+          "parking": {"available": true},
+          "toilet": {"available": true},
+          "food": {"available": true},
+          "school": {"available": true, "note": "Saisonales Surfcenter mit Kursen, Verleih, Umkleiden und Duschen."}
+        },
+        "facing": null,
+        "editorial_classification": "worth_trip",
+        "editorial": {
+          "description": "Apelviken ist Varbergs langer Sandstrand und regionales Surfzentrum an der schwedischen Westküste. Bei West bis Südwest bauen sich in der Bucht Wellen auf; offizielle lokale Seiten belegen Kite-, Wind- und Wellenreiten, ein Surfcenter ergänzt Wing-Angebote, Kurse und Verleih. Strandpromenade, Restaurants, Camping und die Nähe zur historischen Stadt Varberg schaffen einen nachvollziehbaren Reisegrund, ohne den Spot als weltweit herausragend einzustufen.",
+          "safety_notice": "Die Kommune warnt an windigen Tagen vor gefährlichen Strömungen. Badegäste, lokale Bereiche und saisonale Betriebszeiten berücksichtigen; Bedingungen und Hinweise am Strand vor dem Start prüfen."
+        }
+      },
+      "variants": ["kitesurf:classic", "windsurf:fin"],
+      "intended_lifecycle": {"origin": "editorial", "status": "draft", "content_status": "unreviewed"},
+      "aliases": ["Apelvikens badstrand", "Apelviken Beach"],
+      "unsupported_research": {"level": "Kurse belegen Lernangebote, aber keine pauschale Eignung der gesamten Bucht für jedes Niveau.", "wing_variant": "Wing ist als Sportwert unterstützt, eine eigene Wingfoil-Variante fehlt im Datenmodell.", "camping": "Camping im Strandgebiet ist belegt, aber camping ist im aktuellen Facility-Schreibschema nicht zulässig."},
+      "public_live_duplicate_check": {"checked_at": "2026-11-09", "name_or_alias_match": false, "nearest_published_spot": "Kegnaes", "nearest_distance_km": 284.3, "hidden_drafts_checked": false},
+      "sources": [
+        {"field_path": "location", "url": "https://varberg.se/jobb-och-foretagande/arrangera-evenemang/evenemangsplatser/evenemangsplatser-i-varberg/2025-12-11-apelviken", "title": "Apelviken", "publisher": "Varbergs kommun", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Veröffentlicht 57.082543, 12.258718 am Surfparkplatz/Strandbereich."},
+        {"field_path": "sports", "url": "https://www.visithalland.com/en/late-summer-guide-apelviken/", "title": "Apelviken", "publisher": "Visit Halland", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Kite-, Windsurf- und Wellenreitnutzung sowie Wellen bei SW/W."},
+        {"field_path": "sports", "url": "https://www.surfersvarberg.com/center-kurser-apelviken", "title": "Surfers Center in Apelviken", "publisher": "Surfers Varberg", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Windsurf-, Surf- und Wingfoil-Kurse bzw. Verleih am konkreten Standort."},
+        {"field_path": "facilities", "url": "https://varberg.se/jobb-och-foretagande/arrangera-evenemang/evenemangsplatser/evenemangsplatser-i-varberg/2025-12-11-apelviken", "title": "Apelviken", "publisher": "Varbergs kommun", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Parkflächen, Toiletten, Restaurants, Camping, Strandpromenade und Nähe zu Zentrum und Bahnhof."},
+        {"field_path": "facilities.school", "url": "https://www.surfersvarberg.com/center-kurser-apelviken", "title": "Surfers Center in Apelviken", "publisher": "Surfers Varberg", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Kurse, Verleih, Umkleiden und Duschen; Seite kennzeichnet den Centerbetrieb als saisonal geschlossen."},
+        {"field_path": "editorial.safety_notice", "url": "https://visitvarberg.se/uppleva/apelvikens-badstrand", "title": "Apelvikens badstrand", "publisher": "Visit Varberg", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Kommunale Tourismusseite warnt vor gefährlichen Strömungen an windigen Tagen."},
+        {"field_path": "editorial.description", "url": "https://varberg.se/jobb-och-foretagande/arrangera-evenemang/evenemangsplatser/evenemangsplatser-i-varberg/2025-12-11-apelviken", "title": "Apelviken", "publisher": "Varbergs kommun", "checked_at": "2026-11-09T00:00:00+01:00", "verification_status": "verified", "note": "Belegt Apelviken als Varbergs Surfzentrum mit langem Sandstrand und städtischer Reise-Infrastruktur."}
+      ]
+    }
+  ]
+}

@@ -206,7 +206,7 @@ export default function RegionDetail() {
         {/* No region aggregation until a V2 product rule has been defined. */}
         <SectionBand tone="band" heading={t("region.when")} pad="md" id="season">
           <p className="text-body text-muted">{t("region.windUnknown")}</p>
-          <DataHelpLink anchor="forecast-climate">{t("region.windHelp")}</DataHelpLink>
+          <DataHelpLink anchor="regionale-windverfuegbarkeit">{t("region.windHelp")}</DataHelpLink>
         </SectionBand>
 
         {/* Die Spots — same body width as the spot detail page's content frame. */}

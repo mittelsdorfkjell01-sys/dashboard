@@ -1,0 +1,427 @@
+{
+  "research_metadata": {
+    "purpose": "Draft regions required for a geographically distributed European worth_trip catalogue",
+    "checked_at": "2026-11-09",
+    "intended_status": "draft",
+    "write_status": "local_drafts_created_cloud_pending",
+    "write_blockers": [
+      "Cloud admin authentication is unavailable in this session.",
+      "Hidden live draft regions cannot be listed, so final live duplicate review is still required."
+    ],
+    "known_hidden_live_regions_not_recreated": [
+      {"name": "Dalmatien", "country": "HR", "evidence": "Published spot Neretva Delta references this region."},
+      {"name": "Noord-Holland", "country": "NL", "evidence": "Published spot Wijk aan Zee / Noordpier references this region."}
+    ],
+    "coordinate_method": "Region centres from OpenStreetMap Nominatim administrative or geographic objects where available; descriptive coastal centres are used for non-administrative surf regions and must be rechecked during live import review.",
+    "import_command": "python -m app.importers.regions research/spots/worth-trip-europe-2026-11-08/regions-expansion-001.json --actor worth-trip-europe-research",
+    "local_import_result": {
+      "imported_at": "2026-11-09",
+      "created": 40,
+      "status": "draft",
+      "published": 0,
+      "idempotency_check": "A second import created 0 and skipped all 40 regions."
+    }
+  },
+  "regions": [
+    {
+      "slug": "algarve",
+      "name": "Algarve",
+      "country": "PT",
+      "lat": 37.2449218,
+      "lon": -8.1959563,
+      "description": "Südportugiesische Atlantik- und Südküste mit offenen Beachbreaks, Buchten sowie Windrevieren zwischen Sagres und der spanischen Grenze.",
+      "source_query": "Algarve Portugal",
+      "source_url": "https://www.openstreetmap.org/node/13117154009"
+    },
+    {
+      "slug": "alentejo-coast",
+      "name": "Alentejo-Küste",
+      "country": "PT",
+      "lat": 38.0551003,
+      "lon": -7.8605799,
+      "description": "Weitläufige portugiesische Atlantikküste südlich der Region Lissabon mit Naturstränden, Flussmündungen und vergleichsweise dünner Besiedlung.",
+      "source_query": "Região do Alentejo Portugal",
+      "source_url": "https://www.openstreetmap.org/node/1763537517"
+    },
+    {
+      "slug": "galicia",
+      "name": "Galicien",
+      "country": "ES",
+      "lat": 42.61946,
+      "lon": -7.863112,
+      "description": "Nordwestspanische Atlantikregion mit Rías, exponierten Stränden, felsigen Küstenabschnitten und mehreren eigenständigen Surfgebieten.",
+      "source_query": "Galicia Spain",
+      "source_url": "https://www.openstreetmap.org/relation/349036"
+    },
+    {
+      "slug": "costa-de-la-luz",
+      "name": "Costa de la Luz",
+      "country": "ES",
+      "lat": 36.8,
+      "lon": -6.35,
+      "description": "Andalusische Atlantikküste zwischen der portugiesischen Grenze und Tarifa mit langen Sandstränden, Flussmündungen und thermisch beeinflussten Windrevieren.",
+      "source_query": "Costa de la Luz coastal region Huelva Cádiz",
+      "source_url": "https://www.openstreetmap.org/?mlat=36.8&mlon=-6.35#map=8/36.8/-6.35"
+    },
+    {
+      "slug": "mallorca",
+      "name": "Mallorca",
+      "country": "ES",
+      "lat": 39.613432,
+      "lon": 2.8829185,
+      "description": "Baleareninsel mit offenen Buchten, Kap- und Küstenwindrevieren sowie saisonal nutzbaren Surf-, Wind- und Foilbedingungen.",
+      "source_query": "Mallorca Spain",
+      "source_url": "https://www.openstreetmap.org/relation/6803636"
+    },
+    {
+      "slug": "brittany",
+      "name": "Bretagne",
+      "country": "FR",
+      "lat": 48.2640845,
+      "lon": -2.9202408,
+      "description": "Französische Atlantik- und Ärmelkanalregion mit stark gegliederter Küste, großen Tiden, Riffen, Buchten und zahlreichen Wassersportrevieren.",
+      "source_query": "Brittany France",
+      "source_url": "https://www.openstreetmap.org/relation/102740"
+    },
+    {
+      "slug": "normandy",
+      "name": "Normandie",
+      "country": "FR",
+      "lat": 49.0677708,
+      "lon": 0.3138532,
+      "description": "Französische Ärmelkanalregion mit großen Tiden, Sandstränden, Klippenküsten und Windrevieren an offenen Buchten.",
+      "source_query": "Normandy France",
+      "source_url": "https://www.openstreetmap.org/relation/3793170"
+    },
+    {
+      "slug": "gironde",
+      "name": "Gironde",
+      "country": "FR",
+      "lat": 44.8839021,
+      "lon": -0.6046439,
+      "description": "Atlantikküste um die Gironde-Mündung mit langen Dünenstränden, Seen und eigenständigen Surf- und Windrevieren nördlich der Landes.",
+      "source_query": "Gironde France",
+      "source_url": "https://www.openstreetmap.org/relation/7405"
+    },
+    {
+      "slug": "french-basque-coast",
+      "name": "Französische Baskenküste",
+      "country": "FR",
+      "lat": 43.44,
+      "lon": -1.59,
+      "description": "Kompakte französische Atlantikküste zwischen Anglet und Hendaye mit Beachbreaks, Felsbuchten und ausgeprägter Surfkultur.",
+      "source_query": "Côte Basque Biarritz Saint-Jean-de-Luz",
+      "source_url": "https://www.openstreetmap.org/?mlat=43.44&mlon=-1.59#map=10/43.44/-1.59"
+    },
+    {
+      "slug": "corsica",
+      "name": "Korsika",
+      "country": "FR",
+      "lat": 42.188098,
+      "lon": 9.0683139,
+      "description": "Mittelmeerinsel mit stark gegliederter Küste, Bergkulisse und saisonal sehr unterschiedlichen Wind- und Wellenrevieren.",
+      "source_query": "Corsica France",
+      "source_url": "https://www.openstreetmap.org/relation/76910"
+    },
+    {
+      "slug": "devon",
+      "name": "Devon",
+      "country": "GB",
+      "lat": 50.7241405,
+      "lon": -3.6607788,
+      "description": "Südwestenglische Grafschaft mit exponierter Nordküste, geschützterer Südküste, Flussmündungen und etablierten Surfstränden.",
+      "source_query": "Devon England",
+      "source_url": "https://www.openstreetmap.org/relation/57538"
+    },
+    {
+      "slug": "pembrokeshire",
+      "name": "Pembrokeshire",
+      "country": "GB",
+      "lat": 51.8339209,
+      "lon": -4.916667,
+      "description": "Walisische Atlantikküste mit Nationalparklandschaft, offenen Stränden, Riffen und wechselnder Exposition rund um die Halbinsel.",
+      "source_query": "Pembrokeshire Wales",
+      "source_url": "https://www.openstreetmap.org/relation/57535"
+    },
+    {
+      "slug": "gower",
+      "name": "Gower-Halbinsel",
+      "country": "GB",
+      "lat": 51.5964296,
+      "lon": -4.1475988,
+      "description": "Walisische Halbinsel westlich von Swansea mit Atlantikstränden, Buchten, Klippen und mehreren eigenständigen Surf- und Windspots.",
+      "source_query": "Gower Peninsula Wales",
+      "source_url": "https://www.openstreetmap.org/node/1917484764"
+    },
+    {
+      "slug": "outer-hebrides",
+      "name": "Äußere Hebriden",
+      "country": "GB",
+      "lat": 57.666667,
+      "lon": -7.166667,
+      "description": "Schottische Atlantikinseln mit stark exponierten Westküsten, weißen Sandstränden und abgelegenen Wind- und Wellenrevieren.",
+      "source_query": "Outer Hebrides Scotland",
+      "source_url": "https://www.openstreetmap.org/relation/1959008"
+    },
+    {
+      "slug": "mayo",
+      "name": "County Mayo",
+      "country": "IE",
+      "lat": 53.9086522,
+      "lon": -9.2981258,
+      "description": "Irische Atlantikregion mit Buchten, Inseln, großen Stränden und rauer Küstenlandschaft entlang des Wild Atlantic Way.",
+      "source_query": "County Mayo Ireland",
+      "source_url": "https://www.openstreetmap.org/relation/338539"
+    },
+    {
+      "slug": "sligo",
+      "name": "County Sligo",
+      "country": "IE",
+      "lat": 54.1929861,
+      "lon": -8.7305427,
+      "description": "Irische Atlantikküste mit Beachbreaks, Riffwellen und markanter Bergkulisse zwischen Donegal und Mayo.",
+      "source_query": "County Sligo Ireland",
+      "source_url": "https://www.openstreetmap.org/relation/335330"
+    },
+    {
+      "slug": "kerry",
+      "name": "County Kerry",
+      "country": "IE",
+      "lat": 52.1453345,
+      "lon": -9.5174011,
+      "description": "Irische Südwestküste mit Halbinseln, Atlantikbuchten, langen Sandstränden und landschaftlich außergewöhnlichen Wassersportrevieren.",
+      "source_query": "County Kerry Ireland",
+      "source_url": "https://www.openstreetmap.org/relation/332622"
+    },
+    {
+      "slug": "north-jutland",
+      "name": "Nordjütland",
+      "country": "DK",
+      "lat": 57.3,
+      "lon": 9.7,
+      "description": "Nördlicher Teil Jütlands zwischen Nordsee, Skagerrak und Kattegat mit stark unterschiedlicher Exposition und zahlreichen Windrevieren.",
+      "source_query": "Region Nordjylland Denmark",
+      "source_url": "https://www.openstreetmap.org/?mlat=57.3&mlon=9.7#map=7/57.3/9.7"
+    },
+    {
+      "slug": "west-jutland",
+      "name": "Westjütland",
+      "country": "DK",
+      "lat": 56.0,
+      "lon": 8.15,
+      "description": "Dänische Nordseeküste mit Dünenstränden, Fjordzugängen und einer Kombination aus offenen Wellen- und geschützteren Windrevieren.",
+      "source_query": "West Jutland North Sea coast Denmark",
+      "source_url": "https://www.openstreetmap.org/?mlat=56.0&mlon=8.15#map=7/56.0/8.15"
+    },
+    {
+      "slug": "north-frisia",
+      "name": "Nordfriesland",
+      "country": "DE",
+      "lat": 54.6091419,
+      "lon": 8.8942338,
+      "description": "Deutsche Nordseeregion mit Inseln, Halligen, Wattenmeer, Tide und mehreren Wind- und Wellenrevieren.",
+      "source_query": "Nordfriesland Germany",
+      "source_url": "https://www.openstreetmap.org/relation/27019"
+    },
+    {
+      "slug": "east-frisia",
+      "name": "Ostfriesland",
+      "country": "DE",
+      "lat": 53.3725785,
+      "lon": 7.4392346,
+      "description": "Deutsche Nordseeküste mit ostfriesischen Inseln, Wattenmeer, Tide und windreichen Küsten- und Binnenrevieren.",
+      "source_query": "Ostfriesland Germany",
+      "source_url": "https://www.openstreetmap.org/relation/2136137"
+    },
+    {
+      "slug": "rugen",
+      "name": "Rügen",
+      "country": "DE",
+      "lat": 54.4529015,
+      "lon": 13.3882344,
+      "description": "Deutsche Ostseeinsel mit Bodden, offenen Küstenabschnitten, Kreideküste und vielfältigen Wind- und Wellenrevieren.",
+      "source_query": "Rügen Germany",
+      "source_url": "https://www.openstreetmap.org/relation/1434381"
+    },
+    {
+      "slug": "jaeren",
+      "name": "Jæren",
+      "country": "NO",
+      "lat": 58.75,
+      "lon": 5.6,
+      "description": "Flache norwegische Atlantikküste südlich von Stavanger mit langen Stränden, Dünen und außergewöhnlich offener Wellenexposition.",
+      "source_query": "Jæren coast Rogaland Norway",
+      "source_url": "https://www.openstreetmap.org/?mlat=58.75&mlon=5.6#map=8/58.75/5.6"
+    },
+    {
+      "slug": "lofoten",
+      "name": "Lofoten",
+      "country": "NO",
+      "lat": 68.2,
+      "lon": 13.7,
+      "description": "Norwegischer Inselarchipel mit arktischer Bergkulisse, geschützten Buchten und offenem Nordatlantikzugang.",
+      "source_query": "Lofoten archipelago Nordland Norway",
+      "source_url": "https://www.openstreetmap.org/?mlat=68.2&mlon=13.7#map=7/68.2/13.7"
+    },
+    {
+      "slug": "halland",
+      "name": "Halland",
+      "country": "SE",
+      "lat": 56.9547859,
+      "lon": 12.8565682,
+      "description": "Schwedische Westküstenregion am Kattegat mit Sandstränden, Buchten und windreichen Flachwasser- und Wellenrevieren.",
+      "source_query": "Halland Sweden",
+      "source_url": "https://www.openstreetmap.org/relation/54403"
+    },
+    {
+      "slug": "gotland",
+      "name": "Gotland",
+      "country": "SE",
+      "lat": 57.4174802,
+      "lon": 18.5369579,
+      "description": "Schwedische Ostseeinsel mit Kalksteinküste, Sandbuchten und mehreren Windrichtungen ausgesetzten Revieren.",
+      "source_query": "Gotland Sweden",
+      "source_url": "https://www.openstreetmap.org/relation/5176205"
+    },
+    {
+      "slug": "hel-peninsula",
+      "name": "Halbinsel Hel",
+      "country": "PL",
+      "lat": 54.6914682,
+      "lon": 18.7003345,
+      "description": "Schmale polnische Ostseehalbinsel zwischen offener See und Putziger Bucht mit eng benachbarten Wellen- und Flachwasserrevieren.",
+      "source_query": "Hel Peninsula Poland",
+      "source_url": "https://www.openstreetmap.org/relation/14599375"
+    },
+    {
+      "slug": "saaremaa",
+      "name": "Saaremaa",
+      "country": "EE",
+      "lat": 58.27382,
+      "lon": 22.2771058,
+      "description": "Estnische Ostseeinsel mit flachen Buchten, Halbinseln und offenen Westküsten für Wind- und Wellenbedingungen.",
+      "source_query": "Saaremaa Estonia",
+      "source_url": "https://www.openstreetmap.org/relation/189934"
+    },
+    {
+      "slug": "gulf-of-riga",
+      "name": "Golf von Riga",
+      "country": "LV",
+      "lat": 57.5,
+      "lon": 23.5,
+      "description": "Große Ostseebucht zwischen Lettland und Estland mit langen Sandküsten, Flachwasser und windabhängigen Wellenrevieren.",
+      "source_query": "Gulf of Riga Latvian coast",
+      "source_url": "https://www.openstreetmap.org/?mlat=57.5&mlon=23.5#map=7/57.5/23.5"
+    },
+    {
+      "slug": "curonian-spit",
+      "name": "Kurische Nehrung",
+      "country": "LT",
+      "lat": 55.3425832,
+      "lon": 21.0299204,
+      "description": "Litauischer Abschnitt der schmalen Ostseenehrung zwischen offener See und Kurischem Haff mit Dünen- und Lagunenlandschaft.",
+      "source_query": "Curonian Spit Lithuania",
+      "source_url": "https://www.openstreetmap.org/relation/309762"
+    },
+    {
+      "slug": "istria",
+      "name": "Istrien",
+      "country": "HR",
+      "lat": 45.1934345,
+      "lon": 13.9150536,
+      "description": "Nördliche Adriatische Halbinsel mit Felsküsten, Buchten und Bora- sowie Maestral-geprägten Wassersportrevieren.",
+      "source_query": "Istria Croatia",
+      "source_url": "https://www.openstreetmap.org/relation/8063578"
+    },
+    {
+      "slug": "kvarner",
+      "name": "Kvarner",
+      "country": "HR",
+      "lat": 44.9138905,
+      "lon": 14.1652872,
+      "description": "Nordadriatische Bucht und Inselregion zwischen Istrien und Dalmatien mit stark kanalisierbaren lokalen Winden.",
+      "source_query": "Kvarner Gulf Croatia",
+      "source_url": "https://www.openstreetmap.org/relation/10151951"
+    },
+    {
+      "slug": "crete",
+      "name": "Kreta",
+      "country": "GR",
+      "lat": 35.3084952,
+      "lon": 24.4633423,
+      "description": "Große griechische Mittelmeerinsel mit stark unterschiedlicher Nord- und Südküstenexposition sowie saisonalen Wind- und Wellenrevieren.",
+      "source_query": "Crete Greece",
+      "source_url": "https://www.openstreetmap.org/relation/453129"
+    },
+    {
+      "slug": "karpathos",
+      "name": "Karpathos",
+      "country": "GR",
+      "lat": 35.6136611,
+      "lon": 27.1192567,
+      "description": "Griechische Dodekanes-Insel mit stark beschleunigtem Sommerwind, Bergkulisse und mehreren getrennten Küstenrevieren.",
+      "source_query": "Karpathos Greece",
+      "source_url": "https://www.openstreetmap.org/relation/452619"
+    },
+    {
+      "slug": "lefkada",
+      "name": "Lefkada",
+      "country": "GR",
+      "lat": 38.7065734,
+      "lon": 20.6416779,
+      "description": "Ionische Insel mit Lagunen, offenen Weststränden und thermisch geprägten Windrevieren nahe dem griechischen Festland.",
+      "source_query": "Lefkada Greece",
+      "source_url": "https://www.openstreetmap.org/relation/3984639"
+    },
+    {
+      "slug": "puglia",
+      "name": "Apulien",
+      "country": "IT",
+      "lat": 40.9842539,
+      "lon": 16.6210027,
+      "description": "Südostitalienische Region zwischen Adria und Ionischem Meer mit langen Küsten, Lagunen und windabhängigen Wellenrevieren.",
+      "source_query": "Puglia Italy",
+      "source_url": "https://www.openstreetmap.org/relation/40095"
+    },
+    {
+      "slug": "tuscany",
+      "name": "Toskana",
+      "country": "IT",
+      "lat": 43.4586541,
+      "lon": 11.1389204,
+      "description": "Westitalienische Küstenregion mit Sandstränden, Flussmündungen, Inselblicken und saisonalen Wind- und Wellenbedingungen.",
+      "source_query": "Tuscany Italy",
+      "source_url": "https://www.openstreetmap.org/relation/41977"
+    },
+    {
+      "slug": "lake-garda",
+      "name": "Gardasee",
+      "country": "IT",
+      "lat": 45.6624314,
+      "lon": 10.6861569,
+      "description": "Großer Alpensee mit ausgeprägten thermischen Windsystemen, Bergkulisse und zahlreichen Wind-, Wing- und Foilrevieren.",
+      "source_query": "Lake Garda Italy",
+      "source_url": "https://www.openstreetmap.org/relation/8569"
+    },
+    {
+      "slug": "lake-neusiedl",
+      "name": "Neusiedler See",
+      "country": "AT",
+      "lat": 47.8003123,
+      "lon": 16.7366677,
+      "description": "Sehr flacher Steppensee im Burgenland mit Schilfgürtel, Naturschutzflächen und etablierten Wind- und Foilrevieren.",
+      "source_query": "Lake Neusiedl Austria",
+      "source_url": "https://www.openstreetmap.org/relation/28066"
+    },
+    {
+      "slug": "engadin",
+      "name": "Engadin",
+      "country": "CH",
+      "lat": 46.428683,
+      "lon": 9.7637539,
+      "description": "Schweizer Hochtal mit Silvaplanersee und weiteren Alpenseen, thermischem Wind und hochalpiner Kulisse.",
+      "source_query": "Engadin Switzerland",
+      "source_url": "https://www.openstreetmap.org/relation/1684169"
+    }
+  ]
+}

@@ -1,0 +1,431 @@
+{
+  "generated_at": "2026-11-10T16:27:21.065385+00:00",
+  "independence_statement": "Created before local/database comparison for batch 007.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual, geographic, resolution and licence review."
+  ],
+  "spots": [
+    {
+      "spot": "Torbole",
+      "query": "Torbole Lake Garda windsurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Torbole 100919 - Spiaggia 01.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Torbole_100919_-_Spiaggia_01.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9b/Torbole_100919_-_Spiaggia_01.jpg/960px-Torbole_100919_-_Spiaggia_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1536,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Davy1509&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Davy1509 (page does not exist)\">Davy1509</a>",
+            "description": "Il lungolago di Torbole",
+            "coordinates": null
+          },
+          {
+            "title": "File:Torbole 100919 - Spiaggia 02.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Torbole_100919_-_Spiaggia_02.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Torbole_100919_-_Spiaggia_02.jpg/960px-Torbole_100919_-_Spiaggia_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1536,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Davy1509&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Davy1509 (page does not exist)\">Davy1509</a>",
+            "description": "Il lungolago di Torbole",
+            "coordinates": null
+          },
+          {
+            "title": "File:Torbole 100919 - Spiaggia 03.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Torbole_100919_-_Spiaggia_03.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2b/Torbole_100919_-_Spiaggia_03.jpg/960px-Torbole_100919_-_Spiaggia_03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1536,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Davy1509&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Davy1509 (page does not exist)\">Davy1509</a>",
+            "description": "Spiaggia di Torbole",
+            "coordinates": null
+          },
+          {
+            "title": "File:Torbole 100919 - Spiaggia 05.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Torbole_100919_-_Spiaggia_05.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Torbole_100919_-_Spiaggia_05.jpg/960px-Torbole_100919_-_Spiaggia_05.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1536,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Davy1509&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Davy1509 (page does not exist)\">Davy1509</a>",
+            "description": "Il lungolago e la spiaggia di Torbole",
+            "coordinates": null
+          },
+          {
+            "title": "File:Torbole 100919 - Spiaggia 08.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Torbole_100919_-_Spiaggia_08.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Torbole_100919_-_Spiaggia_08.jpg/960px-Torbole_100919_-_Spiaggia_08.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 996,
+            "height": 1388,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Davy1509&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Davy1509 (page does not exist)\">Davy1509</a>",
+            "description": "Torbole: il lungolago e la spiaggia",
+            "coordinates": null
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Malcesine",
+      "query": "Malcesine Lake Garda windsurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:WINDSURF - Malcesine (VR), Italy- August 1989 - panoramio.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:WINDSURF_-_Malcesine_(VR),_Italy-_August_1989_-_panoramio.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/WINDSURF_-_Malcesine_%28VR%29%2C_Italy-_August_1989_-_panoramio.jpg/960px-WINDSURF_-_Malcesine_%28VR%29%2C_Italy-_August_1989_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1619,
+            "height": 2300,
+            "license": "CC BY 3.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20161014175944/http://www.panoramio.com/user/4208745?with_photo_id=32857183\">Giorgio Galeotti</a>",
+            "description": "WINDSURF - Nago-Torbole, Trento, Italy - August 1989",
+            "coordinates": {
+              "lat": 45.8684335,
+              "lon": 10.8764272
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Campione del Garda",
+      "query": "Campione del Garda kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Dervio",
+      "query": "Dervio Lake Como windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Colico",
+      "query": "Colico Lake Como kitesurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Colico Spiaggia.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Colico_Spiaggia.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/Colico_Spiaggia.jpg/960px-Colico_Spiaggia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 4320,
+            "height": 3240,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Corradox\" title=\"User:Corradox\">Corradox</a>",
+            "description": "Kitesurfing at the beach of Colico (Lake Como)",
+            "coordinates": null
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gera Lario",
+      "query": "Gera Lario windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Valmadrera",
+      "query": "Valmadrera Lake Como windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Cannobio",
+      "query": "Cannobio Lake Maggiore windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Grado Pineta",
+      "query": "Grado Pineta kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Marina Julia",
+      "query": "Marina Julia windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Sottomarina",
+      "query": "Sottomarina kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Porto Corsini",
+      "query": "Porto Corsini kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Senigallia",
+      "query": "Senigallia windsurf surf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Porto Recanati",
+      "query": "Porto Recanati kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Vieste",
+      "query": "Vieste kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Torre Guaceto",
+      "query": "Torre Guaceto kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Porto Cesareo",
+      "query": "Porto Cesareo kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gallipoli",
+      "query": "Gallipoli Puglia kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Talamone",
+      "query": "Talamone windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Castiglione della Pescaia",
+      "query": "Castiglione della Pescaia windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError",
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Santa Marinella",
+      "query": "Santa Marinella surf Italy",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lido di Ostia",
+      "query": "Ostia surf kitesurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Kitesurf-LNI Ostia-race -IMG0017.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Kitesurf-LNI_Ostia-race_-IMG0017.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Kitesurf-LNI_Ostia-race_-IMG0017.jpg/960px-Kitesurf-LNI_Ostia-race_-IMG0017.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 3814,
+            "height": 2396,
+            "license": "CC BY-SA 3.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Jipre\" title=\"User:Jipre\">Pierluigi Renzi</a>",
+            "description": "3° LNI KITE CONTEST (Gara RACE - Kite Surf) - 17 e 18 settembre 2011 - Lega Navale Italiana sezione Lido di Ostia",
+            "coordinates": null
+          },
+          {
+            "title": "File:Kitesurf-LNI Ostia race-2011-IMG0010.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Kitesurf-LNI_Ostia_race-2011-IMG0010.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/Kitesurf-LNI_Ostia_race-2011-IMG0010.jpg/960px-Kitesurf-LNI_Ostia_race-2011-IMG0010.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 3888,
+            "height": 2592,
+            "license": "CC BY-SA 3.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Jipre\" title=\"User:Jipre\">Pierluigi Renzi</a>",
+            "description": "3° LNI KITE CONTEST (Gara RACE - Kite Surf) - 17 e 18 settembre 2011 - Lega Navale Italiana sezione Lido di Ostia",
+            "coordinates": {
+              "lat": 41.718185,
+              "lon": 12.301995
+            }
+          },
+          {
+            "title": "File:Mm00a 1604 Ost Surf D3000 02 (197871529).jpeg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Mm00a_1604_Ost_Surf_D3000_02_(197871529).jpeg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Mm00a_1604_Ost_Surf_D3000_02_%28197871529%29.jpeg/960px-Mm00a_1604_Ost_Surf_D3000_02_%28197871529%29.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1204,
+            "license": "CC0",
+            "artist": "<div class=\"fn value\">\n<a rel=\"nofollow\" class=\"external text\" href=\"https://500px.com/ilesram\">Marsel Minga</a></div>",
+            "description": "<div class=\"description\">\n500px provided description: (?) no copyright - YOU ARE FREE TO USE IT [#sea ,#wind ,#surfing ,#sport ,#jump ,#flying ,#action ,#kitesurf ,#kitesurfing ,#mare ,#ostia]</div>",
+            "coordinates": {
+              "lat": 41.7311182,
+              "lon": 12.2862694
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Mondello",
+      "query": "Mondello windsurf Palermo",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Puzziteddu",
+      "query": "Puzziteddu kitesurf windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pozzallo",
+      "query": "Pozzallo kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

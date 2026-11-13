@@ -36,27 +36,6 @@ def bayesian_positive_share(
     return SocialResult(max(0.0, min(1.0, score)), n, positives, True)
 
 
-def social_score_for_spot(
-    db,
-    *,
-    spot_id: uuid.UUID,
-    sport: str,
-    level: str,
-    min_group_size: int,
-    band_fingerprint: str | None = None,
-    similar_band: bool = False,
-) -> SocialResult:
-    return social_scores_for_spots(
-        db,
-        spot_ids=[spot_id],
-        sport=sport,
-        level=level,
-        min_group_size=min_group_size,
-        band_fingerprint=band_fingerprint,
-        similar_band=similar_band,
-    )[spot_id]
-
-
 def social_scores_for_spots(
     db,
     *,

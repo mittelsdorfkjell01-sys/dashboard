@@ -39,6 +39,9 @@ export interface FeedPost {
   reportImageId: string | null;
   upvotes: number;
   viewerUpvoted: boolean;
+  /** The signed-in viewer wrote this post. Only own *comments* can be deleted
+   *  by their author; ratings and photos go through the operator. */
+  viewerIsAuthor: boolean;
 }
 
 /** A top-level comment together with its replies (oldest first). */
@@ -139,6 +142,7 @@ export function mergeFeed({
       reportImageId: photo?.id ?? null,
       upvotes: r.upvotes ?? 0,
       viewerUpvoted: r.viewer_upvoted ?? false,
+      viewerIsAuthor: false,
     };
   });
 
@@ -161,6 +165,7 @@ export function mergeFeed({
       reportImageId: photo?.id ?? null,
       upvotes: t.upvotes ?? 0,
       viewerUpvoted: t.viewer_upvoted ?? false,
+      viewerIsAuthor: t.viewer_is_author ?? false,
     };
   });
 
@@ -180,6 +185,7 @@ export function mergeFeed({
     reportImageId: img.id,
     upvotes: 0,
     viewerUpvoted: false,
+    viewerIsAuthor: false,
   }));
 
   return [...fromRatings, ...fromTips, ...fromPhotos];

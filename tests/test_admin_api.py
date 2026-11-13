@@ -810,6 +810,22 @@ def test_wind_climatology_only_caches_ready_public_data(admin, region_id, db):
     assert ready.headers["Cache-Control"] == PUBLIC_CACHE_CONTROL
 
 
+def test_editorial_public_cache_bounds_stale_content(admin, region_id, db):
+    from app.api._http_cache import PUBLIC_CACHE_CONTROL
+    from app.models import Spot
+
+    spot = _create_spot(admin, region_id)
+    row = db.get(Spot, uuid.UUID(spot["id"]))
+    row.status = "published"
+    db.commit()
+
+    response = admin.get(f"/spots/{row.id}")
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == PUBLIC_CACHE_CONTROL
+    assert "s-maxage=300" in PUBLIC_CACHE_CONTROL
+    assert "stale-while-revalidate=60" in PUBLIC_CACHE_CONTROL
+
+
 def test_na_counts_as_fulfilled(admin, region_id, db):
     # a spot whose description is explicitly n/a still satisfies that rule
     spot = _create_spot(admin, region_id)

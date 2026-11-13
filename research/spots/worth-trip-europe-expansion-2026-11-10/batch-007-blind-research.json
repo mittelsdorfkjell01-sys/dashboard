@@ -1,0 +1,1184 @@
+{
+  "schema_version": 1,
+  "batch": "007",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Candidate selection used external discovery only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless explicitly sourced.",
+    "Image candidates remain unapproved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Torbole",
+      "country": "IT",
+      "identity": "Northern Lake Garda windsurf/wing waters at Torbole; kite access is a separate lift-only regime.",
+      "entry": {
+        "lat": 45.869,
+        "lon": 10.875,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing",
+        "kitesurf"
+      ],
+      "conditions": "Ora/Pelèr thermal system, mountain funnel and dense international traffic; kite use has wind, distance and time limits.",
+      "access_rules": "Kites use official lift providers, stay 200 m from shore/boats and stop above 16 m/s; regatta zones prevail.",
+      "trip_value": "Lake Garda's globally recognised specialist scene, championships and exceptional wind system exceed worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gardatrentino.it/en/outdoor/water-sports/kitesurfing",
+          "publisher": "Garda Trentino Tourism",
+          "supports": [
+            "rules",
+            "wind_limit",
+            "zones",
+            "lift"
+          ]
+        },
+        {
+          "url": "https://www.gardatrentino.it/Brochure/2021/2021_GT_Brochure_Water_Sport.pdf",
+          "publisher": "Garda Trentino Tourism",
+          "supports": [
+            "zone_map",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://www.dpc-torbole.com/fileadmin/user_upload/dpctorbole/travel_information/DPC_Torbole_Travel_Information.pdf",
+          "publisher": "Duotone Pro Center Torbole",
+          "supports": [
+            "discipline_split",
+            "instruction"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Malcesine",
+      "country": "IT",
+      "identity": "Malcesine morning windsurf launches on eastern Lake Garda; Pier/Conca are distinct subspots.",
+      "entry": {
+        "lat": 45.765,
+        "lon": 10.812,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Strong early Pelèr, later lighter Ora; expert jumping and beginner teaching windows differ sharply.",
+      "access_rules": "Pin one launch and time/level window; avoid ferry/navigation lanes and strong-wind self-rescue exposure.",
+      "trip_value": "Worldwide rider draw, elite training and foundational freestyle history exceed worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitmalcesine.com/en/windsurf-in-malcesine-on-lake-garda",
+          "publisher": "Malcesine Tourism Department",
+          "supports": [
+            "winds",
+            "levels",
+            "global_riders",
+            "history"
+          ]
+        },
+        {
+          "url": "https://www.gardatrentino.it/en/outdoor/water-sports/kitesurfing",
+          "publisher": "Garda Trentino Tourism",
+          "supports": [
+            "lake_rules",
+            "navigation_distance"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Campione del Garda",
+      "country": "IT",
+      "identity": "The concession-managed kite beach at Campione, not unrestricted Lake Garda shore.",
+      "entry": {
+        "lat": 45.758,
+        "lon": 10.749,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Pelèr and Ora both work; intense all-day winds and cliff-lined lake require managed assistance.",
+      "access_rules": "Membership/concession rules, current launch corridor and in-water assistance are mandatory.",
+      "trip_value": "Unique managed kite beach, reliable dual thermal winds and destination services support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.kitecampione.it/spot-e-regolamento/",
+          "publisher": "Kite Campione / FIV association",
+          "supports": [
+            "only_dedicated_beach",
+            "concession",
+            "assistance",
+            "winds"
+          ]
+        },
+        {
+          "url": "https://gardalombardia.com/en/info/campione-del-garda_655",
+          "publisher": "Garda Lombardia Tourism",
+          "supports": [
+            "sports",
+            "winds",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.italia.it/it/lombardia/brescia/campione-del-garda",
+          "publisher": "Italia.it",
+          "supports": [
+            "official_sport_use"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Dervio",
+      "country": "IT",
+      "identity": "Dervio's established school/club lakefront on northern Lake Como.",
+      "entry": {
+        "lat": 46.077,
+        "lon": 9.306,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "sailing"
+      ],
+      "conditions": "Regular 10–16 kt afternoon Breva March–October; Föhn/Brevun can be much stronger and gusty.",
+      "access_rules": "Select a school/club launch, document boat traffic, self-rescue and unsafe north-wind states.",
+      "trip_value": "Upper-lake wind reliability, schools and alpine setting support worth_trip after exact launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.montagnelagodicomo.it/en/listings/sailing-and-water-sports-in-dervio/",
+          "publisher": "Lake Como & Valsassina Tourism",
+          "supports": [
+            "sports",
+            "schools",
+            "rental"
+          ]
+        },
+        {
+          "url": "https://www.turisportdervio.it/index.php/com_content/article/9/6/",
+          "publisher": "Dervio tourism operator",
+          "supports": [
+            "Breva",
+            "season",
+            "strong_winds",
+            "reputation"
+          ]
+        },
+        {
+          "url": "https://www.como.travel/it/vento/",
+          "publisher": "Como Travel",
+          "supports": [
+            "thermal_system",
+            "regional_spots"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Colico",
+      "country": "IT",
+      "identity": "Grass-beach kite launch at Colico, with lift option and adjacent reserve kept separate.",
+      "entry": {
+        "lat": 46.135,
+        "lon": 9.377,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Typical Breva averages 15–18 kt; launch, shallows and river-mouth/reserve edges constrain the area.",
+      "access_rules": "Use the defined grass launch or authorised lift; protect Pian di Spagna wetland and boat lanes.",
+      "trip_value": "Italy's official tourism calls it a dream kite destination; infrastructure and alpine setting support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.italia.it/en/lombardy/lecco/colico",
+          "publisher": "Italia.it",
+          "supports": [
+            "wind_range",
+            "kite_destination",
+            "reserve"
+          ]
+        },
+        {
+          "url": "https://visitcolico.it/en/just_outdoor/water-sports/kitesurf/",
+          "publisher": "Visit Colico",
+          "supports": [
+            "launch",
+            "lift",
+            "Breva"
+          ]
+        },
+        {
+          "url": "https://www.lakecomo.is/en/experience/kitesurfing/",
+          "publisher": "Lake Como Tourism",
+          "supports": [
+            "European_visitors",
+            "seasonal_winds"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Gera Lario – Acquaforte",
+      "country": "IT",
+      "identity": "Acquaforte beach at Gera Lario, not the whole northern lake shore.",
+      "entry": {
+        "lat": 46.171,
+        "lon": 9.369,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "sailing"
+      ],
+      "conditions": "Windy upper-lake beach driven by Breva; precise kite launch geometry remains unverified.",
+      "access_rules": "Map monitored bathing water, harbour, reserve edge and legal kite rigging area.",
+      "trip_value": "Constant-wind upper-lake setting supports worth_trip after exact zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitlario.com/en/towns/gera-lario/",
+          "publisher": "Lario destination guide",
+          "supports": [
+            "windsurf",
+            "Breva",
+            "beach",
+            "reserve"
+          ]
+        },
+        {
+          "url": "https://visitlario.com/it/cosa-vedere/spiaggia-acquaforte/",
+          "publisher": "Lario destination guide",
+          "supports": [
+            "exact_beach",
+            "sports",
+            "water_quality"
+          ]
+        },
+        {
+          "url": "https://www.northlakecomo.net/uploads/EnTravelguide-upload.pdf",
+          "publisher": "North Lake Como Tourism",
+          "supports": [
+            "European_visitors",
+            "sports"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Valmadrera – Baia di Parè",
+      "country": "IT",
+      "identity": "Baia di Parè lake-sport candidate with a current-rule conflict.",
+      "entry": {
+        "lat": 45.852,
+        "lon": 9.363,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Morning Tivano about 15 kt and afternoon Breva 8–10 kt; thunderstorms can create violent gusts.",
+      "access_rules": "A 6 August 2026 emergency ordinance prohibited lake sports during Moregallo firefighting; current revocation is not proven.",
+      "trip_value": "Potential trip value exists, but it cannot be counted until the emergency restriction and current legal launch are resolved.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://sportellotelematico.autoritabacinolario.it/porto/26",
+          "publisher": "Lario Basin Authority",
+          "supports": [
+            "winds",
+            "port",
+            "gust_hazard"
+          ]
+        },
+        {
+          "url": "https://comune.valmadrera.lc.it/it/news/incendio-moregallo-ordinanza",
+          "publisher": "Valmadrera municipality",
+          "supports": [
+            "2026_sport_ban"
+          ]
+        },
+        {
+          "url": "https://leccotourism.it/wp-content/uploads/2024/08/Sport-nautici-2024_ITA-UK-1.pdf",
+          "publisher": "Lecco Tourism",
+          "supports": [
+            "windsurf_club"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Cannobio Lido",
+      "country": "IT",
+      "identity": "Cannobio's public Lido on Lake Maggiore; harbour and ferry approaches excluded.",
+      "entry": {
+        "lat": 46.063,
+        "lon": 8.697,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "sailing",
+        "kitesurf"
+      ],
+      "conditions": "Pre-alpine lake wind with dangerous storm states; sport proof is destination-level rather than launch-specific.",
+      "access_rules": "Stay outside harbours and marked routes, sail only in suitable weather, and confirm the rigging/launch sector.",
+      "trip_value": "Large public beach and lake destination support worth_trip only after launch and rules correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.turismocannobio.it/Cannobio_Calendario_Eventi_2025.pdf",
+          "publisher": "Cannobio Tourism",
+          "supports": [
+            "windsurf",
+            "sailing",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.campingorchidea.it/download/REGOLAMENTO-NAVIGAZIONE_EN.pdf",
+          "publisher": "Piedmont navigation rules",
+          "supports": [
+            "harbour_exclusion",
+            "weather_rules"
+          ]
+        },
+        {
+          "url": "https://www.cannobio4you.it/CA_impaginato_rev2low.pdf",
+          "publisher": "Cannobio tourism guide",
+          "supports": [
+            "public_lido",
+            "sports"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Grado Pineta – Punta Barbacale",
+      "country": "IT",
+      "identity": "Punta Barbacale kite area at eastern Grado Pineta.",
+      "entry": {
+        "lat": 45.681,
+        "lon": 13.424,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Bora works over shallow flat water and long sandbar, but very low tide can stop navigation.",
+      "access_rules": "Kiting is prohibited during bathing season and winter conservation limits apply east of the point; exact current map required.",
+      "trip_value": "Cross-border rider draw and distinctive lagoon conditions support worth_trip after seasonal/conservation correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://grado.it/en/beaches/beaches/grado-pineta-beach",
+          "publisher": "Grado Tourism",
+          "supports": [
+            "European_visitors",
+            "conditions",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.kitelifefvg.it/kite-spot/grado-pineta/",
+          "publisher": "Kite Life FVG",
+          "supports": [
+            "summer_ban",
+            "conservation",
+            "tide",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://grado.it/assets/pagine-sito/documenti/catalogo-2026-ita-deu-eng.pdf",
+          "publisher": "Grado Tourism",
+          "supports": [
+            "2026_spot_identity",
+            "levels"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Marina Julia",
+      "country": "IT",
+      "identity": "The free official kite corridor at Marina Julia, Monfalcone.",
+      "entry": {
+        "lat": 45.78,
+        "lon": 13.544,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing",
+        "SUP"
+      ],
+      "conditions": "Side-on Bora, shallow flat water west and faster depth east; grass/gravel rigging area.",
+      "access_rules": "Use the marked corridor and current bathing ordinance; different depth/skill sectors must remain explicit.",
+      "trip_value": "One of the mid-upper Adriatic's best official corridors with clubs, rescue and events supports worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.turismofvg.it/sea/beach-marina-julia?LangSetCMS=en",
+          "publisher": "Friuli Venezia Giulia Tourism",
+          "supports": [
+            "corridor",
+            "conditions",
+            "rules",
+            "services"
+          ]
+        },
+        {
+          "url": "https://www.turismofvg.it/en/sea/associazione-velica-dilettantistica-windsurfing-marina-julia?LangSetCMS=en",
+          "publisher": "Friuli Venezia Giulia Tourism",
+          "supports": [
+            "courses",
+            "club",
+            "events"
+          ]
+        },
+        {
+          "url": "https://www.fiso.it/_files/f_media/2025/10/39378.pdf",
+          "publisher": "Monfalcone municipality guide",
+          "supports": [
+            "year_round_kite",
+            "corridor"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Sottomarina",
+      "country": "IT",
+      "identity": "Sottomarina's authorised kite corridor behind the dam; not the entire 10 km beach.",
+      "entry": {
+        "lat": 45.199,
+        "lon": 12.302,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing",
+        "SUP"
+      ],
+      "conditions": "Moderate constant wind and generally calm Adriatic water; storm systems can produce organised waves.",
+      "access_rules": "During bathing season launch/land only through the corridor and remain outside protected swimming water.",
+      "trip_value": "Long equipped coast and recognised wind-sport schools support worth_trip after corridor correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitchioggia.com/en/live/beaches/sup-windsurf-and-kitesurf/",
+          "publisher": "Visit Chioggia",
+          "supports": [
+            "winds",
+            "sports",
+            "schools"
+          ]
+        },
+        {
+          "url": "https://www.spinoutasd.com/lo-spot",
+          "publisher": "SpinOut ASD",
+          "supports": [
+            "2026_rules",
+            "corridor",
+            "bathing_zone"
+          ]
+        },
+        {
+          "url": "https://www.comune.chioggia.ve.it/vivere-il-comune/luoghi/spiaggia-sottomarina/",
+          "publisher": "Chioggia municipality",
+          "supports": [
+            "beach_identity",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Porto Corsini",
+      "country": "IT",
+      "identity": "The authorised Adriatico Wind Club kite centre at Porto Corsini.",
+      "entry": {
+        "lat": 44.493,
+        "lon": 12.282,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "sailing"
+      ],
+      "conditions": "Wide Adriatic beach beside a 2.5 km port breakwater; port approaches and seasonal bathers are material hazards.",
+      "access_rules": "Use the authorised centre/corridor and maintain port, breakwater and swimming exclusions.",
+      "trip_value": "Ravenna trip context, broad beach and year-round authorised school support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.turismo.ra.it/en/nature-seaside/the-beaches-of-ravenna/porto-corsini/",
+          "publisher": "Ravenna Tourism / municipality",
+          "supports": [
+            "sports",
+            "club",
+            "beach",
+            "port"
+          ]
+        },
+        {
+          "url": "https://www.adriaticowindclub.com/corso.php?idcorso=2",
+          "publisher": "Adriatico Wind Club",
+          "supports": [
+            "year_round_courses",
+            "only_authorised_center"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Senigallia",
+      "country": "IT",
+      "identity": "Senigallia's authorised seasonal kite beach; exact location remains open.",
+      "entry": {
+        "lat": 43.715,
+        "lon": 13.22,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "surf"
+      ],
+      "conditions": "Shallow sandy beginner-friendly coast with small/medium wind waves.",
+      "access_rules": "Summer launch is limited to the authorised kite beach; exact corridor and current ordinance required.",
+      "trip_value": "Strong local services but insufficient evidence of a distinctive dedicated-trip experience.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.feelsenigallia.it/en/to-live/sea/",
+          "publisher": "Feel Senigallia official tourism",
+          "supports": [
+            "sports",
+            "clubs",
+            "courses"
+          ]
+        },
+        {
+          "url": "https://www.kitesurfing.it/Kitespot/senigallia-bech/",
+          "publisher": "Kitesurfing.it",
+          "supports": [
+            "summer_corridor",
+            "conditions",
+            "levels"
+          ]
+        },
+        {
+          "url": "https://www.italia.it/it/marche/ancona/rotonda-a-mare",
+          "publisher": "Italia.it",
+          "supports": [
+            "watersports",
+            "destination"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Porto Recanati – Scossicci",
+      "country": "IT",
+      "identity": "Scossicci beach wind-sport candidate north of Porto Recanati.",
+      "entry": {
+        "lat": 43.432,
+        "lon": 13.663,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Deeper seabed is described as suitable, but wind window and hazards are not authoritatively detailed.",
+      "access_rules": "Exact corridor, bathing-season rules and navigation constraints remain unproven.",
+      "trip_value": "A pleasant regional beach, but current evidence is too generic for dedicated-trip status.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.portorecanatiturismo.it/interessi/mare-porto-recanati",
+          "publisher": "Porto Recanati Tourism",
+          "supports": [
+            "Scossicci",
+            "sports",
+            "depth"
+          ]
+        },
+        {
+          "url": "https://backoffice.turismo.marche.it/GestionePOI/Uploads/6104_636730217831074531.pdf",
+          "publisher": "Marche Tourism",
+          "supports": [
+            "sea_sports",
+            "destination_services"
+          ]
+        },
+        {
+          "url": "https://www.rivieradelconero.info/images/pdf/guida-2021.pdf",
+          "publisher": "Riviera del Conero Tourism",
+          "supports": [
+            "clubs",
+            "kitesurf"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Vieste – Scialmarino",
+      "country": "IT",
+      "identity": "Scialmarino's shallow sandy kite/windsurf bay north of Vieste.",
+      "entry": {
+        "lat": 41.925,
+        "lon": 16.118,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "Moderate consistent Mistral/Scirocco, shallow sand and strongest shoulder seasons May–June/September.",
+      "access_rules": "Use current school and bathing corridors; distinguish Scialmarino from San Lorenzo/Crovatico subspots.",
+      "trip_value": "Long-established European visitor draw, reliable conditions and Gargano journey support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitvieste.com/kitesurf-a-vieste/",
+          "publisher": "Visit Vieste",
+          "supports": [
+            "winds",
+            "season",
+            "levels",
+            "school"
+          ]
+        },
+        {
+          "url": "https://turismo.puglia.it/foggia/vieste/",
+          "publisher": "Puglia Tourism",
+          "supports": [
+            "Scialmarino",
+            "sports",
+            "shallow_water"
+          ]
+        },
+        {
+          "url": "https://www.italia.it/it/italia/cosa-fare/kitesurf-dove-andare-tra-laghi-e-spiagge",
+          "publisher": "Italia.it",
+          "supports": [
+            "year_round_recommendation",
+            "beginner"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Torre Guaceto coast",
+      "country": "IT",
+      "identity": "Unresolved candidate inside/alongside the Torre Guaceto marine and state reserve.",
+      "entry": {
+        "lat": 40.715,
+        "lon": 17.8,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Exposed Adriatic reserve coast; no source establishes a public wind-sport launch compatible with zone rules.",
+      "access_rules": "Zone A/B/C protection, authorised activities and land access must be resolved with reserve management.",
+      "trip_value": "Do not count: conservation permission and exact launch are insufficiently evidenced.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://riservaditorreguaceto.it/index.php/it/turismo/le-attivita",
+          "publisher": "Torre Guaceto Reserve",
+          "supports": [
+            "authorised_activities_context"
+          ]
+        },
+        {
+          "url": "https://win.riservaditorreguaceto.it/page.aspx?LVL_II=70&mp=1&view=top",
+          "publisher": "Torre Guaceto Reserve",
+          "supports": [
+            "official_regulations"
+          ]
+        },
+        {
+          "url": "https://www.rac-spa.org/sites/default/files/doc_medmpanet/final_docs_regional/60_surveillance_and_enforcement_of_regulations_in_mediterranean_mpas.pdf",
+          "publisher": "MedMPAnet",
+          "supports": [
+            "zone_map",
+            "permissions"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Porto Cesareo – Bacino Grande",
+      "country": "IT",
+      "identity": "Bacino Grande/Porto Cesareo kite section; marine-protected waters and Strea lagoon must not be conflated.",
+      "entry": {
+        "lat": 40.271,
+        "lon": 17.881,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing",
+        "windsurf"
+      ],
+      "conditions": "Western winds give flat/chop water; southern/eastern wind can be side-off and unsafe.",
+      "access_rules": "Map the legal corridor against the marine protected area and retain offshore-wind/rock warnings.",
+      "trip_value": "Salento travel value, flat-water variety and national kite recommendation support worth_trip after zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.italia.it/it/italia/cosa-fare/kitesurf-dove-andare-tra-laghi-e-spiagge",
+          "publisher": "Italia.it",
+          "supports": [
+            "national_recommendation",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://www.salento.it/en/attivita/kitesurfing-on-the-west-coast-of-Salento/",
+          "publisher": "Salento destination portal",
+          "supports": [
+            "Bacino_Grande",
+            "winds",
+            "rocks"
+          ]
+        },
+        {
+          "url": "https://opentourism.italy-albania-montenegro.eu/sites/opentourism.italy-albania-montenegro.eu/files/2021-06/Brochure%20Area%20Marina%20Protetta%20Porto%20Cesareo_0.pdf",
+          "publisher": "Porto Cesareo MPA",
+          "supports": [
+            "protected_area"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Gallipoli – Baia Verde / Lido Pizzo",
+      "country": "IT",
+      "identity": "Two wind-dependent Gallipoli kite sections; they require separate operational entries.",
+      "entry": {
+        "lat": 40.037,
+        "lon": 18.016,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Baia Verde covers southern through north-west winds; Lido Pizzo covers northern wind within natural-park context.",
+      "access_rules": "Split the zones, attach current municipal ordinances and protect crowded bathing/natural areas.",
+      "trip_value": "Two-coast wind options and Salento trip setting support worth_trip after exact-zone correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.salento.it/en/attivita/kitesurfing-on-the-west-coast-of-Salento/",
+          "publisher": "Salento destination portal",
+          "supports": [
+            "zones",
+            "winds",
+            "natural_park"
+          ]
+        },
+        {
+          "url": "https://www.visit-gallipoli.com/en/spiagge/guide/spiagge-con-vento/",
+          "publisher": "Visit Gallipoli",
+          "supports": [
+            "winds",
+            "crowding",
+            "ordinance_need"
+          ]
+        },
+        {
+          "url": "https://www.enit.it/en/puglia-beach-tourism",
+          "publisher": "ENIT",
+          "supports": [
+            "regional_destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Talamone – Fertilia",
+      "country": "IT",
+      "identity": "Fertilia's long free beach and managed wind-sport centres in Talamone Bay.",
+      "entry": {
+        "lat": 42.555,
+        "lon": 11.133,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing",
+        "SUP"
+      ],
+      "conditions": "Top thermal winds, shallow learning water and stronger afternoon sessions.",
+      "access_rules": "Use current school/corridor rules and protect nearby Maremma natural-park waters.",
+      "trip_value": "Well-defined thermal bay, schools/rental and Maremma setting support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visittuscany.com/en/towns-and-villages/talamone/",
+          "publisher": "Visit Tuscany",
+          "supports": [
+            "Fertilia",
+            "sports",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.visittuscany.com/en/ideas/watersports-in-tuscany/",
+          "publisher": "Visit Tuscany",
+          "supports": [
+            "thermal_wind",
+            "school",
+            "rental"
+          ]
+        },
+        {
+          "url": "https://www.italia.it/en/tuscany/grosseto/talamone",
+          "publisher": "Italia.it",
+          "supports": [
+            "sports",
+            "trip_value"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Castiglione della Pescaia",
+      "country": "IT",
+      "identity": "Managed kite/windsurf corridors on the long coast toward Marina di Grosseto; exact centre must be selected.",
+      "entry": {
+        "lat": 42.763,
+        "lon": 10.879,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf",
+        "wing",
+        "surf"
+      ],
+      "conditions": "Shallow sand, western winds and 15–20 kt summer thermal; eastern wind is offshore.",
+      "access_rules": "Use an authorised corridor, respect summer swim zones and exclude offshore-wind use.",
+      "trip_value": "High wind probability, schools and Maremma destination support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://maremmaexperience.it/water-sports/",
+          "publisher": "Maremma Experience destination portal",
+          "supports": [
+            "winds",
+            "season",
+            "schools",
+            "levels"
+          ]
+        },
+        {
+          "url": "https://www.kitesurftoscana.it/kitesurf-marina-di-grosseto/",
+          "publisher": "Kitesurf Toscana",
+          "supports": [
+            "corridor",
+            "thermal",
+            "bottom",
+            "rules"
+          ]
+        },
+        {
+          "url": "https://visitcastiglionedellapescaia.it/",
+          "publisher": "Castiglione official tourism",
+          "supports": [
+            "destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Santa Marinella",
+      "country": "IT",
+      "identity": "Santa Marinella's established rocky surf bays; an exact break must be selected.",
+      "entry": {
+        "lat": 42.034,
+        "lon": 11.854,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf"
+      ],
+      "conditions": "Rocky coves and reef-style waves used year-round; level and entry vary by break.",
+      "access_rules": "Pin one break and document reef, current, crowd and entry/exit hazards.",
+      "trip_value": "Italy's official tourism calls it a surf paradise and year-round draw; supports worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.italia.it/it/lazio/santa-marinella-e-santa-severa",
+          "publisher": "Italia.it",
+          "supports": [
+            "surf_paradise",
+            "year_round",
+            "rocky_coast"
+          ]
+        },
+        {
+          "url": "https://visitsantamarinella.it/welcome/",
+          "publisher": "Visit Santa Marinella",
+          "supports": [
+            "destination",
+            "access"
+          ]
+        },
+        {
+          "url": "https://www.leduestelle.it/wp-content/uploads/2024/02/il-mare-del-lazio-guidda-bb-ostia.pdf",
+          "publisher": "Lazio tourism guide",
+          "supports": [
+            "surf_reputation"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Lido di Ostia",
+      "country": "IT",
+      "identity": "Broad Rome-coast candidate without a specific verified sport corridor.",
+      "entry": {
+        "lat": 41.729,
+        "lon": 12.278,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "surf",
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Urban sandy coast with many concessions and high seasonal bathing pressure.",
+      "access_rules": "A specific legal launch/corridor and live bathing rules are required.",
+      "trip_value": "Excellent metropolitan access but insufficient distinctive trip value versus specialist coasts.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.italia.it/en/lazio/rome/ostia",
+          "publisher": "Italia.it",
+          "supports": [
+            "sports",
+            "services",
+            "coast_length"
+          ]
+        },
+        {
+          "url": "https://www.turismoroma.it/it/quartieri/ostia",
+          "publisher": "Rome Tourism",
+          "supports": [
+            "sports",
+            "urban_destination"
+          ]
+        },
+        {
+          "url": "https://turismoroma.it/en/page/sea-rome",
+          "publisher": "Rome Tourism",
+          "supports": [
+            "sport_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Mondello",
+      "country": "IT",
+      "identity": "Mondello Gulf windsurf/kite water near Palermo; current launch zoning remains open.",
+      "entry": {
+        "lat": 38.21,
+        "lon": 13.326,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Sheltered scenic gulf with long windsurf festival history; exact wind window and bathing-season corridor need sourcing.",
+      "access_rules": "Attach current municipal sport zone, summer crowd separation and launch.",
+      "trip_value": "Historic international windsurf event, Palermo access and island setting support worth_trip after correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://turismo.comune.palermo.it/palermo-welcome-mare-dettaglio.php?det=26&id=373&tp=158",
+          "publisher": "Palermo municipality tourism",
+          "supports": [
+            "festival",
+            "windsurf",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.visitsicily.info/en/kitesurfing-in-sicily/",
+          "publisher": "Visit Sicily",
+          "supports": [
+            "kite_recommendation"
+          ]
+        },
+        {
+          "url": "https://www.palermotourism.com/datas/operatori/download/congressi/file/congressi.pdf",
+          "publisher": "Palermo Tourism",
+          "supports": [
+            "world_festival",
+            "competition"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Puzziteddu",
+      "country": "IT",
+      "identity": "Puzziteddu gulf and its sandy launch between two reef points.",
+      "entry": {
+        "lat": 37.56,
+        "lon": 12.676,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing",
+        "surf"
+      ],
+      "conditions": "Winter 20–25 kt with 1–3 m waves; summer NW thermal 12–28 kt; offshore north wind is expert-only.",
+      "access_rules": "Use concession corridor and rescue, preserve reef/level/offshore-wind distinctions.",
+      "trip_value": "European-leading wave/wind reputation and specialist resort infrastructure exceed worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitsicily.info/windsurf-in-sicilia/",
+          "publisher": "Visit Sicily",
+          "supports": [
+            "popular_wave_spot",
+            "identity"
+          ]
+        },
+        {
+          "url": "https://www.puzziteddu.it/",
+          "publisher": "ASD Reef / FIV school",
+          "supports": [
+            "European_reputation",
+            "conditions",
+            "corridor"
+          ]
+        },
+        {
+          "url": "https://www.windresort.it/en/stay-with-water-sport-school-sicily/the-spot",
+          "publisher": "Windresort",
+          "supports": [
+            "winds",
+            "waves",
+            "hazards",
+            "rescue"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_as_world_class"
+    },
+    {
+      "name": "Pozzallo – Secondo Scivolo",
+      "country": "IT",
+      "identity": "Secondo Scivolo wind-sport beach at Pozzallo, not the whole town frontage.",
+      "entry": {
+        "lat": 36.73,
+        "lon": 14.846,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Wide sand and shallow water exposed to Scirocco, with ample rigging space.",
+      "access_rules": "Confirm current launch corridor, summer swimmer separation and storm/rock hazards.",
+      "trip_value": "Official national and Sicilian sources plus a defined active beach support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.italia.it/en/sicily/ragusa/pozzallo",
+          "publisher": "Italia.it",
+          "supports": [
+            "sports",
+            "shallow_water",
+            "wide_beach"
+          ]
+        },
+        {
+          "url": "https://www.visitsicily.info/en/windsurf-in-sicily/",
+          "publisher": "Visit Sicily",
+          "supports": [
+            "Scirocco",
+            "sports"
+          ]
+        },
+        {
+          "url": "https://www.pozzallonatasulmare.it/en/spiagge",
+          "publisher": "Pozzallo destination portal",
+          "supports": [
+            "Secondo_Scivolo",
+            "wind_stadium",
+            "space"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    }
+  ]
+}

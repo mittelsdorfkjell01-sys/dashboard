@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+import time
+
 import pytest
 
-from app.live.cache import InMemoryCache, cache_key
+from app.live.cache import (
+    FailOpenCache,
+    InMemoryCache,
+    cache_key,
+    cache_metrics_snapshot,
+)
 from app.live.client import MAX_FORECAST_DAYS
 from app.live.weather_contract import FORECAST_PRODUCT_VERSION
 from app.live.models import AROME, BEST_MATCH, ICON_D2, ICON_EU, select_model
 from app.live.service import (
     _forecast_sample_issued_at,
+    _cached_nowcast,
     _store_forecast_samples_once,
     confidence_for_day,
     get_forecast_series,
@@ -60,6 +69,38 @@ def test_redis_cache_fails_open_when_redis_is_down():
     cache._r = _DeadRedis()
     assert cache.get("om:x") is None  # reported as a miss
     cache.set("om:x", {"a": 1}, ttl=10)  # swallowed, no raise
+
+
+def test_redis_cache_discards_corrupt_json_as_a_miss():
+    from app.live.cache import RedisCache
+
+    deleted: list[str] = []
+
+    class _CorruptRedis:
+        def get(self, _key):
+            return b"{not-json"
+
+        def delete(self, key):
+            deleted.append(key)
+
+    cache = RedisCache.__new__(RedisCache)
+    cache._r = _CorruptRedis()
+    assert cache.get("om:broken") is None
+    assert deleted == ["om:broken"]
+
+
+def test_fail_open_cache_exposes_bounded_namespace_metrics():
+    cache_metrics_snapshot(reset=True)
+    cache = FailOpenCache(InMemoryCache(), InMemoryCache())
+    assert cache.get("om:model:1:2:forecast") is None
+    cache.set("om:model:1:2:forecast", {"ok": True}, 30)
+    assert cache.get("om:model:1:2:forecast")["ok"] is True
+
+    metrics = cache_metrics_snapshot(reset=True)["namespaces"]["om"]
+    assert metrics["requests"] == 2
+    assert metrics["hits"] == 1
+    assert metrics["misses"] == 1
+    assert metrics["writes"] == 1
 
 
 def test_cache_envelope_preserves_capture_time():
@@ -160,6 +201,36 @@ def test_second_call_hits_cache_no_http():
     get_forecast_series(spot.id, db=db, client=client, cache=cache)
     assert client.forecast_calls == 2
     assert client.marine_calls == 2
+
+
+def test_provider_cold_miss_is_single_flight():
+    class _SlowClient:
+        def __init__(self):
+            self.calls = 0
+
+        def fetch_forecast(self, _lat, _lon, _models, _days):
+            self.calls += 1
+            time.sleep(0.05)
+            return {"value": self.calls}
+
+    client = _SlowClient()
+    cache = InMemoryCache()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(
+            pool.map(
+                lambda _index: _cached_nowcast(
+                    54.0,
+                    10.0,
+                    "icon",
+                    client=client,
+                    cache=cache,
+                ),
+                range(2),
+            )
+        )
+
+    assert client.calls == 1
+    assert [result["value"] for result in results] == [1, 1]
 
 
 def test_shadow_baseline_fetch_skips_marine_and_station_products():

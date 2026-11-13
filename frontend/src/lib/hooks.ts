@@ -4,14 +4,18 @@
 // cache (see ./swr): navigating between pages renders cached data instantly and
 // refreshes in the background instead of re-showing a skeleton and re-fetching.
 
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Spot } from "./types";
 import * as api from "./api";
 import { adaptSpot, adaptSpots } from "./adapt";
 import { usePersistentSwr, useSwr, type SwrState } from "./swr";
-import { mutate } from "./swr";
-import { mergeFeed, type FeedPost } from "./communityFeed";
 import type { NormalizedForecastSeries } from "./forecastNormalization";
+export {
+  useCommunityFeed,
+  usePersistedState,
+  useRatingScore,
+  type CommunityFeedState,
+} from "./communityHooks";
 
 // Kept as names for backward-compatible imports; identical shape to SwrState.
 export type AsyncState<T> = SwrState<T>;
@@ -352,101 +356,4 @@ export function useRegionBySlug(slug: string | undefined) {
   return useSwr(slug ? `region-slug:${slug}` : null, () =>
     api.getRegionBySlug(slug!)
   );
-}
-
-export interface CommunityFeedState {
-  posts: FeedPost[];
-  photos: api.CommunityImage[];
-  loading: boolean;
-  error: string | null;
-  reload: () => void;
-  addTip: (tip: api.TipItem) => void;
-}
-
-/** Ratings + tips + images for a spot, merged into one chronological feed
- *  (see lib/communityFeed). The Info tab's mosaic gallery tile and the
- *  community feed section call this independently from two different places
- *  in the page — the underlying useSwr cache (keyed by spotId) means that
- *  only fires one set of requests, not two. */
-export function useCommunityFeed(spotId?: string): CommunityFeedState {
-  const ratings = useSwr(spotId ? `ratings:${spotId}` : null, () => api.getRatings(spotId!));
-  const tips = useSwr(spotId ? `tips:${spotId}` : null, () => api.getTips(spotId!));
-  const images = useSwr(spotId ? `images:${spotId}` : null, () => api.getSpotImages(spotId!));
-
-  // Commons photos were fetched automatically, not posted by a community
-  // member — they feed the gallery (below) but never masquerade as a feed
-  // post ("someone shared a photo").
-  const communityImages = useMemo(
-    () => (images.data?.items ?? []).filter((i) => i.source !== "wikimedia_commons"),
-    [images.data]
-  );
-  const posts = useMemo(
-    () =>
-      mergeFeed({
-        ratings: ratings.data?.items ?? [],
-        tips: tips.data?.items ?? [],
-        images: communityImages,
-      }),
-    [ratings.data, tips.data, communityImages]
-  );
-  const photos = images.data?.items ?? [];
-
-  return {
-    posts,
-    photos,
-    // Text comments do not depend on the gallery response. In particular,
-    // gallery cold starts or a slow media query must not keep the comments
-    // skeleton visible after ratings and tips are already available. Images
-    // still join the existing posts as soon as their request completes.
-    loading: ratings.loading || tips.loading,
-    error: ratings.error ?? tips.error,
-    reload: () => {
-      ratings.reload();
-      tips.reload();
-      images.reload();
-    },
-    addTip: (tip) => {
-      if (!spotId) return;
-      mutate<{ items: api.TipItem[] }>(`tips:${spotId}`, (current) => ({
-        items: [tip, ...(current?.items ?? [])],
-      }));
-    },
-  };
-}
-
-/** The namebox score — real `RatingAggregate.score` (0–5, Bayesian) from the
- *  spot's published ratings. Shares the `ratings:${spotId}` cache key with
- *  `useCommunityFeed`, so mounting both on the same page (namebox + feed)
- *  never fires the request twice. */
-export function useRatingScore(spotId?: string): number | null {
-  const ratings = useSwr(spotId ? `ratings:${spotId}` : null, () => api.getRatings(spotId!));
-  return ratings.data?.aggregate.score ?? null;
-}
-
-/** A piece of UI state persisted to localStorage under `key` (spot-agnostic —
- *  e.g. a chart's unit/metric toggle that should stay put across spots and
- *  reloads). Falls back to `initial` when nothing's stored yet, or storage
- *  isn't available (private browsing, quota). */
-export function usePersistedState<T>(
-  key: string,
-  initial: T
-): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw !== null ? (JSON.parse(raw) as T) : initial;
-    } catch {
-      return initial;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      /* private browsing / quota — the toggle still works for this session */
-    }
-  }, [key, value]);
-
-  return [value, setValue];
 }

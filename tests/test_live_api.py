@@ -4,6 +4,7 @@ via FastAPI dependency overrides. DB-gated (skips when the test DB is down)."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import uuid
 
 import pytest
 from fastapi import Response
@@ -345,6 +346,38 @@ def test_live_batch_does_not_select_wide_spot_json(
         "spots.overrides",
     ):
         assert wide_column not in selected_columns
+
+
+def test_batch_station_measurements_use_set_based_queries(db, seeded_spot_ids):
+    from app.live.service import public_station_measurements
+
+    statements: list[str] = []
+
+    def capture(_connection, _cursor, statement, _parameters, _context, _many):
+        if any(
+            table in statement
+            for table in (
+                "FROM spots",
+                "FROM spot_weather_profiles",
+                "FROM weather_stations",
+                "FROM spot_geo_profile_versions",
+            )
+        ):
+            statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        result = public_station_measurements(
+            db,
+            [uuid.UUID(value) for value in seeded_spot_ids],
+        )
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+
+    assert set(result) == {uuid.UUID(value) for value in seeded_spot_ids}
+    assert sum("FROM weather_stations" in statement for statement in statements) == 1
+    assert sum("FROM spots" in statement for statement in statements) == 1
+    assert len(statements) <= 4
 
 
 def test_live_batch_precedes_uuid_route(client, seeded_spot_ids, fake_live):

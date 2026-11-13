@@ -239,24 +239,6 @@ def _proposal_payload(row) -> dict:
     }
 
 
-@router.get("/environment")
-def environment() -> dict:
-    """Local/prod indicator for the back-office banner: which database this
-    session is talking to and whether admin writes are currently blocked."""
-    from app.config import get_settings
-
-    return get_settings().environment_summary()
-
-
-@router.get("/operations")
-def operations(db: Session = Depends(get_db)) -> dict:
-    """Consolidated operations view: climatology freshness, job queue depth,
-    latest-job status counts and recent ERA5 runs (status/duration/error)."""
-    from app.admin import operations as admin_operations
-
-    return admin_operations.operations_summary(db)
-
-
 @router.get("/rider-model")
 def get_rider_model(db: Session = Depends(get_db)) -> dict:
     """Return the active private rider-model calibration for the admin editor."""

@@ -1,0 +1,477 @@
+{
+  "generated_at": "2026-11-10T16:09:52.268887+00:00",
+  "independence_statement": "Created before local/database comparison for batch 004.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual and source-page review.",
+    "Pexels and Unsplash API credentials were unavailable."
+  ],
+  "spots": [
+    {
+      "spot": "Apelviken",
+      "query": "Apelviken Varberg surfing",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Varberg kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Varberg_kitesurfing.jpg",
+            "thumbnail_url": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Varberg_kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "width": 640,
+            "height": 480,
+            "license": "CC0",
+            "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Larus83&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Larus83 (page does not exist)\">Larus83</a>",
+            "description": "Kitesurfer surfing in Apelviken, Varberg.",
+            "coordinates": null
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Toppilansaari",
+      "query": "Toppilansaari Oulu kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Hiekkasarkat",
+      "query": "Hiekkasarkat Kalajoki kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Svencele",
+      "query": "Svencele Lithuania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Juodkrante",
+      "query": "Juodkrante Lithuania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Saulkrasti Koklite",
+      "query": "Saulkrasti Koklite kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ventspils South Beach",
+      "query": "Ventspils beach kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Leba",
+      "query": "Leba Poland kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Jastarnia",
+      "query": "Jastarnia kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Dabki Lake Bukowo",
+      "query": "Dabki Lake Bukowo windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Viganj",
+      "query": "Viganj windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "VIGANJ",
+            "source_page": "https://www.flickr.com/photos/10161657@N08/2792989303",
+            "thumbnail_url": "https://api.openverse.org/v1/images/8bbba0a1-963c-4e5f-b609-202e8e3d7d69/thumb/",
+            "width": 768,
+            "height": 1024,
+            "license": "by-nd",
+            "license_version": "2.0",
+            "creator": "eduardsb",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Windsurfing",
+            "source_page": "https://www.flickr.com/photos/12663421@N05/1366448257",
+            "thumbnail_url": "https://api.openverse.org/v1/images/a473ce84-d5a7-43dd-b001-2826f6f2eb86/thumb/",
+            "width": 771,
+            "height": 1024,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Lauren-Jane",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Surferi viganj",
+            "source_page": "https://commons.wikimedia.org/w/index.php?curid=48890650",
+            "thumbnail_url": "https://api.openverse.org/v1/images/5832aaa5-7e3c-4f6f-b3b8-f05d402490ad/thumb/",
+            "width": 2560,
+            "height": 1536,
+            "license": "by-sa",
+            "license_version": "3.0",
+            "creator": "Quahadi",
+            "provider": "wikimedia",
+            "source": "wikimedia"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Premantura",
+      "query": "Premantura windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Windsurfing Premantura2",
+            "source_page": "https://commons.wikimedia.org/w/index.php?curid=697077",
+            "thumbnail_url": "https://api.openverse.org/v1/images/fff571ba-1064-4894-be4d-f952dd5f2077/thumb/",
+            "width": 1280,
+            "height": 960,
+            "license": "by-sa",
+            "license_version": "3.0",
+            "creator": "Vincent Pál, permission given",
+            "provider": "wikimedia",
+            "source": "wikimedia"
+          },
+          {
+            "title": "Windsurfing Premantura1",
+            "source_page": "https://commons.wikimedia.org/w/index.php?curid=697074",
+            "thumbnail_url": "https://api.openverse.org/v1/images/45578c3b-184e-43d5-8cee-2ac6786711a9/thumb/",
+            "width": 1280,
+            "height": 960,
+            "license": "by-sa",
+            "license_version": "3.0",
+            "creator": "Vincent Pál, permission given",
+            "provider": "wikimedia",
+            "source": "wikimedia"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Velika Plaza",
+      "query": "Velika Plaza Ulcinj kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ada Bojana",
+      "query": "Ada Bojana kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Velipoja",
+      "query": "Velipoja Albania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Krapets",
+      "query": "Krapets Bulgaria kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Asparuhovo Beach",
+      "query": "Asparuhovo Beach windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pomorie",
+      "query": "Pomorie Bulgaria kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Mamaia Siutghiol",
+      "query": "Mamaia Siutghiol windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Corbu Beach",
+      "query": "Corbu Beach Romania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Vadu Beach",
+      "query": "Vadu Beach Romania kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Alacati",
+      "query": "Alacati windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "alacati windsurf paradise",
+            "source_page": "https://www.flickr.com/photos/34190036@N05/3435096636",
+            "thumbnail_url": "https://api.openverse.org/v1/images/5b0f603d-18eb-464e-89a2-97a09a2bbed4/thumb/",
+            "width": 179,
+            "height": 147,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Windsurfing Screenshots",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Alaçatı 2011-10-06 026PHDR",
+            "source_page": "https://www.flickr.com/photos/47388974@N02/6365981371",
+            "thumbnail_url": "https://api.openverse.org/v1/images/d213fdfc-b69f-4153-98bb-f71379ea115c/thumb/",
+            "width": 1024,
+            "height": 682,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Mehmet Aktugan",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Alaçatı 2011-10-06 004PHDR",
+            "source_page": "https://www.flickr.com/photos/47388974@N02/6365979261",
+            "thumbnail_url": "https://api.openverse.org/v1/images/5f3e5ee2-e8a7-4ce8-850f-fff13e5abd12/thumb/",
+            "width": 1024,
+            "height": 681,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Mehmet Aktugan",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Alaçatı 2011-10-06 023PHDR",
+            "source_page": "https://www.flickr.com/photos/47388974@N02/6365980797",
+            "thumbnail_url": "https://api.openverse.org/v1/images/b10f2f28-e0c1-4a9d-a7f6-30eab18b450e/thumb/",
+            "width": 1024,
+            "height": 680,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Mehmet Aktugan",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Alaçatı 2011-10-06 020PHDR",
+            "source_page": "https://www.flickr.com/photos/47388974@N02/6365979865",
+            "thumbnail_url": "https://api.openverse.org/v1/images/ac6a4ff4-f4be-49c5-a380-7b620300b7fc/thumb/",
+            "width": 1024,
+            "height": 675,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Mehmet Aktugan",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Akyaka",
+      "query": "Akyaka kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "KITEACADEMY - Gökova",
+            "source_page": "https://www.flickr.com/photos/91768588@N06/8333701170",
+            "thumbnail_url": "https://api.openverse.org/v1/images/a8614078-954d-4fd2-b275-905773241568/thumb/",
+            "width": 1024,
+            "height": 683,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "kite academy",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "IMG_0030",
+            "source_page": "https://www.flickr.com/photos/34754535@N03/5828179297",
+            "thumbnail_url": "https://api.openverse.org/v1/images/8cf88ef9-8f28-49c1-882d-3a4c02e39eec/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by",
+            "license_version": "2.0",
+            "creator": "Konstantin Zamkov",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "First day at #kitesurfing school. #Akyaka is one of the best places to learn #kitesurfing. #Turkey #summer.",
+            "source_page": "https://www.flickr.com/photos/34475076@N00/28140859003",
+            "thumbnail_url": "https://api.openverse.org/v1/images/017934ff-6582-4f57-8470-21bc2ae7aba6/thumb/",
+            "width": 1024,
+            "height": 767,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "beratus",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Uçurtma Sörfü, Akyaka, Muğla 2015",
+            "source_page": "https://commons.wikimedia.org/w/index.php?curid=156810749",
+            "thumbnail_url": "https://api.openverse.org/v1/images/00a7a62d-ea9d-4bc3-9c3a-868cdee97ff6/thumb/",
+            "width": 5184,
+            "height": 3456,
+            "license": "cc0",
+            "license_version": "1.0",
+            "creator": "Hamdigumus",
+            "provider": "wikimedia",
+            "source": "wikimedia"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gokceada Aydincik",
+      "query": "Gokceada Aydincik windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Gradina Beach",
+      "query": "Gradina Beach Bulgaria kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

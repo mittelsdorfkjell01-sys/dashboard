@@ -53,6 +53,28 @@ export class FieldSource {
 
   constructor(readonly manifest: FieldManifest) {}
 
+  private rememberDecoded(key: string, tile: DecodedFieldTile): void {
+    this.cache.delete(key);
+    this.cache.set(key, tile);
+    while (this.cache.size > MAX_CACHE_TILES) {
+      const oldest = this.cache.keys().next().value as string | undefined;
+      if (!oldest) break;
+      this.cache.delete(oldest);
+      const cell = oldest.split("/").slice(-3).join("/");
+      this.blended.delete(cell);
+    }
+  }
+
+  private rememberBlended(cell: string, tile: DecodedFieldTile): void {
+    this.blended.delete(cell);
+    this.blended.set(cell, tile);
+    while (this.blended.size > MAX_CACHE_TILES) {
+      const oldest = this.blended.keys().next().value as string | undefined;
+      if (!oldest) break;
+      this.blended.delete(oldest);
+    }
+  }
+
   /** Published instants, ascending. */
   private get publishedTimes(): string[] {
     return [...this.manifest.valid_times].sort((a, b) => Date.parse(a) - Date.parse(b));
@@ -132,12 +154,7 @@ export class FieldSource {
       })
       .then((payload) => decodeFieldTile(key, payload))
       .then((tile) => {
-        this.cache.set(key, tile);
-        while (this.cache.size > MAX_CACHE_TILES) {
-          const oldest = this.cache.keys().next().value as string | undefined;
-          if (!oldest) break;
-          this.cache.delete(oldest);
-        }
+        this.rememberDecoded(key, tile);
         return tile;
       })
       .finally(() => {
@@ -184,8 +201,8 @@ export class FieldSource {
       let out = this.blended.get(cell);
       if (!out || out.header.width !== tile.header.width || out.header.height !== tile.header.height) {
         out = { key: `${cell}@blend`, header: { ...tile.header }, arrays: {} };
-        this.blended.set(cell, out);
       }
+      this.rememberBlended(cell, out);
       out.header = { ...tile.header, valid_time: target };
       return blendInto(out, tile, counterpart, alpha);
     });

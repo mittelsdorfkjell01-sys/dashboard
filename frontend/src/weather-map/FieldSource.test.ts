@@ -129,4 +129,30 @@ describe("FieldSource", () => {
     expect(tiles).toHaveLength(9);
     expect(fetch).toHaveBeenCalledTimes(9);
   });
+
+  it("bounds blended buffers and removes them with decoded tile eviction", () => {
+    const source = new FieldSource(manifest);
+    const internals = source as unknown as {
+      cache: Map<string, DecodedFieldTile>;
+      blended: Map<string, DecodedFieldTile>;
+      rememberDecoded: (key: string, tile: DecodedFieldTile) => void;
+      rememberBlended: (cell: string, tile: DecodedFieldTile) => void;
+    };
+    const tile = (key: string): DecodedFieldTile => ({
+      key,
+      header: { schema: "swd-field-tile-v2", width: 2, height: 2, overlap: 0, z: 4, x: 0, y: 0, valid_time: "2026-10-03T12:00:00Z", variables: [] },
+      arrays: { wind_u: new Float32Array(4), wind_v: new Float32Array(4) },
+    });
+
+    internals.rememberBlended("4/0/0", tile("blend:0"));
+    internals.rememberDecoded("t0/4/0/0", tile("decoded:0"));
+    for (let index = 1; index <= 320; index += 1) {
+      internals.rememberDecoded(`t0/4/${index}/0`, tile(`decoded:${index}`));
+      internals.rememberBlended(`4/${index}/0`, tile(`blend:${index}`));
+    }
+
+    expect(internals.cache.size).toBe(320);
+    expect(internals.blended.size).toBeLessThanOrEqual(320);
+    expect(internals.blended.has("4/0/0")).toBe(false);
+  });
 });

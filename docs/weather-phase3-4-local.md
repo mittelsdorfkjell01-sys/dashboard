@@ -61,13 +61,10 @@ runs, complete public provenance and verified holdout improvement for every
 activated calibration. Every target remains `pending_evidence` until 30 days of
 production observations exist.
 
-Marine comparison is available only through the pure `marine-shadow-v1`
-evaluator. It records availability and height/period/direction errors without
-changing public output. A second provider is not configured: availability,
-licensing, attribution requirements, spatial resolution and free-use quotas
-must be reviewed before any fixture adapter is connected. Consequently marine
-uncertainty remains `not_determined` and no local measurement accuracy is
-claimed.
+No second marine provider is configured. Availability, licensing, attribution,
+spatial resolution and free-use quotas must be reviewed before a comparison
+adapter is added. Consequently marine uncertainty remains `not_determined` and
+no local measurement accuracy is claimed.
 
 ## Manual steps after the database limit resets
 

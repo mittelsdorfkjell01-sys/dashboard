@@ -3,11 +3,42 @@ import { useAuth } from "../../context/AuthContext";
 import { AccountError, updatePreferences, type SportConditions, type SportKey } from "../../lib/account";
 import { SPORTS, sportLabel } from "../../lib/labels";
 import { Button, Field, Input } from "../../components/ui";
+import { useOptionalUnits } from "../../context/PrefsContext";
+import type { TempUnit, WaveUnit, WindUnit } from "../../lib/units";
+import {
+  tempFromInput, tempToInput, TEMP_UNIT_SUFFIX,
+  waveFromInput, waveToInput, WAVE_UNIT_SUFFIX,
+  windFromInput, windInputUnit, windToInput, WIND_UNIT_SUFFIX,
+} from "../../lib/units";
 
 type Profiles = Partial<Record<SportKey, SportConditions>>;
 type ConditionField = keyof SportConditions;
 
 const FIELDS: ConditionField[] = ["windMinKn", "windMaxKn", "waveMinM", "waveMaxM", "waterTempMinC"];
+
+/**
+ * Thresholds are stored canonically (knots, metres, °C) but are entered in
+ * whatever units the visitor picked under "Einheiten & Anzeige" — the help page
+ * promises the preference applies wherever a value is "angezeigt oder
+ * eingegeben", and a form that silently demanded knots broke that promise.
+ *
+ * Conversion happens only at the field boundary: state, validation and the
+ * saved payload stay canonical, so the allowed ranges and the min/max checks
+ * keep working unchanged.
+ */
+type FieldUnits = { wind: WindUnit; wave: WaveUnit; temp: TempUnit };
+
+function toInput(field: ConditionField, value: number, units: FieldUnits): number {
+  if (field === "waterTempMinC") return tempToInput(value, units.temp);
+  if (field === "waveMinM" || field === "waveMaxM") return waveToInput(value, units.wave);
+  return windToInput(value, units.wind);
+}
+
+function fromInput(field: ConditionField, value: number, units: FieldUnits): number {
+  if (field === "waterTempMinC") return tempFromInput(value, units.temp);
+  if (field === "waveMinM" || field === "waveMaxM") return waveFromInput(value, units.wave);
+  return windFromInput(value, units.wind);
+}
 
 function cleanProfiles(profiles: Profiles): Profiles {
   const clean: Profiles = {};
@@ -61,6 +92,7 @@ export default function SportConditionsSection({ onDirtyChange }: { onDirtyChang
   const [sports, setSports] = useState<SportKey[]>(() => selectedSports(user?.preferences.sports));
   const [profiles, setProfiles] = useState<Profiles>(() => user?.preferences.conditions ?? {});
   const [active, setActive] = useState<SportKey | null>(() => selectedSports(user?.preferences.sports)[0] ?? null);
+  const units = useOptionalUnits();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -82,7 +114,10 @@ export default function SportConditionsSection({ onDirtyChange }: { onDirtyChang
   const setCondition = (sport: SportKey, field: ConditionField, raw: string) => {
     setProfiles((current) => ({
       ...current,
-      [sport]: { ...current[sport], [field]: raw === "" ? null : Number(raw) },
+      [sport]: {
+        ...current[sport],
+        [field]: raw === "" ? null : fromInput(field, Number(raw), units),
+      },
     }));
     setNote(null);
   };
@@ -142,23 +177,23 @@ export default function SportConditionsSection({ onDirtyChange }: { onDirtyChang
             <p className="mb-4 text-ui font-semibold text-ink">{sportLabel(active)}</p>
             <div className="grid gap-5 sm:grid-cols-2">
               <fieldset className="space-y-2">
-                <legend className="text-ui font-semibold text-ink">Wind · kn</legend>
+                <legend className="text-ui font-semibold text-ink">Wind · {WIND_UNIT_SUFFIX[windInputUnit(units.wind)]}</legend>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ab"><Input type="number" min={0} max={80} step="any" inputMode="decimal" value={current.windMinKn ?? ""} disabled={busy} onChange={(event) => setCondition(active, "windMinKn", event.target.value)} /></Field>
-                  <Field label="Bis"><Input type="number" min={0} max={80} step="any" inputMode="decimal" value={current.windMaxKn ?? ""} disabled={busy} onChange={(event) => setCondition(active, "windMaxKn", event.target.value)} /></Field>
+                  <Field label="Ab"><Input type="number" min={0} max={windToInput(80, units.wind)} step="any" inputMode="decimal" value={current.windMinKn == null ? "" : toInput("windMinKn", current.windMinKn, units)} disabled={busy} onChange={(event) => setCondition(active, "windMinKn", event.target.value)} /></Field>
+                  <Field label="Bis"><Input type="number" min={0} max={windToInput(80, units.wind)} step="any" inputMode="decimal" value={current.windMaxKn == null ? "" : toInput("windMaxKn", current.windMaxKn, units)} disabled={busy} onChange={(event) => setCondition(active, "windMaxKn", event.target.value)} /></Field>
                 </div>
               </fieldset>
               <fieldset className="space-y-2">
-                <legend className="text-ui font-semibold text-ink">Wellen · m</legend>
+                <legend className="text-ui font-semibold text-ink">Wellen · {WAVE_UNIT_SUFFIX[units.wave]}</legend>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Ab"><Input type="number" min={0} max={12} step="any" inputMode="decimal" value={current.waveMinM ?? ""} disabled={busy} onChange={(event) => setCondition(active, "waveMinM", event.target.value)} /></Field>
-                  <Field label="Bis"><Input type="number" min={0} max={12} step="any" inputMode="decimal" value={current.waveMaxM ?? ""} disabled={busy} onChange={(event) => setCondition(active, "waveMaxM", event.target.value)} /></Field>
+                  <Field label="Ab"><Input type="number" min={0} max={waveToInput(12, units.wave)} step="any" inputMode="decimal" value={current.waveMinM == null ? "" : toInput("waveMinM", current.waveMinM, units)} disabled={busy} onChange={(event) => setCondition(active, "waveMinM", event.target.value)} /></Field>
+                  <Field label="Bis"><Input type="number" min={0} max={waveToInput(12, units.wave)} step="any" inputMode="decimal" value={current.waveMaxM == null ? "" : toInput("waveMaxM", current.waveMaxM, units)} disabled={busy} onChange={(event) => setCondition(active, "waveMaxM", event.target.value)} /></Field>
                 </div>
               </fieldset>
-              <Field label="Wassertemperatur ab · °C"><Input type="number" min={-5} max={40} step="any" inputMode="decimal" value={current.waterTempMinC ?? ""} disabled={busy} onChange={(event) => setCondition(active, "waterTempMinC", event.target.value)} /></Field>
+              <Field label={`Wassertemperatur ab · ${TEMP_UNIT_SUFFIX[units.temp]}`}><Input type="number" min={tempToInput(-5, units.temp)} max={tempToInput(40, units.temp)} step="any" inputMode="decimal" value={current.waterTempMinC == null ? "" : toInput("waterTempMinC", current.waterTempMinC, units)} disabled={busy} onChange={(event) => setCondition(active, "waterTempMinC", event.target.value)} /></Field>
             </div>
           </div>}
-          <p className="mt-3 text-caption text-muted">Leere Felder schränken deine Bedingungen nicht ein. Die Grenzwerte gibst du in kn, m und °C ein.</p>
+          <p className="mt-3 text-caption text-muted">Leere Felder schränken deine Bedingungen nicht ein. Die Grenzwerte gibst du in {WIND_UNIT_SUFFIX[windInputUnit(units.wind)]}, {WAVE_UNIT_SUFFIX[units.wave]} und {TEMP_UNIT_SUFFIX[units.temp]} ein.</p>
         </div>}
 
         {invalid && <p role="alert" className="text-ui text-danger">{invalid}</p>}

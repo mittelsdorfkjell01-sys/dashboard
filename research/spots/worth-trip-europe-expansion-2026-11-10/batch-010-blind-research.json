@@ -1,0 +1,1017 @@
+{
+  "schema_version": 1,
+  "batch": "010",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Candidate selection used external discovery only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Protected-area permission is unresolved unless explicitly sourced.",
+    "Image candidates remain unapproved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Durankulak – Kartaliy South Beach",
+      "country": "BG",
+      "identity": "The exposed beach south of Durankulak, outside the lake itself.",
+      "entry": {
+        "lat": 43.666,
+        "lon": 28.572,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Seasonal NE–SE wind, waves and an unguarded long beach suit self-sufficient intermediate or expert riders.",
+      "access_rules": "Confirm the exact launch against the protected lake and dune zones; no lifeguard or verified rescue.",
+      "trip_value": "Wild coast and credible conditions are attractive, but legal launch and current sport-use evidence remain incomplete.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.ventosurf.com/spot/durankulak-suedstrand-kartaliy",
+          "publisher": "VentoSurf",
+          "supports": [
+            "spot_identity",
+            "season",
+            "wind",
+            "level",
+            "no_lifeguard"
+          ]
+        },
+        {
+          "url": "https://bulgariatravel.org/wp-content/uploads/2021/03/Slow-tourism-eng-MT-2-3.pdf",
+          "publisher": "Bulgaria Travel",
+          "supports": [
+            "wild_beach",
+            "lake",
+            "nature_value"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Krapets",
+      "country": "BG",
+      "identity": "The long open beach south of Krapets village.",
+      "entry": {
+        "lat": 43.624,
+        "lon": 28.574,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "May–September winds, waves and broad shallow water are documented for intermediate and advanced kiters.",
+      "access_rules": "Map swimmer and dune corridors and confirm current rescue/operator coverage.",
+      "trip_value": "A wild, spacious coast with international sport documentation supports worth_trip after operational correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.ikointl.com/destinations/kitesurfing-bulgaria/spots/krapets",
+          "publisher": "International Kiteboarding Organization",
+          "supports": [
+            "season",
+            "wind",
+            "waves",
+            "level"
+          ]
+        },
+        {
+          "url": "https://bulgariatravel.org/wp-content/uploads/2021/03/Slow-tourism-eng-MT-2-3.pdf",
+          "publisher": "Bulgaria Travel",
+          "supports": [
+            "wide_shallow_beach",
+            "wild_nature",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/sport.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "popular_surf_destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Albena",
+      "country": "BG",
+      "identity": "The organised Albena resort beach north of Varna, not the whole Balchik coast.",
+      "entry": {
+        "lat": 43.369,
+        "lon": 28.082,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Official national material names Albena as a popular surf destination and the resort advertises windsurf services.",
+      "access_rules": "Pin the current watersports launch and swimmer separation; the evidence lacks a detailed wind profile.",
+      "trip_value": "Services and destination infrastructure support consideration, but specialist travel value and recurring conditions are not sufficiently demonstrated.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/sport.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "popular_surf_destination"
+          ]
+        },
+        {
+          "url": "https://albena.bg/sports/water-sports",
+          "publisher": "Albena resort",
+          "supports": [
+            "windsurf",
+            "water_sports",
+            "services"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Asparuhovo, Varna",
+      "country": "BG",
+      "identity": "The long shallow beach south of Varna's canal entrance.",
+      "entry": {
+        "lat": 43.175,
+        "lon": 27.904,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Varna Bay has regular breeze and active clubs; the beach is long, wide and shallow.",
+      "access_rules": "Keep clear of the canal, fishing port, navigation and swimmer sectors; identify the club launch.",
+      "trip_value": "An accessible urban training venue is useful, but the sources do not establish a dedicated-trip proposition.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visit.varna.bg/en/beach-asparuhovo.html",
+          "publisher": "Visit Varna",
+          "supports": [
+            "beach_dimensions",
+            "shallows",
+            "services",
+            "canal_boundary"
+          ]
+        },
+        {
+          "url": "https://visit.varna.bg/bg/water-sports-1.html",
+          "publisher": "Visit Varna",
+          "supports": [
+            "windsurf",
+            "kitesurf",
+            "clubs",
+            "bay_breeze"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Kamchia coast",
+      "country": "BG",
+      "identity": "The beach and river-mouth coast adjoining the strict Kamchia reserve.",
+      "entry": {
+        "lat": 43.027,
+        "lon": 27.897,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "No reliable source establishes recurring wind-sport use at a legal launch.",
+      "access_rules": "Strict-reserve, marine and dune protection require explicit authority permission and a launch outside prohibited habitat.",
+      "trip_value": "Natural value alone cannot substitute for evidence of legal watersports use.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://pdbase.government.bg/zpo/bg/area.jsp?NEM_Partition=1&areaID=11&categoryID=1",
+          "publisher": "Bulgarian protected-area register",
+          "supports": [
+            "strict_reserve",
+            "access_limits"
+          ]
+        },
+        {
+          "url": "https://www.moew.government.bg/en/the-ministry-of-environment-and-water-declared-protected-zone-kamchiya/",
+          "publisher": "Bulgarian environment ministry",
+          "supports": [
+            "protected_zone",
+            "marine_and_dune_habitats"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Obzor",
+      "country": "BG",
+      "identity": "The main Obzor beach, not an identified specialist launch.",
+      "entry": {
+        "lat": 42.819,
+        "lon": 27.884,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "A specialist directory claims windsurf use, while official material only supplies broad regional context.",
+      "access_rules": "Confirm a current launch, operator, rescue and recurring wind window.",
+      "trip_value": "The available evidence does not establish either robust specialist use or distinctive trip value.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://windsurfbulgaria.adbtc.info/spots/obzor",
+          "publisher": "Windsurf Bulgaria",
+          "supports": [
+            "windsurf_claim",
+            "levels",
+            "amenities"
+          ]
+        },
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/black_sea_coast.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "coast_destination",
+            "regional_wind_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Sunny Beach / Nessebar",
+      "country": "BG",
+      "identity": "The school-operated sectors at Sunny Beach North and Nessebar South, not the entire resort strip.",
+      "entry": {
+        "lat": 42.687,
+        "lon": 27.714,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "A current school proves lessons and use on a very long serviced resort beach.",
+      "access_rules": "Split the two launch sectors and retain swimmers, seasonal crowding and harbour boundaries.",
+      "trip_value": "Strong resort utility does not by itself show distinctive wind, water or specialist travel value.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.visitnessebar.bg/dataen/77",
+          "publisher": "Nessebar municipality tourism",
+          "supports": [
+            "long_beach",
+            "generic_water_sports"
+          ]
+        },
+        {
+          "url": "https://surfschoolbg.com/en/",
+          "publisher": "Extreme Surf School",
+          "supports": [
+            "lessons",
+            "Sunny_Beach_North",
+            "Nessebar_South"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Pomorie",
+      "country": "BG",
+      "identity": "The sea-side sport beach near Pomorie, not protected Lake Pomorie.",
+      "entry": {
+        "lat": 42.56,
+        "lon": 27.646,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "National tourism identifies Pomorie as a surf destination, but exact active launch and conditions are unresolved.",
+      "access_rules": "Separate sea launch from Ramsar wetland, and confirm current permission, operator and rescue.",
+      "trip_value": "Potential destination value exists, but wetland boundaries and operational evidence block confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/sport.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "popular_surf_destination"
+          ]
+        },
+        {
+          "url": "https://rsis.ramsar.org/RISapp/files/RISrep/BG1229RIS.pdf",
+          "publisher": "Ramsar Sites Information Service",
+          "supports": [
+            "wetland_status",
+            "recreation_context",
+            "management_constraints"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Sarafovo, Burgas",
+      "country": "BG",
+      "identity": "The Sarafovo beach launch on Burgas Bay.",
+      "entry": {
+        "lat": 42.562,
+        "lon": 27.521,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "E–SW winds produce flat water, chop or small waves; a documented IKO school serves multiple levels.",
+      "access_rules": "Map the launch around swimmers, groynes and airport/urban constraints and verify current rescue.",
+      "trip_value": "Established instruction, usable condition range and Burgas access support worth_trip after launch correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.unplug-kitesurf.com/spots/sarafovo-bulgaria",
+          "publisher": "Unplug Kitesurf",
+          "supports": [
+            "wind_directions",
+            "flat_chop_waves",
+            "levels",
+            "hazards"
+          ]
+        },
+        {
+          "url": "https://eyca.org/discounts/5b2a84ca3145ce59aebf1dd9",
+          "publisher": "European Youth Card Association",
+          "supports": [
+            "IKO_school",
+            "Burgas_bay",
+            "lessons"
+          ]
+        },
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/sport.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "Burgas_surf_destination"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Lake Atanasovsko",
+      "country": "BG",
+      "identity": "The protected saline lake north of Burgas, not adjacent Sarafovo sea beach.",
+      "entry": {
+        "lat": 42.544,
+        "lon": 27.473,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "No reliable source establishes legal wind-sport use.",
+      "access_rules": "Ramsar and Natura 2000 habitat protection is central; do not infer access from adjacent roads or beaches.",
+      "trip_value": "The candidate lacks discipline-specific and legal-use evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://natura2000.egov.bg/PublicDownloads/Auto/PS_SCI/BG0000270/BG0000270_PS_16.pdf",
+          "publisher": "Bulgarian Natura 2000 portal",
+          "supports": [
+            "protected_habitats",
+            "management"
+          ]
+        },
+        {
+          "url": "https://rsis.ramsar.org/RISapp/files/RISrep/BG292RIS_2001_en.pdf",
+          "publisher": "Ramsar Sites Information Service",
+          "supports": [
+            "wetland_status",
+            "bird_value"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Gradina, Chernomorets",
+      "country": "BG",
+      "identity": "The Gradina/Zlatna Ribka windsurf beach between Chernomorets and Sozopol.",
+      "entry": {
+        "lat": 42.431,
+        "lon": 27.649,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "wing"
+      ],
+      "conditions": "The tourism ministry identifies some of Bulgaria's best windsurf conditions here; a long-running school serves beginner through advanced levels.",
+      "access_rules": "Pin the school/launch and swimmer/campsite separation and retain seasonal rescue information.",
+      "trip_value": "National recognition, mature instruction and a broad sandy bay support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/black_sea_coast.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "best_windsurf_conditions",
+            "Gradina"
+          ]
+        },
+        {
+          "url": "https://surfhouse.bg/windsurf-school-gradina/",
+          "publisher": "Surf House Gradina",
+          "supports": [
+            "school",
+            "equipment",
+            "beginner_advanced",
+            "operating_history"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Harmanite, Sozopol",
+      "country": "BG",
+      "identity": "The guarded urban Harmanite beach south of Sozopol old town.",
+      "entry": {
+        "lat": 42.412,
+        "lon": 27.696,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Windsurf is available on windy days, with shallow water and nearby centres.",
+      "access_rules": "Seasonal swimmer density and guarded bathing zones constrain launch use.",
+      "trip_value": "This is a convenient activity beach, but sources do not show a recurring specialist condition or dedicated-trip value.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://plajovete.bg/en/beaches/xarmanite",
+          "publisher": "Bulgarian beaches portal",
+          "supports": [
+            "windsurf_available",
+            "shallows",
+            "lifeguard",
+            "urban_beach"
+          ]
+        },
+        {
+          "url": "https://www.sozopolis.bg/en/activities/water-sports-sozopol",
+          "publisher": "Sozopolis destination portal",
+          "supports": [
+            "centres",
+            "schools",
+            "windsurf_on_windy_days"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Ahtopol",
+      "country": "BG",
+      "identity": "The rocky/open coast around Ahtopol; an exact legal launch is not verified.",
+      "entry": {
+        "lat": 42.098,
+        "lon": 27.939,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "One low-authority directory claims strong summer/autumn wind, waves and advanced use.",
+      "access_rules": "Confirm the launch, rock hazards, protected-coast rules, rescue and a current operator/community source.",
+      "trip_value": "A single specialist claim plus general tourism context is insufficient.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://windsurfbulgaria.adbtc.info/spots/ahotopol",
+          "publisher": "Windsurf Bulgaria",
+          "supports": [
+            "windsurf_claim",
+            "strong_wind",
+            "waves",
+            "rock_hazard"
+          ]
+        },
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/black_sea_coast.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "south_coast_destination",
+            "regional_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Silistar",
+      "country": "BG",
+      "identity": "The small protected bay south of Sinemorets.",
+      "entry": {
+        "lat": 42.022,
+        "lon": 28.007,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "National tourism names Silistar among surf destinations, but no precise conditions or active launch are established.",
+      "access_rules": "Explicit protected-area permission, beach zoning and access must be confirmed before recommending rigging or launch.",
+      "trip_value": "The setting and national mention are promising, but conservation rules and weak operational detail require more research.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.tourism.government.bg/sites/tourism.government.bg/files/uploads/info_materials/eng/sport.pdf",
+          "publisher": "Bulgarian Ministry of Tourism",
+          "supports": [
+            "popular_surf_destination"
+          ]
+        },
+        {
+          "url": "https://pdbase.government.bg/zpo/en/area.jsp?NEM_Partition=1&areaID=192&categoryID=6",
+          "publisher": "Bulgarian protected-area register",
+          "supports": [
+            "protected_area",
+            "identity",
+            "management_need"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Mamaia – H2O Beach / Lake Siutghiol",
+      "country": "RO",
+      "identity": "Two nearby but materially different sectors: H2O sea beach for kite and Lake Siutghiol clubs for windsurf.",
+      "entry": {
+        "lat": 44.273,
+        "lon": 28.618,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "H2O has a May–September thermal window, designated launch and services; the lake supports organised windsurf activity.",
+      "access_rules": "Split sea and lake sectors before publication and retain crowding, swimmer and shore-infrastructure constraints.",
+      "trip_value": "A mature activity scene and resort access support worth_trip once the mixed identity is corrected.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ctseaus.ro/en/turism-activ/",
+          "publisher": "Constanta active-tourism portal",
+          "supports": [
+            "kite",
+            "windsurf",
+            "Lake_Siutghiol",
+            "WEGO"
+          ]
+        },
+        {
+          "url": "https://www.xtremespots.com/board-sports/kiteboarding-kitesurfing/h2o-beach-constanta-romania/",
+          "publisher": "Xtreme Spots",
+          "supports": [
+            "H2O_identity",
+            "season",
+            "thermal",
+            "launch",
+            "crowding"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Constanța – Zoom / WEGO sector",
+      "country": "RO",
+      "identity": "The documented WEGO/Zoom urban kite sector, replacing the unverified generic Modern Beach label.",
+      "entry": {
+        "lat": 44.193,
+        "lon": 28.655,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "An official active-tourism portal lists the spot; secondary detail describes flat-to-small-wave water beside an urban pier.",
+      "access_rules": "Pin the current launch and document pier/rock, swimmers and any seasonal municipal restrictions.",
+      "trip_value": "Verified use is useful locally, but sources do not establish a distinctive travel proposition.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://ctseaus.ro/en/turism-activ/",
+          "publisher": "Constanta active-tourism portal",
+          "supports": [
+            "WEGO_kite_spot",
+            "location_context"
+          ]
+        },
+        {
+          "url": "https://www.spots4kite.com/spots/wego-kite-spot/",
+          "publisher": "Spots4Kite",
+          "supports": [
+            "city_spot",
+            "pier_hazard",
+            "water_state"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Corbu beach",
+      "country": "RO",
+      "identity": "The natural Corbu beach within the Danube Delta Biosphere Reserve tourism perimeter.",
+      "entry": {
+        "lat": 44.378,
+        "lon": 28.707,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Low-authority local material reports windsurf/kitesurf use, but no supervised launch or robust conditions source is available.",
+      "access_rules": "Reserve permit, vehicle rules, approved tourist zone and absence of lifeguard must be resolved with the authority.",
+      "trip_value": "Wild-coast travel value is strong, but legal operation and sport evidence remain too uncertain.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.cjc.ro/dyn_doc/turism/1.5-Ruta_multi-culturala_ecoturistica.pdf",
+          "publisher": "Constanta County Council",
+          "supports": [
+            "biosphere_reserve",
+            "natural_beach",
+            "tourism_value"
+          ]
+        },
+        {
+          "url": "https://consilierturism.ro/destinatii/asemanari-si-diferente-intre-plajele-corbu-si-vadu/",
+          "publisher": "Consilier Turism",
+          "supports": [
+            "permit",
+            "vehicle_restrictions",
+            "no_lifeguard"
+          ]
+        },
+        {
+          "url": "https://cdpqb6wwgd.infopensiuni.ro/cazare-corbu/obiective-turistice-corbu/plaja-corbu_7132",
+          "publisher": "InfoPensiuni",
+          "supports": [
+            "kitesurf_claim",
+            "windsurf_claim"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Vadu beach",
+      "country": "RO",
+      "identity": "The limited tourism-access part of Vadu's natural biosphere-reserve beach.",
+      "entry": {
+        "lat": 44.45,
+        "lon": 28.769,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "No reliable discipline-specific use or condition evidence was found.",
+      "access_rules": "Reserve access, tourist-zone and vehicle restrictions apply; no launch should be inferred outside authorised areas.",
+      "trip_value": "Scenery and wind exposure do not establish a legal wind-sport destination.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.cjc.ro/dyn_doc/turism/1.5-Ruta_multi-culturala_ecoturistica.pdf",
+          "publisher": "Constanta County Council",
+          "supports": [
+            "biosphere_reserve",
+            "natural_beach"
+          ]
+        },
+        {
+          "url": "https://www.info-delta.ro/ce-ai-voie-sa-faci-pe-plajele-neamenajate-vadu-corbu-si-midia-din-delta-dunarii-2022/",
+          "publisher": "Info Delta",
+          "supports": [
+            "reserve_rules",
+            "tourist_zones",
+            "access_limits"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Gura Portiței",
+      "country": "RO",
+      "identity": "The boat-access settlement on the narrow Razim–Black Sea barrier.",
+      "entry": {
+        "lat": 44.691,
+        "lon": 28.942,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Official destination and resort sources establish unusual lagoon/sea geography but not recurring wind-sport use.",
+      "access_rules": "Confirm reserve rules, a legal launch, operator/rescue and transport of equipment.",
+      "trip_value": "Exceptional scenery is not enough without discipline-specific evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visitjurilovca.ro/en/descopera/gura-portitei/",
+          "publisher": "Visit Jurilovca",
+          "supports": [
+            "destination",
+            "lagoon_sea_identity",
+            "boat_access"
+          ]
+        },
+        {
+          "url": "https://guraportitei.ro/en/",
+          "publisher": "Gura Portitei resort",
+          "supports": [
+            "accommodation",
+            "activities",
+            "access"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Sfântu Gheorghe, Danube Delta",
+      "country": "RO",
+      "identity": "The wild beach near the Sfântu Gheorghe arm mouth, outside the dangerous outlet itself.",
+      "entry": {
+        "lat": 44.896,
+        "lon": 29.596,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "The broad shallow wild beach has high landscape value, but no reliable wind-sport scene or launch is documented.",
+      "access_rules": "Reserve rules, protected plants, no-lifeguard conditions and the river-mouth hazard require authority confirmation.",
+      "trip_value": "Remote trip value is clear, yet legal and discipline-specific evidence is insufficient.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://visit-delta.ro/en/natural-attractions/beaches/",
+          "publisher": "Visit Delta",
+          "supports": [
+            "wild_beach",
+            "shallow_water",
+            "protected_plant",
+            "mouth_hazard"
+          ]
+        },
+        {
+          "url": "https://www.info-delta.ro/ce-ai-voie-sa-faci-pe-plajele-neamenajate-vadu-corbu-si-midia-din-delta-dunarii-2022/",
+          "publisher": "Info Delta",
+          "supports": [
+            "reserve_rules",
+            "permitted_activities",
+            "access_limits"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Eforie Nord",
+      "country": "RO",
+      "identity": "The resort beach at Eforie Nord, with no currently verified specialist launch.",
+      "entry": {
+        "lat": 44.067,
+        "lon": 28.641,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "An older cross-border brochure mentions regional windsurf activity; current exact use and conditions are unverified.",
+      "access_rules": "Confirm a current operator, launch, wind window and swimmer separation.",
+      "trip_value": "Historic/general activity claims do not meet the evidence threshold.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.robgjobs.eu/wp-content/uploads/2019/02/Brosura-100pg-editia-a-patra.pdf",
+          "publisher": "RO-BG Jobs project",
+          "supports": [
+            "historic_windsurf_school_claim",
+            "regional_sport"
+          ]
+        },
+        {
+          "url": "https://romania.travel/eforie-nord",
+          "publisher": "Romania Travel",
+          "supports": [
+            "resort_identity",
+            "beach_services"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Limanu / Mangalia marina",
+      "country": "RO",
+      "identity": "The Limanu lake marina and sailing-school area, not an evidenced windsurf spot.",
+      "entry": {
+        "lat": 43.804,
+        "lon": 28.531,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "sailing",
+        "windsurf"
+      ],
+      "conditions": "Official records establish sailing instruction and marina use, but not windsurf/kite use or notable conditions.",
+      "access_rules": "Do not generalise sailing permission to boards or kites; confirm any public launch separately.",
+      "trip_value": "The candidate does not meet discipline-specific evidence requirements.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://portal.rna.ro/SiteAssets/servicii/personal-navigant/Lista%20furnizori%20aprobati%20ptr%20cursuriCAA.pdf",
+          "publisher": "Romanian Naval Authority",
+          "supports": [
+            "approved_sailing_provider",
+            "Limanu_Mangalia"
+          ]
+        },
+        {
+          "url": "https://www.mmediu.gov.ro/app/webroot/uploads/files/PASM.pdf",
+          "publisher": "Romanian environment ministry",
+          "supports": [
+            "Limanu_marina",
+            "lake_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Kilyos – Burç Beach",
+      "country": "TR",
+      "identity": "The Burç Beach wind/kite sector on Istanbul's Black Sea coast.",
+      "entry": {
+        "lat": 41.251,
+        "lon": 29.032,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wavesurf"
+      ],
+      "conditions": "Strong Black Sea wind and waves support multiple disciplines; the beach has hosted a kiteboard world championship and provides sport facilities.",
+      "access_rules": "Check current membership/guest access, operating season, rescue and swimmer separation before travel.",
+      "trip_value": "Competition history, official destination recognition and proximity to Istanbul support worth_trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://dev.goturkiye.com/istanbul/kilyos",
+          "publisher": "GoTurkiye",
+          "supports": [
+            "windsurf",
+            "kiteboard",
+            "Burc_Beach",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://www.bumed.org.tr/pdf/calisma_raporlari/2011_faaliyet_raporu.pdf",
+          "publisher": "Bogazici University Alumni Association",
+          "supports": [
+            "kite_world_championship",
+            "windsurf",
+            "kiteboard",
+            "facilities"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_as_worth_trip"
+    },
+    {
+      "name": "Gümüşdere Beach, Kilyos",
+      "country": "TR",
+      "identity": "The Gümüşdere/Goga school sector on the same wider Kilyos wind coast as Burç Beach.",
+      "entry": {
+        "lat": 41.254,
+        "lon": 28.986,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing",
+        "windsurf"
+      ],
+      "conditions": "A current kite club offers lessons and equipment on a strong-wind, wave-exposed Black Sea beach.",
+      "access_rules": "Determine whether this should be a sector of one Kilyos record; confirm exact public access and rescue.",
+      "trip_value": "It has credible sport value but should not become a second destination-level count without a defensible boundary.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.bilgeozturkkiteclub.com/subelerimiz/kilyos-istanbul",
+          "publisher": "Bilge Ozturk Kite Club",
+          "supports": [
+            "Kilyos_branch",
+            "lessons",
+            "rental",
+            "strong_wind_and_waves"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/9869/kitesurf/gumusdere-beach-kilyos",
+          "publisher": "Let's Kite",
+          "supports": [
+            "same_coastal_spot",
+            "kitesurf",
+            "wingfoil",
+            "windsurf"
+          ]
+        },
+        {
+          "url": "https://sariyer.bel.tr/ckuploads/ckfiles/Sariyer%20Yasam%20Rehberi%202021%2817.12.2021%29.pdf",
+          "publisher": "Sariyer municipality",
+          "supports": [
+            "Gumusdere_beaches",
+            "clean_water",
+            "identity"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Silivri – Semizkum",
+      "country": "TR",
+      "identity": "The Semizkum windsurf area west of Istanbul, not the whole Silivri shoreline.",
+      "entry": {
+        "lat": 41.072,
+        "lon": 28.161,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Secondary sources identify flat water, a club and Poyraz sessions, but modelled wind is relatively light and often offshore.",
+      "access_rules": "Confirm the active club/launch and retain offshore-wind, experience and rescue warnings.",
+      "trip_value": "Regional windsurf use is credible, but distinctive dedicated-trip value is not established.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://advenway.com/en/tools/windsurf-conditions/silivri-semizkum/",
+          "publisher": "Advenway",
+          "supports": [
+            "spot_identity",
+            "flat_water",
+            "experienced",
+            "club",
+            "modelled_wind"
+          ]
+        },
+        {
+          "url": "https://www.istanbulwindsurfcenter.com/istanbulda-ruzgar-sorfu/",
+          "publisher": "Istanbul Windsurf Center",
+          "supports": [
+            "Silivri_area",
+            "Poyraz",
+            "wide_uncrowded_area"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    }
+  ]
+}

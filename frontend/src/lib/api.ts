@@ -2,8 +2,20 @@
 // Base URL comes from VITE_API_URL (default http://localhost:8000). Every call
 // returns typed data or throws an ApiError the UI can surface.
 
-import { getAdminKey } from "./adminKey";
 import { normalizeForecast, type NormalizedForecastSeries } from "./forecastNormalization";
+import { API_BASE, ApiError, addAuthHeaders, queryString as qs, request } from "./api/client";
+import type { GeoPoint } from "./api/shared";
+export {
+  alignLoopbackApiHost,
+  API_BASE,
+  ApiError,
+  publicApiErrorMessage,
+  request,
+} from "./api/client";
+export * from "./api/tides";
+export * from "./api/shared";
+export * from "./api/community";
+export * from "./api/adminOperations";
 import type {
   MediaEntityType,
   MediaItem,
@@ -11,51 +23,6 @@ import type {
   ProviderKey,
   TabStatus,
 } from "./mediaPicker";
-
-const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
-
-export function alignLoopbackApiHost(base: string, pageHostname?: string): string {
-  if (!pageHostname || !LOOPBACK_HOSTS.has(pageHostname) || !/^https?:\/\//i.test(base)) {
-    return base;
-  }
-  const url = new URL(base);
-  if (LOOPBACK_HOSTS.has(url.hostname)) url.hostname = pageHostname;
-  return url.toString().replace(/\/$/, "");
-}
-
-const configuredApiBase =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ||
-  "http://localhost:8000";
-
-export const API_BASE: string = alignLoopbackApiHost(
-  configuredApiBase,
-  typeof window === "undefined" ? undefined : window.location.hostname,
-);
-
-export class ApiError extends Error {
-  status: number;
-  detail: unknown;
-  constructor(message: string, status: number, detail: unknown) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.detail = detail;
-  }
-}
-
-export function publicApiErrorMessage(status: number, fallback?: string | null): string {
-  if (status === 0) return fallback || "Verbindung zum Datendienst fehlgeschlagen.";
-  if (status === 404) {
-    return fallback && !/not found/i.test(fallback)
-      ? fallback
-      : "Der angeforderte Inhalt wurde nicht gefunden.";
-  }
-  if (status === 429) return "Zu viele Anfragen auf einmal. Bitte warte kurz und versuche es erneut.";
-  if (status >= 500) {
-    return "Unser Datendienst ist gerade nicht erreichbar. Bitte versuche es in Kürze erneut.";
-  }
-  return fallback || `Anfrage fehlgeschlagen (${status}).`;
-}
 
 /** Resolve a possibly root-relative URL (e.g. "/media/…") against the API host. */
 export function resolveMediaUrl(url?: string | null): string | undefined {
@@ -87,11 +54,6 @@ export function usableMediaUrl(url?: string | null): string | undefined {
 }
 
 // --- backend shapes --------------------------------------------------------
-
-export interface GeoPoint {
-  lat: number;
-  lon: number;
-}
 
 /**
  * The `image` object stored on spots and regions. Written server-side by
@@ -138,7 +100,7 @@ export interface ImageRecord {
   source_checked_at?: string | null;
 }
 
-export type FacilityKind = "parking" | "shower" | "food" | "camping" | "school";
+export type FacilityKind = "parking" | "shower" | "toilet" | "changing" | "food" | "school";
 export type FacilityMap = Partial<
   Record<FacilityKind, { available: boolean; note?: string }>
 >;
@@ -160,6 +122,8 @@ export interface SpotSummary {
   water_type: string[];
   bottom_type: string[];
   level: string[];
+  /** Optional while older cached catalogue payloads age out. */
+  best_wind_directions?: string[];
   water_character: string[];
   style: string[];
   facilities: FacilityMap | null;
@@ -175,6 +139,12 @@ export interface SpotSummary {
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
   wind_availability: number[] | null;
+  /** Per-spot, per-variant suitability (windsurf:fin/foil, kitesurf:classic/
+   *  foil). A *missing* variant means "unbekannt" — never a recommendation.
+   *  Optional so an older cached payload without the field stays valid. */
+  variant_conditions?: Record<string, { suitability?: string } & Record<string, unknown>> | null;
+  /** Variants the spot actually offers (suitability geeignet/eingeschraenkt). */
+  variants?: string[];
 }
 
 export interface SpotRead extends SpotSummary {
@@ -185,113 +155,6 @@ export interface SpotRead extends SpotSummary {
   finish_rank: Rank | null;
   created_at: string;
   updated_at: string;
-}
-
-export type TideQuality =
-  | "unavailable"
-  | "model_only"
-  | "reviewed_anchor"
-  | "manual_calibrated"
-  | "gauge_calibrated";
-
-export interface TideEvent {
-  id: string;
-  event_type: "high" | "low";
-  raw_time: string | null;
-  time: string;
-  uncertainty_minutes: number;
-  profile_version: number;
-  overridden: boolean;
-}
-
-export interface PublicTideEvent {
-  id: string;
-  event_type: "high" | "low";
-  time: string;
-  uncertainty_minutes: number;
-}
-
-export interface PublicTideSeriesPoint {
-  time: string;
-  level_normalized: number;
-  phase: "rising" | "high" | "falling" | "low";
-}
-
-export interface PublicTides {
-  available: boolean;
-  message: string | null;
-  timezone: string | null;
-  phase: "rising" | "high" | "falling" | "low" | "unavailable";
-  cycle_position: number | null;
-  quality: TideQuality;
-  approximate: boolean;
-  last_calculated_at: string | null;
-  valid_until: string | null;
-  forecast_start: string | null;
-  forecast_end: string | null;
-  horizon_days: number;
-  partial: boolean;
-  datum: "relative_low_high";
-  model_name: string | null;
-  model_version: string | null;
-  events: PublicTideEvent[];
-  series: PublicTideSeriesPoint[];
-}
-
-export interface TideOverride {
-  id: string;
-  event_type: "high" | "low";
-  raw_time: string;
-  original_model_time: string;
-  manual_time: string;
-  difference_minutes: number;
-  scope: "single" | "high_profile" | "low_profile" | "calibration_input";
-  reason: string;
-  source: string | null;
-  actor: string | null;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TideProfile {
-  id: string;
-  spot_id: string;
-  enabled: boolean;
-  public_enabled: boolean;
-  timezone: string | null;
-  model_name: string;
-  model_version: string;
-  automatic_anchor: GeoPoint | null;
-  manual_anchor: GeoPoint | null;
-  effective_anchor: GeoPoint | null;
-  anchor_distance_m: number | null;
-  anchor_kind: string | null;
-  anchor_status: "needs_review" | "auto_selected" | "reviewed" | "invalid";
-  anchor_warnings: string[] | null;
-  global_offset_minutes: number;
-  high_offset_minutes: number;
-  low_offset_minutes: number;
-  manual_uncertainty_minutes: number | null;
-  estimated_uncertainty_minutes: number | null;
-  uncertainty_source: string | null;
-  quality_status: TideQuality;
-  note: string | null;
-  correction_reason: string | null;
-  correction_source: string | null;
-  version: number;
-  last_calculated_at: string | null;
-  calculation_status: "not_configured" | "queued" | "running" | "ready" | "failed" | "stale";
-  calculation_error: string | null;
-  updated_at: string;
-  events: TideEvent[];
-  overrides: TideOverride[];
-  latest_run: Record<string, unknown> | null;
-  limits: {
-    soft_offset_minutes: number;
-    hard_offset_minutes: number;
-    reason_required_minutes: number;
-  };
 }
 
 export interface Region {
@@ -661,126 +524,9 @@ export interface Readiness {
   };
 }
 
-// --- request core ----------------------------------------------------------
-
-const REQUEST_TIMEOUT_MS = 15000;
-type RequestOptions = RequestInit & { timeoutMs?: number };
-
-function cookieValue(name: string): string | undefined {
-  return document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${name}=`))
-    ?.slice(name.length + 1);
-}
-
-function addAuthHeaders(path: string, method: string, headers: Record<string, string>): void {
-  // Vercel deliberately refuses to edge-cache responses with `Vary: Cookie`.
-  // A signed-in account always has the readable double-submit CSRF cookie next
-  // to its httpOnly session cookie. Sending an Authorization marker on safe
-  // reads makes Vercel bypass the public CDN entry before FastAPI resolves the
-  // real account from the cookie. Anonymous recommendation/search responses can
-  // therefore be shared at the edge without risking a cached anonymous result
-  // being served in place of a personalized one.
-  if (["GET", "HEAD"].includes(method) && cookieValue("swd_csrf")) {
-    headers.Authorization = "Session";
-  }
-  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
-    const csrf = cookieValue("swd_csrf");
-    if (csrf) headers["X-CSRF-Token"] = decodeURIComponent(csrf);
-  }
-  const devKey = import.meta.env.VITE_ADMIN_KEY as string | undefined;
-  if (devKey) {
-    headers["X-Admin-Key"] = devKey;
-  } else if (path.startsWith("/admin")) {
-    const key = getAdminKey();
-    if (key) headers["X-Admin-Key"] = key;
-  }
-}
-
-export async function request<T>(path: string, init?: RequestOptions): Promise<T> {
-  const { timeoutMs = REQUEST_TIMEOUT_MS, ...fetchInit } = init ?? {};
-  const headers: Record<string, string> = {
-    ...(fetchInit.body && !(fetchInit.body instanceof FormData)
-      ? { "Content-Type": "application/json" }
-      : {}),
-    ...((fetchInit.headers as Record<string, string>) || {}),
-  };
-  const method = (fetchInit.method ?? "GET").toUpperCase();
-  // LOCAL DEV break-glass: when VITE_ADMIN_KEY is set, send it on EVERY request
-  // (incl. /auth/me) so the admin area works without the cookie login. Falls back
-  // to a session-entered key on /admin only. Unset in prod → normal cookie auth.
-  addAuthHeaders(path, method, headers);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  // Chain an external signal (caller-controlled cancellation, e.g. a stale
-  // slider request) into the same controller that also enforces the timeout.
-  const externalSignal = fetchInit.signal;
-  if (externalSignal) {
-    if (externalSignal.aborted) controller.abort();
-    else externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
-  }
-  let resp: Response;
-  try {
-    resp = await fetch(`${API_BASE}${path}`, {
-      ...fetchInit,
-      headers,
-      // Send/receive the httpOnly session cookie (Sprint A auth) on every call.
-      credentials: "include",
-      signal: controller.signal,
-    });
-  } catch (e) {
-    const aborted = e instanceof DOMException && e.name === "AbortError";
-    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-    throw new ApiError(
-      aborted
-        ? "Zeitüberschreitung — der Server hat nicht rechtzeitig geantwortet."
-        : offline
-          ? "Du bist offline. Prüfe deine Verbindung und versuche es erneut."
-          : "Verbindung zum Datendienst fehlgeschlagen. Bitte versuche es erneut.",
-      0,
-      e
-    );
-  } finally {
-    clearTimeout(timer);
-  }
-  if (!resp.ok) {
-    let detail: unknown = null;
-    try {
-      detail = await resp.json();
-    } catch {
-      /* non-JSON error body */
-    }
-    const serverMessage =
-      (detail && typeof detail === "object" && "detail" in detail
-        ? typeof (detail as any).detail === "string"
-          ? (detail as any).detail
-          : typeof (detail as any).detail?.message === "string"
-            ? (detail as any).detail.message
-            : JSON.stringify((detail as any).detail)
-        : null);
-    const msg = publicApiErrorMessage(resp.status, serverMessage);
-    throw new ApiError(msg, resp.status, detail);
-  }
-  if (resp.status === 204) return undefined as T;
-  return (await resp.json()) as T;
-}
-
 // Read caching lives in the SWR layer (see ./swr): it dedupes in-flight requests
 // and serves stale-while-revalidate across the app on every build, so the public
 // GET helpers below are plain fetches (no second, TTL-based cache underneath).
-
-function qs(params: Record<string, unknown>): string {
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null || v === "") continue;
-    if (Array.isArray(v)) v.forEach((x) => sp.append(k, String(x)));
-    else sp.append(k, String(v));
-  }
-  const s = sp.toString();
-  return s ? `?${s}` : "";
-}
 
 // --- public endpoints ------------------------------------------------------
 
@@ -929,9 +675,6 @@ export const getWindClimatologyV3 = (id: string, query: WindClimatologyV3Query) 
   });
   return request<WindClimatologyV3Read>(`/spots/${id}/wind-climatology-v3${params}`, { signal });
 };
-
-export const getSpotTides = (id: string, days = 10) =>
-  request<PublicTides>(`/spots/${id}/tides?days=${Math.max(1, Math.min(10, days))}`);
 
 export const getSpotLive = (id: string) =>
   request<LiveConditionsRead>(`/spots/${id}/live`);
@@ -1285,148 +1028,6 @@ export const setAdminUserPassword = (id: string, password: string) =>
 export const deleteAdminUser = (id: string) =>
   request<void>(`/admin/users/${id}`, { method: "DELETE" });
 
-// --- community / UGC (Sprint C/D, public) ----------------------------------
-
-export interface RatingItem {
-  id: string;
-  stars: number;
-  skill_level: string;
-  sport: string;
-  conditions: string;
-  author_name: string;
-  created_at: string;
-  upvotes?: number;
-  viewer_upvoted?: boolean;
-}
-export interface RatingAggregate {
-  count: number;
-  avg: number | null;
-  score: number;
-}
-export const getRatings = (spotId: string) =>
-  request<{ items: RatingItem[]; aggregate: RatingAggregate }>(
-    `/spots/${spotId}/ratings`
-  );
-export const postRating = (
-  spotId: string,
-  body: {
-    stars: number;
-    skill_level: string;
-    sport: string;
-    conditions: string;
-    author_name?: string;
-    author_email?: string;
-    website?: string;
-  }
-) =>
-  request<RatingItem>(`/spots/${spotId}/ratings`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-
-export interface TipItem {
-  id: string;
-  body: string;
-  title: string | null;
-  author_name: string;
-  created_at: string;
-  /** Set when this tip is a reply to another (single-level threads). */
-  parent_id: string | null;
-  upvotes?: number;
-  viewer_upvoted?: boolean;
-}
-export const getTips = (spotId: string) =>
-  request<{ items: TipItem[] }>(`/spots/${spotId}/tips`);
-export const postTip = (
-  spotId: string,
-  body: {
-    body: string;
-    title?: string;
-    author_name?: string;
-    author_email?: string;
-    parent_id?: string;
-    website?: string;
-  }
-) =>
-  request<TipItem>(`/spots/${spotId}/tips`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-
-export const setCommentUpvote = (kind: "rating" | "tip", id: string, active: boolean) =>
-  request<{ count: number; viewer_upvoted: boolean }>(`/community/comments/${kind}/${id}/upvote`, {
-    method: active ? "PUT" : "DELETE",
-  });
-
-export interface CommunityImage {
-  id: string;
-  url: string;
-  kind: string;
-  width: number | null;
-  height: number | null;
-  credit: string | null;
-  created_at: string;
-  source: string;
-  license_name: string | null;
-  license_url: string | null;
-  source_url: string | null;
-}
-export const getSpotImages = (spotId: string) =>
-  request<{ items: CommunityImage[] }>(`/spots/${spotId}/images`);
-
-/** Admin: geosearch Wikimedia Commons around the spot and store newly-licensed
- *  hits as gallery images. Safe to call again — already-stored photos are
- *  skipped, so it only ever adds what's new since the last fetch. */
-export const fetchCommonsImages = (spotId: string) =>
-  request<{ items: CommunityImage[] }>(`/admin/spots/${spotId}/commons-images/fetch`, {
-    method: "POST",
-  });
-
-export function uploadSpotImage(
-  spotId: string,
-  file: File,
-  kind: "gallery" | "hero_candidate",
-  opts: { credit?: string; licenseAccept: boolean; review?: boolean } = { licenseAccept: false }
-): Promise<CommunityImage> {
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("kind", kind);
-  fd.append("license_accept", String(opts.licenseAccept));
-  if (opts.credit) fd.append("credit", opts.credit);
-  // Standalone gallery uploads (decoupled from the composer) go to the admin
-  // review queue instead of appearing immediately — hero candidates are
-  // already always pending, so this only changes anything for "gallery".
-  if (opts.review) fd.append("review", "true");
-  return request<CommunityImage>(`/spots/${spotId}/images`, {
-    method: "POST",
-    body: fd,
-    timeoutMs: 120_000,
-  });
-}
-
-export const reportImage = (
-  imageId: string,
-  body: { reason: string; note?: string; reporter_email?: string; website?: string }
-) =>
-  request<{ image_id: string; report_count: number; takedown_contact: string | null }>(
-    `/images/${imageId}/report`,
-    { method: "POST", body: JSON.stringify(body) }
-  );
-
-export const getImageLicense = () =>
-  request<{ version: string; terms: string }>(`/community/license`);
-
-export const postSubmission = (body: {
-  payload: Record<string, unknown>;
-  submitter_name?: string;
-  submitter_email?: string;
-  website?: string;
-}) =>
-  request<{ id: string; status: string }>(`/submissions`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-
 // --- admin moderation (Sprint D) -------------------------------------------
 
 export interface ReviewCounts {
@@ -1650,43 +1251,6 @@ export interface AdminOverview {
 }
 
 export const getAdminOverview = () => request<AdminOverview>(`/admin/overview`);
-
-/** Local/prod safety indicator for the back-office banner. */
-export interface AdminEnvironment {
-  app_env: "development" | "test" | "production";
-  database_target: "local" | "remote" | "unknown";
-  admin_writes_blocked: boolean;
-  allow_remote_writes: boolean;
-}
-
-export const getEnvironment = () =>
-  request<AdminEnvironment>(`/admin/environment`);
-
-/** Consolidated operations view (climatology/job health). */
-export interface OpsJob {
-  job_id: string;
-  spot_id: string | null;
-  spot_name: string | null;
-  status: string;
-  error: string | null;
-  error_category: "quota" | "coordinates" | "validation" | "provider" | "unknown" | null;
-  reason: string | null;
-  attempt_count: number;
-  created_at: string | null;
-  started_at: string | null;
-  completed_at: string | null;
-  duration_s: number | null;
-}
-
-export interface AdminOperations {
-  freshness: { missing: number; stale: number; current: number; failed: number };
-  queue_depth: number;
-  job_status: Record<string, number>;
-  recent_jobs: OpsJob[];
-  public_update: { climatology_cron: string; edge_cache: string };
-}
-
-export const getOperations = () => request<AdminOperations>(`/admin/operations`);
 
 export interface V3RunView {
   id: string; status: string; period: [number, number]; algorithm_version: string;
@@ -1940,73 +1504,6 @@ export const getAdminSpots = (params: AdminSpotsQuery = {}) =>
 export const getAdminSpot = (id: string) =>
   request<SpotRead>(`/admin/spots/${id}/record`);
 
-export const getTideProfile = (id: string) =>
-  request<TideProfile>(`/admin/spots/${id}/tide`);
-
-export const updateTideProfile = (
-  id: string,
-  body: Partial<Pick<TideProfile,
-    | "enabled" | "public_enabled" | "timezone"
-    | "global_offset_minutes" | "high_offset_minutes" | "low_offset_minutes"
-    | "manual_uncertainty_minutes" | "note" | "correction_reason"
-    | "correction_source"
-  >> & { review_anchor?: boolean },
-) => request<TideProfile>(`/admin/spots/${id}/tide`, {
-  method: "PATCH", body: JSON.stringify(body),
-});
-
-export const autoSelectTideAnchor = (id: string) =>
-  request<{ run_id: string; status: string }>(`/admin/spots/${id}/tide/anchor/auto`, { method: "POST" });
-
-export const setManualTideAnchor = (id: string, body: { lat: number; lon: number; reason: string }) =>
-  request<TideProfile>(`/admin/spots/${id}/tide/anchor`, { method: "PUT", body: JSON.stringify(body) });
-
-export const previewTides = (id: string, body: { global_offset_minutes: number; high_offset_minutes: number; low_offset_minutes: number }) =>
-  request<{ events: TideEvent[] }>(`/admin/spots/${id}/tide/preview`, { method: "POST", body: JSON.stringify(body) });
-
-export const recalculateTides = (id: string) =>
-  request<{ run_id: string; status: string }>(`/admin/spots/${id}/tide/recalculate`, { method: "POST" });
-
-export const createTideOverride = (id: string, body: {
-  event_id: string; manual_time: string;
-  scope: TideOverride["scope"]; reason: string; source?: string;
-}) => request<{ id: string; difference_minutes: number; scope: string }>(
-  `/admin/spots/${id}/tide/overrides`, { method: "POST", body: JSON.stringify(body) },
-);
-
-export const revokeTideOverride = (spotId: string, overrideId: string) =>
-  request<void>(`/admin/spots/${spotId}/tide/overrides/${overrideId}`, { method: "DELETE" });
-
-export interface TideSuggestionPart {
-  offset_minutes: number;
-  spread_minutes: number;
-  uncertainty_minutes: number;
-  count: number;
-}
-export interface TideSuggestion {
-  total: number;
-  high: TideSuggestionPart | null;
-  low: TideSuggestionPart | null;
-  from: string | null;
-  until: string | null;
-}
-export const getTideSuggestion = (id: string) =>
-  request<TideSuggestion>(`/admin/spots/${id}/tide/suggestion`);
-export const applyTideSuggestion = (id: string, body: { apply_high: boolean; apply_low: boolean; reason: string }) =>
-  request<TideProfile>(`/admin/spots/${id}/tide/suggestion/apply`, { method: "POST", body: JSON.stringify(body) });
-
-export interface TideProfileRevision {
-  version: number;
-  reason: string;
-  actor: string | null;
-  created_at: string;
-  snapshot: Record<string, unknown>;
-}
-export const getTideHistory = (id: string) =>
-  request<TideProfileRevision[]>(`/admin/spots/${id}/tide/history`);
-export const rollbackTideProfile = (id: string, version: number, reason: string) =>
-  request<TideProfile>(`/admin/spots/${id}/tide/rollback`, { method: "POST", body: JSON.stringify({ version, reason }) });
-
 export interface AdminRegionEntry {
   region: Region;
   spot_counts: StatusCounts;
@@ -2204,6 +1701,7 @@ export interface SpotCreateBody {
   water_type?: string[];
   bottom_type?: string[];
   level?: string[];
+  best_wind_directions?: string[];
   water_character?: string[];
   style?: string[];
   facilities?: FacilityMap | null;

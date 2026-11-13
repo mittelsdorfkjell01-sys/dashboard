@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.admin.era5_worker import climatology_summary, count_queued
+from app.live.cache import cache_metrics_snapshot
 from app.models import (
     Era5Job, ForecastProcessingJob, ForecastSnapshot, Spot,
     WeatherModelCalibration, WeatherObservation, WeatherStation,
@@ -129,7 +130,8 @@ def operations_summary(db: Session) -> dict:
         # see the dedicated GitHub refresh workflow + app/api/_http_cache.py).
         "public_update": {
             "climatology_cron": "halbjährlich am 1. Februar und 1. August",
-            "edge_cache": "Öffentliche Listen/Detail ≤ 10 s; Top-Spots bis 6 h (Edge-Cache).",
+            "edge_cache": "Öffentliche Listen/Details höchstens 6 min; Top-Spots bis 30 h inklusive Stale-Fenster.",
         },
+        "cache": cache_metrics_snapshot(),
         "weather": weather_operations(db),
     }

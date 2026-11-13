@@ -14,3 +14,12 @@ def test_expected_database_revision_is_the_single_alembic_head():
     assert heads == [EXPECTED_DB_REVISION], (
         f"application expects {EXPECTED_DB_REVISION!r}, Alembic heads are {heads!r}"
     )
+
+
+def test_best_wind_migration_is_independent_from_mutable_seed_code():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "alembic" / "versions" / "0095_best_wind_directions.py").read_text(
+        encoding="utf-8"
+    )
+    assert "app.seed" not in source
+    assert "RESEARCH_ROWS" in source

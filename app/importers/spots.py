@@ -15,10 +15,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -29,22 +32,25 @@ from app.admin.constants import SPORTS
 from app.admin.duplicates import find_spot_duplicates
 from app.db.session import SessionLocal
 from app.media.image_object import CANONICAL_KEYS, build_image
-from app.models import Region, Spot
+from app.models import Region, Spot, SpotContentSource
 from app.names import normalize_name
 from app.schemas.admin import SpotCreate
 from app.config import get_settings
 
 
 ARRAY_FIELDS = {
-    "sports", "water_type", "bottom_type", "level", "water_character", "style"
+    "sports", "water_type", "bottom_type", "level", "best_wind_directions",
+    "water_character", "style", "aliases",
 }
-JSON_FIELDS = {"editorial", "facilities", "image"}
+JSON_FIELDS = {"editorial", "facilities", "image", "variant_conditions"}
 ALLOWED_FIELDS = {
     "slug", "name", "region_slug", "lat", "lon", "location", "description",
-    "facing", "model_pref", "editorial_classification",
+    "facing", "model_pref", "editorial_classification", "sources",
     *ARRAY_FIELDS, *JSON_FIELDS,
 }
 REQUIRED_FIELDS = {"slug", "name", "region_slug", "sports"}
+SOURCE_STATUSES = {"unreviewed", "verified", "rejected", "conflict"}
+SOURCE_FIELD_PATH = re.compile(r"^[A-Za-z0-9_.:-]+$")
 
 
 class ImportFormatError(ValueError):
@@ -60,6 +66,7 @@ class ImportReport:
     skipped: list[str] = field(default_factory=list)
     errors: list[dict[str, Any]] = field(default_factory=list)
     preview: list[dict[str, Any]] = field(default_factory=list)
+    source_records: int = 0
 
     @property
     def ok(self) -> bool:
@@ -75,6 +82,7 @@ class ImportReport:
             "skipped": self.skipped,
             "errors": self.errors,
             "preview": self.preview,
+            "source_records": self.source_records,
         }
 
 
@@ -104,6 +112,121 @@ def _parse_array(value: Any, field_name: str) -> list[str]:
     return [item.strip() for item in text.split(separator) if item.strip()]
 
 
+def _parse_checked_at(value: Any, *, source_number: int) -> datetime:
+    if isinstance(value, datetime):
+        checked_at = value
+    elif isinstance(value, str) and value.strip():
+        text = value.strip().replace("Z", "+00:00")
+        try:
+            checked_at = datetime.fromisoformat(text)
+        except ValueError as exc:
+            raise ImportFormatError(
+                f"sources[{source_number}].checked_at: ISO-Zeitstempel erwartet"
+            ) from exc
+    else:
+        raise ImportFormatError(f"sources[{source_number}].checked_at fehlt")
+    if checked_at.tzinfo is None:
+        raise ImportFormatError(
+            f"sources[{source_number}].checked_at: Zeitzone erforderlich"
+        )
+    return checked_at
+
+
+def _clean_source_text(
+    source: dict[str, Any], key: str, source_number: int, *, required: bool, max_length: int
+) -> str | None:
+    value = source.get(key)
+    if value is None:
+        if required:
+            raise ImportFormatError(f"sources[{source_number}].{key} fehlt")
+        return None
+    if not isinstance(value, str):
+        raise ImportFormatError(f"sources[{source_number}].{key}: Text erwartet")
+    value = " ".join(value.split())
+    if required and not value:
+        raise ImportFormatError(f"sources[{source_number}].{key} fehlt")
+    if len(value) > max_length:
+        raise ImportFormatError(
+            f"sources[{source_number}].{key}: maximal {max_length} Zeichen"
+        )
+    return value or None
+
+
+def _parse_sources(value: Any) -> list[dict[str, Any]]:
+    if value in (None, ""):
+        return []
+    parsed = _parse_json_cell(value, "sources")
+    if not isinstance(parsed, list):
+        raise ImportFormatError("sources: erwartet eine Liste")
+    cleaned: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for number, source in enumerate(parsed, start=1):
+        if not isinstance(source, dict):
+            raise ImportFormatError(f"sources[{number}]: Objekt erwartet")
+        unknown = sorted(
+            set(source)
+            - {"field_path", "url", "title", "publisher", "checked_at", "verification_status", "note"}
+        )
+        if unknown:
+            raise ImportFormatError(
+                f"sources[{number}]: unbekannte Felder: {', '.join(unknown)}"
+            )
+        field_path = _clean_source_text(
+            source, "field_path", number, required=True, max_length=160
+        )
+        if not SOURCE_FIELD_PATH.fullmatch(field_path or ""):
+            raise ImportFormatError(
+                f"sources[{number}].field_path: ungültiger Feldpfad"
+            )
+        url = _clean_source_text(source, "url", number, required=True, max_length=2048)
+        parts = urlsplit(url or "")
+        if parts.scheme not in {"http", "https"} or not parts.netloc:
+            raise ImportFormatError(f"sources[{number}].url: HTTP(S)-URL erwartet")
+        title = _clean_source_text(source, "title", number, required=True, max_length=300)
+        publisher = _clean_source_text(
+            source, "publisher", number, required=False, max_length=200
+        )
+        note = _clean_source_text(source, "note", number, required=False, max_length=1000)
+        status = source.get("verification_status", "unreviewed")
+        if status not in SOURCE_STATUSES:
+            raise ImportFormatError(
+                f"sources[{number}].verification_status: ungültiger Wert {status!r}"
+            )
+        key = (field_path or "", url or "")
+        if key in seen:
+            raise ImportFormatError(
+                f"sources[{number}]: Feldpfad und URL mehrfach im Spot"
+            )
+        seen.add(key)
+        cleaned.append({
+            "field_path": field_path,
+            "url": url,
+            "title": title,
+            "publisher": publisher,
+            "checked_at": _parse_checked_at(source.get("checked_at"), source_number=number),
+            "verification_status": status,
+            "note": note,
+        })
+    return cleaned
+
+
+def _unwrap_spot_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Accept either a flat row or ``{"spot": {...}, "sources": [...]}``."""
+    if "spot" not in row:
+        return row
+    unknown = sorted(set(row) - {"spot", "sources"})
+    if unknown:
+        raise ImportFormatError(
+            f"Spot-Umschlag enthält unbekannte Felder: {', '.join(unknown)}"
+        )
+    spot = row.get("spot")
+    if not isinstance(spot, dict):
+        raise ImportFormatError("spot: Objekt erwartet")
+    if "sources" in spot and "sources" in row:
+        raise ImportFormatError("sources darf nur einmal angegeben werden")
+    return {**spot, **({"sources": row["sources"]} if "sources" in row else {})}
+
+
 def load_rows(path: Path) -> list[dict[str, Any]]:
     """Read a UTF-8 JSON/CSV file into raw row dictionaries."""
     if not path.is_file():
@@ -120,7 +243,7 @@ def load_rows(path: Path) -> list[dict[str, Any]]:
             raise ImportFormatError("JSON muss eine Liste oder ein Objekt mit 'spots' sein")
         if not all(isinstance(row, dict) for row in payload):
             raise ImportFormatError("Jeder JSON-Eintrag muss ein Objekt sein")
-        return payload
+        return [_unwrap_spot_row(row) for row in payload]
     if suffix == ".csv":
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             return [dict(row) for row in csv.DictReader(handle)]
@@ -160,6 +283,8 @@ def normalize_row(raw: dict[str, Any], row_number: int) -> dict[str, Any]:
             if row[field_name] is not None and not isinstance(row[field_name], dict):
                 raise ImportFormatError(f"{field_name}: erwartet ein JSON-Objekt")
 
+    row["sources"] = _parse_sources(row.get("sources"))
+
     if row.get("image") is not None:
         try:
             row["image"] = build_image(
@@ -169,6 +294,16 @@ def normalize_row(raw: dict[str, Any], row_number: int) -> dict[str, Any]:
             raise ImportFormatError(f"image: {exc}") from exc
 
     editorial = dict(row.get("editorial") or {})
+    aliases = row.pop("aliases", [])
+    if aliases:
+        existing_aliases = editorial.get("aliases") or []
+        if not isinstance(existing_aliases, list):
+            raise ImportFormatError("editorial.aliases: erwartet eine Liste")
+        editorial["aliases"] = list(dict.fromkeys(
+            str(alias).strip()
+            for alias in [*existing_aliases, *aliases]
+            if str(alias).strip()
+        ))
     if "description" in row:
         editorial["description"] = str(row.pop("description")).strip()
     row["editorial"] = editorial or None
@@ -242,6 +377,7 @@ def import_spots(
                 raise ImportFormatError("Region nicht gefunden")
             payload = {**row, "region_id": region.id, "allow_duplicate": allow_duplicates}
             image = payload.pop("image", None)
+            sources = payload.pop("sources", [])
             validated = SpotCreate.model_validate(payload)
             existing_spot = db.scalar(
                 select(Spot.id).where(
@@ -265,9 +401,10 @@ def import_spots(
                 region_id=region.id,
                 lat=row["lat"],
                 lon=row["lon"],
+                aliases=(row.get("editorial") or {}).get("aliases") or [],
             )
             candidates = [*duplicate_result.exact, *duplicate_result.likely]
-            if any(candidate.get("similarity") == 1.0 for candidate in candidates):
+            if duplicate_result.exact:
                 report.skipped.append(slug)
                 report.preview.append({
                     "row": number, "slug": slug, "action": "skip_exact_duplicate",
@@ -283,6 +420,14 @@ def import_spots(
             )
             if image is not None:
                 spot.image = image
+            for source in sources:
+                db.add(SpotContentSource(
+                    spot_id=spot.id,
+                    **source,
+                    created_by=actor,
+                    reviewed_by=actor if source["verification_status"] == "verified" else None,
+                ))
+            report.source_records += len(sources)
             report.created.append(slug)
             report.preview.append({
                 "row": number,
@@ -291,6 +436,7 @@ def import_spots(
                 "region": region.slug,
                 "status": "draft",
                 "image_rights_present": image is not None,
+                "source_records": len(sources),
                 "duplicates": candidates,
             })
         except Exception as exc:
@@ -303,6 +449,7 @@ def import_spots(
             if item.get("slug") in rolled_back and item.get("action") == "created":
                 item["action"] = "rolled_back"
         report.created.clear()
+        report.source_records = 0
         db.rollback()
     elif dry_run:
         db.rollback()

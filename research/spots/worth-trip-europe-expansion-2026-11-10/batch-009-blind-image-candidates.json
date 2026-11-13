@@ -1,0 +1,591 @@
+{
+  "generated_at": "2026-11-10T16:44:31.359167+00:00",
+  "independence_statement": "Created before local/database comparison for batch 009.",
+  "limitations": [
+    "Search relevance is not geographic proof.",
+    "Every candidate requires visual, geographic, resolution and licence review."
+  ],
+  "spots": [
+    {
+      "spot": "Chalikounas Corfu",
+      "query": "Chalikounas Corfu kitesurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Chalikounas Beach in Corfu.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Chalikounas_Beach_in_Corfu.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Chalikounas_Beach_in_Corfu.jpg/960px-Chalikounas_Beach_in_Corfu.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1366,
+            "license": "CC BY-SA 3.0",
+            "artist": "Przemek Pietrak",
+            "description": "This image has been originally created as the illustration for <a rel=\"nofollow\" class=\"external text\" href=\"https://wikicrosswords.org/fr/indice-de-mots-crois%C3%A9s/grand-bac-a-sable/\">grand bac à sable</a> entry in crosswords dictionary wikicrosswords.org. It has been released under CC-BY-3.0 license.",
+            "coordinates": null
+          },
+          {
+            "title": "File:Chalikounas Beach in Corfu - Kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Chalikounas_Beach_in_Corfu_-_Kitesurfing.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/Chalikounas_Beach_in_Corfu_-_Kitesurfing.jpg/960px-Chalikounas_Beach_in_Corfu_-_Kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 2048,
+            "height": 1366,
+            "license": "CC BY-SA 3.0",
+            "artist": "Przemek Pietrak",
+            "description": "This image has been originally created as the illustration for <a rel=\"nofollow\" class=\"external text\" href=\"https://wikicrosswords.org/da/krydsord-definition/stor-sandkasse/\">stor sandkasse</a> entry in crosswords dictionary wikicrosswords.org. It has been released under CC-BY-3.0 license.",
+            "coordinates": null
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Devils Paradise Beach Karpathos",
+      "query": "Devils Paradise Beach Karpathos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Fanes Rhodes",
+      "query": "Fanes Rhodes kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kefalos Kos",
+      "query": "Kefalos Kos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Loutsa Nissakia",
+      "query": "Loutsa Nissakia Greece windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Marmari Kos",
+      "query": "Marmari Kos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Marmari Megali Ammos Evia",
+      "query": "Marmari Megali Ammos Evia kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Mikri Vigla Naxos",
+      "query": "Mikri Vigla Naxos kitesurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:Naxos Mikri Vigla 2025-06-18 0806 kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Naxos_Mikri_Vigla_2025-06-18_0806_kitesurfing.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3d/Naxos_Mikri_Vigla_2025-06-18_0806_kitesurfing.jpg/960px-Naxos_Mikri_Vigla_2025-06-18_0806_kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 5000,
+            "height": 7500,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Tsui\" title=\"User:Tsui\">Tsui</a>",
+            "description": "<a href=\"https://en.wikipedia.org/wiki/Kiteboarding\" class=\"extiw\" title=\"en:Kiteboarding\">Kitesurfing</a> at <a href=\"https://en.wikipedia.org/wiki/Mikri_Vigla\" class=\"extiw\" title=\"en:Mikri Vigla\">Mikri Vigla</a>, <a href=\"https://en.wikipedia.org/wiki/Naxos\" class=\"extiw\" title=\"en:Naxos\">Naxos</a>, <a href=\"https://en.wikipedia.org/wiki/Greece\" class=\"extiw\" title=\"en:Greece\">Greece</a>",
+            "coordinates": {
+              "lat": 37.02533611,
+              "lon": 25.36507778
+            }
+          },
+          {
+            "title": "File:Naxos Mikri Vigla 2025-06-19 0842 kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Naxos_Mikri_Vigla_2025-06-19_0842_kitesurfing.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Naxos_Mikri_Vigla_2025-06-19_0842_kitesurfing.jpg/960px-Naxos_Mikri_Vigla_2025-06-19_0842_kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 4670,
+            "height": 7000,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Tsui\" title=\"User:Tsui\">Tsui</a>",
+            "description": "<a href=\"https://en.wikipedia.org/wiki/Kiteboarding\" class=\"extiw\" title=\"en:Kiteboarding\">Kitesurfing</a> in <a href=\"https://en.wikipedia.org/wiki/Mikri_Vigla\" class=\"extiw\" title=\"en:Mikri Vigla\">Mikri Vigla</a>, <a href=\"https://en.wikipedia.org/wiki/Naxos\" class=\"extiw\" title=\"en:Naxos\">Naxos</a>, <a href=\"https://en.wikipedia.org/wiki/Greece\" class=\"extiw\" title=\"en:Greece\">Greece</a>",
+            "coordinates": {
+              "lat": 37.02623333,
+              "lon": 25.36739722
+            }
+          },
+          {
+            "title": "File:Naxos Mikri Vigla 2025-06-19 0846 kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Naxos_Mikri_Vigla_2025-06-19_0846_kitesurfing.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/Naxos_Mikri_Vigla_2025-06-19_0846_kitesurfing.jpg/960px-Naxos_Mikri_Vigla_2025-06-19_0846_kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 7000,
+            "height": 4670,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Tsui\" title=\"User:Tsui\">Tsui</a>",
+            "description": "<a href=\"https://en.wikipedia.org/wiki/Kiteboarding\" class=\"extiw\" title=\"en:Kiteboarding\">Kitesurfing</a> vor <a href=\"https://en.wikipedia.org/wiki/Mikri_Vigla\" class=\"extiw\" title=\"en:Mikri Vigla\">Mikri Vigla</a>, <a href=\"https://en.wikipedia.org/wiki/Naxos\" class=\"extiw\" title=\"en:Naxos\">Naxos</a>, <a href=\"https://en.wikipedia.org/wiki/Greece\" class=\"extiw\" title=\"en:Greece\">Greece</a>",
+            "coordinates": {
+              "lat": 37.02623333,
+              "lon": 25.36739722
+            }
+          },
+          {
+            "title": "File:Naxos Mikri Vigla 2025-06-19 0850 kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Naxos_Mikri_Vigla_2025-06-19_0850_kitesurfing.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Naxos_Mikri_Vigla_2025-06-19_0850_kitesurfing.jpg/960px-Naxos_Mikri_Vigla_2025-06-19_0850_kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 5000,
+            "height": 7500,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Tsui\" title=\"User:Tsui\">Tsui</a>",
+            "description": "<a href=\"https://en.wikipedia.org/wiki/Kiteboarding\" class=\"extiw\" title=\"en:Kiteboarding\">Kitesurfing</a> in <a href=\"https://en.wikipedia.org/wiki/Mikri_Vigla\" class=\"extiw\" title=\"en:Mikri Vigla\">Mikri Vigla</a>, <a href=\"https://en.wikipedia.org/wiki/Naxos\" class=\"extiw\" title=\"en:Naxos\">Naxos</a>, <a href=\"https://en.wikipedia.org/wiki/Greece\" class=\"extiw\" title=\"en:Greece\">Greece</a>",
+            "coordinates": {
+              "lat": 37.02623333,
+              "lon": 25.36739722
+            }
+          },
+          {
+            "title": "File:Naxos Mikri Vigla 2025-06-26 1564 kitesurfing.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:Naxos_Mikri_Vigla_2025-06-26_1564_kitesurfing.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Naxos_Mikri_Vigla_2025-06-26_1564_kitesurfing.jpg/960px-Naxos_Mikri_Vigla_2025-06-26_1564_kitesurfing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 4500,
+            "height": 6300,
+            "license": "CC BY-SA 4.0",
+            "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Tsui\" title=\"User:Tsui\">Tsui</a>",
+            "description": "<a href=\"https://en.wikipedia.org/wiki/Kiteboarding\" class=\"extiw\" title=\"en:Kiteboarding\">Kitesurfing</a> in <a href=\"https://en.wikipedia.org/wiki/Mikri_Vigla\" class=\"extiw\" title=\"en:Mikri Vigla\">Mikri Vigla</a>, <a href=\"https://en.wikipedia.org/wiki/Naxos\" class=\"extiw\" title=\"en:Naxos\">Naxos</a>, <a href=\"https://en.wikipedia.org/wiki/Greece\" class=\"extiw\" title=\"en:Greece\">Greece</a>",
+            "coordinates": {
+              "lat": 37.02623333,
+              "lon": 25.36739722
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ftelia Mykonos",
+      "query": "Ftelia Mykonos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Golden Beach Paros",
+      "query": "Golden Beach Paros windsurf",
+      "providers": {
+        "wikimedia_commons": [
+          {
+            "title": "File:New golden beach - panoramio.jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:New_golden_beach_-_panoramio.jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/07/New_golden_beach_-_panoramio.jpg/960px-New_golden_beach_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1600,
+            "height": 1200,
+            "license": "CC BY 3.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20161010140614/http://www.panoramio.com/user/1588104?with_photo_id=9787261\">brunobarbato</a>",
+            "description": "new golden beach",
+            "coordinates": {
+              "lat": 37.015027,
+              "lon": 25.250015
+            }
+          },
+          {
+            "title": "File:New golden beach - panoramio - brunobarbato (1).jpg",
+            "source_page": "https://commons.wikimedia.org/wiki/File:New_golden_beach_-_panoramio_-_brunobarbato_(1).jpg",
+            "thumbnail_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/New_golden_beach_-_panoramio_-_brunobarbato_%281%29.jpg/960px-New_golden_beach_-_panoramio_-_brunobarbato_%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "width": 1600,
+            "height": 1200,
+            "license": "CC BY 3.0",
+            "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20161010140631/http://www.panoramio.com/user/1588104?with_photo_id=9787264\">brunobarbato</a>",
+            "description": "new golden beach",
+            "coordinates": {
+              "lat": 37.014616,
+              "lon": 25.249028
+            }
+          }
+        ],
+        "openverse": []
+      },
+      "errors": [
+        "openverse: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "New Golden Beach Paros",
+      "query": "New Golden Beach Paros windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Tsoukalia Paros",
+      "query": "Tsoukalia Paros windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Paros - tsoukalia windsurfing spot august 2011 - panoramio",
+            "source_page": "https://commons.wikimedia.org/w/index.php?curid=54347343",
+            "thumbnail_url": "https://api.openverse.org/v1/images/33684c87-e0e7-4187-a2fc-42505bcea00a/thumb/",
+            "width": 3872,
+            "height": 2592,
+            "license": "by",
+            "license_version": "3.0",
+            "creator": "giorgoskontaxis",
+            "provider": "wikimedia",
+            "source": "wikimedia"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Pounta Paros",
+      "query": "Pounta Paros kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "20220613_114879Em_Antiparos kitesurfers",
+            "source_page": "https://www.flickr.com/photos/152221251@N07/52171982857",
+            "thumbnail_url": "https://api.openverse.org/v1/images/36054bf4-ec0b-40f0-a26e-9a3417215d52/thumb/",
+            "width": 1024,
+            "height": 576,
+            "license": "pdm",
+            "license_version": "1.0",
+            "creator": "Emilien-Lebourgeois",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "20220613_114774Em_Antiparos kitesurfers",
+            "source_page": "https://www.flickr.com/photos/152221251@N07/52173253394",
+            "thumbnail_url": "https://api.openverse.org/v1/images/5650d4bf-c813-49ea-af6b-969f7135fd1c/thumb/",
+            "width": 1024,
+            "height": 574,
+            "license": "pdm",
+            "license_version": "1.0",
+            "creator": "Emilien-Lebourgeois",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "20220613_114777Em_Antiparos kitesurfers",
+            "source_page": "https://www.flickr.com/photos/152221251@N07/52171982677",
+            "thumbnail_url": "https://api.openverse.org/v1/images/e0c439cf-ed34-4f08-b2fb-f98d2ac38362/thumb/",
+            "width": 1024,
+            "height": 578,
+            "license": "pdm",
+            "license_version": "1.0",
+            "creator": "Emilien-Lebourgeois",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "20220613_114882Em_Antiparos kitesurfers",
+            "source_page": "https://www.flickr.com/photos/152221251@N07/52173486225",
+            "thumbnail_url": "https://api.openverse.org/v1/images/aa0498fd-6e7f-4ec2-afa9-f6e812997e40/thumb/",
+            "width": 1024,
+            "height": 577,
+            "license": "pdm",
+            "license_version": "1.0",
+            "creator": "Emilien-Lebourgeois",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "20220613_114881Em_Antiparos kitesurfers",
+            "source_page": "https://www.flickr.com/photos/152221251@N07/52173012798",
+            "thumbnail_url": "https://api.openverse.org/v1/images/a315a4c5-c716-451c-8f8b-7c6e94524501/thumb/",
+            "width": 1024,
+            "height": 576,
+            "license": "pdm",
+            "license_version": "1.0",
+            "creator": "Emilien-Lebourgeois",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Ixia Rhodes",
+      "query": "Ixia Rhodes windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "windsurfing",
+            "source_page": "https://www.flickr.com/photos/64197260@N00/2505761764",
+            "thumbnail_url": "https://api.openverse.org/v1/images/fb80e7e1-4dd5-436d-8d3c-f53d876c04c9/thumb/",
+            "width": 500,
+            "height": 337,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "esther**",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Antonio Forssell Doukellis Windsurfing Summer 2009 Surfersparadise Ixia Rhodes Greece NEW!!",
+            "source_page": "https://www.flickr.com/photos/34190036@N05/3880865636",
+            "thumbnail_url": "https://api.openverse.org/v1/images/37985ecb-f475-434e-b6cf-927bd6f9f912/thumb/",
+            "width": 181,
+            "height": 135,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Windsurfing Screenshots",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Antonio Forssell Doukellis Windsurfing Summer 2009 Surfersparadise Ixia Rhodes Greece NEW!!",
+            "source_page": "https://www.flickr.com/photos/34190036@N05/3880865556",
+            "thumbnail_url": "https://api.openverse.org/v1/images/eb01346c-a56f-468c-8ea0-5cebd673cda0/thumb/",
+            "width": 181,
+            "height": 135,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "Windsurfing Screenshots",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Surfin' I.X.I.A.",
+            "source_page": "https://www.flickr.com/photos/11740011@N02/6334644115",
+            "thumbnail_url": "https://api.openverse.org/v1/images/ef1d0deb-7efa-4560-bb4c-7590730f8606/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "frankenschulz",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "",
+            "source_page": "https://www.flickr.com/photos/11740011@N02/6334645593",
+            "thumbnail_url": "https://api.openverse.org/v1/images/df9d3c54-b92f-43cb-8826-bb2c24bf4f3a/thumb/",
+            "width": 1024,
+            "height": 768,
+            "license": "by-nc-sa",
+            "license_version": "2.0",
+            "creator": "frankenschulz",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Kokkari Samos",
+      "query": "Kokkari Samos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "St George Beach Naxos",
+      "query": "St George Beach Naxos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Theologos Rhodes",
+      "query": "Theologos Rhodes windsurf kitesurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Plaka Naxos",
+      "query": "Plaka Naxos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": [
+          {
+            "title": "Grecia",
+            "source_page": "https://www.flickr.com/photos/28683534@N00/1409623760",
+            "thumbnail_url": "https://api.openverse.org/v1/images/eb337982-ae61-4f27-829e-a60d72e0b675/thumb/",
+            "width": 1024,
+            "height": 707,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Dorli Photography",
+            "provider": "flickr",
+            "source": "flickr"
+          },
+          {
+            "title": "Grecia",
+            "source_page": "https://www.flickr.com/photos/28683534@N00/1409624688",
+            "thumbnail_url": "https://api.openverse.org/v1/images/a22209a7-269e-4b9f-8938-2e21c459a9a2/thumb/",
+            "width": 1024,
+            "height": 707,
+            "license": "by-nc-nd",
+            "license_version": "2.0",
+            "creator": "Dorli Photography",
+            "provider": "flickr",
+            "source": "flickr"
+          }
+        ]
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Laguna Naxos",
+      "query": "Laguna Naxos windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Schinias Marathon",
+      "query": "Schinias Marathon windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Anavyssos Attica",
+      "query": "Anavyssos Greece windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Nea Iraklitsa Kavala",
+      "query": "Nea Iraklitsa Kavala windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Paliouri Chrousso Halkidiki",
+      "query": "Paliouri Chrousso Halkidiki windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lake Volvi",
+      "query": "Lake Volvi Greece windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    },
+    {
+      "spot": "Lake Vegoritida",
+      "query": "Lake Vegoritida windsurf",
+      "providers": {
+        "wikimedia_commons": [],
+        "openverse": []
+      },
+      "errors": [
+        "wikimedia_commons: HTTPError"
+      ],
+      "review_status": "unreviewed_candidates_not_approved"
+    }
+  ]
+}

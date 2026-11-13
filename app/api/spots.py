@@ -18,6 +18,7 @@ from app.api._http_cache import (
     set_recommendation_cache,
 )
 from app.account.deps import optional_account
+from app.config import get_settings
 from app.db.session import get_db
 from app.discovery import service as discovery
 from app.live import service as live_service
@@ -38,14 +39,21 @@ from app.live.public_cache import (
     set_public_forecast,
     set_public_live,
 )
-from app.live.weather_contract import FORECAST_PRODUCT_VERSION, WEATHER_CONTRACT_VERSION
+from app.live.weather_contract import (
+    FORECAST_PRODUCT_VERSION,
+    WEATHER_CONTRACT_VERSION,
+    Availability,
+    marine_classification,
+)
 from app.models import AppUser, Spot, SpotWeatherProfile, SpotWeatherSector, WindClimatologyRun
 from app.names import normalize_name, slugify
 from app.public_catalog import PUBLISHED, get_published_spot, published_spot_exists
 from app.schemas import LandingSpots, SpotRead, SpotSummary
+from app.schemas.common import GeoPoint
 from app.schemas.live import ForecastSeriesRead, ForecastSummaryRead, LiveConditionsRead
 from app.similarity import service as similarity_service
 from app.tides import service as tide_service
+from app.tides.modelled_sea_level import public_modelled_sea_level
 from app.tides.schemas import PublicTideRead
 
 logger = logging.getLogger(__name__)
@@ -61,10 +69,46 @@ def get_spot_tides(
     spot_id: uuid.UUID,
     days: int = Query(default=10, ge=1, le=10),
     db: Session = Depends(get_db),
+    client: OpenMeteoClient = Depends(get_om_client),
+    cache: Cache = Depends(get_cache),
 ) -> PublicTideRead:
-    if get_published_spot(db, spot_id) is None:
+    spot = get_published_spot(db, spot_id)
+    if spot is None:
         raise HTTPException(status_code=404, detail="Spot not found")
-    return PublicTideRead.model_validate(tide_service.public_tides(spot_id, days=days, db=db))
+
+    stored = tide_service.public_tides(spot_id, days=days, db=db)
+    if stored.get("available"):
+        return PublicTideRead.model_validate(stored)
+
+    if (
+        not get_settings().tide_modelled_sea_level_fallback_enabled
+        or marine_classification(spot) is not Availability.AVAILABLE
+    ):
+        return PublicTideRead.model_validate(stored)
+
+    point = GeoPoint.from_geo(spot.location)
+    if point is None:
+        return PublicTideRead.model_validate(stored)
+    try:
+        marine, _diagnostics = live_service.marine_for_spot(
+            spot,
+            point.lat,
+            point.lon,
+            client=client,
+            cache=cache,
+        )
+        modelled = public_modelled_sea_level(
+            spot_id,
+            marine,
+            days=days,
+            display_timezone=getattr(spot.weather_profile, "timezone", None),
+        )
+        return PublicTideRead.model_validate(modelled)
+    except Exception:
+        # Tide is decision-support data. Provider or parsing failures stay an
+        # explicit unavailable state and must never take down the spot page.
+        logger.exception("modelled sea-level fallback failed for spot %s", spot_id)
+        return PublicTideRead.model_validate(stored)
 
 
 def _wind_availability(db: Session, rows: list[Spot]) -> dict[uuid.UUID, list[float]]:
@@ -543,15 +587,23 @@ def get_spots_live_batch(
         cache, {spot_id: generations[spot_id] for spot_id in result_ids}
     )
     input_generations = public_live_wind_input_generations(cache, result_ids)
+    measurement_misses = [
+        spot_id for spot_id in result_ids if cached_measurements.get(spot_id) is None
+    ]
+    if measurement_misses and isinstance(db, Session):
+        cached_measurements.update(
+            live_service.public_station_measurements(
+                db,
+                measurement_misses,
+                cache=cache,
+                wind_directions={
+                    spot_id: results[spot_id].current.dir
+                    for spot_id in measurement_misses
+                },
+            )
+        )
     for spot_id in result_ids:
         measurement = cached_measurements.get(spot_id)
-        if measurement is None and isinstance(db, Session):
-            measurement = live_service.public_station_measurement(
-                db,
-                spot_id,
-                cache=cache,
-                wind_direction_deg=results[spot_id].current.dir,
-            )
         enriched = results[spot_id].model_dump(mode="json")
         enriched["measurement"] = measurement
         enriched["live_wind"] = live_service.public_live_wind_analysis(

@@ -222,7 +222,7 @@ def test_create_stores_categories_and_facilities(admin, region_id):
         water_type=["ocean", "sea"],
         bottom_type=["sand", "reef"],
         style=["freeride", "big_air"],
-        facilities={"parking": {"available": True}, "camping": {"available": False}},
+        facilities={"parking": {"available": True}, "toilet": {"available": False}},
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()

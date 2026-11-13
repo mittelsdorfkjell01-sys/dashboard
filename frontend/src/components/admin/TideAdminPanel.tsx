@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ApiError,
+  autoSelectTideAnchor,
   getTideProfile,
   recalculateTides,
   updateTideProfile,
   type TideProfile,
   type TideEvent,
-} from "../../lib/api";
+} from "../../lib/api/tides";
+import { ApiError } from "../../lib/api/client";
 import { Field, fieldClass } from "../ui";
 import { Button } from "./ui";
 
@@ -57,8 +58,9 @@ function nextEvent(events: TideEvent[] | undefined, type: "high" | "low"): TideE
   return (events ?? []).find((e) => e.event_type === type);
 }
 
-export default function TideAdminPanel({ spotId }: {
+export default function TideAdminPanel({ spotId, onChanged }: {
   spotId: string;
+  onChanged?: () => void | Promise<void>;
   /** Kept in the type for call-site compatibility; not used in the lean UI. */
   spotLat?: number;
   spotLon?: number;
@@ -107,6 +109,7 @@ export default function TideAdminPanel({ spotId }: {
       await work();
       setMessage(success);
       await reload();
+      await onChanged?.();
     } catch (cause) {
       setError(
         cause instanceof ApiError || cause instanceof Error
@@ -163,6 +166,21 @@ export default function TideAdminPanel({ spotId }: {
   const onRecalc = () =>
     run(() => recalculateTides(spotId), "Neuberechnung wurde eingeplant.");
 
+  const onActivate = () => run(async () => {
+    await updateTideProfile(spotId, { enabled: true, public_enabled: false });
+    await autoSelectTideAnchor(spotId);
+  }, "FES-Berechnung und automatische Ankerwahl wurden eingeplant.");
+
+  const onReviewAnchor = () => run(
+    () => updateTideProfile(spotId, { review_anchor: true }),
+    "Modellanker wurde geprüft. Die bestätigte Berechnung läuft erneut.",
+  );
+
+  const onPublication = (publicEnabled: boolean) => run(
+    () => updateTideProfile(spotId, { public_enabled: publicEnabled }),
+    publicEnabled ? "Astronomische Tide wurde veröffentlicht." : "Astronomische Tide wurde zurückgezogen.",
+  );
+
   const onReset = () => {
     // Reset to the current model prediction (offsets = 0) so the next save
     // lands neutral. Note stays; if the operator wants to clear it, they can.
@@ -188,7 +206,70 @@ export default function TideAdminPanel({ spotId }: {
         </p>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <dl className="grid gap-x-4 gap-y-2 border-y border-admin-border py-3 text-label sm:grid-cols-2">
+        <div>
+          <dt className="text-admin-muted">Berechnung</dt>
+          <dd className="mt-0.5 font-medium text-admin-fg">{CALCULATION_LABELS[profile.calculation_status]}</dd>
+        </div>
+        <div>
+          <dt className="text-admin-muted">Modellanker</dt>
+          <dd className="mt-0.5 font-medium text-admin-fg">{ANCHOR_LABELS[profile.anchor_status]}</dd>
+        </div>
+        {profile.anchor_distance_m !== null && (
+          <div>
+            <dt className="text-admin-muted">Entfernung zum Spot</dt>
+            <dd className="mt-0.5 font-medium tabular-nums text-admin-fg">{Math.round(profile.anchor_distance_m)} m</dd>
+          </div>
+        )}
+        <div>
+          <dt className="text-admin-muted">Öffentlich</dt>
+          <dd className="mt-0.5 font-medium text-admin-fg">{profile.public_enabled ? "Ja · FES ersetzt den Fallback" : "Nein · Fallback bleibt aktiv"}</dd>
+        </div>
+      </dl>
+
+      {(profile.anchor_warnings ?? []).map((warning) => (
+        <p key={warning} className="rounded-md bg-admin-warning-bg px-3 py-2 text-label text-admin-warning">
+          {warning}
+        </p>
+      ))}
+      {profile.calculation_error && (
+        <p className="rounded-md bg-admin-danger-bg px-3 py-2 text-label text-admin-danger">
+          {profile.calculation_error} Erneut einplanen oder Modellanker prüfen.
+        </p>
+      )}
+
+      {!profile.enabled && (
+        <div>
+          <p className="mb-2 text-label text-admin-fg2">Startet eine private FES-Berechnung. Es wird noch nichts veröffentlicht.</p>
+          <Button variant="primary" disabled={busy} onClick={onActivate}>FES für diesen Spot aktivieren</Button>
+        </div>
+      )}
+
+      {profile.enabled && profile.anchor_status === "auto_selected" && profile.calculation_status === "ready" && (
+        <div>
+          <p className="mb-2 text-label text-admin-fg2">Prüfe Entfernung und Warnungen. Die Bestätigung veröffentlicht noch nichts.</p>
+          <Button variant="primary" disabled={busy} onClick={onReviewAnchor}>Modellanker bestätigen</Button>
+        </div>
+      )}
+
+      {profile.enabled && profile.anchor_status === "reviewed" && profile.calculation_status === "ready" && (
+        <div>
+          <p className="mb-2 text-label text-admin-fg2">
+            {profile.public_enabled
+              ? "Die geprüfte FES-Tide ist öffentlich und ersetzt den Meeresspiegel-Fallback."
+              : "Die geprüfte Tide bleibt privat, bis sie ausdrücklich veröffentlicht wird."}
+          </p>
+          <Button
+            variant={profile.public_enabled ? "secondary" : "primary"}
+            disabled={busy}
+            onClick={() => onPublication(!profile.public_enabled)}
+          >
+            {profile.public_enabled ? "Tide zurückziehen" : "Astronomische Tide veröffentlichen"}
+          </Button>
+        </div>
+      )}
+
+      {profile.enabled && <div className="grid gap-3 sm:grid-cols-2">
         <Field
           label="Uhrzeit Hochwasser"
           hint={
@@ -221,18 +302,18 @@ export default function TideAdminPanel({ spotId }: {
             disabled={!predictedLow}
           />
         </Field>
-      </div>
+      </div>}
 
-      <Field label="Fachliche Notiz">
+      {profile.enabled && <Field label="Fachliche Notiz">
         <textarea
           className={fieldClass}
           rows={3}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
-      </Field>
+      </Field>}
 
-      <div className="flex flex-wrap gap-2">
+      {profile.enabled && <div className="flex flex-wrap gap-2">
         <Button variant="primary" disabled={busy} onClick={onSave}>
           Korrektur speichern
         </Button>
@@ -242,7 +323,23 @@ export default function TideAdminPanel({ spotId }: {
         <Button variant="secondary" disabled={busy} onClick={onReset}>
           Korrektur zurücksetzen
         </Button>
-      </div>
+      </div>}
     </div>
   );
 }
+
+const CALCULATION_LABELS: Record<TideProfile["calculation_status"], string> = {
+  not_configured: "Noch nicht konfiguriert",
+  queued: "Eingeplant",
+  running: "Läuft",
+  ready: "Bereit",
+  failed: "Fehlgeschlagen",
+  stale: "Veraltet",
+};
+
+const ANCHOR_LABELS: Record<TideProfile["anchor_status"], string> = {
+  needs_review: "Auswahl ausstehend",
+  auto_selected: "Automatisch gewählt · Prüfung nötig",
+  reviewed: "Geprüft",
+  invalid: "Ungültig",
+};

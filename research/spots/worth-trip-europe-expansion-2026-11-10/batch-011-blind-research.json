@@ -1,0 +1,1164 @@
+{
+  "schema_version": 1,
+  "batch": "011",
+  "research_mode": "independent_blind_before_local_comparison",
+  "created_at": "2026-11-10",
+  "independence_statement": "Saved before opening local spot, source, media or prior candidate records for these 25 names. Candidate selection used external discovery only.",
+  "method_limits": [
+    "Coordinates are approximate discovery points and do not prove a launch.",
+    "Ukraine verdicts use the current 2026 travel warning as a hard gate.",
+    "Georgia is included as a transcontinental European-edge coverage area; Abkhazia is excluded.",
+    "Image candidates remain unapproved.",
+    "Full draft/cloud duplication access remained unavailable."
+  ],
+  "spots": [
+    {
+      "name": "Odesa – Chornomorka",
+      "country": "UA",
+      "identity": "A proposed southwest-Odesa beach sector whose exact active launch is not established.",
+      "entry": {
+        "lat": 46.361,
+        "lon": 30.702,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "General Odesa-region kite use exists, but no dependable exact-source condition profile was found.",
+      "access_rules": "All non-western Ukrainian regions are under an against-all-travel warning; beach/mine and military restrictions require authorities.",
+      "trip_value": "Neither current travel viability nor an exact specialist launch is established.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://en.tudoy-sudoy.od.ua/file/Odessa_region_travel_guide_book.pdf",
+          "publisher": "Odesa regional travel guide",
+          "supports": [
+            "regional_kitesurf",
+            "kite_club",
+            "coastal_candidates"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Odesa – Arcadia",
+      "country": "UA",
+      "identity": "The dense urban Arcadia bathing beach, not a verified wind-sport launch.",
+      "entry": {
+        "lat": 46.432,
+        "lon": 30.765,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "No reliable source proves recurring specialist use or safe rigging space.",
+      "access_rules": "Current against-all-travel advice overrides leisure recommendation; urban bathing and coastal security restrictions also require confirmation.",
+      "trip_value": "A famous resort beach is not automatically a wind-sport destination.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://odesa.travel/en/beaches/arcadia",
+          "publisher": "Odesa tourism",
+          "supports": [
+            "urban_beach",
+            "resort_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Chornomorsk / Sukhyi Lyman",
+      "country": "UA",
+      "identity": "The lyman/yacht-club area by Chornomorsk, distinct from the commercial port.",
+      "entry": {
+        "lat": 46.326,
+        "lon": 30.654,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "sailing"
+      ],
+      "conditions": "Forecast and directory evidence is too generic to prove a current specialist scene.",
+      "access_rules": "Against-all-travel advice, port security and an exact legal launch must be resolved.",
+      "trip_value": "Potential regional utility is insufficiently documented and currently not travel-recommendable.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://www.windfinder.com/forecast/chornomors_k_odessa_ukraine/birdseye",
+          "publisher": "Windfinder",
+          "supports": [
+            "location",
+            "wind_forecast",
+            "marine_context"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Kobleve – Tiligul dam",
+      "country": "UA",
+      "identity": "The kite-school launch on Tiligul Lyman near Kobleve, not the generic resort beach.",
+      "entry": {
+        "lat": 46.658,
+        "lon": 31.186,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "A long-running school network documents shallow flat-water training and weekend-trip use.",
+      "access_rules": "Current against-all-travel advice blocks leisure travel; re-check war hazards, dam access, school operation and protected-lagoon rules.",
+      "trip_value": "Strong historic use and accessible flat water could support worth_trip only after the security situation changes.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://www.kitecenter.com.ua/kite-spots",
+          "publisher": "Windrider Ukraine",
+          "supports": [
+            "exact_coordinates",
+            "school",
+            "Tiligul_Lyman",
+            "training"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Kinburn Spit",
+      "country": "UA",
+      "identity": "The protected Kinburn/Pokrovska spit complex between the estuary and Black Sea.",
+      "entry": {
+        "lat": 46.558,
+        "lon": 31.528,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Historic shallow bays and open-water options have high specialist value.",
+      "access_rules": "The park states the territory is occupied and patrols are suspended; reserve areas need guided access even outside war conditions.",
+      "trip_value": "Exceptional natural and sport potential is fully blocked by occupation, war and conservation access.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://ecolog.mk.gov.ua/ua/RLP/kk/",
+          "publisher": "Mykolaiv regional ecology authority",
+          "supports": [
+            "occupied",
+            "military_action",
+            "protected_park",
+            "no_patrols"
+          ]
+        },
+        {
+          "url": "https://wownature.in.ua/en/parks-and-reserves/ivory-coast-of-sviatoslav-national-nature-park/",
+          "publisher": "Nature Reserve Fund of Ukraine",
+          "supports": [
+            "reserve_zones",
+            "guided_access",
+            "Kinburn_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Skadovsk – Karzhyny / Lazurne",
+      "country": "UA",
+      "identity": "The Dzharylhach Bay kite sectors west of Skadovsk.",
+      "entry": {
+        "lat": 46.076,
+        "lon": 32.542,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Shallow sheltered lagoon water and former schools are documented, though independent modelling indicates poor wind reliability at Skadovsk itself.",
+      "access_rules": "Occupied/war-affected Kherson coast and against-all-travel advice make current access unacceptable.",
+      "trip_value": "Historic training value exists, but current travel and operating conditions cannot be confirmed.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/country/ukraine",
+          "publisher": "Let's Kite",
+          "supports": [
+            "historic_spot_identity",
+            "disciplines",
+            "region"
+          ]
+        },
+        {
+          "url": "https://www.kitecenter.com.ua/kite-spots",
+          "publisher": "Windrider Ukraine",
+          "supports": [
+            "Lazurne_school",
+            "coordinates",
+            "Dzharylhach_Bay"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Henichesk / Arabat Spit",
+      "country": "UA",
+      "identity": "The Henichesk–Henicheska Hirka sectors on Utliuk Lyman/Syvash, not the full 100-km spit.",
+      "entry": {
+        "lat": 46.147,
+        "lon": 34.817,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "Former schools used shallow lyman water and multiple wind orientations.",
+      "access_rules": "The occupied/war-affected Azov coast is under against-all-travel advice; mines, military zones and operator status are unknown.",
+      "trip_value": "Strong historic flat-water potential is presently blocked.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://www.kitecenter.com.ua/kite-spots",
+          "publisher": "Windrider Ukraine",
+          "supports": [
+            "Henichesk_school",
+            "coordinates",
+            "Utliuk_Lyman",
+            "Syvash"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/country/ukraine",
+          "publisher": "Let's Kite",
+          "supports": [
+            "historic_spot_identity",
+            "disciplines",
+            "region"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Kyrylivka – Fedotova Spit",
+      "country": "UA",
+      "identity": "The Fedotova/Peresyp spit kite sectors beside Kyrylivka.",
+      "entry": {
+        "lat": 46.345,
+        "lon": 35.37,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing",
+        "windsurf"
+      ],
+      "conditions": "Historic directories and a cross-border tourism source establish wind-sport use in the Azov resort complex.",
+      "access_rules": "Kyrylivka remains occupied and the region is under against-all-travel advice; coastal safety cannot be assumed.",
+      "trip_value": "The former resort has credible sport value but no current leisure-travel viability.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/country/ukraine",
+          "publisher": "Let's Kite",
+          "supports": [
+            "historic_spot_identity",
+            "disciplines",
+            "region"
+          ]
+        },
+        {
+          "url": "https://blacksea-cbc.net/images/e-library/BSB117_CULTOUR-BSB_Cross_Border_Route__Trails_in_Ukraine_and_Turkey_for_True_Connoisseurs_of_Adrenaline_EN.pdf",
+          "publisher": "EU Black Sea CBC project",
+          "supports": [
+            "Kyrylivka_windsurf",
+            "tourism_context"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Berdyansk Spit",
+      "country": "UA",
+      "identity": "The spit and sheltered bay sectors, not the occupied commercial port.",
+      "entry": {
+        "lat": 46.64,
+        "lon": 36.78,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Shallow flat water, wave alternatives, spring/autumn wind and historic schools are described in detail.",
+      "access_rules": "Berdyansk is occupied and against-all-travel advice applies; military, mine and port risks are disqualifying now.",
+      "trip_value": "The historic evidence would support a strong candidate, but current travel is impossible to recommend.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://berdyansk.org.ua/rest/kaytserfing-v-berdyanskoy-buhte-i2256",
+          "publisher": "Berdyansk destination portal",
+          "supports": [
+            "flat_water",
+            "waves",
+            "wind_directions",
+            "schools",
+            "season"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/country/ukraine",
+          "publisher": "Let's Kite",
+          "supports": [
+            "historic_spot_identity",
+            "disciplines",
+            "region"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Lake Svitiaz",
+      "country": "UA",
+      "identity": "The Shatsk National Park lake and its permitted recreation shores.",
+      "entry": {
+        "lat": 51.497,
+        "lon": 23.846,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "The lake has clear recreational value, but no robust current wind-sport scene or condition source was found.",
+      "access_rules": "Western Ukraine is still essential-travel-only; the northern lake district also has border permits and national-park constraints.",
+      "trip_value": "Natural value does not meet the specialist evidence threshold.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://svityaz.lutsk.ua/en/",
+          "publisher": "Shatsk Lakes guide",
+          "supports": [
+            "border_permit",
+            "lake_identity",
+            "current_access_context"
+          ]
+        },
+        {
+          "url": "https://didalosvityaz.com/en/work/svityaz-lake/",
+          "publisher": "Didalo Svitiaz",
+          "supports": [
+            "national_park",
+            "freshwater",
+            "tourism"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Vyshhorod / Kyiv Sea",
+      "country": "UA",
+      "identity": "The Kyiv Reservoir windsurf club and kite sectors north of the capital.",
+      "entry": {
+        "lat": 50.6,
+        "lon": 30.5,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing"
+      ],
+      "conditions": "A large fetch, sandy bottom, April–October season, long-running club and national events establish specialist use.",
+      "access_rules": "Kyiv region is under against-all-travel advice; attacks, martial-law access and critical-infrastructure rules block recommendation.",
+      "trip_value": "This is a strong historic inland candidate held solely pending safe, lawful travel and current club confirmation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/9708/kitesurf/vyshhorod-kyiv-sea",
+          "publisher": "Let's Kite",
+          "supports": [
+            "season",
+            "fetch",
+            "bottom",
+            "access"
+          ]
+        },
+        {
+          "url": "https://extremstyle.ua/ua/blog/view/kyyivskyy-vindserfinh-klub",
+          "publisher": "Kyiv Windsurf Club / ExtremStyle",
+          "supports": [
+            "club_history",
+            "events",
+            "training",
+            "regional_draw"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Zatoka / Serhiivka – Budak Lyman",
+      "country": "UA",
+      "identity": "The Budak Lyman school sector near Serhiivka/Zatoka, not the exposed bridge or whole sandbar.",
+      "entry": {
+        "lat": 46.026,
+        "lon": 30.384,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "A former school network documents the exact lyman launch, training and flat-water use.",
+      "access_rules": "Odesa region is under against-all-travel advice; bridge, coastal defence, mines and current school operation require revalidation.",
+      "trip_value": "Credible historic trip value is currently blocked by war risk.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/ukraine",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_travel_warning",
+            "war",
+            "insurance",
+            "air_attacks"
+          ]
+        },
+        {
+          "url": "https://www.kitecenter.com.ua/kite-spots",
+          "publisher": "Windrider Ukraine",
+          "supports": [
+            "Serhiivka_school",
+            "coordinates",
+            "Budak_Lyman"
+          ]
+        },
+        {
+          "url": "https://en.tudoy-sudoy.od.ua/file/Odessa_region_travel_guide_book.pdf",
+          "publisher": "Odesa regional travel guide",
+          "supports": [
+            "Zatoka",
+            "Tiligul",
+            "kitesurf_learning"
+          ]
+        }
+      ],
+      "blind_verdict": "hold_for_more_research"
+    },
+    {
+      "name": "Ghidighici Reservoir",
+      "country": "MD",
+      "identity": "The established windsurf/kite recreation shore near Vatra, outside motor-sport and bathing sectors.",
+      "entry": {
+        "lat": 47.092,
+        "lon": 28.734,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf",
+        "wing",
+        "sailing"
+      ],
+      "conditions": "Flat water, prevailing northwest wind, instruction and a long-standing local windsurf scene are documented.",
+      "access_rules": "Pin the current non-motorised launch and verify water quality, swimmer/motorboat separation, rescue and club status.",
+      "trip_value": "Moldova's main wind-sport lake and Chisinau access support worth_trip after operational correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://letskite.ch/en/spots/4719/snowkite/ghidighici-lake",
+          "publisher": "Let's Kite",
+          "supports": [
+            "main_kite_spot",
+            "flat_water",
+            "NW_wind",
+            "level"
+          ]
+        },
+        {
+          "url": "https://www.familia.md/RO/info/home_and_family/body/sportivnie_sektsii_obzor/default.aspx",
+          "publisher": "Familia Moldova",
+          "supports": [
+            "windsurf_club",
+            "kite_school",
+            "rental",
+            "Ghidighici"
+          ]
+        },
+        {
+          "url": "https://perfecte.md/sport/de-peste-7-ani-pe-lacul-ghidighici-poti-face-cele-mai-tari-sporturi-nautice-unde-sunt-bineveniti-toti-doritorii-inclusiv-copiii-si-la-40-50-de-ani-au-rezultate-bune-video---2571996.html",
+          "publisher": "PRO TV Moldova",
+          "supports": [
+            "windsurf_training",
+            "sailing",
+            "multi_year_use"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Costești–Stânca Reservoir",
+      "country": "MD",
+      "identity": "The transboundary Prut reservoir, with no identified specialist launch.",
+      "entry": {
+        "lat": 47.93,
+        "lon": 27.1,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "One tourism article names windsurfing, but a current club, wind window, launch and rescue are unproven.",
+      "access_rules": "Border-water permits, dam rehabilitation, navigation and exact recreation zones require authority confirmation.",
+      "trip_value": "Large size and scenery do not establish a dedicated wind-sport trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://locuri.md/2025/07/03/costesti-stanca-marea-din-nordul-moldovei/",
+          "publisher": "Locuri Moldova",
+          "supports": [
+            "windsurf_claim",
+            "beaches",
+            "recreation"
+          ]
+        },
+        {
+          "url": "https://mediu.gov.md/index.php/ro/node/722",
+          "publisher": "Moldovan environment ministry",
+          "supports": [
+            "dam_rehabilitation",
+            "strategic_infrastructure",
+            "current_works"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Batumi beach",
+      "country": "GE",
+      "identity": "The urban Batumi seafront, not a verified dedicated kite launch.",
+      "entry": {
+        "lat": 41.647,
+        "lon": 41.607,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Modelled kite reliability stays below 30% in every month and no authoritative active school/launch source was found.",
+      "access_rules": "Pin any permitted sector around swimmers, port/airport activity and dense summer use.",
+      "trip_value": "Excellent city-trip value cannot compensate for low wind reliability and weak specialist infrastructure evidence.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://kitecompass.app/spot/batumi",
+          "publisher": "kiteCOMPASS",
+          "supports": [
+            "nine_year_model",
+            "low_reliability",
+            "seasonality"
+          ]
+        },
+        {
+          "url": "https://pre-webunwto.s3.eu-west-1.amazonaws.com/s3fs-public/2024-09/georgia-investment-tourism-guidelines.pdf",
+          "publisher": "UN Tourism / Georgia investment guide",
+          "supports": [
+            "major_destination",
+            "general_water_sports"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Gonio",
+      "country": "GE",
+      "identity": "The pebble resort beach south of Batumi.",
+      "entry": {
+        "lat": 41.562,
+        "lon": 41.571,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Destination sources prove beach value but not recurring wind-sport use, conditions or a launch.",
+      "access_rules": "Separate swimmers and border/airport-adjacent constraints; verify any current operator.",
+      "trip_value": "Generic water activity at a scenic beach is insufficient.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://pre-webunwto.s3.eu-west-1.amazonaws.com/s3fs-public/2024-09/georgia-investment-tourism-guidelines.pdf",
+          "publisher": "UN Tourism / Georgia investment guide",
+          "supports": [
+            "Gonio_beach",
+            "tourism"
+          ]
+        },
+        {
+          "url": "https://germany.georgia.travel/wp-content/uploads/2023/02/ajara-1.pdf",
+          "publisher": "Georgia Travel",
+          "supports": [
+            "Gonio_identity",
+            "coast_facilities"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Kvariati",
+      "country": "GE",
+      "identity": "The narrow pebble beach between Gonio and Sarpi.",
+      "entry": {
+        "lat": 41.545,
+        "lon": 41.561,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf"
+      ],
+      "conditions": "Official tourism documents diving and motorised leisure, while only a low-authority article claims recent kite schools.",
+      "access_rules": "Confirm school identities, rigging room, wind reliability, swimmer separation and border proximity.",
+      "trip_value": "Current evidence is too weak for a specialist travel recommendation.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://georgia.travel/villages/kvarati",
+          "publisher": "Georgia Travel",
+          "supports": [
+            "beach_identity",
+            "diving",
+            "tourism_services"
+          ]
+        },
+        {
+          "url": "https://georgiajourneys.com/adrenaline-rush-best-adventure-activities-in-and-around-batumi/",
+          "publisher": "Georgia Unlocked",
+          "supports": [
+            "kite_school_claim",
+            "recent_growth"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Kobuleti",
+      "country": "GE",
+      "identity": "The long resort beach, outside the protected wetland perimeter.",
+      "entry": {
+        "lat": 41.843,
+        "lon": 41.781,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "Directories label it for kite use, but available modelling is generally light and no active specialist centre is verified.",
+      "access_rules": "Map any legal launch around swimmers and protected areas.",
+      "trip_value": "A long destination beach lacks dependable wind and scene evidence for a dedicated trip.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://windy.app/spots/Georgia/kite",
+          "publisher": "Windy.app",
+          "supports": [
+            "candidate_identity",
+            "discipline_claim"
+          ]
+        },
+        {
+          "url": "https://windy.app/forecast2/spot/5547813/Kobuleti/statistics",
+          "publisher": "Windy.app",
+          "supports": [
+            "light_wind",
+            "waves",
+            "modelled_conditions"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_trip_value"
+    },
+    {
+      "name": "Ureki",
+      "country": "GE",
+      "identity": "The wide magnetic-sand beach at Ureki, not the whole Shekvetili–Grigoleti coast.",
+      "entry": {
+        "lat": 41.997,
+        "lon": 41.759,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing",
+        "windsurf"
+      ],
+      "conditions": "May–September thermal west/southwest wind, broad sand and tourist infrastructure are documented for intermediate riders.",
+      "access_rules": "Confirm a current school/rescue point, swimmer zones and whether modelled rideable hours translate to normal kite sizes.",
+      "trip_value": "Distinctive black sand, accessible infrastructure and a defined thermal season support worth_trip after operational correction.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://lets-kite.com/en/spots/17223/kitesurf/ureki-beach",
+          "publisher": "Let's Kite",
+          "supports": [
+            "season",
+            "thermal_wind",
+            "level",
+            "infrastructure"
+          ]
+        },
+        {
+          "url": "https://windy.app/spots/Georgia/kite",
+          "publisher": "Windy.app",
+          "supports": [
+            "candidate_identity",
+            "discipline_claim"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Maltakva / Poti coast",
+      "country": "GE",
+      "identity": "The Black Sea beach at Maltakva, not the artificial Golden Lake waterski venue.",
+      "entry": {
+        "lat": 42.123,
+        "lon": 41.69,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "The locality has major waterski history on Golden Lake, but that does not prove wind-sport use on the sea beach.",
+      "access_rules": "Avoid conflating the artificial competition lake, port approaches, Paliastomi protected waters and the coastal launch.",
+      "trip_value": "International waterski value is out of scope and wind-sport evidence is insufficient.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://www.2026eaopen.ge/about-us",
+          "publisher": "Georgian Waterski National Federation",
+          "supports": [
+            "Golden_Lake",
+            "waterski_history",
+            "competition"
+          ]
+        },
+        {
+          "url": "https://www.tbilisisrf.gov.ge/uploads/catalogue.pdf",
+          "publisher": "Enterprise Georgia",
+          "supports": [
+            "Maltakva_resort",
+            "coast_identity"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Anaklia",
+      "country": "GE",
+      "identity": "The resort beach south of the Enguri mouth and Abkhazia boundary area.",
+      "entry": {
+        "lat": 42.394,
+        "lon": 41.569,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "windsurf"
+      ],
+      "conditions": "A directory claims kite use, but no robust condition or operating source was found.",
+      "access_rules": "Port construction, river mouth, swimmer zones and proximity to the Abkhazia administrative boundary require current checks.",
+      "trip_value": "The beach has destination value but insufficient specialist evidence and elevated regional constraints.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://windy.app/spots/Georgia/kite",
+          "publisher": "Windy.app",
+          "supports": [
+            "candidate_identity",
+            "discipline_claim"
+          ]
+        },
+        {
+          "url": "https://www.tbilisisrf.gov.ge/uploads/catalogue.pdf",
+          "publisher": "Enterprise Georgia",
+          "supports": [
+            "Anaklia_resort",
+            "tourism_investment"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Tbilisi Sea – Bollywood Beach",
+      "country": "GE",
+      "identity": "The kite-school shore on Tbilisi Reservoir, separate from sailboat, water-ski and aqua-park sectors.",
+      "entry": {
+        "lat": 41.75,
+        "lon": 44.85,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "kitesurf",
+        "wing",
+        "sailing"
+      ],
+      "conditions": "A local school reports frequent strong wind and boat-supported instruction; official tourism confirms the large recreational reservoir and sailing access.",
+      "access_rules": "Pin the current school launch and confirm drinking-water, motorboat, swimmer, gust and rescue rules.",
+      "trip_value": "A distinctive capital-adjacent inland scene supports worth_trip after exact-zone and operator verification.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://georgia.travel/tbilisi-sea",
+          "publisher": "Georgia Travel",
+          "supports": [
+            "reservoir_size",
+            "sailing",
+            "water_ski",
+            "recreation"
+          ]
+        },
+        {
+          "url": "https://account.localgymsandfitness.com/GE/Tbilisi/109031968410595/Kiting-School-in-Tbilisi",
+          "publisher": "Kiting School in Tbilisi mirror",
+          "supports": [
+            "Bollywood_Beach",
+            "strong_wind",
+            "boat_support",
+            "lessons"
+          ]
+        }
+      ],
+      "blind_verdict": "accept_after_correction"
+    },
+    {
+      "name": "Bazaleti Lake",
+      "country": "GE",
+      "identity": "The resort lake north of Tbilisi, without an identified wind-sport launch.",
+      "entry": {
+        "lat": 42.044,
+        "lon": 44.68,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf",
+        "kitesurf"
+      ],
+      "conditions": "Tourism value is established, but recurring wind-sport use and wind reliability are not.",
+      "access_rules": "Confirm water access, launch permission, rescue and any operator before treating it as a spot.",
+      "trip_value": "Lake scenery alone is insufficient.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://georgia.travel/bazaleti-lake",
+          "publisher": "Georgia Travel",
+          "supports": [
+            "lake_identity",
+            "recreation",
+            "destination"
+          ]
+        },
+        {
+          "url": "https://windy.app/spots/Georgia/kite",
+          "publisher": "Windy.app",
+          "supports": [
+            "candidate_identity",
+            "discipline_claim"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Paravani Lake",
+      "country": "GE",
+      "identity": "The high-altitude lake in Samtskhe–Javakheti, mainly discovered as a snowkite candidate.",
+      "entry": {
+        "lat": 41.44,
+        "lon": 43.82,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "snowkite",
+        "kitesurf"
+      ],
+      "conditions": "Directory evidence supports snowkite interest, not a verified open-water wind-sport season or safe launch.",
+      "access_rules": "Cold water, remoteness, ice transitions and rescue require specialist documentation.",
+      "trip_value": "Frozen-lake potential does not qualify an unverified watersports trip spot.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://windy.app/spots/Georgia/kite",
+          "publisher": "Windy.app",
+          "supports": [
+            "candidate_identity",
+            "discipline_claim"
+          ]
+        },
+        {
+          "url": "https://georgia.travel/paravani-lake",
+          "publisher": "Georgia Travel",
+          "supports": [
+            "high_altitude_lake",
+            "destination",
+            "climate"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    },
+    {
+      "name": "Lisi Lake",
+      "country": "GE",
+      "identity": "The small urban recreation lake west of Tbilisi.",
+      "entry": {
+        "lat": 41.742,
+        "lon": 44.739,
+        "status": "approximate_discovery_point_exact_launch_open"
+      },
+      "sports": [
+        "windsurf"
+      ],
+      "conditions": "Official tourism documents swimming, boating and water bikes but no windsurf scene.",
+      "access_rules": "Small size, crowded recreation, swimmers and undefined board-sport permission need confirmation.",
+      "trip_value": "This is an urban recreation lake, not an evidenced wind-sport destination.",
+      "image_review": "searched_open_not_approved",
+      "sources": [
+        {
+          "url": "https://www.gov.uk/foreign-travel-advice/georgia",
+          "publisher": "UK FCDO",
+          "supports": [
+            "current_regional_warning",
+            "Abkhazia_boundary"
+          ]
+        },
+        {
+          "url": "https://georgia.travel/lisi-lake",
+          "publisher": "Georgia Travel",
+          "supports": [
+            "small_lake",
+            "swimming",
+            "boats",
+            "crowding"
+          ]
+        }
+      ],
+      "blind_verdict": "reject_insufficient_evidence"
+    }
+  ]
+}

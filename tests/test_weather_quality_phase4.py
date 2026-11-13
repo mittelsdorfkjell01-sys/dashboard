@@ -4,20 +4,7 @@ import pytest
 
 from app.weather.consensus import WindMember, calculate_wind_consensus
 from app.weather.monitoring import IncidentDeduplicator, evaluate
-from app.weather.validation import bounded_value, validate_aligned_columns, validate_time_axis
 from app.weather.verification import MIN_CALIBRATION_SAMPLES, circular_error_deg, evaluate_calibration_holdout, verification_metrics
-
-
-@pytest.mark.parametrize("field,value", [
-    ("wind_speed_ms", float("nan")), ("wind_speed_ms", -1), ("wind_gust_ms", float("inf")),
-    ("wave_height_m", -0.1), ("wave_period_s", 0.1), ("precipitation_mm", -1),
-    ("temperature_c", 61), ("pressure_hpa", 799), ("direction_deg", 360),
-])
-def test_corrupt_provider_values_are_hard_errors(field, value):
-    result = bounded_value(value, field)
-    assert result.value is None
-    assert result.hard_error is True
-    assert result.issues
 
 
 def test_invalid_member_never_reaches_consensus_math():
@@ -29,18 +16,6 @@ def test_invalid_member_never_reaches_consensus_math():
     assert result is not None
     assert result.member_count == 1
     assert result.weights == {"icon": 1.0}
-
-
-def test_time_axis_rejects_order_future_and_column_mismatch():
-    now = datetime(2026, 3, 29, 0, tzinfo=timezone.utc)  # DST transition day
-    with pytest.raises(ValueError, match="strictly"):
-        validate_time_axis([now.isoformat(), now.isoformat()], now=now)
-    with pytest.raises(ValueError, match="future"):
-        validate_time_axis([(now + timedelta(days=12)).isoformat()], now=now)
-    with pytest.raises(ValueError, match="array_length"):
-        validate_aligned_columns([1, 2], {"wind": [1]}, {"wind"})
-    with pytest.raises(ValueError, match="missing_columns"):
-        validate_aligned_columns([1], {}, {"wind"})
 
 
 def _holdout_rows(*, calibrated_delta: float):
