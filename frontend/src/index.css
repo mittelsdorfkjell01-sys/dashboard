@@ -316,7 +316,7 @@ html { -webkit-tap-highlight-color: transparent; }
     border-radius: 0.875rem;
   }
 
-  .spot-gallery-compact > div {
+  .spot-gallery-compact > div:first-child {
     aspect-ratio: 2 / 3;
   }
 
@@ -357,7 +357,7 @@ html { -webkit-tap-highlight-color: transparent; }
   }
 
   @media (min-width: 1024px) {
-    .spot-gallery-compact > div {
+    .spot-gallery-compact > div:first-child {
       height: auto;
       aspect-ratio: 2 / 3;
     }

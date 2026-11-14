@@ -9,19 +9,18 @@ import { formatMonthDayRange } from "../lib/bestSeason";
 type Item = { label: string; value: string };
 
 /**
- * The Info tab's spec card — the single object that sits beside the community
- * gallery and runs its full height.
+ * The Info tab's spec column, beside the community gallery.
  *
- * It reads top to bottom as one sheet, in three bands separated by hairlines:
- *   1. the best travel season as the card's head (the one raised fact, with
- *      the link into the Windmonate chart),
- *   2. the spot profile (Level / Gewässer / Untergrund / Beste Windrichtung)
- *      as label-left / value-right rows,
- *   3. the facilities as the card's foot, on the quieter band surface.
+ * Not one sheet any more: the specs are separate cards, each a label and its
+ * value, so a missing fact leaves no empty row in a shared table and each one
+ * can be read on its own. They sit top-aligned in the upper half of the
+ * column; the facilities card takes the lower half. The halves are `flex-1`
+ * against the gallery height the page passes down, so the split lands on the
+ * gallery's midpoint at any gallery size instead of a guessed pixel value.
  *
- * The profile rows share the card's spare vertical space (`flex-1` per row),
- * so the card fills the gallery height without inventing content or leaving a
- * void. Everything missing simply disappears — no placeholder rows.
+ * "Beste Reisezeit" keeps its own card above the specs when the spot has a
+ * climatology for it — it is a different kind of statement (a derived window,
+ * with a link into the chart), not another label/value pair.
  */
 export default function SpotProfileCard({
   spot,
@@ -47,46 +46,50 @@ export default function SpotProfileCard({
   if (items.length === 0 && !bestSeason && facilities.length === 0) return null;
 
   return (
-    <div
-      className={`flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-surface ${className}`}
-    >
-      {bestSeason && (
-        <div className="border-b border-line px-4 py-4 sm:px-5">
-          <p className="text-caption font-medium uppercase tracking-caps text-muted">Beste Reisezeit</p>
-          <p className="mt-1.5 break-words text-lead font-semibold leading-[1.15] text-ink">
-            {formatMonthDayRange(bestSeason.start_date, bestSeason.end_date)}
-          </p>
-          <p className="mt-1 text-caption leading-snug text-muted">Verlässlichste Windzeit im Jahr</p>
-          <Link
-            to={`${spotPath(spot, "daten")}#windmonate`}
-            className="mt-2 inline-flex items-center gap-0.5 text-caption font-medium text-accent transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            Windmonate <ChevronRightIcon width={14} height={14} />
-          </Link>
-        </div>
-      )}
-
-      {items.length > 0 && (
-        <dl className="flex flex-1 flex-col divide-y divide-line px-4 sm:px-5">
-          {items.map((item) => (
-            <div
-              key={item.label}
-              className="flex flex-1 min-w-0 items-center justify-between gap-4 py-3"
+    <div className={`flex min-w-0 flex-col gap-4 ${className}`}>
+      {/* Upper half: the separate spec cards, aligned to the top. */}
+      <div className="flex min-w-0 flex-col gap-2.5 lg:flex-1">
+        {bestSeason && (
+          <div className="min-w-0 rounded-card border border-line bg-surface px-4 py-3.5">
+            <p className="text-caption font-medium uppercase tracking-caps text-muted">
+              Beste Reisezeit
+            </p>
+            <p className="mt-1.5 break-words text-lead font-semibold leading-[1.15] text-ink">
+              {formatMonthDayRange(bestSeason.start_date, bestSeason.end_date)}
+            </p>
+            <p className="mt-1 text-caption leading-snug text-muted">
+              Verlässlichste Windzeit im Jahr
+            </p>
+            <Link
+              to={`${spotPath(spot, "daten")}#windmonate`}
+              className="mt-2 inline-flex items-center gap-0.5 text-caption font-medium text-accent transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              <dt className="shrink-0 text-caption font-medium uppercase tracking-caps text-muted">
-                {item.label}
-              </dt>
-              <dd className="min-w-0 break-words text-right text-caption font-medium leading-snug text-ink">
-                {item.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
+              Windmonate <ChevronRightIcon width={14} height={14} />
+            </Link>
+          </div>
+        )}
 
+        {items.map((item) => (
+          <dl
+            key={item.label}
+            className="flex min-w-0 items-center justify-between gap-4 rounded-card border border-line bg-surface px-4 py-3"
+          >
+            <dt className="shrink-0 text-caption font-medium uppercase tracking-caps text-muted">
+              {item.label}
+            </dt>
+            <dd className="min-w-0 break-words text-right text-caption font-medium leading-snug text-ink">
+              {item.value}
+            </dd>
+          </dl>
+        ))}
+      </div>
+
+      {/* Lower half: facilities, unchanged in content. */}
       {facilities.length > 0 && (
-        <div className="border-t border-line bg-band px-4 py-3.5 sm:px-5">
-          <h2 className="text-caption font-medium uppercase tracking-caps text-muted">Ausstattung</h2>
+        <div className="min-w-0 overflow-hidden rounded-card border border-line bg-band px-4 py-3.5 lg:flex-1">
+          <h2 className="text-caption font-medium uppercase tracking-caps text-muted">
+            Ausstattung
+          </h2>
           <div className="mt-1">
             <Facilities items={facilities} variant="table" />
           </div>

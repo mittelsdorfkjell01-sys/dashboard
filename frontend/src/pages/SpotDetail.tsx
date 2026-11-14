@@ -258,32 +258,50 @@ export default function SpotDetail() {
                   "--spot-gallery-right-inset": `${galleryRightInset}px`,
                 } as CSSProperties}
               >
-                <section aria-label="Spotbeschreibung und Hinweise" className="order-1 flex min-w-0 flex-col self-stretch">
-                  {/* Spot identity: breadcrumb, name + community score inline
-                      (Figma Frame_9) — replaces the hero namebox. */}
-                  {(regionPart || country) && (
-                    <p className="text-ui leading-tight text-ink-soft/80">
-                      {regionPart && (
-                        <Link
-                          to={`/region/${regionSlug(spot.region)}`}
-                          className="font-medium text-ink transition-opacity hover:opacity-70 hover:underline"
-                        >
-                          {regionPart}
-                        </Link>
-                      )}
-                      {country && regionPart && (
-                        <span className="mx-1.5 text-ink-soft/50">·</span>
-                      )}
-                      {country && <span>{country}</span>}
-                    </p>
-                  )}
-                  {/* Page title: `heading` on phones, `heading-lg` from sm. */}
-                  <h1 className="mt-3 text-heading font-semibold text-balance text-ink sm:text-heading-lg">
-                    {spot.name}
-                    {/* Origin mark trails the title on the same baseline; the
-                        written-out sentence sits at the foot of this tab. */}
-                    <SpotOriginMark origin={spot.origin} className="ml-2 align-baseline" />
-                  </h1>
+                {/* Collapsed, this column is exactly as tall as the gallery
+                    tile — the same measured height the spec column uses — so
+                    all three end on the gallery's bottom edge and the safety
+                    card closes the column there. Expanded, the height is
+                    released: the description has taken the safety card's space
+                    and must be allowed to run past the tile. */}
+                <section
+                  aria-label="Spotbeschreibung und Hinweise"
+                  className={`order-1 flex min-w-0 flex-col ${
+                    descriptionExpanded
+                      ? "self-start"
+                      : "self-stretch lg:h-[var(--spot-gallery-height,630px)] lg:self-start"
+                  }`}
+                >
+                  {/* Spot identity: the name, then where it is, on one line.
+                      Region and country used to sit above the title as a
+                      breadcrumb, which read as navigation the page does not
+                      have. Beside the name they read as what they are — the
+                      rest of the spot's address. They wrap to their own line
+                      on a narrow column instead of squeezing the name. */}
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <h1 className="text-heading font-semibold text-balance text-ink sm:text-heading-lg">
+                      {spot.name}
+                      {/* Origin mark trails the title on the same baseline; the
+                          written-out sentence sits at the foot of this tab. */}
+                      <SpotOriginMark origin={spot.origin} className="ml-2 align-baseline" />
+                    </h1>
+                    {(regionPart || country) && (
+                      <p className="text-ui leading-tight text-ink-soft/80">
+                        {regionPart && (
+                          <Link
+                            to={`/region/${regionSlug(spot.region)}`}
+                            className="font-medium text-ink transition-opacity hover:opacity-70 hover:underline"
+                          >
+                            {regionPart}
+                          </Link>
+                        )}
+                        {country && regionPart && (
+                          <span className="mx-1.5 text-ink-soft/50">·</span>
+                        )}
+                        {country && <span>{country}</span>}
+                      </p>
+                    )}
+                  </div>
                   <SpotEditorialClassification spot={spot} />
 
                   {/* Sports are plain label + white check, not
@@ -310,7 +328,23 @@ export default function SpotDetail() {
                     text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}
                     onExpandedChange={setDescriptionExpanded}
                   />
-                  <SpotConditionHints spot={spot} forecast={forecastSummary} />
+                  {/* The column has one pool of height to share. Collapsed,
+                      the description takes what is left above this card and
+                      the card closes the column flush with the gallery.
+                      Expanded, the text needs that space, so the card fades
+                      out and gives it up — it comes back on "Weniger
+                      anzeigen", and `aria-hidden` keeps it from being read
+                      while it is invisible. */}
+                  <div
+                    aria-hidden={descriptionExpanded}
+                    className={`transition-opacity duration-base motion-reduce:transition-none ${
+                      descriptionExpanded
+                        ? "pointer-events-none h-0 overflow-hidden opacity-0"
+                        : "opacity-100"
+                    }`}
+                  >
+                    <SpotConditionHints spot={spot} forecast={forecastSummary} />
+                  </div>
                 </section>
 
                 <div
@@ -324,6 +358,17 @@ export default function SpotDetail() {
                     onOpenGallery={() => setGalleryOpen(true)}
                     galleryTriggerRef={galleryTriggerRef}
                   />
+                  {/* The spot's actions belong to the spot, not to the spec
+                      column they used to head. Centred under the gallery they
+                      sit on the page's middle axis and stop competing with the
+                      column's own heading. */}
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                    <FavoriteButton spot={spot} />
+                    <ShareButton spot={spot} />
+                    {spotId && <VisitedButton spotId={spotId} />}
+                    {spotId && <Link to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`} aria-label={t("trips.planSpot")} title={t("trips.planSpot")} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"><CalendarIcon className="text-lead" /></Link>}
+                    <SuggestEditButton spot={spot} />
+                  </div>
                 </div>
 
                 {/* Profile column: the centred action row, then one spec card
@@ -331,20 +376,13 @@ export default function SpotDetail() {
                     tall card grows instead of clipping). */}
                 <aside
                   aria-label="Spotprofil und Ausstattung"
-                  className="order-2 flex min-w-0 flex-col lg:order-3 lg:min-h-[var(--spot-gallery-height,630px)] lg:self-start"
+                  className="order-2 flex min-w-0 flex-col lg:order-3 lg:h-[var(--spot-gallery-height,630px)] lg:self-start"
                 >
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <FavoriteButton spot={spot} />
-                    <ShareButton spot={spot} />
-                    {spotId && <VisitedButton spotId={spotId} />}
-                    {spotId && <Link to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`} aria-label={t("trips.planSpot")} title={t("trips.planSpot")} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"><CalendarIcon className="text-lead" /></Link>}
-                    <SuggestEditButton spot={spot} />
-                  </div>
                   <SpotProfileCard
                     spot={spot}
                     bestSeason={bestSeason}
                     facilities={facilities}
-                    className="mt-5 lg:flex-1"
+                    className="lg:h-full"
                   />
                 </aside>
                   {spot.coords ? (

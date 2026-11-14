@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Spot description that starts collapsed to a few lines at every viewport.
- * The toggle only appears when the text is actually clipped, so a short
- * description still reads as a plain paragraph.
+ * Spot description that starts collapsed and only offers a toggle when the
+ * text is genuinely cut off, so a short description reads as a plain
+ * paragraph.
+ *
+ * How much it shows depends on the column, not on a line count. From `lg` the
+ * collapsed paragraph takes whatever height the Info column has left between
+ * the spot header and the safety card below it (`flex-1` + `overflow-hidden`),
+ * so the column ends flush with the gallery beside it at any text length.
+ * Below `lg` there is no such column height to fill, so it falls back to a
+ * three-line clamp.
+ *
+ * Clipping is measured, never counted: `scrollHeight > clientHeight` is true
+ * for both the clamp and the flex-filled box, which is why one check covers
+ * both modes and stays correct across widths, line heights and resizes.
  */
 export default function SpotDescription({
   text,
@@ -30,16 +41,20 @@ export default function SpotDescription({
   }, [text, expanded]);
 
   return (
-    <div className="mt-5 sm:mt-8">
+    <div
+      className={`mt-5 sm:mt-8 ${
+        expanded ? "" : "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
+      }`}
+    >
       {/* Collapsed to three lines — enough to place the spot, short enough
           that the column stays calm. The last line fades into the page so the
           cut reads as "there is more" rather than as a hard crop; the fade is
           decorative and never covers the toggle. */}
-      <div className="relative">
+      <div className={`relative ${expanded ? "" : "lg:min-h-0 lg:flex-1"}`}>
         <p
           ref={ref}
           className={`max-w-measure text-ui leading-relaxed text-ink-soft ${
-            expanded ? "" : "line-clamp-3"
+            expanded ? "" : "line-clamp-3 lg:line-clamp-none lg:h-full lg:overflow-hidden"
           }`}
         >
           {text}

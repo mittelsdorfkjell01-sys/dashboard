@@ -150,3 +150,39 @@ export function buildSpotConditionHints(
   }
   return hints;
 }
+
+/** One cell of the safety card's foot: a bare label and value.
+ *
+ * Separate from :func:`buildSpotConditionHints` on purpose. The hints are
+ * *sentences* — they carry a source and read as prose. These are the three
+ * plain readings the card ends on (air, water, bottom), each in its own cell,
+ * so they need the values apart rather than joined into one line. The gating
+ * is the same: a forecast reading only counts when the provenance says it is
+ * fresh, available and genuinely a forecast.
+ */
+export type SpotFactCell = { id: "air" | "water" | "bottom"; label: string; value: string };
+
+export function buildSpotFactCells(
+  spot: Spot,
+  forecast: ForecastSummaryRead | null | undefined,
+  tempUnit: TempUnit = DEFAULT_UNITS.temp,
+): SpotFactCell[] {
+  const cells: SpotFactCell[] = [];
+  const hour = forecast?.hour;
+  const provenance = hour?.provenance;
+  const usable =
+    hour?.stale !== true && usableForecast(provenance) && provenanceTiming(provenance) !== null;
+
+  if (usable && Number.isFinite(hour?.air)) {
+    cells.push({ id: "air", label: "Luft", value: formatTemp(hour!.air as number, tempUnit) });
+  }
+  if (usable && Number.isFinite(hour?.sst)) {
+    cells.push({ id: "water", label: "Wasser", value: formatTemp(hour!.sst as number, tempUnit) });
+  }
+
+  const labels = (spot.bottomType ?? []).map(bottomTypeLabel).filter(Boolean);
+  if (labels.length) {
+    cells.push({ id: "bottom", label: "Untergrund", value: labels.join(" und ") });
+  }
+  return cells;
+}
