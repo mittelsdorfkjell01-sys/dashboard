@@ -10,6 +10,14 @@
   --sw-page: #F8F6F2;
   --sw-band: #EFEAE2;
   --sw-surface: #FFFFFF;
+  /* Tile ground: the smallest step that still separates a tile from the page
+     it sits on (DESIGN.md, The Unframed Tile Rule). It moves AWAY from the
+     page in whichever direction the theme has room — darker on the light
+     page, lighter on the dark one — because the light page is already close
+     to white and a lighter step there is invisible. Light: 2% down from
+     --sw-page. Dark: 2% of the full range up (2% *of* a near-black value
+     would not even move one step). */
+  --sw-tile: #F3F1ED;
   --sw-ink: #241C17;
   --sw-ink-soft: #3D332C;
   --sw-muted: #6B625B;
@@ -65,6 +73,7 @@ html[data-theme="dark"] {
   --sw-page: #0E1114;
   --sw-band: #14181C;
   --sw-surface: #1A1F24;
+  --sw-tile: #131619;
   --sw-ink: #F1EDE7;
   --sw-ink-soft: #C7BFB6;
   --sw-muted: #9B928A;

@@ -21,6 +21,9 @@ export default {
         // section background (was `cream`).
         surface: "var(--sw-surface)",
         band: "var(--sw-band)",
+        // The one tile ground — see --sw-tile in index.css. Not a card surface:
+        // it exists so a tile can separate from the page WITHOUT a stroke.
+        tile: "var(--sw-tile)",
         // Page/body background — cards sit on this as surface.
         page: "var(--sw-page)",
         // Restricted action accent. Product direction keeps this blue only on

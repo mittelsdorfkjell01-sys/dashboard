@@ -9,7 +9,7 @@ import { useOptionalUnits } from "../context/PrefsContext";
  * Safety and location notices, the card the Info column ends on.
  *
  * No panel, no fill, no heading: the block stands on the page like the
- * description above it, centred on the column.
+ * description above it, flush with the same left edge.
  *   1. The warnings (editorial safety notice, offshore wind) lead — each one
  *      factual sentence, marked by a single red hazard glyph. No grading, no
  *      traffic light, no per-line source label, and no word "Sicherheit" over
@@ -50,18 +50,21 @@ export default function SpotConditionHints({
     <section
       aria-label="Sicherheit"
       aria-live="polite"
-      className="mt-4 text-center sm:mt-5"
+      className="mt-4 sm:mt-5"
     >
       {warnings.length > 0 && (
         <ul className="space-y-1.5">
           {warnings.map((hint) => (
             <li key={hint.id} className="min-w-0">
-              {/* Glyph set inline with the sentence, not in a column beside it:
-                  a centred block with a hanging icon reads as a broken grid.
-                  The measure sits on the paragraph, because `ch` resolves
-                  against the element's own font size — on a wrapper it would
-                  be read at the inherited 14px, three times wider than meant. */}
-              <p className="mx-auto min-w-0 max-w-[46ch] text-micro leading-snug text-ink-soft">
+              {/* Flush with the column's left edge, like the title and the
+                  description above it — the block is a note in that column,
+                  not a centred banner across it. The glyph is set inline with
+                  the sentence so the text keeps that edge instead of being
+                  pushed in by a hanging icon. The measure sits on the
+                  paragraph, because `ch` resolves against the element's own
+                  font size — on a wrapper it would be read at the inherited
+                  14px, three times wider than meant. */}
+              <p className="min-w-0 max-w-[46ch] text-micro leading-snug text-ink-soft">
                 <SafetyIcon
                   aria-hidden
                   width={12}
@@ -79,7 +82,7 @@ export default function SpotConditionHints({
         /* Set apart from the warning above: these are plain readings of the
            place, not a caution, and at 12px they are the most legible thing in
            the block — which is right, because they are what gets looked up. */
-        <dl className="mt-3 flex flex-wrap items-baseline justify-center gap-x-5 gap-y-1">
+        <dl className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1">
           {cells.map((cell) => (
             <div key={cell.id} className="flex min-w-0 items-baseline gap-1.5">
               <dt className="text-micro font-medium uppercase tracking-caps text-muted">

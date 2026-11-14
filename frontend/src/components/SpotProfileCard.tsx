@@ -82,10 +82,12 @@ export default function SpotProfileCard({
             readable size fits "Fortgeschritten" in that, so every long value
             broke into syllables. At two per row each value stands on one line.
 
-            No frame (DESIGN.md, The Unframed Tile Rule): one step of tone —
-            `surface` on `page`, about 1.08:1 — lifts the tile off the page.
-            The tone carries the whole separation, so the tile is given real
-            room inside rather than a hairline around it.
+            No frame (DESIGN.md, The Unframed Tile Rule): one step of tone
+            lifts the tile off the page — `--sw-tile`, which moves 2% away from
+            `--sw-page` in whichever direction the theme has room (down on the
+            light page, up on the dark one). The tone carries the whole
+            separation, so the tile is given real room inside rather than a
+            hairline around it.
 
             The two lines are a label and a reading, and they now look like it:
             the label keeps the house versal spacing at the 10px rung, the
@@ -99,7 +101,7 @@ export default function SpotProfileCard({
           {items.map((item) => (
             <dl
               key={item.label}
-              className="flex min-w-0 flex-col rounded-card bg-surface px-3 py-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-4 lg:py-3"
+              className="flex min-w-0 flex-col rounded-card bg-tile px-3 py-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-4 lg:py-3"
             >
               <dt className="hyphens-auto break-words text-micro font-medium uppercase tracking-caps leading-tight text-muted lg:shrink-0 lg:hyphens-none lg:text-caption">
                 {item.label}
