@@ -7,25 +7,26 @@ die unveränderlichen Feldartefakte.
 
 ## Einmalige Neon-Konfiguration
 
-Im bestehenden Produktionsprojekt einen Bucket mit `public_read` anlegen und
-eine S3-kompatible Zugangsberechtigung erzeugen. Modellartefakte dürfen nicht in
-Postgres oder Vercel Blob gespeichert werden.
+Im bestehenden Produktionsprojekt einen Bucket mit `public_read` anlegen.
+Modellartefakte dürfen nicht in Postgres oder Vercel Blob gespeichert werden.
+Der Workflow löst die branchgebundene S3-Konfiguration mit dem Neon CLI erst
+zur Laufzeit auf; Storage-Schlüssel werden nicht lokal kopiert.
 
 Folgende Werte werden benötigt:
 
 | Ziel | Name | Art |
 |---|---|---|
-| GitHub Secret | `WEATHER_FIELD_STORAGE_ENDPOINT` | S3-Endpunkt |
-| GitHub Secret | `WEATHER_FIELD_STORAGE_ACCESS_KEY` | Zugriffsschlüssel |
-| GitHub Secret | `WEATHER_FIELD_STORAGE_SECRET_KEY` | geheimer Schlüssel |
-| GitHub Variable | `WEATHER_FIELD_STORAGE_REGION` | Bucket-Region |
+| GitHub Secret | `NEON_API_KEY` | Neon-API-Zugriff für den Worker |
+| GitHub Secret | `POOLED_DATABASE_URL` | gepoolte Produktionsdatenbank |
+| GitHub Secret | `VERCEL_TOKEN` | nur für den manuellen Bootstrap |
+| GitHub Variable | `NEON_PROJECT_ID` | bestehendes Neon-Projekt |
 | GitHub Variable | `WEATHER_FIELD_STORAGE_BUCKET` | Bucket-Name |
 | GitHub Variable | `WEATHER_FIELD_STORAGE_PREFIX` | z. B. `production` |
-| GitHub Variable | `WEATHER_FIELD_PUBLIC_BASE_URL` | öffentliche HTTPS-Basis-URL |
 | GitHub Variable | `WAVE_FIELD_WORKER_ENABLED` | erst nach Smoke-Test `true` |
 
-`DIRECT_DATABASE_URL` und `WORKER_JWT_SECRET` werden aus den bereits
-vorhandenen Repository-Secrets verwendet.
+`WORKER_JWT_SECRET` wird aus den bereits vorhandenen Repository-Secrets
+verwendet. Der manuelle Workflow **Configure Production Wave Storage** überträgt
+die von Neon gelieferten Werte direkt in beide Vercel-Produktionsprojekte.
 
 Die Vercel-Produktionsumgebungen benötigen dieselben
 `WEATHER_FIELD_STORAGE_*`-Werte sowie:
@@ -58,12 +59,13 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
 
 ## Aktivierung
 
-1. Bucket und Werte konfigurieren, `WAVE_FIELD_WORKER_ENABLED` noch nicht setzen.
-2. Workflow **Production Wave Field Publication** manuell mit einem Modell
+1. Bucket und Basiswerte konfigurieren, `WAVE_FIELD_WORKER_ENABLED` noch nicht setzen.
+2. Workflow **Configure Production Wave Storage** einmal ausführen und beide
+   Vercel-Projekte neu deployen.
+3. Workflow **Production Wave Field Publication** manuell mit einem Modell
    starten und Storage- sowie Qualitätsausgabe prüfen.
-3. Manuell mit `all` starten. Der abschließende Doctor muss drei aktive,
+4. Manuell mit `all` starten. Der abschließende Doctor muss drei aktive,
    gesunde Veröffentlichungen melden.
-4. Vercel-Umgebungsvariablen setzen und neu deployen.
 5. `python -m scripts.production_readiness api-smoke --require-wave-fields`
    gegen die Produktions-API ausführen.
 6. Erst danach `WAVE_FIELD_WORKER_ENABLED=true` setzen. Der geplante Lauf startet
