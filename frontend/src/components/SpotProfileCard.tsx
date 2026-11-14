@@ -69,19 +69,31 @@ export default function SpotProfileCard({
           </div>
         )}
 
-        {items.map((item) => (
-          <dl
-            key={item.label}
-            className="flex min-w-0 items-center justify-between gap-4 rounded-card border border-line bg-surface px-4 py-3"
-          >
-            <dt className="shrink-0 text-caption font-medium uppercase tracking-caps text-muted">
-              {item.label}
-            </dt>
-            <dd className="min-w-0 break-words text-right text-caption font-medium leading-snug text-ink">
-              {item.value}
-            </dd>
-          </dl>
-        ))}
+        {/* Phones put the four facts side by side as one band of tiles, label
+            over value: on a narrow screen the column is the whole page width,
+            and four full-width rows cost four scroll-lengths for twelve words.
+            The tiles are narrow, so the label drops its letter-spacing and both
+            label and value hyphenate (`lang="de"` is set on the document)
+            rather than breaking mid-word. Under 360px even that is not enough
+            for German compounds — "Geschütztes Meer" in a 66px tile breaks into
+            four syllables — so the smallest phones get two rows of two instead.
+            From `lg` the column is a column again and each fact is its own
+            label-left/value-right card. */}
+        <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 lg:flex lg:flex-col lg:gap-2.5">
+          {items.map((item) => (
+            <dl
+              key={item.label}
+              className="flex min-w-0 flex-col rounded-card border border-line bg-surface px-2.5 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-4 lg:py-3"
+            >
+              <dt className="hyphens-auto break-words text-micro font-medium uppercase leading-tight text-muted lg:shrink-0 lg:hyphens-none lg:text-caption lg:tracking-caps">
+                {item.label}
+              </dt>
+              <dd className="mt-1 min-w-0 hyphens-auto break-words text-caption font-medium leading-snug text-ink lg:mt-0 lg:text-right">
+                {item.value}
+              </dd>
+            </dl>
+          ))}
+        </div>
       </div>
 
       {/* Lower half: facilities, unchanged in content. */}

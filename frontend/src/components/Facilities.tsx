@@ -4,7 +4,6 @@ import {
   CheckCircleIcon,
   CloseIcon,
   FoodIcon,
-  MinusIcon,
   ParkingIcon,
   ShowerIcon,
   SurfSchoolIcon,
@@ -27,13 +26,13 @@ const facilityIcon: Record<FacilityKind, (p: { width?: number; height?: number; 
  *  never conflate them:
  *   - available: true  → icon full, normal title/note
  *   - available: false → icon muted + title struck through (demonstrably absent)
- *   - available: null  → icon at 30% opacity, no strikethrough, "Keine Angabe"
+ *   - available: null  → icon at 30% opacity, no strikethrough, "Unbekannt"
  *
  *  `variant="grid"` (default) is the icon-tile grid; `variant="table"` is the
  *  hairline spec sheet that forms the foot of the Info tab's profile card —
- *  one row per amenity, state carried by the right-hand glyph (✓ / ✗ / –)
- *  rather than a strikethrough, since the glyph already names all three
- *  states; `variant="rail"` is the
+ *  one row per amenity. Present and absent are glyphs (✓ / ✗); the third
+ *  state is the word "Unbekannt", because "nobody has checked" is a claim a
+ *  reader has to be told, not a quieter version of "no"; `variant="rail"` is the
  *  hairline-table look for the sticky spec rail next to the lede; `variant="list"`
  *  is the calm facts list and `variant="compact"` is its denser profile-panel
  *  counterpart.
@@ -61,7 +60,7 @@ export default function Facilities({
             const Icon = facilityIcon[f.kind];
             const absent = f.available === false;
             const unknown = f.available === null;
-            const status = f.available === true ? "Vorhanden" : absent ? "Nicht vorhanden" : "Keine Angabe";
+            const status = f.available === true ? "Vorhanden" : absent ? "Nicht vorhanden" : "Unbekannt";
             return (
               <tr key={f.kind} className="flex min-w-0 items-center justify-between gap-3 py-2">
                 <th scope="row" className="min-w-0 text-left font-normal">
@@ -79,19 +78,30 @@ export default function Facilities({
                   </span>
                 </th>
                 <td className="text-right">
-                  <span
-                    className={`inline-grid h-5 w-5 place-items-center ${f.available === true ? "text-ink" : "text-muted"}`}
-                    aria-label={status}
-                    title={status}
-                  >
-                    {f.available === true ? (
-                      <CheckCircleIcon checkOnly width={14} height={14} aria-hidden />
-                    ) : absent ? (
-                      <CloseIcon width={14} height={14} aria-hidden />
-                    ) : (
-                      <MinusIcon width={14} height={14} aria-hidden />
-                    )}
-                  </span>
+                  {/* "Nobody has checked" is spelled out rather than drawn.
+                      A dash left the third state looking like a quieter "no",
+                      and the word was only ever in the `aria-label` — so the
+                      page said one thing to a screen reader and something else
+                      to everyone else. Present and absent keep their glyphs:
+                      the eye scans those, and the exception is the one that
+                      has to be read. */}
+                  {unknown ? (
+                    <span className="whitespace-nowrap text-caption leading-tight text-muted">
+                      {status}
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-grid h-5 w-5 place-items-center ${f.available === true ? "text-ink" : "text-muted"}`}
+                      aria-label={status}
+                      title={status}
+                    >
+                      {f.available === true ? (
+                        <CheckCircleIcon checkOnly width={14} height={14} aria-hidden />
+                      ) : (
+                        <CloseIcon width={14} height={14} aria-hidden />
+                      )}
+                    </span>
+                  )}
                 </td>
               </tr>
             );

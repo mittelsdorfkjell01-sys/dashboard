@@ -22,7 +22,7 @@ describe("facilitiesFromMap", () => {
     const out = facilitiesFromMap({ parking: { available: true } });
     const shower = out.find((f) => f.kind === "shower")!;
     expect(shower.available).toBeNull();
-    expect(shower.note).toBe("Keine Angabe");
+    expect(shower.note).toBe("Unbekannt");
   });
 
   it("flags available:false as demonstrably absent, distinct from unknown", () => {

@@ -38,7 +38,7 @@ export function facilitiesFromMap(map?: FacilityMap | null): Facility[] {
   return FACILITY_KINDS.map((kind) => {
     const entry = map?.[kind];
     if (!entry) {
-      return { kind, title: facilityLabel(kind), note: "Keine Angabe", available: null };
+      return { kind, title: facilityLabel(kind), note: "Unbekannt", available: null };
     }
     return {
       kind,

@@ -273,8 +273,18 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
 
 test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }) => {
   let delayReplacementTiles = false;
+  let baseTilesInFlight = 0;
+  let referenceRequests = 0;
+  let referenceStartedBeforeBaseLoaded = false;
   const replacementZoomLevels = new Set<string>();
   await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
+    const isReference = route.request().url().includes("World_Boundaries_and_Places");
+    if (isReference) {
+      referenceRequests += 1;
+      if (baseTilesInFlight > 0) referenceStartedBeforeBaseLoaded = true;
+    } else {
+      baseTilesInFlight += 1;
+    }
     if (delayReplacementTiles) {
       const path = new URL(route.request().url()).pathname.split("/");
       replacementZoomLevels.add(path.at(-3) ?? "");
@@ -282,8 +292,11 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
     }
     await route.fulfill({
       contentType: "image/svg+xml",
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
+      body: isReference
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"/>'
+        : '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
     });
+    if (!isReference) baseTilesInFlight -= 1;
   });
   await page.setViewportSize({ width: 1280, height: 900 });
   await mockApi(page);
@@ -305,6 +318,9 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   );
   expect(mapZoom).toBeCloseTo(1, 5);
   await expect(map.locator(".leaflet-tile-pane")).not.toHaveCSS("filter", "none");
+  await expect(map.locator(".swd-locator-labels .leaflet-tile-loaded").first()).toBeVisible();
+  expect(referenceRequests).toBeGreaterThan(0);
+  expect(referenceStartedBeforeBaseLoaded).toBe(false);
   const edgeBlend = await map.locator(".swd-locator-map").evaluate((element) =>
     getComputedStyle(element, "::after").boxShadow,
   );
@@ -554,6 +570,9 @@ test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklap
   expect(Math.abs(collapsedProfile!.height - collapsedGallery!.height)).toBeLessThanOrEqual(1);
   const facilityTable = profile.getByRole("table", { name: "Ausstattung am Spot" });
   await expect(facilityTable.getByRole("row")).toHaveCount(7);
+  // Present and absent are glyphs; "nobody has checked" is a word. The mock
+  // leaves toilet and changing room unset, so exactly two rows say so.
+  await expect(facilityTable.getByText("Unbekannt", { exact: true })).toHaveCount(2);
   await expect(facilityTable.getByText("Camping")).toHaveCount(0);
   await expect(facilityTable.getByText("Direkt am Deich")).toHaveCount(0);
   const profileContent = await profile.locator(":scope > *").evaluateAll((elements) => {
@@ -614,6 +633,41 @@ test("Aktionen stehen auf dem Handy oben bei den Spotdaten, nicht unten bei der 
   expect(actions).not.toBeNull();
   expect(actions!.y).toBeLessThan(locator!.y);
   expect(actions!.y).toBeLessThan(galleryColumn!.y);
+});
+
+test("Level, Gewässer, Untergrund und Windrichtung stehen auf dem Handy als Kacheln nebeneinander", async ({ page }) => {
+  await mockApi(page);
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/(test|laboe|Alcyons)$/, (route) =>
+    route.fulfill({ json: { ...spot, best_wind_directions: ["nw", "w"] } }));
+
+  const boxes = async () => {
+    const profile = page.getByRole("complementary", { name: "Spotprofil und Ausstattung" });
+    return Promise.all(
+      ["Level", "Gewässer", "Untergrund", "Beste Windrichtung"].map((label) =>
+        profile.getByRole("term").filter({ hasText: new RegExp(`^${label}$`, "i") }).boundingBox(),
+      ),
+    );
+  };
+
+  // A phone: one row of four.
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/spot/test/info");
+  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+  const row = await boxes();
+  expect(row.every((box) => box !== null)).toBe(true);
+  for (const box of row) expect(Math.abs(box!.y - row[0]!.y)).toBeLessThanOrEqual(1);
+  const xs = row.map((box) => box!.x);
+  expect([...xs].sort((a, b) => a - b)).toEqual(xs);
+  expect(new Set(xs).size).toBe(4);
+
+  // A very small phone: two rows of two, because German compounds do not fit
+  // in a 66px tile without breaking into syllables.
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.waitForTimeout(200);
+  const small = await boxes();
+  expect(Math.abs(small[1]!.y - small[0]!.y)).toBeLessThanOrEqual(1);
+  expect(small[2]!.y).toBeGreaterThan(small[0]!.y);
+  expect(Math.abs(small[3]!.y - small[2]!.y)).toBeLessThanOrEqual(1);
 });
 
 for (const width of [320, 375, 768, 1280, 1440]) {
