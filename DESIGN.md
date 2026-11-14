@@ -284,11 +284,13 @@ Konturen sind fein und neutral. Dicke Rahmen, doppelte Einfassungen und dekorati
 ### Cards / Containers
 
 - **Spot- und Regionskarten:** bildgefuehrt, ohne umschliessende Flaeche und ohne Ruheschatten. Text sitzt direkt unter dem Bild.
-- **Informationskarten:** keine eigene Flaeche. Der Inhalt steht auf dem Grund der Seite; hoechstens eine Hairline, und nur wenn ohne sie zwei Dinge ineinanderlaufen wuerden.
+- **Informationskarten:** keine Umrandung. Der Inhalt steht auf dem Grund der Seite; eine Kachel darf sich hoechstens durch einen minimalen Tonwechsel abheben.
 - **Empty States:** gestrichelte Hairline, dezente Icon-Tafel und kurze naechste Handlung.
 - **Interactive State:** gesamter Kartenlink erhaelt einen klaren Focus-Visible-Ring; Bildzoom oder Opazitaet bleibt subtil.
 
-**The No Tile Background Rule.** Eine Kachel bekommt keinen eigenen Hintergrund. Weder `surface` noch `band` werden benutzt, um eine Gruppe von Angaben als Flaeche zu markieren — eine Flaeche behauptet Gewicht, das die Angabe selten hat, und viele kleine Flaechen auf einer Seite zerlegen sie in Kaestchen. Erlaubt ist hoechstens ein Stroke, und auch der nur, wenn die Kachel sich sonst nicht vom Nachbarn abheben wuerde (etwa in einem Raster gleichrangiger Werte). Wer eine Flaeche braucht, braucht sie explizit und begruendet: Medienrahmen, Eingaben, Dialoge und Overlays haben sie, weil sie etwas ueberlagern oder Eingabe erwarten.
+**The Unframed Tile Rule.** Eine Kachel bekommt keinen Rahmen. Ein Stroke zeichnet ein Kaestchen, und viele Kaestchen zerlegen eine Seite in Fragmente — gerade dort, wo gleichrangige Werte nebeneinander stehen und ohnehin als Gruppe gelesen werden. Abheben darf sich eine Kachel nur durch einen **minimalen Tonwechsel**: genau eine Stufe heller als ihr Grund (`surface` auf `page`, ~1.08:1), nie eine zweite Stufe obendrauf, nie Ton und Stroke zusammen, nie ein Schatten. Der Ton traegt dann die ganze Trennung, also braucht die Kachel genug Innenraum, damit die Flaeche ruhig wirkt und nicht eng. Rahmen bleiben den Dingen vorbehalten, die wirklich eine Kante haben: Eingaben, Dialoge, Overlays, Medien.
+
+Bis 2026-11-14 galt hier das Gegenteil (Stroke erlaubt, Flaeche verboten). Beide Fassungen verfolgen dasselbe Ziel — keine Kaestchenseite —, die aktuelle erreicht es leiser.
 
 **The Earned Line Rule.** Trennstriche sind kein Raster. Eine Liste gleichartiger Zeilen (Ausstattung, Angaben, Fakten) trennt durch Abstand, nicht durch Linien. Eine Hairline tritt erst auf, wo ein Wechsel der Art des Inhalts sonst unsichtbar bliebe.
 

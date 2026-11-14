@@ -80,21 +80,31 @@ export default function SpotProfileCard({
             Two per row, two rows. Four across fit the width but not the
             words: a 390px phone left about 67px of text per tile, and no
             readable size fits "Fortgeschritten" in that, so every long value
-            broke into syllables. At two per row each value has room to stand
-            on one line. The type sits on the 10px rung, the label drops its
-            letter-spacing, and both still hyphenate (`lang="de"` is set on the
-            document) if a value does outrun the tile. From `lg` the column is
-            a column again: label left, value right, full type size. */}
-        <div className="grid grid-cols-2 gap-1.5 lg:flex lg:flex-col lg:gap-2">
+            broke into syllables. At two per row each value stands on one line.
+
+            No frame (DESIGN.md, The Unframed Tile Rule): one step of tone —
+            `surface` on `page`, about 1.08:1 — lifts the tile off the page.
+            The tone carries the whole separation, so the tile is given real
+            room inside rather than a hairline around it.
+
+            The two lines are a label and a reading, and they now look like it:
+            the label keeps the house versal spacing at the 10px rung, the
+            reading sits a step above it at 12px. Same size for both, pressed
+            together, was what made the block read as scrappy. `auto-rows-fr`
+            squares the two rows off against each other, and the content hangs
+            from the top so the labels line up across a row even when one of
+            them wraps. From `lg` the column
+            is a column again: label left, reading right. */}
+        <div className="grid auto-rows-fr grid-cols-2 gap-2 lg:flex lg:flex-col lg:gap-2">
           {items.map((item) => (
             <dl
               key={item.label}
-              className="flex min-w-0 flex-col rounded-card border border-line px-2 py-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-3.5 lg:py-2.5"
+              className="flex min-w-0 flex-col rounded-card bg-surface px-3 py-3.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-4 lg:py-3"
             >
-              <dt className="hyphens-auto break-words text-micro font-medium uppercase leading-tight text-muted lg:shrink-0 lg:hyphens-none lg:text-caption lg:tracking-caps">
+              <dt className="hyphens-auto break-words text-micro font-medium uppercase tracking-caps leading-tight text-muted lg:shrink-0 lg:hyphens-none lg:text-caption">
                 {item.label}
               </dt>
-              <dd className="mt-0.5 min-w-0 hyphens-auto break-words text-micro font-normal leading-snug text-ink lg:mt-0 lg:text-right lg:text-caption">
+              <dd className="mt-1.5 min-w-0 hyphens-auto break-words text-caption font-normal leading-snug text-ink lg:mt-0 lg:text-right">
                 {item.value}
               </dd>
             </dl>

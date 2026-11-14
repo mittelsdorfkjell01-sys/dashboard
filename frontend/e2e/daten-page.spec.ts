@@ -321,6 +321,10 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   await expect(map.locator(".swd-locator-labels .leaflet-tile-loaded").first()).toBeVisible();
   expect(referenceRequests).toBeGreaterThan(0);
   expect(referenceStartedBeforeBaseLoaded).toBe(false);
+  const visibleReadyMs = Number(await map.locator(".leaflet-container").getAttribute("data-visible-ready-ms"));
+  const visibleTileRequests = Number(await map.locator(".leaflet-container").getAttribute("data-visible-tile-requests"));
+  expect(visibleReadyMs).toBeGreaterThan(0);
+  expect(visibleTileRequests).toBeGreaterThan(0);
   const edgeBlend = await map.locator(".swd-locator-map").evaluate((element) =>
     getComputedStyle(element, "::after").boxShadow,
   );
@@ -330,9 +334,27 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
   // wheel gesture. The old implementation serialised gestures behind tile
   // loading (up to 1.8 s), which made precision trackpads feel unresponsive.
   await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible();
-  delayReplacementTiles = true;
   await map.getByRole("button", { name: "Karte aktivieren" }).click();
   await expect(map.locator(".swd-locator-map")).toHaveAttribute("data-lenis-prevent", "");
+  const mapControls = [
+    map.getByRole("button", { name: "Vergrößern" }),
+    map.getByRole("button", { name: "Verkleinern" }),
+    map.getByRole("link", { name: "In externer Karte öffnen" }),
+    map.getByRole("button", { name: "Kartenquellen anzeigen" }),
+  ];
+  for (const control of mapControls) {
+    const controlBox = await control.boundingBox();
+    expect(controlBox?.width).toBeGreaterThanOrEqual(44);
+    expect(controlBox?.height).toBeGreaterThanOrEqual(44);
+  }
+
+  // A half-step zoom gets one restrained 0.4% visual settle. It should read
+  // as polish, not as a second zoom or a bounce.
+  delayReplacementTiles = true;
+  await map.getByRole("button", { name: "Vergrößern" }).click();
+  await expect(map.locator(".leaflet-container")).toHaveClass(/swd-locator-settling/);
+  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-settling/);
+
   const box = await map.locator(".leaflet-container").boundingBox();
   expect(box).not.toBeNull();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
@@ -360,6 +382,34 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
     ));
   });
   expect(uncoveredSamples).toEqual([]);
+});
+
+test("Spot-Karte respektiert Reduced Motion und hat mobile Touch-Ziele", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
+    await route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockApi(page);
+  await page.goto("/spot/laboe/info");
+
+  const map = page.getByRole("region", { name: "Lage", exact: true });
+  await map.scrollIntoViewIfNeeded();
+  await map.getByRole("button", { name: "Karte im Vollbild öffnen" }).click();
+  const close = map.getByRole("button", { name: "Vollbild schließen" });
+  await expect(close).toBeVisible();
+  for (const control of [close, map.getByRole("button", { name: "Vergrößern" }), map.getByRole("button", { name: "Kartenquellen anzeigen" })]) {
+    const box = await control.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  }
+
+  await map.getByRole("button", { name: "Vergrößern" }).click();
+  await page.waitForTimeout(350);
+  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-settling/);
 });
 
 test("Spot-Karte meldet fehlende Satellitenkacheln und lädt sie erneut", async ({ page }) => {
@@ -638,16 +688,40 @@ test("Aktionen stehen auf dem Handy oben bei den Spotdaten, nicht unten bei der 
   expect(actions!.y).toBeLessThan(galleryColumn!.y);
 });
 
+test("Die Gültigkeit der Vorhersage liegt eingeklappt hinter einem Marker", async ({ page }) => {
+  // The timestamp belongs on the page — a reading without one is a claim
+  // without a date — but it waits until it is asked for.
+  await page.setViewportSize({ width: 390, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+  const hints = page.getByRole("region", { name: "Sicherheit", exact: true });
+  await expect(hints).toBeVisible();
+  await expect(hints.getByText(/^Vorhersage · /)).toHaveCount(0);
+
+  const marker = hints.getByRole("button", { name: "Gültigkeit der Vorhersage anzeigen" });
+  await expect(marker).toHaveAttribute("aria-expanded", "false");
+  await marker.click();
+  await expect(hints.getByText(/^Vorhersage · /)).toBeVisible();
+  await expect(
+    hints.getByRole("button", { name: "Gültigkeit der Vorhersage ausblenden" }),
+  ).toHaveAttribute("aria-expanded", "true");
+});
+
 test("Level, Gewässer, Untergrund und Windrichtung stehen auf dem Handy als zwei mal zwei Kacheln", async ({ page }) => {
   await mockApi(page);
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/(test|laboe|Alcyons)$/, (route) =>
     route.fulfill({ json: { ...spot, best_wind_directions: ["nw", "w"] } }));
 
+  // The tiles themselves, not their labels: a label can wrap to a second line
+  // without that saying anything about where its tile sits.
   const boxes = async () => {
     const profile = page.getByRole("complementary", { name: "Spotprofil und Ausstattung" });
     return Promise.all(
       ["Level", "Gewässer", "Untergrund", "Beste Windrichtung"].map((label) =>
-        profile.getByRole("term").filter({ hasText: new RegExp(`^${label}$`, "i") }).boundingBox(),
+        profile
+          .locator("dl")
+          .filter({ has: page.getByRole("term").filter({ hasText: new RegExp(`^${label}$`, "i") }) })
+          .boundingBox(),
       ),
     );
   };
