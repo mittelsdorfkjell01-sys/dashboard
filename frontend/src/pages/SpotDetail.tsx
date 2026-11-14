@@ -1,28 +1,24 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import LandingHeader from "../components/LandingHeader";
 import SpotTabs from "../components/SpotTabs";
 import DatenPage from "../components/data/daten/DatenPage";
 import SpotGalleryTile from "../components/SpotGalleryTile";
 import PhotoGalleryOverlay from "../components/PhotoGalleryOverlay";
 import SpotCommentBox from "../components/SpotCommentBox";
-import FavoriteButton from "../components/FavoriteButton";
-import ShareButton from "../components/ShareButton";
-import SuggestEditButton from "../components/SuggestEditButton";
-import VisitedButton from "../components/VisitedButton";
 import Footer from "../components/Footer";
 import SimilarSpots from "../components/SimilarSpots";
 import SpotOriginMark, { SpotOriginLine } from "../components/SpotOriginMark";
 import SpotProfileCard from "../components/SpotProfileCard";
+import SpotActions from "../components/SpotActions";
 import SpotDescription from "../components/SpotDescription";
 import SpotConditionHints from "../components/SpotConditionHints";
 import SpotEditorialClassification from "../components/SpotEditorialClassification";
 import SpotVariants from "../components/SpotVariants";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
-import { CalendarIcon, ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
+import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
 import { sportLabel } from "../lib/labels";
 import { regionSlug } from "../lib/types";
 import { sortFeed } from "../lib/communityFeed";
@@ -31,12 +27,12 @@ import { useCommunityFeed } from "../lib/communityHooks";
 import { facilitiesFromMap } from "../lib/spotView";
 import { mapLinkProps } from "../lib/mapLinks";
 import { spotPath } from "../lib/spotRoutes";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
 
 const SPOT_INFO_GRID = "lg:grid-cols-[minmax(320px,1fr)_minmax(420px,560px)_minmax(320px,1fr)]";
 const LocatorMap = lazy(() => import("../components/LocatorMap"));
 
 export default function SpotDetail() {
-  const { t } = useTranslation();
   const { spotName } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,6 +95,10 @@ export default function SpotDetail() {
   const [galleryRightInset, setGalleryRightInset] = useState(0);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const mapSlotRef = useRef<HTMLDivElement>(null);
+  // `lg` — the breakpoint at which the Info tab becomes three columns and the
+  // gallery stops being the fourth block down the page. The action row follows
+  // this switch (see the grid below), so the JS and the CSS cannot drift.
+  const desktopLayout = useDesktopViewport("(min-width: 1024px)");
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
@@ -361,23 +361,25 @@ export default function SpotDetail() {
                   {/* The spot's actions belong to the spot, not to the spec
                       column they used to head. Centred under the gallery they
                       sit on the page's middle axis and stop competing with the
-                      column's own heading. */}
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                    <FavoriteButton spot={spot} />
-                    <ShareButton spot={spot} />
-                    {spotId && <VisitedButton spotId={spotId} />}
-                    {spotId && <Link to={`/konto/reisen?spotId=${encodeURIComponent(spotId)}&spotName=${encodeURIComponent(spot.name)}`} aria-label={t("trips.planSpot")} title={t("trips.planSpot")} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band"><CalendarIcon className="text-lead" /></Link>}
-                    <SuggestEditButton spot={spot} />
-                  </div>
+                      column's own heading.
+
+                      Desktop only: the gallery is the fourth block on a phone,
+                      below the map, and the actions must not travel that far
+                      down with it. Below `lg` they render at the head of the
+                      profile column instead — the same single row, moved, not
+                      a second copy hidden with CSS. */}
+                  {desktopLayout && <SpotActions spot={spot} spotId={spotId} className="mt-4" />}
                 </div>
 
-                {/* Profile column: the centred action row, then one spec card
-                    that runs the gallery's full height (min-height, so a very
-                    tall card grows instead of clipping). */}
+                {/* Profile column: the spec cards, running the gallery's full
+                    height on desktop. On a phone it is the second block on the
+                    page, so it also carries the action row — see the gallery
+                    above for why the row lives in only one of the two. */}
                 <aside
                   aria-label="Spotprofil und Ausstattung"
                   className="order-2 flex min-w-0 flex-col lg:order-3 lg:h-[var(--spot-gallery-height,630px)] lg:self-start"
                 >
+                  {!desktopLayout && <SpotActions spot={spot} spotId={spotId} className="mb-5" />}
                   <SpotProfileCard
                     spot={spot}
                     bestSeason={bestSeason}

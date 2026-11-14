@@ -9,7 +9,7 @@ import type { CommunityImage } from "../src/lib/api";
 // "Karte" button links into the one weather map, framed on the spot and locked
 // to the wind field.
 
-const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: { parking: { available: true, note: "Direkt am Deich" }, school: { available: true, note: "Kurse vor Ort" }, shower: { available: false, note: null }, food: { available: true, note: "Saisonal geöffnet" } }, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", content_status: "verified", content_reviewed_at: "2026-08-24T00:00:00Z", content_review_due_at: "2027-08-24T00:00:00Z", content_sources: [], image: null, era5_cell: null, model_pref: null, editorial: { description: "Ein vielseitiger Küstenspot mit ausreichend Platz auf dem Wasser und einem gut erreichbaren Einstieg. Bei wechselnden Bedingungen lohnt sich vor der Anfahrt ein genauer Blick auf Windrichtung, Wasserstand und lokale Hinweise. Der Uferbereich kann je nach Wetter deutlich anspruchsvoller werden, deshalb sollten weniger erfahrene Wassersportlerinnen und Wassersportler besonders aufmerksam planen." }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
+const spot = { id: "test", slug: "laboe", name: "Alcyons", region_id: "r1", region_name: "Kieler Bucht", region_country: "DE", location: { lat: 54.4, lon: 10.2 }, sports: ["surf"], water_type: ["sea"], bottom_type: ["sand"], level: ["advanced"], water_character: ["welle_klein"], style: ["wave_riding"], facilities: { parking: { available: true, note: "Direkt am Deich" }, school: { available: true, note: "Kurse vor Ort" }, shower: { available: false, note: null }, food: { available: true, note: "Saisonal geöffnet" } }, status: "published", confidence: null, facing: 45, origin: "community", contributor_name: "Lena K.", editorial_classification: "worth_trip", content_status: "verified", content_reviewed_at: "2026-08-24T00:00:00Z", content_review_due_at: "2027-08-24T00:00:00Z", content_sources: [], image: null, era5_cell: null, model_pref: null, editorial: { description: "Ein vielseitiger Küstenspot mit ausreichend Platz auf dem Wasser und einem gut erreichbaren Einstieg. Bei wechselnden Bedingungen lohnt sich vor der Anfahrt ein genauer Blick auf Windrichtung, Wasserstand und lokale Hinweise. Der Uferbereich kann je nach Wetter deutlich anspruchsvoller werden, deshalb sollten weniger erfahrene Wassersportlerinnen und Wassersportler besonders aufmerksam planen." }, climatology: null, overrides: null, finish_rank: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-08-24T00:00:00Z" };
 const conditions = ["clear", "partly_cloudy", "rain", "snow", "thunderstorm", "overcast", "drizzle", "mainly_clear"] as const;
 const summary = (i: number) => ({ wind_avg: 12, wind_max: 18, gust_max: 24, air_min: 16 + i, air_max: 24 + i, swell_max: 1.8, apparent_temperature_max_c: 23, precipitation_sum_mm: 0.5, uv_index_max: 9, weather_condition: conditions[i % conditions.length] });
 const forecastDates = ["2026-09-05", "2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13", "2026-09-14"];
@@ -274,7 +274,7 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
 test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }) => {
   let delayReplacementTiles = false;
   const replacementZoomLevels = new Set<string>();
-  await page.route("https://server.arcgisonline.com/**", async (route) => {
+  await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
     if (delayReplacementTiles) {
       const path = new URL(route.request().url()).pathname.split("/");
       replacementZoomLevels.add(path.at(-3) ?? "");
@@ -344,6 +344,41 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
     ));
   });
   expect(uncoveredSamples).toEqual([]);
+});
+
+test("Spot-Karte meldet fehlende Satellitenkacheln und lädt sie erneut", async ({ page }) => {
+  let recoverTiles = false;
+  let primaryRequests = 0;
+  let fallbackRequests = 0;
+
+  await page.route(/https:\/\/(?:services|server)\.arcgisonline\.com\/.*/, async (route) => {
+    const host = new URL(route.request().url()).hostname;
+    if (host === "services.arcgisonline.com") primaryRequests += 1;
+    if (host === "server.arcgisonline.com") fallbackRequests += 1;
+
+    if (!recoverTiles) {
+      await route.abort("failed");
+      return;
+    }
+    await route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#73919a"/></svg>',
+    });
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/laboe/info");
+
+  const map = page.getByRole("region", { name: "Lage", exact: true });
+  await map.scrollIntoViewIfNeeded();
+  await expect(map.getByRole("alert")).toContainText("Satellitenbild unvollständig");
+  expect(primaryRequests).toBeGreaterThan(0);
+  expect(fallbackRequests).toBeGreaterThan(0);
+
+  recoverTiles = true;
+  await map.getByRole("button", { name: "Erneut laden" }).click();
+  await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible();
+  await expect(map.getByRole("alert")).toHaveCount(0);
 });
 
 test("Daten-Seite zeigt Meteogramm und Ausblick", async ({ page }) => {
@@ -432,10 +467,36 @@ test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abru
   await expect(page.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
   await expect(page.getByText("Eine Reise wert")).toBeVisible();
   await expect(page.getByText(/Community · Lena K\./)).toBeVisible();
-  await expect(page.getByText(/Luft 23 °C · Wasser 18 °C/)).toBeVisible();
+  // Air and water are cells in the safety card's foot, each a label over
+  // its value — not one joined sentence.
+  const safetyCard = page.getByRole("region", { name: "Sicherheit", exact: true });
+  await expect(safetyCard.getByText("Luft", { exact: true })).toBeVisible();
+  await expect(safetyCard.getByText("23 °C", { exact: true })).toBeVisible();
+  await expect(safetyCard.getByText("Wasser", { exact: true })).toBeVisible();
+  await expect(safetyCard.getByText("18 °C", { exact: true })).toBeVisible();
   expect(liveRequests).toBe(0);
   expect(forecastRequests).toBe(0);
   expect(forecastSummaryRequests).toBe(1);
+});
+
+test("Region und Land stehen neben dem Spotnamen, nicht als Brotkrume darüber", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+  const title = page.getByRole("heading", { name: "Alcyons", level: 1 });
+  await expect(title).toBeVisible();
+  const region = page.getByRole("link", { name: "Kieler Bucht" });
+  await expect(region).toBeVisible();
+  await expect(page.getByText("Deutschland", { exact: true })).toBeVisible();
+
+  // Beside the name, on its baseline — not on a line above it.
+  const [titleBox, regionBox] = await Promise.all([title.boundingBox(), region.boundingBox()]);
+  expect(titleBox).not.toBeNull();
+  expect(regionBox).not.toBeNull();
+  expect(regionBox!.x).toBeGreaterThan(titleBox!.x + titleBox!.width - 1);
+  const titleBottom = titleBox!.y + titleBox!.height;
+  const regionBottom = regionBox!.y + regionBox!.height;
+  expect(Math.abs(regionBottom - titleBottom)).toBeLessThanOrEqual(6);
 });
 
 test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", async ({ page }) => {
@@ -450,9 +511,24 @@ test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", a
 test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklappen stabil bleibt", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await mockApi(page);
+  // From `lg` the collapsed description takes whatever height the column has
+  // left, so a text that fits is simply not clipped and offers no toggle. This
+  // test is about the toggle, so it needs a description long enough to overrun
+  // a column as tall as the gallery.
+  await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/(test|laboe|Alcyons)$/, (route) =>
+    route.fulfill({
+      json: {
+        ...spot,
+        editorial: {
+          ...spot.editorial,
+          description: `${spot.editorial.description} ${spot.editorial.description} ${spot.editorial.description} ${spot.editorial.description}`,
+        },
+      },
+    }));
   await page.goto("/spot/test/info");
 
-  const gallery = page.locator(".spot-gallery-compact > div");
+  // The tile only: the gallery container also carries the action row below it.
+  const gallery = page.locator(".spot-gallery-compact > div:first-child");
   const details = page.getByRole("region", { name: "Spotbeschreibung und Hinweise" });
   const profile = page.getByRole("complementary", { name: "Spotprofil und Ausstattung" });
   const more = details.getByRole("button", { name: "Mehr anzeigen" });
@@ -466,7 +542,8 @@ test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklap
   await expect(profile.getByRole("heading", { name: "Sicherheit", exact: true })).toHaveCount(0);
   await expect(profile.getByRole("heading", { name: "Spotprofil" })).toHaveCount(0);
   await expect(profile.getByText(/Ein vielseitiger Küstenspot/)).toHaveCount(0);
-  await expect(profile.getByRole("button", { name: "Zu Favoriten hinzufügen" })).toBeVisible();
+  // On desktop the actions hang under the gallery, not in either column.
+  await expect(profile.getByRole("button", { name: "Zu Favoriten hinzufügen" })).toHaveCount(0);
   await expect(details.getByRole("button", { name: "Zu Favoriten hinzufügen" })).toHaveCount(0);
   await expect(profile).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 
@@ -487,17 +564,56 @@ test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklap
   const freeAbove = profileContent.top - collapsedProfile!.y;
   const freeBelow = collapsedProfile!.y + collapsedProfile!.height - profileContent.bottom;
   expect(Math.abs(freeAbove - freeBelow)).toBeLessThanOrEqual(6);
+  // The action row: one copy, under the gallery, centred on it.
+  const actions = page.locator(".spot-detail-content-grid").getByRole("button", { name: "Zu Favoriten hinzufügen" });
+  await expect(actions).toHaveCount(1);
+  const actionsBox = await actions.boundingBox();
+  expect(actionsBox).not.toBeNull();
+  expect(actionsBox!.y).toBeGreaterThanOrEqual(collapsedGallery!.y + collapsedGallery!.height);
+  const actionsRow = await page.locator(".spot-gallery-compact > div:last-child").boundingBox();
+  const galleryCentre = collapsedGallery!.x + collapsedGallery!.width / 2;
+  expect(Math.abs(actionsRow!.x + actionsRow!.width / 2 - galleryCentre)).toBeLessThanOrEqual(1);
   await more.click();
-  await expect(details.getByRole("button", { name: "Weniger anzeigen" })).toBeVisible();
+  const less = details.getByRole("button", { name: "Weniger anzeigen" });
+  await expect(less).toBeVisible();
   const expandedGallery = await gallery.boundingBox();
   expect(expandedGallery).not.toBeNull();
   expect(Math.abs(expandedGallery!.height - collapsedGallery!.height)).toBeLessThanOrEqual(1);
+  // Expanded, the text needs the column's height, so the safety card gives it
+  // up — and is hidden from assistive technology while it is invisible.
+  await expect(details.getByRole("region", { name: "Sicherheit", exact: true })).toHaveCount(0);
+
+  await less.click();
+  await expect(more).toBeVisible();
   const description = details.getByText(/Ein vielseitiger Küstenspot/);
   const hints = details.getByRole("region", { name: "Sicherheit", exact: true });
   const [descriptionBox, hintsBox] = await Promise.all([description.boundingBox(), hints.boundingBox()]);
   expect(descriptionBox).not.toBeNull();
   expect(hintsBox).not.toBeNull();
   expect(hintsBox!.y).toBeGreaterThanOrEqual(descriptionBox!.y + descriptionBox!.height);
+});
+
+test("Aktionen stehen auf dem Handy oben bei den Spotdaten, nicht unten bei der Galerie", async ({ page }) => {
+  // On a phone the gallery is the fourth block, below the locator map. The
+  // action row must not travel down there with it, and it must exist exactly
+  // once — the desktop position is a move, not a CSS-hidden second copy.
+  await page.setViewportSize({ width: 390, height: 900 });
+  await mockApi(page);
+  await page.goto("/spot/test/info");
+  const grid = page.locator(".spot-detail-content-grid");
+  const profile = page.getByRole("complementary", { name: "Spotprofil und Ausstattung" });
+  const favorite = grid.getByRole("button", { name: "Zu Favoriten hinzufügen" });
+  await expect(favorite).toHaveCount(1);
+  await expect(profile.getByRole("button", { name: "Zu Favoriten hinzufügen" })).toBeVisible();
+
+  const [actions, galleryColumn, locator] = await Promise.all([
+    favorite.boundingBox(),
+    page.locator(".spot-gallery-compact").boundingBox(),
+    page.getByRole("region", { name: "Lage", exact: true }).boundingBox(),
+  ]);
+  expect(actions).not.toBeNull();
+  expect(actions!.y).toBeLessThan(locator!.y);
+  expect(actions!.y).toBeLessThan(galleryColumn!.y);
 });
 
 for (const width of [320, 375, 768, 1280, 1440]) {
