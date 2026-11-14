@@ -8,8 +8,9 @@ import { useOptionalUnits } from "../context/PrefsContext";
 /**
  * Safety and location notices, the card the Info column ends on.
  *
- * No panel, no fill, no heading: the block stands on the page like the
- * description above it, flush with the same left edge.
+ * No panel, no fill, no heading. The block steps in from the body's left edge
+ * — it is a note about the column above it, not another paragraph in it — and
+ * the hazard glyph sits in the space that step opens up.
  *   1. The warnings (editorial safety notice, offshore wind) lead — each one
  *      factual sentence, marked by a single red hazard glyph. No grading, no
  *      traffic light, no per-line source label, and no word "Sicherheit" over
@@ -56,23 +57,26 @@ export default function SpotConditionHints({
         <ul className="space-y-1.5">
           {warnings.map((hint) => (
             <li key={hint.id} className="min-w-0">
-              {/* Flush with the column's left edge, like the title and the
-                  description above it — the block is a note in that column,
-                  not a centred banner across it. The glyph is set inline with
-                  the sentence so the text keeps that edge instead of being
-                  pushed in by a hanging icon. The measure sits on the
-                  paragraph, because `ch` resolves against the element's own
-                  font size — on a wrapper it would be read at the inherited
-                  14px, three times wider than meant. */}
-              <p className="min-w-0 max-w-[46ch] text-micro leading-snug text-ink-soft">
+              {/* Indented, not flush: the block is a note *about* the column
+                  above it, so it steps in from the body's left edge instead of
+                  starting on it, and the hazard glyph sits in the space that
+                  step opens up. The text keeps a single left edge of its own —
+                  it hangs beside the glyph rather than wrapping under it.
+
+                  The measure sits on the paragraph, because `ch` resolves
+                  against the element's own font size; on a wrapper it would be
+                  read at the inherited 14px, three times wider than meant. */}
+              <div className="flex min-w-0 gap-2 pl-6 sm:pl-8">
                 <SafetyIcon
                   aria-hidden
-                  width={12}
-                  height={12}
-                  className="mr-1 inline-block shrink-0 translate-y-[1px] text-danger"
+                  width={15}
+                  height={15}
+                  className="mt-px shrink-0 text-danger"
                 />
-                {hint.sentence}
-              </p>
+                <p className="min-w-0 max-w-[46ch] text-micro leading-snug text-ink-soft">
+                  {hint.sentence}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
@@ -82,7 +86,7 @@ export default function SpotConditionHints({
         /* Set apart from the warning above: these are plain readings of the
            place, not a caution, and at 12px they are the most legible thing in
            the block — which is right, because they are what gets looked up. */
-        <dl className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+        <dl className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 pl-6 sm:pl-8">
           {cells.map((cell) => (
             <div key={cell.id} className="flex min-w-0 items-baseline gap-1.5">
               <dt className="text-micro font-medium uppercase tracking-caps text-muted">

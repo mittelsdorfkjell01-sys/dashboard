@@ -83,7 +83,7 @@ export default function SpotProfileCard({
             broke into syllables. At two per row each value stands on one line.
 
             No frame (DESIGN.md, The Unframed Tile Rule): one step of tone
-            lifts the tile off the page — `--sw-tile`, which moves 2% away from
+            lifts the tile off the page — `--sw-tile`, which moves 8% away from
             `--sw-page` in whichever direction the theme has room (down on the
             light page, up on the dark one). The tone carries the whole
             separation, so the tile is given real room inside rather than a

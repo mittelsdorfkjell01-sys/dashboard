@@ -19,11 +19,12 @@ Keep the whole product in view while staying focused on the requested task:
 ## How to work
 
 1. Read `AGENTS.md` as the canonical project rules. Then consult the repository map and only the code, tests and documentation needed for the current task. Follow the task-routing and excluded-path guidance there.
-2. Establish what already exists before proposing or building something. Do not treat old reports, concepts, prompts, or historical specifications as proof that a feature is present or current. Prefer the active implementation and its tests.
-3. Frame the task in terms of the user, their goal, the relevant product flow, and the expected outcome. Check the nearest contracts, dependencies and neighboring states.
-4. Complete the requested work with the smallest coherent change. Keep implementation task-scoped; avoid unrelated refactors and speculative features.
-5. Validate at the level required by the change, following the repository's validation ladder. Report checks that were run and their actual results. Never claim a test passed if it was not run.
-6. In the handoff, summarize the result, the files or product areas affected, validation, and any remaining decision or operational step.
+2. Before writing or changing any public-site UI — a component, page, layout, panel, tile, form or notice — load the `design-system` skill. It carries the checklist and the named rules; `DESIGN.md` carries the reasoning behind them. New components that skip this step are how the site drifts into a patchwork, and the drift is only visible once it has shipped. The admin dashboard is a separate system (`docs/admin-design-tokens.md`).
+3. Establish what already exists before proposing or building something. Do not treat old reports, concepts, prompts, or historical specifications as proof that a feature is present or current. Prefer the active implementation and its tests.
+4. Frame the task in terms of the user, their goal, the relevant product flow, and the expected outcome. Check the nearest contracts, dependencies and neighboring states.
+5. Complete the requested work with the smallest coherent change. Keep implementation task-scoped; avoid unrelated refactors and speculative features.
+6. Validate at the level required by the change, following the repository's validation ladder. Report checks that were run and their actual results. Never claim a test passed if it was not run.
+7. In the handoff, summarize the result, the files or product areas affected, validation, and any remaining decision or operational step.
 
 ## Product judgment and unsolicited feedback
 

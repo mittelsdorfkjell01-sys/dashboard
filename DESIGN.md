@@ -144,6 +144,48 @@ components:
 
 # Design System: Surfwinddata
 
+## Vor jeder neuen Komponente
+
+Diese zehn Punkte sind die Kurzfassung des ganzen Dokuments. Sie sind
+Entscheidungen, die das System bereits getroffen hat — sie noch einmal zu
+treffen, nur anders, ist der Weg, auf dem eine Seite zum Flickenteppich wird.
+Alles darunter erklaert, warum.
+
+1. **Gibt es das schon?** Erst `frontend/src/components` durchsuchen. Eine
+   zweite Schreibweise eines vorhandenen Musters ist die haeufigste Ursache
+   fuer Abdriften.
+2. **Flaeche:** standardmaessig keine. Eine Kachel hebt sich um genau eine
+   Tonstufe (`bg-tile`). Einen Rahmen bekommen nur Dinge mit echter Kante —
+   Eingaben, Dialoge, Overlays, Medien.
+3. **Kontur:** standardmaessig keine. Eine Hairline nur dort, wo zwei Dinge
+   sonst ineinanderlaufen, nie als Dekoration um eine Gruppe.
+4. **Schatten:** standardmaessig keiner. `shadow-card` / `shadow-float` nur
+   fuer Dinge, die wirklich ueber dem Inhalt schweben.
+5. **Radius:** `rounded-card` (14px) fuer jedes Rechteck. `rounded-full` nur
+   bei wirklich runder Silhouette.
+6. **Typo:** ausschliesslich die Skala (`micro` … `hero`, `data-*`). Kein
+   `text-[14px]`, kein `text-sm`, keine `sz-*` im oeffentlichen Code.
+7. **Farbe:** ausschliesslich semantische Tokens. Keine Tailwind-Palette
+   (`bg-gray-100`), kein Hex am Call-Site.
+8. **Abstand:** Tailwind-Spacing, nichts Beliebiges. Der vertikale Rhythmus
+   kommt vom Band, nicht vom Margin der Komponente.
+9. **Dark Mode:** jedes Token kippt mit. Eine handgeschriebene Farbe ist eine
+   Light-Mode-only-Komponente.
+10. **320px und Touch:** kein horizontaler Ueberlauf bei 320px, jedes
+    Bedienelement mindestens 44px hoch.
+
+Beim Arbeiten laedt der Skill `design-system` (`.claude/skills/design-system/`)
+genau diese Liste plus die Named Rules; dieses Dokument bleibt die Begruendung.
+
+## Wenn eine Entscheidung einer Regel widerspricht
+
+Der Nutzer entscheidet — aber das Dokument darf nicht liegen bleiben. Kehrt
+eine Entscheidung eine Named Rule um, dann wird die Regel **im selben Commit**
+mitgeaendert, und sie vermerkt, was vorher galt. Eine Regel, der der Code
+widerspricht, ist schlimmer als keine Regel: sie bringt allen bei, das Dokument
+zu ignorieren.
+
+
 ## Overview
 
 **Creative North Star: „Editorial Coast Explorer“**
@@ -237,7 +279,7 @@ Die oeffentliche Vollbildkarte ist eine begruendete Ausnahme: Sie bleibt als fun
 
 Touch-Ziele sind mindestens `44px` hoch oder breit. Bewegliche Browserleisten und Safe Areas werden auf mobilen Vollbildansichten beruecksichtigt. Horizontales Scrollen ist nur in klar erkennbaren Rails, Tabellen und Diagrammen erlaubt.
 
-**The Shared Edge Rule.** Oeffentliche Seiten erfinden keine eigenen Containerbreiten; sie verwenden `page`, `content` oder `measure`.
+**The Shared Edge Rule.** Oeffentliche Seiten erfinden keine eigenen Containerbreiten; sie verwenden `page`, `content`, `measure` oder — nur fuer eine Seite mit eigener Navigationsspalte — `measure-wide` und `measure-nav`. (Die Regel nannte frueher nur `page`, `content` und `measure`; `measure-wide` stand bereits als undokumentierte vierte Breite im Code. `measure-nav` ist `measure-wide` plus Navigationsspalte und Spaltenabstand: Eine Seite mit Seitennavigation zentriert dieses Paar, sonst sitzt der Text sichtbar rechts der Fensterachse, weil nur der Rest neben der Navigation zentriert wird.)
 
 **The Image Breathing Rule.** Bildraster erhalten mehr vertikalen als horizontalen Abstand, damit das Stoebern ruhig und nicht katalogartig dicht wirkt.
 
@@ -288,7 +330,7 @@ Konturen sind fein und neutral. Dicke Rahmen, doppelte Einfassungen und dekorati
 - **Empty States:** gestrichelte Hairline, dezente Icon-Tafel und kurze naechste Handlung.
 - **Interactive State:** gesamter Kartenlink erhaelt einen klaren Focus-Visible-Ring; Bildzoom oder Opazitaet bleibt subtil.
 
-**The Unframed Tile Rule.** Eine Kachel bekommt keinen Rahmen. Ein Stroke zeichnet ein Kaestchen, und viele Kaestchen zerlegen eine Seite in Fragmente — gerade dort, wo gleichrangige Werte nebeneinander stehen und ohnehin als Gruppe gelesen werden. Abheben darf sich eine Kachel nur durch einen **minimalen Tonwechsel**: genau eine Stufe heller als ihr Grund (`surface` auf `page`, ~1.08:1), nie eine zweite Stufe obendrauf, nie Ton und Stroke zusammen, nie ein Schatten. Der Ton traegt dann die ganze Trennung, also braucht die Kachel genug Innenraum, damit die Flaeche ruhig wirkt und nicht eng. Rahmen bleiben den Dingen vorbehalten, die wirklich eine Kante haben: Eingaben, Dialoge, Overlays, Medien.
+**The Unframed Tile Rule.** Eine Kachel bekommt keinen Rahmen. Ein Stroke zeichnet ein Kaestchen, und viele Kaestchen zerlegen eine Seite in Fragmente — gerade dort, wo gleichrangige Werte nebeneinander stehen und ohnehin als Gruppe gelesen werden. Abheben darf sich eine Kachel nur durch einen **minimalen Tonwechsel**: genau eine Tonstufe weg vom Grund (`--sw-tile`, 8% der Skala — im Light-Theme dunkler, im Dark-Theme heller), nie eine zweite Stufe obendrauf, nie Ton und Stroke zusammen, nie ein Schatten. Der Ton traegt dann die ganze Trennung, also braucht die Kachel genug Innenraum, damit die Flaeche ruhig wirkt und nicht eng. Rahmen bleiben den Dingen vorbehalten, die wirklich eine Kante haben: Eingaben, Dialoge, Overlays, Medien.
 
 Bis 2026-11-14 galt hier das Gegenteil (Stroke erlaubt, Flaeche verboten). Beide Fassungen verfolgen dasselbe Ziel — keine Kaestchenseite —, die aktuelle erreicht es leiser.
 
