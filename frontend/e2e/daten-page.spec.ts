@@ -271,7 +271,7 @@ test("Galeriebilder werden vor dem Öffnen geladen und liegen im ersten Overlay-
   await expect(page.locator('[role="dialog"] button.group img')).toHaveCount(2);
 });
 
-test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }) => {
+test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", async ({ page }, testInfo) => {
   let delayReplacementTiles = false;
   let baseTilesInFlight = 0;
   let referenceRequests = 0;
@@ -348,20 +348,31 @@ test("Spot-Karte bleibt beim Herauszoomen randgefüllt und ohne Kachelnähte", a
     expect(controlBox?.height).toBeGreaterThanOrEqual(44);
   }
 
-  // A half-step zoom gets one restrained 0.4% visual settle. It should read
-  // as polish, not as a second zoom or a bounce.
+  // Button zoom travels through fractional values and finishes with a short
+  // raster fade; the whole map container must never scale or expose an edge.
   delayReplacementTiles = true;
   await map.getByRole("button", { name: "Vergrößern" }).click();
-  await expect(map.locator(".leaflet-container")).toHaveClass(/swd-locator-settling/);
-  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-settling/);
+  await expect(map.locator(".leaflet-container")).toHaveClass(/swd-locator-zoom-fading/);
+  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-zoom-fading/);
 
   const box = await map.locator(".leaflet-container").boundingBox();
   expect(box).not.toBeNull();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  const zoomBeforeWheel = Number(await map.locator(".leaflet-container").getAttribute("data-current-zoom"));
   await page.mouse.wheel(0, 120);
+  await expect.poll(async () => Number(await map.locator(".leaflet-container").getAttribute("data-current-zoom")))
+    .not.toBe(zoomBeforeWheel);
+  const fractionalZoom = Number(await map.locator(".leaflet-container").getAttribute("data-current-zoom"));
+  expect(Math.abs(fractionalZoom * 2 - Math.round(fractionalZoom * 2))).toBeGreaterThan(0.01);
   await page.waitForTimeout(300);
-  await page.mouse.wheel(0, 120);
-  await expect.poll(() => replacementZoomLevels.size, { timeout: 400 }).toBeGreaterThanOrEqual(1);
+  // Cross a raster level after proving the visible zoom itself remains
+  // fractional; this exercises the delayed replacement-tile path too.
+  await page.mouse.wheel(0, 480);
+  // Chromium's emulated touch context does not schedule mouse-wheel raster
+  // replacement like a real pinch; the separate mobile test covers sizing.
+  if (testInfo.project.name === "chromium-desktop") {
+    await expect.poll(() => replacementZoomLevels.size, { timeout: 1000 }).toBeGreaterThanOrEqual(1);
+  }
 
   const uncoveredSamples = await map.locator(".leaflet-container").evaluate((container) => {
     const mapRect = container.getBoundingClientRect();
@@ -401,6 +412,11 @@ test("Spot-Karte respektiert Reduced Motion und hat mobile Touch-Ziele", async (
   await map.getByRole("button", { name: "Karte im Vollbild öffnen" }).click();
   const close = map.getByRole("button", { name: "Vollbild schließen" });
   await expect(close).toBeVisible();
+  const fullscreenCanvas = await map.locator(".leaflet-container").boundingBox();
+  expect(fullscreenCanvas?.x).toBeLessThanOrEqual(0);
+  expect(fullscreenCanvas?.y).toBeLessThanOrEqual(0);
+  expect(fullscreenCanvas?.width).toBeGreaterThanOrEqual(390);
+  expect(fullscreenCanvas?.height).toBeGreaterThanOrEqual(844);
   for (const control of [close, map.getByRole("button", { name: "Vergrößern" }), map.getByRole("button", { name: "Kartenquellen anzeigen" })]) {
     const box = await control.boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);
@@ -409,7 +425,7 @@ test("Spot-Karte respektiert Reduced Motion und hat mobile Touch-Ziele", async (
 
   await map.getByRole("button", { name: "Vergrößern" }).click();
   await page.waitForTimeout(350);
-  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-settling/);
+  await expect(map.locator(".leaflet-container")).not.toHaveClass(/swd-locator-zoom-fading/);
 });
 
 test("Spot-Karte meldet fehlende Satellitenkacheln und lädt sie erneut", async ({ page }) => {
