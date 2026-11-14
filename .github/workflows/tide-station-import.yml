@@ -16,7 +16,6 @@ jobs:
   import:
     if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.TIDE_STATION_IMPORT_ENABLED == 'true')
     runs-on: ubuntu-latest
-    environment: production
     timeout-minutes: 20
     env:
       TZ: UTC
