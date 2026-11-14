@@ -17,7 +17,8 @@ from app.tides.marine_field import (
 from app.tides.modelled_sea_level import public_modelled_sea_level
 from app.tides.service import _normalized_hourly_series
 from app.tides.station_import import evidence_hash
-from app.tides.stations import ProviderObservation
+from app.tides import stations as station_module
+from app.tides.stations import PegelOnlineProvider, ProviderObservation
 
 
 def test_marine_field_contract_requires_datum_for_metric_levels():
@@ -83,6 +84,20 @@ def test_station_evidence_hash_is_deterministic_for_raw_key_order():
     assert evidence_hash(ProviderObservation(**common, raw={"a": 1, "b": 2})) == evidence_hash(
         ProviderObservation(**common, raw={"b": 2, "a": 1})
     )
+
+
+def test_pegelonline_catalog_skips_water_level_stations_without_valid_coordinates(monkeypatch):
+    common = {"timeseries": [{"shortname": "W"}], "agency": "WSV"}
+    monkeypatch.setattr(station_module, "_json_get", lambda _url: [
+        {**common, "uuid": "valid", "longname": "Valid", "latitude": 54.1, "longitude": 8.6},
+        {**common, "uuid": "missing", "longname": "Missing"},
+        {**common, "uuid": "invalid", "longname": "Invalid", "latitude": "unknown", "longitude": 8.5},
+        {**common, "uuid": "outside", "longname": "Outside", "latitude": 95, "longitude": 8.5},
+    ])
+
+    result = PegelOnlineProvider().stations()
+
+    assert [station.provider_station_id for station in result] == ["valid"]
 
 
 def test_modelled_sea_level_is_explicitly_non_navigational_and_partial():
