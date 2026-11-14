@@ -480,7 +480,7 @@ test("Info-Locator bleibt statisch und nutzt genau einen schlanken Forecast-Abru
   await locatorRegion.evaluate((element) => element.scrollIntoView({ block: "center" }));
   await expect(page.locator(".swd-locator-map")).toBeVisible();
   await expect(page.locator(".swd-locator-map [data-observation-type]")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Sicherheit", exact: true })).toBeVisible();
   await expect(page.getByText("Eine Reise wert")).toBeVisible();
   await expect(page.getByText(/Community · Lena K\./)).toBeVisible();
   // Air and water are cells in the safety card's foot, each a label over
@@ -519,7 +519,7 @@ test("Info-Hinweise bleiben auf kleinen Displays ohne Seitenüberlauf lesbar", a
   await page.setViewportSize({ width: 320, height: 720 });
   await mockApi(page);
   await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Sicherheit", exact: true })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
@@ -552,12 +552,13 @@ test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklap
   await expect(details).toBeVisible();
   await expect(profile).toBeVisible();
   await expect(more).toBeVisible();
-  await expect(details.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
+  // No visible heading: a red glyph and the sentence are the whole block.
+  await expect(details.getByRole("heading", { name: "Sicherheit", exact: true })).toHaveCount(0);
   const hintsCard = details.getByRole("region", { name: "Sicherheit", exact: true });
   // Flat on the page, no panel of its own (DESIGN.md, The No Tile Background
   // Rule). This used to assert the opposite — a tinted band.
   await expect(hintsCard).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(profile.getByRole("heading", { name: "Sicherheit", exact: true })).toHaveCount(0);
+  await expect(profile.getByRole("region", { name: "Sicherheit", exact: true })).toHaveCount(0);
   await expect(profile.getByRole("heading", { name: "Spotprofil" })).toHaveCount(0);
   await expect(profile.getByText(/Ein vielseitiger Küstenspot/)).toHaveCount(0);
   // On desktop the actions hang under the gallery, not in either column.
@@ -637,7 +638,7 @@ test("Aktionen stehen auf dem Handy oben bei den Spotdaten, nicht unten bei der 
   expect(actions!.y).toBeLessThan(galleryColumn!.y);
 });
 
-test("Level, Gewässer, Untergrund und Windrichtung stehen auf dem Handy als Kacheln nebeneinander", async ({ page }) => {
+test("Level, Gewässer, Untergrund und Windrichtung stehen auf dem Handy als zwei mal zwei Kacheln", async ({ page }) => {
   await mockApi(page);
   await page.route(/^http:\/\/(?:localhost|127\.0\.0\.1):8000\/spots\/(test|laboe|Alcyons)$/, (route) =>
     route.fulfill({ json: { ...spot, best_wind_directions: ["nw", "w"] } }));
@@ -651,25 +652,20 @@ test("Level, Gewässer, Untergrund und Windrichtung stehen auf dem Handy als Kac
     );
   };
 
-  // A phone: one row of four.
-  await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto("/spot/test/info");
-  await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
-  const row = await boxes();
-  expect(row.every((box) => box !== null)).toBe(true);
-  for (const box of row) expect(Math.abs(box!.y - row[0]!.y)).toBeLessThanOrEqual(1);
-  const xs = row.map((box) => box!.x);
-  expect([...xs].sort((a, b) => a - b)).toEqual(xs);
-  expect(new Set(xs).size).toBe(4);
-
-  // A very small phone: two rows of two, because German compounds do not fit
-  // in a 66px tile without breaking into syllables.
-  await page.setViewportSize({ width: 320, height: 900 });
-  await page.waitForTimeout(200);
-  const small = await boxes();
-  expect(Math.abs(small[1]!.y - small[0]!.y)).toBeLessThanOrEqual(1);
-  expect(small[2]!.y).toBeGreaterThan(small[0]!.y);
-  expect(Math.abs(small[3]!.y - small[2]!.y)).toBeLessThanOrEqual(1);
+  // Two per row, two rows — at every phone width. Four across fit the width
+  // but not the words: every long German value broke into syllables.
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/spot/test/info");
+    await expect(page.getByRole("heading", { name: "Alcyons" })).toBeVisible();
+    const tiles = await boxes();
+    expect(tiles.every((box) => box !== null)).toBe(true);
+    expect(Math.abs(tiles[1]!.y - tiles[0]!.y)).toBeLessThanOrEqual(1);
+    expect(tiles[1]!.x).toBeGreaterThan(tiles[0]!.x);
+    expect(tiles[2]!.y).toBeGreaterThan(tiles[0]!.y);
+    expect(Math.abs(tiles[3]!.y - tiles[2]!.y)).toBeLessThanOrEqual(1);
+    expect(tiles[3]!.x).toBeGreaterThan(tiles[2]!.x);
+  }
 });
 
 for (const width of [320, 375, 768, 1280, 1440]) {

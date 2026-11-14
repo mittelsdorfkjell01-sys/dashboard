@@ -15,7 +15,6 @@ import SpotActions from "../components/SpotActions";
 import SpotDescription from "../components/SpotDescription";
 import SpotConditionHints from "../components/SpotConditionHints";
 import SpotEditorialClassification from "../components/SpotEditorialClassification";
-import SpotVariants from "../components/SpotVariants";
 import { EditorialHero, SectionBand } from "../components/editorial";
 import { ErrorBanner } from "../components/AsyncStates";
 import { ChevronDownIcon, CheckCircleIcon } from "../lib/icons";
@@ -319,10 +318,6 @@ export default function SpotDetail() {
                       ))}
                     </div>
                   )}
-
-                  {/* Foil variants carry their own, separately reviewed
-                      suitability — never inherited from the sport above. */}
-                  <SpotVariants spot={spot} />
 
                   <SpotDescription
                     text={spot.description || "Für diesen Spot gibt es noch keine Beschreibung."}

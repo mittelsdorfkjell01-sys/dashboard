@@ -77,16 +77,15 @@ export default function SpotProfileCard({
             the outline is what separates four equal values standing next to
             each other, and that is the whole job it has.
 
-            Four tiles on a 390px phone leave about 67px of text each, so the
-            type steps down to the 10px rung and the label drops its
-            letter-spacing. German compounds still outrun that — no readable
-            size fits "Fortgeschritten" in 67px — so both label and value
-            hyphenate (`lang="de"` is set on the document) and break at
-            syllables rather than mid-word. Under 360px the tiles would be
-            narrower than the hyphenated pieces, so the smallest phones get two
-            rows of two, where every value fits on one line. From `lg` the
-            column is a column again: label left, value right, full type size. */}
-        <div className="grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 lg:flex lg:flex-col lg:gap-2">
+            Two per row, two rows. Four across fit the width but not the
+            words: a 390px phone left about 67px of text per tile, and no
+            readable size fits "Fortgeschritten" in that, so every long value
+            broke into syllables. At two per row each value has room to stand
+            on one line. The type sits on the 10px rung, the label drops its
+            letter-spacing, and both still hyphenate (`lang="de"` is set on the
+            document) if a value does outrun the tile. From `lg` the column is
+            a column again: label left, value right, full type size. */}
+        <div className="grid grid-cols-2 gap-1.5 lg:flex lg:flex-col lg:gap-2">
           {items.map((item) => (
             <dl
               key={item.label}
@@ -95,7 +94,7 @@ export default function SpotProfileCard({
               <dt className="hyphens-auto break-words text-micro font-medium uppercase leading-tight text-muted lg:shrink-0 lg:hyphens-none lg:text-caption lg:tracking-caps">
                 {item.label}
               </dt>
-              <dd className="mt-0.5 min-w-0 hyphens-auto break-words text-micro font-semibold leading-snug text-ink lg:mt-0 lg:text-right lg:text-caption lg:font-medium">
+              <dd className="mt-0.5 min-w-0 hyphens-auto break-words text-micro font-normal leading-snug text-ink lg:mt-0 lg:text-right lg:text-caption">
                 {item.value}
               </dd>
             </dl>
