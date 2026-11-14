@@ -7,7 +7,7 @@ moderation status filtering lives here so every caller is consistent.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from sqlalchemy import delete, func, select
@@ -230,6 +230,58 @@ def delete_own_tip(db: Session, tip_id, user_id) -> None:
         raise ReplyPresent()
     db.delete(tip)
     db.commit()
+
+
+def edit_own_tip(db: Session, tip_id, user_id, *, body: str, title: str | None) -> LocalTip:
+    """Rewrite a comment the signed-in account itself wrote.
+
+    The same ownership rule as deletion: only the author, only a published
+    comment. Unlike deletion, replies are no obstacle — changing one's own
+    wording takes nobody else's text away.
+
+    Every edit stamps ``edited_at``. A reply underneath may be answering
+    wording that no longer exists, so a changed comment has to say that it
+    changed; the feed shows the marker, and the timestamp lets it say when.
+    """
+    tip = db.get(LocalTip, tip_id)
+    if tip is None or tip.status != "published":
+        raise LookupError("Kommentar nicht gefunden.")
+    if tip.app_user_id is None or tip.app_user_id != user_id:
+        raise PermissionError("Nur eigene Kommentare lassen sich bearbeiten.")
+    text = (body or "").strip()
+    if not text:
+        raise ValueError("Ein Kommentar braucht Text.")
+    from app.community.filter import is_flagged
+
+    clean_title = (title or "").strip() or None
+    tip.body = text
+    tip.title = clean_title
+    # An edit is re-checked like a new comment, so a clean post cannot be
+    # rewritten into spam after the fact. A flag already raised stays raised.
+    tip.flagged = tip.flagged or is_flagged(text, clean_title)
+    tip.edited_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(tip)
+    return tip
+
+
+def report_tip(db: Session, tip_id) -> LocalTip:
+    """Flag a published comment for the operator to look at.
+
+    Deliberately thin: it raises the flag that already orders the admin review
+    queue, and nothing else. No per-reporter record, no counter, no automatic
+    hiding — a report is a request for a human to look, not a vote that removes
+    someone's text. Flagging an already flagged comment is a no-op, so repeat
+    reports cannot be used to push an item up the queue.
+    """
+    tip = db.get(LocalTip, tip_id)
+    if tip is None or tip.status != "published":
+        raise LookupError("Kommentar nicht gefunden.")
+    if not tip.flagged:
+        tip.flagged = True
+        db.commit()
+        db.refresh(tip)
+    return tip
 
 
 # --- authenticated comment upvotes ---------------------------------------

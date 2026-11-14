@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getSpotTips, hideTip, restoreTip, type ReviewTip } from "../../lib/api";
+import { ApiError, deleteTipHard, getSpotTips, hideTip, restoreTip, type ReviewTip } from "../../lib/api";
 import { groupTipThreads } from "../../lib/tipThreads";
 import Button from "../ui/Button";
 
@@ -8,6 +8,12 @@ import Button from "../ui/Button";
  * published and hidden — grouped into threads, so a reply is shown under its
  * parent for context. Any comment can be hidden or restored (not just flagged
  * ones); hidden comments stay listed so they can be brought back.
+ *
+ * Hiding is the default and the only one-click action, because it is
+ * reversible and leaves the thread intact. Deleting is for the cases hiding
+ * does not cover — a takedown, a deletion request, personal data in someone
+ * else's thread — so it sits behind an explicit confirmation, takes the
+ * replies with it, and is written to the moderation audit.
  */
 export default function SpotCommentsPanel({ spotId }: { spotId: string }) {
   const [tips, setTips] = useState<ReviewTip[] | null>(null);
@@ -76,6 +82,7 @@ function Comment({
   onAct: (id: string, fn: (id: string) => Promise<unknown>) => void;
 }) {
   const hidden = tip.status === "hidden";
+  const [confirming, setConfirming] = useState(false);
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
@@ -96,15 +103,38 @@ function Comment({
           {tip.body}
         </p>
       </div>
-      {hidden ? (
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={busy}
-          onClick={() => onAct(tip.id, restoreTip)}
-        >
-          Wiederherstellen
-        </Button>
+      {confirming ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-caption text-admin-muted">Endgültig löschen?</span>
+          <Button
+            size="sm"
+            variant="danger"
+            disabled={busy}
+            onClick={() => {
+              setConfirming(false);
+              onAct(tip.id, deleteTipHard);
+            }}
+          >
+            Löschen
+          </Button>
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
+            Abbrechen
+          </Button>
+        </div>
+      ) : hidden ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => onAct(tip.id, restoreTip)}
+          >
+            Wiederherstellen
+          </Button>
+          <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirming(true)}>
+            Löschen
+          </Button>
+        </div>
       ) : (
         <Button
           size="sm"

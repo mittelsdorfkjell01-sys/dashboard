@@ -511,6 +511,79 @@ def test_author_can_delete_own_comment(anon_client, spot_id, db, monkeypatch):
     assert tip_id not in [t["id"] for t in remaining]
 
 
+def test_author_can_edit_own_comment_and_the_edit_is_marked(anon_client, spot_id, monkeypatch):
+    _signed_in(anon_client, monkeypatch)
+    posted = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Parkplatz ist frei.", "author_name": "Autorin"}
+    )
+    assert posted.status_code == 201, posted.text
+    tip_id = posted.json()["id"]
+    assert posted.json()["edited_at"] is None
+
+    changed = anon_client.patch(
+        f"/community/comments/tip/{tip_id}", json={"body": "Parkplatz kostet seit Mai 3 Euro."}
+    )
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["body"] == "Parkplatz kostet seit Mai 3 Euro."
+    # The edit is public: a reply underneath may answer wording that is gone.
+    assert changed.json()["edited_at"] is not None
+
+    listed = anon_client.get(f"/spots/{spot_id}/tips").json()["items"]
+    row = next(t for t in listed if t["id"] == tip_id)
+    assert row["body"] == "Parkplatz kostet seit Mai 3 Euro."
+    assert row["edited_at"] is not None
+
+
+def test_editing_a_comment_with_replies_is_allowed(anon_client, spot_id, monkeypatch):
+    # Unlike deletion: rewriting one's own wording takes nobody else's text away.
+    _signed_in(anon_client, monkeypatch)
+    parent = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Einstieg links ist flacher.", "author_name": "Autorin"}
+    ).json()
+    anon_client.post(
+        f"/spots/{spot_id}/tips",
+        json={"body": "Stimmt, bei Niedrigwasser.", "author_name": "Leser", "parent_id": parent["id"]},
+    )
+    changed = anon_client.patch(
+        f"/community/comments/tip/{parent['id']}", json={"body": "Einstieg links ist deutlich flacher."}
+    )
+    assert changed.status_code == 200, changed.text
+
+
+def test_other_accounts_cannot_edit_a_comment(anon_client, spot_id, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    _signed_in(anon_client, monkeypatch)
+    posted = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Mole meiden.", "author_name": "Autorin"}
+    )
+    tip_id = posted.json()["id"]
+    with TestClient(anon_client.app) as stranger:
+        _signed_in(stranger, monkeypatch)
+        refused = stranger.patch(
+            f"/community/comments/tip/{tip_id}", json={"body": "Alles bestens hier."}
+        )
+        assert refused.status_code == 403
+        assert "eigene" in refused.json()["detail"]
+
+
+def test_anyone_can_report_a_comment_and_nothing_is_hidden(anon_client, spot_id, db):
+    # A report asks a human to look. It must never remove the text by itself,
+    # or it becomes a way to silence a comment someone disagrees with.
+    posted = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Fragwuerdiger Beitrag.", "author_name": "Jemand"}
+    )
+    tip_id = posted.json()["id"]
+    reported = anon_client.post(f"/community/comments/tip/{tip_id}/report")
+    assert reported.status_code == 202, reported.text
+
+    row = db.get(LocalTip, uuid.UUID(tip_id))
+    db.refresh(row)
+    assert row.flagged is True
+    assert row.status == "published"
+    assert tip_id in [t["id"] for t in anon_client.get(f"/spots/{spot_id}/tips").json()["items"]]
+
+
 def test_other_accounts_cannot_delete_a_comment(anon_client, spot_id, monkeypatch):
     from fastapi.testclient import TestClient
 

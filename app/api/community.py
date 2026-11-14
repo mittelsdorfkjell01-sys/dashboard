@@ -105,8 +105,10 @@ class TipOut(BaseModel):
     upvotes: int = 0
     viewer_upvoted: bool = False
     # Whether the signed-in viewer wrote this comment. Only their own comments
-    # may offer the delete action (see DELETE /community/comments/tip/{id}).
+    # may offer the edit and delete actions.
     viewer_is_author: bool = False
+    # Set once the author changed the text. NULL = as written.
+    edited_at: str | None = None
 
     @classmethod
     def of(cls, t: LocalTip, vote: dict | None = None, viewer_id=None) -> "TipOut":
@@ -117,6 +119,7 @@ class TipOut(BaseModel):
             parent_id=str(t.parent_id) if t.parent_id else None,
             upvotes=vote.get("count", 0), viewer_upvoted=vote.get("viewer_upvoted", False),
             viewer_is_author=bool(viewer_id and t.app_user_id == viewer_id),
+            edited_at=t.edited_at.isoformat() if t.edited_at else None,
         )
 
 
@@ -321,6 +324,62 @@ def delete_own_comment(
             ),
         )
     return Response(status_code=204)
+
+
+class TipEdit(BaseModel):
+    body: str = Field(min_length=1, max_length=4_000)
+    title: str | None = Field(default=None, max_length=120)
+
+    model_config = {"extra": "forbid"}
+
+
+@router.patch("/community/comments/tip/{comment_id}")
+def edit_own_comment(
+    comment_id: uuid.UUID,
+    body: TipEdit,
+    request: Request,
+    db: Session = Depends(get_db),
+    limiter: RateLimiter = Depends(get_rate_limiter),
+    account: AppUser = Depends(current_account),
+) -> TipOut:
+    """Rewrite a comment the signed-in account wrote itself.
+
+    Replies are no obstacle here, unlike deletion: changing one's own wording
+    takes nobody else's text away. Every edit is stamped, and the stamp is
+    public — see ``edited_at`` on :class:`TipOut`.
+    """
+    enforce(limiter, request, "tip", limit=LIMITS["tip"][0], window=LIMITS["tip"][1])
+    try:
+        tip = service.edit_own_tip(db, comment_id, account.id, body=body.body, title=body.title)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Nur eigene Kommentare lassen sich bearbeiten.")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return TipOut.of(tip, None, account.id)
+
+
+@router.post("/community/comments/tip/{comment_id}/report", status_code=202)
+def report_comment(
+    comment_id: uuid.UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    limiter: RateLimiter = Depends(get_rate_limiter),
+) -> dict:
+    """Ask the operator to look at a comment.
+
+    Open to signed-out readers on purpose: someone who stumbles on abuse should
+    not have to make an account first. The report only raises the flag that
+    orders the admin queue — it never hides anything, so it cannot be used to
+    silence a comment someone disagrees with. Rate-limited like image reports.
+    """
+    enforce(limiter, request, "report", limit=LIMITS["report"][0], window=LIMITS["report"][1])
+    try:
+        service.report_tip(db, comment_id)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
+    return {"status": "received"}
 
 
 # --- submissions -----------------------------------------------------------

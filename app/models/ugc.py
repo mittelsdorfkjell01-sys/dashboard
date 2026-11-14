@@ -103,6 +103,10 @@ class LocalTip(Base, TimestampMixin):
         Boolean, nullable=False, server_default=text("false")
     )
     ip_hash: Mapped[str | None] = mapped_column(String(64))
+    # Set the first time the author changes the text, and on every later edit.
+    # NULL means "as written". A timestamp, not a flag, so the marker can say
+    # when — see migration 0098.
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (
         CheckConstraint(

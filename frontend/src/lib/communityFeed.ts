@@ -42,6 +42,8 @@ export interface FeedPost {
   /** The signed-in viewer wrote this post. Only own *comments* can be deleted
    *  by their author; ratings and photos go through the operator. */
   viewerIsAuthor: boolean;
+  /** Set once the author changed the text — the feed shows a marker. */
+  editedAt?: string | null;
 }
 
 /** A top-level comment together with its replies (oldest first). */
@@ -166,6 +168,7 @@ export function mergeFeed({
       upvotes: t.upvotes ?? 0,
       viewerUpvoted: t.viewer_upvoted ?? false,
       viewerIsAuthor: t.viewer_is_author ?? false,
+      editedAt: t.edited_at ?? null,
     };
   });
 

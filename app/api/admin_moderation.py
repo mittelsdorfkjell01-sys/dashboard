@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -221,6 +221,19 @@ def restore_tip(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     return {"id": str(tip.id), "status": tip.status}
+
+
+@router.delete("/tips/{tip_id}", status_code=204)
+def delete_tip(
+    tip_id: uuid.UUID, db: Session = Depends(get_db), actor: str = Depends(get_actor)
+) -> Response:
+    """Delete a comment and its replies for good. Hiding is the default; this
+    is for takedowns and deletion requests. Audited — see moderation.delete_tip."""
+    try:
+        moderation.delete_tip(db, tip_id, actor=actor)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Tipp nicht gefunden.")
+    return Response(status_code=204)
 
 
 @router.post("/ratings/{rating_id}/hide")

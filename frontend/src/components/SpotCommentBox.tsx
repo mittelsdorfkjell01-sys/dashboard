@@ -2,7 +2,7 @@ import { useState } from "react";
 import { avatarColor, commentThreads, initials, relativeTime, type CommentThread, type FeedPost } from "../lib/communityFeed";
 import InlineTipComposer from "./InlineTipComposer";
 import UpvoteButton from "./UpvoteButton";
-import type { TipItem } from "../lib/api";
+import { ApiError, deleteOwnTip, editOwnTip, reportTip, type TipItem } from "../lib/api";
 
 const INITIAL_VISIBLE = 6;
 const PAGE_SIZE = 6;
@@ -39,14 +39,14 @@ function ThreadRow({ thread, spotId, onPosted }: { thread: CommentThread; spotId
   const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
   return <article className="min-w-0">
-    <CommentRow post={comment} />
+    <CommentRow post={comment} onChanged={() => onPosted?.()} />
     {replies.length > 0 && <div className="relative ml-8 mt-4 space-y-4 pl-6 lg:ml-11 lg:pl-7">
       {/* Reddit-style thread line: a hairline rail (line-soft, finer than the
           old border) that curves into each reply via a small rounded elbow. */}
       <span aria-hidden className="pointer-events-none absolute left-0 top-0 bottom-5 w-px bg-line-soft" />
       {replies.map(reply => <div key={reply.id} className="relative">
         <span aria-hidden className="pointer-events-none absolute -left-6 top-0 h-[15px] w-[18px] rounded-bl-card border-b border-l border-line-soft lg:-left-7 lg:w-[22px]" />
-        <CommentRow post={reply} compact />
+        <CommentRow post={reply} compact onChanged={() => onPosted?.()} />
       </div>)}
     </div>}
     <div className="ml-8 mt-2 lg:ml-11">
@@ -55,22 +55,106 @@ function ThreadRow({ thread, spotId, onPosted }: { thread: CommentThread; spotId
   </article>;
 }
 
-function CommentRow({ post, compact = false }: { post: FeedPost; compact?: boolean }) {
+/** A single comment: avatar, name, text, and the actions that belong to the
+ *  reader looking at it. The author gets edit and delete, everyone else gets
+ *  report — the same split people know from every social feed.
+ *
+ *  Deleting asks once, inline, rather than through a browser dialog: a native
+ *  `confirm()` cannot be styled, cannot be dismissed by tapping away, and on
+ *  iOS takes the page's scroll position with it. Editing happens in place, so
+ *  the comment never leaves the thread it belongs to.
+ */
+function CommentRow({ post, compact = false, onChanged }: { post: FeedPost; compact?: boolean; onChanged?: () => void }) {
   const anonymous = !post.authorName || post.authorName === "Anonym";
   const rawId = post.id.replace(/^(tip|rating):/, "");
+  const isComment = post.kind === "tip";
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(post.text ?? "");
+  const [confirming, setConfirming] = useState(false);
+  const [reported, setReported] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async (fn: () => Promise<unknown>, after?: () => void) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await fn();
+      after?.();
+      onChanged?.();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Das hat nicht geklappt. Bitte versuche es erneut.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const action = "min-h-10 text-caption font-medium text-muted transition-colors hover:text-ink disabled:opacity-50";
+
   return <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3">
     <span aria-hidden className={`grid shrink-0 place-items-center rounded-full text-caption font-semibold ${compact ? "h-7 w-7" : "h-9 w-9"} ${anonymous ? "bg-band text-muted" : "text-white"}`} style={anonymous ? undefined : { backgroundColor: avatarColor(post.authorName) }}>{anonymous ? "?" : initials(post.authorName)}</span>
     <div className={`flex min-w-0 items-center ${compact ? "min-h-7" : "min-h-9"}`}>
-      <strong className={`${compact ? "text-ui" : "text-ui"} truncate font-semibold text-ink`}>{post.authorName || "Anonym"}</strong>
+      <strong className="truncate text-ui font-semibold text-ink">{post.authorName || "Anonym"}</strong>
     </div>
     <div aria-hidden />
     <div className="min-w-0 pt-2">
-      {post.title && <span className="mb-1 block text-ui font-semibold text-ink">{post.title}</span>}
-      <p className={`${compact ? "text-ui" : "text-ui"} whitespace-pre-line leading-relaxed text-ink-soft`}>{post.text}</p>
-      <div className="mt-1 flex min-h-10 items-center gap-3 text-caption text-muted">
+      {editing ? (
+        <form
+          className="max-w-[420px]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!draft.trim()) return;
+            void run(() => editOwnTip(rawId, { body: draft }), () => setEditing(false));
+          }}
+        >
+          <label className="sr-only" htmlFor={`edit-${rawId}`}>Kommentar bearbeiten</label>
+          <textarea
+            id={`edit-${rawId}`}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            maxLength={4000}
+            rows={3}
+            autoFocus
+            className="comment-field w-full resize-none rounded-card border border-line bg-page p-3 text-ui text-ink focus:border-ink focus:outline-none"
+          />
+          <div className="mt-1 flex items-center gap-4">
+            <button type="submit" disabled={busy || !draft.trim()} className="min-h-10 text-caption font-semibold text-accent disabled:opacity-50">Speichern</button>
+            <button type="button" disabled={busy} onClick={() => { setDraft(post.text ?? ""); setEditing(false); setError(null); }} className={action}>Abbrechen</button>
+          </div>
+        </form>
+      ) : (
+        <>
+          {post.title && <span className="mb-1 block text-ui font-semibold text-ink">{post.title}</span>}
+          <p className="whitespace-pre-line text-ui leading-relaxed text-ink-soft">{post.text}</p>
+        </>
+      )}
+      <div className="mt-1 flex min-h-10 flex-wrap items-center gap-x-3 text-caption text-muted">
         <time dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time>
+        {post.editedAt && (
+          <span title={`Bearbeitet ${relativeTime(post.editedAt)}`}>bearbeitet</span>
+        )}
         {post.kind !== "photo" && <UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} />}
+        {isComment && post.viewerIsAuthor && !editing && (
+          confirming ? (
+            <>
+              <span className="text-ink">Wirklich löschen?</span>
+              <button type="button" disabled={busy} onClick={() => void run(() => deleteOwnTip(rawId))} className="min-h-10 text-caption font-semibold text-danger disabled:opacity-50">Ja, löschen</button>
+              <button type="button" disabled={busy} onClick={() => setConfirming(false)} className={action}>Abbrechen</button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => { setDraft(post.text ?? ""); setEditing(true); }} className={action}>Bearbeiten</button>
+              <button type="button" onClick={() => { setConfirming(true); setError(null); }} className={action}>Löschen</button>
+            </>
+          )
+        )}
+        {isComment && !post.viewerIsAuthor && (
+          reported
+            ? <span>gemeldet</span>
+            : <button type="button" disabled={busy} onClick={() => void run(() => reportTip(rawId), () => setReported(true))} className={action}>Melden</button>
+        )}
       </div>
+      {error && <p role="alert" className="text-caption text-danger">{error}</p>}
     </div>
   </div>;
 }

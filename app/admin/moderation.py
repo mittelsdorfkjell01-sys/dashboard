@@ -495,6 +495,28 @@ def set_tip_status(db: Session, tip_id, status: str, *, actor: str) -> LocalTip:
     return tip
 
 
+def delete_tip(db: Session, tip_id, *, actor: str) -> None:
+    """Remove a comment for good, with its replies.
+
+    The operator's last resort, for the cases hiding does not cover: a legal
+    takedown, a deletion request, personal data in someone else's thread.
+    Hiding stays the default — it is reversible and keeps the thread intact —
+    so this is a separate action, not a second button that looks like the first.
+
+    The row goes (``local_tips.parent_id`` cascades, so replies go with it) and
+    the audit entry stays: it records who removed what and when, which is the
+    only trace left once the text is gone.
+    """
+    tip = db.scalar(select(LocalTip).where(LocalTip.id == tip_id).with_for_update())
+    if tip is None:
+        raise LookupError("tip not found")
+    record_moderation(
+        db, actor=actor, action="tip_delete", target_type="tip", target_id=tip.id,
+    )
+    db.delete(tip)
+    db.commit()
+
+
 def set_rating_status(db: Session, rating_id, status: str, *, actor: str) -> SpotRating:
     rating = db.scalar(
         select(SpotRating).where(SpotRating.id == rating_id).with_for_update()

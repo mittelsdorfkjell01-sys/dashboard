@@ -27,8 +27,10 @@ export interface TipItem {
   parent_id: string | null;
   upvotes?: number;
   viewer_upvoted?: boolean;
-  /** The signed-in viewer wrote this comment, so it may offer deletion. */
+  /** The signed-in viewer wrote this comment, so it may offer edit + delete. */
   viewer_is_author?: boolean;
+  /** Set once the author changed the text. Null = as written. */
+  edited_at?: string | null;
 }
 
 export interface CommunityImage {
@@ -87,6 +89,19 @@ export const postTip = (
  *  through the operator instead. */
 export const deleteOwnTip = (id: string) =>
   request<void>(`/community/comments/tip/${id}`, { method: "DELETE" });
+
+/** Rewrite one of the viewer's own comments. Replies are no obstacle — unlike
+ *  deletion, changing one's own wording takes nobody else's text away. */
+export const editOwnTip = (id: string, body: { body: string; title?: string | null }) =>
+  request<TipItem>(`/community/comments/tip/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
+/** Ask the operator to look at a comment. Open to signed-out readers, and it
+ *  only raises the flag that orders the admin queue — nothing is hidden by it. */
+export const reportTip = (id: string) =>
+  request<{ status: string }>(`/community/comments/tip/${id}/report`, { method: "POST" });
 
 export const setCommentUpvote = (kind: "rating" | "tip", id: string, active: boolean) =>
   request<{ count: number; viewer_upvoted: boolean }>(`/community/comments/${kind}/${id}/upvote`, {

@@ -1137,6 +1137,10 @@ export const getSpotTips = (spotId: string) =>
   request<{ items: ReviewTip[] }>(`/admin/spots/${spotId}/tips`);
 export const hideTip = (id: string) =>
   request<{ id: string; status: string }>(`/admin/tips/${id}/hide`, { method: "POST" });
+/** Remove a comment and its replies for good. Hiding is the default; this is
+ *  for takedowns and deletion requests, and it is written to the audit log. */
+export const deleteTipHard = (id: string) =>
+  request<void>(`/admin/tips/${id}`, { method: "DELETE" });
 export const restoreTip = (id: string) =>
   request<{ id: string; status: string }>(`/admin/tips/${id}/restore`, {
     method: "POST",
