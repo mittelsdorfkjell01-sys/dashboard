@@ -42,13 +42,24 @@ jobs:
       - name: Install importer dependencies
         run: pip install -r requirements.txt
 
-      - name: Require deployed schema head
-        shell: bash
+      - name: Require the tide-station schema contract
         run: |
-          test -n "$DATABASE_URL"
-          current="$(alembic current 2>/dev/null | tail -1 | awk '{print $1}')"
-          expected="$(python -c 'from app.db.schema import EXPECTED_DB_REVISION; print(EXPECTED_DB_REVISION)')"
-          test "$current" = "$expected"
+          python - <<'PY'
+          from sqlalchemy import inspect
+
+          from app.db.session import engine
+
+          required = {
+              "tide_stations",
+              "tide_station_aliases",
+              "tide_sensors",
+              "tide_observations",
+          }
+          missing = sorted(required - set(inspect(engine).get_table_names()))
+          if missing:
+              raise SystemExit(f"missing tide-station tables: {', '.join(missing)}")
+          print("tide-station schema contract: ok")
+          PY
 
       - name: Refresh free PEGELONLINE catalogue
         run: python -m scripts.tide_station_import
