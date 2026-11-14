@@ -136,7 +136,7 @@ export const de = {
       sports: {
         q: "Für welche Sportarten ist Surfwinddata gedacht?",
         p1: "Der Katalog unterscheidet Surfen, Windsurfen, Kitesurfen und Wingfoilen. Welche Sportarten an einem Spot möglich sind, steht auf seiner Detailseite.",
-        p2: "Windfoil und Kitefoil führen wir als eigene Varianten. Foilen braucht genug Wassertiefe, einen passenden Startbereich und oft ein anderes Windfenster. Ein Spot, der zum Windsurfen mit Finne oder zum klassischen Kiten passt, ist deshalb nicht automatisch ein Foil-Spot. Solange die Redaktion eine Foil-Variante an einem Spot nicht geprüft hat, steht dort „unbekannt“. Wir schätzen sie nicht aus der Hauptsportart ab, denn eine falsche Angabe kann hier zu Grundberührung oder einem ungeeigneten Start führen. „Unbekannt“ heißt nicht ungeeignet, sondern ungeprüft.",
+        p2: "Foilen führen wir als eine eigene Angabe, nicht getrennt nach Windfoil und Kitefoil. Was ein Foil vom Ort braucht — genug Wassertiefe, einen passenden Startbereich und oft ein anderes Windfenster — hängt am Gewässer, nicht daran, ob jemand ein Segel oder eine Bar in der Hand hält. Ein Spot, der zum Windsurfen mit Finne oder zum klassischen Kiten passt, ist deshalb nicht automatisch ein Foil-Spot. Solange die Redaktion das an einem Spot nicht geprüft hat, steht dort „unbekannt“. Wir schätzen es nicht aus der Hauptsportart ab, denn eine falsche Angabe kann hier zu Grundberührung oder einem ungeeigneten Start führen. „Unbekannt“ heißt nicht ungeeignet, sondern ungeprüft.",
       },
       noAccount: {
         q: "Kann ich ohne Konto nach Spots suchen?",

@@ -105,8 +105,10 @@ class Spot(Base, TimestampMixin):
     facing: Mapped[int | None] = mapped_column(SmallInteger)     # compass bearing 0..359
 
     editorial: Mapped[dict | None] = mapped_column(JSONB)
-    # Per-spot, per-variant suitability + conditions (Windfoil/Kitefoil):
-    # {"<sport>:<slug>": {"suitability": geeignet|eingeschraenkt|ungeeignet|
+    # Per-spot, per-variant suitability + conditions. Keys are the base
+    # disciplines ("windsurf:fin", "kitesurf:classic") plus the one shared
+    # "foil" category — foil is not split per sport, see app/admin/constants.py:
+    # {"<variant>": {"suitability": geeignet|eingeschraenkt|ungeeignet|
     # unbekannt, "wind_directions": [[from,to]…], "usable_depth_m", "tide",
     # "entry", "launch_area", "hazards", "local_rules", "level": […],
     # "discipline": […], "notes"}}. A missing variant = "unbekannt" (never a

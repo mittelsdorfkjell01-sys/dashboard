@@ -139,8 +139,9 @@ export interface SpotSummary {
   typical_wind_kt: number | null;
   typical_wave_height_m: number | null;
   wind_availability: number[] | null;
-  /** Per-spot, per-variant suitability (windsurf:fin/foil, kitesurf:classic/
-   *  foil). A *missing* variant means "unbekannt" — never a recommendation.
+  /** Per-spot, per-variant suitability (windsurf:fin, kitesurf:classic, and the
+   *  one shared `foil`). A *missing* variant means "unbekannt" — never a
+   *  recommendation.
    *  Optional so an older cached payload without the field stays valid. */
   variant_conditions?: Record<string, { suitability?: string } & Record<string, unknown>> | null;
   /** Variants the spot actually offers (suitability geeignet/eingeschraenkt). */

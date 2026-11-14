@@ -31,7 +31,7 @@ def _scope_filter(stmt, sport: str | None, variant: str | None = None):
 
     When ``variant`` is given the query keeps only spots whose
     ``variant_conditions[variant].suitability`` is ``geeignet``/``eingeschraenkt``
-    — so a Kitefoil filter never returns a spot merely because it lists
+    — so a ``foil`` filter never returns a spot merely because it lists
     ``kitesurf`` (the variant, not the parent sport, is the gate). Without a
     variant it falls back to the plain ``sports`` membership filter.
     """

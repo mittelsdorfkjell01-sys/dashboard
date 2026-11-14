@@ -29,15 +29,15 @@ def scoring_sport(sport_or_variant: str | None) -> str | None:
     """Map a sport/variant key to the sport whose scoring params apply.
 
     Base variants (``windsurf:fin`` / ``kitesurf:classic``) score like their
-    parent sport; a bare sport maps to itself. Foil variants have **no** proven
-    parameters and return ``None`` — the caller must treat that as "nicht
-    ausreichend bewertet" rather than inventing thresholds.
+    parent sport; a bare sport maps to itself. Foil has **no** proven parameters
+    and returns ``None`` — the caller must treat that as "nicht ausreichend
+    bewertet" rather than inventing thresholds.
     """
-    from app.admin.constants import SPORT_FOIL_VARIANT, parent_sport
+    from app.admin.constants import FOIL_VARIANT, parent_sport
 
     if not sport_or_variant:
         return None
-    if sport_or_variant in SPORT_FOIL_VARIANT.values():
+    if sport_or_variant == FOIL_VARIANT:
         return None
     return parent_sport(sport_or_variant)
 

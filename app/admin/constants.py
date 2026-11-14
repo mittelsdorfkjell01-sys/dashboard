@@ -73,29 +73,35 @@ FACILITY_KINDS: tuple[str, ...] = (
 # derived from a spot supporting both kitesurfing and surfing.
 SPORTS: tuple[str, ...] = ("kitesurf", "windsurf", "wing", "surf")
 
-# --- sport variants (Windfoil / Kitefoil) ----------------------------------
-# A *variant* is a selectable discipline within a parent sport, keyed
-# ``"<sport>:<slug>"``. Only wind- and kitesurfing split; ``wing`` stays its own
-# sport (Wingfoilen) and ``surf`` is deliberately not given a foil variant
-# (Surf-Foil is not silently folded into another sport). The base variant
-# (``:fin`` / ``:classic``) carries the historical, proven suitability; the foil
-# variant starts ``unbekannt`` until an editor confirms it.
+# --- sport variants (base disciplines + foil) -------------------------------
+# A *variant* is a selectable discipline, keyed ``"<sport>:<slug>"`` when it
+# belongs to one parent sport. Only wind- and kitesurfing split that way, and
+# their base variant (``:fin`` / ``:classic``) carries the historical, proven
+# suitability.
 SPORT_VARIANTS: dict[str, tuple[str, ...]] = {
-    "windsurf": ("windsurf:fin", "windsurf:foil"),
-    "kitesurf": ("kitesurf:classic", "kitesurf:foil"),
+    "windsurf": ("windsurf:fin",),
+    "kitesurf": ("kitesurf:classic",),
 }
 # The proven base variant a sport's existing listing implies (migration seed).
 SPORT_BASE_VARIANT: dict[str, str] = {
     "windsurf": "windsurf:fin",
     "kitesurf": "kitesurf:classic",
 }
-# The foil variant per sport — the one that must never inherit suitability.
-SPORT_FOIL_VARIANT: dict[str, str] = {
-    "windsurf": "windsurf:foil",
-    "kitesurf": "kitesurf:foil",
-}
-VARIANT_KEYS: tuple[str, ...] = tuple(
-    key for keys in SPORT_VARIANTS.values() for key in keys
+# Foil is ONE category, not one per sport. What a foil needs from a place —
+# depth under the board, a launch deep enough to get going, a wind window that
+# suits a much faster craft — is a property of the water, not of whether the
+# rider holds a sail or a bar. Two keys per spot asked editors the same question
+# twice and let a page claim "Windfoil ungeprüft, Kitefoil geeignet" about one
+# sandbank. It never inherits suitability from any sport: a spot proven for fin
+# windsurfing says nothing about whether a foil clears the bottom there.
+FOIL_VARIANT: str = "foil"
+# The sports whose riders this category concerns. ``wing`` is its own sport
+# (Wingfoilen is always foiled) and ``surf`` is deliberately left out — Surf-Foil
+# is not silently folded in here.
+FOIL_SPORTS: tuple[str, ...] = ("windsurf", "kitesurf")
+VARIANT_KEYS: tuple[str, ...] = (
+    *(key for keys in SPORT_VARIANTS.values() for key in keys),
+    FOIL_VARIANT,
 )
 
 # Per-spot, per-variant suitability. A missing entry means ``unbekannt`` (never
@@ -277,10 +283,12 @@ def validate_editorial(value: dict | None) -> dict | None:
 # --- sport-variant helpers -------------------------------------------------
 
 def parent_sport(variant_key: str) -> str:
-    """The parent sport of a variant key (``"windsurf:foil"`` -> ``"windsurf"``).
+    """The parent sport of a variant key (``"windsurf:fin"`` -> ``"windsurf"``).
 
     A bare sport key is returned unchanged, so callers can treat sports and
-    variants uniformly.
+    variants uniformly. ``"foil"`` has no parent sport and is returned as
+    itself — callers that mean "which sport's rules apply" must check for it
+    (see :data:`FOIL_VARIANT`), because no sport's rules do.
     """
     return variant_key.split(":", 1)[0]
 
@@ -410,17 +418,14 @@ def variant_consistency_warnings(
     conditions = variant_conditions if isinstance(variant_conditions, dict) else {}
     chars = set(water_character or [])
     shallow_place = bool(chars & {"flach"})
-    for sport, foil_key in SPORT_FOIL_VARIANT.items():
-        if sport not in set(sports or []):
-            continue
-        block = conditions.get(foil_key) if isinstance(conditions, dict) else None
-        suit = variant_suitability(conditions, foil_key)
-        if suit in SUITABILITY_OFFERED:
+    if set(sports or []) & set(FOIL_SPORTS):
+        block = conditions.get(FOIL_VARIANT)
+        if variant_suitability(conditions, FOIL_VARIANT) in SUITABILITY_OFFERED:
             depth = (block or {}).get("usable_depth_m")
             has_depth = isinstance(depth, (int, float))
             if shallow_place and not has_depth:
                 warnings.append(
-                    f"{foil_key}: als nutzbar markiert, aber der Ort gilt als "
+                    f"{FOIL_VARIANT}: als nutzbar markiert, aber der Ort gilt als "
                     f"Flachwasser und es ist keine nutzbare Tiefe erfasst — Foils "
                     f"brauchen mehr Tiefe als ein flacher Einstieg bietet."
                 )

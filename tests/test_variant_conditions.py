@@ -1,4 +1,5 @@
-"""Sport variants (Windfoil / Kitefoil): vocabulary, scoring honesty, filter.
+"""Sport variants (base disciplines + the one foil category): vocabulary,
+scoring honesty, filter.
 
 Pure-function tests run without a database; the API/filter tests are DB-gated
 (they publish spots and hit ``/map``), like the rest of the suite.
@@ -26,7 +27,7 @@ from tests.content_helpers import verify_spot_content
 def test_validate_variant_conditions_accepts_known_and_cleans():
     out = validate_variant_conditions(
         {
-            "kitesurf:foil": {
+            "foil": {
                 "suitability": "eingeschraenkt",
                 "wind_directions": [[200, 260]],
                 "usable_depth_m": 1.5,
@@ -35,7 +36,7 @@ def test_validate_variant_conditions_accepts_known_and_cleans():
             }
         }
     )
-    block = out["kitesurf:foil"]
+    block = out["foil"]
     assert block["suitability"] == "eingeschraenkt"
     assert block["wind_directions"] == [[200.0, 260.0]]
     assert block["usable_depth_m"] == 1.5
@@ -47,7 +48,7 @@ def test_validate_variant_conditions_rejects_unknown_key_and_suitability():
     with pytest.raises(ValueError):
         validate_variant_conditions({"surf:foil": {"suitability": "geeignet"}})
     with pytest.raises(ValueError):
-        validate_variant_conditions({"windsurf:foil": {"suitability": "maybe"}})
+        validate_variant_conditions({"foil": {"suitability": "maybe"}})
 
 
 def test_validate_variant_conditions_drops_empty_blocks():
@@ -57,10 +58,10 @@ def test_validate_variant_conditions_drops_empty_blocks():
 
 
 def test_variant_suitability_defaults_to_unbekannt():
-    assert variant_suitability(None, "windsurf:foil") == "unbekannt"
-    assert variant_suitability({"windsurf:foil": {}}, "windsurf:foil") == "unbekannt"
+    assert variant_suitability(None, "foil") == "unbekannt"
+    assert variant_suitability({"foil": {}}, "foil") == "unbekannt"
     assert (
-        variant_suitability({"windsurf:foil": {"suitability": "geeignet"}}, "windsurf:foil")
+        variant_suitability({"foil": {"suitability": "geeignet"}}, "foil")
         == "geeignet"
     )
 
@@ -68,10 +69,10 @@ def test_variant_suitability_defaults_to_unbekannt():
 def test_offered_variants_only_lists_geeignet_and_eingeschraenkt():
     conditions = {
         "windsurf:fin": {"suitability": "geeignet"},
-        "windsurf:foil": {"suitability": "unbekannt"},
-        "kitesurf:foil": {"suitability": "eingeschraenkt"},
+        "kitesurf:classic": {"suitability": "unbekannt"},
+        "foil": {"suitability": "eingeschraenkt"},
     }
-    assert offered_variants(conditions) == ["windsurf:fin", "kitesurf:foil"]
+    assert offered_variants(conditions) == ["windsurf:fin", "foil"]
 
 
 # --- consistency warnings --------------------------------------------------
@@ -79,7 +80,7 @@ def test_offered_variants_only_lists_geeignet_and_eingeschraenkt():
 def test_warns_when_foil_usable_on_flat_water_without_depth():
     warnings = variant_consistency_warnings(
         ["windsurf"],
-        {"windsurf:foil": {"suitability": "geeignet"}},
+        {"foil": {"suitability": "geeignet"}},
         water_character=["flach"],
     )
     assert any("Flachwasser" in w for w in warnings)
@@ -87,7 +88,7 @@ def test_warns_when_foil_usable_on_flat_water_without_depth():
     # A recorded usable depth resolves the contradiction.
     ok = variant_consistency_warnings(
         ["windsurf"],
-        {"windsurf:foil": {"suitability": "geeignet", "usable_depth_m": 2.0}},
+        {"foil": {"suitability": "geeignet", "usable_depth_m": 2.0}},
         water_character=["flach"],
     )
     assert not any("Flachwasser" in w for w in ok)
@@ -96,7 +97,7 @@ def test_warns_when_foil_usable_on_flat_water_without_depth():
 def test_warns_when_competition_level_on_unproven_variant():
     warnings = variant_consistency_warnings(
         ["kitesurf"],
-        {"kitesurf:foil": {"suitability": "eingeschraenkt", "level": ["competition"]}},
+        {"foil": {"suitability": "eingeschraenkt", "level": ["competition"]}},
     )
     assert any("Wettkampf" in w for w in warnings)
 
@@ -116,14 +117,13 @@ class _Spot:
 def test_scoring_sport_maps_base_variant_and_drops_foil():
     assert scoring_sport("windsurf:fin") == "windsurf"
     assert scoring_sport("kitesurf:classic") == "kitesurf"
-    assert scoring_sport("windsurf:foil") is None
-    assert scoring_sport("kitesurf:foil") is None
+    assert scoring_sport("foil") is None
     assert scoring_sport("wing") == "wing"
 
 
 def test_variant_is_offered_reflects_suitability():
-    spot = _Spot(["windsurf"], {"windsurf:foil": {"suitability": "geeignet"}})
-    assert variant_is_offered(spot, "windsurf:foil") is True
+    spot = _Spot(["windsurf"], {"foil": {"suitability": "geeignet"}})
+    assert variant_is_offered(spot, "foil") is True
     assert variant_is_offered(spot, "windsurf:fin") is False  # unbekannt
 
 
@@ -132,11 +132,11 @@ def test_foil_variant_never_scores_positive_even_when_offered():
     # bewertet"), never a green forecast off invented thresholds.
     spot = _Spot(
         ["windsurf"],
-        {"windsurf:foil": {"suitability": "geeignet", "wind_directions": [[200, 260]]}},
+        {"foil": {"suitability": "geeignet", "wind_directions": [[200, 260]]}},
         climatology={"weeks": [{"week": 1, "wind": {"p50_kt": 22}}]},
     )
     scorer = SeasonalRuleScorer()
-    assert scorer.score(spot, {"week": 1}, {"variant": "windsurf:foil"}) == 0.0
+    assert scorer.score(spot, {"week": 1}, {"variant": "foil"}) == 0.0
 
 
 def test_unknown_variant_is_not_positive():
@@ -152,9 +152,9 @@ def test_unknown_variant_is_not_positive():
 def test_variant_editorial_overlays_variant_wind_window():
     spot = _Spot(
         ["kitesurf"],
-        {"kitesurf:foil": {"wind_directions": [[200, 260]], "usable_depth_m": 1.5}},
+        {"foil": {"wind_directions": [[200, 260]], "usable_depth_m": 1.5}},
     )
-    ed = variant_editorial(spot, "kitesurf:foil")
+    ed = variant_editorial(spot, "foil")
     assert ed["usable_wind_directions"] == [[200, 260]]
     assert ed["usable_depth_m"] == 1.5
 
@@ -250,7 +250,7 @@ def test_create_stores_and_returns_variant_conditions(admin, region_id):
         admin, region_id, sports=["windsurf"],
         variant_conditions={
             "windsurf:fin": {"suitability": "geeignet"},
-            "windsurf:foil": {"suitability": "ungeeignet"},
+            "foil": {"suitability": "ungeeignet"},
         },
     )
     assert resp.status_code == 201, resp.text
@@ -263,22 +263,39 @@ def test_create_stores_and_returns_variant_conditions(admin, region_id):
 def test_deselecting_sport_prunes_its_variants(admin, region_id):
     spot = _create(
         admin, region_id, sports=["windsurf", "kitesurf"],
-        variant_conditions={"windsurf:foil": {"suitability": "geeignet"}},
+        variant_conditions={"windsurf:fin": {"suitability": "geeignet"}},
     ).json()
     patched = admin.patch(f"/admin/spots/{spot['id']}", json={"sports": ["kitesurf"]})
     assert patched.status_code == 200, patched.text
-    # windsurf dropped → its variant block must be gone.
+    # windsurf dropped → its own variant block must be gone.
     assert not (patched.json().get("variant_conditions") or {})
 
 
-def test_kitefoil_filter_excludes_classic_only_spot(admin, region_id):
-    # A spot that only lists kitesurf (no Kitefoil suitability) …
+def test_foil_survives_while_any_foil_sport_is_listed(admin, region_id):
+    # Foil belongs to no single sport, so dropping one of two foil sports must
+    # not take the assessment with it — the water has not changed.
+    spot = _create(
+        admin, region_id, sports=["windsurf", "kitesurf"],
+        variant_conditions={"foil": {"suitability": "geeignet"}},
+    ).json()
+    kept = admin.patch(f"/admin/spots/{spot['id']}", json={"sports": ["kitesurf"]})
+    assert kept.status_code == 200, kept.text
+    assert kept.json()["variant_conditions"]["foil"]["suitability"] == "geeignet"
+
+    # Last foil sport gone → nobody the category concerns is left.
+    dropped = admin.patch(f"/admin/spots/{spot['id']}", json={"sports": ["surf"]})
+    assert dropped.status_code == 200, dropped.text
+    assert not (dropped.json().get("variant_conditions") or {})
+
+
+def test_foil_filter_excludes_classic_only_spot(admin, region_id):
+    # A spot that only lists kitesurf (no foil suitability) …
     classic = _create(admin, region_id, publish=True).json()
-    # … and one that actually offers Kitefoil.
+    # … and one that actually offers foiling.
     foil = _create(
         admin, region_id, publish=True,
         variant_conditions={
-            "kitesurf:foil": {"suitability": "geeignet", "wind_directions": [[200, 260]]}
+            "foil": {"suitability": "geeignet", "wind_directions": [[200, 260]]}
         },
     ).json()
 
@@ -287,11 +304,11 @@ def test_kitefoil_filter_excludes_classic_only_spot(admin, region_id):
     assert {classic["id"], foil["id"]} <= both_ids
 
     only_foil = admin.get(
-        "/map", params={**_BBOX, "variant": "kitesurf:foil"}
+        "/map", params={**_BBOX, "variant": "foil"}
     ).json()
     foil_ids = {p["id"] for p in only_foil["pins"]}
     assert foil["id"] in foil_ids
-    assert classic["id"] not in foil_ids  # kitesurf alone is NOT kitefoil
+    assert classic["id"] not in foil_ids  # kitesurf alone is NOT foil
 
 
 def test_migration_backfill_seeds_base_variant_not_foil(admin, region_id, db):
@@ -322,20 +339,20 @@ def test_migration_backfill_seeds_base_variant_not_foil(admin, region_id, db):
 
     row = admin.get(f"/admin/spots/{spot['id']}/record").json()
     assert row["variant_conditions"]["windsurf:fin"]["suitability"] == "geeignet"
-    assert "windsurf:foil" not in row["variant_conditions"]  # never invented
+    assert "foil" not in row["variant_conditions"]  # never invented
     assert row["variants"] == ["windsurf:fin"]
 
 
 def test_readiness_reports_variant_gaps_and_warnings(admin, region_id):
     spot = _create(
         admin, region_id, sports=["kitesurf"], water_character=["flach"],
-        variant_conditions={"kitesurf:foil": {"suitability": "geeignet"}},
+        variant_conditions={"foil": {"suitability": "geeignet"}},
     ).json()
     readiness = admin.get(f"/admin/spots/{spot['id']}/readiness").json()
     fields = {i["field"] for i in readiness["checklist"]}
-    assert "variant.kitesurf:foil.wind_directions" in fields
-    assert "variant.kitesurf:foil.usable_depth_m" in fields
+    assert "variant.foil.wind_directions" in fields
+    assert "variant.foil.usable_depth_m" in fields
     # Flat-water place + usable foil + no depth → a consistency warning.
     assert any("Flachwasser" in w for w in readiness["warnings"])
     # …but none of it blocks (recommended only).
-    assert "variant.kitesurf:foil.wind_directions" not in readiness["gaps"]
+    assert "variant.foil.wind_directions" not in readiness["gaps"]

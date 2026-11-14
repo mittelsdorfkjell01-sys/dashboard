@@ -63,7 +63,7 @@ archivierte Spots.
 - `description` (Kurzform für `editorial.description`)
 - `editorial` als JSON-Objekt
 - `facilities` als JSON-Objekt
-- `variant_conditions` für die unterstützten Wind- und Kitefoil-Varianten
+- `variant_conditions` für die Basis-Disziplinen (`windsurf:fin`, `kitesurf:classic`) und die eine gemeinsame `foil`-Angabe
 - `sources` mit feldbezogenen Quellenbelegen
 
 Listen können in JSON echte Arrays sein. In CSV werden mehrere Werte mit `|`
@@ -107,7 +107,7 @@ müssen bis zu einer eigenen Modellentscheidung im Recherchematerial bleiben.
           "parking": {"available": true, "note": "Direkt am Strand"}
         },
         "variant_conditions": {
-          "kitesurf:foil": {
+          "foil": {
             "suitability": "eingeschraenkt",
             "usable_depth_m": 1.5
           }

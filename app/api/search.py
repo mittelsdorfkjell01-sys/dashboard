@@ -62,7 +62,7 @@ def search(
     sport: str | None = Query(default=None),
     variant: str | None = Query(
         default=None,
-        description="Sport variant key (e.g. windsurf:foil, kitesurf:foil); "
+        description="Sport variant key (e.g. foil, windsurf:fin); "
         "filters to spots that actually offer this variant",
     ),
     week: int | None = Query(default=None, ge=1, le=52),

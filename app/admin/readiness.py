@@ -100,18 +100,17 @@ def _variant_checklist(spot: Any) -> list[dict]:
 
     For each variant a spot actually offers (``geeignet``/``eingeschraenkt``) we
     surface — never as a blocker — what's still missing for a *belastbare*
-    recommendation: a usable wind window, and for foil variants a usable depth.
+    recommendation: a usable wind window, and for foil a usable depth.
     ``unbekannt``/``ungeeignet`` variants add nothing (they are not offered).
     """
     from app.admin.constants import (
-        SPORT_FOIL_VARIANT,
+        FOIL_VARIANT,
         offered_variants,
     )
 
     conditions = getattr(spot, "variant_conditions", None)
     if not isinstance(conditions, dict):
         return []
-    foil_keys = set(SPORT_FOIL_VARIANT.values())
     items: list[dict] = []
     for key in offered_variants(conditions):
         block = conditions.get(key) or {}
@@ -121,7 +120,7 @@ def _variant_checklist(spot: Any) -> list[dict]:
             "ok": is_fulfilled(block.get("wind_directions")),
             "na": False,
         })
-        if key in foil_keys:
+        if key == FOIL_VARIANT:
             items.append({
                 "field": f"variant.{key}.usable_depth_m",
                 "severity": "recommended",

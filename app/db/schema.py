@@ -2,5 +2,5 @@
 
 from hashlib import sha256
 
-EXPECTED_DB_REVISION = "0096_wave_verification"
+EXPECTED_DB_REVISION = "0097_single_foil_variant"
 EXPECTED_DB_FINGERPRINT = sha256(EXPECTED_DB_REVISION.encode("utf-8")).hexdigest()[:12]

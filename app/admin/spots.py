@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.admin.audit import record_audit
 from app.admin.constants import (
+    FOIL_SPORTS,
+    FOIL_VARIANT,
     STATUS_ARCHIVED,
     STATUS_DRAFT,
     STATUS_LIVE,
@@ -63,16 +65,26 @@ def _load(db: Session, spot_id):
 
 
 def _prune_variants(conditions: dict | None, sports: list[str]) -> dict | None:
-    """Drop variant blocks whose parent sport is no longer selected.
+    """Drop variant blocks whose sport is no longer selected.
 
     Keeps variant data in lockstep with the ``sports`` array (mirrors how
     ``synchronize_wavekite_style`` keeps the derived style in step), so
     deselecting a sport in the editor never leaves orphaned variant suitability.
+
+    ``foil`` belongs to no single sport (see :data:`FOIL_VARIANT`), so it is
+    kept while the spot still lists any sport whose riders foil, and dropped
+    only when none of them is left.
     """
     if not conditions:
         return None
     active = set(sports or [])
-    kept = {k: v for k, v in conditions.items() if parent_sport(k) in active}
+
+    def still_selected(key: str) -> bool:
+        if key == FOIL_VARIANT:
+            return bool(active & set(FOIL_SPORTS))
+        return parent_sport(key) in active
+
+    kept = {k: v for k, v in conditions.items() if still_selected(k)}
     return kept or None
 
 

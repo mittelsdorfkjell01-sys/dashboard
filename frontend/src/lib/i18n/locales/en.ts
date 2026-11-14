@@ -93,7 +93,7 @@ export const en = {
       sports: {
         q: "Which sports does Surfwinddata cover?",
         p1: "The catalogue distinguishes surfing, windsurfing, kitesurfing and wing foiling. A spot page shows which sports are possible there.",
-        p2: "Windfoil and kitefoil are listed as separate variants. Foiling needs enough water depth, a suitable launch area and often a different wind range. A spot that works for fin windsurfing or classic kiting is therefore not automatically a foil spot. Until the editors have reviewed a foil variant at a spot, it is shown as “unknown”. We don't estimate it from the main sport, because a wrong claim here can mean grounding the foil or an unsuitable launch. “Unknown” does not mean unsuitable, only not yet reviewed.",
+        p2: "Foiling is listed as one entry, not split into windfoil and kitefoil. What a foil needs from a place — enough water depth, a suitable launch area and often a different wind range — depends on the water, not on whether the rider holds a sail or a bar. A spot that works for fin windsurfing or classic kiting is therefore not automatically a foil spot. Until the editors have reviewed it at a spot, it is shown as “unknown”. We don't estimate it from the main sport, because a wrong claim here can mean grounding the foil or an unsuitable launch. “Unknown” does not mean unsuitable, only not yet reviewed.",
       },
       noAccount: {
         q: "Can I browse without an account?",

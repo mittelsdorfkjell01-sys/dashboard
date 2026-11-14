@@ -73,7 +73,7 @@ def test_normalize_supports_aliases_variants_wind_and_field_sources():
             "aliases": ["Nordstrand Beach"],
             "best_wind_directions": ["W", "NW"],
             "variant_conditions": {
-                "kitesurf:foil": {"suitability": "eingeschraenkt", "usable_depth_m": 1.5}
+                "foil": {"suitability": "eingeschraenkt", "usable_depth_m": 1.5}
             },
             "sources": [{
                 "field_path": "best_wind_directions",
@@ -89,7 +89,7 @@ def test_normalize_supports_aliases_variants_wind_and_field_sources():
     )
     assert row["editorial"]["aliases"] == ["Nordstrand Beach"]
     assert row["best_wind_directions"] == ["W", "NW"]
-    assert row["variant_conditions"]["kitesurf:foil"]["usable_depth_m"] == 1.5
+    assert row["variant_conditions"]["foil"]["usable_depth_m"] == 1.5
     assert row["sources"][0]["checked_at"].utcoffset() is not None
 
 
