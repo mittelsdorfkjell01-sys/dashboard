@@ -29,6 +29,7 @@ jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.WAVE_FIELD_WORKER_ENABLED == 'true')
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 90
     env:
       TZ: UTC
@@ -40,7 +41,7 @@ jobs:
       PASSWORD_BREACH_CHECK_ENABLED: "true"
       CORS_ORIGINS: https://surfwinddata.com
       JWT_SECRET: ${{ secrets.WORKER_JWT_SECRET }}
-      DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.POOLED_DATABASE_URL }}
       DB_SERVERLESS: "true"
       WEATHER_FIELD_PIPELINE_ENABLED: "true"
       WEATHER_FIELD_PUBLIC_ENABLED: "false"

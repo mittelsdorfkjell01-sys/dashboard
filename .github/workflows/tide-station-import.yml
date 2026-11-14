@@ -16,6 +16,7 @@ jobs:
   import:
     if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.TIDE_STATION_IMPORT_ENABLED == 'true')
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 20
     env:
       TZ: UTC
@@ -27,7 +28,7 @@ jobs:
       PASSWORD_BREACH_CHECK_ENABLED: "true"
       CORS_ORIGINS: https://surfwinddata.com
       JWT_SECRET: ${{ secrets.WORKER_JWT_SECRET }}
-      DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.POOLED_DATABASE_URL }}
       DB_SERVERLESS: "true"
 
     steps:
