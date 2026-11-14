@@ -1,14 +1,17 @@
 # Weather-field production runbook
 
-This runbook covers the free, self-hosted wind and wave field pipeline. It does
-not authorize measurement-based quality rollout; that evidence phase remains
-separate.
+This runbook covers the free wind and wave field pipeline. It does not authorize
+measurement-based quality rollout; that evidence phase remains separate. The
+Neon/GitHub-hosted wave-only deployment is documented in
+`docs/ops/neon-free-wave-worker.md`.
 
 ## Required services and configuration
 
-The production stack must run `db`, `redis`, `app`, `maintenance-worker`,
-`weather-field-worker` and `caddy`. The API, Caddy and both workers must mount
-the same persistent `weather_fields` volume.
+The self-hosted production stack must run `db`, `redis`, `app`,
+`maintenance-worker`, `weather-field-worker` and `caddy`. The API, Caddy and
+both workers must mount the same persistent `weather_fields` volume. A
+wave-only deployment can instead use the scheduled GitHub-hosted worker and
+Neon Object Storage, with no shared filesystem.
 
 Production configuration requires:
 

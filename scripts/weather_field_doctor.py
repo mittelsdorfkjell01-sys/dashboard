@@ -18,6 +18,11 @@ from app.spatial_fields.storage import configured_field_storage
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--require-public", action="store_true")
+    parser.add_argument(
+        "--require-waves",
+        action="store_true",
+        help="Require all public wave products without requiring public wind fields.",
+    )
     parser.add_argument("--fail-on-alert", action="store_true")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args(argv)
@@ -28,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
             storage=configured_field_storage(),
             settings=settings,
             require_public=args.require_public,
+            require_waves=args.require_waves,
         )
     print(json.dumps(report, indent=2 if args.pretty else None, sort_keys=True))
     has_critical = any(

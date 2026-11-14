@@ -87,6 +87,11 @@ class Settings(BaseSettings):
     weather_field_storage_access_key: str = ""
     weather_field_storage_secret_key: str = ""
     weather_field_storage_addressing_style: Literal["auto", "path", "virtual"] = "auto"
+    # Set to a hard provider allowance in production. Zero disables the global
+    # cap; individual runs remain bounded by the activation asset limit.
+    weather_field_storage_budget_bytes: int = Field(
+        default=0, ge=0, le=1_000_000_000_000
+    )
     weather_field_pipeline_enabled: bool = False
     weather_field_public_enabled: bool = False
     weather_field_auto_activate: bool = False

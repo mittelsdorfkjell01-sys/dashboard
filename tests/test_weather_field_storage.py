@@ -3,10 +3,12 @@ import hashlib
 import pytest
 
 from app.spatial_fields.storage import (
+    BudgetedFieldObjectStorage,
     ImmutableObjectConflict,
     LocalFieldObjectStorage,
     MemoryFieldObjectStorage,
     S3FieldObjectStorage,
+    StorageBudgetExceeded,
     validate_object_key,
 )
 from app.spatial_fields.monitoring import _health_tile_sample
@@ -30,6 +32,19 @@ def test_memory_storage_is_idempotent_but_immutable() -> None:
     assert first.public_url == "https://cdn.example/fields/europe/run/manifest.json"
     with pytest.raises(ImmutableObjectConflict):
         storage.put_immutable("europe/run/manifest.json", b"two")
+
+
+def test_budgeted_storage_blocks_before_exceeding_run_allowance() -> None:
+    delegate = MemoryFieldObjectStorage()
+    storage = BudgetedFieldObjectStorage(delegate, max_new_bytes=5)
+
+    storage.put_immutable("run/one.bin", b"123")
+    storage.put_immutable("run/one.bin", b"123")
+
+    assert storage.written_bytes == 3
+    with pytest.raises(StorageBudgetExceeded):
+        storage.put_immutable("run/two.bin", b"456")
+    assert not delegate.exists("run/two.bin")
 
 
 def test_local_storage_publishes_complete_files_atomically(tmp_path) -> None:

@@ -1,0 +1,106 @@
+name: Production Wave Field Publication
+
+on:
+  schedule:
+    # The free models publish on six-hour cycles. Offset the worker so upstream
+    # files have time to complete before discovery starts.
+    - cron: "35 1,7,13,19 * * *"
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Model to publish
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - dwd-ewam
+          - dwd-gwam
+          - noaa-gfs-wave
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-wave-field-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.WAVE_FIELD_WORKER_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      TZ: UTC
+      APP_ENV: production
+      DEPLOYMENT_MODE: admin
+      ENABLE_ADMIN_API: "true"
+      API_DEBUG: "false"
+      COOKIE_SECURE: "true"
+      PASSWORD_BREACH_CHECK_ENABLED: "true"
+      CORS_ORIGINS: https://surfwinddata.com
+      JWT_SECRET: ${{ secrets.WORKER_JWT_SECRET }}
+      DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+      DB_SERVERLESS: "true"
+      WEATHER_FIELD_PIPELINE_ENABLED: "true"
+      WEATHER_FIELD_PUBLIC_ENABLED: "false"
+      WAVE_FIELD_PUBLIC_ENABLED: "true"
+      WAVE_FIELD_AUTO_ACTIVATE: "true"
+      WAVE_BACKTEST_ARCHIVE_ENABLED: "true"
+      WEATHER_FIELD_RETENTION_RUNS: "3"
+      # Leaves 500 MB below Neon's 5 GB free object-storage allowance.
+      WEATHER_FIELD_STORAGE_BUDGET_BYTES: "4500000000"
+      WEATHER_FIELD_STORAGE_BACKEND: s3
+      WEATHER_FIELD_STORAGE_ENDPOINT: ${{ secrets.WEATHER_FIELD_STORAGE_ENDPOINT }}
+      WEATHER_FIELD_STORAGE_REGION: ${{ vars.WEATHER_FIELD_STORAGE_REGION }}
+      WEATHER_FIELD_STORAGE_BUCKET: ${{ vars.WEATHER_FIELD_STORAGE_BUCKET }}
+      WEATHER_FIELD_STORAGE_PREFIX: ${{ vars.WEATHER_FIELD_STORAGE_PREFIX }}
+      WEATHER_FIELD_STORAGE_ACCESS_KEY: ${{ secrets.WEATHER_FIELD_STORAGE_ACCESS_KEY }}
+      WEATHER_FIELD_STORAGE_SECRET_KEY: ${{ secrets.WEATHER_FIELD_STORAGE_SECRET_KEY }}
+      WEATHER_FIELD_STORAGE_ADDRESSING_STYLE: path
+      WEATHER_FIELD_PUBLIC_BASE_URL: ${{ vars.WEATHER_FIELD_PUBLIC_BASE_URL }}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install field-worker dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate database and object-storage configuration
+        shell: bash
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$WEATHER_FIELD_STORAGE_ENDPOINT"
+          test -n "$WEATHER_FIELD_STORAGE_BUCKET"
+          test -n "$WEATHER_FIELD_STORAGE_ACCESS_KEY"
+          test -n "$WEATHER_FIELD_STORAGE_SECRET_KEY"
+          test -n "$WEATHER_FIELD_PUBLIC_BASE_URL"
+          case "$WEATHER_FIELD_PUBLIC_BASE_URL" in https://*) ;; *) exit 1 ;; esac
+          current="$(alembic current 2>/dev/null | tail -1 | awk '{print $1}')"
+          expected="$(python -c 'from app.db.schema import EXPECTED_DB_REVISION; print(EXPECTED_DB_REVISION)')"
+          test "$current" = "$expected"
+          python -m scripts.weather_field_storage_smoke
+
+      - name: Publish complete model horizons sequentially
+        shell: bash
+        env:
+          TARGET_MODEL: ${{ inputs.model || 'all' }}
+        run: |
+          status=0
+          for model in dwd-ewam dwd-gwam noaa-gfs-wave; do
+            if [ "$TARGET_MODEL" != "all" ] && [ "$TARGET_MODEL" != "$model" ]; then
+              continue
+            fi
+            python -m scripts.wave_field_publish --model "$model" --activate || status=1
+          done
+          exit "$status"
+
+      - name: Verify publication health and storage allowance
+        if: always() && (github.event_name != 'workflow_dispatch' || inputs.model == 'all')
+        run: python -m scripts.weather_field_doctor --require-waves --fail-on-alert --pretty
