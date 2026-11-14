@@ -12,6 +12,22 @@ export function regionLabel(region?: Region): string {
   return [region.name, countryName(region.country)].filter(Boolean).join(", ");
 }
 
+/** "Kieler Bucht, Deutschland" for a spot, from whichever source has it.
+ *
+ * The caller may hold the full `Region` record (list views join it), but the
+ * single-spot hook does not — it adapts the detail payload on its own. That
+ * payload carries `region_name`/`region_country` itself, so falling back to
+ * them keeps the label on the one page that always lacked it: the detail page
+ * rendered an empty region line for every spot.
+ */
+function spotRegionLabel(s: SpotSummary | SpotRead, region?: Region): string {
+  const joined = regionLabel(region);
+  if (joined) return joined;
+  const name = s.region_name?.trim();
+  const country = s.region_country ? countryName(s.region_country) : "";
+  return [name, country].filter(Boolean).join(", ");
+}
+
 /** Map a backend spot (+ its region) into the frontend `Spot`. */
 export function adaptSpot(
   s: SpotSummary | SpotRead,
@@ -48,7 +64,7 @@ export function adaptSpot(
     uuid: s.id,
     slug: s.slug,
     name: s.name,
-    region: regionLabel(region),
+    region: spotRegionLabel(s, region),
     regionId: s.region_id ?? undefined,
     wind: typicalWind,
     description,
