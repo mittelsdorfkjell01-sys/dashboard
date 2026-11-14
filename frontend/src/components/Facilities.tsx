@@ -55,14 +55,16 @@ export default function Facilities({
             <th scope="col">Status</th>
           </tr>
         </thead>
-        <tbody className="flex flex-col divide-y divide-line">
+        {/* Spacing, not rules: six rows of the same kind read as a list on
+            their own (DESIGN.md, The Earned Line Rule). */}
+        <tbody className="flex flex-col gap-1.5">
           {items.map((f) => {
             const Icon = facilityIcon[f.kind];
             const absent = f.available === false;
             const unknown = f.available === null;
             const status = f.available === true ? "Vorhanden" : absent ? "Nicht vorhanden" : "Unbekannt";
             return (
-              <tr key={f.kind} className="flex min-w-0 items-center justify-between gap-3 py-2">
+              <tr key={f.kind} className="flex min-w-0 items-center justify-between gap-3">
                 <th scope="row" className="min-w-0 text-left font-normal">
                   <span className="flex min-w-0 items-center gap-2.5">
                     <Icon

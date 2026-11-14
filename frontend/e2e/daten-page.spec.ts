@@ -554,7 +554,9 @@ test("Beschreibung und Hinweise bleiben links, während die Galerie beim Ausklap
   await expect(more).toBeVisible();
   await expect(details.getByRole("heading", { name: "Sicherheit", exact: true })).toBeVisible();
   const hintsCard = details.getByRole("region", { name: "Sicherheit", exact: true });
-  await expect(hintsCard).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  // Flat on the page, no panel of its own (DESIGN.md, The No Tile Background
+  // Rule). This used to assert the opposite — a tinted band.
+  await expect(hintsCard).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(profile.getByRole("heading", { name: "Sicherheit", exact: true })).toHaveCount(0);
   await expect(profile.getByRole("heading", { name: "Spotprofil" })).toHaveCount(0);
   await expect(profile.getByText(/Ein vielseitiger Küstenspot/)).toHaveCount(0);

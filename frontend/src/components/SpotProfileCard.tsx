@@ -50,7 +50,7 @@ export default function SpotProfileCard({
       {/* Upper half: the separate spec cards, aligned to the top. */}
       <div className="flex min-w-0 flex-col gap-2.5 lg:flex-1">
         {bestSeason && (
-          <div className="min-w-0 rounded-card border border-line bg-surface px-4 py-3.5">
+          <div className="min-w-0">
             <p className="text-caption font-medium uppercase tracking-caps text-muted">
               Beste Reisezeit
             </p>
@@ -72,23 +72,30 @@ export default function SpotProfileCard({
         {/* Phones put the four facts side by side as one band of tiles, label
             over value: on a narrow screen the column is the whole page width,
             and four full-width rows cost four scroll-lengths for twelve words.
-            The tiles are narrow, so the label drops its letter-spacing and both
-            label and value hyphenate (`lang="de"` is set on the document)
-            rather than breaking mid-word. Under 360px even that is not enough
-            for German compounds — "Geschütztes Meer" in a 66px tile breaks into
-            four syllables — so the smallest phones get two rows of two instead.
-            From `lg` the column is a column again and each fact is its own
-            label-left/value-right card. */}
-        <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 lg:flex lg:flex-col lg:gap-2.5">
+
+            Stroke only, never a fill (DESIGN.md, The No Tile Background Rule):
+            the outline is what separates four equal values standing next to
+            each other, and that is the whole job it has.
+
+            Four tiles on a 390px phone leave about 67px of text each, so the
+            type steps down to the 10px rung and the label drops its
+            letter-spacing. German compounds still outrun that — no readable
+            size fits "Fortgeschritten" in 67px — so both label and value
+            hyphenate (`lang="de"` is set on the document) and break at
+            syllables rather than mid-word. Under 360px the tiles would be
+            narrower than the hyphenated pieces, so the smallest phones get two
+            rows of two, where every value fits on one line. From `lg` the
+            column is a column again: label left, value right, full type size. */}
+        <div className="grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 lg:flex lg:flex-col lg:gap-2">
           {items.map((item) => (
             <dl
               key={item.label}
-              className="flex min-w-0 flex-col rounded-card border border-line bg-surface px-2.5 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-4 lg:py-3"
+              className="flex min-w-0 flex-col rounded-card border border-line px-2 py-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-3.5 lg:py-2.5"
             >
               <dt className="hyphens-auto break-words text-micro font-medium uppercase leading-tight text-muted lg:shrink-0 lg:hyphens-none lg:text-caption lg:tracking-caps">
                 {item.label}
               </dt>
-              <dd className="mt-1 min-w-0 hyphens-auto break-words text-caption font-medium leading-snug text-ink lg:mt-0 lg:text-right">
+              <dd className="mt-0.5 min-w-0 hyphens-auto break-words text-micro font-semibold leading-snug text-ink lg:mt-0 lg:text-right lg:text-caption lg:font-medium">
                 {item.value}
               </dd>
             </dl>
@@ -96,13 +103,17 @@ export default function SpotProfileCard({
         </div>
       </div>
 
-      {/* Lower half: facilities, unchanged in content. */}
+      {/* Lower half: facilities. No frame, no fill, no rules between the rows
+          — a heading and a list, standing on the page like the rest of the
+          column (DESIGN.md, The No Tile Background Rule / The Earned Line
+          Rule). Six amenities of the same kind need spacing to be read as a
+          list, not a grid drawn around them. */}
       {facilities.length > 0 && (
-        <div className="min-w-0 overflow-hidden rounded-card border border-line bg-band px-4 py-3.5 lg:flex-1">
+        <div className="min-w-0 lg:flex-1">
           <h2 className="text-caption font-medium uppercase tracking-caps text-muted">
             Ausstattung
           </h2>
-          <div className="mt-1">
+          <div className="mt-2">
             <Facilities items={facilities} variant="table" />
           </div>
         </div>

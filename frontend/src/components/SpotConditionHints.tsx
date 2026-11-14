@@ -7,20 +7,19 @@ import { useOptionalUnits } from "../context/PrefsContext";
 /**
  * Safety and location notices, the card the Info column ends on.
  *
- * Three bands, top to bottom:
- *   1. the heading, with a red rule under it — the rule is what marks this as
- *      the block with weight, which is why the warning text below it no longer
- *      repeats a red glyph of its own.
- *   2. the warning itself (editorial safety notice, offshore wind) as plain
- *      text. One factual sentence, no grading, no traffic light. The source
- *      label is gone: everything in this card is either the operator's
- *      editorial notice or the forecast, and naming that per line crowded a
- *      block whose job is to be read, not audited.
- *   3. the plain readings — air, water, bottom — as square cells split across
- *      the full width. Square, not rounded: they are a table foot, not chips
- *      floating in the column.
+ * No panel, no fill, no rules (DESIGN.md, The No Tile Background Rule): the
+ * block stands on the page like the description above it. Three quiet lines,
+ * top to bottom:
+ *   1. a small "Sicherheit" eyebrow,
+ *   2. the warnings (editorial safety notice, offshore wind), each one factual
+ *      sentence marked by a single red hazard glyph. No grading, no traffic
+ *      light, and no per-line source label: everything here is either the
+ *      operator's notice or the forecast, and naming that on every line
+ *      crowded a block whose job is to be read, not audited.
+ *   3. the plain readings — air, water, bottom — as label/value pairs on one
+ *      wrapping line.
  *
- * With no warning present the cells stand alone under the heading, which is
+ * With no warning present the readings stand alone under the eyebrow, which is
  * the honest state for a spot nobody has flagged.
  */
 export default function SpotConditionHints({
@@ -44,46 +43,41 @@ export default function SpotConditionHints({
     <section
       aria-labelledby="spot-condition-hints-title"
       aria-live="polite"
-      className="mt-4 overflow-hidden rounded-card bg-band sm:mt-5"
+      className="mt-4 sm:mt-5"
     >
-      <div className="px-3.5 pt-3">
-        <div className="flex items-center gap-2">
-          <SafetyIcon aria-hidden width={14} height={14} className="shrink-0 text-ink-soft" />
-          <h2
-            id="spot-condition-hints-title"
-            className="text-caption font-semibold uppercase tracking-caps text-ink-soft"
-          >
-            Sicherheit
-          </h2>
-        </div>
-        {/* The one red mark in this card. It replaces the per-line hazard
-            glyph: one rule reads as "this block carries weight" without
-            repeating itself for every sentence. */}
-        <div aria-hidden className="mt-2 h-0.5 rounded-full bg-danger" />
-
-        {warnings.length > 0 && (
-          <ul className="mt-3 space-y-2 pb-3">
-            {warnings.map((hint) => (
-              <li key={hint.id} className="min-w-0 text-caption leading-snug text-ink">
-                {hint.sentence}
-              </li>
-            ))}
-          </ul>
-        )}
-        {warnings.length === 0 && <div className="pb-3" />}
+      <div className="flex items-center gap-1.5">
+        <SafetyIcon aria-hidden width={12} height={12} className="shrink-0 text-muted" />
+        <h2
+          id="spot-condition-hints-title"
+          className="text-micro font-medium uppercase tracking-caps text-muted"
+        >
+          Sicherheit
+        </h2>
       </div>
 
+      {warnings.length > 0 && (
+        <ul className="mt-1.5 space-y-1.5">
+          {warnings.map((hint) => (
+            <li key={hint.id} className="flex min-w-0 gap-2">
+              {/* The one red mark on the page, and it is this small: a glyph on
+                  the sentence that warrants it. The block used to carry a
+                  full-width red rule and a tinted panel, which shouted the
+                  same thing three times over. */}
+              <SafetyIcon aria-hidden width={13} height={13} className="mt-0.5 shrink-0 text-danger" />
+              <p className="min-w-0 text-caption leading-snug text-ink-soft">{hint.sentence}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {cells.length > 0 && (
-        <dl
-          className="grid divide-x divide-line border-t border-line bg-surface"
-          style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}
-        >
+        <dl className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
           {cells.map((cell) => (
-            <div key={cell.id} className="min-w-0 px-3 py-2.5">
+            <div key={cell.id} className="flex min-w-0 items-baseline gap-1.5">
               <dt className="text-micro font-medium uppercase tracking-caps text-muted">
                 {cell.label}
               </dt>
-              <dd className="mt-0.5 break-words text-caption font-medium leading-snug text-ink">
+              <dd className="min-w-0 break-words text-caption font-medium leading-snug text-ink">
                 {cell.value}
               </dd>
             </div>
@@ -92,9 +86,7 @@ export default function SpotConditionHints({
       )}
 
       {timing && (
-        <p className="border-t border-line px-3.5 py-2 text-micro leading-snug text-muted">
-          Vorhersage · {timing}
-        </p>
+        <p className="mt-1.5 text-micro leading-snug text-muted">Vorhersage · {timing}</p>
       )}
     </section>
   );

@@ -284,9 +284,13 @@ Konturen sind fein und neutral. Dicke Rahmen, doppelte Einfassungen und dekorati
 ### Cards / Containers
 
 - **Spot- und Regionskarten:** bildgefuehrt, ohne umschliessende Flaeche und ohne Ruheschatten. Text sitzt direkt unter dem Bild.
-- **Informationskarten:** Surface oder Band, Hairline nur wenn fuer Trennung erforderlich.
+- **Informationskarten:** keine eigene Flaeche. Der Inhalt steht auf dem Grund der Seite; hoechstens eine Hairline, und nur wenn ohne sie zwei Dinge ineinanderlaufen wuerden.
 - **Empty States:** gestrichelte Hairline, dezente Icon-Tafel und kurze naechste Handlung.
 - **Interactive State:** gesamter Kartenlink erhaelt einen klaren Focus-Visible-Ring; Bildzoom oder Opazitaet bleibt subtil.
+
+**The No Tile Background Rule.** Eine Kachel bekommt keinen eigenen Hintergrund. Weder `surface` noch `band` werden benutzt, um eine Gruppe von Angaben als Flaeche zu markieren — eine Flaeche behauptet Gewicht, das die Angabe selten hat, und viele kleine Flaechen auf einer Seite zerlegen sie in Kaestchen. Erlaubt ist hoechstens ein Stroke, und auch der nur, wenn die Kachel sich sonst nicht vom Nachbarn abheben wuerde (etwa in einem Raster gleichrangiger Werte). Wer eine Flaeche braucht, braucht sie explizit und begruendet: Medienrahmen, Eingaben, Dialoge und Overlays haben sie, weil sie etwas ueberlagern oder Eingabe erwarten.
+
+**The Earned Line Rule.** Trennstriche sind kein Raster. Eine Liste gleichartiger Zeilen (Ausstattung, Angaben, Fakten) trennt durch Abstand, nicht durch Linien. Eine Hairline tritt erst auf, wo ein Wechsel der Art des Inhalts sonst unsichtbar bliebe.
 
 ### Inputs / Fields
 
@@ -298,7 +302,7 @@ Konturen sind fein und neutral. Dicke Rahmen, doppelte Einfassungen und dekorati
 ### Notice Panels
 
 - **Structure:** kleines, ruhiges Icon; kurze Ueberschrift; ein bis drei Saetze; optionale Textaktion.
-- **Tone:** `band` fuer neutrale Hinweise, semantisch getoente helle Flaechen nur fuer Warnung, Fehler oder Erfolg.
+- **Tone:** flaechenlos auf dem Seitengrund. Ein Hinweis traegt hoechstens eine schmale semantische Markierung (Icon, kurze Regel) — eine getoente Flaeche nur dort, wo eine Warnung wirklich den Blick zuerst braucht, und nie fuer einen neutralen Hinweis.
 - **Density:** kompakt, aber nicht bannerartig laut. Hinweise duerfen die Fotografie und Hauptinformation nicht optisch dominieren.
 
 ### Navigation
