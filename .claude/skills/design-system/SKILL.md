@@ -46,7 +46,7 @@ for you — making it again, differently, is how a page turns into a patchwork.
 These are the ones that get broken. Full text and reasoning in `DESIGN.md`.
 
 - **The Unframed Tile Rule.** A tile gets no frame. It separates itself by one
-  minimal tone step (`bg-tile`, 8% of the range away from `page`), never tone *and* stroke,
+  minimal tone step (`bg-tile`, 4% of the range away from `page`), never tone *and* stroke,
   never a shadow. Give it real padding instead of a line around it.
 - **The Earned Line Rule.** A list of like rows separates by spacing, not by
   dividers. A hairline appears only where the *kind* of content changes.

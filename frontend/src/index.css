@@ -14,11 +14,11 @@
      it sits on (DESIGN.md, The Unframed Tile Rule). It moves AWAY from the
      page in whichever direction the theme has room — darker on the light
      page, lighter on the dark one — because the light page is already close
-     to white and a lighter step there is invisible. Both steps are 8% of the
-     full 0-255 range, not 8% of the page's own value: 8% *of* a near-black
+     to white and a lighter step there is invisible. Both steps are 4% of the
+     full 0-255 range, not 4% of the page's own value: 4% *of* a near-black
      number would not move a single step, so one rule for both themes has to
      be measured against the range. */
-  --sw-tile: #E4E2DE;
+  --sw-tile: #EEECE8;
   --sw-ink: #241C17;
   --sw-ink-soft: #3D332C;
   --sw-muted: #6B625B;
@@ -74,7 +74,7 @@ html[data-theme="dark"] {
   --sw-page: #0E1114;
   --sw-band: #14181C;
   --sw-surface: #1A1F24;
-  --sw-tile: #222528;
+  --sw-tile: #181B1E;
   --sw-ink: #F1EDE7;
   --sw-ink-soft: #C7BFB6;
   --sw-muted: #9B928A;
