@@ -261,7 +261,11 @@ def post_tip(
         raise HTTPException(status_code=404, detail="Spot not found")
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    return TipOut.of(tip)
+    # Pass the account through, or the comment the author just wrote comes back
+    # saying it is not theirs: the list inserts this object straight away, so a
+    # missing flag means their own fresh comment offers no edit or delete until
+    # the next read replaces it.
+    return TipOut.of(tip, None, account.id if account else None)
 
 
 @router.get("/spots/{spot_id}/tips")

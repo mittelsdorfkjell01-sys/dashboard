@@ -269,7 +269,10 @@ export function useSpotBestSeason(spotId?: string): { start_date: string; end_da
   const [directionMode, setDirectionMode] = useState<api.WindDirectionMode>("all");
   const v3 = useWindClimatologyV3(spotId, { minWindKn: 15, maxWindKn: 20, directionMode }, Boolean(spotId));
   useEffect(() => {
-    if (v3.data?.direction.usable_available && directionMode === "all") setDirectionMode("usable");
+    // `direction` is optional-chained too: the guard above only covers a
+    // missing payload, and a payload without that block crashed the whole spot
+    // page — a best-season teaser is not worth taking the page down for.
+    if (v3.data?.direction?.usable_available && directionMode === "all") setDirectionMode("usable");
   }, [v3.data, directionMode]);
   const season = v3.data?.best_season;
   return season ? { start_date: season.start_date, end_date: season.end_date } : null;

@@ -124,8 +124,8 @@ export default function InlineTipComposer({
           onSignIn={() => navigate(`/anmelden?mode=login&redirect=${encodeURIComponent(location.pathname + location.search)}`)}
           onCancel={() => setAuthOpen(false)}
           title="Wie möchtest du kommentieren?"
-          anonymousText="Dein Entwurf bleibt erhalten. Der Kommentar erscheint als Anonym."
-          signInText="Dein Entwurf bleibt erhalten und erscheint unter deinem Namen."
+          anonymousText="Der Kommentar erscheint als Anonym und lässt sich danach nicht mehr bearbeiten oder löschen."
+          signInText="Der Kommentar erscheint unter deinem Namen — du kannst ihn später bearbeiten oder löschen."
         />
       </div>
     );
@@ -199,8 +199,8 @@ export default function InlineTipComposer({
         onSignIn={() => navigate(`/anmelden?mode=login&redirect=${encodeURIComponent(location.pathname + location.search)}`)}
         onCancel={() => setAuthOpen(false)}
         title="Wie möchtest du kommentieren?"
-        anonymousText="Dein Entwurf bleibt erhalten. Der Kommentar erscheint als Anonym."
-        signInText="Dein Entwurf bleibt erhalten und erscheint unter deinem Namen."
+        anonymousText="Der Kommentar erscheint als Anonym und lässt sich danach nicht mehr bearbeiten oder löschen."
+        signInText="Der Kommentar erscheint unter deinem Namen — du kannst ihn später bearbeiten oder löschen."
       />
     </div>
   );
