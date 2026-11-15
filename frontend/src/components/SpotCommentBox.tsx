@@ -193,7 +193,10 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
         {isComment && onReply && !editing && (
           <button type="button" onClick={onReply} className={meta}>Antworten</button>
         )}
-        {isComment && !editing && (canEdit || canDelete) && (
+        {/* Every comment has a menu: your own offers edit and delete, anyone
+            else's offers Melden. Gating the whole menu on ownership — which an
+            earlier pass did — quietly removed the only way to report. */}
+        {isComment && !editing && (
           confirming ? (
             <>
               <span className="text-caption text-ink">Wirklich löschen?</span>
