@@ -9,12 +9,24 @@ export interface CommunityFeedState {
   loading: boolean;
   error: string | null;
   reload: () => void;
+  /** Put a new comment into the list before the server confirms it. */
   addTip: (tip: api.TipItem) => void;
+  /** Drop a comment (and anything replying to it) from the list at once. */
+  removeTip: (id: string) => void;
+  /** Swap an edited comment in place, keeping its position in the thread. */
+  replaceTip: (tip: api.TipItem) => void;
 }
 
 export function useCommunityFeed(spotId?: string): CommunityFeedState {
   const ratings = useSwr(spotId ? `ratings:${spotId}` : null, () => api.getRatings(spotId!));
-  const tips = useSwr(spotId ? `tips:${spotId}` : null, () => api.getTips(spotId!));
+  // Comments are the one part of this page other people change while you are
+  // looking at it. A half-minute poll (and a refresh when the tab comes back)
+  // is enough to keep a thread current without a socket; the interval is long
+  // enough that a reader scrolling the list never sees it jump under them.
+  const tips = useSwr(spotId ? `tips:${spotId}` : null, () => api.getTips(spotId!), {
+    refreshIntervalMs: 30_000,
+    refreshOnFocus: true,
+  });
   const images = useSwr(spotId ? `images:${spotId}` : null, () => api.getSpotImages(spotId!));
 
   const communityImages = useMemo(
@@ -41,10 +53,28 @@ export function useCommunityFeed(spotId?: string): CommunityFeedState {
       tips.reload();
       images.reload();
     },
+    // The three local edits below land before the request does, so the list
+    // answers the tap instead of the network. Each caller still reloads
+    // afterwards, so a failed request is corrected by the next read.
     addTip: (tip) => {
       if (!spotId) return;
       mutate<{ items: api.TipItem[] }>(`tips:${spotId}`, (current) => ({
         items: [tip, ...(current?.items ?? [])],
+      }));
+    },
+    removeTip: (id) => {
+      if (!spotId) return;
+      mutate<{ items: api.TipItem[] }>(`tips:${spotId}`, (current) => ({
+        // Replies go with the parent: the server refuses to delete a comment
+        // that has any, but a reply whose parent is gone would otherwise hang
+        // in the list until the next read.
+        items: (current?.items ?? []).filter((t) => t.id !== id && t.parent_id !== id),
+      }));
+    },
+    replaceTip: (tip) => {
+      if (!spotId) return;
+      mutate<{ items: api.TipItem[] }>(`tips:${spotId}`, (current) => ({
+        items: (current?.items ?? []).map((t) => (t.id === tip.id ? tip : t)),
       }));
     },
   };

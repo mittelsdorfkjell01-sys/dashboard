@@ -146,6 +146,14 @@ export default function InlineTipComposer({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="verfasse einen Kommentar…"
+        onKeyDown={(event) => {
+          // Same key as the compact field, so the two composers do not
+          // disagree about what Enter means. Shift+Enter still breaks a line.
+          if (event.key === "Enter" && !event.shiftKey && text.trim() && !busy) {
+            event.preventDefault();
+            onSend();
+          }
+        }}
         maxLength={4000}
         className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-card border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body"
       />

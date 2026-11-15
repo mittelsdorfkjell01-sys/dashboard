@@ -69,7 +69,7 @@ export default function SpotDetail() {
   const { data: forecastSummary } = useSpotForecastSummary(activeTab === "info" ? spotId : undefined);
   const { data: forecast, loading: forecastLoading, error: forecastError } =
     useSpotForecast(activeTab === "daten" ? spotId : undefined);
-  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip } =
+  const { posts, photos, loading: commentsLoading, error: commentsError, reload: reloadFeed, addTip, removeTip, replaceTip } =
     useCommunityFeed(activeTab === "info" ? spotId : undefined);
   // Best travel season — surfaced on both tabs (a line in the Info identity
   // column, a jump link in the Daten header). Best-effort; null hides it.
@@ -405,6 +405,8 @@ export default function SpotDetail() {
                         if (tip) addTip(tip);
                         reloadFeed();
                       }}
+                      onRemoved={removeTip}
+                      onEdited={replaceTip}
                       loading={commentsLoading}
                       error={commentsError}
                     />
@@ -467,7 +469,7 @@ export default function SpotDetail() {
 }
 
 function MapPlaceholder() {
-  return <div role="status" aria-label="Karte wird geladen" className="h-[360px] w-full animate-pulse rounded-card bg-band sm:h-[440px] lg:h-full" />;
+  return <div role="status" aria-label="Karte wird geladen" className="h-[clamp(20rem,55svh,27.5rem)] w-full animate-pulse rounded-card bg-band lg:h-full" />;
 }
 
 class LocatorMapBoundary extends Component<
@@ -489,7 +491,7 @@ class LocatorMapBoundary extends Component<
     const [lat, lng] = this.props.coords;
     const link = mapLinkProps(lat, lng);
     return (
-      <div className="grid h-[360px] place-items-center bg-band px-6 text-center sm:h-[440px] lg:h-full lg:min-h-[360px]">
+      <div className="grid h-[clamp(20rem,55svh,27.5rem)] place-items-center bg-band px-6 text-center lg:h-full lg:min-h-[360px]">
         <div>
           <p className="text-ui font-semibold text-ink">Karte momentan nicht verfügbar</p>
           <p className="mt-2 text-ui text-muted">Die übrigen Spotinformationen funktionieren weiterhin.</p>

@@ -14,7 +14,7 @@ const PAGE_SIZE = 6;
  * Antworten passiert inline pro Thread; ab `INITIAL_VISIBLE` Threads blendet
  * ein "weitere laden"-Link den Rest lokal ein (Daten sind bereits geladen).
  */
-export default function SpotCommentBox({ spotId, posts, onPosted, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onPosted?: (tip?: TipItem) => void; loading?: boolean; error?: string | null }) {
+export default function SpotCommentBox({ spotId, posts, onPosted, onRemoved, onEdited, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onPosted?: (tip?: TipItem) => void; onRemoved?: (id: string) => void; onEdited?: (tip: TipItem) => void; loading?: boolean; error?: string | null }) {
   const threads = commentThreads(posts);
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const shown = threads.slice(0, visible);
@@ -24,7 +24,7 @@ export default function SpotCommentBox({ spotId, posts, onPosted, loading = fals
     <div className="min-h-0 flex-1 lg:mt-2 lg:overflow-y-auto lg:pr-2">
       <div className="mt-7 lg:mt-2">
         {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-accent underline">Erneut versuchen</button></div> : threads.length === 0 ? <div className="py-8"><p className="text-body font-semibold text-ink">Teile deine Erfahrung mit diesem Spot</p><p className="mt-2 text-ui leading-relaxed text-muted">Hilfreich sind Bedingungen, Einstieg, Gefahren oder Tipps zu ähnlichen Spots.</p></div> : <div className="space-y-7">
-          {shown.map(thread => <ThreadRow key={thread.comment.id} thread={thread} spotId={spotId} onPosted={onPosted} />)}
+          {shown.map(thread => <ThreadRow key={thread.comment.id} thread={thread} spotId={spotId} onPosted={onPosted} onRemoved={onRemoved} onEdited={onEdited} />)}
         </div>}
       </div>
       {visible < threads.length && <button type="button" onClick={() => setVisible(v => v + PAGE_SIZE)} className="mt-6 min-h-11 self-start text-ui font-medium text-accent transition-colors hover:text-accent-hover">Weitere Kommentare laden ({threads.length - visible})</button>}
@@ -33,20 +33,20 @@ export default function SpotCommentBox({ spotId, posts, onPosted, loading = fals
   </section>;
 }
 
-function ThreadRow({ thread, spotId, onPosted }: { thread: CommentThread; spotId?: string; onPosted?: (tip?: TipItem) => void }) {
+function ThreadRow({ thread, spotId, onPosted, onRemoved, onEdited }: { thread: CommentThread; spotId?: string; onPosted?: (tip?: TipItem) => void; onRemoved?: (id: string) => void; onEdited?: (tip: TipItem) => void }) {
   const [replying, setReplying] = useState(false);
   const { comment, replies } = thread;
   const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
   return <article className="min-w-0">
-    <CommentRow post={comment} onChanged={() => onPosted?.()} />
+    <CommentRow post={comment} onChanged={() => onPosted?.()} onRemoved={onRemoved} onEdited={onEdited} />
     {replies.length > 0 && <div className="relative ml-8 mt-4 space-y-4 pl-6 lg:ml-11 lg:pl-7">
       {/* Reddit-style thread line: a hairline rail (line-soft, finer than the
           old border) that curves into each reply via a small rounded elbow. */}
       <span aria-hidden className="pointer-events-none absolute left-0 top-0 bottom-5 w-px bg-line-soft" />
       {replies.map(reply => <div key={reply.id} className="relative">
         <span aria-hidden className="pointer-events-none absolute -left-6 top-0 h-[15px] w-[18px] rounded-bl-card border-b border-l border-line-soft lg:-left-7 lg:w-[22px]" />
-        <CommentRow post={reply} compact onChanged={() => onPosted?.()} />
+        <CommentRow post={reply} compact onChanged={() => onPosted?.()} onRemoved={onRemoved} onEdited={onEdited} />
       </div>)}
     </div>}
     <div className="ml-8 mt-2 lg:ml-11">
@@ -64,7 +64,7 @@ function ThreadRow({ thread, spotId, onPosted }: { thread: CommentThread; spotId
  *  iOS takes the page's scroll position with it. Editing happens in place, so
  *  the comment never leaves the thread it belongs to.
  */
-function CommentRow({ post, compact = false, onChanged }: { post: FeedPost; compact?: boolean; onChanged?: () => void }) {
+function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited }: { post: FeedPost; compact?: boolean; onChanged?: () => void; onRemoved?: (id: string) => void; onEdited?: (tip: TipItem) => void }) {
   const anonymous = !post.authorName || post.authorName === "Anonym";
   const rawId = post.id.replace(/^(tip|rating):/, "");
   const isComment = post.kind === "tip";
@@ -104,7 +104,10 @@ function CommentRow({ post, compact = false, onChanged }: { post: FeedPost; comp
           onSubmit={(e) => {
             e.preventDefault();
             if (!draft.trim()) return;
-            void run(() => editOwnTip(rawId, { body: draft }), () => setEditing(false));
+            void run(async () => {
+              const updated = await editOwnTip(rawId, { body: draft });
+              onEdited?.(updated);
+            }, () => setEditing(false));
           }}
         >
           <label className="sr-only" htmlFor={`edit-${rawId}`}>Kommentar bearbeiten</label>
@@ -138,7 +141,12 @@ function CommentRow({ post, compact = false, onChanged }: { post: FeedPost; comp
           confirming ? (
             <>
               <span className="text-ink">Wirklich löschen?</span>
-              <button type="button" disabled={busy} onClick={() => void run(() => deleteOwnTip(rawId))} className="min-h-10 text-caption font-semibold text-danger disabled:opacity-50">Ja, löschen</button>
+              <button type="button" disabled={busy} onClick={() => void run(async () => {
+                // The row goes at once; the reload behind it corrects the list
+                // if the request turns out to fail.
+                onRemoved?.(rawId);
+                await deleteOwnTip(rawId);
+              })} className="min-h-10 text-caption font-semibold text-danger disabled:opacity-50">Ja, löschen</button>
               <button type="button" disabled={busy} onClick={() => setConfirming(false)} className={action}>Abbrechen</button>
             </>
           ) : (

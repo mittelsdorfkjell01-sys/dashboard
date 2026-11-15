@@ -11,6 +11,10 @@ export default function UpvoteButton({ kind, id, count, active }: { kind: "ratin
   const [pressed, setPressed] = useState(active);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // A short pop on the arrow when the vote lands. The count already changes
+  // instantly; this is the part that makes the tap feel answered rather than
+  // merely recorded. Cleared on a timer so a second tap can play it again.
+  const [popping, setPopping] = useState(false);
 
   const toggle = async () => {
     if (!user) {
@@ -22,6 +26,10 @@ export default function UpvoteButton({ kind, id, count, active }: { kind: "ratin
     const before = { value, pressed };
     setPressed(next);
     setValue(Math.max(0, value + (next ? 1 : -1)));
+    if (next) {
+      setPopping(true);
+      window.setTimeout(() => setPopping(false), 220);
+    }
     setBusy(true);
     setError("");
     try {
@@ -39,7 +47,7 @@ export default function UpvoteButton({ kind, id, count, active }: { kind: "ratin
 
   return <span className="inline-flex items-center gap-1.5">
     <button type="button" aria-pressed={pressed} disabled={busy} onClick={toggle} className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-card px-2 text-caption font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${pressed ? "text-accent" : "text-muted hover:text-ink"}`}>
-      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="m5 9 5-5 5 5M10 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none" className={`transition-transform duration-base motion-reduce:transition-none ${popping ? "-translate-y-0.5 scale-125" : ""}`}><path d="m5 9 5-5 5 5M10 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
       <span>{value}</span><span className="sr-only">Upvotes</span>
     </button>
     {error && <span role="alert" className="sr-only">{error}</span>}
