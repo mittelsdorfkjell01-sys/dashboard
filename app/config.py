@@ -680,6 +680,9 @@ class Settings(BaseSettings):
     # built-in spam/URL indicators). Content still publishes; it just shows up
     # flagged in the review panel. Case-insensitive substring match.
     banned_words: str = ""
+    # Comma-separated terms that hold a comment for review instead of only
+    # flagging it. See app/community/filter.py for the two tiers.
+    blocked_words: str = ""
 
     # --- Wind climatology V3 public rollout (Phase 5) -----------------------
     # Global switch for the public, read-only V3 weekly-reliability endpoint

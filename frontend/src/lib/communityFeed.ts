@@ -44,6 +44,8 @@ export interface FeedPost {
   viewerIsAuthor: boolean;
   /** Set once the author changed the text — the feed shows a marker. */
   editedAt?: string | null;
+  /** "pending" means it is held for review and only its author is told. */
+  status?: string;
 }
 
 /** A top-level comment together with its replies (oldest first). */
@@ -169,6 +171,7 @@ export function mergeFeed({
       viewerUpvoted: t.viewer_upvoted ?? false,
       viewerIsAuthor: t.viewer_is_author ?? false,
       editedAt: t.edited_at ?? null,
+      status: t.status ?? "published",
     };
   });
 

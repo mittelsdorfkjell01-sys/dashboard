@@ -3,6 +3,7 @@ import { avatarColor, commentThreads, initials, relativeTime, type CommentThread
 import InlineTipComposer from "./InlineTipComposer";
 import UpvoteButton from "./UpvoteButton";
 import { ApiError, deleteOwnTip, editOwnTip, reportTip, type TipItem } from "../lib/api";
+import { forgetWithdrawToken, withdrawToken } from "../lib/withdrawTokens";
 
 const INITIAL_VISIBLE = 6;
 const PAGE_SIZE = 6;
@@ -91,6 +92,13 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
   const anonymous = !post.authorName || post.authorName === "Anonym";
   const rawId = post.id.replace(/^(tip|rating):/, "");
   const isComment = post.kind === "tip";
+  // Two ways to own a comment: the account that wrote it, or — for one posted
+  // without an account — the one-time secret this device kept. Anonymous
+  // authors may withdraw, but not rewrite: an edit needs an identity to stay
+  // accountable to, and a secret in localStorage is not one.
+  const token = isComment ? withdrawToken(rawId) : null;
+  const canEdit = isComment && post.viewerIsAuthor;
+  const canDelete = canEdit || Boolean(token);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.text ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -161,7 +169,7 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
             maxLength={4000}
             rows={3}
             autoFocus
-            className="comment-field w-full resize-none rounded-card border border-line bg-page p-3 text-ui text-ink focus:border-ink focus:outline-none"
+            className="comment-field w-full resize-none rounded-card border border-line bg-page p-3 text-ui text-ink focus:outline-none"
           />
           <div className="mt-1 flex items-center gap-4">
             <button type="submit" disabled={busy || !draft.trim()} className="min-h-8 text-caption font-semibold text-accent disabled:opacity-50">Speichern</button>
@@ -185,7 +193,7 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
         {isComment && onReply && !editing && (
           <button type="button" onClick={onReply} className={meta}>Antworten</button>
         )}
-        {isComment && !editing && (
+        {isComment && !editing && (canEdit || canDelete) && (
           confirming ? (
             <>
               <span className="text-caption text-ink">Wirklich löschen?</span>
@@ -193,7 +201,8 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
                 // The row goes at once; the reload behind it corrects the list
                 // if the request turns out to fail.
                 onRemoved?.(rawId);
-                await deleteOwnTip(rawId);
+                await deleteOwnTip(rawId, token);
+                forgetWithdrawToken(rawId);
               })} className="min-h-8 text-caption font-semibold text-danger disabled:opacity-50">Ja, löschen</button>
               <button type="button" disabled={busy} onClick={() => setConfirming(false)} className={meta}>Abbrechen</button>
             </>
@@ -212,10 +221,14 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
                   of the meta row, so a left-anchored menu ran off the column. */}
               {menuOpen && (
                 <div role="menu" className="absolute right-0 top-full z-10 mt-1 min-w-[10rem] overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                  {post.viewerIsAuthor ? (
+                  {canEdit || canDelete ? (
                     <>
-                      <button type="button" role="menuitem" className={menuItem} onClick={() => { setDraft(post.text ?? ""); setEditing(true); setMenuOpen(false); }}>Bearbeiten</button>
-                      <button type="button" role="menuitem" className={`${menuItem} text-danger`} onClick={() => { setConfirming(true); setMenuOpen(false); setError(null); }}>Löschen</button>
+                      {canEdit && (
+                        <button type="button" role="menuitem" className={menuItem} onClick={() => { setDraft(post.text ?? ""); setEditing(true); setMenuOpen(false); }}>Bearbeiten</button>
+                      )}
+                      <button type="button" role="menuitem" className={`${menuItem} text-danger`} onClick={() => { setConfirming(true); setMenuOpen(false); setError(null); }}>
+                        {canEdit ? "Löschen" : "Zurückziehen"}
+                      </button>
                     </>
                   ) : reported ? (
                     <span className={`${menuItem} text-muted`}>Gemeldet</span>

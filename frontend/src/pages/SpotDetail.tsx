@@ -402,7 +402,10 @@ export default function SpotDetail() {
                       spotId={spotId}
                       posts={sortedPosts}
                       onPosted={(tip) => {
-                        if (tip) addTip(tip);
+                        // A held comment is not public yet, so it must not be
+                        // inserted into the list — the composer tells its
+                        // author that it is waiting for review instead.
+                        if (tip && tip.status !== "pending") addTip(tip);
                         reloadFeed();
                       }}
                       onRemoved={removeTip}

@@ -151,7 +151,9 @@ def review_queue(db: Session) -> dict[str, Any]:
     # workflow instead of requiring a spot-specific maintenance route.
     tips = db.scalars(
         select(LocalTip)
-        .where(LocalTip.status.in_(("published", "hidden")))
+        # "pending" is in here because a held comment is waiting on exactly
+        # this queue: leave it out and the hold becomes a silent delete.
+        .where(LocalTip.status.in_(("published", "hidden", "pending")))
         .order_by(LocalTip.flagged.desc(), LocalTip.created_at.desc())
         .limit(100)
     ).all()
@@ -480,8 +482,10 @@ def set_tip_status(db: Session, tip_id, status: str, *, actor: str) -> LocalTip:
     tip = db.scalar(select(LocalTip).where(LocalTip.id == tip_id).with_for_update())
     if tip is None:
         raise LookupError("tip not found")
-    expected = "published" if status == "hidden" else "hidden"
-    if tip.status != expected:
+    # Hiding needs a published comment; releasing accepts either a hidden one
+    # (restore) or a held one (approve) — both mean "this may be read now".
+    allowed = ("published",) if status == "hidden" else ("hidden", "pending")
+    if tip.status not in allowed:
         raise ValueError(f"tip cannot change from {tip.status} to {status}")
     tip.status = status
     if status != "hidden":

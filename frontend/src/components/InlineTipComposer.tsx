@@ -4,6 +4,7 @@ import { ApiError, postTip, type TipItem } from "../lib/api";
 import { CloseIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import CommentAuthChoiceDialog from "./CommentAuthChoiceDialog";
+import { rememberWithdrawToken } from "../lib/withdrawTokens";
 
 /**
  * Shared inline compose mask (used by the Info-tab comment tile and the
@@ -44,6 +45,7 @@ export default function InlineTipComposer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  const [held, setHeld] = useState(false);
 
   useEffect(() => {
     if (!draftKey) return;
@@ -57,8 +59,15 @@ export default function InlineTipComposer({
     setError(null);
     try {
       const created = await postTip(spotId, { body: text.trim(), title: title.trim() || undefined, author_name: authorName, parent_id: parentId });
+      // An anonymous author gets a one-time secret back. Keep it on this
+      // device, or they can never take the comment back.
+      if (created.withdraw_token) rememberWithdrawToken(created.id, created.withdraw_token);
       setText("");
       setTitle("");
+      // A held comment is told to its author rather than silently swallowed:
+      // watching your own comment not appear is how people conclude a site is
+      // broken, and post it again.
+      setHeld(created.status === "pending");
       onPosted?.(created);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Senden fehlgeschlagen.");
@@ -93,7 +102,7 @@ export default function InlineTipComposer({
             maxLength={4000}
             placeholder="Kommentar hinzufügen …"
             aria-label="Kommentar hinzufügen"
-            className="h-11 w-full rounded-card border border-line bg-page py-2 pl-4 pr-12 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-ui"
+            className="comment-compact w-full rounded-card border border-line bg-page py-2 pl-4 pr-12 text-body text-ink placeholder:text-muted focus:outline-none sm:text-ui"
           />
           {text.trim() && (
             <button
@@ -101,7 +110,7 @@ export default function InlineTipComposer({
               onClick={onSend}
               disabled={busy}
               aria-label={busy ? "Kommentar wird gesendet" : "Kommentar absenden"}
-              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-card text-accent transition-colors hover:bg-band hover:text-accent-hover disabled:opacity-40"
+              className="comment-compact absolute right-0 top-0 grid w-11 place-items-center rounded-card text-accent transition-colors hover:bg-band hover:text-accent-hover disabled:opacity-40"
             >
               {busy ? (
                 <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-accent/25 border-t-accent" />
@@ -115,6 +124,7 @@ export default function InlineTipComposer({
           )}
         </div>
         {error && <p role="alert" className="mt-2 text-caption text-danger">{error}</p>}
+        {held && <p role="status" className="mt-2 text-caption text-muted">Dein Kommentar wird geprüft und erscheint nach der Freigabe.</p>}
         <CommentAuthChoiceDialog
           open={authOpen}
           onAnonymous={() => {
@@ -155,9 +165,10 @@ export default function InlineTipComposer({
           }
         }}
         maxLength={4000}
-        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-card border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body"
+        className="comment-field min-h-[110px] w-full flex-1 resize-none rounded-card border border-line bg-page p-4 text-body text-ink placeholder:text-muted focus:outline-none sm:text-body"
       />
       {error && <p role="alert" className="mt-2 text-ui text-danger">{error}</p>}
+      {held && <p role="status" className="mt-2 text-caption text-muted">Dein Kommentar wird geprüft und erscheint nach der Freigabe.</p>}
       <div className="mt-2 flex items-center justify-between gap-3">
         {onCancel ? (
           <button

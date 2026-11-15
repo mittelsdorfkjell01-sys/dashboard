@@ -107,6 +107,10 @@ class LocalTip(Base, TimestampMixin):
     # NULL means "as written". A timestamp, not a flag, so the marker can say
     # when — see migration 0098.
     edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # SHA-256 of a one-time secret handed to an anonymous author at creation,
+    # so they can withdraw their own comment without an account. The secret
+    # itself is never stored — see migration 0099.
+    withdraw_token_hash: Mapped[str | None] = mapped_column(String(64))
 
     __table_args__ = (
         CheckConstraint(

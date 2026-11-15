@@ -31,6 +31,10 @@ export interface TipItem {
   viewer_is_author?: boolean;
   /** Set once the author changed the text. Null = as written. */
   edited_at?: string | null;
+  /** "published" or "pending" — pending means it is waiting for review. */
+  status?: string;
+  /** Handed to an anonymous author once, at creation, so they can withdraw it. */
+  withdraw_token?: string | null;
 }
 
 export interface CommunityImage {
@@ -87,8 +91,11 @@ export const postTip = (
 /** Delete one of the viewer's own comments. Returns 409 when the comment has
  *  replies — deleting it would take other people's text with it, so those go
  *  through the operator instead. */
-export const deleteOwnTip = (id: string) =>
-  request<void>(`/community/comments/tip/${id}`, { method: "DELETE" });
+export const deleteOwnTip = (id: string, withdrawToken?: string | null) =>
+  request<void>(
+    `/community/comments/tip/${id}${withdrawToken ? `?withdraw_token=${encodeURIComponent(withdrawToken)}` : ""}`,
+    { method: "DELETE" },
+  );
 
 /** Rewrite one of the viewer's own comments. Replies are no obstacle — unlike
  *  deletion, changing one's own wording takes nobody else's text away. */

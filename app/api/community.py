@@ -16,6 +16,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Query,
     Request,
     Response,
     UploadFile,
@@ -109,6 +110,13 @@ class TipOut(BaseModel):
     viewer_is_author: bool = False
     # Set once the author changed the text. NULL = as written.
     edited_at: str | None = None
+    # "published" or "pending" — a held comment is waiting for review and is
+    # visible to nobody but the operator. Returned so the author is told that,
+    # instead of watching their comment vanish.
+    status: str = "published"
+    # Handed to an anonymous author exactly once, at creation, so they can
+    # withdraw the comment later. Never returned by any read.
+    withdraw_token: str | None = None
 
     @classmethod
     def of(cls, t: LocalTip, vote: dict | None = None, viewer_id=None) -> "TipOut":
@@ -120,6 +128,8 @@ class TipOut(BaseModel):
             upvotes=vote.get("count", 0), viewer_upvoted=vote.get("viewer_upvoted", False),
             viewer_is_author=bool(viewer_id and t.app_user_id == viewer_id),
             edited_at=t.edited_at.isoformat() if t.edited_at else None,
+            status=t.status,
+            withdraw_token=getattr(t, "withdraw_token", None),
         )
 
 
@@ -303,10 +313,17 @@ def delete_upvote(kind: str, comment_id: uuid.UUID, request: Request, db: Sessio
 @router.delete("/community/comments/tip/{comment_id}", status_code=204)
 def delete_own_comment(
     comment_id: uuid.UUID,
+    withdraw_token: str | None = Query(default=None, max_length=128),
     db: Session = Depends(get_db),
-    account: AppUser = Depends(current_account),
+    account: AppUser | None = Depends(optional_account),
 ) -> Response:
-    """Delete a comment the signed-in account wrote itself.
+    """Delete a comment its author wrote itself.
+
+    Two ways to prove authorship: a signed-in account, or the one-time secret
+    an anonymous author was handed when they posted. The second exists because
+    the composer deliberately lets people comment without registering — a
+    hazard worth reporting should not wait on an account — and someone who can
+    post should be able to take it back.
 
     Scoped to comments on purpose: ratings, images and spot suggestions stay
     with the operator, which is what the help page tells people. A comment that
@@ -314,7 +331,9 @@ def delete_own_comment(
     text away.
     """
     try:
-        service.delete_own_tip(db, comment_id, account.id)
+        service.delete_own_tip(
+            db, comment_id, account.id if account else None, withdraw_token=withdraw_token
+        )
     except LookupError:
         raise HTTPException(status_code=404, detail="Kommentar nicht gefunden.")
     except PermissionError:

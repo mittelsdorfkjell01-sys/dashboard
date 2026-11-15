@@ -8,6 +8,8 @@ moderation status filtering lives here so every caller is consistent.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
+import secrets
 import uuid
 
 from sqlalchemy import delete, func, select
@@ -170,8 +172,14 @@ def create_tip(
         # comment instead of nesting deeper.
         if parent.parent_id is not None:
             parent_id = parent.parent_id
-    from app.community.filter import is_flagged
+    from app.community.filter import is_flagged, is_held
 
+    held = is_held(body, title, author_name)
+    # An author without an account gets a secret so they can still take their
+    # own comment back. Signed-in authors are identified by app_user_id and
+    # need none; handing them one too would be a second, weaker key to the
+    # same door.
+    secret = None if app_user_id else secrets.token_urlsafe(24)
     tip = LocalTip(
         spot_id=spot_id,
         body=body.strip(),
@@ -180,14 +188,23 @@ def create_tip(
         author_email=_clean_email(author_email),
         parent_id=parent_id,
         app_user_id=app_user_id,
-        flagged=is_flagged(body, author_name),
+        # Held comments are flagged as well, so they sort to the top of the
+        # review queue instead of waiting behind routine link flags.
+        flagged=held or is_flagged(body, author_name),
+        status="pending" if held else "published",
+        withdraw_token_hash=_hash_token(secret) if secret else None,
         ip_hash=ip_hash,
     )
     db.add(tip)
-    if tip.flagged:
+    if held:
+        _notify(db, "flagged_tip", "Ein Kommentar wartet auf Freigabe.", spot_id)
+    elif tip.flagged:
         _notify(db, "flagged_tip", "Ein Tipp wurde zur Prüfung markiert.", spot_id)
     db.commit()
     db.refresh(tip)
+    # Carried on the instance, never persisted: the caller returns it to the
+    # author once and it is gone from the server's side of the world.
+    tip.withdraw_token = secret  # type: ignore[attr-defined]
     return tip
 
 
@@ -208,8 +225,17 @@ class ReplyPresent(Exception):
     the operator instead; see the help page, "Mitmachen & Community"."""
 
 
-def delete_own_tip(db: Session, tip_id, user_id) -> None:
-    """Remove a comment the signed-in account itself wrote.
+def _hash_token(secret: str) -> str:
+    return hashlib.sha256(secret.encode("utf-8")).hexdigest()
+
+
+def delete_own_tip(db: Session, tip_id, user_id=None, *, withdraw_token: str | None = None) -> None:
+    """Remove a comment its author wrote, proving authorship one of two ways.
+
+    A signed-in account is matched on ``app_user_id``. An anonymous author
+    proves it with the secret they were handed when they posted: it is compared
+    against the stored hash in constant time, so a wrong guess leaks nothing
+    about the right one.
 
     Self-service deletion covers the author's *own* words only. A comment that
     has replies is deliberately refused rather than cascaded away: the public
@@ -217,9 +243,16 @@ def delete_own_tip(db: Session, tip_id, user_id) -> None:
     by other people who never agreed to that.
     """
     tip = db.get(LocalTip, tip_id)
-    if tip is None or tip.status != "published":
+    if tip is None or tip.status not in ("published", "pending"):
         raise LookupError("Kommentar nicht gefunden.")
-    if tip.app_user_id is None or tip.app_user_id != user_id:
+    if tip.app_user_id is not None:
+        if tip.app_user_id != user_id:
+            raise PermissionError("Nur eigene Kommentare lassen sich löschen.")
+    elif not (
+        withdraw_token
+        and tip.withdraw_token_hash
+        and secrets.compare_digest(_hash_token(withdraw_token), tip.withdraw_token_hash)
+    ):
         raise PermissionError("Nur eigene Kommentare lassen sich löschen.")
     replies = db.scalar(
         select(func.count())

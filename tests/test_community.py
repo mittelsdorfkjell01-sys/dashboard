@@ -616,3 +616,63 @@ def test_a_comment_with_replies_is_not_cascaded_away(anon_client, spot_id, monke
     refused = anon_client.delete(f"/community/comments/tip/{parent_id}")
     assert refused.status_code == 409
     assert "Antworten" in refused.json()["detail"]
+
+
+def test_anonymous_author_can_withdraw_with_the_token(anon_client, spot_id, db):
+    # Posting without an account hands back a one-time secret; with it the
+    # author can take the comment back, without it nobody can.
+    posted = anon_client.post(
+        f"/spots/{spot_id}/tips", json={"body": "Einstieg bei Niedrigwasser steinig."}
+    )
+    assert posted.status_code == 201, posted.text
+    tip_id = posted.json()["id"]
+    token = posted.json()["withdraw_token"]
+    assert token, "an anonymous author must get a way back"
+
+    refused = anon_client.delete(f"/community/comments/tip/{tip_id}")
+    assert refused.status_code == 403
+    wrong = anon_client.delete(f"/community/comments/tip/{tip_id}?withdraw_token=nope")
+    assert wrong.status_code == 403
+
+    gone = anon_client.delete(f"/community/comments/tip/{tip_id}?withdraw_token={token}")
+    assert gone.status_code == 204, gone.text
+    assert db.get(LocalTip, uuid.UUID(tip_id)) is None
+
+
+def test_signed_in_author_gets_no_withdraw_token(anon_client, spot_id, monkeypatch):
+    # They are identified by their account; a second, weaker key to the same
+    # door would only be something to leak.
+    _signed_in(anon_client, monkeypatch)
+    posted = anon_client.post(f"/spots/{spot_id}/tips", json={"body": "Parkplatz ist frei."})
+    assert posted.status_code == 201, posted.text
+    assert posted.json()["withdraw_token"] is None
+
+
+def test_abusive_comment_is_held_for_review_and_never_published(anon_client, spot_id, client):
+    posted = anon_client.post(f"/spots/{spot_id}/tips", json={"body": "Du Hurensohn."})
+    assert posted.status_code == 201, posted.text
+    assert posted.json()["status"] == "pending"
+
+    # Invisible in public, and the author is told why by the composer.
+    public = anon_client.get(f"/spots/{spot_id}/tips").json()["items"]
+    assert posted.json()["id"] not in [t["id"] for t in public]
+
+    # Waiting on the operator, not silently dropped.
+    queue = client.get("/admin/review/queue").json()
+    held = [t for t in queue["tips"] if t["id"] == posted.json()["id"]]
+    assert held and held[0]["status"] == "pending"
+
+    released = client.post(f"/admin/tips/{posted.json()['id']}/restore")
+    assert released.status_code == 200, released.text
+    assert posted.json()["id"] in [
+        t["id"] for t in anon_client.get(f"/spots/{spot_id}/tips").json()["items"]
+    ]
+
+
+def test_plain_speech_is_not_held(anon_client, spot_id):
+    # "Wasserstand" contains "ass"; a substring list would hold it. A comment
+    # calling a spot scheisse steinig is someone describing a spot.
+    for text in ("Der Wasserstand ist niedrig.", "Der Einstieg ist scheisse steinig."):
+        posted = anon_client.post(f"/spots/{spot_id}/tips", json={"body": text})
+        assert posted.status_code == 201, posted.text
+        assert posted.json()["status"] == "published", text

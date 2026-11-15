@@ -285,6 +285,48 @@ html { -webkit-tap-highlight-color: transparent; }
     outline: none !important;
   }
 
+  /* The comment field: slimmer than a standard input, and silent when you
+     click into it.
+
+     Height. 40px rather than the house 44px, because this field sits under a
+     thread and should not read as a form. The 44px touch target is kept where
+     a finger is actually used — `pointer: coarse` covers phones and tablets —
+     so the slimmer version only ever reaches a mouse.
+
+     Focus. Focusing changes nothing: no border colour, no ring, no tint. The
+     blinking caret is the signal, which is what every chat and comment box
+     does — and for a text field the caret is a real focus indicator for
+     keyboard users too, because it appears wherever focus lands. (A button
+     would need a visible ring; a text field does not. `:focus-visible` is no
+     help here either: per spec it always matches an element that expects text
+     input, so it fires on a plain mouse click as well.)
+
+     The selectors carry an element name on purpose. Tailwind's
+     `placeholder:text-muted` is a class-level rule on ::placeholder, so a
+     class-only selector would tie with it and lose on source order.
+
+     Placeholder. It disappears the moment the field is focused, leaving the
+     caret alone on an empty line, instead of making you read "Kommentar
+     hinzufügen" while you type over it. */
+  .comment-compact {
+    height: 2.5rem;
+  }
+  @media (pointer: coarse) {
+    .comment-compact {
+      height: 2.75rem;
+    }
+  }
+  input.comment-compact:focus,
+  textarea.comment-field:focus {
+    border-color: var(--sw-line);
+    box-shadow: none;
+    outline: none;
+  }
+  input.comment-compact:focus::placeholder,
+  textarea.comment-field:focus::placeholder {
+    color: transparent;
+  }
+
   /* The "Wohin?" search field is a borderless Tippleiste inside the search bar —
      it carries no focus outline at all (the open panel is the affordance). */
   .search-plain:focus-visible {
@@ -349,9 +391,13 @@ html { -webkit-tap-highlight-color: transparent; }
 
   /* Spot-page fields use one neutral border as their complete focus state.
      This overrides the old border + ring + global outline combination without
-     removing the visible keyboard affordance. */
-  .spot-detail-page :where(input, select, textarea):focus,
-  .spot-detail-page :where(input, select, textarea):focus-visible {
+     removing the visible keyboard affordance.
+
+     The comment fields are excluded: they answer focus with the caret alone
+     (see .comment-compact above), and this rule's `!important` border and
+     background were exactly the colour change they are meant not to make. */
+  .spot-detail-page :where(input, select, textarea):not(.comment-field, .comment-compact):focus,
+  .spot-detail-page :where(input, select, textarea):not(.comment-field, .comment-compact):focus-visible {
     border-color: var(--sw-ink-soft) !important;
     background-color: var(--sw-surface) !important;
     box-shadow: none !important;
