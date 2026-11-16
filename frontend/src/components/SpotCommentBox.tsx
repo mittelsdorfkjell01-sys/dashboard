@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { avatarColor, commentThreads, initials, relativeTime, type CommentThread, type FeedPost } from "../lib/communityFeed";
+import { createPortal } from "react-dom";
+import { avatarColor, commentThreads, initials, relativeTime, sortThreads, type CommentThread, type FeedPost } from "../lib/communityFeed";
 import InlineTipComposer from "./InlineTipComposer";
 import UpvoteButton from "./UpvoteButton";
 import { ApiError, deleteOwnTip, editOwnTip, reportTip, type TipItem } from "../lib/api";
 import { forgetWithdrawToken, withdrawToken } from "../lib/withdrawTokens";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
 
 const INITIAL_VISIBLE = 6;
 const PAGE_SIZE = 6;
@@ -16,12 +18,28 @@ const PAGE_SIZE = 6;
  * ein "weitere laden"-Link den Rest lokal ein (Daten sind bereits geladen).
  */
 export default function SpotCommentBox({ spotId, posts, onPosted, onRemoved, onEdited, loading = false, error = null }: { spotId?: string; posts: FeedPost[]; onPosted?: (tip?: TipItem) => void; onRemoved?: (id: string) => void; onEdited?: (tip: TipItem) => void; loading?: boolean; error?: string | null }) {
-  const threads = commentThreads(posts);
+  const [sort, setSort] = useState<"relevant" | "newest">("relevant");
+  const threads = sortThreads(commentThreads(posts), sort);
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const shown = threads.slice(0, visible);
 
   return <section aria-labelledby="spot-comments-title" className="flex min-w-0 flex-col lg:h-full">
-    <h2 id="spot-comments-title" className="text-ui font-semibold text-ink">Kommentare</h2>
+    <div className="flex min-w-0 items-baseline justify-between gap-4">
+      <h2 id="spot-comments-title" className="text-ui font-semibold text-ink">Kommentare</h2>
+      {/* Relevance leads, but recency has to stay one tap away: on a spot page
+          a note about a new fence at the launch is worth more than a beloved
+          comment from four seasons ago, and only the reader knows which they
+          came for. */}
+      {threads.length > 1 && (
+        <button
+          type="button"
+          onClick={() => setSort((mode) => (mode === "relevant" ? "newest" : "relevant"))}
+          className="min-h-8 shrink-0 text-caption font-medium text-muted transition-colors hover:text-ink"
+        >
+          {sort === "relevant" ? "Neueste zuerst" : "Relevanteste zuerst"}
+        </button>
+      )}
+    </div>
     <div className="min-h-0 flex-1 lg:mt-2 lg:overflow-y-auto lg:pr-2">
       <div className="mt-7 lg:mt-2">
         {loading && threads.length === 0 ? <CommentSkeleton /> : error && threads.length === 0 ? <div role="alert" className="py-8 text-body text-muted">Kommentare konnten nicht geladen werden. <button type="button" onClick={() => onPosted?.()} className="font-medium text-accent underline">Erneut versuchen</button></div> : threads.length === 0 ? <div className="py-8"><p className="text-body font-semibold text-ink">Teile deine Erfahrung mit diesem Spot</p><p className="mt-2 text-ui leading-relaxed text-muted">Hilfreich sind Bedingungen, Einstieg, Gefahren oder Tipps zu ähnlichen Spots.</p></div> : <div className="space-y-7">
@@ -36,6 +54,7 @@ export default function SpotCommentBox({ spotId, posts, onPosted, onRemoved, onE
 
 function ThreadRow({ thread, spotId, onPosted, onRemoved, onEdited }: { thread: CommentThread; spotId?: string; onPosted?: (tip?: TipItem) => void; onRemoved?: (id: string) => void; onEdited?: (tip: TipItem) => void }) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [repliesOpen, setRepliesOpen] = useState(false);
   const { comment, replies } = thread;
   const parentTipId = comment.kind === "tip" ? comment.id.replace(/^tip:/, "") : undefined;
 
@@ -56,9 +75,22 @@ function ThreadRow({ thread, spotId, onPosted, onRemoved, onEdited }: { thread: 
   );
 
   return <article className="min-w-0">
-    <CommentRow post={comment} onChanged={() => onPosted?.()} onRemoved={onRemoved} onEdited={onEdited} onReply={() => setReplyTo(comment.authorName || "Anonym")} />
+    <CommentRow post={comment} onChanged={() => onPosted?.()} onRemoved={onRemoved} onEdited={onEdited} onReply={() => { setRepliesOpen(true); setReplyTo(comment.authorName || "Anonym"); }} />
     {replyTo === (comment.authorName || "Anonym") && composer(comment.authorName || "Anonym")}
-    {replies.length > 0 && <div className="relative ml-8 mt-3 space-y-3 pl-6 lg:ml-11 lg:pl-7">
+    {/* Replies stay folded away. An open thread pushes the next comment off
+        the screen, and most readers are scanning top-level comments, not
+        following one conversation. */}
+    {replies.length > 0 && !repliesOpen && (
+      <button
+        type="button"
+        onClick={() => setRepliesOpen(true)}
+        className="ml-11 mt-2 flex min-h-8 items-center gap-2 text-caption font-medium text-muted transition-colors hover:text-ink"
+      >
+        <span aria-hidden className="h-px w-6 bg-line" />
+        {replies.length === 1 ? "1 Antwort ansehen" : `${replies.length} Antworten ansehen`}
+      </button>
+    )}
+    {replies.length > 0 && repliesOpen && <div className="relative ml-8 mt-3 space-y-3 pl-6 lg:ml-11 lg:pl-7">
       {/* Reddit-style thread line: a hairline rail (line-soft, finer than the
           old border) that curves into each reply via a small rounded elbow. */}
       <span aria-hidden className="pointer-events-none absolute left-0 top-0 bottom-5 w-px bg-line-soft" />
@@ -67,6 +99,14 @@ function ThreadRow({ thread, spotId, onPosted, onRemoved, onEdited }: { thread: 
         <CommentRow post={reply} compact onChanged={() => onPosted?.()} onRemoved={onRemoved} onEdited={onEdited} onReply={() => setReplyTo(reply.authorName || "Anonym")} />
         {replyTo === (reply.authorName || "Anonym") && composer(reply.authorName || "Anonym")}
       </div>)}
+      <button
+        type="button"
+        onClick={() => setRepliesOpen(false)}
+        className="flex min-h-8 items-center gap-2 text-caption font-medium text-muted transition-colors hover:text-ink"
+      >
+        <span aria-hidden className="h-px w-6 bg-line" />
+        Antworten ausblenden
+      </button>
     </div>}
   </article>;
 }
@@ -107,10 +147,14 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const desktop = useDesktopViewport("(min-width: 640px)");
 
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: MouseEvent) => {
+      // Only the popover closes on an outside click; the sheet has its own
+      // backdrop, and this listener would fight it.
+      if (!desktop) return;
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
@@ -120,7 +164,7 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen]);
+  }, [menuOpen, desktop]);
 
   const run = async (fn: () => Promise<unknown>, after?: () => void) => {
     setBusy(true);
@@ -139,6 +183,23 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
   const meta = "min-h-8 text-caption font-medium text-muted transition-colors hover:text-ink disabled:opacity-50";
   const menuItem = "flex w-full items-center px-3 py-2 text-left text-caption text-ink transition-colors hover:bg-band";
   const avatar = compact ? "h-7 w-7" : "h-8 w-8";
+
+  // One list of actions, shown either in the desktop popover or the phone
+  // sheet. Written once so the two shapes can never drift apart.
+  const actions = canEdit || canDelete ? (
+    <>
+      {canEdit && (
+        <button type="button" role="menuitem" className={menuItem} onClick={() => { setDraft(post.text ?? ""); setEditing(true); setMenuOpen(false); }}>Bearbeiten</button>
+      )}
+      <button type="button" role="menuitem" className={`${menuItem} text-danger`} onClick={() => { setConfirming(true); setMenuOpen(false); setError(null); }}>
+        {canEdit ? "Löschen" : "Zurückziehen"}
+      </button>
+    </>
+  ) : reported ? (
+    <span className={`${menuItem} text-muted`}>Gemeldet</span>
+  ) : (
+    <button type="button" role="menuitem" className={menuItem} disabled={busy} onClick={() => { setMenuOpen(false); void run(() => reportTip(rawId), () => setReported(true)); }}>Melden</button>
+  );
 
   return <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3">
     <span aria-hidden className={`grid shrink-0 place-items-center self-start rounded-full text-caption font-semibold ${avatar} ${anonymous ? "bg-band text-muted" : "text-white"}`} style={anonymous ? undefined : { backgroundColor: avatarColor(post.authorName) }}>{anonymous ? "?" : initials(post.authorName)}</span>
@@ -220,26 +281,45 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
               >
                 ···
               </button>
-              {/* Anchored to the trigger's right edge: the trigger sits at the end
-                  of the meta row, so a left-anchored menu ran off the column. */}
-              {menuOpen && (
+              {menuOpen && (desktop ? (
+                /* Desktop: a small popover anchored to the trigger's right
+                   edge — the trigger sits at the end of the meta row, so a
+                   left-anchored menu ran off the column. */
                 <div role="menu" className="absolute right-0 top-full z-10 mt-1 min-w-[10rem] overflow-hidden rounded-card border border-line bg-surface shadow-card">
-                  {canEdit || canDelete ? (
-                    <>
-                      {canEdit && (
-                        <button type="button" role="menuitem" className={menuItem} onClick={() => { setDraft(post.text ?? ""); setEditing(true); setMenuOpen(false); }}>Bearbeiten</button>
-                      )}
-                      <button type="button" role="menuitem" className={`${menuItem} text-danger`} onClick={() => { setConfirming(true); setMenuOpen(false); setError(null); }}>
-                        {canEdit ? "Löschen" : "Zurückziehen"}
-                      </button>
-                    </>
-                  ) : reported ? (
-                    <span className={`${menuItem} text-muted`}>Gemeldet</span>
-                  ) : (
-                    <button type="button" role="menuitem" className={menuItem} disabled={busy} onClick={() => { setMenuOpen(false); void run(() => reportTip(rawId), () => setReported(true)); }}>Melden</button>
-                  )}
+                  {actions}
                 </div>
-              )}
+              ) : (
+                /* Phone: a sheet from the bottom edge, which is where a thumb
+                   is and where this gesture leads in every app people already
+                   use. A popover pinned to a 12px glyph halfway up a scrolling
+                   list is a desktop idea. Rendered as one variant, never two
+                   behind CSS — a hidden copy keeps its listeners and has
+                   already cost this app a bug. */
+                createPortal(
+                  <div className="fixed inset-0 z-modal flex flex-col justify-end">
+                    <button
+                      type="button"
+                      aria-label="Menü schließen"
+                      onClick={() => setMenuOpen(false)}
+                      className="absolute inset-0 bg-ink/30"
+                    />
+                    <div
+                      role="menu"
+                      className="relative mx-3 mb-[max(0.75rem,env(safe-area-inset-bottom))] overflow-hidden rounded-card bg-surface shadow-float"
+                    >
+                      {actions}
+                      <button
+                        type="button"
+                        onClick={() => setMenuOpen(false)}
+                        className={`${menuItem} justify-center border-t border-line font-medium`}
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                  </div>,
+                  document.body,
+                )
+              ))}
             </div>
           )
         )}

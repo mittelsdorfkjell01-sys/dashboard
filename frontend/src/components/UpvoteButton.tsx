@@ -48,7 +48,10 @@ export default function UpvoteButton({ kind, id, count, active }: { kind: "ratin
   return <span className="inline-flex items-center gap-1.5">
     <button type="button" aria-pressed={pressed} disabled={busy} onClick={toggle} className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-card px-2 text-caption font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${pressed ? "text-accent" : "text-muted hover:text-ink"}`}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none" className={`transition-transform duration-base motion-reduce:transition-none ${popping ? "-translate-y-0.5 scale-125" : ""}`}><path d="m5 9 5-5 5 5M10 4v12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      <span>{value}</span><span className="sr-only">Upvotes</span>
+      {/* No "0". A row of zeroes reads as an empty form; the arrow alone
+          is an invitation, and the number appears once there is one. */}
+      {value > 0 && <span>{value}</span>}
+      <span className="sr-only">{value === 1 ? "1 Upvote" : `${value} Upvotes`}</span>
     </button>
     {error && <span role="alert" className="sr-only">{error}</span>}
   </span>;

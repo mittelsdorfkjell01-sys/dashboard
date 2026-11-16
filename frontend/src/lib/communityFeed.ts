@@ -77,6 +77,56 @@ export function commentThreads(posts: FeedPost[]): CommentThread[] {
   }));
 }
 
+/** How a thread ranks when the list is sorted by relevance.
+ *
+ * Two things decide it: how much the comment earned, and how long ago. The
+ * earnings are upvotes plus replies, with a reply counted double — writing one
+ * costs more than tapping an arrow, so it says more about whether a comment was
+ * worth reading. The age divides that, which is the shape Hacker News and
+ * Reddit use and the reason neither of them freezes on the same top post.
+ *
+ * The exponent is the whole argument. At 1.0 a comment from this morning beats
+ * anything older no matter what it says, which is just "newest" wearing a
+ * different name. At 0 nothing ever moves again and the first popular comment
+ * owns the spot forever. 0.4 sits where a year-old comment with real agreement
+ * still outranks a fresh empty one, while a day-old comment with two replies
+ * climbs past a two-year-old with three upvotes.
+ *
+ * That matters more here than on a social feed: conditions change. A note about
+ * a new fence at the launch is worth more than a beloved comment from 2019, and
+ * the decay is what lets it overtake.
+ *
+ * Deliberately not personalised and not hidden — the same order for everyone,
+ * computed from two numbers anyone can see on the row.
+ */
+export function threadRelevance(thread: CommentThread, now: number = Date.now()): number {
+  const earned = (thread.comment.upvotes ?? 0) + thread.replies.length * 2;
+  const posted = Date.parse(thread.comment.createdAt);
+  const ageHours = Number.isFinite(posted) ? Math.max(0, (now - posted) / 3_600_000) : 0;
+  return (earned + 1) / Math.pow(ageHours + 2, 0.4);
+}
+
+/** Threads in the order a reader should meet them.
+ *
+ * "newest" is a plain reverse-chronological list. "relevant" ranks by
+ * :func:`threadRelevance` and falls back to recency on a tie, so two untouched
+ * comments still come out newest-first instead of in whatever order the server
+ * happened to send.
+ */
+export function sortThreads(
+  threads: CommentThread[],
+  mode: "relevant" | "newest",
+  now: number = Date.now(),
+): CommentThread[] {
+  const byNewest = (a: CommentThread, b: CommentThread) =>
+    b.comment.createdAt.localeCompare(a.comment.createdAt);
+  if (mode === "newest") return [...threads].sort(byNewest);
+  return [...threads].sort((a, b) => {
+    const diff = threadRelevance(b, now) - threadRelevance(a, now);
+    return Math.abs(diff) < 1e-9 ? byNewest(a, b) : diff;
+  });
+}
+
 const VISIT_MARKER_RE = /^\[besucht:(\d{4}-\d{2}-\d{2})\]\s*/;
 
 export function encodeVisitDate(visitedAt: string, text: string): string {
