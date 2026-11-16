@@ -4,6 +4,6 @@
 # never add these native/scientific dependencies to api/requirements.txt.
 # 2026.4+ publishes Linux x86_64 and aarch64 wheels. This keeps the licensed
 # worker viable on free ARM infrastructure without compiling PyFES locally.
-pyfes==2026.5.2
+pyfes==2026.10.0
 netCDF4>=1.7,<2
 timezonefinder>=8,<9
