@@ -653,7 +653,12 @@ def test_retention_reclaims_failed_run_assets_before_complete_cycles(db) -> None
         )
         run.status = status
         runs.append(run)
-    storage = MemoryFieldObjectStorage()
+    class TransactionCheckingStorage(MemoryFieldObjectStorage):
+        def delete(self, key: str) -> None:
+            assert not db.in_transaction()
+            super().delete(key)
+
+    storage = TransactionCheckingStorage()
     stored = storage.put_immutable("failed/run/partial.bin", b"partial")
     asset = register_asset(
         db,
