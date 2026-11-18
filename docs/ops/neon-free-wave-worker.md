@@ -47,13 +47,16 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
 
 - Der Worker verarbeitet die Modelle nacheinander; parallele Läufe können das
   gemeinsame Speicherbudget nicht überbuchen.
-- Pro Modell bleiben drei Zyklen erhalten. Aktive Veröffentlichung und direkter
+- Pro Modell bleiben zwei vollständige Zyklen erhalten. Aktive Veröffentlichung und direkter
   Rollback-Vorgänger werden zusätzlich geschützt.
 - Das harte Budget liegt bei 4,5 GB und damit 500 MB unter dem kostenlosen
   5-GB-Limit. Vor jedem Lauf wird Retention ausgeführt.
-- Ein einzelner Lauf darf höchstens das bestehende Aktivierungslimit plus eine
-  begrenzte Reserve für Manifest und Asset-Index schreiben. Die Pipeline bricht
-  vor dem überschreitenden Objekt ab.
+- Ein einzelner Lauf darf höchstens 800 MB plus eine begrenzte Reserve für
+  Manifest und Asset-Index schreiben. Das deckt den gemessenen GWAM-Bedarf von
+  rund 740 MB ab; die Pipeline bricht vor dem überschreitenden Objekt ab.
+- Abgebrochene direkte Publisher-Läufe werden nach dem Stale-Schwellwert als
+  fehlgeschlagen markiert. Ihre Teilassets zählen nicht zu den zwei
+  Retention-Zyklen und werden vor dem nächsten Lauf entfernt.
 - Ein Storage-Smoke-Test prüft Schreiben, Lesen und Löschen, bevor Modelldaten
   geladen werden.
 
@@ -64,7 +67,8 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
    Vercel-Projekte neu deployen.
 3. Workflow **Production Wave Field Publication** manuell mit einem Modell
    starten und Storage- sowie Qualitätsausgabe prüfen.
-4. Manuell mit `all` starten. Der abschließende Doctor muss drei aktive,
+4. Manuell mit `all` starten. Der serielle Lauf darf bis zu vier Stunden dauern;
+   der abschließende Doctor muss drei aktive,
    gesunde Veröffentlichungen melden.
 5. `python -m scripts.production_readiness api-smoke --require-wave-fields`
    gegen die Produktions-API ausführen.
@@ -72,5 +76,5 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
    viermal täglich nach Abschluss der freien Modellzyklen.
 
 Bei einem Fehler bleibt die letzte aktive Veröffentlichung erhalten. Das
-Storage-Budget oder die Retention dürfen nicht erhöht werden, um einen
-fehlgeschlagenen Lauf zu erzwingen.
+Storage-Budget oder die Retention dürfen nicht ohne gemessene Assetgrößen
+erhöht werden, um einen fehlgeschlagenen Lauf zu erzwingen.

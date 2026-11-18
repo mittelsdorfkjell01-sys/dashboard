@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import func, select
 
 from app.models.weather_field import (
     WeatherFieldAsset,
+    WeatherFieldJob,
     WeatherFieldPublication,
     WeatherFieldRun,
 )
@@ -22,6 +25,47 @@ def tracked_weather_field_storage_bytes(db) -> int:
         )
         or 0
     )
+
+
+def fail_stale_unmanaged_runs(
+    db,
+    *,
+    model_key: str,
+    stale_before: datetime,
+    now: datetime | None = None,
+) -> list[str]:
+    """Fail abandoned direct-publisher runs without touching active worker jobs."""
+    active_job_run_ids = set(
+        db.scalars(
+            select(WeatherFieldJob.run_id).where(
+                WeatherFieldJob.status == "processing",
+                WeatherFieldJob.run_id.is_not(None),
+            )
+        ).all()
+    )
+    runs = db.scalars(
+        select(WeatherFieldRun)
+        .where(
+            WeatherFieldRun.model_key == model_key,
+            WeatherFieldRun.status.in_(
+                {"downloading", "processing", "quality_pending"}
+            ),
+            WeatherFieldRun.started_at < stale_before,
+        )
+        .with_for_update(skip_locked=True)
+    ).all()
+    failed_ids: list[str] = []
+    completed_at = now or datetime.now(timezone.utc)
+    for run in runs:
+        if run.id in active_job_run_ids:
+            continue
+        run.status = "failed"
+        run.completed_at = completed_at
+        run.error = "direct publisher exceeded processing stale threshold"
+        failed_ids.append(str(run.id))
+    if failed_ids:
+        db.commit()
+    return failed_ids
 
 
 def prune_weather_field_runs(
@@ -69,14 +113,20 @@ def prune_weather_field_runs(
         # Retention is defined in model cycles, not raw run rows. Retries and
         # reprocessing versions of one cycle must not crowd an older distinct
         # cycle out of the shadow-readiness window.
+        retainable_statuses = {"ready", "rejected"}
         retained_cycles: list = []
         for run in runs:
+            if run.status not in retainable_statuses:
+                continue
             if run.model_run_at not in retained_cycles:
                 retained_cycles.append(run.model_run_at)
             if len(retained_cycles) >= retain_runs:
                 break
         retained = {
-            run.id for run in runs if run.model_run_at in retained_cycles
+            run.id
+            for run in runs
+            if run.status in retainable_statuses
+            and run.model_run_at in retained_cycles
         } | protected_run_ids
         for run in runs:
             if run.id in retained or run.status not in {
