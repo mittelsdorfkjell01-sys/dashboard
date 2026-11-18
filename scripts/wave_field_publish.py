@@ -20,6 +20,7 @@ from app.spatial_fields.forecast_profile import (
 )
 from app.spatial_fields.pipeline import process_run, provider_for_model
 from app.spatial_fields.retention import (
+    fail_stale_unmanaged_runs,
     prune_weather_field_runs,
     tracked_weather_field_storage_bytes,
 )
@@ -36,13 +37,21 @@ def _configured_hours(settings, model_key: str) -> list[int]:
     return configured_wave_hours(settings, model_key)
 
 
-def _bounded_storage(db, *, settings, storage):
+def _bounded_storage(db, *, settings, storage, model_key: str, now: datetime):
     """Prune first, then reserve bounded room for exactly one model run."""
+    stale_runs = fail_stale_unmanaged_runs(
+        db,
+        model_key=model_key,
+        stale_before=now
+        - timedelta(minutes=settings.weather_field_processing_stale_minutes),
+        now=now,
+    )
     retention = prune_weather_field_runs(
         db,
         storage=storage,
         retain_runs=settings.weather_field_retention_runs,
     )
+    retention["stale_runs_failed"] = stale_runs
     tracked_bytes = tracked_weather_field_storage_bytes(db)
     provider_budget = settings.weather_field_storage_budget_bytes
     available_bytes = (
@@ -96,6 +105,8 @@ def publish_wave_run(
             db,
             settings=settings,
             storage=storage,
+            model_key=model_key,
+            now=instant,
         )
         models = sync_free_model_catalog(db)
         model = next(row for row in models if row.model_key == model_key)

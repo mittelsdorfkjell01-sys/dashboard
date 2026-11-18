@@ -29,7 +29,9 @@ jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.WAVE_FIELD_WORKER_ENABLED == 'true')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # EWAM and GWAM each take about one hour; the serial all-model run needs an
+    # independent safety window without introducing another paid worker.
+    timeout-minutes: 240
     env:
       TZ: UTC
       APP_ENV: production
@@ -47,7 +49,11 @@ jobs:
       WAVE_FIELD_PUBLIC_ENABLED: "true"
       WAVE_FIELD_AUTO_ACTIVATE: "true"
       WAVE_BACKTEST_ARCHIVE_ENABLED: "true"
-      WEATHER_FIELD_RETENTION_RUNS: "3"
+      # Two complete cycles preserve rollback while keeping all three wave
+      # models comfortably inside Neon's free object-storage allowance.
+      WEATHER_FIELD_RETENTION_RUNS: "2"
+      # GWAM tiles plus browser series containers require about 740 MB.
+      WEATHER_FIELD_ACTIVATION_MAX_ASSET_BYTES: "800000000"
       # Leaves 500 MB below Neon's 5 GB free object-storage allowance.
       WEATHER_FIELD_STORAGE_BUDGET_BYTES: "4500000000"
       WEATHER_FIELD_STORAGE_BACKEND: s3
