@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.models.weather_field import (
     WeatherFieldAsset,
@@ -13,6 +13,9 @@ from app.models.weather_field import (
     WeatherFieldRun,
 )
 from app.spatial_fields.storage import FieldObjectStorage
+
+
+DELETE_COMMIT_BATCH_SIZE = 100
 
 
 def tracked_weather_field_storage_bytes(db) -> int:
@@ -136,15 +139,19 @@ def prune_weather_field_runs(
                 "expired",
             }:
                 continue
+            run_id = run.id
             assets = db.scalars(
                 select(WeatherFieldAsset).where(
-                    WeatherFieldAsset.run_id == run.id,
+                    WeatherFieldAsset.run_id == run_id,
                     WeatherFieldAsset.status != "deleted",
                 )
             ).all()
+            asset_records = [
+                (asset.id, asset.object_key, asset.size_bytes) for asset in assets
+            ]
             candidate_runs += 1
-            candidate_assets += len(assets)
-            run_bytes = sum(asset.size_bytes for asset in assets)
+            candidate_assets += len(asset_records)
+            run_bytes = sum(size_bytes for _, _, size_bytes in asset_records)
             candidate_bytes += run_bytes
             candidates.append(
                 {
@@ -152,29 +159,50 @@ def prune_weather_field_runs(
                     "model": run.model_key,
                     "model_run": run.model_run_at.isoformat(),
                     "status": run.status,
-                    "assets": len(assets),
+                    "assets": len(asset_records),
                     "bytes": run_bytes,
                 }
             )
             if dry_run:
                 continue
+            # Object-store I/O can take minutes for a large failed run. End the
+            # read transaction first so serverless Postgres does not terminate
+            # an otherwise idle connection while objects are deleted.
+            db.commit()
             run_failed = False
-            for asset in assets:
+            deleted_batch: list = []
+            for asset_id, object_key, size_bytes in asset_records:
                 try:
-                    storage.delete(asset.object_key)
-                    asset.status = "deleted"
+                    storage.delete(object_key)
+                    deleted_batch.append(asset_id)
                     deleted_assets += 1
-                    deleted_bytes += asset.size_bytes
+                    deleted_bytes += size_bytes
+                    if len(deleted_batch) >= DELETE_COMMIT_BATCH_SIZE:
+                        db.execute(
+                            update(WeatherFieldAsset)
+                            .where(WeatherFieldAsset.id.in_(deleted_batch))
+                            .values(status="deleted")
+                        )
+                        db.commit()
+                        deleted_batch.clear()
                 except Exception as exc:
                     run_failed = True
                     errors.append(
                         {
-                            "run_id": str(run.id),
-                            "asset_id": str(asset.id),
+                            "run_id": str(run_id),
+                            "asset_id": str(asset_id),
                             "error": type(exc).__name__,
                         }
                     )
+            if deleted_batch:
+                db.execute(
+                    update(WeatherFieldAsset)
+                    .where(WeatherFieldAsset.id.in_(deleted_batch))
+                    .values(status="deleted")
+                )
+                db.commit()
             if not run_failed:
+                run = db.get(WeatherFieldRun, run_id)
                 run.status = "expired"
                 expired_runs += 1
         if not dry_run:
