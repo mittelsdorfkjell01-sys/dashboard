@@ -51,8 +51,20 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-wave-backtest.txt
 
+      - name: Guard Neon transfer quota
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: >-
+          python -m scripts.neon_transfer_guard
+          --workload-name "Wave verification"
+          --require-config
+
       - name: Install verification dependencies
         run: pip install -r requirements-wave-backtest.txt
+
+      - name: Route Neon database over IPv4
+        run: python -m scripts.database_ipv4_env
 
       - name: Import recent Copernicus observations
         if: github.event_name == 'schedule' || inputs.mode == 'all' || inputs.mode == 'import'

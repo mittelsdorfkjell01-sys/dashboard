@@ -41,6 +41,26 @@ def test_missing_monitor_configuration_blocks_shadow(monkeypatch, tmp_path):
     assert "allow_shadow=false" in values
 
 
+def test_required_monitor_configuration_fails_closed(monkeypatch, tmp_path):
+    output = tmp_path / "output.txt"
+    monkeypatch.delenv("NEON_API_KEY", raising=False)
+    monkeypatch.delenv("NEON_PROJECT_ID", raising=False)
+    assert (
+        guard.main(
+            [
+                "--github-output",
+                str(output),
+                "--workload-name",
+                "Wave publication",
+                "--require-config",
+            ]
+        )
+        == 3
+    )
+    values = output.read_text(encoding="utf-8")
+    assert "allow_workload=false" in values
+
+
 def test_block_threshold_fails_without_leaking_key(monkeypatch, tmp_path, capsys):
     output = tmp_path / "output.txt"
     monkeypatch.setenv("NEON_API_KEY", "do-not-print-this")
@@ -49,4 +69,5 @@ def test_block_threshold_fails_without_leaking_key(monkeypatch, tmp_path, capsys
     assert guard.main(["--github-output", str(output)]) == 2
     combined = capsys.readouterr().out + output.read_text(encoding="utf-8")
     assert "allow_shadow=false" in combined
+    assert "allow_workload=false" in combined
     assert "do-not-print-this" not in combined
