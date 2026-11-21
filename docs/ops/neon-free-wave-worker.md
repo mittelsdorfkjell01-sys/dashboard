@@ -73,7 +73,9 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
 5. `python -m scripts.production_readiness api-smoke --require-wave-fields`
    gegen die Produktions-API ausführen.
 6. Erst danach `WAVE_FIELD_WORKER_ENABLED=true` setzen. Der geplante Lauf startet
-   viermal täglich nach Abschluss der freien Modellzyklen.
+   zweimal täglich nach Abschluss der freien Modellzyklen. Die reduzierte
+   Frequenz hält den seriellen Drei-Modell-Worker innerhalb des kostenlosen
+   Compute-Budgets; manuelle Zusatzläufe nur für Störungsbehebung verwenden.
 
 Bei einem Fehler bleibt die letzte aktive Veröffentlichung erhalten. Das
 Storage-Budget oder die Retention dürfen nicht ohne gemessene Assetgrößen
