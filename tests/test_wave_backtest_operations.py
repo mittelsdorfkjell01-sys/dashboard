@@ -49,6 +49,8 @@ def test_wave_workflows_are_free_bounded_and_fail_closed():
     assert "COPERNICUS_MARINE_USERNAME" in verification
     assert "COPERNICUS_MARINE_PASSWORD" in verification
     assert "requirements-wave-backtest.txt" in verification
+    assert "python -m scripts.database_ipv4_env" in publication
+    assert "python -m scripts.database_ipv4_env" in verification
     assert "--minimum-forecast-samples 1" in verification
     assert "--minimum-matched-values 1" in verification
     assert "--minimum-matched-platforms 1" in verification

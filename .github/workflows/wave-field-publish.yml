@@ -74,8 +74,20 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Guard Neon transfer quota
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: >-
+          python -m scripts.neon_transfer_guard
+          --workload-name "Wave field publication"
+          --require-config
+
       - name: Install field-worker dependencies
         run: pip install -r requirements.txt
+
+      - name: Route Neon database over IPv4
+        run: python -m scripts.database_ipv4_env
 
       - name: Resolve branch-scoped Neon Object Storage
         shell: bash
