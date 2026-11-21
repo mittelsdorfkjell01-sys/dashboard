@@ -14,7 +14,11 @@ import type { SpotOrigin } from "../lib/api";
 // street map. Note the {z}/{y}/{x} order (y before x) — Esri's ArcGIS tile
 // scheme, not Leaflet's default {z}/{x}/{y}.
 const AERIAL_TILE_URL =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const AERIAL_FALLBACK_TILE_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const REFERENCE_TILE_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
 const AERIAL_ATTRIBUTION =
   'Tiles © <a href="https://www.esri.com/">Esri</a> — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community';
 
@@ -49,6 +53,7 @@ export default function LocatorMap({
   const originsMixed = useSpotOriginsMixed();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const retryTilesRef = useRef<() => void>(() => undefined);
   const [active, setActive] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   // Below lg the inline map is small, so a tap opens it fullscreen; from lg up
@@ -66,10 +71,16 @@ export default function LocatorMap({
   }, []);
   const [ready, setReady] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
+  const [tilesIncomplete, setTilesIncomplete] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
+    const startedAt = performance.now();
+    let visibleTileRequests = 0;
+    let fallbackFailures = 0;
+    let labelsAdded = false;
+    let zoomFadeTimer = 0;
     let map: L.Map;
     try {
       map = L.map(container, {
@@ -114,6 +125,46 @@ export default function LocatorMap({
       // imagery still covers the full frame throughout that transition.
       const visiblePixelBounds = tileLayer._getTiledPixelBounds.bind(tileLayer);
       tileLayer._getTiledPixelBounds = (center) => visiblePixelBounds(center).pad(0.5);
+      tileLayer.on("tileloadstart", () => {
+        visibleTileRequests += 1;
+      });
+      tileLayer.on("tileerror", (event) => {
+        const source = (event.tile as HTMLImageElement).src;
+        if (source.includes("services.arcgisonline.com")) {
+          tileLayer.setUrl(AERIAL_FALLBACK_TILE_URL, false);
+          tileLayer.redraw();
+          return;
+        }
+        fallbackFailures += 1;
+        setTilesIncomplete(true);
+      });
+      tileLayer.on("load", () => {
+        const complete = fallbackFailures === 0;
+        setTilesIncomplete(!complete);
+        if (!complete) return;
+        container.dataset.visibleReadyMs = String(
+          Math.max(0.1, Math.round((performance.now() - startedAt) * 10) / 10),
+        );
+        container.dataset.visibleTileRequests = String(visibleTileRequests);
+        if (!labelsAdded) {
+          labelsAdded = true;
+          const labelsPane = map.createPane("locatorLabels");
+          labelsPane.classList.add("swd-locator-labels");
+          labelsPane.style.zIndex = "450";
+          labelsPane.style.pointerEvents = "none";
+          L.tileLayer(REFERENCE_TILE_URL, {
+            maxZoom: 19,
+            pane: "locatorLabels",
+          }).addTo(map);
+        }
+      });
+      retryTilesRef.current = () => {
+        fallbackFailures = 0;
+        visibleTileRequests = 0;
+        setTilesIncomplete(false);
+        tileLayer.setUrl(AERIAL_TILE_URL, false);
+        tileLayer.redraw();
+      };
       tileLayer.addTo(map);
     } catch (error) {
       console.error("Unable to initialise locator map:", error);
@@ -121,6 +172,26 @@ export default function LocatorMap({
       return;
     }
     mapRef.current = map;
+    const updateZoom = () => {
+      container.dataset.currentZoom = map.getZoom().toFixed(3);
+    };
+    const startZoomFade = () => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      window.clearTimeout(zoomFadeTimer);
+      container.classList.add("swd-locator-zoom-fading");
+    };
+    const finishZoomFade = () => {
+      window.clearTimeout(zoomFadeTimer);
+      zoomFadeTimer = window.setTimeout(
+        () => container.classList.remove("swd-locator-zoom-fading"),
+        240,
+      );
+      updateZoom();
+    };
+    map.on("zoom", updateZoom);
+    map.on("zoomstart", startZoomFade);
+    map.on("zoomend", finishZoomFade);
+    updateZoom();
     for (const h of interactionHandlers(map)) h.disable(); // start locked
 
     const icon = L.divIcon({
@@ -145,6 +216,8 @@ export default function LocatorMap({
     return () => {
       resizeObserver.disconnect();
       cancelAnimationFrame(resizeFrame);
+      window.clearTimeout(zoomFadeTimer);
+      retryTilesRef.current = () => undefined;
       map.remove();
       mapRef.current = null;
     };
@@ -230,7 +303,7 @@ export default function LocatorMap({
         data-lenis-prevent={active ? "" : undefined}
         className={
           fullscreen
-            ? "swd-locator-map fixed inset-0 z-fullscreen overflow-hidden bg-band"
+            ? "swd-locator-map fixed inset-0 z-fullscreen h-[100dvh] w-screen max-w-none overflow-hidden bg-band"
             : "swd-locator-map relative h-[360px] overflow-hidden rounded-card bg-band sm:h-[440px] lg:h-full"
         }
       >
@@ -264,7 +337,7 @@ export default function LocatorMap({
               setFullscreen(false);
               setActive(false);
             }}
-            className="absolute right-4 z-map-control grid h-9 w-9 place-items-center rounded-full bg-ink/55 text-white transition-colors hover:bg-ink/70"
+            className="absolute right-4 z-map-control grid h-11 w-11 place-items-center rounded-full bg-ink/55 text-white transition-colors hover:bg-ink/70"
             style={{ top: "calc(1rem + env(safe-area-inset-top, 0px))" }}
           >
             <CloseIcon width={16} height={16} />
@@ -280,7 +353,7 @@ export default function LocatorMap({
               type="button"
               aria-label="Vergrößern"
               onClick={() => requestZoom(0.5)}
-              className="grid h-8 w-8 place-items-center text-white transition-opacity hover:opacity-65"
+              className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
             >
               <ControlGlyph plus />
             </button>
@@ -288,7 +361,7 @@ export default function LocatorMap({
               type="button"
               aria-label="Verkleinern"
               onClick={() => requestZoom(-0.5)}
-              className="grid h-8 w-8 place-items-center text-white transition-opacity hover:opacity-65"
+              className="grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
             >
               <ControlGlyph />
             </button>
@@ -300,13 +373,29 @@ export default function LocatorMap({
             rel={link.rel}
             aria-label="In externer Karte öffnen"
             title="In externer Karte öffnen"
-            className="pointer-events-auto grid h-8 w-8 place-items-center text-white transition-opacity hover:opacity-65"
+            className="pointer-events-auto grid h-11 w-11 place-items-center text-white transition-opacity hover:opacity-65"
           >
             <LinkIcon width={15} height={15} />
           </a>
         </div>
 
         <LeafletAttributionDisclosure source="esri" tone="overlay" />
+
+        {tilesIncomplete && (
+          <div
+            role="alert"
+            className="absolute bottom-14 left-1/2 z-map-control flex -translate-x-1/2 items-center gap-3 rounded-card bg-black/80 px-4 py-3 text-caption text-white shadow-card"
+          >
+            <span>Satellitenbild unvollständig</span>
+            <button
+              type="button"
+              onClick={() => retryTilesRef.current()}
+              className="min-h-11 whitespace-nowrap font-semibold underline underline-offset-2"
+            >
+              Erneut laden
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

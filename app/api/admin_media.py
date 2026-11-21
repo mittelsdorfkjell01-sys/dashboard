@@ -349,6 +349,11 @@ def promote_gallery_image(image_id: uuid.UUID, db: Session = Depends(get_db)) ->
         return media_gallery.promote_to_hero(db, image_id)
     except LookupError:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden.")
+    except media_adopt.DuplicateHeroError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "duplicate_hero", "message": str(exc), "usages": exc.usages},
+        )
     except media_gallery.GalleryError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 

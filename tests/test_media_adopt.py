@@ -17,6 +17,7 @@ from sqlalchemy import delete, select
 
 from app.config import get_settings
 from app.media import adopt as media_adopt
+from app.media.image_object import build_image
 from app.media.providers import pexels, unsplash, wikimedia
 from app.media.providers.base import ProviderError
 from app.models import MediaProviderBudget, MediaUsage, Region, Spot, SpotImage
@@ -415,6 +416,39 @@ def test_verify_sources_treats_an_unreachable_host_as_dead(db, spot, unsplash_fe
     media_adopt.verify_sources(db, limit=500)
     db.refresh(spot)
     assert spot.image["source_status"] == "dead"
+
+
+def test_verify_sources_checks_local_hosted_media_without_http(db, spot, tmp_path, monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "media_backend", "local")
+    monkeypatch.setattr(settings, "media_dir", str(tmp_path))
+    monkeypatch.setattr(settings, "media_url_prefix", "/media")
+    target = tmp_path / "spots" / "hero.avif"
+    target.parent.mkdir()
+    target.write_bytes(b"image")
+    spot.image = build_image(
+        url="/media/spots/hero.avif",
+        source="upload",
+        license="owned",
+        credit="Surfwinddata",
+        provider="upload",
+        delivery="hosted",
+    )
+    db.commit()
+    monkeypatch.setattr(
+        "app.media.adopt.head_status",
+        lambda url: (
+            pytest.fail(f"HTTP check attempted for owned URL: {url}")
+            if url == "/media/spots/hero.avif"
+            else 200
+        ),
+    )
+
+    report = media_adopt.verify_sources(db, limit=500)
+    db.refresh(spot)
+
+    assert spot.image["source_status"] == "ok"
+    assert all(item["entity_id"] != str(spot.id) for item in report["dead"])
 
 
 # --- HTTP surface ----------------------------------------------------------

@@ -29,7 +29,7 @@ import {
 import { cartoTileUrl, prefersRetinaTiles, CARTO_ATTRIBUTION, CARTO_VOYAGER_LABELS, CARTO_VOYAGER_NOLABELS } from "../lib/basemaps";
 import LeafletAttributionDisclosure from "../components/LeafletAttributionDisclosure";
 import ExplorerModeToggle from "../weather-map/ExplorerModeToggle";
-import { parseFieldUrlState, updateFieldUrl, type ExplorerMode } from "../weather-map/fieldUrlState";
+import { fieldUrlSearch, parseFieldUrlState, type ExplorerMode } from "../weather-map/fieldUrlState";
 import { EUROPE_COUNTRY_LABELS, PLACE_LABEL_MIN_ZOOM } from "../weather-map/countryLabels";
 
 const MapForecastChart = lazy(() => import("../components/data/MapForecastChart"));
@@ -155,6 +155,7 @@ function SpotExplorer({
 
   const viewportTimer = useRef<number>();
   const commitViewport = useCallback(() => {
+    if (!active) return;
     const map = mapRef.current;
     if (!map) return;
     const center = map.getCenter();
@@ -168,7 +169,7 @@ function SpotExplorer({
       const bounds = map.getBounds();
       setViewportIds(withCoords.filter((spot) => bounds.contains([spot.coords[0], spot.coords[1]])).map((spot) => spot.id));
     }, VIEWPORT_DEBOUNCE_MS);
-  }, [selectedId, withCoords]);
+  }, [active, selectedId, withCoords]);
 
   // --- map construction -----------------------------------------------------
   useEffect(() => {
@@ -596,20 +597,19 @@ function SpotExplorer({
 }
 
 export default function MapView() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<ExplorerMode>(() => parseFieldUrlState(window.location.search).mode);
   const [weatherMode, setWeatherMode] = useState<"wind" | "waves">(() => {
     const initial = parseFieldUrlState(window.location.search).mode;
     return initial === "waves" ? "waves" : "wind";
   });
   useEffect(() => {
-    const sync = () => {
-      setMode(parseFieldUrlState(window.location.search).mode);
-    };
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
-  }, []);
+    setMode(parseFieldUrlState(location.search).mode);
+  }, [location.search]);
   const changeMode = (next: ExplorerMode) => {
-    updateFieldUrl({ mode: next }, false);
+    const search = fieldUrlSearch(window.location.search, { mode: next });
+    navigate({ pathname: window.location.pathname, search }, { replace: false });
     if (next !== "spots") setWeatherMode(next);
     setMode(next);
   };

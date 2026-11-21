@@ -11,9 +11,22 @@ import os
 from pathlib import Path
 
 from app.config import Settings, get_settings
+from sqlalchemy.engine import make_url
 
 # --- redirect the app to the test database BEFORE engine creation ---------
 _TEST_URL = Settings().test_database_url
+
+
+def _validate_test_database_url(raw_url: str) -> None:
+    """Refuse to run the schema-reset fixture against a non-local/non-test DB."""
+    url = make_url(raw_url)
+    if url.host not in {"localhost", "127.0.0.1", "::1"}:
+        raise RuntimeError("TEST_DATABASE_URL must point to a local database")
+    if url.database != "surfwind_test":
+        raise RuntimeError("TEST_DATABASE_URL database must be exactly 'surfwind_test'")
+
+
+_validate_test_database_url(_TEST_URL)
 os.environ["DATABASE_URL"] = _TEST_URL
 os.environ["APP_ENV"] = "test"
 os.environ["DEPLOYMENT_MODE"] = "admin"

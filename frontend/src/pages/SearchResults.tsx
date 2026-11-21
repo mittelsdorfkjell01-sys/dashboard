@@ -131,6 +131,16 @@ function ResultsLayout({
   /** Camera for the companion map; null → no map (nothing resolved yet). */
   frame: { center: [number, number]; zoom: number } | null;
 }) {
+  const [desktopMap, setDesktopMap] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const update = () => setDesktopMap(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   return (
     <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 pb-16 sm:px-8">
       <div className={frame ? "lg:grid lg:grid-cols-[1fr_minmax(360px,40%)] lg:gap-8" : undefined}>
@@ -139,7 +149,7 @@ function ResultsLayout({
           <div className="mt-8 space-y-10">{children}</div>
         </div>
 
-        {frame && (
+        {frame && desktopMap && (
           <div className="hidden lg:block">
             {/* Docked beneath the persistent header and held there while the
                 result column scrolls independently. */}
@@ -261,6 +271,7 @@ export default function SearchResults() {
   const sport = params.get("sport") ?? undefined;
   const week = params.get("week");
   const month = params.get("month");
+  const weeks = params.get("weeks") ?? undefined;
   const spotId = params.get("spot_id") ?? undefined;
   const regionId = params.get("region_id") ?? undefined;
   const mode = params.get("mode"); // "weeks" → the temporal best-weeks list
@@ -280,7 +291,7 @@ export default function SearchResults() {
   }, [eventKey]); // one event per navigated search URL
 
   const placeOpen = !q && !spotId && !regionId;
-  const timeOpen = !week && !month;
+  const timeOpen = !week && !month && !weeks;
   const placeEntity = spotId ?? regionId;
 
   const showWeeks = mode === "weeks" && Boolean(placeEntity);
@@ -348,7 +359,7 @@ export default function SearchResults() {
       run = api.getBestWeeks({ spot_id: spotId, region_id: regionId, sport }).then((r) => alive && setBestWeeks(r));
     } else if (showBestRegions) {
       run = Promise.all([
-        api.getBestRegions({ sport, month: month ? Number(month) : undefined }),
+        api.getBestRegions({ sport, month: month ? Number(month) : undefined, weeks }),
         api.getRegions(),
       ]).then(([r, regions]) => {
         if (!alive) return;
@@ -359,7 +370,13 @@ export default function SearchResults() {
       // A place is present (spot / region / free text, incl. the geocoded
       // "nearby" fallback). Always resolve to spots so picking a spot shows
       // that spot — not the best-weeks list.
-      run = api.getSearch({ q, sport, week: week ? Number(week) : undefined }).then((r) => alive && setResult(r));
+      run = api.getSearch({
+        q,
+        sport,
+        week: week ? Number(week) : undefined,
+        weeks,
+        month: month ? Number(month) : undefined,
+      }).then((r) => alive && setResult(r));
     }
 
     run
@@ -368,7 +385,7 @@ export default function SearchResults() {
     return () => {
       alive = false;
     };
-  }, [q, sport, week, month, spotId, regionId, discovery, showWeeks, showBestRegions, retry]);
+  }, [q, sport, week, month, weeks, spotId, regionId, discovery, showWeeks, showBestRegions, retry]);
 
   const monthName = month ? MONTHS[Number(month) - 1] : null;
   const geocodeName = result?.geocode?.name;
@@ -386,7 +403,9 @@ export default function SearchResults() {
   const filterSummary = [
     q || (placeOpen ? "überall" : null),
     sport ? sportLabel(sport) : "alle Sportarten",
-    monthName ?? (week ? `Kalenderwoche ${week}` : "jederzeit"),
+    weeks
+      ? `Kalenderwochen ${weeks.replace("-", "–")}`
+      : monthName ?? (week ? `Kalenderwoche ${week}` : "jederzeit"),
     originFilter === "editorial"
       ? "von der Redaktion"
       : originFilter === "community"

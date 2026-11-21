@@ -1,13 +1,25 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 
 const directory = fileURLToPath(new URL("../dist/assets/", import.meta.url));
 const files = (await readdir(directory)).filter((name) => name.endsWith(".js"));
 const sizes = await Promise.all(
-  files.map(async (name) => ({ name, bytes: (await stat(join(directory, name))).size }))
+  files.map(async (name) => {
+    const path = join(directory, name);
+    return {
+      name,
+      bytes: (await stat(path)).size,
+      gzipBytes: gzipSync(await readFile(path)).byteLength,
+    };
+  })
 );
 const tooLarge = sizes.filter(({ bytes }) => bytes > 1_000_000);
+const tooLargeCompressed = sizes.filter(({ gzipBytes }) => gzipBytes > 250_000);
+const tooLargeSpotDetail = sizes.filter(
+  ({ name, gzipBytes }) => /^SpotDetail-/.test(name) && gzipBytes > 100_000
+);
 const isAdminBuild = process.env.VITE_INCLUDE_ADMIN === "true";
 const hasAdminChunk = files.some((name) => /admin/i.test(name));
 const indexHtml = await readFile(fileURLToPath(new URL("../dist/index.html", import.meta.url)), "utf8");
@@ -32,4 +44,18 @@ if (tooLarge.length) {
   console.error(`Bundle budget exceeded: ${tooLarge.map(({ name, bytes }) => `${name} (${bytes} B)`).join(", ")}`);
   process.exit(1);
 }
-console.log(`Bundle budget ok. Largest chunk: ${Math.max(0, ...sizes.map(({ bytes }) => bytes))} B.`);
+if (tooLargeCompressed.length || tooLargeSpotDetail.length) {
+  const failures = [...new Map(
+    [...tooLargeCompressed, ...tooLargeSpotDetail].map((entry) => [entry.name, entry])
+  ).values()];
+  console.error(
+    `Compressed bundle budget exceeded: ${failures
+      .map(({ name, gzipBytes }) => `${name} (${gzipBytes} B gzip)`)
+      .join(", ")}`
+  );
+  process.exit(1);
+}
+console.log(
+  `Bundle budget ok. Largest chunk: ${Math.max(0, ...sizes.map(({ bytes }) => bytes))} B raw / ` +
+    `${Math.max(0, ...sizes.map(({ gzipBytes }) => gzipBytes))} B gzip.`
+);

@@ -1,9 +1,7 @@
 // The landing search's value model + how it maps onto the backend `/search`
 // query. IMPORTANT: the existing /search endpoint (see getSearch in api.ts) only
-// understands `q`, a single `sport`, one `week`, and `level`. Richer inputs
-// (multiple sports, a real date range) are sent through as extra params but are
-// marked `// TODO backend` — they are NOT invented endpoints, just forward-compat
-// hints the current backend ignores.
+// understands free text, sport, and either a concrete week, inclusive week
+// range, or calendar month. Additional discipline inputs remain forward-compatible.
 
 /** Flexible-search duration, combinable with a month (e.g. "best weekend in January"). */
 export type WhenDuration = "weekend" | "week" | "twoweeks";
@@ -28,8 +26,8 @@ export interface SearchValue {
   whereSel: WhereSelection | null;
   whereOpen: boolean; // explicitly "egal wo" / überall — the open place axis
   when: WhenValue;
-  which: string[]; // backend sport values: surf | kitesurf | windsurf | wing
-  disciplines: string[]; // freestyle | big_air | foil
+  which: string[];
+  disciplines: string[];
 }
 
 export const EMPTY_SEARCH: SearchValue = {
@@ -84,7 +82,7 @@ export function isPlaceOpen(v: SearchValue): boolean {
 
 /** Whether the time axis is left open (no concrete week). */
 export function isTimeOpen(v: SearchValue): boolean {
-  return weekFromWhen(v.when) == null;
+  return !v.when || v.when.mode === "open";
 }
 
 /** ISO-8601 week number (1..53) for a date. */
@@ -138,7 +136,6 @@ export function buildSearchParams(v: SearchValue): URLSearchParams {
     }
   }
 
-  // /search takes a single sport → use the first selected discipline.
   if (v.which.length) p.set("sport", v.which[0]);
 
   // --- time axis ---
@@ -146,15 +143,16 @@ export function buildSearchParams(v: SearchValue): URLSearchParams {
   if (week) p.set("week", String(week));
   const month = monthFromWhen(v.when);
   if (month) p.set("month", String(month));
-
-  // Richer inputs, forwarded for future backend support (currently unread):
-  if (v.which.length > 1) p.set("sports", v.which.join(",")); // TODO backend
-  if (v.disciplines.length) p.set("disciplines", v.disciplines.join(",")); // TODO backend
-  if (v.when?.mode === "range") {
-    p.set("from", v.when.from); // TODO backend
-    if (v.when.to) p.set("to", v.when.to); // TODO backend
+  if (v.when?.mode === "range" && v.when.to) {
+    p.set("weeks", `${isoWeek(new Date(v.when.from))}-${isoWeek(new Date(v.when.to))}`);
   }
-  if (v.when?.mode === "flex" && v.when.duration) p.set("duration", v.when.duration); // TODO backend
+  if (v.which.length > 1) p.set("sports", v.which.join(","));
+  if (v.disciplines.length) p.set("disciplines", v.disciplines.join(","));
+  if (v.when?.mode === "range") {
+    p.set("from", v.when.from);
+    if (v.when.to) p.set("to", v.when.to);
+  }
+  if (v.when?.mode === "flex" && v.when.duration) p.set("duration", v.when.duration);
   return p;
 }
 

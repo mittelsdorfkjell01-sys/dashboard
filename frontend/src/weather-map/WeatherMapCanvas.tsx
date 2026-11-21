@@ -389,14 +389,17 @@ export default function WeatherMapCanvas(props: Props) {
       // so the tap's screen point queries cleanly against it. A dot wins over
       // the coordinate: tapping a spot asks about that spot.
       const { onPick, onPickSpot } = callbacksRef.current;
-      if (onPickSpot && labelMap.getLayer("weather-spots")) {
+      if (onPickSpot) {
         const { x, y } = event.point;
-        const hit = labelMap.queryRenderedFeatures([
-          [x - SPOT_TAP_SLOP, y - SPOT_TAP_SLOP],
-          [x + SPOT_TAP_SLOP, y + SPOT_TAP_SLOP],
-        ], { layers: ["weather-spots"] })[0];
-        const spotId = hit?.properties?.id;
-        if (spotId) { onPickSpot(String(spotId)); return; }
+        const nearest = (callbacksRef.current.spots ?? [])
+          .flatMap((spot) => {
+            if (!spot.coords) return [];
+            const point = labelMap.project([spot.coords[1], spot.coords[0]]);
+            return [{ id: spot.id, distance: Math.hypot(point.x - x, point.y - y) }];
+          })
+          .filter((spot) => spot.distance <= SPOT_TAP_SLOP + 9)
+          .sort((left, right) => left.distance - right.distance)[0];
+        if (nearest) { onPickSpot(nearest.id); return; }
       }
       onPick?.(event.lngLat.lng, event.lngLat.lat);
     });
@@ -457,8 +460,15 @@ export default function WeatherMapCanvas(props: Props) {
   // a pan or zoom, with nothing to retry them (2026-10-12).
   useEffect(() => {
     const map = labelMapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-    syncSpots(map, props.spots, props.showSpots, props.spotColor);
+    if (!map) return;
+    const sync = () => {
+      if (map.isStyleLoaded()) {
+        syncSpots(map, callbacksRef.current.spots, callbacksRef.current.showSpots, callbacksRef.current.spotColor);
+      }
+    };
+    sync();
+    if (!map.isStyleLoaded()) map.once("styledata", sync);
+    return () => { map.off("styledata", sync); };
   }, [props.showSpots, props.spots, props.spotColor]);
 
   useEffect(() => {

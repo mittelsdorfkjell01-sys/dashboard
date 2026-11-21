@@ -413,10 +413,14 @@ test("Spot-Karte respektiert Reduced Motion und hat mobile Touch-Ziele", async (
   const close = map.getByRole("button", { name: "Vollbild schließen" });
   await expect(close).toBeVisible();
   const fullscreenCanvas = await map.locator(".leaflet-container").boundingBox();
+  const viewport = await page.evaluate(() => ({
+    width: document.documentElement.clientWidth,
+    height: document.documentElement.clientHeight,
+  }));
   expect(fullscreenCanvas?.x).toBeLessThanOrEqual(0);
   expect(fullscreenCanvas?.y).toBeLessThanOrEqual(0);
-  expect(fullscreenCanvas?.width).toBeGreaterThanOrEqual(390);
-  expect(fullscreenCanvas?.height).toBeGreaterThanOrEqual(844);
+  expect(fullscreenCanvas?.width).toBeGreaterThanOrEqual(viewport.width);
+  expect(fullscreenCanvas?.height).toBeGreaterThanOrEqual(viewport.height - 1);
   for (const control of [close, map.getByRole("button", { name: "Vergrößern" }), map.getByRole("button", { name: "Kartenquellen anzeigen" })]) {
     const box = await control.boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);

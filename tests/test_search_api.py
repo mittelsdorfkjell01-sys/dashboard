@@ -48,6 +48,21 @@ def test_search_endpoint_sport_toggle(client, mocked_search):
     assert "laboe" not in {s["slug"] for s in wave["spots"]}
 
 
+def test_search_endpoint_accepts_a_week_range(client, mocked_search):
+    response = client.get("/search", params={"q": "Laboe", "weeks": "3-5"})
+    assert response.status_code == 200
+
+
+def test_search_endpoint_accepts_a_month(client, mocked_search):
+    response = client.get("/search", params={"q": "Laboe", "month": 7})
+    assert response.status_code == 200
+
+
+def test_search_endpoint_rejects_an_invalid_week_range(client, mocked_search):
+    response = client.get("/search", params={"q": "Laboe", "weeks": "0-53"})
+    assert response.status_code == 422
+
+
 def test_map_endpoint(client, mocked_search):
     resp = client.get(
         "/map",

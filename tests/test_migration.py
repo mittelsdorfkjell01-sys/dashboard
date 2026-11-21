@@ -461,6 +461,20 @@ def test_admin_totp_columns_removed(db):
     assert cols == []
 
 
+def test_provider_hero_unique_index_exists(db):
+    definition = db.execute(
+        text(
+            "SELECT indexdef FROM pg_indexes "
+            "WHERE schemaname = 'public' "
+            "AND indexname = 'uq_media_usage_unique_hero'"
+        )
+    ).scalar()
+    assert definition is not None
+    assert "UNIQUE INDEX" in definition
+    assert "role" in definition and "'hero'" in definition
+    assert "external_id IS NOT NULL" in definition
+
+
 def test_gallery_accepts_a_region_but_not_both_entities(db):
     """0027 generalised ``spot_images`` to spot-or-region; the check constraint
     is what keeps a row from belonging to both or to neither."""

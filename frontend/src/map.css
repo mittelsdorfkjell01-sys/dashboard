@@ -167,6 +167,16 @@
   will-change: transform;
   transform: translateZ(0);
 }
+.swd-locator-map .swd-map-sources-glyph {
+  width: 44px;
+  height: 44px;
+}
+.swd-locator-map .swd-locator-labels {
+  filter: none;
+}
+.swd-locator-map .swd-locator-zoom-fading .leaflet-tile-pane {
+  opacity: 0.96;
+}
 /* Give the pane Leaflet actually translates during a drag a stable GPU layer
    too, so pans stay smooth on touch. */
 .swd-locator-map .leaflet-map-pane {

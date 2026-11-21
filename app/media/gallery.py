@@ -145,6 +145,17 @@ def promote_to_hero(db: Session, image_id) -> dict:
     entity_id = row.spot_id or row.region_id
     entity = _load_entity(db, entity_type, entity_id)
 
+    if row.provider and row.external_id:
+        from app.media.adopt import check_duplicates
+
+        check_duplicates(
+            db,
+            provider=row.provider,
+            external_id=row.external_id,
+            role="hero",
+            entity_id=entity_id,
+        )
+
     if not row.credit or not row.credit.strip():
         # Attribution is mandatory for a hero and the builder would refuse the
         # write anyway; failing here gives the operator a usable message.
@@ -170,7 +181,7 @@ def promote_to_hero(db: Session, image_id) -> dict:
         role="hero",
     )
 
-    from app.media.adopt import _gallery_row, _record_usage
+    from app.media.adopt import _gallery_row, _record_usage, commit_media_changes
 
     previous = upgrade_legacy(entity.image)
     if (
@@ -226,5 +237,5 @@ def promote_to_hero(db: Session, image_id) -> dict:
             entity_id=entity_id,
             role="hero",
         )
-    db.commit()
+    commit_media_changes(db, provider=row.provider, external_id=row.external_id)
     return {"entity_type": entity_type, "entity_id": str(entity_id), "image": image}

@@ -3,6 +3,8 @@ clustering, colouring, sport filtering. No database, no network."""
 
 from __future__ import annotations
 
+import pytest
+
 from app.search.geocode import GeocodeResult, classify_geocode
 from app.search.pins import build_pins, cluster_pins, value_to_color
 from app.search.ranking import rank_nearby
@@ -145,6 +147,23 @@ def test_rank_nearby_distance_damping_breaks_ties():
         [(a, 20_000), (b, 2_000)], None, None, scorer=scorer, d0_km=30.0
     )
     assert [r["spot"].slug for r in ranked] == ["b", "a"]  # nearer wins the tie
+
+
+def test_rank_nearby_averages_every_week_in_a_range():
+    spot = make_spot("A", 54.41, 10.22, ["kitesurf"], slug="a")
+
+    class WeekScorer:
+        def score(self, _spot, time_context, _profile):
+            return time_context["week"] / 10
+
+    ranked = rank_nearby(
+        [(spot, 0)],
+        {"weeks": [2, 3, 4]},
+        None,
+        scorer=WeekScorer(),
+        d0_km=40,
+    )
+    assert ranked[0]["score"] == pytest.approx(0.3)
 
 
 # --- pins: colouring + clustering ------------------------------------------

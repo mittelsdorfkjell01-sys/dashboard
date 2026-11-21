@@ -14,6 +14,7 @@ from app.admin import regions as admin_regions
 from app.admin import spots as admin_spots
 from app.config import get_settings
 from app.media import gallery as media_gallery
+from app.media.adopt import DuplicateHeroError
 from app.media.gc import collect_media_garbage
 from app.media.image_object import build_image
 from app.models import MediaUsage, Region, Spot, SpotImage
@@ -347,6 +348,30 @@ def test_promoting_records_media_usage(db, spot):
     assert usage is not None and usage.role == "hero"
 
 
+def test_promoting_cannot_duplicate_a_provider_hero(db):
+    first, second = db.scalars(select(Spot).limit(2)).all()
+    db.add(
+        MediaUsage(
+            provider="unsplash",
+            external_id="unique-hero-1",
+            entity_type="spot",
+            entity_id=first.id,
+            role="hero",
+        )
+    )
+    db.commit()
+    row = _gallery_row(
+        db,
+        second,
+        entity_type="spot",
+        provider="unsplash",
+        external_id="unique-hero-1",
+    )
+
+    with pytest.raises(DuplicateHeroError):
+        media_gallery.promote_to_hero(db, row.id)
+
+
 # --- HTTP surface ------------------------------------------------------------
 
 def test_gallery_endpoints_require_authentication(anon_client, spot):
@@ -431,17 +456,17 @@ def test_worklist_flags_a_duplicate_photo_used_on_two_spots(db, client):
         url="https://img/dup.jpg", source="unsplash", license="Unsplash License",
         credit="Jo", provider="unsplash", external_id="dup-1", delivery="hotlinked",
     )
-    a.image, b.image = image, {**image}
+    a.image = image
     db.add_all([
         MediaUsage(provider="unsplash", external_id="dup-1", entity_type="spot", entity_id=a.id, role="hero"),
-        MediaUsage(provider="unsplash", external_id="dup-1", entity_type="spot", entity_id=b.id, role="hero"),
+        MediaUsage(provider="unsplash", external_id="dup-1", entity_type="spot", entity_id=b.id, role="gallery"),
     ])
     db.commit()
 
     try:
         resp = client.get("/admin/spots", params={"media": "duplicate", "limit": 500})
         ids = {i["id"] for i in resp.json()["items"]}
-        assert {str(a.id), str(b.id)} <= ids
+        assert str(a.id) in ids
     finally:
         a.image, b.image = original_a, original_b
         db.execute(delete(MediaUsage).where(MediaUsage.external_id == "dup-1"))
