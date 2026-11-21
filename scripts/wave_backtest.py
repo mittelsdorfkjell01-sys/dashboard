@@ -22,6 +22,38 @@ def _day(value: str, *, end: bool) -> datetime:
     )
 
 
+def enforce_evidence_thresholds(
+    artifact: dict,
+    *,
+    minimum_forecast_samples: int,
+    minimum_matched_values: int,
+    minimum_matched_platforms: int,
+) -> None:
+    """Reject verification runs that do not contain meaningful evidence."""
+
+    actual = {
+        "forecast_samples": int(artifact.get("forecast_samples", 0)),
+        "matched_values": int(artifact.get("matched_values", 0)),
+        "matched_platforms": int(
+            artifact.get("coverage", {}).get("matched_platforms", 0)
+        ),
+    }
+    required = {
+        "forecast_samples": minimum_forecast_samples,
+        "matched_values": minimum_matched_values,
+        "matched_platforms": minimum_matched_platforms,
+    }
+    missing = [
+        f"{key}={actual[key]} (required {minimum})"
+        for key, minimum in required.items()
+        if actual[key] < minimum
+    ]
+    if missing:
+        raise ValueError(
+            "insufficient wave verification evidence: " + ", ".join(missing)
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--start", required=True, help="UTC date, YYYY-MM-DD")
@@ -29,6 +61,10 @@ def main() -> int:
     parser.add_argument("--model", action="append", dest="models")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--tolerance-minutes", type=int, default=30)
+    parser.add_argument("--minimum-forecast-samples", type=int, default=0)
+    parser.add_argument("--minimum-matched-values", type=int, default=0)
+    parser.add_argument("--minimum-matched-platforms", type=int, default=0)
+    parser.add_argument("--artifact-uri")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -42,6 +78,15 @@ def main() -> int:
             model_keys=args.models,
             tolerance_minutes=args.tolerance_minutes,
         )
+        try:
+            enforce_evidence_thresholds(
+                artifact,
+                minimum_forecast_samples=args.minimum_forecast_samples,
+                minimum_matched_values=args.minimum_matched_values,
+                minimum_matched_platforms=args.minimum_matched_platforms,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
         summary = {
             key: artifact[key]
             for key in (
@@ -77,7 +122,7 @@ def main() -> int:
             dataset_end=end.date(),
             policy_version=POLICY_VERSION,
             configuration=artifact["configuration"],
-            artifact_uri=str(args.output),
+            artifact_uri=args.artifact_uri or str(args.output),
             artifact_sha256=digest,
             summary=summary,
             completed_at=datetime.now(timezone.utc),
