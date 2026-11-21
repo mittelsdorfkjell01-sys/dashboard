@@ -1,0 +1,89 @@
+name: Configure Production Wave Storage
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-wave-storage-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+      WEATHER_FIELD_STORAGE_BUCKET: ${{ vars.WEATHER_FIELD_STORAGE_BUCKET }}
+      WEATHER_FIELD_STORAGE_PREFIX: ${{ vars.WEATHER_FIELD_STORAGE_PREFIX }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_SURFWINDDATA_PROJECT_ID: ${{ vars.VERCEL_SURFWINDDATA_PROJECT_ID }}
+      VERCEL_DASHBOARD_PROJECT_ID: ${{ vars.VERCEL_DASHBOARD_PROJECT_ID }}
+
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+
+      - name: Resolve branch-scoped Neon Object Storage
+        shell: bash
+        run: |
+          runtime_env="$RUNNER_TEMP/neon-object-storage.env"
+          npx -y neon@latest env pull \
+            --project-id "$NEON_PROJECT_ID" \
+            --branch production \
+            --file "$runtime_env" \
+            --service object-storage \
+            --no-analytics
+          set -a
+          source "$runtime_env"
+          set +a
+          test -n "$AWS_ENDPOINT_URL_S3"
+          test -n "$AWS_REGION"
+          test -n "$AWS_ACCESS_KEY_ID"
+          test -n "$AWS_SECRET_ACCESS_KEY"
+          echo "::add-mask::$AWS_ACCESS_KEY_ID"
+          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
+          {
+            echo "WEATHER_FIELD_STORAGE_ENDPOINT=${AWS_ENDPOINT_URL_S3%/}"
+            echo "WEATHER_FIELD_STORAGE_REGION=$AWS_REGION"
+            echo "WEATHER_FIELD_STORAGE_ACCESS_KEY=$AWS_ACCESS_KEY_ID"
+            echo "WEATHER_FIELD_STORAGE_SECRET_KEY=$AWS_SECRET_ACCESS_KEY"
+            echo "WEATHER_FIELD_PUBLIC_BASE_URL=${AWS_ENDPOINT_URL_S3%/}/$WEATHER_FIELD_STORAGE_BUCKET"
+          } >> "$GITHUB_ENV"
+          rm -f "$runtime_env"
+
+      - name: Configure both Vercel production targets
+        shell: bash
+        run: |
+          set_config() {
+            local project="$1" name="$2" value="$3"
+            printf '%s' "$value" | npx -y vercel@latest env add "$name" \
+              --environment production --force --no-sensitive --yes \
+              --project "$project" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
+          }
+          set_secret() {
+            local project="$1" name="$2" value="$3"
+            printf '%s' "$value" | npx -y vercel@latest env add "$name" \
+              --environment production --force --sensitive --yes \
+              --project "$project" --scope "$VERCEL_ORG_ID" --token "$VERCEL_TOKEN"
+          }
+          for project in "$VERCEL_SURFWINDDATA_PROJECT_ID" "$VERCEL_DASHBOARD_PROJECT_ID"; do
+            set_config "$project" WEATHER_FIELD_STORAGE_BACKEND s3
+            set_config "$project" WEATHER_FIELD_STORAGE_ENDPOINT "$WEATHER_FIELD_STORAGE_ENDPOINT"
+            set_config "$project" WEATHER_FIELD_STORAGE_REGION "$WEATHER_FIELD_STORAGE_REGION"
+            set_config "$project" WEATHER_FIELD_STORAGE_BUCKET "$WEATHER_FIELD_STORAGE_BUCKET"
+            set_config "$project" WEATHER_FIELD_STORAGE_PREFIX "$WEATHER_FIELD_STORAGE_PREFIX"
+            set_config "$project" WEATHER_FIELD_STORAGE_ADDRESSING_STYLE path
+            set_config "$project" WEATHER_FIELD_PUBLIC_BASE_URL "$WEATHER_FIELD_PUBLIC_BASE_URL"
+            set_config "$project" WEATHER_FIELD_STORAGE_BUDGET_BYTES 4500000000
+            set_config "$project" WEATHER_FIELD_PIPELINE_ENABLED true
+            set_config "$project" WAVE_FIELD_PUBLIC_ENABLED true
+            set_config "$project" WAVE_FIELD_AUTO_ACTIVATE true
+            set_secret "$project" WEATHER_FIELD_STORAGE_ACCESS_KEY "$WEATHER_FIELD_STORAGE_ACCESS_KEY"
+            set_secret "$project" WEATHER_FIELD_STORAGE_SECRET_KEY "$WEATHER_FIELD_STORAGE_SECRET_KEY"
+          done

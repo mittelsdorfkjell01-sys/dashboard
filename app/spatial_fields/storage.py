@@ -15,6 +15,10 @@ class ImmutableObjectConflict(RuntimeError):
     """Raised when an existing immutable key has different content."""
 
 
+class StorageBudgetExceeded(RuntimeError):
+    """Raised before a publication can exceed its configured object budget."""
+
+
 @dataclass(frozen=True)
 class StoredObject:
     key: str
@@ -33,6 +37,50 @@ class FieldObjectStorage(Protocol):
     def public_url(self, key: str) -> str: ...
 
     def delete(self, key: str) -> None: ...
+
+
+class BudgetedFieldObjectStorage:
+    """Bound new bytes written by one worker run without changing URL semantics.
+
+    Publication keys are immutable and run-specific. Repeated writes through the
+    same wrapper are counted once, while the persistent, cross-run budget is
+    derived from the asset ledger in Postgres before this wrapper is created.
+    """
+
+    def __init__(self, storage: FieldObjectStorage, *, max_new_bytes: int):
+        if max_new_bytes < 0:
+            raise ValueError("max_new_bytes must not be negative")
+        self.storage = storage
+        self.max_new_bytes = max_new_bytes
+        self.written_bytes = 0
+        self._written_keys: set[str] = set()
+
+    def public_url(self, key: str) -> str:
+        return self.storage.public_url(key)
+
+    def exists(self, key: str) -> bool:
+        return self.storage.exists(key)
+
+    def get(self, key: str) -> bytes:
+        return self.storage.get(key)
+
+    def delete(self, key: str) -> None:
+        self.storage.delete(key)
+
+    def put_immutable(self, key: str, data: bytes) -> StoredObject:
+        canonical = validate_object_key(key)
+        new_bytes = 0 if canonical in self._written_keys else len(data)
+        projected = self.written_bytes + new_bytes
+        if projected > self.max_new_bytes:
+            raise StorageBudgetExceeded(
+                "weather-field run would exceed its object-storage budget "
+                f"({projected} > {self.max_new_bytes} bytes)"
+            )
+        stored = self.storage.put_immutable(canonical, data)
+        if new_bytes:
+            self._written_keys.add(canonical)
+            self.written_bytes = projected
+        return stored
 
 
 def validate_object_key(key: str) -> str:

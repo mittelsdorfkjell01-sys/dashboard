@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import math
 from typing import Any, Protocol
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -62,13 +63,25 @@ class PegelOnlineProvider:
             series = item.get("timeseries") or []
             if not any(row.get("shortname") == "W" for row in series):
                 continue
+            try:
+                latitude = float(item["latitude"])
+                longitude = float(item["longitude"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not (
+                math.isfinite(latitude)
+                and math.isfinite(longitude)
+                and -90.0 <= latitude <= 90.0
+                and -180.0 <= longitude <= 180.0
+            ):
+                continue
             station_id = str(item["uuid"])
             result.append(ProviderStation(
                 provider=self.key,
                 provider_station_id=station_id,
                 name=item.get("longname") or item.get("shortname") or station_id,
-                latitude=float(item["latitude"]),
-                longitude=float(item["longitude"]),
+                latitude=latitude,
+                longitude=longitude,
                 country_code="DE",
                 operator=item.get("agency"),
                 source_url=f"{self.base_url}/stations/{station_id}.json",
