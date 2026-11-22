@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../map.css";
@@ -8,11 +8,14 @@ import Supercluster from "supercluster";
 import Header from "../components/Header";
 import SpotCard from "../components/SpotCard";
 import { ChevronLeftIcon, CloseIcon, ListIcon, MinusIcon, PlusIcon } from "../lib/icons";
-import { useSpotForecast, useSpots, useSpotsLive } from "../lib/hooks";
+import { useRegions, useSpotForecast, useSpots, useSpotsLive } from "../lib/hooks";
 import { getSpotCatalogVersion } from "../lib/api";
 import type { Spot } from "../lib/types";
 import { countryName } from "../lib/flags";
 import { spotPath } from "../lib/spotRoutes";
+import { useMapBack } from "../lib/mapBack";
+import { REGION_FOCUS_ZOOM, SPOT_FOCUS_ZOOM } from "../weather-map/camera";
+import type { WhereSelection } from "../lib/searchSubmit";
 import { SpotDataScopeProvider } from "../state/SpotDataScope";
 import { useSpotOriginsMixed } from "../context/SpotOriginContext";
 import {
@@ -72,8 +75,6 @@ function SpotExplorer({
   active: boolean;
   onModeChange: (mode: ExplorerMode) => void;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersLayer = useRef<L.LayerGroup | null>(null);
@@ -99,9 +100,35 @@ function SpotExplorer({
     catalogReady,
   );
 
-  // `location.key === "default"` means this tab has no entry to go back to
-  // (deep link, reload, new tab) — fall back to the homepage.
-  const goBack = () => { if (location.key !== "default") navigate(-1); else navigate("/"); };
+  // Same behaviour as the wind map's back glyph (see lib/mapBack.ts).
+  const goBack = useMapBack();
+  const { data: regions } = useRegions();
+
+  /** The map's search answers by MOVING, never by leaving — the same grammar
+   *  the wind map uses, so the one glyph in the corner does the same thing in
+   *  both halves. A spot is additionally selected, which opens its panel. */
+  const resolvePlace = (selection: WhereSelection | null, text: string) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const needle = text.trim().toLowerCase();
+    const spot = selection?.kind === "spot" && selection.id
+      ? withCoords.find((candidate) => candidate.id === selection.id)
+      : !selection && needle
+        ? withCoords.find((candidate) => candidate.name.toLowerCase() === needle)
+        : undefined;
+    if (spot) {
+      setTilesOpen(false);
+      setSelectedId(spot.id);
+      map.setView(spot.coords, Math.max(map.getZoom(), SPOT_FOCUS_ZOOM), { animate: !reducedMotion() });
+      return;
+    }
+    const region = selection?.kind === "region" && selection.id
+      ? regions?.find((candidate) => candidate.id === selection.id)
+      : !selection && needle
+        ? regions?.find((candidate) => candidate.name.toLowerCase() === needle)
+        : undefined;
+    if (region?.center) map.setView([region.center.lat, region.center.lon], REGION_FOCUS_ZOOM, { animate: !reducedMotion() });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -160,15 +187,22 @@ function SpotExplorer({
     const center = map.getCenter();
     const zoom = map.getZoom();
     // URL sync stays immediate; only the live-data-triggering viewport commit
-    // is debounced.
-    const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search);
-    window.history.replaceState(null, "", `${window.location.pathname}${search}${window.location.hash}`);
+    // is debounced. A HIDDEN pane must not write the shared camera, the same
+    // rule the wind pane already follows: both panes stay mounted and warm,
+    // and this map settles (and fires moveend) while the wind map is the one
+    // on screen. `publicMapSearch` drops `mode=`, so those writes were
+    // quietly deleting the wind map's own mode from the shared URL — whoever
+    // wrote last won, and a browser Back out of Wind then landed on Spots.
+    if (active) {
+      const search = publicMapSearch([center.lng, center.lat], zoom, selectedId, window.location.search);
+      window.history.replaceState(null, "", `${window.location.pathname}${search}${window.location.hash}`);
+    }
     window.clearTimeout(viewportTimer.current);
     viewportTimer.current = window.setTimeout(() => {
       const bounds = map.getBounds();
       setViewportIds(withCoords.filter((spot) => bounds.contains([spot.coords[0], spot.coords[1]])).map((spot) => spot.id));
     }, VIEWPORT_DEBOUNCE_MS);
-  }, [selectedId, withCoords]);
+  }, [active, selectedId, withCoords]);
 
   // --- map construction -----------------------------------------------------
   useEffect(() => {
@@ -482,11 +516,7 @@ function SpotExplorer({
   };
 
   return (
-    <main data-lenis-prevent className={`swd-public-map relative w-full overflow-hidden ${selectedSpot ? "has-bottom-panel" : ""} ${tilesOpen ? "has-bottom-row" : ""}`} aria-labelledby="public-map-title">
-      {/* The search is docked at the bottom centre; while the selected-spot
-          chart or the spot row holds the bottom, drop the search so the two
-          don't stack on top of each other. */}
-      {!selectedSpot && !tilesOpen && <Header />}
+    <main data-lenis-prevent className={`swd-public-map sw-theme-light relative w-full overflow-hidden ${selectedSpot ? "has-bottom-panel" : ""} ${tilesOpen ? "has-bottom-row" : ""}`} aria-labelledby="public-map-title">
       <ExplorerModeToggle mode="spots" onChange={onModeChange} />
       <h1 id="public-map-title" className="sr-only">Spot-Karte</h1>
       <p id="public-map-help" className="sr-only">
@@ -504,13 +534,13 @@ function SpotExplorer({
       {(mapError || catalogueUnavailable) && (
         <div role="alert" className="swd-map-error absolute left-1/2 top-24 z-scrim -translate-x-1/2">
           <div>
-            <strong>{catalogueUnavailable ? "Spots konnten nicht geladen werden." : "Karte momentan nicht verfügbar."}</strong>
-            <p>{catalogueUnavailable ? spotsError : "Prüfe deine Verbindung und lade die Karte erneut."}</p>
+            <strong className="text-ui font-semibold">{catalogueUnavailable ? "Spots konnten nicht geladen werden." : "Karte momentan nicht verfügbar."}</strong>
+            <p className="text-caption">{catalogueUnavailable ? spotsError : "Prüfe deine Verbindung und lade die Karte erneut."}</p>
           </div>
-          <button type="button" onClick={retryMapProblem}>Erneut versuchen</button>
+          <button type="button" className="text-caption" onClick={retryMapProblem}>Erneut versuchen</button>
         </div>
       )}
-      <LeafletAttributionDisclosure source="carto" />
+      <LeafletAttributionDisclosure source="carto" className="swd-map-sources-dock" />
       <div className="swd-map-controls-left pointer-events-none absolute z-scrim flex flex-col items-start gap-2">
         <button type="button" aria-label="Zurück" onClick={goBack} className="swd-map-bare-control pointer-events-auto">
           <ChevronLeftIcon className="text-title" />
@@ -520,10 +550,17 @@ function SpotExplorer({
           <button type="button" aria-label="Verkleinern" onClick={() => mapRef.current?.zoomOut()} className="swd-map-bare-control"><MinusIcon className="text-title" /></button>
         </div>
       </div>
-      {/* The list glyph stays put whether the row is open or not — it is the
-          switch for it, not a one-way door (2026-10-11 feedback: it used to
-          vanish on the first tap). Bare mark, same size as back/zoom. */}
+      {/* One right-hand stack, the same place on both halves of the map: the
+          search glyph on top (it used to be a pill docked at the bottom
+          centre here and a glyph up here on the wind map — one map, two
+          search affordances), then the list glyph. The list glyph stays put
+          whether the row is open or not — it is the switch for it, not a
+          one-way door (2026-10-11 feedback: it used to vanish on the first
+          tap). Bare marks, same size as back/zoom. */}
       <div className="swd-map-controls pointer-events-none absolute z-scrim flex flex-col items-end gap-3">
+        <div className="swd-map-search pointer-events-auto">
+          <Header whereOnly onResolve={resolvePlace} />
+        </div>
         <button
           type="button"
           aria-label="Spots im Ausschnitt anzeigen"
@@ -540,13 +577,13 @@ function SpotExplorer({
         <section id="swd-map-list-panel" aria-label="Spots im Ausschnitt" className="swd-map-bottom-shell is-row pointer-events-none absolute inset-x-0 bottom-0 z-scrim">
           <div className="swd-map-panel pointer-events-auto">
             <div className="swd-map-panel-head">
-              <p className="swd-map-list-title">Spots im Ausschnitt</p>
+              <p className="swd-map-list-title text-ui font-semibold text-ink">Spots im Ausschnitt</p>
               <button type="button" aria-label="Schließen" aria-expanded={true} onClick={() => setTilesOpen(false)} className="swd-map-plain-close">
                 <CloseIcon className="text-body" />
               </button>
             </div>
             {listPanelSpots.length === 0 ? (
-              <p role="status" className="swd-map-list-empty">{listEmptyLabel}</p>
+              <p role="status" className="swd-map-list-empty text-caption text-muted">{listEmptyLabel}</p>
             ) : (
               <div className="swd-map-row-scroll">
                 {listPanelSpots.map((spot) => (
@@ -564,11 +601,11 @@ function SpotExplorer({
           <div className="swd-map-panel pointer-events-auto">
             <div className="swd-map-panel-head">
               <div className="min-w-0">
-                <p className="truncate font-semibold text-ink">{selectedSpot.name}</p>
+                <p className="truncate text-ui font-semibold text-ink">{selectedSpot.name}</p>
                 {regionLine(selectedSpot) && <p className="truncate text-caption text-muted">{regionLine(selectedSpot)}</p>}
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <Link to={spotPath(selectedSpot)} className="swd-map-chart-cta">Zum Spot</Link>
+                <Link to={spotPath(selectedSpot)} className="swd-map-chart-cta text-caption">Zum Spot</Link>
                 <button type="button" aria-label="Schließen" onClick={() => setSelectedId(undefined)} className="swd-map-plain-close">
                   <CloseIcon className="text-body" />
                 </button>

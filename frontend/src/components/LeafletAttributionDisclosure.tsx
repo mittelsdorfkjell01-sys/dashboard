@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from "react";
 import { InfoIcon } from "../lib/icons";
 
-type AttributionSource = "carto" | "esri";
+type AttributionSource = "carto" | "esri" | "openfreemap";
 
 /**
  * The map's sources, behind a small `i` (2026-10-11): the glyph alone, no
@@ -55,13 +55,32 @@ export default function LeafletAttributionDisclosure({
                 CARTO
               </a>
             </>
+          ) : source === "openfreemap" ? (
+            <>
+              Karte ©{" "}
+              <a className="underline underline-offset-2" href="https://openfreemap.org" target="_blank" rel="noreferrer">
+                OpenFreeMap
+              </a>{" "}
+              ©{" "}
+              <a className="underline underline-offset-2" href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">
+                OpenMapTiles
+              </a>{" "}
+              · Daten und Orte ©{" "}
+              <a className="underline underline-offset-2" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+                OpenStreetMap-Mitwirkende
+              </a>
+            </>
           ) : (
             <>
               Tiles ©{" "}
               <a className="underline underline-offset-2" href="https://www.esri.com/" target="_blank" rel="noreferrer">
                 Esri
               </a>{" "}
-              · Quellen: Esri, Maxar, Earthstar Geographics und die GIS User Community
+              · Bildquellen: Esri, Vantor, Earthstar Geographics und die GIS User Community
+              · Referenzdaten: Esri, HERE, Garmin und{" "}
+              <a className="underline underline-offset-2" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+                OpenStreetMap
+              </a>
             </>
           )}
         </aside>
@@ -75,7 +94,7 @@ export default function LeafletAttributionDisclosure({
         aria-controls={panelId}
         title={open ? "Kartenquellen ausblenden" : "Kartenquellen anzeigen"}
         onClick={() => setOpen((current) => !current)}
-        className="swd-map-sources-glyph pointer-events-auto grid h-6 w-6 shrink-0 place-items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="swd-map-sources-glyph pointer-events-auto grid h-11 w-11 shrink-0 place-items-center rounded-full transition-transform duration-fast active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink motion-reduce:transform-none"
       >
         <InfoIcon width={14} height={14} />
       </button>

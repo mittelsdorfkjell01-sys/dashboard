@@ -260,11 +260,12 @@ test("map loads Leaflet layout and renders spots as accessible markers", async (
   // panes and tiles fall into normal document flow on direct /map visits.
   await expect(map.locator(".leaflet-map-pane")).toHaveCSS("position", "absolute");
 
-  // The sources sit behind a small bare `i` that unfolds to its LEFT.
+  // The sources sit behind a small bare `i` that unfolds to its LEFT. The
+  // glyph stays 14px and chrome-less; only its tap target is the house 44px.
   const attribution = page.locator("main.swd-public-map").getByRole("button", { name: "Kartenquellen anzeigen" });
   await expect(attribution).toHaveAttribute("aria-expanded", "false");
   await expect(attribution).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  expect((await attribution.boundingBox())!.width).toBeLessThanOrEqual(28);
+  expect((await attribution.boundingBox())!.width).toBeGreaterThanOrEqual(44);
   await attribution.click();
   const sources = page.locator("main.swd-public-map").getByRole("complementary", { name: "Kartenquellen" });
   await expect(sources).toContainText("CARTO");
@@ -521,12 +522,22 @@ test("the wind map carries the same overlay furniture as the spot map", async ({
   // Same box as the spot map's bare glyphs.
   expect((await back.boundingBox())!.width).toBe(44);
 
-  // Nothing else: no control bar, no layer picker, no legend, no scrubber, no
-  // bottom search bar, and no second zoom control from MapLibre itself.
+  // Nothing else: no control bar, no layer picker, no scrubber, no bottom
+  // search bar, and no second zoom control from MapLibre itself. The colour
+  // scale came BACK on 2026-11-16 (`.swd-wx-legend` below): it is a legend,
+  // not a control surface — the field's colour is the map's main information
+  // and nothing on screen said what it meant.
   await expect(page.locator(".swd-wind-bar")).toHaveCount(0);
   await expect(page.locator(".swd-field-timeline")).toHaveCount(0);
   await expect(page.locator(".swd-field-legend")).toHaveCount(0);
   await expect(page.locator(".maplibregl-ctrl-group")).toHaveCount(0);
+
+  // The scale names the house wind bins in the visitor's unit, and the
+  // publication it belongs to — source and timestamp, never invented.
+  const legend = page.locator(".swd-wx-legend");
+  await expect(legend).toBeVisible();
+  await expect(legend).toContainText("Wind · kn");
+  await expect(legend).toContainText(/ICON|GFS|Lauf/);
   await expect(page.locator(".swd-wx-sheet")).toHaveCount(0);
   await expect(page.getByRole("combobox", { name: "Wetterebene" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Jetzt suchen" })).toHaveCount(0);
@@ -710,6 +721,51 @@ test("Spots, Wind and Wellen switch without remounting the map stage", async ({ 
   expect(await page.evaluate(() => performance.getEntriesByType("navigation").length)).toBe(1);
 });
 
+test("the wind switches between particles and arrows, and a link keeps the choice", async ({ page }) => {
+  await mockBackend(page, undefined, true);
+  await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
+  await expect(page.locator(".swd-field-webgl")).toBeVisible();
+
+  const display = page.getByRole("group", { name: "Darstellung des Winds" });
+  const particles = display.getByRole("button", { name: "Partikel" });
+  const arrows = display.getByRole("button", { name: "Pfeile" });
+  await expect(particles).toHaveAttribute("aria-pressed", "true");
+  await expect(arrows).toHaveAttribute("aria-pressed", "false");
+
+  // Directly under the mode words, centred with them, targets not overlapping.
+  const mode = (await page.getByRole("group", { name: "Kartenmodus" }).boundingBox())!;
+  const row = (await display.boundingBox())!;
+  expect(row.y).toBeGreaterThanOrEqual(mode.y + mode.height - 1);
+  expect(Math.abs(row.x + row.width / 2 - (mode.x + mode.width / 2))).toBeLessThan(2);
+  expect((await arrows.boundingBox())!.height).toBe(44);
+
+  await arrows.click();
+  await expect(arrows).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => new URL(page.url()).searchParams.get("display")).toBe("arrows");
+
+  await page.reload();
+  await expect(page.getByRole("group", { name: "Darstellung des Winds" }).getByRole("button", { name: "Pfeile" }))
+    .toHaveAttribute("aria-pressed", "true");
+});
+
+test("the waves draw drifting crests and carry no wind switch", async ({ page }) => {
+  await mockBackend(page, undefined, true, { withWaves: true });
+  await page.goto("/map?mode=waves&lat=54&lon=5&z=5");
+  await expect(page.locator(".swd-field-webgl")).toBeVisible();
+  await expect(page.getByRole("group", { name: "Darstellung des Winds" })).toHaveCount(0);
+
+  // The motion canvas is where the crests are drawn; it must carry ink.
+  const inked = () =>
+    page.locator(".swd-field-motion").evaluate((node) => {
+      const canvas = node as HTMLCanvasElement;
+      const data = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      let count = 0;
+      for (let index = 3; index < data.length; index += 4) if (data[index] > 40) count += 1;
+      return count;
+    });
+  await expect.poll(inked, { timeout: 10_000 }).toBeGreaterThan(200);
+});
+
 test("a tap on open water opens the forecast sheet for that coordinate", async ({ page }, testInfo) => {
   await mockBackend(page, undefined, true);
   await page.goto("/map?mode=wind&lat=50&lon=8&z=4");
@@ -737,10 +793,17 @@ test("a tap on open water opens the forecast sheet for that coordinate", async (
   const gustHeights = await sheet.locator('[data-wind-bar="gust"]').evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().height));
   expect(Math.max(...gustHeights)).toBeCloseTo(testInfo.project.name === "chromium-mobile" ? 79 : 87, 0);
 
-  // One bottom dock: forecast above, global time regulator immediately below.
+  // One bottom dock, and since 2026-11-16 a real one: scale and sources, the
+  // clock, then the forecast sheet on the bottom edge — a flex column, so the
+  // clock rides on the sheet's top edge instead of each piece being lifted
+  // past the others by a hand-measured offset (the sheet used to sit 70px up
+  // and the clock 46px up, and a phone stacked the two plus the sources glyph
+  // into the bottom third).
   const clock = page.locator(".swd-wx-time");
   const [sheetBox, clockBox] = [await sheet.boundingBox(), await clock.boundingBox()];
-  expect(sheetBox!.y + sheetBox!.height).toBeLessThanOrEqual(clockBox!.y + 2);
+  expect(clockBox!.y + clockBox!.height).toBeLessThanOrEqual(sheetBox!.y + 2);
+  // Docked to it, not floating somewhere above it.
+  expect(sheetBox!.y - (clockBox!.y + clockBox!.height)).toBeLessThan(24);
 
   await page.screenshot({
     path: `../.impeccable/review/${testInfo.project.name === "chromium-mobile" ? "mobile-sheet" : "desktop-sheet"}.png`,
@@ -838,7 +901,7 @@ test("the map's search is place-only, zooms instead of leaving, and opens the sp
   await expect(searchSheet.getByText("Welche Sportart?", { exact: true })).toHaveCount(0);
 
   await searchSheet.getByText("Wohin?", { exact: true }).click();
-  await searchSheet.getByRole("textbox", { name: "Region oder Spot suchen" }).fill("Spot A");
+  await searchSheet.getByRole("searchbox", { name: "Region oder Spot suchen" }).fill("Spot A");
   await searchSheet.getByText("Spot A", { exact: true }).first().click();
   await page.getByRole("button", { name: "Suchen" }).click();
 

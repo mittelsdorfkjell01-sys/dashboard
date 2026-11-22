@@ -4,6 +4,69 @@ import type { FieldSource } from "./FieldSource";
 import type { DecodedFieldTile } from "./fieldTile";
 
 interface Particle { longitude: number; latitude: number; age: number }
+interface Crest { longitude: number; latitude: number; age: number; life: number }
+
+/* ------------------------------------------------------------------------
+ * Wave crests (2026-11-19: "Wellen sollen in Linien laufen, nicht abgeknickt,
+ * immer Rundungen")
+ *
+ * A swell is read by its crests, not by a flow: short arcs set ACROSS the
+ * direction the waves travel, bowed forward like the fronts of a swell that
+ * left a distant storm, drifting slowly downwave. Each arc is one quadratic
+ * curve — no corners anywhere — with round caps, and fades in and out over
+ * its life instead of blinking on and off.
+ *
+ * The wave vector (`wave_u`, `wave_v`) points where the waves GO and its
+ * length is the significant wave height in metres (app/spatial_fields/
+ * providers.py), so the arc's orientation and size come straight from it.
+ * ---------------------------------------------------------------------- */
+
+/** Screen area per crest: sparse, so the colour underneath stays the reading. */
+const CREST_AREA_PER = 5200;
+const CREST_MIN = 50;
+const CREST_MAX = 420;
+/** Even zoomed in, no more than ~this many arcs per published cell. */
+const CREST_PER_CELL = 10;
+const CREST_LIFE_MIN_S = 4;
+const CREST_LIFE_SPREAD_S = 3;
+
+/** Half the arc's chord in px: a little longer for a bigger sea. */
+export function crestHalfLengthPx(heightM: number): number {
+  const height = Number.isFinite(heightM) ? Math.max(0, heightM) : 0;
+  return Math.min(20, Math.max(7, 7 + height * 3.5));
+}
+
+/** Drift in px/s: calm on purpose — a swell is watched, not chased. */
+export function crestDriftPxPerSecond(heightM: number): number {
+  const height = Number.isFinite(heightM) ? Math.max(0, heightM) : 0;
+  return 6 + Math.min(4, height) * 1.5;
+}
+
+/** Opacity over a crest's life: rises and falls along a half sine. */
+export function crestAlpha(age: number, life: number): number {
+  if (!(life > 0) || age <= 0 || age >= life) return 0;
+  return Math.sin((Math.PI * age) / life) * 0.85;
+}
+
+/**
+ * One crest arc in screen space around (x, y) for the wave vector (u, v):
+ * a quadratic curve from `start` to `end`, perpendicular to the direction of
+ * travel, with `control` placed so the arc's apex bulges forward by a third
+ * of its half length. Screen y grows downwards, so the vector's v flips.
+ */
+export function crestArc(x: number, y: number, u: number, v: number) {
+  const height = Math.hypot(u, v);
+  const dx = height > 0 ? u / height : 1;
+  const dy = height > 0 ? -v / height : 0;
+  const half = crestHalfLengthPx(height);
+  const bulge = half * 0.33;
+  // A quadratic's apex sits halfway to its control point.
+  return {
+    start: [x - dy * half, y + dx * half] as const,
+    end: [x + dy * half, y - dx * half] as const,
+    control: [x + dx * bulge * 2, y + dy * bulge * 2] as const,
+  };
+}
 
 const ARROW_SPACING = 62;
 const WEB_MERCATOR_NORTH = 85.05112878;
@@ -171,6 +234,7 @@ export class WindAnimationLayer {
   readonly canvas = document.createElement("canvas");
   private readonly context: CanvasRenderingContext2D;
   private particles: Particle[] = [];
+  private crests: Crest[] = [];
   private frame = 0;
   private lastFrameAt = 0;
   private active = true;
@@ -201,6 +265,7 @@ export class WindAnimationLayer {
     this.tiles = tiles;
     this.mode = mode;
     this.particles = [];
+    this.crests = [];
     const { width, height } = this.resize();
     this.context.clearRect(0, 0, width, height);
     if (mode === "arrows") this.drawArrows();
@@ -286,6 +351,10 @@ export class WindAnimationLayer {
       // whole field on its first frame back.
       const dt = this.lastFrameAt ? Math.min(0.05, (frameAt - this.lastFrameAt) / 1000) : 1 / 60;
       this.lastFrameAt = frameAt;
+      if (this.mode === "crests") {
+        this.stepCrests(dt);
+        return;
+      }
       if (this.mode !== "particles") return;
       const { width, height } = this.resize();
       const context = this.context;
@@ -379,6 +448,73 @@ export class WindAnimationLayer {
       }
     };
     this.frame = requestAnimationFrame(animate);
+  }
+
+  /** Seed a crest somewhere on screen over loaded data, mid-life so a fresh
+   *  field does not fade in all at once. */
+  private resetCrest(crest?: Crest, fresh = false): Crest {
+    const { width, height } = this.resize();
+    const value = crest ?? { longitude: 0, latitude: 0, age: 0, life: 1 };
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const lngLat = this.map.unproject([Math.random() * width, Math.random() * height]);
+      value.longitude = lngLat.lng;
+      value.latitude = lngLat.lat;
+      if (this.tiles.length === 0 || this.source.sample(this.tiles, lngLat.lng, lngLat.lat)) break;
+    }
+    value.life = CREST_LIFE_MIN_S + Math.random() * CREST_LIFE_SPREAD_S;
+    value.age = fresh ? Math.random() * value.life : 0;
+    return value;
+  }
+
+  private stepCrests(dt: number) {
+    const { width, height } = this.resize();
+    const context = this.context;
+    // Crests are discrete marks, not trails: each frame starts clean.
+    context.clearRect(0, 0, width, height);
+    const cellPx = this.cellPx();
+    const area = cellPx > 0 ? Math.max(CREST_AREA_PER, (cellPx * cellPx) / CREST_PER_CELL) : CREST_AREA_PER;
+    const target = Math.max(CREST_MIN, Math.min(CREST_MAX, Math.floor((width * height) / area)));
+    const fresh = this.crests.length === 0;
+    while (this.crests.length < target) this.crests.push(this.resetCrest(undefined, fresh));
+    if (this.crests.length > target) this.crests.length = target;
+    // Under reduced motion the crests stand still and keep their full
+    // strength: the direction is still drawn, nothing moves.
+    const still = typeof window !== "undefined" && !!window.matchMedia
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    context.strokeStyle = "rgb(255,255,255)";
+    context.lineWidth = 1.5;
+    context.lineCap = "round";
+    context.shadowColor = "transparent";
+    context.shadowBlur = 0;
+    for (const crest of this.crests) {
+      const wave = this.source.sample(this.tiles, crest.longitude, crest.latitude);
+      const point = this.map.project([crest.longitude, crest.latitude]);
+      if (!still) crest.age += dt;
+      if (!wave || crest.age >= crest.life || point.x < -24 || point.y < -24 || point.x > width + 24 || point.y > height + 24) {
+        this.resetCrest(crest);
+        continue;
+      }
+      const waveHeight = Math.hypot(wave.u, wave.v);
+      if (!still && waveHeight > 0) {
+        const step = crestDriftPxPerSecond(waveHeight) * dt;
+        const next = this.map.unproject([
+          point.x + (wave.u / waveHeight) * step,
+          point.y - (wave.v / waveHeight) * step,
+        ]);
+        crest.longitude = next.lng;
+        crest.latitude = next.lat;
+      }
+      const alpha = still ? 0.7 : crestAlpha(crest.age, crest.life);
+      if (alpha <= 0.01 || waveHeight <= 0) continue;
+      const arc = crestArc(point.x, point.y, wave.u, wave.v);
+      context.globalAlpha = alpha;
+      context.beginPath();
+      context.moveTo(arc.start[0], arc.start[1]);
+      context.quadraticCurveTo(arc.control[0], arc.control[1], arc.end[0], arc.end[1]);
+      context.stroke();
+    }
+    context.globalAlpha = 1;
   }
 
   redraw() {

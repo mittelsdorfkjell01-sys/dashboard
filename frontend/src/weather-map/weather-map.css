@@ -1,18 +1,23 @@
-/* Wind-explorer palette. The map is a LIGHT, Windy-style instrument
-   (2026-10-07 feedback with reference images): a clean light Positron base,
-   the coloured wind field on top, and dark place labels above that — see the
-   base/label styles in WeatherMapCanvas.tsx. The floating CHROME reads as the
-   same light design system as the public spot map, resolving the `--map-*`/
-   `--sw-*` tokens pinned to light on `.swd-wind-explorer` in map.css.
-   `--wx-canvas` is the light base shown during tile load / gaps. `--wx-base`/
-   `--wx-panel`/`--wx-shadow` are the DARK glass still used by the spot-page
-   field panels (`.swd-spot-field-*`) on the dark Daten page — do not lighten
-   those. */
+/* Wind/wave explorer. The map is a LIGHT instrument (2026-10-07 feedback with
+   reference images): a clean light Positron base, the coloured field on top,
+   and dark place labels above that — see the base/label styles in
+   WeatherMapCanvas.tsx.
+
+   Everything floating ON the field is the site's own design system, not a
+   second one: the house tokens arrive through `.sw-theme-light` on the map
+   root (see index.css), the map-local ink/line/halo tokens through
+   `.swd-wind-explorer` in map.css, and type/weight/colour are set with the
+   house classes in the TSX. This file does geometry — where the chrome sits
+   and how the bottom dock stacks — plus the few things only CSS can reach
+   (range-input parts, pseudo elements).
+
+   `--wx-canvas` is the light base shown during tile load / gaps. The dark
+   glass tokens that used to live here (`--wx-base`/`--wx-panel`/`--wx-shadow`)
+   went with the `.swd-spot-field-*` panels they styled: no component had
+   rendered those since the Daten page was rebuilt, and they were the last
+   reason for a second, darker palette inside the map's own stylesheet. */
 :root {
   --wx-canvas: #E9EEF1; /* light wind-map canvas base (tile load / gaps) */
-  --wx-base: #0a2026;   /* dark base for the Daten-page field panels */
-  --wx-panel: 20 43 49; /* dark glass fill (Daten-page field panels) — rgb(var(--wx-panel) / NN%) */
-  --wx-shadow: 7 22 27; /* dark drop-shadow (Daten-page field panels) — rgb(var(--wx-shadow) / NN%) */
 }
 
 .swd-wind-explorer {
@@ -66,7 +71,7 @@
 .swd-weather-map-labels .maplibregl-canvas { background: transparent; }
 /* The base rule in map.css already carries the light-ground treatment; the
    wind map only softens it further, because it sits on the colour field. */
-.swd-wind-explorer .swd-country-label { color: rgb(35 54 56 / 58%); }
+.swd-wind-explorer .swd-country-label { color: rgb(35 54 56 / 52%); }
 .swd-weather-map-base .maplibregl-control-container { position: relative; z-index: 6; }
 
 .swd-field-webgl,
@@ -83,42 +88,106 @@
 .swd-field-motion { z-index: 3; }
 .swd-field-contours { z-index: 4; }
 
-/* The overlay is exactly two elements (2026-10-11 brief): the search glyph in
-   the top corner and the forecast sheet docked at the bottom, which only
-   exists after a tap. No control bar, no legend, no time scrubber — the rest on
-   top of the field is transient status and the basemap attribution. The
-   Spots/Wind toggle (`.swd-explorer-mode`) lives in map.css, where the spot map
-   still uses it. */
-
 /* Search — the glyph alone, in the same right-hand stack (and at the same
    size) as the spot map's list glyph: no surface, no border, no shadow, just
-   the mark. Overrides MobileSearchTrigger's `iconOnly` chrome. */
-.swd-wx-search .swd-inline-search { pointer-events: auto; }
-.swd-wx-search .swd-inline-search button {
+   the mark. Overrides MobileSearchTrigger's `iconOnly` chrome. Shared with
+   the spot map's own search glyph (`.swd-map-search`), so both halves of the
+   public map open the same search from the same place. */
+.swd-wx-search .swd-inline-search,
+.swd-map-search .swd-inline-search { pointer-events: auto; }
+.swd-wx-search .swd-inline-search button,
+.swd-map-search .swd-inline-search button {
   width: 44px;
   height: 44px;
   border: 0;
   background: transparent;
   box-shadow: none;
 }
-.swd-wx-search .swd-inline-search button svg { width: 20px; height: 20px; }
+.swd-wx-search .swd-inline-search button svg,
+.swd-map-search .swd-inline-search button svg { width: 20px; height: 20px; }
+
+/* --- the bottom dock -----------------------------------------------------
+   One flex column holds everything that lives on the bottom edge: the scale
+   and the sources glyph on the top row, the clock, and the forecast sheet.
+   Each part is in flow, so none of them has to know how tall the others are
+   — which is what the three magic offsets this replaced were for (the sheet
+   lifted the clock by 46px, an open sheet pushed the sources glyph up by
+   270px, and a phone stacked all three into the bottom third). */
+.swd-wx-dock {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  /* Clear of the bottom edge, so the dock reads as something lying ON the
+     map rather than as a browser chrome bar — and so a phone's home
+     indicator has its strip. Whichever element is last in the column (the
+     clock, or the sheet once one is open) keeps this margin of map below it. */
+  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 36px);
+  left: max(12px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 960px;
+  margin-inline: auto;
+  pointer-events: none;
+}
+.swd-wx-dock > * { pointer-events: auto; }
+/* Scale left, sources right, both sitting on the same baseline. The sources
+   glyph is pushed to the right by the row itself, not by the scale beside it,
+   so it stays in its corner on a phone where the scale steps aside. */
+.swd-wx-dock-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.swd-wx-dock-top > .swd-wx-legend { margin-right: auto; }
+.swd-wx-dock-top > * { pointer-events: auto; }
+/* The sources glyph rides in the dock instead of being pinned to the corner,
+   where an open sheet covered it (the CARTO licence has to stay readable). */
+.swd-wx-attribution {
+  position: relative;
+  inset: auto;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+/* The field's colour scale. The field, the forecast bars and this legend all
+   read the one house wind scale (lib/windScale.ts), so a colour on the map
+   means the same thing as the same colour in a chart — before 2026-11-16 the
+   field ran its own continuous ramp and nothing on the map said what any of
+   it meant. On a phone with the sheet open it steps aside: the sheet spells
+   the numbers out, and three stacked panels would own the screen. */
+.swd-wx-legend {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  width: min(272px, 100%);
+  padding: 8px 10px;
+  border: 1px solid var(--sw-line);
+  border-radius: var(--sw-radius);
+  background: color-mix(in srgb, var(--sw-surface) 94%, transparent);
+  box-shadow: var(--sw-shadow-card);
+  color: var(--sw-ink);
+}
+.swd-wx-legend-scale {
+  display: flex;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+.swd-wx-legend-scale span { flex: 1; height: 6px; }
+.swd-wx-legend-ticks { display: flex; justify-content: space-between; }
+@media (max-width: 639px) {
+  .swd-field-map-wrap.has-sheet .swd-wx-legend { display: none; }
+}
 
 /* The clock — one day at a time: the date between two small chevrons, a
    continuous hairline track from now to the end of that day, and the hour
-   marks underneath. Lifted clear of the bottom edge so it reads as part of
-   the map rather than as a browser chrome bar. */
+   marks underneath. Type comes from the house classes in FieldTimeNav.tsx;
+   what is left here is the parts of a range input, which CSS alone can
+   reach. */
 .swd-wx-time {
-  position: absolute;
-  z-index: 1140;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 46px);
-  left: max(16px, env(safe-area-inset-left));
-  margin: 0 auto;
-  max-width: 960px;
   color: var(--map-spot);
-}
-.swd-field-map-wrap.has-sheet .swd-wx-time {
-  bottom: max(10px, env(safe-area-inset-bottom));
 }
 .swd-wx-time-head {
   position: relative;
@@ -127,12 +196,11 @@
   justify-content: center;
   gap: 2px;
   margin-bottom: 1px;
-  filter: drop-shadow(0 1px 3px rgb(15 25 25 / 22%));
 }
 .swd-wx-time-head > button {
   display: inline-flex;
-  width: 26px;
-  height: 26px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
   color: var(--map-spot);
@@ -142,22 +210,17 @@
 .swd-wx-time-head > button:not(:disabled):hover { color: var(--map-selection); }
 .swd-wx-time-value {
   min-width: 104px;
-  font: 500 12px/1 "Poppins", system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  color: var(--map-label-soft);
   text-align: center;
   white-space: nowrap;
 }
-.swd-wx-time-value strong { font-weight: 650; color: var(--map-spot); }
 /* Out of the centred row, so switching days does not nudge the date off
    centre when the reset appears. */
 .swd-wx-time .swd-wx-time-now {
   position: absolute;
   right: 0;
-  height: 22px;
-  padding: 0 4px;
-  font: 500 11px/1 "Poppins", system-ui, sans-serif;
-  color: var(--map-selection);
+  min-height: 44px;
+  padding: 0 6px;
 }
 .swd-wx-time input[type="range"] {
   display: block;
@@ -171,12 +234,12 @@
 }
 .swd-wx-time input[type="range"]::-webkit-slider-runnable-track {
   height: 2px;
-  border-radius: 999px;
+  border-radius: 9999px;
   background: color-mix(in srgb, var(--map-spot) 35%, transparent);
 }
 .swd-wx-time input[type="range"]::-moz-range-track {
   height: 2px;
-  border-radius: 999px;
+  border-radius: 9999px;
   background: color-mix(in srgb, var(--map-spot) 35%, transparent);
 }
 .swd-wx-time input[type="range"]::-webkit-slider-thumb {
@@ -184,9 +247,9 @@
   height: 14px;
   margin-top: -6px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 9999px;
   background: var(--map-spot);
-  box-shadow: 0 1px 4px rgb(15 25 25 / 35%);
+  box-shadow: var(--map-mark-halo);
   appearance: none;
   -webkit-appearance: none;
 }
@@ -194,9 +257,9 @@
   width: 14px;
   height: 14px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 9999px;
   background: var(--map-spot);
-  box-shadow: 0 1px 4px rgb(15 25 25 / 35%);
+  box-shadow: var(--map-mark-halo);
 }
 .swd-wx-time input[type="range"]:focus-visible { outline: 2px solid var(--map-selection); outline-offset: 4px; }
 
@@ -204,39 +267,30 @@
 .swd-wx-time-marks {
   position: relative;
   height: 14px;
-  filter: drop-shadow(0 1px 3px rgb(15 25 25 / 22%));
 }
 .swd-wx-time-marks span {
   position: absolute;
   top: 0;
-  font: 500 10px/1 "Poppins", system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  color: var(--map-label-soft);
   white-space: nowrap;
   transform: translateX(-50%);
 }
 .swd-wx-time-marks span:first-child { transform: none; }
 .swd-wx-time-marks span:last-child:not(:first-child) { transform: translateX(-100%); }
-@media (pointer: coarse) {
-  .swd-wx-time-head > button { width: 32px; height: 32px; }
-}
 
-/* Forecast sheet — one quiet dark band on the bottom edge, in the Spot-Daten
-   instrument palette (`.daten-dark`, applied by the component). It spans the
-   viewport between the same small gutters on every screen: the hours scroll,
-   so width is reading room, not decoration. */
+/* Forecast sheet — the same panel the spot map docks at the bottom: the house
+   light surface with a hairline and the float shadow. It used to borrow the
+   Daten page's dark instrument palette (`daten-dark`), which made switching
+   from Spots to Wind change grounds, accents and text colours mid-page on a
+   LIGHT map; DESIGN.md asks the map's panels to use the shared component
+   rules, and the dark glass was the one piece that did not (2026-11-16). The
+   dark palette stays where it belongs: on the dark Daten page. */
 .swd-wx-sheet {
-  position: absolute;
-  z-index: 1150;
-  right: max(12px, env(safe-area-inset-right));
-  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 70px);
-  left: max(12px, env(safe-area-inset-left));
-  max-width: 960px;
-  margin-inline: auto;
   overflow: hidden;
   border: 1px solid var(--sw-line);
   border-radius: var(--sw-radius);
-  box-shadow: 0 10px 32px rgb(15 25 25 / 24%);
+  background: var(--sw-surface);
+  box-shadow: var(--sw-shadow-float);
   animation: swd-wx-sheet-in var(--sw-dur-slow) var(--sw-ease) both;
 }
 @keyframes swd-wx-sheet-in {
@@ -247,132 +301,34 @@
   .swd-wx-sheet { animation: none; }
 }
 
-/* An open sheet owns the bottom edge: the attribution glyph and the zoom
-   controls step above it. The clearance covers the sheet's two caption lines
-   plus the bar band — it does not grow with the hours, which scroll. */
-.swd-field-map-wrap.has-sheet .swd-wx-attribution {
-  bottom: calc(max(10px, env(safe-area-inset-bottom)) + 270px);
-}
-
-.swd-field-loading,
 .swd-field-expired,
 .swd-field-message {
   position: absolute;
-  z-index: 1200;
   left: 50%;
   border-radius: var(--sw-radius);
-  box-shadow: 0 8px 28px rgb(15 25 25 / 18%);
+  box-shadow: var(--sw-shadow-card);
   transform: translateX(-50%);
 }
-.swd-field-loading { top: 14px; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--map-line); background: color-mix(in srgb, var(--map-surface) 96%, transparent); color: var(--map-label); font-size: 11px; }
-.swd-field-loading span { width: 12px; height: 12px; border: 2px solid color-mix(in srgb, var(--sw-teal) 30%, transparent); border-top-color: var(--sw-teal); border-radius: 999px; animation: swd-field-spin .8s linear infinite; }
-@keyframes swd-field-spin { to { transform: rotate(360deg); } }
-.swd-field-expired { top: 14px; padding: 9px 12px; border: 1px solid var(--sw-warning); background: var(--sw-warning-bg); color: var(--sw-warning); font-size: 11px; }
-.swd-field-expired.is-offline { border-color: var(--map-line); background: color-mix(in srgb, var(--map-surface) 96%, transparent); color: var(--map-label); }
-.swd-field-message { top: 50%; width: min(390px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--map-line); background: var(--sw-surface); color: var(--map-label); transform: translate(-50%, -50%); }
-.swd-field-message strong { font-size: 16px; }
-.swd-field-message p { margin: 6px 0 16px; color: var(--map-label-soft); font-size: 12px; line-height: 1.55; }
+.swd-field-expired { top: 14px; padding: 9px 12px; border: 1px solid var(--sw-warning); background: var(--sw-warning-bg); color: var(--sw-warning); }
+.swd-field-expired.is-offline { border-color: var(--sw-line); background: color-mix(in srgb, var(--sw-surface) 96%, transparent); color: var(--sw-ink); }
+.swd-field-message {
+  top: 50%;
+  width: min(390px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid var(--sw-line);
+  background: var(--sw-surface);
+  color: var(--sw-ink);
+  transform: translate(-50%, -50%);
+}
+.swd-field-message p { margin: 6px 0 16px; color: var(--sw-muted); }
 .swd-field-message div { display: flex; flex-wrap: wrap; gap: 8px; }
-.swd-field-message button { min-height: 42px; padding: 0 13px; border-radius: var(--sw-radius); background: var(--sw-teal); color: #fff; font-size: 11px; font-weight: 600; }
+.swd-field-message button { min-height: 44px; padding: 0 13px; border-radius: var(--sw-radius); background: var(--sw-teal); color: #fff; font-weight: 600; }
 .swd-field-message button + button { background: var(--sw-band); color: var(--sw-ink); }
 
 @media (max-width: 680px) {
-  .swd-field-loading, .swd-field-expired { top: max(14px, calc(env(safe-area-inset-top) + 8px)); }
+  .swd-field-expired { top: max(14px, calc(env(safe-area-inset-top) + 8px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .swd-field-loading span { animation: none; }
   .swd-field-motion { display: block; }
-}
-
-.swd-spot-field-note {
-  position: absolute;
-  z-index: 20;
-  top: 12px;
-  left: 50%;
-  max-width: calc(100% - 24px);
-  padding: 8px 11px;
-  border-radius: var(--sw-radius);
-  background: rgb(var(--wx-panel) / 92%);
-  box-shadow: 0 6px 20px rgb(var(--wx-shadow) / 22%);
-  color: #fff;
-  font-size: 11px;
-  line-height: 1.35;
-  text-align: center;
-  transform: translateX(-50%);
-}
-
-.swd-spot-field-products {
-  position: absolute;
-  z-index: 20;
-  right: 12px;
-  bottom: 12px;
-  width: min(520px, calc(100% - 24px));
-  padding: 12px 14px;
-  border-radius: var(--sw-radius);
-  background: rgb(var(--wx-panel) / 94%);
-  box-shadow: 0 10px 32px rgb(var(--wx-shadow) / 28%);
-  color: #fff;
-}
-
-.swd-spot-field-products-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 9px;
-  font-size: 11px;
-}
-
-.swd-spot-field-products-head strong { font-size: 12px; }
-.swd-spot-field-products-head span { color: rgb(255 255 255 / 68%); }
-
-.swd-spot-field-products dl {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  overflow: hidden;
-  border-radius: var(--sw-radius);
-  background: rgb(255 255 255 / 13%);
-}
-
-.swd-spot-field-products dl > div {
-  min-width: 0;
-  padding: 9px 10px;
-  background: var(--wx-base);
-}
-
-.swd-spot-field-products dt {
-  overflow: hidden;
-  color: rgb(255 255 255 / 65%);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.swd-spot-field-products dd {
-  margin-top: 3px;
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.swd-spot-field-products dd span { color: #afdbe2; font-size: 11px; }
-.swd-spot-field-products small { display: block; margin-top: 8px; color: rgb(255 255 255 / 62%); font-size: 9px; }
-
-@media (max-width: 680px) {
-  .swd-spot-field-products {
-    right: 8px;
-    bottom: 8px;
-    width: calc(100% - 16px);
-    padding: 10px;
-  }
-  .swd-spot-field-products dl > div { padding: 8px 7px; }
-  .swd-spot-field-products dt { font-size: 8px; }
-  .swd-spot-field-products dd { font-size: 12px; }
-  .swd-spot-field-products small { line-height: 1.35; }
 }

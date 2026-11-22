@@ -1,38 +1,48 @@
-const STOPS = [
-  // No violet anywhere below a stiff breeze. The scale is drawn over land as
-  // much as over water, and inland winds sit at 5–15 kt — with the old violet
-  // ends (128,101,216)/(96,127,220) every continent came out lilac
-  // (2026-10-11, twice). It now runs pale blue-grey → light blue → teal.
-  [0, [176, 190, 214]],
-  [5, [136, 177, 216]],
-  [10, [72, 169, 210]],
-  [15, [65, 196, 187]],
-  [20, [68, 181, 105]],
-  [25, [124, 184, 61]],
-  [30, [202, 184, 57]],
-  [40, [232, 137, 62]],
-] as const;
+import { WIND_BINS } from "../lib/windScale";
+
+/** "#A9B7C2" → [169, 183, 194]. */
+function rgb(hex: string): [number, number, number] {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+/**
+ * The wind field's colours ARE the house wind scale (lib/windScale.ts) — the
+ * same seven discrete bins the forecast bars, the meteogram and the legend
+ * use, so 18 kn is the same colour wherever the site draws it.
+ *
+ * Until 2026-11-16 this file carried a second, continuous ramp of its own
+ * (pale blue-grey → light blue → teal → green → yellow → orange). It looked
+ * like a weather map, but it meant that the hourly bars inside the map's own
+ * forecast sheet coloured 18 kn dark green while the field under them drew it
+ * teal — one quantity, two colour languages, in contact on one screen. The
+ * bins are deliberately discrete (see windScale.ts): the steps the field now
+ * shows are exactly the steps the legend names.
+ */
+const STOPS = WIND_BINS.map((bin) => [bin.min, rgb(bin.hex)] as const);
 
 export function fieldColor(speedKnots: number): [number, number, number] {
+  return binColor(speedKnots);
+}
+
+/** The bin a speed falls in — no interpolation between bins, by design. */
+function binColor(speedKnots: number): [number, number, number] {
   const value = Math.max(0, speedKnots);
-  for (let index = 1; index < STOPS.length; index += 1) {
-    const lower = STOPS[index - 1], upper = STOPS[index];
-    if (value > upper[0]) continue;
-    const ratio = (value - lower[0]) / (upper[0] - lower[0]);
-    return [0, 1, 2].map((channel) => Math.round(lower[1][channel] + (upper[1][channel] - lower[1][channel]) * ratio)) as [number, number, number];
+  for (let index = STOPS.length - 1; index >= 0; index -= 1) {
+    if (value >= STOPS[index][0]) return [...STOPS[index][1]] as [number, number, number];
   }
-  return [...STOPS[STOPS.length - 1][1]] as [number, number, number];
+  return [...STOPS[0][1]] as [number, number, number];
 }
 
 export const FIELD_COLOR_STOPS = STOPS;
 
 export const FIELD_LAYER_STYLES = {
-  wind: { label: "Wind", unit: "kt", values: [0, 10, 20, 30, 40], stops: STOPS },
+  wind: { label: "Wind", unit: "kn", values: [0, 10, 20, 30, 40], stops: STOPS },
   waves: {
     label: "Wellen", unit: "m", values: [0, 0.5, 1, 2, 4, 8],
     stops: [[0, [52, 91, 160]], [0.5, [47, 139, 181]], [1, [54, 184, 174]], [2, [124, 196, 104]], [4, [225, 194, 72]], [6, [228, 121, 69]], [10, [156, 56, 93]]],
   },
-  gust: { label: "Böen", unit: "kt", values: [0, 10, 20, 30, 40], stops: STOPS },
+  gust: { label: "Böen", unit: "kn", values: [0, 10, 20, 30, 40], stops: STOPS },
   temperature: {
     label: "Temperatur", unit: "°C", values: [-20, 0, 10, 20, 35],
     stops: [[-30, [64, 78, 156]], [-10, [70, 139, 194]], [0, [166, 216, 225]], [10, [228, 224, 171]], [20, [234, 161, 82]], [30, [202, 78, 70]], [45, [117, 45, 78]]],
@@ -63,6 +73,9 @@ export function layerValue(layer: keyof typeof FIELD_LAYER_STYLES, arrays: Recor
 }
 
 export function layerColor(layer: keyof typeof FIELD_LAYER_STYLES, value: number): [number, number, number] {
+  // Wind and gusts are the house scale, and the house scale does not
+  // interpolate: a value belongs to a bin, and the bin has one colour.
+  if (layer === "wind" || layer === "gust") return binColor(value);
   const stops = FIELD_LAYER_STYLES[layer].stops as readonly (readonly [number, readonly [number, number, number]])[];
   for (let index = 1; index < stops.length; index += 1) {
     const lower = stops[index - 1], upper = stops[index];
