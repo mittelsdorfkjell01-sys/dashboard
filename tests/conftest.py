@@ -17,16 +17,16 @@ from sqlalchemy.engine import make_url
 _TEST_URL = Settings().test_database_url
 
 
-def _assert_safe_test_database(url: str) -> None:
-    """Fail before the destructive schema reset unless the target is local/test-only."""
-    parsed = make_url(url)
-    if parsed.host not in {"localhost", "127.0.0.1", "::1"}:
-        raise RuntimeError("TEST_DATABASE_URL must point to a local database host")
-    if parsed.database != "surfwind_test":
-        raise RuntimeError("TEST_DATABASE_URL database must be named 'surfwind_test'")
+def _validate_test_database_url(raw_url: str) -> None:
+    """Refuse to run the schema-reset fixture against a non-local/non-test DB."""
+    url = make_url(raw_url)
+    if url.host not in {"localhost", "127.0.0.1", "::1"}:
+        raise RuntimeError("TEST_DATABASE_URL must point to a local database")
+    if url.database != "surfwind_test":
+        raise RuntimeError("TEST_DATABASE_URL database must be exactly 'surfwind_test'")
 
 
-_assert_safe_test_database(_TEST_URL)
+_validate_test_database_url(_TEST_URL)
 os.environ["DATABASE_URL"] = _TEST_URL
 os.environ["APP_ENV"] = "test"
 os.environ["DEPLOYMENT_MODE"] = "admin"

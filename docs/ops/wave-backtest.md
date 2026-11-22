@@ -8,7 +8,7 @@ free DWD/NOAA fields and free Copernicus Marine observations.
 ## Evidence flow
 
 ```text
-Copernicus wave observation CSV
+Copernicus Marine platform-series API (daily)
   -> wave_observation_platforms + wave_observations
   -> each future DWD/NOAA wave-field run samples its native grid at active platforms
   -> immutable wave_forecast_samples survive weather-field asset retention
@@ -26,11 +26,20 @@ Use Copernicus Marine products:
 - near-real-time: `INSITU_GLO_PHYBGCWAV_DISCRETE_MYNRT_013_030`;
 - delayed-mode/history: `INSITU_GLO_WAV_DISCRETE_MY_013_045`.
 
-Copernicus registration and downloads are free. Keep its credentials in the
-Copernicus client configuration or process environment; never put them in this
-repository or the database.
+Copernicus registration and downloads are free. The scheduled GitHub workflow
+uses the official client and dataset
+`cmems_obs-ins_glo_phybgcwav_mynrt_na_irr`. Store the account only in the
+repository secrets `COPERNICUS_MARINE_USERNAME` and
+`COPERNICUS_MARINE_PASSWORD`; never put credentials in this repository or the
+database. Set the repository variable `WAVE_BACKTEST_ENABLED=true` only after
+both secrets and the production database are available.
 
-Export a normalized CSV with these columns:
+`Production Wave Verification` imports the last 72 hours every day. On Sunday
+it additionally evaluates the rolling 90-day window. Manual runs can import,
+evaluate, or do both. Evaluation fails unless forecast samples, matched values,
+and a matched platform are all present; an empty report cannot pass.
+
+For a manual/offline import, export a normalized CSV with these columns:
 
 ```text
 platform_id,platform_name,observed_at,latitude,longitude,location_class,significant_height_m,period_s,period_semantic,direction_from_deg,direction_semantic,qc_status
@@ -78,7 +87,10 @@ python -m scripts.wave_backtest `
   --model dwd-ewam `
   --model dwd-gwam `
   --model noaa-gfs-wave `
-  --output local-evidence/wave-backtest-2026-11_2027-01.json
+  --output local-evidence/wave-backtest-2026-11_2027-01.json `
+  --minimum-forecast-samples 1 `
+  --minimum-matched-values 1 `
+  --minimum-matched-platforms 1
 ```
 
 The report separates model, lead bucket, sea region, location class and physical

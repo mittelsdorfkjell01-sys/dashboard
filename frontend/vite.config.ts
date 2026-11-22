@@ -10,6 +10,7 @@ export default defineConfig(({ command, mode }) => {
   // `..` resolves to the repo root relative to the frontend cwd the build runs in.
   const rootEnv = loadEnv(mode, "..", "");
   const adminBuild = env.VITE_INCLUDE_ADMIN === "true";
+  const e2eBuild = mode === "e2e";
   // CARTO basemap key: whatever the deploy sets in the environment (e.g. Vercel)
   // wins, then the frontend's own VITE_CARTO_KEY, then the shared root .env
   // CARTO_API_KEY. Empty = keyless tiles. `process` is read via globalThis so
@@ -83,8 +84,8 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     define: {
-      __INCLUDE_ADMIN__: JSON.stringify(command === "serve" || adminBuild),
-      __ADMIN_DEPLOY__: JSON.stringify(command === "build" && adminBuild),
+      __INCLUDE_ADMIN__: JSON.stringify(command === "serve" || adminBuild || e2eBuild),
+      __ADMIN_DEPLOY__: JSON.stringify(command === "build" && adminBuild && !e2eBuild),
       __CARTO_KEY__: JSON.stringify(cartoKey),
     },
     server: {

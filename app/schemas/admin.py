@@ -192,6 +192,13 @@ class ImageRequest(AdminWriteModel):
     credit: str = Field(min_length=1, max_length=200)
     license_url: AnyHttpUrl | None = None
     credit_url: AnyHttpUrl | None = None
+
+    @field_validator("url")
+    @classmethod
+    def _hero_url_must_be_https(cls, value: AnyHttpUrl) -> AnyHttpUrl:
+        if value.scheme != "https":
+            raise ValueError("Bild-URL muss HTTPS verwenden")
+        return value
     source_page: AnyHttpUrl | None = None
 
     def to_image(self) -> dict:
@@ -313,6 +320,13 @@ class RegionImageRequest(AdminWriteModel):
     credit: str = Field(min_length=1, max_length=200)
     license_url: AnyHttpUrl | None = None
     credit_url: AnyHttpUrl | None = None
+
+    @field_validator("url")
+    @classmethod
+    def _hero_url_must_be_https(cls, value: AnyHttpUrl) -> AnyHttpUrl:
+        if value.scheme != "https":
+            raise ValueError("Bild-URL muss HTTPS verwenden")
+        return value
     source_page: AnyHttpUrl | None = None
 
     def to_image(self) -> dict:

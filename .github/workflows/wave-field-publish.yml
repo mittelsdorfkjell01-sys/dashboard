@@ -2,9 +2,9 @@ name: Production Wave Field Publication
 
 on:
   schedule:
-    # The free models publish on six-hour cycles. Offset the worker so upstream
-    # files have time to complete before discovery starts.
-    - cron: "35 1,7,13,19 * * *"
+    # Two complete daily runs keep the published field current while the
+    # serial three-model worker stays within the free compute allowance.
+    - cron: "35 7,19 * * *"
   workflow_dispatch:
     inputs:
       model:
@@ -29,8 +29,9 @@ jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.WAVE_FIELD_WORKER_ENABLED == 'true')
     runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 90
+    # EWAM and GWAM each take about one hour; the serial all-model run needs an
+    # independent safety window without introducing another paid worker.
+    timeout-minutes: 240
     env:
       TZ: UTC
       APP_ENV: production
@@ -48,18 +49,17 @@ jobs:
       WAVE_FIELD_PUBLIC_ENABLED: "true"
       WAVE_FIELD_AUTO_ACTIVATE: "true"
       WAVE_BACKTEST_ARCHIVE_ENABLED: "true"
-      WEATHER_FIELD_RETENTION_RUNS: "3"
+      # Two complete cycles preserve rollback while keeping all three wave
+      # models comfortably inside Neon's free object-storage allowance.
+      WEATHER_FIELD_RETENTION_RUNS: "2"
+      # GWAM tiles plus browser series containers require about 740 MB.
+      WEATHER_FIELD_ACTIVATION_MAX_ASSET_BYTES: "800000000"
       # Leaves 500 MB below Neon's 5 GB free object-storage allowance.
       WEATHER_FIELD_STORAGE_BUDGET_BYTES: "4500000000"
       WEATHER_FIELD_STORAGE_BACKEND: s3
-      WEATHER_FIELD_STORAGE_ENDPOINT: ${{ secrets.WEATHER_FIELD_STORAGE_ENDPOINT }}
-      WEATHER_FIELD_STORAGE_REGION: ${{ vars.WEATHER_FIELD_STORAGE_REGION }}
       WEATHER_FIELD_STORAGE_BUCKET: ${{ vars.WEATHER_FIELD_STORAGE_BUCKET }}
       WEATHER_FIELD_STORAGE_PREFIX: ${{ vars.WEATHER_FIELD_STORAGE_PREFIX }}
-      WEATHER_FIELD_STORAGE_ACCESS_KEY: ${{ secrets.WEATHER_FIELD_STORAGE_ACCESS_KEY }}
-      WEATHER_FIELD_STORAGE_SECRET_KEY: ${{ secrets.WEATHER_FIELD_STORAGE_SECRET_KEY }}
       WEATHER_FIELD_STORAGE_ADDRESSING_STYLE: path
-      WEATHER_FIELD_PUBLIC_BASE_URL: ${{ vars.WEATHER_FIELD_PUBLIC_BASE_URL }}
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -70,8 +70,55 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+
+      - name: Guard Neon transfer quota
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: >-
+          python -m scripts.neon_transfer_guard
+          --workload-name "Wave field publication"
+          --require-config
+
       - name: Install field-worker dependencies
         run: pip install -r requirements.txt
+
+      - name: Route Neon database over IPv4
+        run: python -m scripts.database_ipv4_env
+
+      - name: Resolve branch-scoped Neon Object Storage
+        shell: bash
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: |
+          runtime_env="$RUNNER_TEMP/neon-object-storage.env"
+          npx -y neon@latest env pull \
+            --project-id "$NEON_PROJECT_ID" \
+            --branch production \
+            --file "$runtime_env" \
+            --service object-storage \
+            --no-analytics
+          set -a
+          source "$runtime_env"
+          set +a
+          test -n "$AWS_ENDPOINT_URL_S3"
+          test -n "$AWS_REGION"
+          test -n "$AWS_ACCESS_KEY_ID"
+          test -n "$AWS_SECRET_ACCESS_KEY"
+          echo "::add-mask::$AWS_ACCESS_KEY_ID"
+          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
+          {
+            echo "WEATHER_FIELD_STORAGE_ENDPOINT=${AWS_ENDPOINT_URL_S3%/}"
+            echo "WEATHER_FIELD_STORAGE_REGION=$AWS_REGION"
+            echo "WEATHER_FIELD_STORAGE_ACCESS_KEY=$AWS_ACCESS_KEY_ID"
+            echo "WEATHER_FIELD_STORAGE_SECRET_KEY=$AWS_SECRET_ACCESS_KEY"
+            echo "WEATHER_FIELD_PUBLIC_BASE_URL=${AWS_ENDPOINT_URL_S3%/}/$WEATHER_FIELD_STORAGE_BUCKET"
+          } >> "$GITHUB_ENV"
+          rm -f "$runtime_env"
 
       - name: Validate database and object-storage configuration
         shell: bash

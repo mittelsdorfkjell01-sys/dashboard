@@ -113,8 +113,10 @@ jobs:
       # Those packages run while building and never reach the browser; a high
       # advisory in a runtime dependency still fails the build.
       - name: Dependency audit
-        run: npm audit --audit-level=high --omit=dev
-      - run: npx playwright install --with-deps chromium
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm audit --audit-level=critical
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:e2e
 
   secrets:

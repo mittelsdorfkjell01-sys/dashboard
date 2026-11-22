@@ -6,13 +6,14 @@ import numpy as np
 
 from app.config import get_settings
 from app.models.weather_field import (
+    WeatherFieldAsset,
     WeatherFieldJob,
     WeatherFieldModel,
     WeatherFieldPublication,
     WeatherFieldRun,
 )
 from app.spatial_fields.catalog import sync_free_model_catalog
-from app.spatial_fields.control_plane import get_or_create_run
+from app.spatial_fields.control_plane import get_or_create_run, register_asset
 from app.spatial_fields.jobs import (
     _run_discovery,
     claim_next_job,
@@ -26,7 +27,10 @@ from app.spatial_fields.phase0 import RegularGrid
 from app.spatial_fields.pipeline import process_run
 from app.spatial_fields.providers import FieldSourceSlice, GfsFieldProvider, IconEuFieldProvider
 from app.spatial_fields.publication import REQUIRED_HARD_GATES, activate_publication
-from app.spatial_fields.retention import prune_weather_field_runs
+from app.spatial_fields.retention import (
+    fail_stale_unmanaged_runs,
+    prune_weather_field_runs,
+)
 from app.spatial_fields.serving import (
     load_active_manifest,
     sample_active_field,
@@ -614,6 +618,122 @@ def test_retention_counts_distinct_model_cycles_not_retry_rows(db) -> None:
         "ready",
         "expired",
     ]
+
+
+def test_retention_reclaims_failed_run_assets_before_complete_cycles(db) -> None:
+    model = WeatherFieldModel(
+        provider_key="test",
+        model_key="retention-failed-test",
+        display_name="Retention failed test",
+        status="active",
+        coverage={"west": -180, "south": -90, "east": 180, "north": 90},
+        native_grid={"gridType": "regular_ll"},
+        cadence_hours=6,
+        forecast_step_hours=3,
+        max_horizon_hours=174,
+        priority=101,
+        licence={"name": "test"},
+        attribution=[{"provider": "test"}],
+    )
+    db.add(model)
+    db.flush()
+    latest = datetime(2026, 11, 17, tzinfo=timezone.utc)
+    runs = []
+    for offset, status in ((0, "failed"), (6, "ready"), (12, "ready")):
+        model_run = latest - timedelta(hours=offset)
+        run = get_or_create_run(
+            db,
+            model=model,
+            model_run_at=model_run,
+            processing_version=f"retention-{status}-{offset}",
+            contract_version="weather-field-v2",
+            coverage=model.coverage,
+            native_grid=model.native_grid,
+            valid_times=[model_run.isoformat().replace("+00:00", "Z")],
+        )
+        run.status = status
+        runs.append(run)
+    class TransactionCheckingStorage(MemoryFieldObjectStorage):
+        def delete(self, key: str) -> None:
+            assert not db.in_transaction()
+            super().delete(key)
+
+    storage = TransactionCheckingStorage()
+    stored = storage.put_immutable("failed/run/partial.bin", b"partial")
+    asset = register_asset(
+        db,
+        run_id=runs[0].id,
+        asset_type="metadata",
+        object_key=stored.key,
+        size_bytes=stored.size_bytes,
+        sha256=stored.sha256,
+        content_type="application/octet-stream",
+        compression="none",
+        status="verified",
+    )
+    db.commit()
+
+    result = prune_weather_field_runs(db, storage=storage, retain_runs=2)
+
+    assert result["deleted_bytes"] >= stored.size_bytes
+    assert db.get(WeatherFieldRun, runs[0].id).status == "expired"
+    assert db.get(WeatherFieldAsset, asset.id).status == "deleted"
+    assert not storage.exists(stored.key)
+    assert [db.get(WeatherFieldRun, run.id).status for run in runs[1:]] == [
+        "ready",
+        "ready",
+    ]
+
+
+def test_stale_unmanaged_run_is_failed_but_active_job_is_preserved(db) -> None:
+    model = WeatherFieldModel(
+        provider_key="test",
+        model_key="stale-direct-test",
+        display_name="Stale direct test",
+        status="active",
+        coverage={"west": -180, "south": -90, "east": 180, "north": 90},
+        native_grid={"gridType": "regular_ll"},
+        cadence_hours=6,
+        forecast_step_hours=3,
+        max_horizon_hours=174,
+        priority=102,
+        licence={"name": "test"},
+        attribution=[{"provider": "test"}],
+    )
+    db.add(model)
+    db.flush()
+    now = datetime(2026, 11, 18, 12, tzinfo=timezone.utc)
+    runs = []
+    for offset, version in ((6, "direct"), (12, "managed")):
+        model_run = now - timedelta(hours=offset)
+        run = get_or_create_run(
+            db,
+            model=model,
+            model_run_at=model_run,
+            processing_version=version,
+            contract_version="weather-field-v2",
+            coverage=model.coverage,
+            native_grid=model.native_grid,
+            valid_times=[model_run.isoformat().replace("+00:00", "Z")],
+        )
+        run.status = "processing"
+        run.started_at = now - timedelta(hours=2)
+        runs.append(run)
+    job, _ = enqueue_process_run(db, runs[1])
+    job.status = "processing"
+    job.started_at = runs[1].started_at
+    db.commit()
+
+    failed_ids = fail_stale_unmanaged_runs(
+        db,
+        model_key=model.model_key,
+        stale_before=now - timedelta(minutes=45),
+        now=now,
+    )
+
+    assert failed_ids == [str(runs[0].id)]
+    assert db.get(WeatherFieldRun, runs[0].id).status == "failed"
+    assert db.get(WeatherFieldRun, runs[1].id).status == "processing"
 
 
 def test_retention_dry_run_reports_without_mutating(db) -> None:

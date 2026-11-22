@@ -112,26 +112,39 @@ def head_status(url: str) -> int | None:
     """
     import httpx
 
+    from urllib.parse import urljoin
+
+    from app.media.safe_url import UnsafeOutboundUrl, require_public_https_url
+
     settings = get_settings()
     try:
-        response = httpx.head(
-            url,
-            headers={"User-Agent": settings.wikimedia_user_agent},
-            timeout=settings.media_http_timeout,
-            follow_redirects=True,
-        )
-        if response.status_code in (403, 405, 501):
-            response = httpx.get(
-                url,
-                headers={
-                    "User-Agent": settings.wikimedia_user_agent,
-                    "Range": "bytes=0-0",
-                },
+        current = require_public_https_url(url)
+        for _ in range(4):
+            response = httpx.head(
+                current,
+                headers={"User-Agent": settings.wikimedia_user_agent},
                 timeout=settings.media_http_timeout,
-                follow_redirects=True,
+                follow_redirects=False,
             )
-        return response.status_code
-    except Exception:
+            if response.status_code in (301, 302, 303, 307, 308):
+                location = response.headers.get("location")
+                if not location:
+                    return response.status_code
+                current = require_public_https_url(urljoin(current, location))
+                continue
+            if response.status_code in (403, 405, 501):
+                response = httpx.get(
+                    current,
+                    headers={
+                        "User-Agent": settings.wikimedia_user_agent,
+                        "Range": "bytes=0-0",
+                    },
+                    timeout=settings.media_http_timeout,
+                    follow_redirects=False,
+                )
+            return response.status_code
+        return None
+    except (UnsafeOutboundUrl, httpx.HTTPError):
         return None
 
 

@@ -1,7 +1,7 @@
 """Sign in with Google or Apple: external identities linked to an account.
 
-Revision ID: 0100_app_user_identities
-Revises: 0099_tip_withdraw_token
+Revision ID: 0102_app_user_identities
+Revises: 0101_unique_media_hero
 
 One row per (provider, subject). The provider's subject id is what identifies
 the person on later sign-ins; the email is kept for support only, because it
@@ -14,8 +14,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 
-revision = "0100_app_user_identities"
-down_revision = "0099_tip_withdraw_token"
+revision = "0102_app_user_identities"
+down_revision = "0101_unique_media_hero"
 branch_labels = None
 depends_on = None
 

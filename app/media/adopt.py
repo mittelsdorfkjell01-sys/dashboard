@@ -28,10 +28,11 @@ from time import perf_counter
 from typing import Callable
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.media import budget as budget_store
+from app.media import budget as budget_store, storage
 from app.media.hero import (
     GALLERY_OUT_MAX_WIDTH,
     GALLERY_OUT_QUALITY,
@@ -82,6 +83,28 @@ class DuplicateHeroError(AdoptError):
     def __init__(self, message: str, usages: list[dict]) -> None:
         super().__init__(message)
         self.usages = usages
+
+
+def commit_media_changes(
+    db: Session, *, provider: str | None, external_id: str | None
+) -> None:
+    """Commit and translate the database hero race guard into a domain error."""
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        constraint = getattr(getattr(exc.orig, "diag", None), "constraint_name", None)
+        db.rollback()
+        if constraint == "uq_media_usage_unique_hero" and provider and external_id:
+            usages = [
+                _describe(db, usage)
+                for usage in _existing_usages(db, provider, external_id)
+                if usage.role == "hero"
+            ]
+            raise DuplicateHeroError(
+                "Dieses Foto wurde parallel bereits als Header-Bild verwendet.",
+                usages,
+            ) from exc
+        raise
 
 
 @dataclass
@@ -187,7 +210,7 @@ def _describe(db: Session, usage: MediaUsage) -> dict:
     }
 
 
-def _check_duplicates(
+def check_duplicates(
     db: Session, *, provider: str, external_id: str, role: str, entity_id
 ) -> list[str]:
     """Hard block for heroes, warning for the gallery.
@@ -489,7 +512,7 @@ def adopt(
     if progress:
         progress(15, "Bildquelle geprüft…")
     warnings = _check_gate(result, role)
-    warnings.extend(_check_duplicates(
+    warnings.extend(check_duplicates(
         db, provider=provider, external_id=external_id, role=role, entity_id=entity.id
     ))
     if progress:
@@ -600,7 +623,11 @@ def adopt(
     )
     started = perf_counter()
     try:
-        db.commit()
+        commit_media_changes(
+            db,
+            provider=result.provider,
+            external_id=result.external_id,
+        )
     except Exception:
         db.rollback()
         if stored["delivery"] == "hosted":
@@ -635,8 +662,12 @@ def verify_sources(db: Session, *, limit: int = 100) -> dict:
             if not isinstance(image, dict) or not image.get("url"):
                 continue
             checked += 1
-            status = head_status(image["url"])
-            alive = status is not None and status < 400
+            if storage.is_owned_url(image["url"]):
+                alive = storage.object_exists(image["url"])
+                status = 200 if alive else 404
+            else:
+                status = head_status(image["url"])
+                alive = status is not None and status < 400
             entity.image = {
                 **image,
                 "source_status": "ok" if alive else "dead",

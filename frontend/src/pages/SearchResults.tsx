@@ -18,6 +18,7 @@ import Chip from "../components/ui/Chip";
 import type { Spot } from "../lib/types";
 import { trackEvent } from "../lib/events";
 import { useTranslation } from "react-i18next";
+import { useDesktopViewport } from "../lib/useAutoHideHeader";
 
 // The one weather map, docked beside the results. Lazily imported: a result
 // column read on a phone never pays for MapLibre.
@@ -121,6 +122,9 @@ function ResultsLayout({
   /** Camera for the companion map; null → no map (nothing resolved yet). */
   frame: { center: [number, number]; zoom: number } | null;
 }) {
+  // The docked map only exists from lg up; below it a CSS-hidden MapLibre map
+  // would still load tiles and run its loop (main 2d9d172f).
+  const desktopMap = useDesktopViewport("(min-width: 1024px)");
   return (
     <div className="mx-auto w-full max-w-[1570px] px-4 pt-2 pb-16 sm:px-8">
       <div className={frame ? "lg:grid lg:grid-cols-[1fr_minmax(360px,40%)] lg:gap-8" : undefined}>
@@ -129,7 +133,7 @@ function ResultsLayout({
           <div className="mt-8 space-y-10">{children}</div>
         </div>
 
-        {frame && (
+        {frame && desktopMap && (
           <div className="hidden lg:block">
             {/* Docked beneath the persistent header and held there while the
                 result column scrolls independently. */}
@@ -348,7 +352,7 @@ export default function SearchResults() {
       // A place is present (spot / region / free text, incl. the geocoded
       // "nearby" fallback). Always resolve to spots so picking a spot shows
       // that spot — not the best-weeks list.
-      run = api.getSearch({ q, sport, week: week ? Number(week) : undefined, weeks }).then((r) => alive && setResult(r));
+      run = api.getSearch({ q, sport, week: week ? Number(week) : undefined, weeks, month: month ? Number(month) : undefined }).then((r) => alive && setResult(r));
     }
 
     run

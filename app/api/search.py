@@ -27,6 +27,16 @@ def _time_context(week: int | None, weeks: str | None = None) -> dict | None:
     return {"week": week} if week else None
 
 
+def _search_time_context(
+    week: int | None, weeks: str | None, month: int | None
+) -> dict | None:
+    if weeks:
+        return _season_window(None, weeks)
+    if month:
+        return _season_window(month, None)
+    return _time_context(week)
+
+
 def _profile(level: str | None) -> dict | None:
     if not level:
         return None
@@ -71,8 +81,10 @@ def search(
     ),
     week: int | None = Query(default=None, ge=1, le=52),
     weeks: str | None = Query(
-        default=None, description="Inclusive ISO week range 'start-end'"
+        default=None,
+        pattern=r"^([1-9]|[1-4][0-9]|5[0-2])-([1-9]|[1-4][0-9]|5[0-2])$",
     ),
+    month: int | None = Query(default=None, ge=1, le=12),
     level: str | None = Query(default=None, description="Skill profile level"),
     db: Session = Depends(get_db),
     geocoder: Geocoder = Depends(get_geocoder),
@@ -95,7 +107,7 @@ def search(
         q,
         sport=sport,
         variant=variant,
-        time_context=_time_context(week, weeks),
+        time_context=_search_time_context(week, weeks, month),
         profile=profile,
         db=db,
         geocoder=geocoder,

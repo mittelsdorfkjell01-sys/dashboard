@@ -16,7 +16,6 @@ jobs:
   import:
     if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main' && vars.TIDE_STATION_IMPORT_ENABLED == 'true')
     runs-on: ubuntu-latest
-    environment: production
     timeout-minutes: 20
     env:
       TZ: UTC
@@ -40,8 +39,20 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
+      - name: Guard Neon transfer quota
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: >-
+          python -m scripts.neon_transfer_guard
+          --workload-name "Tide station import"
+          --require-config
+
       - name: Install importer dependencies
         run: pip install -r requirements.txt
+
+      - name: Route Neon database over IPv4
+        run: python -m scripts.database_ipv4_env
 
       - name: Require the tide-station schema contract
         run: |

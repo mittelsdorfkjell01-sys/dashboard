@@ -848,6 +848,7 @@ export interface SearchQuery {
   sport?: string;
   week?: number;
   weeks?: string;
+  month?: number;
   level?: string;
 }
 

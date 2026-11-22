@@ -66,9 +66,9 @@ describe("tab order", () => {
 });
 
 describe("eligibility", () => {
-  it("lets the admin pick any tile — size becomes an advisory, not a gate", () => {
+  it("keeps a gallery-sized image out of the hero role", () => {
     const small = item({ hero_eligible: false, gallery_eligible: true });
-    expect(isUsable(small, "hero")).toBe(true);
+    expect(isUsable(small, "hero")).toBe(false);
     expect(isUsable(small, "gallery")).toBe(true);
   });
 });

@@ -121,14 +121,17 @@ class TipOut(BaseModel):
     @classmethod
     def of(cls, t: LocalTip, vote: dict | None = None, viewer_id=None) -> "TipOut":
         vote = vote or {}
+        edited_at = getattr(t, "edited_at", None)
         return cls(
             id=str(t.id), body=t.body, title=t.title, author_name=t.author_name,
             created_at=t.created_at.isoformat(),
             parent_id=str(t.parent_id) if t.parent_id else None,
             upvotes=vote.get("count", 0), viewer_upvoted=vote.get("viewer_upvoted", False),
-            viewer_is_author=bool(viewer_id and t.app_user_id == viewer_id),
-            edited_at=t.edited_at.isoformat() if t.edited_at else None,
-            status=t.status,
+            viewer_is_author=bool(
+                viewer_id and getattr(t, "app_user_id", None) == viewer_id
+            ),
+            edited_at=edited_at.isoformat() if edited_at else None,
+            status=getattr(t, "status", "published"),
             withdraw_token=getattr(t, "withdraw_token", None),
         )
 

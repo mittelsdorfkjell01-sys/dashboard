@@ -343,7 +343,7 @@ test("the map keeps its own light palette and markers whatever the site theme is
     await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
     await expect(page.getByRole("button", { name: "Surfspot Spot A" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Surfspot Spot B" })).toBeVisible();
-    expect(await tokens()).toEqual({ surface: "#FFFFFF", mark: "#1A1F24" });
+    expect(await tokens()).toEqual({ surface: "#FFF", mark: "#1A1F24" });
   }
 
   // The ground is Voyager's own travel palette, with no colour filter over it.

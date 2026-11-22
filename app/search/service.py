@@ -121,12 +121,16 @@ class _WindowCoverageScorer:
 def _rank_rows(rows, sport, time_context, profile, db, scorer, variant=None) -> list[dict]:
     d0 = distance_decay_d0(sport, db)
     rank_scorer = scorer
+    rank_context = time_context
     weeks = (time_context or {}).get("weeks")
     if weeks:
         rank_scorer = _WindowCoverageScorer(scorer, weeks, sport, db)
+        # The wrapper already scores the whole window; without "weeks" here
+        # rank_nearby would average the same window once per week again.
+        rank_context = {key: value for key, value in time_context.items() if key != "weeks"}
     ranked = rank_nearby(
         rows,
-        time_context,
+        rank_context,
         _with_sport(profile, sport, variant),
         scorer=rank_scorer,
         d0_km=d0,

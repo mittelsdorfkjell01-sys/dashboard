@@ -9,13 +9,16 @@ export default defineConfig({
     // browser locale so CI runners with an English OS do not select English.
     locale: "de-DE",
     trace: "retain-on-failure",
+    reducedMotion: "reduce",
   },
   projects: [
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox-desktop", use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit-desktop", use: { ...devices["Desktop Safari"] } },
     { name: "chromium-mobile", use: { ...devices["Pixel 5"] } },
   ],
   webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 4173",
+    command: "npm run build:e2e && npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
     url: "http://127.0.0.1:4173/impressum",
     reuseExistingServer: !process.env.CI,
   },

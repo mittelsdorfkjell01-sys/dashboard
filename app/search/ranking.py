@@ -24,7 +24,15 @@ def rank_nearby(
     """
     ranked: list[dict] = []
     for spot, distance_m in items:
-        score = float(scorer.score(spot, time_context, profile))
+        weeks = (time_context or {}).get("weeks") if isinstance(time_context, dict) else None
+        if weeks:
+            values = [
+                float(scorer.score(spot, {"week": week}, profile))
+                for week in weeks
+            ]
+            score = sum(values) / len(values) if values else 0.0
+        else:
+            score = float(scorer.score(spot, time_context, profile))
         d_km = (distance_m or 0.0) / 1000.0
         decay = math.exp(-d_km / d0_km) if d0_km > 0 else 1.0
         ranked.append(

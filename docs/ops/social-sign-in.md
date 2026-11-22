@@ -21,7 +21,7 @@ once a provider's settings are complete (`GET /account/oauth/providers`).
   to the buttons) and get a display name from the provider or the address.
   They have no usable password until set via "Passwort vergessen".
 
-Requires migration `0100_app_user_identities` (apply manually on Neon, see the
+Requires migration `0102_app_user_identities` (apply manually on Neon, see the
 prod-migration notes) and `PyJWT[crypto]` (requirements.txt).
 
 ## Common settings

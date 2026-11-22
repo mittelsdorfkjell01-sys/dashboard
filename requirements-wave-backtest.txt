@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Official client for the free Copernicus Marine in-situ platform-series API.
+copernicusmarine==2.5.1
