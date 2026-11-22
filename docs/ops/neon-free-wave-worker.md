@@ -45,6 +45,14 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
 
 ## Kosten- und Sicherheitsgrenzen
 
+- Die GitHub-Hosted-Runner schreiben vor dem ersten Datenbankzugriff eine
+  aufgelöste IPv4-Adresse als libpq-`hostaddr` in ihre Prozessumgebung. Der
+  ursprüngliche Neon-Hostname bleibt für TLS-Prüfung und SNI erhalten; die
+  Datenbank-URL und ihre Zugangsdaten werden nicht protokolliert.
+- Veröffentlichung, Tide-Import und Wellenverifikation prüfen vor Installation
+  und Datenbankzugriff den Neon-Egress. Ab 4,5 GB werden die Hintergrundläufe
+  fail-closed gestoppt, damit mindestens 0,5 GB für öffentliche API-Aufrufe
+  reserviert bleiben.
 - Der Worker verarbeitet die Modelle nacheinander; parallele Läufe können das
   gemeinsame Speicherbudget nicht überbuchen.
 - Pro Modell bleiben zwei vollständige Zyklen erhalten. Aktive Veröffentlichung und direkter
@@ -73,7 +81,9 @@ Serien-Tiles, obwohl der Bucket für Browserzugriffe öffentlich lesbar ist.
 5. `python -m scripts.production_readiness api-smoke --require-wave-fields`
    gegen die Produktions-API ausführen.
 6. Erst danach `WAVE_FIELD_WORKER_ENABLED=true` setzen. Der geplante Lauf startet
-   viermal täglich nach Abschluss der freien Modellzyklen.
+   zweimal täglich nach Abschluss der freien Modellzyklen. Die reduzierte
+   Frequenz hält den seriellen Drei-Modell-Worker innerhalb des kostenlosen
+   Compute-Budgets; manuelle Zusatzläufe nur für Störungsbehebung verwenden.
 
 Bei einem Fehler bleibt die letzte aktive Veröffentlichung erhalten. Das
 Storage-Budget oder die Retention dürfen nicht ohne gemessene Assetgrößen

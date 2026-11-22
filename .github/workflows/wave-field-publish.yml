@@ -2,9 +2,9 @@ name: Production Wave Field Publication
 
 on:
   schedule:
-    # The free models publish on six-hour cycles. Offset the worker so upstream
-    # files have time to complete before discovery starts.
-    - cron: "35 1,7,13,19 * * *"
+    # Two complete daily runs keep the published field current while the
+    # serial three-model worker stays within the free compute allowance.
+    - cron: "35 7,19 * * *"
   workflow_dispatch:
     inputs:
       model:
@@ -74,8 +74,20 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Guard Neon transfer quota
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: >-
+          python -m scripts.neon_transfer_guard
+          --workload-name "Wave field publication"
+          --require-config
+
       - name: Install field-worker dependencies
         run: pip install -r requirements.txt
+
+      - name: Route Neon database over IPv4
+        run: python -m scripts.database_ipv4_env
 
       - name: Resolve branch-scoped Neon Object Storage
         shell: bash

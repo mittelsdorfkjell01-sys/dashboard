@@ -81,39 +81,56 @@ def _annotation(kind: str, title: str, message: str) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--github-output", default=os.getenv("GITHUB_OUTPUT"))
+    parser.add_argument("--workload-name", default="Weather Shadow")
+    parser.add_argument("--require-config", action="store_true")
     args = parser.parse_args(argv)
+    workload_name = (
+        args.workload_name.replace("\n", " ").replace("\r", " ").strip()
+    )
+    if not workload_name:
+        workload_name = "scheduled background work"
 
     api_key = os.getenv("NEON_API_KEY", "").strip()
     project_id = os.getenv("NEON_PROJECT_ID", "").strip()
     if not api_key or not project_id:
         _append_key_values(
             args.github_output,
-            {"configured": "false", "allow_shadow": "false", "level": "unconfigured"},
+            {
+                "configured": "false",
+                "allow_shadow": "false",
+                "allow_workload": "false",
+                "level": "unconfigured",
+            },
         )
         _annotation(
             "warning",
             "Neon transfer guard is not configured",
-            "Shadow collection remains paused; set NEON_API_KEY and NEON_PROJECT_ID.",
+            f"{workload_name} remains paused; set NEON_API_KEY and NEON_PROJECT_ID.",
         )
         _append_summary(
-            "### Neon transfer guard\nNot configured. Weather Shadow remains paused."
+            f"### Neon transfer guard\nNot configured. {workload_name} remains paused."
         )
-        return 0
+        return 3 if args.require_config else 0
 
     try:
         used = fetch_project_transfer(api_key, project_id)
     except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as exc:
         _append_key_values(
             args.github_output,
-            {"configured": "true", "allow_shadow": "false", "level": "error"},
+            {
+                "configured": "true",
+                "allow_shadow": "false",
+                "allow_workload": "false",
+                "level": "error",
+            },
         )
         _annotation(
             "error",
             "Neon transfer guard failed",
-            f"Quota could not be read ({type(exc).__name__}); Shadow collection is blocked.",
+            f"Quota could not be read ({type(exc).__name__}); {workload_name} is blocked.",
         )
         _append_summary(
-            "### Neon transfer guard\nQuota check failed. Weather Shadow was blocked."
+            f"### Neon transfer guard\nQuota check failed. {workload_name} was blocked."
         )
         return 1
 
@@ -125,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         {
             "configured": "true",
             "allow_shadow": str(allow_shadow).lower(),
+            "allow_workload": str(allow_shadow).lower(),
             "level": level,
             "used_bytes": str(used),
         },
@@ -139,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
         _annotation(
             "error",
             "Neon transfer at 4.5 GB stop threshold",
-            f"{used_gb:.3f} GB used; Weather Shadow was blocked to preserve production traffic.",
+            f"{used_gb:.3f} GB used; {workload_name} was blocked to preserve production traffic.",
         )
         return 2
     if level in {"warning", "critical"}:
