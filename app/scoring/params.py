@@ -197,21 +197,22 @@ def get_params(sport: str, db: Any | None = None, version: int | None = None) ->
     ``KeyError`` for an unknown sport with no DB row.
     """
     if db is not None:
-        try:
-            from sqlalchemy import select
+        from sqlalchemy import select
 
-            from app.models import ScoringParams
+        from app.models import ScoringParams
 
-            stmt = select(ScoringParams).where(ScoringParams.sport == sport)
-            if version is not None:
-                stmt = stmt.where(ScoringParams.version == version)
-            else:
-                stmt = stmt.where(ScoringParams.active.is_(True))
-            row = db.scalar(stmt.order_by(ScoringParams.version.desc()))
-            if row and isinstance(row.params, dict):
-                return row.params
-        except Exception:
-            pass
+        stmt = select(ScoringParams).where(ScoringParams.sport == sport)
+        if version is not None:
+            stmt = stmt.where(ScoringParams.version == version)
+        else:
+            stmt = stmt.where(ScoringParams.active.is_(True))
+        row = db.scalar(stmt.order_by(ScoringParams.version.desc()))
+        if row:
+            if not isinstance(row.params, dict):
+                raise ValueError(
+                    f"invalid scoring_params payload for {sport!r} version {row.version}"
+                )
+            return row.params
     fallback_version = version or SCORING_PARAMS_VERSION
     return SCORING_PARAMS_BY_VERSION[fallback_version][sport]
 

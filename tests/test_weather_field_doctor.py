@@ -2,7 +2,10 @@ from collections import namedtuple
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from app.spatial_fields.doctor import build_weather_field_doctor_report
+from app.spatial_fields.doctor import (
+    build_weather_field_doctor_report,
+    storage_capacity_report,
+)
 from app.spatial_fields.storage import LocalFieldObjectStorage, MemoryFieldObjectStorage
 from scripts import weather_field_doctor
 
@@ -161,6 +164,67 @@ def test_doctor_warns_and_fails_for_local_storage_pressure(monkeypatch, tmp_path
     assert warning["alerts"][-1]["code"] == "weather_field_storage_warning"
     assert critical["status"] == "error"
     assert critical["alerts"][-1]["code"] == "weather_field_storage_critical"
+
+
+def test_doctor_reports_remote_storage_ledger_against_hard_budget() -> None:
+    storage = MemoryFieldObjectStorage()
+
+    warning, warning_alerts = storage_capacity_report(
+        storage,
+        tracked_bytes=750,
+        budget_bytes=1000,
+    )
+    critical, critical_alerts = storage_capacity_report(
+        storage,
+        tracked_bytes=850,
+        budget_bytes=1000,
+    )
+
+    assert warning["status"] == "degraded"
+    assert warning["free_bytes"] == 250
+    assert warning_alerts[0]["code"] == "weather_field_storage_warning"
+    assert critical["status"] == "error"
+    assert critical_alerts[0]["code"] == "weather_field_storage_critical"
+
+
+def test_doctor_can_require_waves_without_requiring_public_wind(monkeypatch):
+    disabled_wind = _health(status="degraded", public=False)
+    healthy_wave = _health()
+    monkeypatch.setattr(
+        "app.spatial_fields.doctor.weather_field_health",
+        lambda *args, **kwargs: disabled_wind,
+    )
+    monkeypatch.setattr(
+        "app.spatial_fields.doctor.wave_field_health",
+        lambda *args, **kwargs: {
+            "status": "ok",
+            "public_enabled": True,
+            "primary": healthy_wave,
+            "fallback": healthy_wave,
+            "extended": healthy_wave,
+        },
+    )
+    monkeypatch.setattr(
+        "app.spatial_fields.doctor.load_plan",
+        lambda *args, **kwargs: SimpleNamespace(
+            due_spot_ids=(),
+            wave_context_changed_spot_ids=(),
+            wave_context="context-1",
+        ),
+    )
+
+    report = build_weather_field_doctor_report(
+        object(),
+        storage=MemoryFieldObjectStorage(),
+        settings=_settings(weather_field_public_enabled=False),
+        now=NOW,
+        require_waves=True,
+    )
+
+    assert report["status"] == "ok"
+    assert "wind_field_public_disabled" not in {
+        item["code"] for item in report["alerts"]
+    }
 
 
 def test_doctor_cli_returns_two_for_critical_alerts(monkeypatch, capsys):

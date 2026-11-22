@@ -7,24 +7,28 @@ httpOnly cookie (see app.account.security) — separate from the admin session.
 
 from __future__ import annotations
 
+import datetime as dt
+import json
 import secrets
 import uuid
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import JSONResponse
+import jwt
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr, Field, StrictInt, model_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.account import rider as rider_service
 from app.account import trips as trip_service
+from app.account import oauth
 from app.account import service
 from app.account.email import MailUnavailable, send_account_link, send_account_notice
 from app.account.deps import current_account
 from app.account.security import create_app_session_token
-from app.account.service import AuthError, EmailExistsError
+from app.account.service import AuthError, EmailExistsError, PasswordRequiredError
 from app.config import get_settings
 from app.db.session import get_db
 from app.models import AppUser, Spot
@@ -39,7 +43,12 @@ router = APIRouter(prefix="/account", tags=["account"])
 class RegisterRequest(BaseModel):
     email: EmailStr
     display_name: str = Field(default="", alias="displayName", max_length=120)
-    # Consent captured at registration (ToS/privacy acceptance + min-age ≥16).
+    # Chosen at registration since 2026-11-20. Optional: a client that sends
+    # none gets the earlier flow (the password is set via the mail link).
+    password: str | None = Field(default=None, max_length=1024)
+    # Consent captured at registration: accepting the terms also confirms the
+    # minimum age (16), which the terms state. `ageConfirmed` is accepted from
+    # older clients but no longer required.
     accepted_terms: bool = Field(default=False, alias="acceptedTerms")
     age_confirmed: bool = Field(default=False, alias="ageConfirmed")
 
@@ -111,13 +120,40 @@ class SportConditions(BaseModel):
         return self
 
 
+class MapLocation(BaseModel):
+    """The rider's own starting point for the spot map ("Dein Standort").
+
+    Set deliberately — from the browser's geolocation or picked on the map —
+    and stored to about 11 m, which is all a route hand-off needs."""
+
+    lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    source: Literal["gps", "manual"]
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def round_coordinates(self) -> "MapLocation":
+        self.lat = round(self.lat, 4)
+        self.lon = round(self.lon, 4)
+        return self
+
+
 class PreferencesPatch(BaseModel):
     units: UnitPreferences | None = None
     sports: list[SportKey] | None = Field(default=None, max_length=4)
     conditions: dict[SportKey, SportConditions] | None = Field(default=None, max_length=4)
     submissionEmails: bool | None = None
+    # Explicit null removes a saved location; omitting the key leaves it alone.
+    mapLocation: MapLocation | None = None
 
     model_config = {"extra": "forbid"}
+
+    def to_patch(self) -> dict:
+        patch = self.model_dump(exclude_none=True)
+        if "mapLocation" in self.model_fields_set and self.mapLocation is None:
+            patch["mapLocation"] = None
+        return patch
 
 
 class SubmissionRequest(BaseModel):
@@ -361,6 +397,36 @@ def _set_session_cookie(response: Response, user: AppUser) -> None:
     set_csrf_cookie(response)
 
 
+# The browser that registered keeps a nonce; the confirmation link carries its
+# hash. Opened there, the link confirms the address with the password chosen at
+# registration; opened anywhere else, the recipient chooses the password.
+REGISTRATION_DEVICE_COOKIE = "swd_registration"
+
+
+def _set_registration_cookie(response: Response, nonce: str) -> None:
+    settings = get_settings()
+    response.set_cookie(
+        key=REGISTRATION_DEVICE_COOKIE,
+        value=nonce,
+        max_age=24 * 3600,  # as long as the link is valid
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        path="/account",
+    )
+
+
+def _clear_registration_cookie(response: Response) -> None:
+    settings = get_settings()
+    response.delete_cookie(
+        REGISTRATION_DEVICE_COOKIE,
+        path="/account",
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
+
+
 def _clear_session_cookie(response: Response) -> None:
     settings = get_settings()
     response.delete_cookie(
@@ -386,11 +452,15 @@ def register(
     enforce(limiter, request, "account-register", limit=5, window=3600)
     if not get_settings().account_smtp_host or not get_settings().account_smtp_from:
         raise HTTPException(status_code=503, detail="Registrierung ist derzeit nicht verfügbar.")
+    # Only a registration that chose a password gets a device nonce. It is set
+    # in every branch below, the duplicate ones included, so the response does
+    # not tell whether the address already had an account.
+    nonce = secrets.token_urlsafe(32) if body.password else None
     try:
         user = service.register(
             db,
             email=body.email,
-            password=secrets.token_urlsafe(32),
+            password=body.password or secrets.token_urlsafe(32),
             display_name=body.display_name,
             accepted_terms=body.accepted_terms,
             age_confirmed=body.age_confirmed,
@@ -399,29 +469,53 @@ def register(
         db.rollback()
         existing = service.get_by_email(db, body.email)
         if existing is not None and existing.email_verified_at is None:
+            if body.password:
+                service.restart_registration(db, existing, body.password)
+                db.commit()
             try:
-                send_account_link(existing.email, purpose="verify", token=service.registration_token(existing))
+                send_account_link(
+                    existing.email, purpose="verify", token=service.registration_token(existing, nonce)
+                )
             except MailUnavailable:
                 pass
+        if nonce:
+            _set_registration_cookie(response, nonce)
         return RegisterAccepted()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     try:
-        send_account_link(user.email, purpose="verify", token=service.registration_token(user))
+        send_account_link(user.email, purpose="verify", token=service.registration_token(user, nonce))
     except MailUnavailable as exc:
         db.rollback()
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     db.commit()
+    if nonce:
+        _set_registration_cookie(response, nonce)
     return RegisterAccepted()
 
 
 @router.post("/email/confirm", response_model=AccountOut)
-def confirm_email(body: EmailConfirmation, db: Session = Depends(get_db)) -> AccountOut:
+def confirm_email(
+    body: EmailConfirmation,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> AccountOut:
+    device_nonce = request.cookies.get(REGISTRATION_DEVICE_COOKIE)
     try:
-        user = service.confirm_email(db, body.token, password=body.password)
+        user = service.confirm_email(db, body.token, password=body.password, device_nonce=device_nonce)
+    except PasswordRequiredError as exc:
+        # Not an error to show: the page asks for the password and retries.
+        raise HTTPException(status_code=428, detail=str(exc)) from exc
     except (AuthError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     db.commit()
+    if device_nonce:
+        _clear_registration_cookie(response)
+    # Back in the browser that registered, with the password chosen there:
+    # the person is signed in right away instead of being sent to log in.
+    if not body.password and device_nonce and user.email_verified_at is not None:
+        _set_session_cookie(response, user)
     return AccountOut.of(user)
 
 
@@ -450,6 +544,160 @@ def confirm_password_reset(body: ResetConfirmation, db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     db.commit()
     return Response(status_code=204)
+
+
+# --- sign in with Google / Apple (2026-11-21) --------------------------------
+#
+# start  → 302 to the provider, with state + nonce + PKCE kept in a short-lived,
+#          signed, httpOnly cookie that binds the flow to this browser (without
+#          it, someone could hand a victim a callback that signs them into the
+#          attacker's account — login CSRF).
+# callback → verify state against the cookie, exchange the code, verify the ID
+#          token, find/link/create the account, set the session, 303 back to
+#          the page. Apple answers with a cross-site form POST, which a
+#          SameSite=Lax cookie would not accompany, hence SameSite=None (only
+#          possible with Secure, i.e. in production over HTTPS).
+
+OAUTH_FLOW_COOKIE = "swd_oauth"
+OAUTH_FLOW_SECONDS = 600
+
+
+def _safe_redirect(target: str | None) -> str:
+    """Only a path on this site: never another origin."""
+    if not target or not target.startswith("/") or target.startswith("//") or target.startswith("/\\"):
+        return "/konto"
+    return target
+
+
+def _oauth_back(path: str) -> RedirectResponse:
+    return RedirectResponse(f"{get_settings().account_public_origin.rstrip('/')}{path}", status_code=303)
+
+
+def _oauth_failed(code: str) -> RedirectResponse:
+    response = _oauth_back(f"/anmelden?oauth_error={code}")
+    response.delete_cookie(OAUTH_FLOW_COOKIE, path="/account/oauth")
+    return response
+
+
+@router.get("/oauth/providers")
+def oauth_providers() -> dict[str, bool]:
+    """Which external sign-ins are configured. The page shows only those."""
+    return oauth.enabled_providers()
+
+
+@router.get("/oauth/{provider}/start")
+def oauth_start(
+    provider: Literal["google", "apple"],
+    request: Request,
+    redirect: str | None = None,
+    limiter: RateLimiter = Depends(get_rate_limiter),
+) -> RedirectResponse:
+    enforce(limiter, request, "account-oauth-start", limit=20, window=900)
+    if not oauth.enabled_providers().get(provider):
+        raise HTTPException(status_code=404, detail="Diese Anmeldung ist nicht eingerichtet.")
+    state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(24)
+    verifier, challenge = oauth.new_pkce()
+    settings = get_settings()
+    flow = jwt.encode(
+        {
+            "typ": "oauth-flow", "provider": provider, "state": state, "nonce": nonce,
+            "verifier": verifier, "redirect": _safe_redirect(redirect),
+            "exp": dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=OAUTH_FLOW_SECONDS),
+        },
+        settings.jwt_secret,
+        algorithm="HS256",
+    )
+    response = RedirectResponse(
+        oauth.authorization_url(provider, state=state, nonce=nonce, challenge=challenge), status_code=302
+    )
+    response.set_cookie(
+        OAUTH_FLOW_COOKIE,
+        flow,
+        max_age=OAUTH_FLOW_SECONDS,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="none" if settings.cookie_secure else "lax",
+        path="/account/oauth",
+    )
+    return response
+
+
+def _oauth_finish(
+    provider: str,
+    request: Request,
+    db: Session,
+    *,
+    code: str | None,
+    state: str | None,
+    error: str | None,
+    apple_user: str | None = None,
+) -> RedirectResponse:
+    if error:
+        return _oauth_failed("denied")
+    raw = request.cookies.get(OAUTH_FLOW_COOKIE)
+    try:
+        flow = jwt.decode(raw or "", get_settings().jwt_secret, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        return _oauth_failed("expired")
+    if (
+        flow.get("typ") != "oauth-flow" or flow.get("provider") != provider
+        or not code or not state or not secrets.compare_digest(str(flow.get("state", "")), state)
+    ):
+        return _oauth_failed("failed")
+    apple_name = None
+    if apple_user:
+        # Apple sends the name once, on the very first sign-in, as JSON.
+        try:
+            name = json.loads(apple_user).get("name") or {}
+            apple_name = " ".join(p for p in (name.get("firstName"), name.get("lastName")) if p) or None
+        except (ValueError, AttributeError):
+            apple_name = None
+    try:
+        identity = oauth.exchange_code(
+            provider, code=code, verifier=flow["verifier"], nonce=flow["nonce"], apple_name=apple_name
+        )
+        user = service.sign_in_with_identity(
+            db,
+            provider=identity.provider,
+            subject=identity.subject,
+            email=identity.email,
+            email_verified=identity.email_verified,
+            name=identity.name,
+        )
+    except oauth.OAuthError:
+        db.rollback()
+        return _oauth_failed("failed")
+    except AuthError:
+        db.rollback()
+        return _oauth_failed("account")
+    db.commit()
+    response = _oauth_back(_safe_redirect(flow.get("redirect")))
+    response.delete_cookie(OAUTH_FLOW_COOKIE, path="/account/oauth")
+    _set_session_cookie(response, user)
+    return response
+
+
+@router.get("/oauth/google/callback")
+def oauth_google_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    return _oauth_finish("google", request, db, code=code, state=state, error=error)
+
+
+@router.post("/oauth/apple/callback")
+def oauth_apple_callback(
+    request: Request,
+    code: str | None = Form(default=None),
+    state: str | None = Form(default=None),
+    error: str | None = Form(default=None),
+    user: str | None = Form(default=None),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    return _oauth_finish("apple", request, db, code=code, state=state, error=error, apple_user=user)
 
 
 @router.post("/login", response_model=AccountOut)
@@ -531,7 +779,7 @@ def request_email_change(
 def update_preferences(
     body: PreferencesPatch, user: AppUser = Depends(current_account), db: Session = Depends(get_db)
 ) -> AccountOut:
-    patch = body.model_dump(exclude_none=True)
+    patch = body.to_patch()
     if patch.get("submissionEmails") and not (
         get_settings().account_smtp_host and get_settings().account_smtp_from
     ):

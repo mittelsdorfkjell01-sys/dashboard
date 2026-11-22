@@ -71,6 +71,13 @@ das Zielprodukt wird der vorhandene Worker schrittweise aktiviert:
 5. Abdeckung, Providerfehler, Cache-Trefferrate und Anteil partieller Horizonte
    überwachen. Ein kostenpflichtiger Provider ist dafür nicht erforderlich.
 
+Bis dieser Worker existiert, aktualisiert
+`.github/workflows/tide-station-import.yml` den kostenlosen PEGELONLINE-Katalog
+einmal täglich über einen GitHub-Hosted Runner. Das verbessert reale
+Stationsabdeckung und Quellenanzeige, ersetzt aber keine europaweite
+astronomische Tide. Der Lauf importiert bewusst nur den Katalog; massenhafte
+Messwertabfragen pro Station sind ohne ein abgestimmtes Abrufbudget deaktiviert.
+
 ## Abnahmekriterien
 
 - Kein Küsten-Spot zeigt modellierte Werte als astronomische Tide.

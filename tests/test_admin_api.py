@@ -1045,17 +1045,22 @@ def test_focal_without_image_422(admin, region_id):
 
 
 def test_board_task_crud(admin):
+    revision_before = admin.get("/admin/realtime/version").json()["revision"]
     created = admin.post("/admin/board/tasks", json={"title": "Laboe prüfen", "body": "Hero fehlt"})
     assert created.status_code == 201, created.text
     tid = created.json()["id"]
     assert created.json()["status"] == "open"
     assert "@" not in created.json()["author"]
+    revision_after_create = admin.get("/admin/realtime/version").json()["revision"]
+    assert revision_after_create > revision_before
 
     assert any(t["id"] == tid for t in admin.get("/admin/board/tasks").json())
     assert admin.post("/admin/board/tasks", json={"title": "  "}).status_code == 422
+    assert admin.get("/admin/realtime/version").json()["revision"] == revision_after_create
 
     moved = admin.patch(f"/admin/board/tasks/{tid}", json={"status": "done"})
     assert moved.status_code == 200 and moved.json()["status"] == "done"
+    assert admin.get("/admin/realtime/version").json()["revision"] > revision_after_create
 
     edited = admin.patch(
         f"/admin/board/tasks/{tid}",

@@ -21,7 +21,9 @@ from app.schemas.search import GeometryRequest
 router = APIRouter(tags=["search"])
 
 
-def _time_context(week: int | None) -> dict | None:
+def _time_context(week: int | None, weeks: str | None = None) -> dict | None:
+    if weeks:
+        return _season_window(None, weeks)
     return {"week": week} if week else None
 
 
@@ -49,6 +51,8 @@ def _season_window(month: int | None, weeks: str | None) -> dict:
             a, b = (int(x) for x in weeks.split("-"))
         except ValueError:
             raise HTTPException(status_code=422, detail="weeks must be 'start-end'")
+        if not (1 <= a <= 52 and 1 <= b <= 52):
+            raise HTTPException(status_code=422, detail="weeks must be within 1..52")
         return resolve_time_window("season", {"weeks": [a, b]})
     if month:
         return resolve_time_window("season", {"month": month})
@@ -66,6 +70,9 @@ def search(
         "filters to spots that actually offer this variant",
     ),
     week: int | None = Query(default=None, ge=1, le=52),
+    weeks: str | None = Query(
+        default=None, description="Inclusive ISO week range 'start-end'"
+    ),
     level: str | None = Query(default=None, description="Skill profile level"),
     db: Session = Depends(get_db),
     geocoder: Geocoder = Depends(get_geocoder),
@@ -88,7 +95,7 @@ def search(
         q,
         sport=sport,
         variant=variant,
-        time_context=_time_context(week),
+        time_context=_time_context(week, weeks),
         profile=profile,
         db=db,
         geocoder=geocoder,

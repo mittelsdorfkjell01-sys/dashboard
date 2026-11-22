@@ -830,6 +830,12 @@ for _s in SPOTS:
         if isinstance(_uwd, list) and _uwd and isinstance(_uwd[0], str):
             _ed["usable_wind_directions"] = _compass_to_windows(_uwd)
 
+# This curated seed batch is the world-class reference catalogue. Publication
+# stays a separate editorial decision, so the records remain drafts until their
+# content has been reviewed.
+for _s in SPOTS:
+    _s["editorial_classification"] = "world_class"
+
 # Every spot gets the same placeholder hero its region gets — derived from the
 # slug, so it is one line here instead of 40 copy-pasted dicts. Until Sprint 1
 # the seed wrote images for regions only and silently dropped them for spots.

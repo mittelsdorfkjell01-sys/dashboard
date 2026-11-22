@@ -12,6 +12,7 @@ from app.spatial_fields.monitoring import (
     wave_field_health,
     weather_field_health,
 )
+from app.spatial_fields.retention import tracked_weather_field_storage_bytes
 
 
 DISK_WARNING_PERCENT = 70.0
@@ -67,12 +68,50 @@ def _existing_storage_path(root: str | Path) -> Path:
 
 
 def storage_capacity_report(
-    storage, *, disk_usage=shutil.disk_usage
+    storage,
+    *,
+    tracked_bytes: int | None = None,
+    budget_bytes: int = 0,
+    disk_usage=shutil.disk_usage,
 ) -> tuple[dict, list[dict]]:
     """Report local field-storage pressure for monitoring and worker admission."""
     root = getattr(storage, "root", None)
     if root is None:
-        return {"status": "not_applicable", "backend": type(storage).__name__}, []
+        if tracked_bytes is None or budget_bytes <= 0:
+            return {"status": "not_applicable", "backend": type(storage).__name__}, []
+        used_percent = round((tracked_bytes / budget_bytes) * 100.0, 1)
+        report = {
+            "status": "ok",
+            "backend": type(storage).__name__,
+            "tracked_bytes": tracked_bytes,
+            "budget_bytes": budget_bytes,
+            "free_bytes": max(budget_bytes - tracked_bytes, 0),
+            "used_percent": used_percent,
+            "warning_percent": DISK_WARNING_PERCENT,
+            "critical_percent": DISK_CRITICAL_PERCENT,
+        }
+        alerts = []
+        if used_percent >= DISK_CRITICAL_PERCENT:
+            report["status"] = "error"
+            alerts.append(
+                _alert(
+                    "weather_field_storage_critical",
+                    "critical",
+                    "storage",
+                    used_percent=used_percent,
+                )
+            )
+        elif used_percent >= DISK_WARNING_PERCENT:
+            report["status"] = "degraded"
+            alerts.append(
+                _alert(
+                    "weather_field_storage_warning",
+                    "warning",
+                    "storage",
+                    used_percent=used_percent,
+                )
+            )
+        return report, alerts
     checked_path = _existing_storage_path(root)
     usage = disk_usage(checked_path)
     used_percent = round((usage.used / usage.total) * 100.0, 1) if usage.total else 100.0
@@ -118,6 +157,7 @@ def build_weather_field_doctor_report(
     settings,
     now: datetime | None = None,
     require_public: bool = False,
+    require_waves: bool = False,
     disk_usage=shutil.disk_usage,
 ) -> dict:
     """Combine field integrity, scheduler backlog, spot sync and disk pressure."""
@@ -139,33 +179,35 @@ def build_weather_field_doctor_report(
         _health_alerts(
             waves["primary"],
             component="wave_primary",
-            require_public=require_public,
+            require_public=require_public or require_waves,
         )
     )
     alerts.extend(
         _health_alerts(
             waves["fallback"],
             component="wave_fallback",
-            require_public=require_public,
+            require_public=require_public or require_waves,
         )
     )
     alerts.extend(
         _health_alerts(
             waves["extended"],
             component="wave_extended",
-            require_public=require_public,
+            require_public=require_public or require_waves,
         )
     )
 
-    if require_public:
+    if require_public or require_waves:
         if not settings.weather_field_pipeline_enabled:
             alerts.append(
                 _alert("weather_field_pipeline_disabled", "critical", "configuration")
             )
+    if require_public:
         if not settings.weather_field_public_enabled:
             alerts.append(
                 _alert("wind_field_public_disabled", "critical", "configuration")
             )
+    if require_public or require_waves:
         if not settings.wave_field_public_enabled:
             alerts.append(
                 _alert("wave_field_public_disabled", "critical", "configuration")
@@ -197,8 +239,16 @@ def build_weather_field_doctor_report(
                 )
             )
 
+    budget_bytes = getattr(settings, "weather_field_storage_budget_bytes", 0)
+    tracked_bytes = (
+        tracked_weather_field_storage_bytes(db)
+        if getattr(storage, "root", None) is None and budget_bytes > 0
+        else None
+    )
     storage_report, storage_alerts = storage_capacity_report(
         storage,
+        tracked_bytes=tracked_bytes,
+        budget_bytes=budget_bytes,
         disk_usage=disk_usage,
     )
     alerts.extend(storage_alerts)

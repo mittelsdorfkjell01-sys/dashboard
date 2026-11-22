@@ -28,6 +28,30 @@ def test_production_admin_requires_security_controls() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    ("deployment_mode", "enable_admin_api", "origin"),
+    [
+        ("public", False, "https://surfwinddata.com"),
+        ("admin", True, "https://dashboardsurfwind.vercel.app"),
+    ],
+)
+def test_documented_production_security_settings_boot(
+    deployment_mode: str, enable_admin_api: bool, origin: str
+) -> None:
+    settings = Settings(
+        _env_file=None,
+        app_env="production",
+        deployment_mode=deployment_mode,
+        enable_admin_api=enable_admin_api,
+        api_debug=False,
+        cookie_secure=True,
+        password_breach_check_enabled=True,
+        jwt_secret="x" * 48,
+        cors_origins=[origin],
+    )
+    assert settings.deployment_mode == deployment_mode
+
+
 def test_browser_security_headers_are_present() -> None:
     response = TestClient(app).get("/openapi.json")
     assert response.status_code == 200

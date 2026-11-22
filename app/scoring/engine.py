@@ -82,6 +82,7 @@ class SeasonalRuleScorer:
     def __init__(self, db: Any | None = None) -> None:
         self._db = db
         self._fallback = InterimScorer()
+        self._params_by_sport: dict[str, dict] = {}
 
     def score(
         self, spot: Any, time_context: dict | None = None, profile: dict | None = None
@@ -118,7 +119,9 @@ class SeasonalRuleScorer:
             if entry is not None:
                 # Resolve via get_params so a deployed scoring_params override wins
                 # on the ranking path too (falls back to in-code params if db=None).
-                params = get_params(sport, self._db)
+                if sport not in self._params_by_sport:
+                    self._params_by_sport[sport] = get_params(sport, self._db)
+                params = self._params_by_sport[sport]
                 res = evaluate_week_cells(entry, editorial, profile, sport, params)
                 return _clamp01(0.6 * res["gut_anteil"] + 0.4 * res["pct_usable"])
         return self._fallback.score(spot, time_context, profile)
@@ -149,19 +152,9 @@ def distance_decay_d0(sport: str | None, db: Any | None = None) -> float:
     :data:`DEFAULT_D0_KM`, then a global fallback.
     """
     if db is not None and sport:
-        try:
-            from sqlalchemy import select
+        from app.scoring.params import get_params
 
-            from app.models import ScoringParams
-
-            row = db.scalar(
-                select(ScoringParams)
-                .where(ScoringParams.sport == sport)
-                .where(ScoringParams.active.is_(True))
-                .order_by(ScoringParams.version.desc())
-            )
-            if row and isinstance(row.params, dict) and row.params.get("d0_km"):
-                return float(row.params["d0_km"])
-        except Exception:
-            pass
+        value = get_params(sport, db).get("d0_km")
+        if value is not None:
+            return float(value)
     return DEFAULT_D0_KM.get(sport or "", _FALLBACK_D0_KM)

@@ -11,15 +11,29 @@ import os
 from pathlib import Path
 
 from app.config import Settings, get_settings
+from sqlalchemy.engine import make_url
 
 # --- redirect the app to the test database BEFORE engine creation ---------
 _TEST_URL = Settings().test_database_url
+
+
+def _assert_safe_test_database(url: str) -> None:
+    """Fail before the destructive schema reset unless the target is local/test-only."""
+    parsed = make_url(url)
+    if parsed.host not in {"localhost", "127.0.0.1", "::1"}:
+        raise RuntimeError("TEST_DATABASE_URL must point to a local database host")
+    if parsed.database != "surfwind_test":
+        raise RuntimeError("TEST_DATABASE_URL database must be named 'surfwind_test'")
+
+
+_assert_safe_test_database(_TEST_URL)
 os.environ["DATABASE_URL"] = _TEST_URL
 os.environ["APP_ENV"] = "test"
 os.environ["DEPLOYMENT_MODE"] = "admin"
 os.environ["ENABLE_ADMIN_API"] = "true"
 # Cron endpoint contract tests opt in explicitly; runtime defaults fail closed.
 os.environ["RUN_MAINTENANCE_CRONS"] = "true"
+os.environ["JWT_SECRET"] = "test-only-jwt-secret-that-is-longer-than-thirty-two-bytes"
 # Keep ERA5 background auto-processing off in tests (a dev .env may enable it);
 # tests that exercise it flip the setting explicitly.
 os.environ["ERA5_AUTOPROCESS"] = "false"

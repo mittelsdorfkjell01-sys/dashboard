@@ -8,6 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.scoring import Scorer, default_scorer, distance_decay_d0
+from app.scoring.context import primary_sport
+from app.scoring.params import WEEK_GOOD_THRESHOLD, get_params
 from app.search.geocode import Geocoder, classify_geocode
 from app.search.pins import build_pins, coords, spot_brief
 from app.search.ranking import rank_nearby
@@ -17,6 +19,7 @@ from app.search.spatial import (
     search_nearby_spots,
 )
 from app.search.text import search_entities
+from app.search.timewindow import N_WEEKS, coverage_intensity
 
 
 # --- serialisation helpers -------------------------------------------------
@@ -76,10 +79,57 @@ def _with_sport(
     return out
 
 
+class _WindowCoverageScorer:
+    """Adapt weekly scorers to the established reliability-first window score."""
+
+    def __init__(self, base: Any, weeks: list[int], sport: str | None, db: Any) -> None:
+        self.base = base
+        self.weeks = weeks
+        self.sport = sport
+        self.db = db
+        self.params_by_sport: dict[str, dict] = {}
+
+    def score(self, spot: Any, _time_context: dict | None, profile: dict | None) -> float:
+        score_window = getattr(self.base, "score_window", None)
+        if callable(score_window):
+            values = score_window(spot, self.weeks, profile)
+        else:
+            values = [
+                self.base.score(spot, {"week": week}, profile)
+                for week in self.weeks
+            ]
+
+        weekly_scores = [0.0] * N_WEEKS
+        for week, value in zip(self.weeks, values):
+            if 1 <= week <= N_WEEKS:
+                weekly_scores[week - 1] = max(0.0, min(1.0, float(value)))
+
+        active_sport = self.sport or primary_sport(spot)
+        if active_sport:
+            if active_sport not in self.params_by_sport:
+                self.params_by_sport[active_sport] = get_params(active_sport, self.db)
+            threshold = self.params_by_sport[active_sport]["week_good_threshold"]
+        else:
+            threshold = WEEK_GOOD_THRESHOLD
+
+        coverage, intensity = coverage_intensity(
+            weekly_scores, self.weeks, threshold
+        )
+        return 0.65 * coverage + 0.35 * intensity
+
+
 def _rank_rows(rows, sport, time_context, profile, db, scorer, variant=None) -> list[dict]:
     d0 = distance_decay_d0(sport, db)
+    rank_scorer = scorer
+    weeks = (time_context or {}).get("weeks")
+    if weeks:
+        rank_scorer = _WindowCoverageScorer(scorer, weeks, sport, db)
     ranked = rank_nearby(
-        rows, time_context, _with_sport(profile, sport, variant), scorer=scorer, d0_km=d0
+        rows,
+        time_context,
+        _with_sport(profile, sport, variant),
+        scorer=rank_scorer,
+        d0_km=d0,
     )
     record_ranked = getattr(scorer, "record_ranked", None)
     if callable(record_ranked):

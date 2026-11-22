@@ -12,7 +12,8 @@ def test_optional_comment_title_round_trip() -> None:
     payload = TipIn(body="Hilfreicher Kommentar", title="Beste Zeit")
     row = SimpleNamespace(
         id=uuid4(), body=payload.body, title=payload.title, author_name="Anonym",
-        created_at=datetime.now(timezone.utc), parent_id=None,
+        created_at=datetime.now(timezone.utc), parent_id=None, app_user_id=None,
+        edited_at=None, status="visible",
     )
     assert TipOut.of(row).title == "Beste Zeit"
 

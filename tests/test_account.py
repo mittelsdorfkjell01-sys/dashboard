@@ -116,7 +116,9 @@ def test_registration_requires_mail_ownership_and_new_password(anon_client):
         "email": email, "password": "attacker-pw-123",
     }).status_code == 401
     token = MAIL_OUTBOX[-1][2]
-    assert anon_client.post("/account/email/confirm", json={"token": token}).status_code == 400
+    # No password chosen at registration and no device cookie: the recipient
+    # has to set one here (428), never confirmed without.
+    assert anon_client.post("/account/email/confirm", json={"token": token}).status_code == 428
     assert anon_client.post("/account/email/confirm", json={
         "token": token, "password": "owner-pw-123",
     }).status_code == 200
@@ -153,18 +155,22 @@ def test_confirmation_weak_password_rejected(anon_client):
     }).status_code == 400
 
 
-def test_registration_requires_consent_and_age(anon_client):
+def test_registration_requires_accepting_the_terms(anon_client):
     email = f"consent-{uuid.uuid4().hex[:8]}@example.com"
-    # Missing both flags, missing age, and missing terms each rejected with 400.
+    # Since 2026-11-20 the minimum age is confirmed with the terms: without
+    # them a registration is refused, the age flag alone does not count.
     for payload in (
         {"email": email, "displayName": "X"},
-        {"email": email, "displayName": "X", "acceptedTerms": True},
         {"email": email, "displayName": "X", "ageConfirmed": True},
     ):
         resp = anon_client.post("/account/register", json=payload)
         assert resp.status_code == 400, resp.text
     # No verification mail is sent for a rejected registration.
     assert all(entry[0] != email for entry in MAIL_OUTBOX)
+    # The terms alone are enough; the age is recorded with them.
+    assert anon_client.post("/account/register", json={
+        "email": email, "displayName": "X", "acceptedTerms": True,
+    }).status_code == 202
 
 
 def test_registration_records_consent(anon_client):
@@ -185,6 +191,72 @@ def test_registration_records_consent(anon_client):
         assert user.terms_accepted_version == service.TERMS_VERSION
         assert user.terms_accepted_at is not None
         assert user.age_confirmed_at is not None
+
+
+# --- password chosen at registration -------------------------------------
+
+def _register_with_password(c: TestClient, email: str, pw: str):
+    resp = c.post("/account/register", json={
+        "email": email, "displayName": "Visitor", "password": pw, "acceptedTerms": True,
+    })
+    assert resp.status_code == 202, resp.text
+    return MAIL_OUTBOX[-1][2]
+
+
+def test_password_at_registration_confirms_in_the_same_browser(anon_client):
+    email = f"same-{uuid.uuid4().hex[:8]}@example.com"
+    token = _register_with_password(anon_client, email, "chosen-pw-123")
+    # Before the link is opened the chosen password signs nobody in.
+    assert TestClient(app).post("/account/login", json={
+        "email": email, "password": "chosen-pw-123",
+    }).status_code == 401
+    # Back in the registering browser: confirmed without asking again, and
+    # signed in right away.
+    confirm = anon_client.post("/account/email/confirm", json={"token": token})
+    assert confirm.status_code == 200, confirm.text
+    assert anon_client.cookies.get(ACCT_COOKIE)
+    assert anon_client.get("/account/me").json()["email"] == email
+    assert TestClient(app).post("/account/login", json={
+        "email": email, "password": "chosen-pw-123",
+    }).status_code == 200
+
+
+def test_link_on_another_device_asks_for_the_password(anon_client):
+    email = f"other-{uuid.uuid4().hex[:8]}@example.com"
+    token = _register_with_password(anon_client, email, "registrant-pw-123")
+    other = TestClient(app)
+    assert other.post("/account/email/confirm", json={"token": token}).status_code == 428
+    assert other.post("/account/email/confirm", json={
+        "token": token, "password": "recipient-pw-123",
+    }).status_code == 200
+    # The mailbox holder's choice stands; the registrant's does not.
+    assert TestClient(app).post("/account/login", json={
+        "email": email, "password": "registrant-pw-123",
+    }).status_code == 401
+    assert TestClient(app).post("/account/login", json={
+        "email": email, "password": "recipient-pw-123",
+    }).status_code == 200
+
+
+def test_a_later_registration_of_an_unconfirmed_address_voids_the_earlier_link(anon_client):
+    email = f"again-{uuid.uuid4().hex[:8]}@example.com"
+    first_token = _register_with_password(anon_client, email, "first-pw-12345")
+    later = TestClient(app)
+    later_token = _register_with_password(later, email, "later-pw-123456")
+    assert later_token != first_token
+    assert anon_client.post("/account/email/confirm", json={"token": first_token}).status_code == 400
+    assert later.post("/account/email/confirm", json={"token": later_token}).status_code == 200
+    assert TestClient(app).post("/account/login", json={
+        "email": email, "password": "later-pw-123456",
+    }).status_code == 200
+
+
+def test_registration_with_a_weak_password_is_refused(anon_client):
+    resp = anon_client.post("/account/register", json={
+        "email": f"weakreg-{uuid.uuid4().hex[:8]}@example.com", "displayName": "X",
+        "password": "123", "acceptedTerms": True,
+    })
+    assert resp.status_code == 400
 
 
 def test_login_me_logout_flow(acct):
@@ -500,14 +572,17 @@ def test_submission_create_and_list(acct, db):
     c = acct["client"]
     assert c.get("/account/submissions").json()["items"] == []
 
-    created = c.post("/account/submissions", json={"name": "Fehmarn Wulfener Hals"})
+    # A name no catalog spot can carry: a real one ("Fehmarn Wulfener Hals")
+    # gets a 409 whenever an earlier test left that seed spot published.
+    name = f"Testvorschlag {uuid.uuid4().hex[:8]}"
+    created = c.post("/account/submissions", json={"name": name})
     assert created.status_code == 201, created.text
     assert created.json()["status"] == "pending"
-    assert created.json()["name"] == "Fehmarn Wulfener Hals"
+    assert created.json()["name"] == name
 
     items = c.get("/account/submissions").json()["items"]
     assert len(items) == 1
-    assert items[0]["name"] == "Fehmarn Wulfener Hals"
+    assert items[0]["name"] == name
     assert items[0]["reviewNote"] is None
     assert c.delete(f"/account/submissions/{items[0]['id']}").status_code == 204
     assert c.get("/account/submissions").json()["items"][0]["status"] == "withdrawn"

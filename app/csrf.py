@@ -13,6 +13,11 @@ from app.config import get_settings
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 SESSION_START_PATHS = {"/auth/login", "/account/login", "/account/register"}
 ORIGIN_PROTECTED_BEACON_PATHS = {"/events"}
+# Sign in with Apple answers with a cross-site form POST from appleid.apple.com:
+# no Origin of ours, no CSRF header. Its protection is the flow's own state,
+# checked against the signed httpOnly cookie that bound the flow to this
+# browser (app/api/account.py `_oauth_finish`).
+OAUTH_CALLBACK_PATHS = {"/account/oauth/apple/callback"}
 
 
 def new_csrf_token() -> str:
@@ -56,6 +61,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             request.cookies.get(settings.auth_cookie_name)
             or request.cookies.get(settings.app_auth_cookie_name)
         )
+        if request.url.path.rstrip("/") in OAUTH_CALLBACK_PATHS:
+            return await call_next(request)
         starts_session = request.url.path.rstrip("/") in SESSION_START_PATHS
         if request.method not in SAFE_METHODS and (has_auth_cookie or starts_session):
             origin = request.headers.get("origin")

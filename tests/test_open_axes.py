@@ -3,6 +3,7 @@ and the region aggregate (counting working spots, not averaging). No DB/network.
 
 from __future__ import annotations
 
+import app.search.timewindow as timewindow
 from app.scoring.region import region_season_weeks, region_score_series, smooth_circular
 from app.search.timewindow import (
     best_weeks_for_area,
@@ -110,6 +111,38 @@ def test_best_weeks_area_takes_best_spot_per_week():
     assert weeks[10]["score"] == 1.0 and weeks[10]["spots_working"] == 1
     assert weeks[20]["score"] == 1.0 and weeks[20]["spots_working"] == 1
     assert weeks[1]["score"] == 0.0
+
+
+def test_timewindow_params_are_loaded_once_per_sport(monkeypatch):
+    spots = [_spot("A", {1: "full"}), _spot("B", {2: "full"})]
+    calls = 0
+    original = timewindow.get_params
+
+    def counted(sport, db=None):
+        nonlocal calls
+        calls += 1
+        return original(sport)
+
+    monkeypatch.setattr(timewindow, "get_params", counted)
+    rank_by_timewindow(spots, {"weeks": [1, 2]}, "kitesurf", None, db=object())
+    assert calls == 1
+
+
+def test_region_params_are_loaded_once_per_sport(monkeypatch):
+    import app.scoring.region as region
+
+    spots = [_spot("A", {1: "full"}), _spot("B", {2: "full"})]
+    calls = 0
+    original = region.get_params
+
+    def counted(sport, db=None):
+        nonlocal calls
+        calls += 1
+        return original(sport)
+
+    monkeypatch.setattr(region, "get_params", counted)
+    region_season_weeks(spots, "kitesurf", db=object())
+    assert calls == 1
 
 
 # --- region aggregate: count working spots, don't average ------------------

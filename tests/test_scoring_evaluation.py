@@ -26,6 +26,15 @@ from app.scoring.personal.metrics import recommendation_quality
 from app.scoring.personal.social import bayesian_positive_share
 
 
+def test_scoring_param_database_errors_are_not_silently_hidden() -> None:
+    class BrokenSession:
+        def scalar(self, _statement):
+            raise RuntimeError("database unavailable")
+
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        get_params("kitesurf", BrokenSession())
+
+
 def _hours() -> list[HistoricalHour]:
     start = datetime(2026, 7, 1, 10, tzinfo=timezone.utc)
     return [

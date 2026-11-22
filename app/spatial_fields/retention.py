@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models.weather_field import (
     WeatherFieldAsset,
@@ -10,6 +10,18 @@ from app.models.weather_field import (
     WeatherFieldRun,
 )
 from app.spatial_fields.storage import FieldObjectStorage
+
+
+def tracked_weather_field_storage_bytes(db) -> int:
+    """Return bytes still owned by the field asset ledger."""
+    return int(
+        db.scalar(
+            select(func.coalesce(func.sum(WeatherFieldAsset.size_bytes), 0)).where(
+                WeatherFieldAsset.status != "deleted"
+            )
+        )
+        or 0
+    )
 
 
 def prune_weather_field_runs(

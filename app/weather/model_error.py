@@ -727,6 +727,74 @@ def _blend_snapshot(blend_overrides: dict[str, float] | None) -> dict[str, float
     }
 
 
+def _baseline_lineage_reasons(
+    baseline: StationModelBaseline,
+    *,
+    observed_at: datetime,
+    governance_required: bool,
+) -> list[str]:
+    """Validate immutable raw-model lineage independently from residual math."""
+    reasons: list[str] = []
+    if any(point.source_product != "raw_model" for point in baseline.points):
+        reasons.append("adjusted_model_input_forbidden")
+    if any(point.source_observation_ids for point in baseline.points):
+        reasons.append("observation_derived_model_input_forbidden")
+    if any(
+        point.model_run_quality not in {"exact", "provider-reported"}
+        for point in baseline.points
+    ):
+        reasons.append("model_run_identity_not_verified")
+    if any(point.baseline_version != baseline.baseline_version for point in baseline.points):
+        reasons.append("baseline_version_mismatch")
+    if baseline.baseline_version == "exact-run-bundle-v1":
+        reasons.append("legacy_capture_time_baseline")
+    if baseline.baseline_version != "exact-run-bundle-v2":
+        return reasons
+
+    if (
+        (governance_required and not baseline.activation_eligible)
+        or not baseline.dataset_bundle_hash
+        or not baseline.dataset_manifest
+    ):
+        reasons.append("not_activation_eligible")
+    elif hashlib.sha256(
+        json.dumps(
+            baseline.dataset_manifest, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest() != baseline.dataset_bundle_hash:
+        reasons.append("dataset_bundle_hash_mismatch")
+    else:
+        from app.weather.exact_run import compatible_dataset_manifests
+
+        manifest = baseline.dataset_manifest
+        if (
+            not compatible_dataset_manifests(manifest, manifest)
+            or tuple(manifest["required_models"]) != baseline.expected_model_ids
+        ):
+            reasons.append("dataset_manifest_incompatible")
+        else:
+            for point in baseline.points:
+                member = manifest["members"].get(point.model_id)
+                if (
+                    not isinstance(member, dict)
+                    or point.provider != member.get("provider")
+                    or point.model_run_at.isoformat() != member.get("run_at")
+                    or point.dataset_version != member.get("dataset_version")
+                    or point.valid_at.isoformat() not in member.get("valid_times", ())
+                    or point.sampling_version != EXACT_SAMPLE_VERSION
+                ):
+                    reasons.append("dataset_point_mismatch")
+                    break
+    if any(
+        point.available_at is None or point.available_at > observed_at
+        for point in baseline.points
+    ):
+        reasons.append("run_not_available_as_of_observation")
+    if any(not point.sample_hash or not point.asset_content_hashes for point in baseline.points):
+        reasons.append("sample_identity_unavailable")
+    return reasons
+
+
 def calculate_station_model_error(
     station,
     observation,
@@ -766,50 +834,11 @@ def calculate_station_model_error(
         policy=policy,
         governance_required=governance_required,
     )
-    lineage_reasons = []
-    if any(point.source_product != "raw_model" for point in baseline.points):
-        lineage_reasons.append("adjusted_model_input_forbidden")
-    if any(point.source_observation_ids for point in baseline.points):
-        lineage_reasons.append("observation_derived_model_input_forbidden")
-    if any(
-        point.model_run_quality not in {"exact", "provider-reported"}
-        for point in baseline.points
-    ):
-        lineage_reasons.append("model_run_identity_not_verified")
-    if any(point.baseline_version != baseline.baseline_version for point in baseline.points):
-        lineage_reasons.append("baseline_version_mismatch")
-    if baseline.baseline_version == "exact-run-bundle-v1":
-        lineage_reasons.append("legacy_capture_time_baseline")
-    if baseline.baseline_version == "exact-run-bundle-v2":
-        if ((governance_required and not baseline.activation_eligible)
-                or not baseline.dataset_bundle_hash or not baseline.dataset_manifest):
-            lineage_reasons.append("not_activation_eligible")
-        elif hashlib.sha256(json.dumps(
-            baseline.dataset_manifest, sort_keys=True, separators=(",", ":")
-        ).encode()).hexdigest() != baseline.dataset_bundle_hash:
-            lineage_reasons.append("dataset_bundle_hash_mismatch")
-        else:
-            from app.weather.exact_run import compatible_dataset_manifests
-
-            manifest = baseline.dataset_manifest
-            if (not compatible_dataset_manifests(manifest, manifest)
-                    or tuple(manifest["required_models"]) != baseline.expected_model_ids):
-                lineage_reasons.append("dataset_manifest_incompatible")
-            else:
-                for point in baseline.points:
-                    member = manifest["members"].get(point.model_id)
-                    if (not isinstance(member, dict)
-                            or point.provider != member.get("provider")
-                            or point.model_run_at.isoformat() != member.get("run_at")
-                            or point.dataset_version != member.get("dataset_version")
-                            or point.valid_at.isoformat() not in member.get("valid_times", ())
-                            or point.sampling_version != EXACT_SAMPLE_VERSION):
-                        lineage_reasons.append("dataset_point_mismatch")
-                        break
-        if any(point.available_at is None or point.available_at > observed_at for point in baseline.points):
-            lineage_reasons.append("run_not_available_as_of_observation")
-        if any(not point.sample_hash or not point.asset_content_hashes for point in baseline.points):
-            lineage_reasons.append("sample_identity_unavailable")
+    lineage_reasons = _baseline_lineage_reasons(
+        baseline,
+        observed_at=observed_at,
+        governance_required=governance_required,
+    )
 
     uncertainty = (
         "reviewed_station_profile"

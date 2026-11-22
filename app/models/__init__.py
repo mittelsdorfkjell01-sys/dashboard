@@ -12,6 +12,7 @@ from app.models.spot_audit import SpotAudit
 from app.models.required_fields import RequiredField
 from app.models.admin_user import AdminUser
 from app.models.app_user import AppUser
+from app.models.app_user_identity import AppUserIdentity
 from app.models.favorite import Favorite
 from app.models.trip import Trip, TripStop
 from app.models.spot_visit import SpotVisit
@@ -137,6 +138,7 @@ __all__ = [
     "RequiredField",
     "AdminUser",
     "AppUser",
+    "AppUserIdentity",
     "Favorite",
     "RiderProfile",
     "RiderSportProfile",

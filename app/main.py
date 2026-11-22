@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.concurrency import run_in_threadpool
 
 from app.api import (
     account,
@@ -22,6 +23,7 @@ from app.api import (
     community,
     cron,
     events,
+    map_pois,
     regions,
     recommendations,
     search,
@@ -35,6 +37,7 @@ from app.safety import RemoteWriteGuardMiddleware
 from app.security_headers import SecurityHeadersMiddleware
 from app.health import check_database, check_redis
 from app.spatial_fields.static import ImmutableFieldStaticFiles
+from app.admin.realtime import bump_revision
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -43,6 +46,19 @@ app = FastAPI(title=settings.api_title, debug=settings.api_debug)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RemoteWriteGuardMiddleware)
+
+
+@app.middleware("http")
+async def _publish_admin_changes(request: Request, call_next):
+    """Signal every successful admin mutation from one central boundary."""
+    response = await call_next(request)
+    if (
+        request.url.path.startswith("/admin/")
+        and request.method not in {"GET", "HEAD", "OPTIONS"}
+        and 200 <= response.status_code < 400
+    ):
+        await run_in_threadpool(bump_revision)
+    return response
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -76,7 +92,7 @@ def _bootstrap_admin_user() -> None:
         try:
             user = bootstrap_admin(db)
             if user is not None:
-                print(f"[bootstrap] created initial admin: {user.email}")
+                logger.info("bootstrap_initial_admin_created")
         finally:
             db.close()
     except Exception as exc:  # never let bootstrap crash startup
@@ -159,6 +175,7 @@ app.include_router(recommendations.router)
 app.include_router(search.router)
 app.include_router(community.router)
 app.include_router(events.router)
+app.include_router(map_pois.router)
 # Public visitor accounts also live on the public site, so this is ungated
 # (unlike the admin /auth router below).
 app.include_router(account.router)

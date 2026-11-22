@@ -84,12 +84,14 @@ jobs:
       - name: Enqueue a fair LiveWind batch
         shell: bash
         run: |
-          curl --fail-with-body --silent --show-error \
+          response="$(curl --fail-with-body --silent --show-error \
             --max-time 30 --retry 3 --retry-delay 5 --retry-all-errors \
             --request POST \
             --header "Authorization: Bearer ${CRON_SECRET}" \
             --header "Content-Type: application/json" \
-            "$LIVE_WIND_ENDPOINT"
+            "$LIVE_WIND_ENDPOINT")"
+          python -c 'import json,sys; body=json.load(sys.stdin); assert not body.get("error") and body.get("status") in {"accepted", "deduplicated"}' \
+            <<<"$response"
 
       - name: Drain the bounded shadow batch
         run: python -m scripts.live_wind_worker
