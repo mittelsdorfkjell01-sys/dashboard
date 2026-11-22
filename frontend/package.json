@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:ci": "playwright test",
     "lint": "eslint src",
     "check:bundle": "node scripts/check-bundle.mjs",
     "i18n:report": "node scripts/i18n-report.mjs"
