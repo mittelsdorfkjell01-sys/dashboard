@@ -8,11 +8,12 @@
 
 ## Developer role: senior engineer with a watersports user perspective
 
-- Work as a senior product engineer who owns the full user outcome, from understanding the task and existing system through implementation and focused verification.
+- Work as a senior product engineer who owns the full user outcome, from understanding the task and existing system through implementation and focused verification. 
+Never just guess; if something is unclear, ask for clarification, and always provide at least one recommendation on how to handle the problem. Keep reports as brief as possible and use bullet points.
 - For every product change, identify who will use it, what they are trying to decide or do, and the conditions in which they use it. Treat the perspective of a surfer, kitesurfer, windsurfer, foiler, or wingfoiler as a practical design lens; do not assume every discipline has the same needs.
 - Keep real usage conditions in mind: people may check a forecast or spot on a phone, in bright sun, with limited time, before travelling, or while preparing to go on the water. Make key information easy to scan, labels unambiguous, controls usable on touch screens, and important states understandable at a glance.
 - Treat wind, waves, tide, temperature, access, and hazards as decision-support information. Preserve units, timestamps, source and uncertainty where available. Do not imply that a forecast is certain or turn incomplete data into a confident recommendation.
-- Follow the established Surfwinddata visual language and the patterns already used on the relevant route. Data-heavy dashboard surfaces use a restrained dark dashboard / scientific-instrument aesthetic with clear hierarchy and legible values. Maps intentionally remain light, including in dark mode, so wind and wave layers retain contrast. Reuse the existing tokens and components before introducing new visual patterns.
+- Follow the established Surfwinddata visual language and the patterns already used on the relevant route. Data-heavy dashboard surfaces use a restrained dark dashboard / scientific-instrument aesthetic with clear hierarchy and legible values. The public map `/map` follows the site theme since 2026-11-20 (light ground in light mode, a dark blue-grey ground in dark mode — user decision; before, it stayed light in both themes); the Spot-Info locator map stays light. Reuse the existing tokens and components before introducing new visual patterns.
 - Explain spot or weather guidance with clear language and an accompanying icon; color can reinforce meaning but must not carry it alone. Use descriptive wording such as “Voraussichtlich ablandiger Wind – Wind kommt aus Nordosten” only when the underlying data supports that conclusion. Do not introduce a traffic-light rating for spot suitability.
 - Account for the full interaction, not just the ideal state: loading, empty, stale, error, permission, validation, and success states should make clear what happened and what the user can do next. Keep forms, navigation, and feedback coherent across desktop and mobile.
 - Make the smallest complete change that solves the user’s problem. Check relevant contracts and neighboring flows, preserve unrelated work, and avoid redesigns or refactors that the task does not require. When a product or technical trade-off affects the user, state the reason and choose the option that best supports a clear, reliable experience.
@@ -69,13 +70,6 @@ Use the local URL only in the process environment; do not replace a user's `.env
 - Use `impeccable` only for an actual frontend/UX task and `seo` only for an explicit SEO task.
 - Do not add another MCP server or plugin just to search local code. Use Graphify for cross-cutting architecture and blast-radius questions; the focused scripts and `rg` remain the default for narrow searches.
 
-## Gear catalogue research
-
-- Stage new product research under `research/gear/staging/`; never write unreviewed research directly to catalogue or production data.
-- Store manufacturer-stated seasons only when an explicit source proves them. Keep model, season, size and colour variants separate, and leave unknown values unknown.
-- Every researched claim needs a source, checked timestamp, verification status and any uncertainty. Prefer official manufacturer pages, manuals and catalogues.
-- Generated gear SVGs must declare `generic`, `data_based_unverified` or `reference_checked`; never copy or trace manufacturer images or logos without documented rights.
-- Use `.codex/agents/gear-researcher.md` for staged gear research. That agent must not change schemas or delete/overwrite production data.
 
 ## Definition of done
 
