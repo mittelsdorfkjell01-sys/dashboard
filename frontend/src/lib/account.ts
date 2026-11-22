@@ -9,7 +9,7 @@
 // so mounted components re-read. Mutations update the cache only after the
 // server confirms them.
 
-import { ApiError, request } from "./api";
+import { API_BASE, ApiError, request } from "./api";
 import { trackEvent } from "./events";
 
 export interface Account {
@@ -25,7 +25,15 @@ export interface Account {
     sports?: string[];
     conditions?: Partial<Record<SportKey, SportConditions>>;
     submissionEmails?: boolean;
+    /** The rider's own starting point for routes; `null` = deliberately removed. */
+    mapLocation?: MapLocation | null;
   };
+}
+
+export interface MapLocation {
+  lat: number;
+  lon: number;
+  source: "gps" | "manual";
 }
 
 export type SportKey = "surf" | "windsurf" | "kitesurf" | "wing";
@@ -251,8 +259,14 @@ export interface RiderSetupResult {
   gear: GearItem[];
 }
 
-/** Thrown for expected, user-facing failures (duplicate email, bad password …). */
-export class AccountError extends Error {}
+/** Thrown for expected, user-facing failures (duplicate email, bad password …).
+ *  `status` is the HTTP status, for the few callers that branch on it (428 on
+ *  the confirmation page: "choose the password here"). */
+export class AccountError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+  }
+}
 
 export const FAVORITES_EVENT = "swd:favorites";
 export const SUBMISSIONS_EVENT = "swd:submissions";
@@ -264,7 +278,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     return await request<T>(path, init);
   } catch (e) {
-    if (e instanceof ApiError) throw new AccountError(e.message);
+    if (e instanceof ApiError) throw new AccountError(e.message, e.status);
     throw e;
   }
 }
@@ -366,21 +380,42 @@ export async function fetchSession(): Promise<Account | null> {
   }
 }
 
+/** The password is chosen here; the confirmation link opened in this browser
+ *  then confirms with it (an httpOnly device cookie the server set). Accepting
+ *  the terms also confirms the minimum age, which the terms state. */
 export async function register(input: {
   email: string;
   displayName: string;
+  password: string;
   acceptedTerms: boolean;
-  ageConfirmed: boolean;
 }): Promise<void> {
   await call<{ accepted: boolean; message: string }>("/account/register", {
     method: "POST",
     body: JSON.stringify({
       email: input.email,
       displayName: input.displayName,
+      password: input.password,
       acceptedTerms: input.acceptedTerms,
-      ageConfirmed: input.ageConfirmed,
     }),
   });
+}
+
+/** Sign in with Google / Apple: which providers the server has configured.
+ *  An unreachable server or an older one reports none, so no button is shown
+ *  that could not work. */
+export type OAuthProvider = "google" | "apple";
+export async function oauthProviders(): Promise<Record<OAuthProvider, boolean>> {
+  try {
+    return await request<Record<OAuthProvider, boolean>>("/account/oauth/providers");
+  } catch {
+    return { google: false, apple: false };
+  }
+}
+
+/** A full-page navigation, not a fetch: the provider's sign-in page has to
+ *  open in the browser, and the server binds the flow to it with a cookie. */
+export function oauthStartUrl(provider: OAuthProvider, redirect: string): string {
+  return `${API_BASE}/account/oauth/${provider}/start?redirect=${encodeURIComponent(redirect)}`;
 }
 
 export async function login(input: {

@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { CloseIcon } from "../../lib/icons";
+import Footer from "../../components/Footer";
 
 /**
  * Full-screen shell for the signed-in account area. Every sub-page is its own
@@ -47,11 +48,15 @@ export default function AccountLayout() {
         type="button"
         onClick={goBack}
         aria-label={t("common.back")}
-        className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 grid h-11 w-11 place-items-center rounded-full bg-black/30 text-white ring-1 ring-white/20 backdrop-blur-sm transition-colors hover:bg-black/45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        // The bare glyph like every back control (2026-11-21), no dark disc.
+        className="back-glyph fixed right-2 top-[max(0.75rem,env(safe-area-inset-top))] z-50 sm:right-4"
       >
-        <CloseIcon className="text-title" />
+        <CloseIcon width={24} height={24} />
       </button>
       <Outlet />
+      {/* The info and legal pages are linked from the footer only; the
+          account area keeps it so the Impressum is one tap away here too. */}
+      <Footer />
     </div>
   );
 }

@@ -1,53 +1,67 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  MenuIcon,
-  UserIcon,
-  SchoolIcon,
-  LogoutIcon,
-  CloseIcon,
-  AccountProfileIcon,
-  AccountSavedIcon,
-  AccountVisitedIcon,
-  AccountAddSpotsIcon,
-  AccountSettingsIcon,
-  CalendarIcon,
-} from "../lib/icons";
+import { MenuIcon, UserIcon, CloseIcon, SearchIcon } from "../lib/icons";
 import { useAuth } from "../context/AuthContext";
 import { initialsOf } from "../lib/initials";
 import { useDesktopViewport } from "../lib/useAutoHideHeader";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
-import { SITE_LINKS } from "../lib/siteLinks";
+import { buildMenuSearchIndex, searchMenu } from "../lib/menuSearch";
+import { consumeAccountMenuRequest } from "../lib/accountMenuReturn";
 import type { TranslationKey } from "../lib/i18n";
 
 interface NavItem {
   /** Catalogue key, resolved at render — see lib/i18n/locales/de.ts. */
   key: TranslationKey;
   to: string;
-  icon: (p: { className?: string }) => ReactNode;
   planned?: boolean;
 }
 
+/**
+ * The site's own destinations, listed right under the search. The legal pages
+ * are not among them: they stay in the footer, and the search reaches them.
+ * `signedOutOnly`: "Spot vorschlagen" leads to the same page as the account
+ * row "Spots hinzufügen", so a signed-in visitor would see it twice.
+ */
+const SITE_NAV: (NavItem & { signedOutOnly?: boolean; fromMenu?: boolean })[] = [
+  { key: "menu.search.map", to: "/map" },
+  { key: "siteLinks.faq", to: "/fragen", fromMenu: true },
+  { key: "siteLinks.contact", to: "/kontakt", fromMenu: true },
+  { key: "menu.suggestSpot", to: "/konto/spots", signedOutOnly: true },
+];
+
 const ACCOUNT_NAV: NavItem[] = [
-  { key: "accountNav.profile", to: "/konto/profil", icon: AccountProfileIcon },
-  { key: "accountNav.setup", to: "/konto/setup", icon: SchoolIcon },
-  { key: "accountNav.saved", to: "/konto/favoriten", icon: AccountSavedIcon },
-  { key: "accountNav.visited", to: "/konto/besucht", icon: AccountVisitedIcon },
-  { key: "accountNav.trips", to: "/konto/reisen", icon: CalendarIcon },
-  { key: "accountNav.addSpots", to: "/konto/spots", icon: AccountAddSpotsIcon },
-  { key: "accountNav.settings", to: "/konto/einstellungen", icon: AccountSettingsIcon },
+  { key: "accountNav.profile", to: "/konto/profil" },
+  { key: "accountNav.setup", to: "/konto/setup" },
+  { key: "accountNav.saved", to: "/konto/favoriten" },
+  { key: "accountNav.visited", to: "/konto/besucht" },
+  { key: "accountNav.trips", to: "/konto/reisen" },
+  { key: "accountNav.addSpots", to: "/konto/spots" },
+  { key: "accountNav.settings", to: "/konto/einstellungen" },
 ];
 
 /**
- * Account entry point shared by every public header. On phones it opens a
- * full-screen sheet (large tap targets, focus-trapped, body-scroll-locked,
- * returns focus to the trigger on close); from `sm` up it is a compact
- * dropdown. Signed-in visitors see their name + avatar and the account areas;
- * signed-out visitors get a clear sign-in / register entry that returns them to
- * the page they were on after authenticating.
+ * The burger menu shared by every public header. On phones it opens a
+ * full-screen sheet (focus-trapped, body-scroll-locked, returns focus to the
+ * trigger on close); from `sm` up it is a compact dropdown. Both read in the
+ * same order, top to bottom:
+ *
+ *   1. a low search field, just the magnifier, over features and the
+ *      sections of the info pages,
+ *   2. the site's own destinations (wind map, help, contact, and — signed
+ *      out — suggesting a spot),
+ *   3. one hairline, then the account areas and sign-out — signed in only,
+ *   4. at the foot: the two display preferences (dark mode, language), and
+ *      under them who you are — avatar + name, or "Anmelden" when signed out.
+ *
+ * Plain text rows: no icons, regular weight, the 12px caption size — the menu
+ * is an index, not a set of buttons. "Anmelden" is the exception, see
+ * SignInRow.
+ *
+ * The three legal pages are not rows here: they live in the footer
+ * (lib/siteLinks.ts), and the search reaches every one of their sections.
  */
 export default function AccountMenu({
   bareOnMobile = false,
@@ -77,7 +91,18 @@ export default function AccountMenu({
     onOpenChange?.(open);
   }, [open, onOpenChange]);
 
-  const close = () => setOpen(false);
+  // A page reached from this menu can send the visitor back into it (see
+  // lib/accountMenuReturn). The request outlives the history step; the first
+  // menu to mount afterwards takes it.
+  useEffect(() => {
+    if (consumeAccountMenuRequest()) setOpen(true);
+  }, [location.key]);
+
+  // Stable on purpose: the sheet's open/close effect depends on it, and a new
+  // function on every render re-ran that effect — which moved focus from the
+  // search field to the close button whenever the page re-rendered under an
+  // open menu (data arriving, the session check resolving).
+  const close = useCallback(() => setOpen(false), []);
 
   const onLogout = async () => {
     close();
@@ -88,7 +113,6 @@ export default function AccountMenu({
   // Preserve where the visitor was so protected areas and sign-in return here.
   const here = location.pathname + location.search;
   const signInHref = `/anmelden?redirect=${encodeURIComponent(here)}`;
-  const registerHref = `/anmelden?mode=register&redirect=${encodeURIComponent(here)}`;
 
   return (
     <div className="relative">
@@ -96,7 +120,7 @@ export default function AccountMenu({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={t("menu.trigger")}
         className={`flex h-11 w-11 items-center justify-center p-0 text-ink transition-opacity hover:opacity-60 sm:w-auto sm:gap-2.5 sm:px-2 ${bareOnMobile ? "max-sm:justify-end" : ""} ${onHero ? "on-hero-ink" : ""}`}
@@ -113,13 +137,7 @@ export default function AccountMenu({
           counted as "outside", closing the menu on mousedown so the link's
           click never fired — the sheet just closed and no navigation happened. */}
       {open && desktop && (
-        <DesktopDropdown
-          user={user}
-          onClose={close}
-          onLogout={onLogout}
-          signInHref={signInHref}
-          registerHref={registerHref}
-        />
+        <DesktopDropdown user={user} onClose={close} onLogout={onLogout} signInHref={signInHref} />
       )}
 
       {open && !desktop && (
@@ -129,7 +147,6 @@ export default function AccountMenu({
           onLogout={onLogout}
           returnFocusRef={triggerRef}
           signInHref={signInHref}
-          registerHref={registerHref}
         />
       )}
     </div>
@@ -138,64 +155,220 @@ export default function AccountMenu({
 
 type Account = ReturnType<typeof useAuth>["user"];
 
-function ProfileHeader({
+const ROW_FOCUS =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+
+/** Who you are, at the foot of the menu. Links to the profile. There is no
+ *  photo backend yet, so the avatar is the initials disc used site-wide. */
+function ProfileRow({
   user,
   onNavigate,
-  size = "sm",
+  className,
 }: {
   user: NonNullable<Account>;
   onNavigate: () => void;
-  size?: "sm" | "lg";
+  className: string;
 }) {
   const { t } = useTranslation();
-  const lg = size === "lg";
   return (
-    <Link
-      to="/konto/profil"
-      onClick={onNavigate}
-      role="menuitem"
-      className={`flex items-center rounded-card transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${lg ? "gap-4 px-1 py-2" : "gap-3 px-2 py-2"}`}
-    >
-      <span
-        className={`grid shrink-0 place-items-center rounded-full bg-ink font-bold text-surface ${lg ? "h-16 w-16 text-title" : "h-11 w-11 text-ui"}`}
-      >
+    <Link to="/konto/profil" onClick={onNavigate} className={className}>
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-caption font-semibold text-surface">
         {initialsOf(user.displayName, user.email)}
       </span>
-      <span className="min-w-0">
-        <span className={`block truncate font-semibold text-ink ${lg ? "text-title" : "text-ui"}`}>
-          {user.displayName || t("menu.myProfile")}
-        </span>
-        <span className={`block truncate text-muted ${lg ? "text-ui" : "text-caption"}`}>{user.email}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">{user.displayName || t("menu.myProfile")}</span>
+        <span className="block truncate text-muted">{user.email}</span>
       </span>
     </Link>
   );
 }
 
-function SignInBlock({ signInHref, registerHref, onNavigate }: { signInHref: string; registerHref: string; onNavigate: () => void }) {
+/** The signed-out foot: one row, in the place the profile would be. Creating
+ *  an account is one tap further, on the sign-in page itself. The one row
+ *  that keeps a glyph and weight (2026-11-19): it is the menu's single call
+ *  to act, and it fills the slot the avatar takes when signed in. */
+function SignInRow({ href, onNavigate, className }: { href: string; onNavigate: () => void; className: string }) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-card bg-band p-4">
-      <p className="text-ui font-semibold text-ink">{t("menu.welcome")}</p>
-      <p className="mt-0.5 text-caption text-muted">{t("menu.welcomeBody")}</p>
-      <div className="mt-3 flex flex-col gap-2">
-        <Link
-          to={signInHref}
-          onClick={onNavigate}
-          role="menuitem"
-          className="inline-flex min-h-11 items-center justify-center rounded-card bg-ink px-4 text-ui font-semibold text-surface transition-colors hover:bg-ink-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          {t("menu.signIn")}
-        </Link>
-        <Link
-          to={registerHref}
-          onClick={onNavigate}
-          role="menuitem"
-          className="inline-flex min-h-11 items-center justify-center rounded-card border border-line px-4 text-ui font-semibold text-ink transition-colors hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-        >
-          {t("menu.createAccount")}
-        </Link>
-      </div>
+    <Link to={href} onClick={onNavigate} className={className}>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-band text-ink">
+        <UserIcon className="text-body" />
+      </span>
+      <span className="flex-1 text-ui font-semibold">{t("menu.signIn")}</span>
+    </Link>
+  );
+}
+
+/**
+ * The search field and, while it holds a query, its results. While searching
+ * the results replace the rest of the menu, so a phone shows them directly
+ * under the field.
+ */
+function MenuSearch({
+  query,
+  onQueryChange,
+  onNavigate,
+  rowClass,
+  autoFocus = false,
+}: {
+  query: string;
+  onQueryChange: (q: string) => void;
+  onNavigate: () => void;
+  rowClass: string;
+  autoFocus?: boolean;
+}) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const listId = useId();
+  // `t` is re-bound on a language change, so the translated labels follow.
+  const index = useMemo(() => buildMenuSearchIndex(t), [t]);
+  const results = useMemo(() => searchMenu(index, query), [index, query]);
+  const searching = query.trim() !== "";
+
+  return (
+    <div>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const first = results[0];
+          if (!first) return;
+          onNavigate();
+          navigate(first.to, { state: { fromMenu: true } });
+        }}
+        className="relative"
+      >
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ui text-muted" />
+        {/* A low field, not the shared form Input: 36px, and no placeholder:
+            the magnifier says what it is, the label names it for screen
+            readers. Typed text is 12px from sm up; phones keep 16px, the size
+            below which iOS zooms the page into a focused field. */}
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={(e) => {
+            // Escape first empties the field; a second Escape closes the menu.
+            if (e.key === "Escape" && query) {
+              e.nativeEvent.stopImmediatePropagation();
+              onQueryChange("");
+            }
+          }}
+          aria-label={t("menu.search.label")}
+          aria-controls={searching ? listId : undefined}
+          enterKeyHint="go"
+          autoComplete="off"
+          // Desktop only (see DesktopDropdown): a keyboard is already there.
+          autoFocus={autoFocus}
+          // The browser's own clear-× is a blue glyph from outside the system;
+          // Escape and backspace already empty the field.
+          // No focus edge (2026-11-20, user decision for this field only): a
+          // text field matches :focus-visible on every tap, and the global
+          // 2px edge in `ink` read as a white ring in dark mode. The caret is
+          // the focus signal here, as on the comment fields. `!` beats the
+          // global rule's !important (class over :where specificity).
+          className="h-9 w-full rounded-card border border-line bg-surface pl-9 pr-3 text-body text-ink outline-none transition-[border-color] placeholder:text-muted hover:border-muted focus-visible:!outline-none sm:text-caption [&::-webkit-search-cancel-button]:appearance-none"
+        />
+      </form>
+
+      {searching && (
+        <div id={listId} className="mt-3">
+          {results.length > 0 ? (
+            <ul aria-label={t("menu.search.results")}>
+              {results.map((r) => (
+                <li key={r.id}>
+                  <Link to={r.to} state={{ fromMenu: true }} onClick={onNavigate} className={rowClass}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{r.label}</span>
+                      <span className="block truncate text-muted">{r.context}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p role="status" className="px-3 py-3 text-caption text-muted">
+              {t("menu.search.empty", { query: query.trim() })}
+            </p>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+/** The two display preferences, at the foot directly above sign-in or the
+ *  profile: identical rows, label left and switch right. */
+function MenuPrefs() {
+  return (
+    <div className="mb-2">
+      <ThemeToggle variant="menu" />
+      <LanguageSwitcher variant="menu" />
+    </div>
+  );
+}
+
+/** The menu under the search: destinations, the account, and at the foot who
+ *  you are. */
+function MenuBody({
+  user,
+  onClose,
+  onLogout,
+  signInHref,
+  rowClass,
+}: {
+  user: Account;
+  onClose: () => void;
+  onLogout: () => void;
+  signInHref: string;
+  rowClass: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <nav aria-label={t("menu.explore")} className="mt-2">
+        {SITE_NAV.filter((item) => !(user && item.signedOutOnly)).map(({ key, to, fromMenu }) => (
+          <Link key={to} to={to} state={fromMenu ? { fromMenu: true } : undefined} onClick={onClose} className={rowClass}>
+            {t(key)}
+          </Link>
+        ))}
+      </nav>
+
+      {/* One hairline where the kind of content changes: the site above, the
+          visitor's own account below. */}
+      {user && (
+        <nav aria-label={t("menu.areas")} className="mt-2 border-t border-line pt-2">
+          {ACCOUNT_NAV.map(({ key, to, planned }) => (
+            <Link key={to} to={to} onClick={onClose} className={rowClass}>
+              <span className="flex-1">{t(key)}</span>
+              {planned && <span className="text-muted">{t("menu.planned")}</span>}
+            </Link>
+          ))}
+          <button type="button" onClick={onLogout} className={`${rowClass} w-full text-left`}>
+            {t("menu.signOut")}
+          </button>
+        </nav>
+      )}
+
+      {/* The foot, pinned to the bottom of the sheet and last in the
+          dropdown: the display preferences, then who you are. A hairline,
+          because what follows is settings and identity, not places to go. */}
+      <div className="mt-auto pt-4">
+        <div className="border-t border-line pt-2">
+          <MenuPrefs />
+        </div>
+        {/* Clear air between the preferences and who you are (2026-11-20):
+            the hairline and the two switches sit higher, so sign-in / the
+            profile row stands on its own at the very foot. */}
+        <div className="mt-6">
+          {user ? (
+            <ProfileRow user={user} onNavigate={onClose} className={rowClass} />
+          ) : (
+            <SignInRow href={signInHref} onNavigate={onClose} className={rowClass} />
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -206,16 +379,15 @@ function DesktopDropdown({
   onClose,
   onLogout,
   signInHref,
-  registerHref,
 }: {
   user: Account;
   onClose: () => void;
   onLogout: () => void;
   signInHref: string;
-  registerHref: string;
 }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -229,51 +401,19 @@ function DesktopDropdown({
     };
   }, [onClose]);
 
-  const rowClass =
-    "flex min-h-11 items-center gap-3 rounded-card px-3 text-ui font-medium text-ink transition-colors hover:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+  const rowClass = `flex min-h-10 items-center gap-3 rounded-card px-3 text-caption text-ink transition-colors hover:bg-band ${ROW_FOCUS}`;
 
   return (
     <div
       ref={ref}
-      role="menu"
-      aria-label={t("menu.account")}
-      className="absolute right-0 top-[calc(100%+10px)] hidden w-80 rounded-card bg-surface p-2 shadow-float ring-1 ring-line sm:block"
+      role="dialog"
+      aria-label={t("menu.trigger")}
+      className="absolute right-0 top-[calc(100%+10px)] hidden max-h-[calc(100svh-6rem)] w-80 flex-col overflow-y-auto overscroll-contain rounded-card bg-surface p-2 shadow-float ring-1 ring-line sm:flex"
     >
-      {user ? (
-        <ProfileHeader user={user} onNavigate={onClose} />
-      ) : (
-        <SignInBlock signInHref={signInHref} registerHref={registerHref} onNavigate={onClose} />
+      <MenuSearch query={query} onQueryChange={setQuery} onNavigate={onClose} rowClass={rowClass} autoFocus />
+      {!query.trim() && (
+        <MenuBody user={user} onClose={onClose} onLogout={onLogout} signInHref={signInHref} rowClass={rowClass} />
       )}
-
-      {user && (
-        <div className="mt-1.5">
-          {ACCOUNT_NAV.map(({ key, to, icon: Icon, planned }) => (
-            <Link key={to} to={to} role="menuitem" onClick={onClose} className={rowClass}>
-              <Icon className="text-lead text-muted" />
-              <span className="flex-1">{t(key)}</span>
-              {planned && <span className="text-caption font-semibold text-muted">{t("menu.planned")}</span>}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-1.5 border-t border-line pt-1.5">
-        {/* Both display preferences read as the same control: label left,
-            switch right. */}
-        <ThemeToggle menuItem />
-        <LanguageSwitcher variant="menu" />
-        {SITE_LINKS.map((item) => (
-          <Link key={item.to} to={item.to} role="menuitem" onClick={onClose} className={rowClass}>
-            {t(item.key)}
-          </Link>
-        ))}
-        {user && (
-          <button type="button" role="menuitem" onClick={onLogout} className={`${rowClass} w-full text-left`}>
-            <LogoutIcon className="text-lead text-muted" />
-            {t("menu.signOut")}
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -286,18 +426,21 @@ function MobileSheet({
   onLogout,
   returnFocusRef,
   signInHref,
-  registerHref,
 }: {
   user: Account;
   onClose: () => void;
   onLogout: () => void;
   returnFocusRef: React.RefObject<HTMLButtonElement>;
   signInHref: string;
-  registerHref: string;
 }) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [query, setQuery] = useState("");
+  // Read through a ref so the effect below runs once per opening, whatever the
+  // parent passes: re-running it re-focuses the close button.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   // Body-scroll lock + Escape + focus return, mirroring the map fullscreen and
   // gallery overlays already used on the site.
@@ -305,10 +448,12 @@ function MobileSheet({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const trigger = returnFocusRef.current;
+    // The close button, not the search field: focusing the field would put
+    // the keyboard over half the menu on every tap of the burger.
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab") return;
@@ -333,69 +478,32 @@ function MobileSheet({
       document.removeEventListener("keydown", onKey);
       trigger?.focus();
     };
-  }, [onClose, returnFocusRef]);
+  }, [returnFocusRef]);
 
-  // Editorial rows: icon + label, no chevron, generous tap targets — matching
-  // the Figma account sheet (Frame 76).
-  const rowClass =
-    "flex min-h-[56px] items-center gap-5 rounded-card px-3 text-body font-medium text-ink transition-colors active:bg-band focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+  // 12px regular rows, like the dropdown; the tap target stays 44px.
+  const rowClass = `flex min-h-11 items-center gap-3 rounded-card px-3 text-caption text-ink transition-colors active:bg-band ${ROW_FOCUS}`;
 
   return createPortal(
     <div className="fixed inset-0 z-menu flex flex-col bg-page sm:hidden" role="dialog" aria-modal="true" aria-label={t("menu.trigger")}>
       <div ref={panelRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
-        {/* Just a close affordance, top-right, as in Figma. */}
-        <div className="flex justify-end pb-4">
+        {/* The close affordance alone on the top line, top-right. */}
+        <div className="flex justify-end">
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label={t("menu.close")}
-            className="grid h-11 w-11 place-items-center rounded-full text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            className={`grid h-11 w-11 place-items-center rounded-full text-ink ${ROW_FOCUS}`}
           >
             <CloseIcon className="text-title" />
           </button>
         </div>
 
-        {user ? (
-          <ProfileHeader user={user} onNavigate={onClose} size="lg" />
-        ) : (
-          <SignInBlock signInHref={signInHref} registerHref={registerHref} onNavigate={onClose} />
+        <MenuSearch query={query} onQueryChange={setQuery} onNavigate={onClose} rowClass={rowClass} />
+
+        {!query.trim() && (
+          <MenuBody user={user} onClose={onClose} onLogout={onLogout} signInHref={signInHref} rowClass={rowClass} />
         )}
-
-        {user && (
-          <nav aria-label={t("menu.areas")} className="mt-8">
-            {ACCOUNT_NAV.map(({ key, to, icon: Icon, planned }) => (
-              <Link key={to} to={to} onClick={onClose} className={rowClass}>
-                <Icon className="text-title text-ink" />
-                <span className="flex-1">{t(key)}</span>
-                {planned && <span className="text-caption font-semibold text-muted">{t("menu.planned")}</span>}
-              </Link>
-            ))}
-          </nav>
-        )}
-
-        {/* The two display preferences sit together, set apart from the
-            account areas: identical rows, label left and switch right. */}
-        <div className="mt-6">
-          <ThemeToggle variant="switch" />
-          <LanguageSwitcher />
-        </div>
-
-        {/* Legal links, pushed toward the foot of the sheet. */}
-        <div className="mt-auto pt-10">
-          {SITE_LINKS.map((item) => (
-            <Link key={item.to} to={item.to} onClick={onClose} className={`${rowClass} pl-3`}>
-              <span className="flex-1">{t(item.key)}</span>
-            </Link>
-          ))}
-
-          {user && (
-            <button type="button" onClick={onLogout} className={`${rowClass} mt-6 w-full text-left`}>
-              <LogoutIcon className="text-title text-ink" />
-              <span className="flex-1">{t("menu.signOutSheet")}</span>
-            </button>
-          )}
-        </div>
       </div>
     </div>,
     document.body,

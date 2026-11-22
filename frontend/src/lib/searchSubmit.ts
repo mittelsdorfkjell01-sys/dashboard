@@ -1,18 +1,10 @@
-// The landing search's value model + how it maps onto the backend `/search`
-// query. IMPORTANT: the existing /search endpoint (see getSearch in api.ts) only
-// understands `q`, a single `sport`, one `week`, and `level`. Richer inputs
-// (multiple sports, a real date range) are sent through as extra params but are
-// marked `// TODO backend` — they are NOT invented endpoints, just forward-compat
-// hints the current backend ignores.
-
-/** Flexible-search duration, combinable with a month (e.g. "best weekend in January"). */
-export type WhenDuration = "weekend" | "week" | "twoweeks";
+// The landing search's value model + how it maps onto the backend search APIs.
 
 export type WhenValue =
   // Explicit calendar range (left side of the "Wann?" panel).
   | { mode: "range"; from: string; to?: string } // yyyy-mm-dd
-  // Flexible: a month and/or a duration (right side). At least one is set.
-  | { mode: "flex"; month?: number; duration?: WhenDuration } // month 1..12
+  // Flexible: pick a month without committing to exact dates.
+  | { mode: "flex"; month: number } // month 1..12
   // Explicitly open ("egal wann" / ganze Saison) — the open time axis.
   | { mode: "open" }
   | null;
@@ -28,8 +20,7 @@ export interface SearchValue {
   whereSel: WhereSelection | null;
   whereOpen: boolean; // explicitly "egal wo" / überall — the open place axis
   when: WhenValue;
-  which: string[]; // backend sport values: surf | kitesurf | windsurf | wing
-  disciplines: string[]; // freestyle | big_air | foil
+  which: string[]; // single selected backend sport; array retained for draft compatibility
 }
 
 export const EMPTY_SEARCH: SearchValue = {
@@ -38,7 +29,6 @@ export const EMPTY_SEARCH: SearchValue = {
   whereOpen: false,
   when: null,
   which: [],
-  disciplines: [],
 };
 
 const SEARCH_DRAFT_KEY = "swd.search-draft.v1";
@@ -58,7 +48,10 @@ export function loadSearchDraft(
   try {
     const parsed = JSON.parse(storage.getItem(SEARCH_DRAFT_KEY) ?? "null") as Partial<SearchValue> | null;
     if (!parsed || typeof parsed.whereText !== "string" || !Array.isArray(parsed.which)) return EMPTY_SEARCH;
-    return { ...EMPTY_SEARCH, ...parsed };
+    const when = parsed.when?.mode === "flex" && !parsed.when.month
+      ? null
+      : parsed.when ?? null;
+    return { ...EMPTY_SEARCH, ...parsed, which: parsed.which.slice(0, 1), when };
   } catch {
     return EMPTY_SEARCH;
   }
@@ -98,6 +91,29 @@ export function isoWeek(date: Date): number {
   return 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
 }
 
+type CalendarDate = { year: number; month: number; day: number };
+
+function parseCalendarDate(iso: string): CalendarDate | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    candidate.getUTCFullYear() !== year
+    || candidate.getUTCMonth() !== month - 1
+    || candidate.getUTCDate() !== day
+  ) return null;
+  return { year, month, day };
+}
+
+function isoWeekFromCalendarDate(iso: string): number | undefined {
+  const value = parseCalendarDate(iso);
+  if (!value) return undefined;
+  return isoWeek(new Date(value.year, value.month - 1, value.day));
+}
+
 /** Representative week for a month (its 15th) — used when only a month is chosen. */
 export function weekOfMonth(month1to12: number, year = new Date().getFullYear()): number {
   return isoWeek(new Date(year, month1to12 - 1, 15));
@@ -106,14 +122,23 @@ export function weekOfMonth(month1to12: number, year = new Date().getFullYear())
 export function weekFromWhen(when: WhenValue): number | undefined {
   if (!when) return undefined;
   if (when.mode === "flex") return when.month ? weekOfMonth(when.month) : undefined;
-  if (when.mode === "range" && when.from) return isoWeek(new Date(when.from));
+  if (when.mode === "range" && when.from) return isoWeekFromCalendarDate(when.from);
   return undefined;
+}
+
+/** Inclusive ISO-week range for an explicit date range. */
+export function weeksFromWhen(when: WhenValue): string | undefined {
+  if (when?.mode !== "range" || !when.from) return undefined;
+  const start = isoWeekFromCalendarDate(when.from);
+  const end = isoWeekFromCalendarDate(when.to ?? when.from);
+  if (start == null || end == null) return undefined;
+  return `${Math.min(start, 52)}-${Math.min(end, 52)}`;
 }
 
 /** Month (1..12) implied by the time pick — used to rank the open place axis. */
 function monthFromWhen(when: WhenValue): number | undefined {
   if (when?.mode === "flex" && when.month) return when.month;
-  if (when?.mode === "range" && when.from) return new Date(when.from).getMonth() + 1;
+  if (when?.mode === "range" && when.from) return parseCalendarDate(when.from)?.month;
   return undefined;
 }
 
@@ -144,17 +169,15 @@ export function buildSearchParams(v: SearchValue): URLSearchParams {
   // --- time axis ---
   const week = weekFromWhen(v.when);
   if (week) p.set("week", String(week));
+  const weeks = weeksFromWhen(v.when);
+  if (weeks) p.set("weeks", weeks);
   const month = monthFromWhen(v.when);
   if (month) p.set("month", String(month));
-
-  // Richer inputs, forwarded for future backend support (currently unread):
-  if (v.which.length > 1) p.set("sports", v.which.join(",")); // TODO backend
-  if (v.disciplines.length) p.set("disciplines", v.disciplines.join(",")); // TODO backend
-  if (v.when?.mode === "range") {
-    p.set("from", v.when.from); // TODO backend
-    if (v.when.to) p.set("to", v.when.to); // TODO backend
+  if (v.when?.mode === "range" && parseCalendarDate(v.when.from)) {
+    p.set("from", v.when.from);
+    if (v.when.to && parseCalendarDate(v.when.to)) p.set("to", v.when.to);
   }
-  if (v.when?.mode === "flex" && v.when.duration) p.set("duration", v.when.duration); // TODO backend
+
   return p;
 }
 
@@ -163,23 +186,28 @@ const MONTHS_FULL = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember",
 ];
-const DURATION_LABEL: Record<WhenDuration, string> = {
-  weekend: "ein Wochenende",
-  week: "eine Woche",
-  twoweeks: "zwei Wochen",
-};
 export function whenLabel(when: WhenValue): string {
   if (!when) return "";
   if (when.mode === "open") return "unentschlossen";
-  if (when.mode === "flex") {
-    const parts: string[] = [];
-    if (when.month) parts.push(MONTHS_FULL[when.month - 1]);
-    if (when.duration) parts.push(DURATION_LABEL[when.duration]);
-    return parts.join(" · ");
-  }
+  if (when.mode === "flex") return MONTHS_FULL[when.month - 1];
   const fmt = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getDate()}.${d.getMonth() + 1}.`;
+    const value = parseCalendarDate(iso);
+    return value ? `${value.day}.${value.month}.` : iso;
   };
   return when.to ? `${fmt(when.from)} – ${fmt(when.to)}` : fmt(when.from);
+}
+
+export function searchDateRangeLabel(from?: string | null, to?: string | null): string | null {
+  if (!from) return null;
+  const start = parseCalendarDate(from);
+  const end = parseCalendarDate(to ?? from);
+  if (!start || !end) return null;
+  const includeYear = start.year !== end.year;
+  const format = (value: CalendarDate) => new Intl.DateTimeFormat("de-DE", {
+    day: "numeric",
+    month: "long",
+    year: includeYear ? "numeric" : undefined,
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(value.year, value.month - 1, value.day)));
+  return from === (to ?? from) ? format(start) : `${format(start)} – ${format(end)}`;
 }

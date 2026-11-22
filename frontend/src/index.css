@@ -2,7 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* The light palette, declared ONCE for two consumers: the document root, and
+   any subtree that must stay light whatever theme the site is in — the public
+   maps (DESIGN.md: the full-screen map is a justified theme-independent
+   exception). `.sw-theme-light` used to be three hand-copied blocks of the
+   same ~20 hex values in map.css (`.swd-public-map`, `.swd-spot-map`,
+   `.swd-wind-explorer`); they silently drifted from this block whenever a
+   token changed here, and they were missing `--sw-tile`, `--sw-accent*` and
+   the status tokens — so a house component rendered inside the light map
+   (SearchBar's accent label) resolved those to their DARK values while the
+   site was in dark mode. A class that re-declares the whole set cannot drift
+   and cannot be incomplete. Own declarations beat inherited ones, so the
+   class wins over `html[data-theme="dark"]` inside its subtree. */
+:root,
+.sw-theme-light {
   /* Surfaces, light → lighter: band < page < surface. All three share the
      warm hue bias of ink/line (no pure grey), and each step is visible on
      its own: band/page 1.11:1, page/surface 1.08:1. Muted text keeps AA on
@@ -14,11 +27,12 @@
      it sits on (DESIGN.md, The Unframed Tile Rule). It moves AWAY from the
      page in whichever direction the theme has room — darker on the light
      page, lighter on the dark one — because the light page is already close
-     to white and a lighter step there is invisible. Both steps are 4% of the
-     full 0-255 range, not 4% of the page's own value: 4% *of* a near-black
-     number would not move a single step, so one rule for both themes has to
-     be measured against the range. */
-  --sw-tile: #EEECE8;
+     to white and a lighter step there is invisible. Both steps are 2% of the
+     full 0-255 range (5 steps per channel), not 2% of the page's own value:
+     2% *of* a near-black number would not move a single step, so one rule
+     for both themes has to be measured against the range. Was 4% until
+     2026-11-17; halved because the tile read too heavy. */
+  --sw-tile: #F3F1ED;
   --sw-ink: #241C17;
   --sw-ink-soft: #3D332C;
   --sw-muted: #6B625B;
@@ -68,13 +82,24 @@
   /* The one corner radius (mirrors `rounded-card` in tailwind.config.js) for
      hand-written CSS such as map.css. */
   --sw-radius: 14px;
+
+  /* The only two shadows on the public site, as variables so hand-written CSS
+     (map.css, weather-map.css) uses the same two values the `shadow-card` /
+     `shadow-float` utilities do — tailwind.config.js reads these. The map
+     chrome used to carry a dozen one-off `box-shadow` values instead. */
+  --sw-shadow-card: 0 12px 34px -18px rgba(36, 28, 23, 0.20);
+  --sw-shadow-float: 0 24px 32px -16px rgba(36, 28, 23, 0.24), 0 48px 80px -24px rgba(36, 28, 23, 0.30);
 }
+
+/* Only the class carries this: on `:root` it would beat the `html` rule below
+   and pin the whole document to light. */
+.sw-theme-light { color-scheme: light; }
 
 html[data-theme="dark"] {
   --sw-page: #0E1114;
   --sw-band: #14181C;
   --sw-surface: #1A1F24;
-  --sw-tile: #181B1E;
+  --sw-tile: #131619;
   --sw-ink: #F1EDE7;
   --sw-ink-soft: #C7BFB6;
   --sw-muted: #9B928A;
@@ -249,6 +274,43 @@ html { -webkit-tap-highlight-color: transparent; }
     @apply text-caption font-medium tracking-caps text-ink-soft uppercase;
   }
 
+  /* --- Back / close glyph (2026-11-21) -----------------------------------
+     Every public back control is the bare glyph the maps already use: no
+     circle, no frame, no fill, no label — a 44px tap target around one
+     chevron. A halo keeps it legible over whatever is underneath.
+       .back-glyph            ink, with a halo in the page colour (flips with
+                              the theme along with the tokens)
+       .back-glyph-on-photo   white, with a dark shadow, over photographs */
+  .back-glyph {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--sw-ink);
+    transition: opacity var(--sw-dur-fast) var(--sw-ease);
+    position: relative;
+    isolation: isolate;
+  }
+  /* A soft spot of page colour behind the chevron, blurred out to nothing at
+     its rim — no edge, no shadow, so it does not read as a button. The
+     floating control passes over running text while the page scrolls; a
+     halo on the thin stroke alone left the chevron tangled in the letters. */
+  .back-glyph:not(.back-glyph-on-photo)::before {
+    content: "";
+    position: absolute;
+    inset: 0.375rem;
+    z-index: -1;
+    border-radius: 9999px;
+    background: var(--sw-page);
+    filter: blur(6px);
+  }
+  .back-glyph-on-photo {
+    color: #fff;
+    filter: drop-shadow(0 1px 2px rgba(14, 17, 20, 0.55)) drop-shadow(0 0 6px rgba(14, 17, 20, 0.35));
+  }
+  .back-glyph:hover { opacity: 0.7; }
+  .back-glyph-on-photo:focus-visible { outline-color: #fff; }
+
   /* --- Design token: global keyboard focus indicator (WCAG 2.4.7) --------
      Every interactive element shows a clear ink ring when reached by
      keyboard (but not on mouse click, thanks to :focus-visible). Form fields
@@ -273,10 +335,19 @@ html { -webkit-tap-highlight-color: transparent; }
      visible outline back on keyboard focus so every input/select/textarea —
      including admin screens not yet migrated to the ui/Input primitive — stays
      reachable and clearly focused. `!important` beats the utility's transparent
-     outline; there is no doubled indicator because the field token adds no ring. */
+     outline.
+
+     The outline sits ON the field's edge (-1px: over its 1px border), so the
+     field reads as one 2px ink edge. It used to stand 2px off the field — the
+     offset that Tailwind's `outline-none` sets wins over this zero-specificity
+     rule — and the light ground showing through that gap read as a white ring
+     around every focused field (2026-11-20). A text field matches
+     :focus-visible on a plain click too, so that ring showed on every tap.
+     Fields must not add a ring of their own on top: this edge is the one
+     indicator. */
   :where(input, select, textarea):focus-visible {
     outline: 2px solid var(--sw-ink) !important;
-    outline-offset: 1px;
+    outline-offset: -1px !important;
   }
 
   /* The inline comment composer opts out of the thick outer outline — its own
@@ -331,6 +402,18 @@ html { -webkit-tap-highlight-color: transparent; }
      it carries no focus outline at all (the open panel is the affordance). */
   .search-plain:focus-visible {
     outline: none !important;
+  }
+
+  /* iOS zooms the whole page into any focused field set below 16px. Fields
+     settle to `text-ui` (14px) from `sm` up, and on touch screens that width
+     is reached too — a tablet, or a phone held sideways. There every text
+     field takes the reading size instead: the search bar, the shared
+     `fieldClass` (login, "Änderung vorschlagen"), the comment fields.
+     `[class]` lifts the selector above the single-class `text-ui` utility. */
+  @media (pointer: coarse) {
+    :is(input, textarea, select)[class] {
+      font-size: 1rem;
+    }
   }
 
   /* Search fields stay completely stroke-free. Keyboard focus is expressed by

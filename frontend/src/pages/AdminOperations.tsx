@@ -23,6 +23,7 @@ import {
   type BadgeTone,
 } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   current: "success",
@@ -77,6 +78,7 @@ export default function AdminOperations() {
   useEffect(() => {
     void load();
   }, [load]);
+  useAdminRealtimeRefresh(load, retrying === null);
 
   const onRetry = async (spotId: string) => {
     setRetrying(spotId);

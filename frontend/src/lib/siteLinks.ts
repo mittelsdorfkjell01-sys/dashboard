@@ -1,22 +1,20 @@
 /**
  * The five info and legal links, in the order they are shown.
  *
- * One list, two surfaces: the footer and the account menu (both its desktop
- * dropdown and its mobile sheet) render exactly these, and they drifted into
- * two hand-kept copies before — same routes, same labels, maintained twice.
- * Adding or renaming a legal page is the kind of change that must not depend
- * on remembering the second place.
+ * Rendered by the footer only. The burger menu dropped them as rows (Nov
+ * 2026); its search reaches the pages and their sections instead, through
+ * lib/menuSearch.ts and the section lists in lib/infoSections.ts.
  *
  * Labels live in the i18n catalogue under `siteLinks.*`, not here, so this
  * stays a pure route list.
  */
 export const SITE_LINKS = [
   { to: "/fragen", key: "siteLinks.faq" },
-  // Contact is a section of the same page now, reachable as its own entry in
-  // that page's side navigation; the old standalone route redirects to this
-  // very anchor (see main.tsx). The project background has no entry of its
-  // own any more — it is one of the page's sections, not a sibling of it.
-  { to: "/fragen#kontakt", key: "siteLinks.contact" },
+  // Contact is its own page (pages/Kontakt.tsx) — it is what a visitor comes
+  // to do, so it is a destination, not an anchor inside the help page. The
+  // project background has no entry of its own: it is one of that page's
+  // sections, not a sibling of it.
+  { to: "/kontakt", key: "siteLinks.contact" },
   { to: "/nutzungsbedingungen", key: "siteLinks.terms" },
   { to: "/impressum", key: "siteLinks.imprint" },
   { to: "/datenschutz", key: "siteLinks.privacy" },

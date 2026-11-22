@@ -7,6 +7,36 @@ export interface HeroVariant {
 
 export const heroManifest: Record<string, HeroVariant> =
 {
+  "hero-auth": {
+    "widths": [
+      640,
+      960,
+      1280,
+      1920,
+      2560,
+      3840
+    ],
+    "formats": [
+      "avif",
+      "webp",
+      "jpg"
+    ],
+    "fallback": "/hero-auth-1920.jpg"
+  },
+  "hero-auth-mobile": {
+    "widths": [
+      640,
+      960,
+      1280,
+      1525
+    ],
+    "formats": [
+      "avif",
+      "webp",
+      "jpg"
+    ],
+    "fallback": "/hero-auth-mobile-1525.jpg"
+  },
   "hero-laboe": {
     "widths": [
       640,

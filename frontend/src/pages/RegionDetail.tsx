@@ -7,6 +7,7 @@ import "../map.css";
 import { pinIcon } from "../lib/mapPin";
 import { cartoTileUrl, CARTO_VOYAGER } from "../lib/basemaps";
 import LandingHeader from "../components/LandingHeader";
+import ScrollBackButton from "../components/ScrollBackButton";
 import SpotCard from "../components/SpotCard";
 import RecommendationRow from "../components/RecommendationRow";
 import SimilarRegions from "../components/SimilarRegions";
@@ -144,6 +145,7 @@ export default function RegionDetail() {
   return (
     <div className="relative min-h-screen bg-page">
       <LandingHeader />
+      <ScrollBackButton onBack={goBack} />
 
       <main>
         <EditorialHero
@@ -160,17 +162,18 @@ export default function RegionDetail() {
             type="button"
             onClick={goBack}
             aria-label="Zurück"
-            className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-card border border-line bg-surface py-2 pl-2.5 pr-4 text-ui font-medium text-accent transition-colors hover:bg-band"
+            data-page-back
+            className="back-glyph back-glyph-on-photo pointer-events-auto -ml-3"
           >
-            <ChevronDownIcon className="rotate-90 text-lead" />
-            Zurück
+            <ChevronDownIcon width={24} height={24} className="rotate-90" />
           </button>
         </EditorialHero>
 
         {/* Breadcrumb + region identity (moved off the hero) */}
         <div className="mx-auto max-w-page px-4 pt-6 sm:px-8">
           <nav className="text-ui font-medium text-muted">
-            <Link to="/" className="hover:underline">
+            {/* py/-my: a 44px tap target without moving the breadcrumb line. */}
+            <Link to="/" className="-my-3 inline-block py-3 hover:underline">
               {t("region.overview")}
             </Link>
             {region.country && (

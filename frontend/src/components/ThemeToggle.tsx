@@ -46,8 +46,8 @@ export default function ThemeToggle({
         role="switch"
         aria-checked={dark}
         aria-label={label}
-        className={`flex w-full items-center justify-between px-3 font-medium text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-          sheet ? "min-h-11 text-body" : "min-h-11 text-ui hover:opacity-70"
+        className={`group flex w-full items-center justify-between px-3 text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+          sheet ? "min-h-11 text-body font-medium" : "min-h-11 text-caption hover:opacity-70"
         }`}
       >
         <span>{targetLabel}</span>

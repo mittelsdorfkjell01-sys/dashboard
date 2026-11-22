@@ -59,9 +59,43 @@ export default function ScrollManager() {
 
     if (hash) {
       const el = document.querySelector(hash);
+      if (!el) {
+        // The target page is a lazily loaded chunk: on a cross-page jump (the
+        // burger menu's search lands on a section of a legal page) the anchor
+        // is not in the DOM yet. Start at the top and retry for a moment
+        // instead of dropping the jump.
+        if (lenis) lenis.scrollTo(0, { immediate: true });
+        else window.scrollTo(0, 0);
+        const timers = [120, 300, 700].map((delay) =>
+          window.setTimeout(() => {
+            const late = document.querySelector(hash) as HTMLElement | null;
+            if (!late || late.dataset.scrolledTo === key) return;
+            late.dataset.scrolledTo = key;
+            const current = getLenis();
+            if (current) {
+              current.resize();
+              current.scrollTo(late, { offset: -80 });
+            } else {
+              late.scrollIntoView({ behavior: "smooth" });
+            }
+          }, delay),
+        );
+        return () => timers.forEach((timer) => window.clearTimeout(timer));
+      }
       if (el) {
-        if (lenis) lenis.scrollTo(el as HTMLElement, { offset: -80 });
-        else (el as HTMLElement).scrollIntoView({ behavior: "smooth" });
+        if (lenis) {
+          // Re-measure before jumping. Lenis caches the document height, and
+          // every route here is a lazily loaded chunk: the page grows after
+          // that measurement, so the cached limit is still the one from the
+          // loading shell. Lenis clamps the target against it, and the FIRST
+          // in-page jump on a freshly opened page silently does nothing —
+          // only once something else has scrolled (which refreshes the cache)
+          // do the section links start working.
+          lenis.resize();
+          lenis.scrollTo(el as HTMLElement, { offset: -80 });
+        } else {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth" });
+        }
         return;
       }
     }

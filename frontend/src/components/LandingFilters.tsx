@@ -109,7 +109,7 @@ export default function LandingFilters(props: LandingFiltersProps) {
       aria-controls={open ? panelId : undefined}
       aria-label="Filter"
       onClick={() => setOpen((o) => !o)}
-      className="relative flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/60"
+      className="relative flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:text-accent"
     >
       <FilterIcon className="text-title" />
       {count > 0 && (

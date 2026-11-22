@@ -13,20 +13,23 @@ import { expect, test } from "@playwright/test";
  *
  * scripts/i18n-report.mjs performs the same check statically over all sources.
  * This spec is the runtime half: it covers the surfaces a visitor actually sees
- * without signing in — the footer and the account menu, which between them
- * exercise the shared SITE_LINKS list and interpolation.
+ * without signing in — the footer (the SITE_LINKS list) and the account menu,
+ * whose search results interpolate catalogue labels.
  */
 test("migrated surfaces render German copy, not catalogue keys", async ({ page }) => {
   await page.goto("/");
 
-  // Footer and account menu both render the shared SITE_LINKS list.
+  // The footer renders the SITE_LINKS list.
   await expect(page.getByText("Daten & Fragen").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Impressum" }).first()).toBeVisible();
 
-  // The account menu's trigger label, heading and actions are all catalogue keys.
+  // The account menu's trigger, search and sign-in row are all catalogue keys;
+  // a search result carries a translated label and a translated context line.
   await page.getByRole("button", { name: /Kontomenü|Konto/ }).first().click();
-  await expect(page.getByText("Willkommen").first()).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Anmelden" }).first()).toBeVisible();
+  const menu = page.getByRole("dialog");
+  await expect(menu.getByRole("link", { name: "Anmelden" })).toBeVisible();
+  await menu.getByRole("searchbox", { name: "Im Menü suchen" }).fill("Einheiten");
+  await expect(menu.getByRole("link", { name: /Einstellungen.*Funktion/ })).toBeVisible();
 
   // Nothing anywhere on the page may look like a catalogue path.
   const lines = (await page.locator("body").innerText()).split("\n");

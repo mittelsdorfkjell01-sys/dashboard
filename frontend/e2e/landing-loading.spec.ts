@@ -83,7 +83,7 @@ test("hero search remains fully visible when opened after scrolling", async ({ p
   const panel = page.getByTestId("desktop-search-panel");
   await expect(stack).toBeVisible();
   await expect(panel).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Region oder Spot suchen" })).toBeFocused();
+  await expect(page.getByRole("combobox", { name: "Region oder Spot suchen" })).toBeFocused();
 
   const box = await stack.boundingBox();
   const panelBox = await panel.boundingBox();

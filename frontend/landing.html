@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>surfwind data — Wind &amp; Welle</title>
+    <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossorigin />
+    <link rel="preconnect" href="https://services.arcgisonline.com" crossorigin />
+    <!-- public-landing-boot:start -->
+    <link
+      rel="preload"
+      href="/landing-hero-mobile.avif"
+      as="image"
+      type="image/avif"
+      media="(max-width: 639px)"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      href="/landing-hero-desktop.avif"
+      as="image"
+      type="image/avif"
+      media="(min-width: 640px)"
+      fetchpriority="high"
+    />
+    <style>
+      html, body { margin: 0; min-height: 100%; background: #161210; }
+      #landing-boot-hero {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100vh;
+        height: 100svh;
+        overflow: hidden;
+        background: #161210;
+        pointer-events: none;
+      }
+      #landing-boot-hero img {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        border: 0;
+        vertical-align: middle;
+        object-fit: cover;
+        object-position: 49% 20%;
+      }
+      @media (max-width: 639px) {
+        #landing-boot-hero { height: 92vh; height: 92svh; }
+        #landing-boot-hero + #app-root { margin-top: -92vh; margin-top: -92svh; }
+      }
+      @media (min-width: 640px) {
+        #landing-boot-hero + #app-root { margin-top: -100vh; margin-top: -100svh; }
+      }
+      #root { position: relative; min-height: 100%; }
+    </style>
+    <!-- public-landing-boot:end -->
+  </head>
+  <body>
+    <div id="root">
+      <!-- public-landing-boot:start -->
+      <picture id="landing-boot-hero">
+        <source media="(max-width: 639px)" srcset="/landing-hero-mobile.avif" />
+        <img
+          src="/landing-hero-desktop.avif"
+          alt="Blick über die Wellen und Küste von Baleal"
+          width="1600"
+          height="1000"
+          fetchpriority="high"
+        />
+      </picture>
+      <!-- public-landing-boot:end -->
+      <div id="app-root"></div>
+    </div>
+    <script type="module" src="/src/landingBootstrap.ts"></script>
+  </body>
+</html>

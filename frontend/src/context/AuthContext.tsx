@@ -20,7 +20,8 @@ interface AuthValue {
   register: (
     email: string,
     displayName: string,
-    consent: { acceptedTerms: boolean; ageConfirmed: boolean },
+    password: string,
+    consent: { acceptedTerms: boolean },
   ) => Promise<void>;
   logout: () => Promise<void>;
   /** Replace the cached account after a profile edit. */
@@ -64,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(await account.login({ email, password }));
         setSessionError(null);
       },
-      async register(email, displayName, consent) {
-        await account.register({ email, displayName, ...consent });
+      async register(email, displayName, password, consent) {
+        await account.register({ email, displayName, password, ...consent });
       },
       async logout() {
         await account.logout();
@@ -83,4 +84,10 @@ export function useAuth(): AuthValue {
   const v = useContext(AuthCtx);
   if (!v) throw new Error("useAuth must be used within <AuthProvider>.");
   return v;
+}
+
+/** Non-throwing variant for components that may render outside the provider
+ *  (isolated tests, lazily mounted maps). */
+export function useOptionalAuth(): AuthValue | null {
+  return useContext(AuthCtx);
 }

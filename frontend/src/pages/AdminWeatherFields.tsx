@@ -11,6 +11,7 @@ import {
   type WeatherFieldShadowRun,
   type WeatherFieldShadowStatus,
 } from "../lib/api";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const statusTone: Record<string, BadgeTone> = {
   succeeded: "success",
@@ -63,6 +64,7 @@ export default function AdminWeatherFields() {
   useEffect(() => {
     void load();
   }, [load]);
+  useAdminRealtimeRefresh(() => load(selectedRun), !queueing);
 
   const onSelectRun = async (runId: string) => {
     setSelectedRun(runId);

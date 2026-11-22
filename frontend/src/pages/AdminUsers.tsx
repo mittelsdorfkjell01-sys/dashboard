@@ -2,7 +2,7 @@
 // reset password. Guards are enforced server-side; RequireAuth role="admin"
 // keeps non-admins out of the route.
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   ApiError,
   createAdminUser,
@@ -25,6 +25,7 @@ import {
   useUnsavedChangesGuard,
 } from "../lib/useUnsavedChangesGuard";
 import UnsavedChangesDialog from "../components/admin/UnsavedChangesDialog";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 export default function AdminUsers() {
   const { blocker, setDirty } = useUnsavedChangesGuard();
@@ -54,7 +55,7 @@ export default function AdminUsers() {
   useEffect(() => setDirty("create-user", createDirty), [createDirty, setDirty]);
   useEffect(() => setDirty("edit-user", editDirty), [editDirty, setDirty]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -64,12 +65,16 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void load();
     getMe().then(setMe).catch(() => setMe(null));
-  }, []);
+  }, [load]);
+  useAdminRealtimeRefresh(
+    load,
+    !createOpen && editTarget === null && pwTarget === null && deleteTarget === null && !createDirty && !editDirty,
+  );
 
   // Keep the online/offline dots live in the background — refetch presence
   // without the full-page "Lädt…" flash a normal load() would trigger.

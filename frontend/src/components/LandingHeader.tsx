@@ -220,7 +220,7 @@ export default function LandingHeader({
               ref={gliderRef}
               to="/"
               aria-label="surfwind data"
-              className={`pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform ${heroInk}`}
+              className={`pointer-events-auto absolute left-0 top-1/2 z-10 flex origin-left items-center whitespace-nowrap leading-none will-change-transform before:absolute before:inset-x-0 before:-inset-y-4 before:content-[''] ${heroInk}`}
               style={{
                 transform: docked
                   ? "translateY(-50%) scale(0.54)"
@@ -322,7 +322,7 @@ export default function LandingHeader({
             {INCLUDE_ADMIN && (
               <Link
                 to="/admin/spot/new"
-                className={`hidden text-body font-medium text-ink transition-opacity hover:opacity-70 sm:block ${heroInk}`}
+                className={`hidden min-h-11 items-center text-body font-medium text-ink transition-opacity hover:opacity-70 sm:flex ${heroInk}`}
               >
                 {t("header.addSpots")}
               </Link>

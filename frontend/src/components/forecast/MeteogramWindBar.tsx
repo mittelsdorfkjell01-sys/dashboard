@@ -77,7 +77,7 @@ function BarValue({ children }: { children: React.ReactNode }) {
   return (
     <span
       className="pointer-events-none absolute inset-x-0 top-0.5 text-center leading-none text-white"
-      style={{ fontSize: 10, textShadow: "0 1px 2px rgba(0, 0, 0, 0.35)" }}
+      style={{ fontSize: 10 }}
     >
       {children}
     </span>

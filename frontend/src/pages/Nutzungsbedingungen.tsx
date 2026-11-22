@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import LandingHeader from "../components/LandingHeader";
 import Footer from "../components/Footer";
+import PageBackLink from "../components/PageBackLink";
+import ScrollBackButton from "../components/ScrollBackButton";
+import { TERMS_ACCESSIBILITY_ANCHOR, TERMS_SECTIONS, legalTitle, type TermsSectionId } from "../lib/infoSections";
 
 /**
  * Nutzungsbedingungen (Terms of Service) for the public account and the
@@ -25,17 +28,19 @@ export default function Nutzungsbedingungen() {
     <div className="relative min-h-screen bg-page">
       <LandingHeader onLight />
       <main className="mx-auto max-w-content px-4 pb-24 pt-32 sm:px-8">
-        <h1 className="break-words text-heading font-semibold leading-tight text-ink [hyphens:auto] sm:text-heading-lg">
+        <PageBackLink className="mb-2" />
+        <ScrollBackButton />
+        <h1 className="break-words text-title font-semibold leading-tight text-ink [hyphens:auto]">
           Nutzungsbedingungen
         </h1>
-        <div className="mt-6 space-y-8 text-body leading-relaxed text-ink-soft">
+        <div className="mt-5 space-y-7 text-ui leading-relaxed text-ink-soft">
           <p>
             Diese Nutzungsbedingungen regeln die Nutzung von Surfwinddata, insbesondere des Kontos und
             der von Nutzerinnen und Nutzern beigetragenen Inhalte. Mit der Registrierung oder der Nutzung
             entsprechender Funktionen erklären Sie sich mit ihnen einverstanden.
           </p>
 
-          <Section title="1. Anbieter und Angebot">
+          <Section id="anbieter">
             <p>
               Surfwinddata wird von einem kleinen Team in Deutschland entwickelt und betrieben. Das
               Angebot ist nicht auf Gewinn ausgelegt. Angaben zum Anbieter finden Sie im{" "}
@@ -46,7 +51,7 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="2. Leistung und Verfügbarkeit">
+          <Section id="verfuegbarkeit">
             <p>
               Die Plattform wird ohne Zusage einer bestimmten Verfügbarkeit bereitgestellt. Funktionen
               können sich ändern, zeitweise nicht verfügbar sein oder eingestellt werden. Noch nicht
@@ -55,16 +60,19 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="3. Konto und Mindestalter">
+          <Section id="konto">
             <p>
               Für bestimmte Funktionen ist ein Konto erforderlich. Ihre Angaben müssen zutreffend sein,
               und Sie sind für die Sicherheit Ihrer Zugangsdaten verantwortlich. Für die Nutzung eines
-              Kontos müssen Sie mindestens 16 Jahre alt sein. Sie können Ihr Konto jederzeit in den
+              Kontos müssen Sie mindestens 16 Jahre alt sein. Mit dem Akzeptieren dieser
+              Nutzungsbedingungen bei der Registrierung bestätigen Sie, dass Sie dieses Mindestalter
+              erreicht haben. Ihr Konto ist erst nutzbar, wenn Sie Ihre E-Mail-Adresse über den
+              zugesandten Link bestätigt haben. Sie können Ihr Konto jederzeit in den
               Kontoeinstellungen löschen.
             </p>
           </Section>
 
-          <Section title="4. Nutzerinhalte und Regeln">
+          <Section id="nutzerinhalte">
             <p>
               Für von Ihnen beigetragene Inhalte (Spotvorschläge, Bewertungen, Tipps, Fotos) sind Sie
               verantwortlich. Sie dürfen nur Inhalte einstellen, an denen Sie die erforderlichen Rechte
@@ -74,7 +82,7 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="5. Rechte an Inhalten">
+          <Section id="rechte">
             <p>
               Die Rechte an Ihren Inhalten verbleiben bei Ihnen. Sie räumen dem Anbieter ein einfaches,
               widerrufliches Recht ein, Ihre beigetragenen Inhalte im Rahmen der Plattform zu speichern,
@@ -83,7 +91,7 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="6. Moderation und Entfernung">
+          <Section id="moderation">
             <p>
               Beiträge können vor einer Veröffentlichung geprüft und im laufenden Betrieb moderiert
               werden. Inhalte, die gegen diese Bedingungen oder geltendes Recht verstoßen, können
@@ -91,7 +99,7 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="7. Meldung rechtswidriger Inhalte (Notice-and-Action)">
+          <Section id="meldung">
             <p>
               Rechtswidrige oder rechtsverletzende Inhalte können Sie melden. Für Bilder nutzen Sie die
               Meldefunktion direkt am Beitrag; für alle übrigen Hinweise wenden Sie sich an den Betreiber{" "}
@@ -120,7 +128,7 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="8. Haftung und Hinweise">
+          <Section id="haftung">
             <p>
               Wetter- und Spotangaben beruhen auf Modellen und Beiträgen und stellen keine Zusicherung
               dar. Sie ersetzen keine eigene Beurteilung der Bedingungen vor Ort. Die Nutzung erfolgt auf
@@ -130,21 +138,21 @@ export default function Nutzungsbedingungen() {
             </p>
           </Section>
 
-          <Section title="9. Beendigung">
+          <Section id="beendigung">
             <p>
               Sie können Ihr Konto jederzeit löschen. Der Anbieter kann die Nutzung bei Verstößen gegen
               diese Bedingungen oder geltendes Recht einschränken oder beenden.
             </p>
           </Section>
 
-          <Section title="10. Änderungen dieser Bedingungen">
+          <Section id="aenderungen">
             <p>
               Diese Bedingungen können angepasst werden, etwa bei Änderungen des Funktionsumfangs oder der
               Rechtslage. Die jeweils aktuelle Fassung ist auf dieser Seite abrufbar.
             </p>
           </Section>
 
-          <Section title="11. Anwendbares Recht">
+          <Section id="recht">
             <p>
               Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.
               Zwingende verbraucherschützende Vorschriften Ihres Aufenthaltsstaates bleiben unberührt.
@@ -156,7 +164,7 @@ export default function Nutzungsbedingungen() {
               equivalent document; Impressum and Datenschutzerklärung keep their
               own pages, which is where their own statutory accessibility
               requirements attach. */}
-          <Section title={`12. ${t("terms.accessibility.q")}`}>
+          <Section id={TERMS_ACCESSIBILITY_ANCHOR} title={`12. ${t("terms.accessibility.q")}`}>
             <p>{t("terms.accessibility.p1")}</p>
             <p>{t("terms.accessibility.p2")}</p>
             <p>
@@ -165,7 +173,7 @@ export default function Nutzungsbedingungen() {
                 components={{
                   contact: (
                     <Link
-                      to="/fragen#kontakt"
+                      to="/kontakt"
                       className="font-semibold text-ink underline underline-offset-4 hover:opacity-70"
                     />
                   ),
@@ -180,10 +188,19 @@ export default function Nutzungsbedingungen() {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id: TermsSectionId | typeof TERMS_ACCESSIBILITY_ANCHOR;
+  /** Only for the translated accessibility section; the rest come from the list. */
+  title?: string;
+  children: ReactNode;
+}) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-body font-semibold text-ink">{title}</h2>
+    <section id={id} className="scroll-mt-24 space-y-3">
+      <h2 className="text-body font-semibold text-ink">{title ?? legalTitle(TERMS_SECTIONS, id)}</h2>
       {children}
     </section>
   );

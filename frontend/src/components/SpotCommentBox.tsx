@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { avatarColor, commentThreads, initials, relativeTime, sortThreads, type CommentThread, type FeedPost } from "../lib/communityFeed";
+import { avatarColor, commentThreads, initials, relativeTime, relativeTimeShort, sortThreads, type CommentThread, type FeedPost } from "../lib/communityFeed";
 import InlineTipComposer from "./InlineTipComposer";
 import UpvoteButton from "./UpvoteButton";
 import { ApiError, deleteOwnTip, editOwnTip, reportTip, type TipItem } from "../lib/api";
@@ -84,25 +84,24 @@ function ThreadRow({ thread, spotId, onPosted, onRemoved, onEdited }: { thread: 
       <button
         type="button"
         onClick={() => setRepliesOpen(true)}
-        className="ml-11 mt-2 flex min-h-8 items-center gap-2 text-caption font-medium text-muted transition-colors hover:text-ink"
+        className="-mb-1.5 ml-11 mt-0.5 flex min-h-11 items-center gap-2 text-caption font-medium text-muted transition-colors hover:text-ink"
       >
         <span aria-hidden className="h-px w-6 bg-line" />
         {replies.length === 1 ? "1 Antwort ansehen" : `${replies.length} Antworten ansehen`}
       </button>
     )}
-    {replies.length > 0 && repliesOpen && <div className="relative ml-8 mt-3 space-y-3 pl-6 lg:ml-11 lg:pl-7">
-      {/* Reddit-style thread line: a hairline rail (line-soft, finer than the
-          old border) that curves into each reply via a small rounded elbow. */}
-      <span aria-hidden className="pointer-events-none absolute left-0 top-0 bottom-5 w-px bg-line-soft" />
-      {replies.map(reply => <div key={reply.id} className="relative">
-        <span aria-hidden className="pointer-events-none absolute -left-6 top-0 h-[15px] w-[18px] rounded-bl-card border-b border-l border-line-soft lg:-left-7 lg:w-[22px]" />
+    {/* Replies sit indented under the parent's text column (avatar 32px +
+        12px gap = ml-11), the way a feed shows them. No thread rail and no
+        elbow: the indent alone says "this answers the comment above". */}
+    {replies.length > 0 && repliesOpen && <div className="ml-11 mt-3 space-y-3">
+      {replies.map(reply => <div key={reply.id}>
         <CommentRow post={reply} compact onChanged={() => onPosted?.()} onRemoved={onRemoved} onEdited={onEdited} onReply={() => setReplyTo(reply.authorName || "Anonym")} />
         {replyTo === (reply.authorName || "Anonym") && composer(reply.authorName || "Anonym")}
       </div>)}
       <button
         type="button"
         onClick={() => setRepliesOpen(false)}
-        className="flex min-h-8 items-center gap-2 text-caption font-medium text-muted transition-colors hover:text-ink"
+        className="-mt-1.5 flex min-h-11 items-center gap-2 text-caption font-medium text-muted transition-colors hover:text-ink"
       >
         <span aria-hidden className="h-px w-6 bg-line" />
         Antworten ausblenden
@@ -180,7 +179,9 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
     }
   };
 
-  const meta = "min-h-8 text-caption font-medium text-muted transition-colors hover:text-ink disabled:opacity-50";
+  // 44px tap height in a 32px row: `-my-1.5` gives the extra back, so the
+  // compact meta line keeps its rhythm.
+  const meta = "-my-1.5 min-h-11 text-caption font-medium text-muted transition-colors hover:text-ink disabled:opacity-50";
   const menuItem = "flex w-full items-center px-3 py-2 text-left text-caption text-ink transition-colors hover:bg-band";
   const avatar = compact ? "h-7 w-7" : "h-8 w-8";
 
@@ -201,7 +202,7 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
     <button type="button" role="menuitem" className={menuItem} disabled={busy} onClick={() => { setMenuOpen(false); void run(() => reportTip(rawId), () => setReported(true)); }}>Melden</button>
   );
 
-  return <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3">
+  return <div className={`grid min-w-0 gap-x-3 ${post.kind !== "photo" ? "grid-cols-[auto_minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]"}`}>
     <span aria-hidden className={`grid shrink-0 place-items-center self-start rounded-full text-caption font-semibold ${avatar} ${anonymous ? "bg-band text-muted" : "text-white"}`} style={anonymous ? undefined : { backgroundColor: avatarColor(post.authorName) }}>{anonymous ? "?" : initials(post.authorName)}</span>
     <div className="min-w-0">
       {editing ? (
@@ -230,7 +231,7 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
             maxLength={4000}
             rows={3}
             autoFocus
-            className="comment-field w-full resize-none rounded-card border border-line bg-page p-3 text-ui text-ink focus:outline-none"
+            className="comment-field w-full resize-none rounded-card border border-line bg-page p-3 text-body text-ink focus:outline-none sm:text-ui"
           />
           <div className="mt-1 flex items-center gap-4">
             <button type="submit" disabled={busy || !draft.trim()} className="min-h-8 text-caption font-semibold text-accent disabled:opacity-50">Speichern</button>
@@ -246,11 +247,10 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
       )}
 
       <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3">
-        <time className="text-caption text-muted" dateTime={post.createdAt}>{relativeTime(post.createdAt)}</time>
+        <time className="text-caption text-muted" dateTime={post.createdAt} title={relativeTime(post.createdAt)}>{relativeTimeShort(post.createdAt)}</time>
         {post.editedAt && (
           <span className="text-caption text-muted" title={`Bearbeitet ${relativeTime(post.editedAt)}`}>bearbeitet</span>
         )}
-        {post.kind !== "photo" && <UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} />}
         {isComment && onReply && !editing && (
           <button type="button" onClick={onReply} className={meta}>Antworten</button>
         )}
@@ -277,7 +277,7 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
                 onClick={() => setMenuOpen((open) => !open)}
                 aria-expanded={menuOpen}
                 aria-label="Weitere Aktionen"
-                className={`${meta} px-1 tracking-widest`}
+                className={`${meta} -mr-3 min-w-11 px-1 tracking-widest`}
               >
                 ···
               </button>
@@ -326,6 +326,10 @@ function CommentRow({ post, compact = false, onChanged, onRemoved, onEdited, onR
       </div>
       {error && <p role="alert" className="text-caption text-danger">{error}</p>}
     </div>
+    {/* The vote stands in its own column at the right edge, as in a feed.
+        In the action row it made time · vote · Antworten · … wider than a
+        reply's column (246px against 189px at 320), and the row broke. */}
+    {post.kind !== "photo" && <div className="-mr-2 -mt-1.5 self-start"><UpvoteButton kind={post.kind} id={rawId} count={post.upvotes} active={post.viewerUpvoted} stacked /></div>}
   </div>;
 }
 

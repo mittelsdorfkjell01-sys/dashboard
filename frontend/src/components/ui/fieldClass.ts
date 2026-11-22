@@ -7,7 +7,9 @@
  * The control font is 16px on phones and settles to the 14px UI token from
  * `sm` up: iOS Safari auto-zooms the page whenever a focused field is under
  * 16px, so keeping phone inputs at 16px stops that jarring zoom-in on tap
- * while leaving the denser desktop sizing untouched.
+ * while leaving the denser desktop sizing untouched. A touch screen wider
+ * than `sm` (tablet, phone held sideways) keeps 16px through the
+ * `pointer: coarse` rule in index.css.
  */
 export const fieldClass =
-  "min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-body sm:text-ui text-ink placeholder:text-muted outline-none transition-[border-color,box-shadow,background-color] hover:border-ink/30 focus-visible:border-ink/50 focus-visible:ring-2 focus-visible:ring-ink/20 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger-border aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger-border";
+  "min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-body sm:text-ui text-ink placeholder:text-muted outline-none transition-[border-color,background-color] hover:border-muted disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger-border aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-danger-border";

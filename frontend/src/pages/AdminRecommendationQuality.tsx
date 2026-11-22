@@ -12,6 +12,7 @@ import {
   type RecommendationQuality,
   type ScoringCalibration,
 } from "../lib/api";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const AUDIENCE: Record<string, string> = {
   logged_profile: "Eingeloggt mit Profil",
@@ -124,6 +125,7 @@ export default function AdminRecommendationQuality() {
   }, [days]);
 
   useEffect(() => { void load(); }, [load]);
+  useAdminRealtimeRefresh(load, busy === null);
 
   const createProposal = async (kind: "default_rider" | "personal_band") => {
     setBusy(kind); setError(null); setMessage(null);

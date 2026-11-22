@@ -38,9 +38,23 @@ const SPORT_OPTIONS: { value: string; Icon: typeof SurfIcon }[] = [
 const SPRING = { type: "spring" as const, stiffness: 360, damping: 34, mass: 0.75 };
 const PANEL_TRANSITION = { duration: 0.07, ease: [0.16, 1, 0.3, 1] as const };
 const PANEL_HEIGHT = 350;
+// Floor for the panel on very short viewports (a phone held sideways with the
+// keyboard up): below this the overlay itself scrolls instead.
+const PANEL_MIN_HEIGHT = 160;
 const PANEL_GAP = 12;
 const SHELL_HEIGHT = 56;
 const VIEWPORT_GUTTER = 24;
+// The pill overlay's top padding (`sm:pt-6`) — this bar only exists from `sm` up.
+const PILL_STACK_TOP = 24;
+const WHERE_LIST_ID = "search-where-list";
+const whereOptionId = (col: "spot" | "region", row: number) => `search-where-${col}-${row}`;
+
+/** Height of the visible viewport. `innerHeight` does not shrink when a soft
+ *  keyboard opens (iOS Safari, Android Chrome's default), the visual viewport
+ *  does — so the panel is measured against what the visitor can actually see. */
+function visibleHeight(): number {
+  return window.visualViewport?.height ?? window.innerHeight;
+}
 
 /**
  * Desktop search (Airbnb-style). Collapsed it is a single, simple bar. Tapping
@@ -128,6 +142,44 @@ export default function SearchBar({
 
   const whereInputRef = useRef<HTMLInputElement>(null);
   const heroTriggerRef = useRef<HTMLButtonElement>(null);
+  const pillTriggerRef = useRef<HTMLButtonElement>(null);
+  // Set when the overlay closes without leaving the page, so focus can return
+  // to the bar that opened it once the exit animation has finished.
+  const restoreFocusRef = useRef(false);
+
+  // Hand focus back to the bar that opened the overlay — after the exit has
+  // finished and the trigger has been committed visible again (it is
+  // `invisible`, and so unfocusable, while the overlay is up or leaving).
+  useEffect(() => {
+    if (expanded || exiting || !restoreFocusRef.current) return;
+    restoreFocusRef.current = false;
+    (variant === "pill" ? pillTriggerRef : heroTriggerRef).current?.focus({ preventScroll: true });
+  }, [expanded, exiting, variant]);
+
+  // The panel never runs past the visible viewport: a phone held sideways is
+  // wider than `sm` but only ~380px tall, and the fixed 350px panel used to end
+  // below the screen with nothing to scroll. Tracked while open, so the keyboard
+  // opening (visual viewport shrinking) shortens the panel too.
+  const [viewportHeight, setViewportHeight] = useState(() =>
+    typeof window !== "undefined" ? visibleHeight() : 800,
+  );
+  useEffect(() => {
+    if (!expanded) return;
+    const update = () => setViewportHeight(visibleHeight());
+    update();
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", update);
+    window.addEventListener("resize", update);
+    return () => {
+      vv?.removeEventListener("resize", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [expanded]);
+  const stackTop = variant === "hero" && heroAnchor ? heroAnchor.top : PILL_STACK_TOP;
+  const panelHeight = Math.max(
+    PANEL_MIN_HEIGHT,
+    Math.min(PANEL_HEIGHT, viewportHeight - stackTop - SHELL_HEIGHT - PANEL_GAP - VIEWPORT_GUTTER),
+  );
 
   const openExpanded = (seg: Segment = "where") => {
     if (variant === "hero") {
@@ -137,7 +189,7 @@ export default function SearchBar({
         // room. The panel always opens below it; on short viewports the complete
         // stack shifts upward only as far as needed to remain reachable.
         const panelSpan = PANEL_HEIGHT + PANEL_GAP;
-        const maxTop = window.innerHeight - (SHELL_HEIGHT + panelSpan) - VIEWPORT_GUTTER;
+        const maxTop = visibleHeight() - (SHELL_HEIGHT + panelSpan) - VIEWPORT_GUTTER;
         let top = Math.min(rect.top, maxTop);
         top = Math.max(VIEWPORT_GUTTER, top);
         setHeroAnchor({ top, left: rect.left, width: rect.width });
@@ -148,7 +200,8 @@ export default function SearchBar({
     setShellReady(Boolean(reduce));
     setExpanded(true);
   };
-  const collapse = () => {
+  const collapse = (returnFocus = true) => {
+    restoreFocusRef.current = returnFocus;
     setExiting(true);
     setExpanded(false);
     setShellReady(false);
@@ -179,12 +232,12 @@ export default function SearchBar({
     // Place-only callers (the wind map) zoom to the pick themselves.
     if (onResolve) {
       onResolve(val.whereSel ?? null, val.whereText.trim());
-      collapse();
+      collapse(false);
       return;
     }
     saveSearchDraft(val);
     navigate(`/search?${buildSearchParams(val).toString()}`);
-    collapse();
+    collapse(false);
   };
 
   const pickWhere = (pick: WherePick) => {
@@ -210,9 +263,7 @@ export default function SearchBar({
   const toggleSport = (sport: string) =>
     setVal((v) => ({
       ...v,
-      which: v.which.includes(sport)
-        ? v.which.filter((s) => s !== sport)
-        : [...v.which, sport],
+      which: v.which.includes(sport) ? [] : [sport],
     }));
 
   const onWhereKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -253,10 +304,11 @@ export default function SearchBar({
       {/* Collapsed trigger — a simple bar (hero) or compact pill (header). */}
       {variant === "pill" ? (
         <motion.button
+          ref={pillTriggerRef}
           layoutId={reduce ? undefined : "search-shell"}
           type="button"
           onClick={() => openExpanded()}
-          className={`flex max-w-full items-center gap-2.5 rounded-card border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
+          className={`flex min-h-11 max-w-full items-center gap-2.5 rounded-card border border-line bg-surface py-1 pl-4 pr-1 text-ui font-medium text-ink shadow-card transition-shadow hover:shadow-float ${
             expanded || exiting ? "invisible" : ""
           }`}
         >
@@ -298,14 +350,16 @@ export default function SearchBar({
               // Header searches rise to the top. In the landing hero the open
               // stack ends exactly at the collapsed bar's former bottom edge:
               // search shell first, active panel directly underneath.
-              className={`fixed inset-0 z-sheet bg-black/25 ${
+              // Scrolls as a last resort, when even the shortened panel does
+              // not fit (a sideways phone with the keyboard up).
+              className={`fixed inset-0 z-sheet overflow-y-auto overscroll-contain bg-black/25 ${
                 variant === "pill" ? "flex items-start justify-center px-4 pt-4 sm:pt-6" : ""
               }`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: reduce ? 0.07 : expanded ? 0.14 : 0.09, ease: "easeOut" }}
-              onClick={collapse}
+              onClick={() => collapse()}
             >
               <motion.div
                 data-testid="desktop-search-stack"
@@ -367,7 +421,16 @@ export default function SearchBar({
                         onKeyDown={onWhereKeyDown}
                         placeholder="Region oder Spot suchen"
                         aria-label="Region oder Spot suchen"
+                        // Combobox semantics so a screen reader announces the
+                        // row the arrow keys highlight (the list stays DOM-
+                        // focused on the input, as ↑/↓/Enter expect).
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls={`${WHERE_LIST_ID}-spots ${WHERE_LIST_ID}-regions`}
                         aria-expanded={open === "where"}
+                        aria-activedescendant={
+                          open === "where" && activeRow >= 0 ? whereOptionId(activeCol, activeRow) : undefined
+                        }
                         className="search-plain relative z-10 w-full truncate border-0 bg-transparent text-ui leading-tight text-ink outline-none ring-0 placeholder:text-muted focus:outline-none focus:ring-0"
                       />
                     </label>
@@ -425,7 +488,8 @@ export default function SearchBar({
                           shell no longer jumps vertically while switching. */}
                       <div
                         data-testid="desktop-search-panel"
-                        className="h-[350px] overflow-y-auto rounded-card bg-surface p-5 shadow-float"
+                        className="overflow-y-auto rounded-card bg-surface p-5 shadow-float"
+                        style={{ height: panelHeight }}
                       >
                         {open === "where" && (
                           placeLoading ? (
@@ -444,6 +508,8 @@ export default function SearchBar({
                             </div>
                           ) : (
                             <SearchWhere
+                              listId={WHERE_LIST_ID}
+                              optionId={whereOptionId}
                               spotItems={spotItems}
                               regionItems={regionItems}
                               activeCol={activeCol}

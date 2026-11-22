@@ -4,7 +4,7 @@
 // mobile-crop editor, because a landscape hero cropped to a phone's tall frame
 // often needs a different focal point than the wide desktop one.
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getAdminSpots,
   resolveMediaUrl,
@@ -17,6 +17,7 @@ import { countryName } from "../lib/flags";
 import { responsiveImageAttributes } from "../lib/heroSource";
 import ImageFocalEditor from "../components/ImageFocalEditor";
 import { Badge, Button } from "../components/admin/ui";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 type HeroSpot = Pick<AdminSpotSummary, "id" | "name" | "region_name" | "region_country" | "image">;
 
@@ -38,21 +39,21 @@ export default function AdminHero() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<HeroSpot | null>(null);
 
-  useEffect(() => {
-    let alive = true;
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    getAdminSpots({ limit: 500, sort: "name" })
-      .then((r) => {
-        if (!alive) return;
-        setSpots(r.items.filter((s) => s.image?.url));
-      })
-      .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : "Laden fehlgeschlagen."))
-      .finally(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
+    try {
+      const result = await getAdminSpots({ limit: 500, sort: "name" });
+      setSpots(result.items.filter((spot) => spot.image?.url));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Laden fehlgeschlagen.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
+  useAdminRealtimeRefresh(load, editing === null);
 
   // Merge a spot back in after a save (the endpoints return the full SpotRead).
   const applyUpdate = (updated: SpotRead) => {

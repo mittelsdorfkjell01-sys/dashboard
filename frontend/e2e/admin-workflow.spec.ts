@@ -15,6 +15,9 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/admin/notifications/unread-count", (route) =>
     route.fulfill({ json: { count: 0 } })
   );
+  await page.route("**/admin/realtime/version", (route) =>
+    route.fulfill({ json: { revision: 0 } })
+  );
   await page.route("**/admin/board/tasks", (route) => route.fulfill({ json: [] }));
   await page.route("**/admin/overview", (route) =>
     route.fulfill({
@@ -38,6 +41,78 @@ test.beforeEach(async ({ page }) => {
       },
     })
   );
+});
+
+test("Kanban übernimmt Änderungen anderer Mitarbeiter ohne Seitenreload", async ({ page }) => {
+  let revision = 0;
+  let tasks: Array<Record<string, unknown>> = [];
+  let versionReads = 0;
+  let boardReads = 0;
+  await page.unroute("**/admin/realtime/version");
+  await page.route("**/admin/realtime/version", (route) => {
+    versionReads += 1;
+    return route.fulfill({ json: { revision } });
+  });
+  await page.unroute("**/admin/board/tasks");
+  await page.route("**/admin/board/tasks", (route) => {
+    boardReads += 1;
+    return route.fulfill({ json: tasks });
+  });
+
+  await page.goto("/admin");
+  await expect(page.getByText("Von Kollegin ergänzt")).toHaveCount(0);
+  await expect.poll(() => versionReads).toBeGreaterThanOrEqual(1);
+  await expect.poll(() => boardReads).toBeGreaterThanOrEqual(1);
+
+  tasks = [{
+    id: "remote-task",
+    title: "Von Kollegin ergänzt",
+    body: "Ohne Reload sichtbar",
+    status: "open",
+    author: "Mara",
+    created_at: "2026-11-16T12:00:00Z",
+  }];
+  revision = 1;
+
+  await expect(page.getByText("Von Kollegin ergänzt"), { timeout: 5_000 }).toBeVisible();
+  await expect(page).toHaveURL(/\/admin$/);
+});
+
+test("Kanban schützt lokale Eingaben vor Live-Aktualisierungen", async ({ page }) => {
+  let revision = 0;
+  let tasks: Array<Record<string, unknown>> = [];
+  let versionReads = 0;
+  await page.unroute("**/admin/realtime/version");
+  await page.route("**/admin/realtime/version", (route) => {
+    versionReads += 1;
+    return route.fulfill({ json: { revision } });
+  });
+  await page.unroute("**/admin/board/tasks");
+  await page.route("**/admin/board/tasks", (route) => route.fulfill({ json: tasks }));
+
+  await page.goto("/admin");
+  await expect.poll(() => versionReads).toBeGreaterThanOrEqual(1);
+  await page.getByRole("button", { name: "Neue Aufgabe" }).click();
+  await page.getByLabel("Titel").fill("Noch nicht gespeichert");
+
+  const readsBeforeChange = versionReads;
+  tasks = [{
+    id: "remote-while-editing",
+    title: "Parallel ergänzt",
+    body: "Nach dem Schließen sichtbar",
+    status: "open",
+    author: "Mara",
+    created_at: "2026-11-16T12:00:00Z",
+  }];
+  revision = 1;
+
+  await expect.poll(() => versionReads).toBeGreaterThan(readsBeforeChange);
+  await expect(page.getByLabel("Titel")).toHaveValue("Noch nicht gespeichert");
+  await expect(page.getByText("Parallel ergänzt")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Abbrechen" }).click();
+  await page.getByRole("button", { name: "Verwerfen" }).click();
+  await expect(page.getByText("Parallel ergänzt"), { timeout: 3_000 }).toBeVisible();
 });
 
 test("admin login only asks for email and password", async ({ page }) => {

@@ -147,7 +147,7 @@ export default function InlineTipComposer({
       {!parentId && !compact && (
         <div className="mb-3">
           <label htmlFor="inline-comment-title" className="text-ui font-medium text-ink">Überschrift <span className="text-muted">(optional)</span></label>
-          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-card border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 sm:text-body" />
+          <input id="inline-comment-title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Worum geht es?" className="mt-2 min-h-11 w-full rounded-card border border-line bg-page px-4 text-body text-ink placeholder:text-muted focus:outline-none sm:text-body" />
           <p className="mt-1 text-right text-caption text-muted">{title.length}/120</p>
         </div>
       )}

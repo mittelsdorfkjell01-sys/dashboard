@@ -8,14 +8,15 @@ import { SITE_LINKS } from "../lib/siteLinks";
  * viewports the links wrap (flex-wrap) and the column stacks instead of being
  * cut off; min-h-11 keeps every target comfortably tappable.
  *
- * The link list is shared with the account menu (lib/siteLinks.ts) — these two
- * surfaces used to keep their own copies of it.
+ * This is the one place the five info and legal pages are linked from (the
+ * burger menu reaches them only through its search). `ground` lets a page on
+ * the band tone (the sign-in page) carry it without a stripe of another tone.
  */
-export default function Footer() {
+export default function Footer({ ground = "bg-page" }: { ground?: "bg-page" | "bg-band" } = {}) {
   const { t } = useTranslation();
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-page">
+    <footer className={ground}>
       <div className="mx-auto flex max-w-page flex-col items-center justify-between gap-3 px-4 py-6 text-ui text-muted sm:flex-row sm:px-8">
         <span>{t("footer.copyright", { year })}</span>
         <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">

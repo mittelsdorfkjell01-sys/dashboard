@@ -25,13 +25,33 @@ import "./lib/i18n";
 
 initializeTheme();
 
-const MapView = React.lazy(() => import("./pages/MapView"));
+type FrontendBootstrapState = {
+  generation: number;
+  root?: ReturnType<typeof ReactDOM.createRoot>;
+};
+
+// Reuse one React root across Vite entry-module reloads. bootstrap() awaits
+// the admin route chunk in dev, so an HMR update can otherwise start a second
+// bootstrap before the first one finishes and call createRoot() twice.
+const bootstrapGlobal = globalThis as typeof globalThis & {
+  __swdFrontendBootstrap?: FrontendBootstrapState;
+};
+const bootstrapState = (bootstrapGlobal.__swdFrontendBootstrap ??= { generation: 0 });
+const bootstrapGeneration = ++bootstrapState.generation;
+const rootElement = document.getElementById("app-root") ?? document.getElementById("root");
+if (!rootElement) throw new Error("Missing #root element");
+const frontendRoot = (bootstrapState.root ??= ReactDOM.createRoot(rootElement));
+
+// 2026-11-19: /map is the redesigned single-surface map (public-map/). The
+// old two-engine page (pages/MapView.tsx) stays in the tree until it is retired.
+const MapView = React.lazy(() => import("./public-map/PublicMap"));
 const SpotDetail = React.lazy(() => import("./pages/SpotDetail"));
 const RegionDetail = React.lazy(() => import("./pages/RegionDetail"));
 const SearchResults = React.lazy(() => import("./pages/SearchResults"));
 const Impressum = React.lazy(() => import("./pages/Impressum"));
 const Datenschutz = React.lazy(() => import("./pages/Datenschutz"));
 const Fragen = React.lazy(() => import("./pages/Fragen"));
+const Kontakt = React.lazy(() => import("./pages/Kontakt"));
 const Nutzungsbedingungen = React.lazy(() => import("./pages/Nutzungsbedingungen"));
 const Auth = React.lazy(() => import("./pages/Auth"));
 const AccountAccess = React.lazy(() => import("./pages/AccountAccess"));
@@ -92,9 +112,11 @@ async function bootstrap() {
     { path: "/datenschutz", element: <Datenschutz /> },
     { path: "/faq", element: <Fragen /> },
     { path: "/fragen", element: <Fragen /> },
-    // Help, project background and contact live on one page now. The two old
-    // URLs stay valid and land on their section instead of 404-ing.
-    { path: "/kontakt", element: <Navigate to="/fragen#kontakt" replace /> },
+    // Contact is its own page again: it is a destination in the site menu and
+    // a thing to do, not a section at the foot of a long help page. The
+    // project background stays a section of that page, so its old URL still
+    // redirects there instead of 404-ing.
+    { path: "/kontakt", element: <Kontakt /> },
     { path: "/ueber-uns", element: <Navigate to="/fragen#projekt" replace /> },
     { path: "/nutzungsbedingungen", element: <Nutzungsbedingungen /> },
     { path: "/reise/:token", element: <SharedTrip /> },
@@ -121,6 +143,10 @@ async function bootstrap() {
     routes.push(...(await import("./adminRoutes")).default);
   }
 
+  // A newer HMR evaluation owns the shared root now. Do not let this older,
+  // asynchronously resumed bootstrap replace its router.
+  if (bootstrapGeneration !== bootstrapState.generation) return;
+
   // Unknown paths (including /admin on the public build, where the admin routes
   // aren't registered) render a real 404 instead of a silent redirect home.
   routes.push({ path: "*", element: <NotFound /> });
@@ -144,7 +170,7 @@ async function bootstrap() {
       children: routes,
     },
   ]);
-  ReactDOM.createRoot(document.getElementById("root")!).render(
+  frontendRoot.render(
     <React.StrictMode>
       <ErrorBoundary>
         <AuthProvider>

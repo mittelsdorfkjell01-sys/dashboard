@@ -320,3 +320,22 @@ export function relativeTime(iso: string, now: Date = new Date()): string {
   const years = Math.floor(days / 365);
   return `vor ${years} ${years === 1 ? "Jahr" : "Jahren"}`;
 }
+
+/** The feed's compact age — "5 Min.", "3 Std.", "2 Tg.", "3 Wo.", "4 Mon.",
+ *  "1 J." — for the comment action row, where "vor 3 Monaten" alone took a
+ *  third of a reply's width. Pair it with `relativeTime` as the full reading
+ *  (title / tooltip). */
+export function relativeTimeShort(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const minutes = Math.floor((now.getTime() - then) / 60000);
+  if (minutes < 1) return "jetzt";
+  if (minutes < 60) return `${minutes} Min.`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} Std.`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} Tg.`;
+  if (days < 30) return `${Math.floor(days / 7)} Wo.`;
+  if (days < 365) return `${Math.floor(days / 30)} Mon.`;
+  return `${Math.floor(days / 365)} J.`;
+}

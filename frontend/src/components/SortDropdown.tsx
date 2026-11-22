@@ -99,7 +99,7 @@ export default function SortDropdown({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-body text-ink transition-colors hover:text-accent"
+        className="-my-2 flex min-h-11 items-center gap-2 text-body text-ink transition-colors hover:text-accent"
       >
         <SortIcon className="text-lead" />
         Sortieren & Filtern

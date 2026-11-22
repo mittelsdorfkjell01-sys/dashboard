@@ -31,8 +31,8 @@ export default function LanguageSwitcher({ variant = "sheet" }: { variant?: "she
       type="button"
       onClick={() => void i18n.changeLanguage(target)}
       aria-label={`${t("language.label")}: ${nameOf(active)}. ${t("language.switchTo", { language: nameOf(target) })}`}
-      className={`flex w-full items-center justify-between gap-4 px-3 font-medium text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-        sheet ? "min-h-11 text-body" : "min-h-11 text-ui hover:opacity-70"
+      className={`group flex w-full items-center justify-between gap-4 px-3 text-ink transition-opacity active:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+        sheet ? "min-h-11 text-body font-medium" : "min-h-11 text-caption hover:opacity-70"
       }`}
     >
       <span>{t("language.label")}</span>

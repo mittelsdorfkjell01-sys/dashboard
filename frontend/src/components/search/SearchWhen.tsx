@@ -2,11 +2,11 @@
 // SearchBar and passed as `tab`) picks the mode; this renders only the active
 // one, full width:
 //  • "date" → a two-month calendar for an explicit range (mode:"range").
-//  • "flex" → a month grid + a duration (mode:"flex").
+//  • "flex" → a month grid (mode:"flex").
 
 import { useState } from "react";
 import type { SVGProps } from "react";
-import type { WhenDuration, WhenValue } from "../../lib/searchSubmit";
+import type { WhenValue } from "../../lib/searchSubmit";
 import type { WhenTab } from "../MobileSearchWhen";
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -57,7 +57,7 @@ export default function SearchWhen({
 }: {
   value: WhenValue;
   onChange: (next: WhenValue) => void;
-  /** Datum (calendar) or flexibel (month + duration); owned by the SearchBar. */
+  /** Datum (calendar) or flexibel (month); owned by the SearchBar. */
   tab: WhenTab;
 }) {
   const today = new Date();
@@ -67,7 +67,6 @@ export default function SearchWhen({
   const range = value?.mode === "range" ? value : null;
   const flex = value?.mode === "flex" ? value : null;
   const selMonth = flex?.month ?? null;
-  const selDuration = flex?.duration ?? null;
 
   const clickDay = (d: Date) => {
     if (d < today) return;
@@ -83,24 +82,8 @@ export default function SearchWhen({
     );
   };
 
-  // Merge a month/duration change into the flexible pick; clearing both → null.
-  const setFlex = (next: { month?: number; duration?: WhenDuration }) => {
-    const month = "month" in next ? next.month : flex?.month;
-    const duration = "duration" in next ? next.duration : flex?.duration;
-    if (!month && !duration) {
-      onChange(null);
-      return;
-    }
-    onChange({
-      mode: "flex",
-      ...(month ? { month } : {}),
-      ...(duration ? { duration } : {}),
-    });
-  };
-
-  const pickMonth = (m1: number) => setFlex({ month: selMonth === m1 ? undefined : m1 });
-  const pickDuration = (d: WhenDuration) =>
-    setFlex({ duration: selDuration === d ? undefined : d });
+  const pickMonth = (month: number) =>
+    onChange(selMonth === month ? null : { mode: "flex", month });
 
   const inRange = (d: Date) => {
     if (!range?.from) return false;
@@ -179,16 +162,11 @@ export default function SearchWhen({
     );
   }
 
-  // ── flexibel: month grid + duration, full width ──────────────────────────
+  // ── flexibel: month grid, full width ─────────────────────────────────────
   const monthChip = (active: boolean) =>
     `flex h-11 items-center justify-center rounded-card border px-2 text-ui font-medium transition-colors ${
       active ? "border-accent bg-teal/10 text-accent" : "border-line text-ink hover:border-accent"
     }`;
-  const durChip = (active: boolean) =>
-    `flex h-11 items-center justify-center rounded-card border px-5 text-ui font-medium transition-colors ${
-      active ? "border-accent bg-teal/10 text-accent" : "border-line text-ink hover:border-accent"
-    }`;
-
   return (
     <div>
       <p className="mb-2 text-ui font-medium text-muted">Monat</p>
@@ -200,20 +178,6 @@ export default function SearchWhen({
         ))}
       </div>
 
-      <p className="mb-2 mt-5 text-ui font-medium text-muted">Zeitspanne</p>
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ["Ein Wochenende", "weekend"],
-            ["Eine Woche", "week"],
-            ["zwei Wochen", "twoweeks"],
-          ] as const
-        ).map(([label, dur]) => (
-          <button key={dur} type="button" onClick={() => pickDuration(dur)} className={durChip(selDuration === dur)}>
-            {label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

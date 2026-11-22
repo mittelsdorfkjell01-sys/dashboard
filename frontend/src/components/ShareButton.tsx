@@ -39,7 +39,7 @@ export default function ShareButton({ spot }: { spot: Spot }) {
       onClick={onClick}
       aria-label="Spot teilen"
       title={copied ? "Link kopiert" : "Spot teilen"}
-      className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:bg-band active:scale-[0.97] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
     >
       {copied ? (
         <CheckCircleIcon checkOnly width={18} height={18} className="text-green" />

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LandingHeader from "../components/LandingHeader";
+import PageBackLink from "../components/PageBackLink";
+import ScrollBackButton from "../components/ScrollBackButton";
 import { getSharedTrip, type TripPlan } from "../lib/account";
 import { spotPath } from "../lib/spotRoutes";
 
@@ -20,8 +22,9 @@ export default function SharedTrip() {
   }, [token]);
 
   return <>
-    <LandingHeader />
-    <main className="mx-auto min-h-[70vh] w-full max-w-content px-4 py-8 sm:px-6 sm:py-12">
+    <LandingHeader onLight left={<PageBackLink />} />
+    <ScrollBackButton />
+    <main className="mx-auto min-h-[70vh] w-full max-w-content px-4 pb-8 pt-32 sm:px-6 sm:pb-12">
       {!trip && !failed && <p role="status" className="py-16 text-center text-ui text-muted">{t("common.loading")}</p>}
       {failed && <div role="alert" className="rounded-card border border-line bg-surface p-8 text-center"><h1 className="text-title font-semibold text-ink">{t("trips.sharedNotFound")}</h1><p className="mt-2 text-ui text-muted">{t("trips.sharedNotFoundBody")}</p></div>}
       {trip && <article>

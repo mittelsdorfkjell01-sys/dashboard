@@ -1,13 +1,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import type { WhenDuration, WhenValue } from "../lib/searchSubmit";
+import type { WhenValue } from "../lib/searchSubmit";
 
 /**
  * "Wann?" picker for the mobile search sheet (Figma Frames 18/19), controlled
  * by `tab`. The Datum/flexibel toggle lives in the tile header (WhenToggle);
  * this renders only the active mode:
  *   - Datum    → a compact scrolling month calendar; a tapped day → mode:"range".
- *   - flexibel → a month grid + duration → mode:"flex".
+ *   - flexibel → a month grid → mode:"flex".
  */
 
 export type WhenTab = "date" | "flex";
@@ -20,11 +20,6 @@ const MONTHS_FULL = [
 const MONTHS_ABBR = [
   "JAN", "FEB", "MÄR", "APR", "MAI", "JUN",
   "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ",
-];
-const DURATIONS: { value: WhenDuration; label: string }[] = [
-  { value: "weekend", label: "Ein Wochenende" },
-  { value: "week", label: "Eine Woche" },
-  { value: "twoweeks", label: "zwei Wochen" },
 ];
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -139,6 +134,15 @@ function DateCalendar({
     return next;
   };
   const weekendStart = addDays(today, (6 - today.getDay() + 7) % 7);
+  const chooseDate = (iso: string) => {
+    if (!selectedFrom || selectedTo) {
+      onPick(iso);
+    } else if (iso < selectedFrom) {
+      onPick(iso, selectedFrom);
+    } else {
+      onPick(selectedFrom, iso);
+    }
+  };
 
   return (
     <div>
@@ -189,7 +193,7 @@ function DateCalendar({
                     <button
                       type="button"
                       disabled={isPast}
-                      onClick={() => onPick(iso)}
+                      onClick={() => chooseDate(iso)}
                       aria-label={`${day}. ${MONTHS_FULL[month0]} ${year}`}
                       className={`grid h-11 w-11 place-items-center rounded-full text-ui transition-[background-color,color,transform] active:scale-[0.9] ${
                         isSelected
@@ -221,12 +225,8 @@ function FlexPicker({
 }) {
   const flex = value?.mode === "flex" ? value : undefined;
   const month = flex?.month;
-  const duration = flex?.duration;
-
-  const commit = (nextMonth?: number, nextDuration?: WhenDuration) => {
-    if (!nextMonth && !nextDuration) onChange(null);
-    else onChange({ mode: "flex", month: nextMonth, duration: nextDuration });
-  };
+  const commit = (nextMonth?: number) =>
+    onChange(nextMonth ? { mode: "flex", month: nextMonth } : null);
 
   const chip = (active: boolean) =>
     `min-h-11 rounded-card border px-4 py-2.5 text-ui font-medium transition-colors ${
@@ -247,42 +247,13 @@ function FlexPicker({
               key={label}
               type="button"
               whileTap={{ scale: 0.94 }}
-              onClick={() => commit(active ? undefined : m, duration)}
+              onClick={() => commit(active ? undefined : m)}
               className={chip(active)}
             >
               {label}
             </motion.button>
           );
         })}
-      </div>
-
-      <p className="mt-4 text-ui font-medium text-muted">Zeitspanne</p>
-      <div className="mt-2 space-y-2">
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.97 }}
-          onClick={() =>
-            commit(month, duration === "weekend" ? undefined : "weekend")
-          }
-          className={`w-full ${chip(duration === "weekend")}`}
-        >
-          Ein Wochenende
-        </motion.button>
-        <div className="grid grid-cols-2 gap-2">
-          {DURATIONS.filter((d) => d.value !== "weekend").map((d) => (
-            <motion.button
-              key={d.value}
-              type="button"
-              whileTap={{ scale: 0.96 }}
-              onClick={() =>
-                commit(month, duration === d.value ? undefined : d.value)
-              }
-              className={chip(duration === d.value)}
-            >
-              {d.label}
-            </motion.button>
-          ))}
-        </div>
       </div>
     </div>
   );

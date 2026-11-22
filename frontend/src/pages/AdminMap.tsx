@@ -16,6 +16,7 @@ import { statusLabel } from "../lib/labels";
 import { PageHeader } from "../components/admin/ui";
 import ConfirmToast from "../components/admin/ConfirmToast";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 import { adminClusterMarkerLabel, adminSpotMarkerLabel } from "../lib/adminMapAccessibility";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -137,6 +138,8 @@ export default function AdminMap() {
         }
       });
   }, []);
+  const refreshViewport = useCallback(() => loadViewport(viewport), [loadViewport, viewport]);
+  useAdminRealtimeRefresh(refreshViewport, !busy && pending === null);
   const clusterIndex = useMemo(() => {
     const index = new Supercluster<MapPoint>({ radius: 54, maxZoom: 16 });
     return index.load(

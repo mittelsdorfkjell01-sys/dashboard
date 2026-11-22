@@ -5,14 +5,14 @@ import Footer from "../components/Footer";
 import SpotCard from "../components/SpotCard";
 import RegionTile from "../components/RegionTile";
 import { ErrorBanner, EmptyState, SpotGridSkeleton } from "../components/AsyncStates";
-import { MapIcon } from "../lib/icons";
+import MapPill from "../components/MapPill";
 import { countryName } from "../lib/flags";
 import { framingFor, REGION_FOCUS_ZOOM } from "../weather-map/camera";
 import { windMapHref } from "../weather-map/fieldUrlState";
-import { sportLabel } from "../lib/labels";
 import * as api from "../lib/api";
 import { API_BASE, resolveMediaUrl } from "../lib/api";
 import { useSpots, useSpotsLive, useTopSpots, useRegions } from "../lib/hooks";
+import { searchDateRangeLabel } from "../lib/searchSubmit";
 import { useSpotOriginsMixed } from "../context/SpotOriginContext";
 import Chip from "../components/ui/Chip";
 import type { Spot } from "../lib/types";
@@ -34,16 +34,16 @@ const MONTHS = [
 /** Breadcrumb + heading — shared by every axis so it can sit either above the
  *  content (loading/error/best-weeks) or inside the split-view grid (so its
  *  row lines up with the map). */
-function ResultHead({ heading, summary }: { heading: string; summary?: string }) {
+function ResultHead({ heading }: { heading: string }) {
   return (
     <>
       <nav className="text-caption font-medium text-muted">
-        <Link to="/" className="hover:underline">Übersicht</Link>
+        {/* py/-my: a 44px tap target without moving the breadcrumb line. */}
+        <Link to="/" className="-my-3.5 inline-block py-3.5 hover:underline">Übersicht</Link>
         <span className="mx-1.5 text-muted">›</span>
         <span className="text-ink">Suche</span>
       </nav>
-      <h1 className="mt-2 text-heading-lg font-semibold leading-tight text-balance text-ink">{heading}</h1>
-      {summary && <p role="status" className="mt-2 text-body text-muted">Aktive Suche: {summary}</p>}
+      <h1 className="mt-2 text-heading font-semibold leading-tight text-balance text-ink">{heading}</h1>
     </>
   );
 }
@@ -53,13 +53,11 @@ function ResultHead({ heading, summary }: { heading: string; summary?: string })
  *  (2 on phones, 3 from sm, 4 from lg) instead of stretching three cards. */
 function SpotRow({
   title,
-  subtitle,
   spots,
   live,
   surface = "search",
 }: {
   title: string;
-  subtitle?: string;
   spots: Spot[];
   live?: Map<string, api.LiveConditionsRead>;
   surface?: string;
@@ -67,11 +65,8 @@ function SpotRow({
   if (spots.length === 0) return null;
   return (
     <section className="pt-2">
-      <div>
-        <h2 className="text-title font-semibold text-ink">{title}</h2>
-        {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4">
+      <h2 className="text-title font-semibold text-ink">{title}</h2>
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4">
         {spots.map((spot) => (
           <div key={spot.id}>
             <SpotCard spot={spot} live={live?.get(spot.id)} surface={surface} />
@@ -85,21 +80,16 @@ function SpotRow({
 /** One tile row of region tiles. */
 function RegionRow({
   title,
-  subtitle,
   regions,
 }: {
   title: string;
-  subtitle?: string;
   regions: { slug: string; name: string; country?: string | null; image?: string | api.ImageRecord | null; spotCount?: number | null; sports?: string[] | null }[];
 }) {
   if (regions.length === 0) return null;
   return (
     <section className="pt-2">
-      <div>
-        <h2 className="text-title font-semibold text-ink">{title}</h2>
-        {subtitle && <p className="mt-1 text-caption text-muted">{subtitle}</p>}
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-3">
+      <h2 className="text-title font-semibold text-ink">{title}</h2>
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-3">
         {regions.map((r, i) => (
           <div key={r.slug || i}>
             <RegionTile slug={r.slug} name={r.name} country={r.country} image={r.image} spotCount={r.spotCount} sports={r.sports} />
@@ -157,13 +147,10 @@ function ResultsLayout({
 
       {/* Below lg the map opens as the full page it is, already framed. */}
       {frame && (
-        <Link
+        <MapPill
           to={windMapHref(frame.center, frame.zoom, { toggle: false })}
-          aria-label="Karte öffnen"
-          className="fixed bottom-6 left-1/2 z-sticky flex -translate-x-1/2 items-center gap-1.5 rounded-card bg-teal px-4 py-2 text-ui font-normal text-white shadow-float lg:hidden"
-        >
-          Karte <MapIcon className="text-body" />
-        </Link>
+          className="text-ink lg:hidden"
+        />
       )}
     </div>
   );
@@ -260,7 +247,9 @@ export default function SearchResults() {
   const q = (params.get("q") ?? "").trim();
   const sport = params.get("sport") ?? undefined;
   const week = params.get("week");
+  const weeks = params.get("weeks") ?? undefined;
   const month = params.get("month");
+  const dateRangeLabel = searchDateRangeLabel(params.get("from"), params.get("to"));
   const spotId = params.get("spot_id") ?? undefined;
   const regionId = params.get("region_id") ?? undefined;
   const mode = params.get("mode"); // "weeks" → the temporal best-weeks list
@@ -280,7 +269,7 @@ export default function SearchResults() {
   }, [eventKey]); // one event per navigated search URL
 
   const placeOpen = !q && !spotId && !regionId;
-  const timeOpen = !week && !month;
+  const timeOpen = !week && !weeks && !month;
   const placeEntity = spotId ?? regionId;
 
   const showWeeks = mode === "weeks" && Boolean(placeEntity);
@@ -348,7 +337,7 @@ export default function SearchResults() {
       run = api.getBestWeeks({ spot_id: spotId, region_id: regionId, sport }).then((r) => alive && setBestWeeks(r));
     } else if (showBestRegions) {
       run = Promise.all([
-        api.getBestRegions({ sport, month: month ? Number(month) : undefined }),
+        api.getBestRegions({ sport, month: month ? Number(month) : undefined, weeks }),
         api.getRegions(),
       ]).then(([r, regions]) => {
         if (!alive) return;
@@ -359,7 +348,7 @@ export default function SearchResults() {
       // A place is present (spot / region / free text, incl. the geocoded
       // "nearby" fallback). Always resolve to spots so picking a spot shows
       // that spot — not the best-weeks list.
-      run = api.getSearch({ q, sport, week: week ? Number(week) : undefined }).then((r) => alive && setResult(r));
+      run = api.getSearch({ q, sport, week: week ? Number(week) : undefined, weeks }).then((r) => alive && setResult(r));
     }
 
     run
@@ -368,7 +357,7 @@ export default function SearchResults() {
     return () => {
       alive = false;
     };
-  }, [q, sport, week, month, spotId, regionId, discovery, showWeeks, showBestRegions, retry]);
+  }, [q, sport, week, weeks, month, spotId, regionId, discovery, showWeeks, showBestRegions, retry]);
 
   const monthName = month ? MONTHS[Number(month) - 1] : null;
   const geocodeName = result?.geocode?.name;
@@ -379,20 +368,12 @@ export default function SearchResults() {
     : discovery
     ? "Entdecken"
     : showBestRegions
-    ? monthName ? `Beste Reviere im ${monthName}` : "Beste Reviere"
+    ? dateRangeLabel
+      ? `Beste Reviere · ${dateRangeLabel}`
+      : monthName ? `Beste Reviere im ${monthName}` : "Beste Reviere"
     : nearby && geocodeName
     ? result?.resolved === "area" ? `Spots in ${geocodeName}` : `Spots in der Nähe von ${geocodeName}`
     : q ? `Ergebnisse für „${q}“` : "Suche";
-  const filterSummary = [
-    q || (placeOpen ? "überall" : null),
-    sport ? sportLabel(sport) : "alle Sportarten",
-    monthName ?? (week ? `Kalenderwoche ${week}` : "jederzeit"),
-    originFilter === "editorial"
-      ? "von der Redaktion"
-      : originFilter === "community"
-      ? "von der Community"
-      : null,
-  ].filter(Boolean).join(" · ");
   const pageLoading = loading || (discovery && catalogueLoading && !catalogue);
   const criticalError = error ?? (discovery && !catalogue ? catalogueError : null);
   const partialError = criticalError ? null : catalogueError ?? topSpotsError ?? regionsError;
@@ -453,10 +434,10 @@ export default function SearchResults() {
     <div className="flex min-h-screen flex-col bg-page">
       <ResultsHeader />
 
-      <main className="flex-1 pt-20 sm:pt-24">
+      <main className="flex-1 pt-24">
         {pageLoading && (
           <div className="mx-auto w-full max-w-page px-4 pt-2 sm:px-8">
-            <ResultHead heading={heading} summary={filterSummary} />
+            <ResultHead heading={heading} />
             <div className="mt-8">
               <SpotGridSkeleton />
             </div>
@@ -465,7 +446,7 @@ export default function SearchResults() {
 
         {criticalError && !pageLoading && (
           <div className="mx-auto w-full max-w-page px-4 pt-2 sm:px-8">
-            <ResultHead heading={heading} summary={filterSummary} />
+            <ResultHead heading={heading} />
             <div className="mt-8">
               <ErrorBanner title="Die Suche ist gerade nicht verfügbar." message={criticalError} onRetry={retryAll} />
             </div>
@@ -474,7 +455,7 @@ export default function SearchResults() {
 
         {!pageLoading && !criticalError && showWeeks && bestWeeks && (
           <div className={RESULTS_COLUMN}>
-            <ResultHead heading={heading} summary={filterSummary} />
+            <ResultHead heading={heading} />
             <div className="mt-8">
               <BestWeeksList data={bestWeeks} place={q} />
             </div>
@@ -482,7 +463,7 @@ export default function SearchResults() {
         )}
 
         {!pageLoading && !criticalError && (discovery || showBestRegions || showSearch) && (
-          <ResultsLayout frame={mapFrame} head={<ResultHead heading={heading} summary={filterSummary} />}>
+          <ResultsLayout frame={mapFrame} head={<ResultHead heading={heading} />}>
             {originsMixed && (
               <OriginFacet active={originFilter} onChange={setOriginFilter} />
             )}
@@ -495,25 +476,24 @@ export default function SearchResults() {
             )}
             {showSearch && (
               <>
-                <RegionRow title="Direkte Treffer" subtitle="Regionen zu deiner Suche" regions={directRegions} />
+                <RegionRow title="Direkte Treffer" regions={directRegions} />
                 <SpotRow
                   title={directRegions.length ? "Spots" : "Direkte Treffer"}
-                  subtitle={nearby && geocodeName ? `In der Nähe von ${geocodeName}` : "Ergebnisse deiner Suche"}
                   spots={directSpots}
                   live={live}
                 />
                 {directSpots.length === 0 && directRegions.length === 0 && (
                   <EmptyState message="Keine direkten Treffer. Versuche einen anderen Ort oder Spotnamen." />
                 )}
-                <SpotRow title="Weitere Spots" subtitle="Weitere Auswahl für deine Suche" spots={similar} live={live} />
+                <SpotRow title="Weitere Spots" spots={similar} live={live} />
               </>
             )}
 
             {showBestRegions && (
-              <BestRegionsRow data={bestRegions} monthName={monthName} meta={regionMeta} />
+              <BestRegionsRow data={bestRegions} meta={regionMeta} />
             )}
 
-            <SpotRow title={t("recommendations.currentTitle")} subtitle={t("recommendations.limits")} spots={performing} live={live} surface="now" />
+            <SpotRow title={t("recommendations.currentTitle")} spots={performing} live={live} surface="now" />
 
             {discovery && <DiscoveryRegions />}
           </ResultsLayout>
@@ -566,11 +546,9 @@ function OriginFacet({
 
 function BestRegionsRow({
   data,
-  monthName,
   meta,
 }: {
   data: api.BestRegionsResponse | null;
-  monthName: string | null;
   meta: Map<string, api.Region>;
 }) {
   const ranking = data?.regions ?? [];
@@ -580,7 +558,6 @@ function BestRegionsRow({
   return (
     <RegionRow
       title="Direkte Treffer"
-      subtitle={`Beste Reviere ${monthName ? `im ${monthName}` : "über die Saison"}`}
       regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {
@@ -618,7 +595,6 @@ function DiscoveryRegions() {
   return (
     <RegionRow
       title="Top-Regionen"
-      subtitle="Ausgewählte Reviere"
       regions={ranking.map((r) => {
         const m = r.id ? meta.get(r.id) : undefined;
         return {

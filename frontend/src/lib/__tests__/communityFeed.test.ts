@@ -8,6 +8,7 @@ import {
   mergeFeed,
   parsePostText,
   relativeTime,
+  relativeTimeShort,
   sortFeed,
 } from "../communityFeed";
 
@@ -180,5 +181,20 @@ describe("avatar helpers", () => {
   it("builds two-letter initials from first + last name, one word from a single name", () => {
     expect(initials("Anna Muster")).toBe("AM");
     expect(initials("Ben")).toBe("BE");
+  });
+});
+
+describe("relativeTimeShort", () => {
+  const now = new Date("2026-11-18T12:00:00Z");
+  const ago = (minutes: number) => new Date(now.getTime() - minutes * 60_000).toISOString();
+  it("gives the compact feed age", () => {
+    expect(relativeTimeShort(ago(0), now)).toBe("jetzt");
+    expect(relativeTimeShort(ago(5), now)).toBe("5 Min.");
+    expect(relativeTimeShort(ago(180), now)).toBe("3 Std.");
+    expect(relativeTimeShort(ago(2 * 1440), now)).toBe("2 Tg.");
+    expect(relativeTimeShort(ago(15 * 1440), now)).toBe("2 Wo.");
+    expect(relativeTimeShort(ago(100 * 1440), now)).toBe("3 Mon.");
+    expect(relativeTimeShort(ago(800 * 1440), now)).toBe("2 J.");
+    expect(relativeTimeShort("kaputt", now)).toBe("");
   });
 });

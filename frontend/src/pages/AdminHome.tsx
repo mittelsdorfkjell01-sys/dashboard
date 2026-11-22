@@ -3,7 +3,7 @@
 // attention — moderation, review, ready-to-publish, spots to finish — each with
 // a direct link. Raw counters are demoted to a compact strip at the bottom.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ApiError,
@@ -17,6 +17,7 @@ import { RANK_CARD, RANK_DOT } from "../lib/rank";
 import BoardPanel from "../components/admin/BoardPanel";
 import { Badge, PageHeader, StatTile, type BadgeTone } from "../components/admin/ui";
 import { createAdminReturnState } from "../lib/adminNavigation";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 type Tone = "red" | "orange" | "neutral";
 interface Task {
@@ -60,11 +61,13 @@ export default function AdminHome() {
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    getAdminOverview()
+  const load = useCallback(() => getAdminOverview()
       .then(setData)
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen."));
-  }, []);
+      .catch((e) => setError(e instanceof ApiError ? e.message : "Laden fehlgeschlagen.")), []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  useAdminRealtimeRefresh(load);
 
   if (error)
     return (

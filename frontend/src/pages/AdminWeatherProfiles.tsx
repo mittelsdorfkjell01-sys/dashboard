@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, getAdminWeatherProfiles, type WeatherProfileListItem } from "../lib/api";
 import {
@@ -14,6 +14,7 @@ import {
   Thead,
   Tr,
 } from "../components/admin/ui";
+import { useAdminRealtimeRefresh } from "../context/AdminRealtimeContext";
 
 const stateLabel: Record<string, string> = {
   none: "Kein Profil",
@@ -29,14 +30,21 @@ export default function AdminWeatherProfiles() {
   const [items, setItems] = useState<WeatherProfileListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     setError(null);
-    getAdminWeatherProfiles({ country: country || undefined, state: state || undefined })
-      .then((result) => setItems(result.items))
-      .catch((e) =>
-        setError(e instanceof ApiError ? e.message : "Wetterprofile konnten nicht geladen werden.")
-      );
+    try {
+      const result = await getAdminWeatherProfiles({
+        country: country || undefined,
+        state: state || undefined,
+      });
+      setItems(result.items);
+    } catch (reason) {
+      setError(reason instanceof ApiError ? reason.message : "Wetterprofile konnten nicht geladen werden.");
+    }
   }, [country, state]);
+
+  useEffect(() => { void load(); }, [load]);
+  useAdminRealtimeRefresh(load);
 
   return (
     <div>
