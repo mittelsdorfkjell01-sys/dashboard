@@ -13,9 +13,45 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox-desktop", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit-desktop", use: { ...devices["Desktop Safari"] } },
-    { name: "chromium-mobile", use: { ...devices["Pixel 5"] } },
+    {
+      name: "firefox-desktop",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch: [
+        "**/accessibility.spec.ts",
+        "**/admin-theme.spec.ts",
+        "**/editorial-style.spec.ts",
+        "**/help-page.spec.ts",
+        "**/public-core.spec.ts",
+        "**/search.spec.ts",
+      ],
+    },
+    {
+      name: "webkit-desktop",
+      use: { ...devices["Desktop Safari"] },
+      testMatch: [
+        "**/accessibility.spec.ts",
+        "**/admin-theme.spec.ts",
+        "**/editorial-style.spec.ts",
+        "**/help-page.spec.ts",
+        "**/public-core.spec.ts",
+        "**/search.spec.ts",
+      ],
+    },
+    {
+      name: "chromium-mobile",
+      use: { ...devices["Pixel 5"] },
+      testMatch: [
+        "**/accessibility.spec.ts",
+        "**/daten-page.spec.ts",
+        "**/editorial-style.spec.ts",
+        "**/help-page.spec.ts",
+        "**/landing-loading.spec.ts",
+        "**/public-core.spec.ts",
+        "**/public-resilience.spec.ts",
+        "**/search.spec.ts",
+        "**/wind-climatology-v3-public.spec.ts",
+      ],
+    },
   ],
   webServer: {
     command: "npm run build:e2e && npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",

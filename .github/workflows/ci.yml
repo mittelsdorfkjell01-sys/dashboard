@@ -117,7 +117,12 @@ jobs:
           npm audit --omit=dev --audit-level=high
           npm audit --audit-level=critical
       - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run test:e2e
+      # The complete suite includes Chromium/WebGL- and viewport-specific
+      # contracts. Run those in both Chromium viewports, then exercise the
+      # engine-independent accessibility and public-core contracts in Firefox
+      # and WebKit. This keeps cross-browser coverage meaningful instead of
+      # retrying tests whose preconditions only exist in Chromium.
+      - run: npm run test:e2e:ci
 
   secrets:
     runs-on: ubuntu-latest
