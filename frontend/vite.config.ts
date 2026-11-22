@@ -55,6 +55,8 @@ export default defineConfig(({ command, mode }) => {
         },
       },
     ],
+    // MapLibre starts its worker as a module worker (lib/maplibreWorker.ts).
+    worker: { format: "es" },
     optimizeDeps: {
       // MapLibre ships its worker as a sibling ESM asset. Pre-bundling the
       // package rewrites that URL into Vite's deps cache where the worker does
