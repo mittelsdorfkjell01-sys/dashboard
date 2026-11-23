@@ -12,6 +12,8 @@ description = "Test fixtures and prose research notes, not credentials"
 regexTarget = "match"
 regexes = [
   '''(attacker-pw|owner-pw|again-owner)-\d+''',
+  # Account-flow fixtures added with sign-in by Google/Apple (2026-11-22).
+  '''(chosen|recipient|registrant|later)-pw-\d+''',
 ]
 # research/ holds spot research notes: long German and English prose in JSON
 # string fields. The generic-api-key heuristic scores sentences like
